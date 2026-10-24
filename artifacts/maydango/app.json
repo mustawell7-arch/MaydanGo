@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "MaydanGo",
+    "slug": "maydango",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "maydango",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {},
+    "web": {
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "MaydanGo uses your camera to scan facility check-in codes.",
+          "barcodeScannerEnabled": true
+        }
+      ]
+    ],
+    "splash": {
+      "backgroundColor": "#f6f6ef",
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain"
+    },
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

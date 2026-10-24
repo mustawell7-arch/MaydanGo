@@ -1,0 +1,1 @@
+- [MaydanGo Iraq scope](maydango-iraq-scope.md) — Build for all Iraqi regions, including Kurdistan, the south, and the west, with Arabic, Kurdish, and English.

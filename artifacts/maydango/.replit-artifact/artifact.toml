@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "MaydanGo"
+description = "MaydanGo is an Iraq-focused sports, fitness, wellness and online-training membership app. This first launch build helps customers discover partner facilities and classes, understand membership access, manage bookings and follow a QR/GPS check-in flow, with Arabic, Kurdish and English support planned."
+version = "1.0.0"
+id = "artifacts/maydango"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 25791
+
+[services.development]
+run = "pnpm --filter @workspace/maydango run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/maydango", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/maydango", "run", "serve" ]
+
+[services.env]
+PORT = "25791"
+BASE_PATH = "/"
