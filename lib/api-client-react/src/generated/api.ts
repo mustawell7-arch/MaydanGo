@@ -27,10 +27,13 @@ import type {
 import type {
   AccessGrantInput,
   AccessRevokeInput,
+  CheckinPolicy,
   CreateMemberBookingBody,
   EnablePreviewMembershipBody,
+  GetAttendance200,
   GetBookingCatalog200Item,
   HealthStatus,
+  IssueCheckinQr200,
   LiveOffering,
   LivePlan,
   MemberState,
@@ -42,7 +45,10 @@ import type {
   PartnerApproval,
   PartnerInput,
   PlanInput,
-  SaveMemberProfileBody
+  ReviewAttendanceBody,
+  SaveMemberProfileBody,
+  ScanCheckinQr200,
+  ScanCheckinQrBody
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -71,6 +77,485 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetAttendanceUrl = () => {
+
+
+
+
+  return `/api/attendance`
+}
+
+export const getAttendance = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetAttendance200> => {
+
+  return customFetch<GetAttendance200>(getGetAttendanceUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAttendanceQueryKey = () => {
+    return [
+    `/api/attendance`
+    ] as const;
+    }
+
+
+export const getGetAttendanceQueryOptions = <TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAttendanceQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAttendance>>> = ({ signal }) => getAttendance({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAttendanceQueryResult = NonNullable<Awaited<ReturnType<typeof getAttendance>>>
+export type GetAttendanceQueryError = ErrorType<unknown>
+
+
+export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAttendance>>,
+          TError,
+          Awaited<ReturnType<typeof getAttendance>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAttendance>>,
+          TError,
+          Awaited<ReturnType<typeof getAttendance>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetAttendanceQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSetCheckinPolicyUrl = (id: string,) => {
+
+
+
+
+  return `/api/attendance/${id}/policy`
+}
+
+export const setCheckinPolicy = async (id: string,
+    checkinPolicy: CheckinPolicy, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<void>(getSetCheckinPolicyUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(checkinPolicy)
+  }
+);}
+
+
+
+
+
+export const getSetCheckinPolicyMutationKey = () => ['setCheckinPolicy'] as const;
+
+export const getSetCheckinPolicyMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCheckinPolicy>>, TError,SetCheckinPolicyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setCheckinPolicy>>, TError,SetCheckinPolicyMutationVariables, TContext> => {
+
+const mutationKey = getSetCheckinPolicyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setCheckinPolicy>>, SetCheckinPolicyMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  setCheckinPolicy(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetCheckinPolicyMutationResult = NonNullable<Awaited<ReturnType<typeof setCheckinPolicy>>>
+    export type SetCheckinPolicyMutationBody = BodyType<CheckinPolicy>
+    export type SetCheckinPolicyMutationError = ErrorType<unknown>
+    export type SetCheckinPolicyMutationVariables = {id: string;data: BodyType<CheckinPolicy>}
+
+    export const useSetCheckinPolicy = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setCheckinPolicy>>, TError,SetCheckinPolicyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setCheckinPolicy>>,
+        TError,
+        SetCheckinPolicyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetCheckinPolicyMutationOptions(options), queryClient);
+    }
+
+export const getIssueCheckinQrUrl = (id: string,) => {
+
+
+
+
+  return `/api/attendance/${id}/qr`
+}
+
+export const issueCheckinQr = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<IssueCheckinQr200> => {
+
+  return customFetch<IssueCheckinQr200>(getIssueCheckinQrUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getIssueCheckinQrMutationKey = () => ['issueCheckinQr'] as const;
+
+export const getIssueCheckinQrMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof issueCheckinQr>>, TError,IssueCheckinQrMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof issueCheckinQr>>, TError,IssueCheckinQrMutationVariables, TContext> => {
+
+const mutationKey = getIssueCheckinQrMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof issueCheckinQr>>, IssueCheckinQrMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  issueCheckinQr(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type IssueCheckinQrMutationResult = NonNullable<Awaited<ReturnType<typeof issueCheckinQr>>>
+
+    export type IssueCheckinQrMutationError = ErrorType<unknown>
+    export type IssueCheckinQrMutationVariables = {id: string}
+
+    export const useIssueCheckinQr = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof issueCheckinQr>>, TError,IssueCheckinQrMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof issueCheckinQr>>,
+        TError,
+        IssueCheckinQrMutationVariables,
+        TContext
+      > => {
+      return useMutation(getIssueCheckinQrMutationOptions(options), queryClient);
+    }
+
+export const getRevokeCheckinQrUrl = (id: string,) => {
+
+
+
+
+  return `/api/attendance/${id}/qr`
+}
+
+export const revokeCheckinQr = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getRevokeCheckinQrUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRevokeCheckinQrMutationKey = () => ['revokeCheckinQr'] as const;
+
+export const getRevokeCheckinQrMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeCheckinQr>>, TError,RevokeCheckinQrMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof revokeCheckinQr>>, TError,RevokeCheckinQrMutationVariables, TContext> => {
+
+const mutationKey = getRevokeCheckinQrMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeCheckinQr>>, RevokeCheckinQrMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  revokeCheckinQr(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevokeCheckinQrMutationResult = NonNullable<Awaited<ReturnType<typeof revokeCheckinQr>>>
+
+    export type RevokeCheckinQrMutationError = ErrorType<unknown>
+    export type RevokeCheckinQrMutationVariables = {id: string}
+
+    export const useRevokeCheckinQr = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeCheckinQr>>, TError,RevokeCheckinQrMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof revokeCheckinQr>>,
+        TError,
+        RevokeCheckinQrMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRevokeCheckinQrMutationOptions(options), queryClient);
+    }
+
+export const getScanCheckinQrUrl = () => {
+
+
+
+
+  return `/api/attendance/scan`
+}
+
+export const scanCheckinQr = async (scanCheckinQrBody: ScanCheckinQrBody, options?: Parameters<typeof customFetch>[1]): Promise<ScanCheckinQr200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ScanCheckinQr200>(getScanCheckinQrUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(scanCheckinQrBody)
+  }
+);}
+
+
+
+
+
+export const getScanCheckinQrMutationKey = () => ['scanCheckinQr'] as const;
+
+export const getScanCheckinQrMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof scanCheckinQr>>, TError,ScanCheckinQrMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof scanCheckinQr>>, TError,ScanCheckinQrMutationVariables, TContext> => {
+
+const mutationKey = getScanCheckinQrMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof scanCheckinQr>>, ScanCheckinQrMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  scanCheckinQr(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ScanCheckinQrMutationResult = NonNullable<Awaited<ReturnType<typeof scanCheckinQr>>>
+    export type ScanCheckinQrMutationBody = BodyType<ScanCheckinQrBody>
+    export type ScanCheckinQrMutationError = ErrorType<unknown>
+    export type ScanCheckinQrMutationVariables = {data: BodyType<ScanCheckinQrBody>}
+
+    export const useScanCheckinQr = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof scanCheckinQr>>, TError,ScanCheckinQrMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof scanCheckinQr>>,
+        TError,
+        ScanCheckinQrMutationVariables,
+        TContext
+      > => {
+      return useMutation(getScanCheckinQrMutationOptions(options), queryClient);
+    }
+
+export const getReviewAttendanceUrl = (id: string,) => {
+
+
+
+
+  return `/api/attendance/${id}/review`
+}
+
+export const reviewAttendance = async (id: string,
+    reviewAttendanceBody: ReviewAttendanceBody, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<void>(getReviewAttendanceUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(reviewAttendanceBody)
+  }
+);}
+
+
+
+
+
+export const getReviewAttendanceMutationKey = () => ['reviewAttendance'] as const;
+
+export const getReviewAttendanceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewAttendance>>, TError,ReviewAttendanceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewAttendance>>, TError,ReviewAttendanceMutationVariables, TContext> => {
+
+const mutationKey = getReviewAttendanceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewAttendance>>, ReviewAttendanceMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reviewAttendance(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewAttendanceMutationResult = NonNullable<Awaited<ReturnType<typeof reviewAttendance>>>
+    export type ReviewAttendanceMutationBody = BodyType<ReviewAttendanceBody>
+    export type ReviewAttendanceMutationError = ErrorType<unknown>
+    export type ReviewAttendanceMutationVariables = {id: string;data: BodyType<ReviewAttendanceBody>}
+
+    export const useReviewAttendance = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewAttendance>>, TError,ReviewAttendanceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reviewAttendance>>,
+        TError,
+        ReviewAttendanceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReviewAttendanceMutationOptions(options), queryClient);
+    }
 
 export const getGetOperationsUrl = () => {
 

@@ -73,4 +73,12 @@ export const attendance = pgTable("attendance", {
   offeringId: text("offering_id").notNull().references(() => offerings.id),
   checkedInAt: timestamp("checked_in_at", { withTimezone: true }).notNull(),
   verifiedBy: text("verified_by").notNull(),
-});
+  reservationId: text("reservation_id").references(() => reservations.id),
+  status: text("status").notNull().default("pending"),
+  settlementEligible: boolean("settlement_eligible").notNull().default(false),
+  lockedAt: timestamp("locked_at", { withTimezone: true }),
+}, t => [
+  uniqueIndex("attendance_reservation").on(t.reservationId),
+  uniqueIndex("one_verified_visit_per_offering").on(t.userId, t.offeringId)
+    .where(sql`${t.reservationId} is not null and ${t.status} in ('pending', 'confirmed', 'disputed')`),
+]);

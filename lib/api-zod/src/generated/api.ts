@@ -8,6 +8,99 @@
 import * as zod from 'zod';
 
 
+export const GetAttendanceResponse = zod.object({
+  "role": zod.string(),
+  "rows": zod.array(zod.object({
+  "reservationId": zod.string(),
+  "userId": zod.string(),
+  "title": zod.string(),
+  "facility": zod.string(),
+  "startsAt": zod.string(),
+  "endsAt": zod.string(),
+  "bookingStatus": zod.string(),
+  "status": zod.string(),
+  "settlementEligible": zod.boolean(),
+  "locked": zod.boolean(),
+  "reference": zod.string().optional(),
+  "checkedInAt": zod.string().optional(),
+  "policy": zod.object({
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.number().int(),
+  "opensAt": zod.string(),
+  "closesAt": zod.string(),
+  "correctionEndsAt": zod.string()
+}).optional(),
+  "events": zod.array(zod.object({
+  "action": zod.string(),
+  "reason": zod.string(),
+  "createdAt": zod.string(),
+  "actorId": zod.string()
+}))
+}))
+})
+
+
+export const SetCheckinPolicyParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const SetCheckinPolicyBody = zod.object({
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.number().int(),
+  "opensAt": zod.string(),
+  "closesAt": zod.string(),
+  "correctionEndsAt": zod.string()
+})
+
+export const SetCheckinPolicyResponse = zod.unknown()
+
+
+export const IssueCheckinQrParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const IssueCheckinQrResponse = zod.object({
+  "token": zod.string(),
+  "expiresAt": zod.string()
+})
+
+
+export const RevokeCheckinQrParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const RevokeCheckinQrResponse = zod.unknown()
+
+
+export const ScanCheckinQrBody = zod.object({
+  "token": zod.string(),
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "accuracy": zod.number(),
+  "capturedAt": zod.string(),
+  "mocked": zod.boolean().optional()
+})
+
+export const ScanCheckinQrResponse = zod.object({
+  "reference": zod.string(),
+  "status": zod.string()
+})
+
+
+export const ReviewAttendanceParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ReviewAttendanceBody = zod.object({
+  "action": zod.enum(['confirm', 'no_show', 'dispute', 'void', 'resolve_confirm', 'resolve_void', 'accept_request', 'lock']),
+  "reason": zod.string()
+})
+
+export const ReviewAttendanceResponse = zod.unknown()
+
+
 
 
 export const getOperationsResponseOfferingsItemOneMinAgeMin = 0;

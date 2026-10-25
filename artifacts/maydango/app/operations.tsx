@@ -75,6 +75,7 @@ export default function OperationsScreen() {
         <Text style={{ color: c.primaryForeground, fontWeight: '800' }}>{admin ? 'Administrator' : 'Partner staff'}</Text>
         <Text raw style={{ color: c.accent, fontSize: 12 }}>{d.partnerId ?? `${d.partners.length} · ${d.offerings.length} · ${d.plans.length}`}</Text>
       </View>
+      <Btn c={c} title="Partner check-in & attendance" onPress={() => router.push('/checkin')} />
       {tabs.length > 1 ? <View style={s.wrap}>{tabs.map(t => <Pressable key={t} accessibilityRole="tab" accessibilityState={{ selected: tab === t }} onPress={() => setTab(t)}
         style={[s.tab, { borderColor: tab === t ? c.primary : c.border, backgroundColor: tab === t ? c.accent : c.card }]}><Text style={{ color: c.foreground, fontWeight: '700' }}>{names[t]}</Text></Pressable>)}</View> : null}
       {ops.error ? <Text style={{ color: c.destructive }}>{ops.error}</Text> : null}

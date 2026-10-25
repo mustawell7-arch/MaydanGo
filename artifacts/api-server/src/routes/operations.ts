@@ -3,7 +3,7 @@ import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
-import { db, operators, partners, offerings, reservations, membershipPlans, memberships, accessGrants, operationAudit } from "@workspace/db";
+import { db, operators, partners, offerings, reservations, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents } from "@workspace/db";
 import { BookingError } from "../lib/reservations";
 import { offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
 
@@ -107,6 +107,13 @@ router.post("/offerings/:id/cancel", async (req, res) => {
     if (o.cancelledAt) return;
     if (o.startsAt <= new Date()) throw new BookingError(409, "Past sessions require attendance review.");
     await tx.update(offerings).set({ active: false, cancelledAt: new Date() }).where(eq(offerings.id, o.id));
+    const arrivals = await tx.select().from(attendance).where(eq(attendance.offeringId, o.id));
+    for (const a of arrivals) {
+      await tx.update(attendance).set({ status: "void", settlementEligible: false }).where(eq(attendance.id, a.id));
+      if (a.reservationId) await tx.insert(attendanceEvents).values({ id: randomUUID(), reservationId: a.reservationId,
+        actorId: res.locals.operator.userId, action: "partner_cancelled", before: a.status, after: "void",
+        reason: "Partner cancelled the offering; allowance restored." });
+    }
     await tx.update(reservations).set({ status: "partner_cancelled", cancelledAt: new Date() })
       .where(and(eq(reservations.offeringId, o.id), inArray(reservations.status, ["reserved", "requested"])));
     await audit(tx, res.locals.operator.userId, "offering.cancel", o.id);

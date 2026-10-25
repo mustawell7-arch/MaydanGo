@@ -76,7 +76,6 @@ function useAppState() {
     },
     // Preview-only controls cannot grant a server membership or produce verified attendance.
     setMembershipTier: (membershipTier: LocalState['membershipTier']) => commit(s => ({ ...s, membershipTier })),
-    recordCheckIn: (facilityId: string) => commit(s => ({ ...s, checkIns: [{ facilityId, checkedInAt: new Date().toISOString() }, ...s.checkIns], visitsRemaining: Math.max(0, s.visitsRemaining - 1) })),
   };
 }
 const AppContext = createContext<ReturnType<typeof useAppState> | null>(null);

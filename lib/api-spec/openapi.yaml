@@ -11,6 +11,129 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /attendance:
+    get:
+      operationId: getAttendance
+      responses:
+        "200":
+          description: Own reservation attendance or authorized partner roster, with audit notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [role, rows]
+                properties:
+                  role: { type: string }
+                  rows:
+                    type: array
+                    items:
+                      type: object
+                      required: [reservationId, userId, title, facility, startsAt, endsAt, bookingStatus, status, settlementEligible, locked, events]
+                      properties:
+                        reservationId: { type: string }
+                        userId: { type: string }
+                        title: { type: string }
+                        facility: { type: string }
+                        startsAt: { type: string }
+                        endsAt: { type: string }
+                        bookingStatus: { type: string }
+                        status: { type: string }
+                        settlementEligible: { type: boolean }
+                        locked: { type: boolean }
+                        reference: { type: string }
+                        checkedInAt: { type: string }
+                        policy:
+                          $ref: "#/components/schemas/CheckinPolicy"
+                        events:
+                          type: array
+                          items:
+                            type: object
+                            required: [action, reason, createdAt, actorId]
+                            properties:
+                              action: { type: string }
+                              reason: { type: string }
+                              createdAt: { type: string }
+                              actorId: { type: string }
+  /attendance/{id}/policy:
+    put:
+      operationId: setCheckinPolicy
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckinPolicy"
+      responses:
+        "200": { description: Policy saved }
+  /attendance/{id}/qr:
+    post:
+      operationId: issueCheckinQr
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Single-use QR; replaces all previous codes for this reservation
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, expiresAt]
+                properties:
+                  token: { type: string }
+                  expiresAt: { type: string }
+    delete:
+      operationId: revokeCheckinQr
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: QR deactivated }
+  /attendance/scan:
+    post:
+      operationId: scanCheckinQr
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, latitude, longitude, accuracy, capturedAt]
+              properties:
+                token: { type: string }
+                latitude: { type: number }
+                longitude: { type: number }
+                accuracy: { type: number }
+                capturedAt: { type: string }
+                mocked: { type: boolean }
+      responses:
+        "200":
+          description: Arrival recorded, awaiting partner confirmation
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reference, status]
+                properties:
+                  reference: { type: string }
+                  status: { type: string }
+  /attendance/{id}/review:
+    post:
+      operationId: reviewAttendance
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action, reason]
+              properties:
+                action: { type: string, enum: [confirm, no_show, dispute, void, resolve_confirm, resolve_void, accept_request, lock] }
+                reason: { type: string }
+      responses:
+        "200": { description: Audited review saved }
   /operations:
     $ref: "./operations.yaml#/paths/~1operations"
   /operations/partners:
@@ -165,6 +288,16 @@ paths:
                 $ref: "#/components/schemas/HealthStatus"
 components:
   schemas:
+    CheckinPolicy:
+      type: object
+      required: [latitude, longitude, radius, opensAt, closesAt, correctionEndsAt]
+      properties:
+        latitude: { type: number }
+        longitude: { type: number }
+        radius: { type: integer }
+        opensAt: { type: string }
+        closesAt: { type: string }
+        correctionEndsAt: { type: string }
     MemberState:
       type: object
       required: [memberships, bookings]

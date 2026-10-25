@@ -6,7 +6,7 @@ import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import { StorageBanner } from '@/components/LocalNotice';
 
-export function ScreenShell({ children }: { children: React.ReactNode }) {
+export function ScreenShell({ children, sample = true }: { children: React.ReactNode; sample?: boolean }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { language, hydrated } = useApp();
@@ -22,9 +22,9 @@ export function ScreenShell({ children }: { children: React.ReactNode }) {
       }}
     >
       <StorageBanner />
-      <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 17, paddingHorizontal: 22, paddingVertical: 6 }}>
+      {sample ? <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 17, paddingHorizontal: 22, paddingVertical: 6 }}>
         Sample catalog · illustrative places, schedules and prices. Not live partner availability.
-      </Text>
+      </Text> : null}
       {children}
     </View>
   );

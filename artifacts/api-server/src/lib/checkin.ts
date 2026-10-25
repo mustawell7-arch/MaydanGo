@@ -1,0 +1,227 @@
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, memberships, offerings, operators, partners, reservations, memberProfiles } from "@workspace/db";
+import { z } from "zod";
+import { BookingError } from "./reservations";
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+const digest = (token: string) => createHash("sha256").update(token).digest("hex");
+export const policyInput = z.object({
+  latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180),
+  radius: z.number().int().min(25).max(800),
+  opensAt: z.string().datetime({ offset: true }), closesAt: z.string().datetime({ offset: true }),
+  correctionEndsAt: z.string().datetime({ offset: true }),
+}).strict();
+export const scanInput = z.object({
+  token: z.string().regex(/^MDG1:[a-f0-9]{64}$/),
+  latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180),
+  accuracy: z.number().min(0).max(100), capturedAt: z.string().datetime({ offset: true }),
+  mocked: z.boolean().optional(),
+}).strict();
+export const reviewInput = z.object({
+  action: z.enum(["confirm", "no_show", "dispute", "void", "resolve_confirm", "resolve_void", "accept_request", "lock"]),
+  reason: z.string().trim().min(5).max(500),
+}).strict();
+export function distance(a: number, b: number, c: number, d: number) {
+  const rad = (x: number) => x * Math.PI / 180;
+  return 6371000 * 2 * Math.asin(Math.min(1, Math.sqrt(Math.sin(rad(c - a) / 2) ** 2 +
+    Math.cos(rad(a)) * Math.cos(rad(c)) * Math.sin(rad(d - b) / 2) ** 2)));
+}
+async function event(tx: Tx, reservationId: string, actorId: string, action: string, before: string, after: string, reason: string) {
+  await tx.insert(attendanceEvents).values({ id: randomUUID(), reservationId, actorId, action, before, after, reason });
+}
+async function context(tx: Tx, id: string) {
+  const [initial] = await tx.select().from(reservations).where(eq(reservations.id, id));
+  if (!initial) throw new BookingError(404, "Reservation not found.");
+  // Same lock order as booking/revocation: account, offering, then reservation.
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${initial.userId}))`);
+  const [o] = await tx.select().from(offerings).where(eq(offerings.id, initial.offeringId)).for("update");
+  const [r] = await tx.select().from(reservations).where(eq(reservations.id, id)).for("update");
+  if (o.scope !== "live") throw new BookingError(403, "Sample bookings cannot create verified attendance.");
+  const [p] = await tx.select().from(checkinPolicies).where(eq(checkinPolicies.offeringId, o.id));
+  const [a] = await tx.select().from(attendance).where(eq(attendance.reservationId, id));
+  return { r, o, p, a };
+}
+async function staff(tx: Tx, actor: string, partnerId: string | null) {
+  const [op] = await tx.select().from(operators).where(eq(operators.userId, actor)).for("share");
+  if (!op || (op.role !== "admin" && !(op.role === "partner" && partnerId && op.partnerId === partnerId)))
+    throw new BookingError(403, "Authorized staff for this partner are required.");
+  return op;
+}
+async function eligible(tx: Tx, c: Awaited<ReturnType<typeof context>>) {
+  const { r, o } = c;
+  const otherArrivals = await tx.select().from(attendance).where(and(eq(attendance.userId, r.userId),
+    eq(attendance.offeringId, o.id), inArray(attendance.status, ["pending", "confirmed", "disputed"])));
+  if (otherArrivals.some(a => a.reservationId !== r.id))
+    throw new BookingError(409, "Attendance already exists for this member and session.");
+  if (r.status !== "reserved" || !o.active || o.cancelledAt || o.accessType === "live")
+    throw new BookingError(409, "A confirmed physical reservation is required.");
+  const [partner] = await tx.select().from(partners).where(eq(partners.id, o.partnerId ?? "")).for("share");
+  if (!partner?.approved) throw new BookingError(403, "Partner approval is required.");
+  const [m] = await tx.select().from(memberships).where(and(eq(memberships.userId, r.userId), eq(memberships.scope, "live")));
+  const now = new Date();
+  if (!m || !["active", "trial"].includes(m.status) || !["trial", "corporate"].includes(m.source) ||
+      m.paymentStatus !== "not_required" || m.startsAt > now || m.endsAt <= now || m.endsAt < o.endsAt)
+    throw new BookingError(403, "An active eligible membership is required.");
+  const rules = m.rules;
+  if (!o.tiers.includes(m.tier) || o.additionalPayment ||
+      (rules.cities && !rules.cities.includes(o.city)) || (rules.facilities && !rules.facilities.includes(o.facility)) ||
+      (rules.categories && !rules.categories.includes(o.category)) ||
+      (m.source === "trial" && !rules.trialAllowedTypes?.includes(o.accessType)) ||
+      (m.source === "corporate" && (!rules.corporateId || rules.corporateId !== m.corporateId)))
+    throw new BookingError(403, "This membership does not include this offering.");
+  if (o.gender !== "all" || o.minAge || o.maxAge !== null) {
+    const [profile] = await tx.select().from(memberProfiles).where(eq(memberProfiles.userId, r.userId));
+    const birth = new Date(profile?.birthDate ?? "invalid");
+    let age = o.startsAt.getUTCFullYear() - birth.getUTCFullYear();
+    if (o.startsAt.getUTCMonth() < birth.getUTCMonth() || (o.startsAt.getUTCMonth() === birth.getUTCMonth() && o.startsAt.getUTCDate() < birth.getUTCDate())) age--;
+    if (!profile || !Number.isFinite(age) || (o.gender !== "all" && profile.gender !== o.gender) || age < o.minAge || (o.maxAge !== null && age > o.maxAge))
+      throw new BookingError(403, "Your eligibility profile does not match this session.");
+  }
+  const held = await tx.select({ o: offerings }).from(reservations).innerJoin(offerings, eq(reservations.offeringId, offerings.id))
+    .where(and(eq(reservations.userId, r.userId), inArray(reservations.status, ["reserved", "requested"])));
+  const visits = await tx.select({ o: offerings }).from(attendance).innerJoin(offerings, eq(attendance.offeringId, offerings.id))
+    .where(and(eq(attendance.userId, r.userId), inArray(attendance.status, ["pending", "confirmed", "disputed"])));
+  const uses = [...new Map([...held, ...visits].filter(x => x.o.scope === "live" && x.o.startsAt >= m.startsAt && x.o.startsAt < m.endsAt).map(x => [x.o.id, x.o])).values()];
+  const day = (d: Date) => new Date(d.getTime() + 10800000).toISOString().slice(0, 10);
+  const limit = o.accessType === "premium" ? rules.premiumQuota : rules.physicalQuota;
+  if ((rules.quotaMode === "separate" ? uses.filter(x => x.accessType === o.accessType).length > (limit ?? 0) : uses.length > rules.quota) ||
+      uses.filter(x => day(x.startsAt) === day(o.startsAt)).length > rules.dailyLimit ||
+      (rules.facilityLimits?.[o.facility] !== undefined && uses.filter(x => x.facility === o.facility).length > rules.facilityLimits[o.facility]) ||
+      (rules.categoryLimits?.[o.category] !== undefined && uses.filter(x => x.category === o.category).length > rules.categoryLimits[o.category]) ||
+      (o.partnerGroup && rules.partnerGroupLimits?.[o.partnerGroup] !== undefined && uses.filter(x => x.partnerGroup === o.partnerGroup).length > rules.partnerGroupLimits[o.partnerGroup]))
+    throw new BookingError(403, "Your visit allowance is exhausted.");
+}
+export async function savePolicy(actor: string, id: string, input: z.infer<typeof policyInput>) {
+  return db.transaction(async tx => {
+    const c = await context(tx, id); await staff(tx, actor, c.o.partnerId);
+    const opensAt = new Date(input.opensAt), closesAt = new Date(input.closesAt), correctionEndsAt = new Date(input.correctionEndsAt);
+    if (opensAt >= closesAt || opensAt < new Date(c.o.startsAt.getTime() - 3600000) || closesAt > c.o.endsAt ||
+        correctionEndsAt < c.o.endsAt || correctionEndsAt > new Date(c.o.endsAt.getTime() + 7 * 86400000))
+      throw new BookingError(400, "Window must be within one hour before start and session end; correction deadline must be within seven days after end.");
+    if (c.p || c.o.endsAt <= new Date()) throw new BookingError(409, "Policy is fixed once configured. Contact support for a replacement session.");
+    await tx.insert(checkinPolicies).values({ ...input, offeringId: c.o.id, opensAt, closesAt, correctionEndsAt });
+    await event(tx, id, actor, "policy", "", "", JSON.stringify(input));
+  });
+}
+export async function issueQr(actor: string, id: string, revoke = false) {
+  return db.transaction(async tx => {
+    const c = await context(tx, id); await staff(tx, actor, c.o.partnerId);
+    await tx.update(checkinChallenges).set({ consumedAt: new Date() }).where(eq(checkinChallenges.reservationId, id));
+    if (revoke) { await event(tx, id, actor, "qr.revoke", "", "", "QR deactivated"); return; }
+    await eligible(tx, c);
+    if (!c.p || new Date() < c.p.opensAt || new Date() >= c.p.closesAt || c.a) throw new BookingError(409, "Check-in is closed, unconfigured, or already recorded.");
+    const token = `MDG1:${randomBytes(32).toString("hex")}`;
+    const expiresAt = new Date(Math.min(Date.now() + 300000, c.p.closesAt.getTime()));
+    await tx.insert(checkinChallenges).values({ id: randomUUID(), reservationId: id, digest: digest(token), expiresAt });
+    await event(tx, id, actor, "qr.issue", "", "", "Single-use QR issued");
+    return { token, expiresAt };
+  });
+}
+export async function scanQr(actor: string, input: z.infer<typeof scanInput>) {
+  return db.transaction(async tx => {
+    const [challenge] = await tx.select().from(checkinChallenges).where(eq(checkinChallenges.digest, digest(input.token)));
+    if (!challenge) throw new BookingError(400, "Invalid QR code.");
+    const c = await context(tx, challenge.reservationId);
+    if (c.r.userId !== actor) throw new BookingError(403, "This QR belongs to another reservation.");
+    const [fresh] = await tx.select().from(checkinChallenges).where(eq(checkinChallenges.id, challenge.id)).for("update");
+    const now = new Date();
+    if (fresh.consumedAt || fresh.expiresAt <= now || c.a) throw new BookingError(409, "QR expired, deactivated, or already used.");
+    await eligible(tx, c);
+    if (!c.p || now < c.p.opensAt || now >= c.p.closesAt) throw new BookingError(409, "Outside the check-in window.");
+    if (input.mocked || Math.abs(now.getTime() - new Date(input.capturedAt).getTime()) > 60000 ||
+        distance(input.latitude, input.longitude, c.p.latitude, c.p.longitude) + input.accuracy > c.p.radius)
+      throw new BookingError(403, "A fresh, accurate location inside the facility radius is required.");
+    const recent = await tx.select({ a: attendance, p: checkinPolicies }).from(attendance)
+      .innerJoin(checkinPolicies, eq(attendance.offeringId, checkinPolicies.offeringId)).where(eq(attendance.userId, actor));
+    if (recent.some(({ a, p }) => {
+      if (!a.verifiedBy || !["pending", "confirmed", "disputed"].includes(a.status)) return false;
+      const seconds = (now.getTime() - a.checkedInAt.getTime()) / 1000;
+      return seconds >= 0 && (seconds < 60 || (seconds < 3600 && distance(p.latitude, p.longitude, input.latitude, input.longitude) > 500 + seconds * 80));
+    })) throw new BookingError(409, "Rapid check-in or impossible travel detected. Contact staff.");
+    const reference = randomUUID();
+    await tx.insert(attendance).values({ id: reference, reservationId: c.r.id, userId: actor, offeringId: c.o.id,
+      checkedInAt: now, verifiedBy: actor, status: "pending", settlementEligible: false });
+    await tx.update(checkinChallenges).set({ consumedAt: now }).where(eq(checkinChallenges.id, fresh.id));
+    await event(tx, c.r.id, actor, "scan", "not_checked_in", "pending", "QR and location validated; partner confirmation required");
+    return { reference, status: "pending" };
+  });
+}
+export async function review(actor: string, id: string, input: z.infer<typeof reviewInput>) {
+  return db.transaction(async tx => {
+    const c = await context(tx, id), { action, reason } = input;
+    const now = new Date();
+    const ownDispute = action === "dispute" && c.r.userId === actor;
+    const op = ownDispute ? null : await staff(tx, actor, c.o.partnerId);
+    if (action === "accept_request") {
+      if (c.r.status !== "requested" || c.o.startsAt <= now || !c.o.active || c.o.cancelledAt)
+        throw new BookingError(409, "Only upcoming active requests may be confirmed.");
+      await tx.update(reservations).set({ status: "reserved" }).where(eq(reservations.id, id));
+      await event(tx, id, actor, action, "requested", "reserved", reason); return;
+    }
+    if (!c.p) throw new BookingError(409, "Configure the attendance policy first.");
+    const locked = !!c.a?.lockedAt || now >= c.p.correctionEndsAt;
+    // No settlement-close override is exposed: a separate super-admin workflow is required.
+    if (locked) throw new BookingError(409, "Attendance is locked. Contact administration.");
+    if (action === "lock") {
+      if (op?.role !== "admin" || !c.a || c.a.status === "disputed" || now < c.o.endsAt)
+        throw new BookingError(403, "Only administrators can lock reconciled attendance after the session.");
+      await tx.update(attendance).set({ lockedAt: now }).where(eq(attendance.id, c.a.id));
+      await event(tx, id, actor, action, c.a.status, c.a.status, reason); return;
+    }
+    if (action.startsWith("resolve_") && (op?.role !== "admin" || c.a?.status !== "disputed"))
+      throw new BookingError(403, "Disputes require administrator review.");
+    if (c.a?.status === "disputed" && !action.startsWith("resolve_"))
+      throw new BookingError(409, "Attendance is on hold for administrator review.");
+    if (action === "no_show" && (now < c.p.closesAt || c.a || c.r.status !== "reserved" || c.o.cancelledAt))
+      throw new BookingError(409, "Only unscanned, confirmed reservations after the check-in window can be marked no-show.");
+    if (action === "confirm") {
+      if (actor === c.r.userId) throw new BookingError(403, "Another staff member must confirm your attendance.");
+      if (c.a?.status !== "pending" || !c.a.verifiedBy) throw new BookingError(409, "A verified arrival is required before partner confirmation.");
+    }
+    if (action !== "no_show" && !c.a) throw new BookingError(409, "There is no attendance record to review.");
+    if (action === "resolve_confirm") {
+      if (!c.a?.verifiedBy || actor === c.r.userId) throw new BookingError(409, "An independent reviewer and verified arrival are required.");
+    }
+    // Eligibility was validated atomically with the arrival. Expiry or a later
+    // membership change must not invalidate that historical evidence.
+    if (["confirm", "resolve_confirm"].includes(action) && c.o.cancelledAt)
+      throw new BookingError(409, "Cancelled sessions cannot become settlement eligible.");
+    const status = action === "confirm" || action === "resolve_confirm" ? "confirmed"
+      : action === "dispute" ? "disputed" : action === "no_show" ? "no_show" : "void";
+    if (c.a) {
+      await tx.update(attendance).set({ status, settlementEligible: status === "confirmed",
+        verifiedBy: status === "confirmed" ? actor : c.a.verifiedBy })
+        .where(eq(attendance.id, c.a.id));
+    } else {
+      await tx.insert(attendance).values({ id: randomUUID(), reservationId: id, userId: c.r.userId, offeringId: c.o.id,
+        checkedInAt: now, verifiedBy: "", status, settlementEligible: false });
+    }
+    // No-shows retain their reserved allowance until explicitly waived.
+    // A void correction releases the reservation hold as well as the visit.
+    if (status === "void" && ["reserved", "requested"].includes(c.r.status)) {
+      await tx.update(reservations).set({ status: "cancelled", cancelledAt: now }).where(eq(reservations.id, id));
+    }
+    await event(tx, id, actor, action, c.a?.status ?? "not_checked_in", status, reason);
+  });
+}
+export async function roster(actor: string) {
+  const [op] = await db.select().from(operators).where(eq(operators.userId, actor));
+  const isStaff = op && ["admin", "partner"].includes(op.role);
+  const rows = await db.select({ r: reservations, o: offerings, a: attendance, p: checkinPolicies }).from(reservations)
+    .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
+    .leftJoin(attendance, eq(attendance.reservationId, reservations.id))
+    .leftJoin(checkinPolicies, eq(checkinPolicies.offeringId, offerings.id))
+    .where(and(eq(offerings.scope, "live"), isStaff
+      ? op.role === "admin" ? undefined : eq(offerings.partnerId, op.partnerId ?? "")
+      : eq(reservations.userId, actor)));
+  const events = rows.length ? await db.select().from(attendanceEvents).where(inArray(attendanceEvents.reservationId, rows.map(x => x.r.id))) : [];
+  return { role: isStaff ? op.role : "member", rows: rows.map(({ r, o, a, p }) => ({
+    reservationId: r.id, userId: r.userId, title: o.title, facility: o.facility, startsAt: o.startsAt, endsAt: o.endsAt,
+    bookingStatus: r.status, status: a?.status ?? "not_checked_in", reference: a?.id,
+    checkedInAt: a?.verifiedBy ? a.checkedInAt : undefined,
+    settlementEligible: a?.settlementEligible ?? false,
+    locked: !!a?.lockedAt || (!!p && new Date() >= p.correctionEndsAt), policy: p ?? undefined,
+    events: events.filter(e => e.reservationId === r.id).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+  })) };
+}

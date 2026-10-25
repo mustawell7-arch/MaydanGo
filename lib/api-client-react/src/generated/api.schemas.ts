@@ -5,6 +5,15 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface CheckinPolicy {
+  latitude: number;
+  longitude: number;
+  radius: number;
+  opensAt: string;
+  closesAt: string;
+  correctionEndsAt: string;
+}
+
 /**
  * @nullable
  */
@@ -231,6 +240,73 @@ export interface OperationsState {
   offerings: LiveOffering[];
   plans: LivePlan[];
 }
+
+export type GetAttendance200RowsItemEventsItem = {
+  action: string;
+  reason: string;
+  createdAt: string;
+  actorId: string;
+};
+
+export type GetAttendance200RowsItem = {
+  reservationId: string;
+  userId: string;
+  title: string;
+  facility: string;
+  startsAt: string;
+  endsAt: string;
+  bookingStatus: string;
+  status: string;
+  settlementEligible: boolean;
+  locked: boolean;
+  reference?: string;
+  checkedInAt?: string;
+  policy?: CheckinPolicy;
+  events: GetAttendance200RowsItemEventsItem[];
+};
+
+export type GetAttendance200 = {
+  role: string;
+  rows: GetAttendance200RowsItem[];
+};
+
+export type IssueCheckinQr200 = {
+  token: string;
+  expiresAt: string;
+};
+
+export type ScanCheckinQrBody = {
+  token: string;
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  capturedAt: string;
+  mocked?: boolean;
+};
+
+export type ScanCheckinQr200 = {
+  reference: string;
+  status: string;
+};
+
+export type ReviewAttendanceBodyAction = typeof ReviewAttendanceBodyAction[keyof typeof ReviewAttendanceBodyAction];
+
+
+export const ReviewAttendanceBodyAction = {
+  confirm: 'confirm',
+  no_show: 'no_show',
+  dispute: 'dispute',
+  void: 'void',
+  resolve_confirm: 'resolve_confirm',
+  resolve_void: 'resolve_void',
+  accept_request: 'accept_request',
+  lock: 'lock',
+} as const;
+
+export type ReviewAttendanceBody = {
+  action: ReviewAttendanceBodyAction;
+  reason: string;
+};
 
 export type SaveMemberProfileBodyGender = typeof SaveMemberProfileBodyGender[keyof typeof SaveMemberProfileBodyGender];
 

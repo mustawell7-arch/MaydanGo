@@ -70,7 +70,7 @@ export async function createReservation(userId: string, input: { kind: string; t
       throw new BookingError(409, "You already have an active reservation or request.");
     }
     const used = await tx.select({ o: offerings }).from(attendance).innerJoin(offerings, eq(attendance.offeringId, offerings.id))
-      .where(eq(attendance.userId, userId));
+      .where(and(eq(attendance.userId, userId), inArray(attendance.status, ["pending", "confirmed", "disputed"])));
     const period = (date: Date) => date >= m.startsAt && date < m.endsAt;
     const held = active.filter(({ o: other }) => other.scope === o.scope && period(other.startsAt));
     const visited = used.filter(({ o: other }) => other.scope === o.scope && period(other.startsAt));
@@ -113,6 +113,8 @@ export async function cancelReservation(userId: string, id: string) {
     if (!r) throw new BookingError(404, "Reservation not found.");
     if (r.status === "cancelled") return;
     if (!["reserved", "requested"].includes(r.status)) throw new BookingError(409, "This reservation cannot be cancelled.");
+    if ((await tx.select().from(attendance).where(eq(attendance.reservationId, id))).length)
+      throw new BookingError(409, "Attendance already exists. Request an attendance review.");
     const [o] = await tx.select().from(offerings).where(eq(offerings.id, r.offeringId));
     if (new Date() >= o.cancellationDeadline) throw new BookingError(409, "The cancellation deadline has passed. Contact support.");
     await tx.update(reservations).set({ status: "cancelled", cancelledAt: new Date() }).where(eq(reservations.id, r.id));

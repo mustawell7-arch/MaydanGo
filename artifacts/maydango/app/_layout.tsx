@@ -15,15 +15,20 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import { translate } from '@/lib/i18n';
-import { ClerkProvider, ClerkLoaded } from '@clerk/expo';
+import { ClerkProvider, ClerkLoaded, useAuth } from '@clerk/expo';
+import { setBaseUrl, setAuthTokenGetter } from '@workspace/api-client-react';
 import { tokenCache } from '@clerk/expo/token-cache';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
+setBaseUrl(process.env.EXPO_PUBLIC_DOMAIN ? `https://${process.env.EXPO_PUBLIC_DOMAIN}` : '');
 
 function RootLayoutNav() {
+  const { getToken, userId } = useAuth();
+  setAuthTokenGetter(() => getToken());
+  useEffect(() => { queryClient.clear(); }, [userId]);
   const { language } = useApp();
   return (
     <Stack screenOptions={{ headerBackTitle: translate(language, 'back') }}>

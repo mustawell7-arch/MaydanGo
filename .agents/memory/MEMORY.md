@@ -3,3 +3,4 @@
 - [Workspace type compatibility](workspace-type-generation.md) — Avoid duplicate React declaration versions and conflicting Orval validator/model barrels.
 - [Localization boundaries](localization-boundaries.md) — Sorani Kurdish, Iraq-time schedules, and native-speaker review remain explicit release constraints.
 - [Live access rollout](live-access-rollout.md) — Payments deferred until after testing; preserve the terms of existing reservations and grants.
+- [Attendance trust](attendance-trust.md) — GPS supports arrival evidence; partner confirmation is mandatory, and closed-record overrides need separate approval.
