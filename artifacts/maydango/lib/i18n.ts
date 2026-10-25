@@ -348,7 +348,7 @@ const extra = {
     lessonWord: 'Lesson',
     minutesShort: 'min',
     courseMissing: 'This course is not available.',
-    statusReserved: 'Reserved · local preview',
+    statusReserved: 'Reserved · sample',
     statusRequested: 'Requested · awaiting coach',
     statusCancelled: 'Cancelled',
     notAttendance: 'A reservation is not attendance. Visits are only recorded when you check in at the place.',

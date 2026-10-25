@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
 import { LocalNotice } from '@/components/LocalNotice';
+import { MemberNotice } from '@/components/MemberNotice';
 import { coaches, communityEvents, facilities, getCityLabel, pick, sessions } from '@/data/demo';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
@@ -31,7 +32,7 @@ export default function BookingsScreen() {
     if (!s) return [];
     const facility = facilities.find((f) => f.id === s.facilityId);
     return [{
-      key: `s-${b.sessionId}`, image: s.image, when: `${s.time} · ${s.duration}`, title: s.title,
+      key: `s-${b.sessionId}`, image: s.image, when: new Date(app.serverBookings.find(r => r.kind === 'session' && r.targetId === b.sessionId)!.startsAt).toLocaleString(), title: s.title,
       meta: s.mode === 'online' ? `${t('onlineTag')} · ${s.instructor}` : `${facility?.name ?? ''} · ${s.instructor}`,
       status: b.status, onCancel: () => app.cancelBooking(b.sessionId), cancelLabel: t('cancelBooking'),
     }];
@@ -40,7 +41,7 @@ export default function BookingsScreen() {
     const ev = communityEvents.find((x) => x.id === e.eventId);
     if (!ev) return [];
     return [{
-      key: `e-${e.eventId}`, image: ev.image, when: `${ev.date} · ${getCityLabel(ev.cityId, app.language)}`, title: ev.title,
+      key: `e-${e.eventId}`, image: ev.image, when: new Date(app.serverBookings.find(r => r.kind === 'event' && r.targetId === e.eventId)!.startsAt).toLocaleString(), title: ev.title,
       meta: ev.venue, status: e.status, onCancel: () => app.cancelEvent(e.eventId), cancelLabel: t('cancelReservation'),
     }];
   });
@@ -49,7 +50,7 @@ export default function BookingsScreen() {
     const slot = c?.slots.find((s) => s.id === r.slot);
     if (!c || !slot) return [];
     return [{
-      key: `c-${r.coachId}-${r.slot}`, image: c.image, when: pick(slot.label, app.language), title: c.name,
+      key: `c-${r.coachId}-${r.slot}`, image: c.image, when: new Date(app.serverBookings.find(b => b.kind === 'coach' && b.targetId === r.coachId && b.slot === r.slot)!.startsAt).toLocaleString(), title: c.name,
       meta: c.specialty, status: r.status, onCancel: () => app.cancelCoachRequest(r.coachId, r.slot), cancelLabel: t('cancelRequest'),
     }];
   });
@@ -80,7 +81,7 @@ export default function BookingsScreen() {
                     <Text style={[styles.statusText, { color: colors.mutedForeground }]}>{statusLabel(row.status)}</Text>
                   </View>
                   {!cancelled ? (
-                    <Pressable accessibilityRole="button" accessibilityLabel={`${row.cancelLabel}: ${row.title}`} onPress={row.onCancel} hitSlop={6} style={styles.cancelButton}>
+                    <Pressable disabled={app.memberLoading} accessibilityRole="button" accessibilityLabel={`${row.cancelLabel}: ${row.title}`} onPress={row.onCancel} hitSlop={6} style={styles.cancelButton}>
                       <Text style={[styles.cancelText, { color: colors.destructive }]}>{t('cancel')}</Text>
                     </Pressable>
                   ) : null}
@@ -97,6 +98,7 @@ export default function BookingsScreen() {
     <ScreenShell>
       <ScreenHeader eyebrow={getCityLabel(app.selectedCityId, app.language)} title={t('bookings')} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <MemberNotice />
         <View style={[styles.countCard, { backgroundColor: colors.primary }]}>
           <View style={styles.calendarMark}>
             <Ionicons name="calendar-outline" size={21} color={colors.primaryForeground} />
@@ -113,7 +115,6 @@ export default function BookingsScreen() {
             {section('eventsSection', eventRows)}
             {section('coachingSection', coachRows)}
             <LocalNotice messageKey="notAttendance" icon="shield-checkmark-outline" />
-            <LocalNotice messageKey="localOnly" />
           </>
         ) : (
           <View style={styles.emptyState}>

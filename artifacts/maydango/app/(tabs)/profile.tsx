@@ -24,6 +24,9 @@ export default function ProfileScreen() {
     <ScreenShell>
       <ScreenHeader eyebrow={t('yourAccount')} title={t('profile')} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Pressable testID="open-account" onPress={() => router.push('/account')} style={{ padding: 16 }}>
+          <Text style={{ color: colors.primary, fontWeight: '700' }}>{app.signedIn ? 'Account & sign out' : 'Sign in / Create account'}</Text>
+        </Pressable>
         <View style={[styles.profileCard, { backgroundColor: colors.primary }]}>
           <View style={styles.avatar}>
             <Text style={[styles.avatarText, { color: colors.primary }]}>M</Text>

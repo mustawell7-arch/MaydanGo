@@ -3,6 +3,9 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { clerkMiddleware } from "@clerk/express";
+import { publishableKeyFromHost } from "@clerk/shared/keys";
+import { CLERK_PROXY_PATH, clerkProxyMiddleware, getClerkProxyHost } from "./middlewares/clerkProxyMiddleware";
 
 const app: Express = express();
 
@@ -25,10 +28,30 @@ app.use(
     },
   }),
 );
-app.use(cors());
+app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowed = [
+    `https://${getClerkProxyHost(req)}`,
+    ...(process.env.NODE_ENV !== "production" ? [
+      `https://${process.env.REPLIT_DEV_DOMAIN}`, `https://${process.env.REPLIT_EXPO_DEV_DOMAIN}`,
+    ] : []),
+  ];
+  if (origin && !allowed.includes(origin)) {
+    res.status(403).json({ message: "Untrusted request origin." }); return;
+  }
+  cors({ origin: origin || false, credentials: true })(req, res, next);
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(clerkMiddleware((req) => ({
+  publishableKey: publishableKeyFromHost(getClerkProxyHost(req) ?? "", process.env.CLERK_PUBLISHABLE_KEY),
+})));
 
 app.use("/api", router);
+app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  req.log.error({ err }, "Request failed");
+  res.status(500).json({ message: "Unable to save changes. Please try again." });
+});
 
 export default app;

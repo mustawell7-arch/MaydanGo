@@ -15,6 +15,7 @@ import { facilities, sessions } from '@/data/demo';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { translate } from '@/lib/i18n';
+import { MemberNotice } from '@/components/MemberNotice';
 
 export default function SessionDetailScreen() {
   const colors = useColors();
@@ -29,14 +30,15 @@ export default function SessionDetailScreen() {
 
   const facility = facilities.find((item) => item.id === session.facilityId);
   const isBooked = app.isSessionBooked(session.id);
+  const offering = app.bookingCatalog.find(o => o.kind === 'session' && o.targetId === session.id);
 
-  const reserve = () => {
+  const reserve = async () => {
     if (isBooked) {
       router.push('/(tabs)/bookings');
       return;
     }
-    app.bookSession(session.id);
-    Alert.alert(t('booked'), `${session.title} · ${session.time}`);
+    const result = await app.bookSession(session.id);
+    if (result.ok) Alert.alert('Reservation saved', 'Sample reservation saved to your account. This is not attendance or a live partner confirmation.');
   };
 
   return (
@@ -54,9 +56,13 @@ export default function SessionDetailScreen() {
           </View>
         </View>
         <View style={styles.body}>
+          <MemberNotice />
+          <Text style={{ color: colors.foreground, marginBottom: 12 }}>
+            {offering ? `Sample date: ${new Date(offering.startsAt).toLocaleString()} · Cancel before ${new Date(offering.cancellationDeadline).toLocaleString()}` : 'Sign in to load the server schedule. Displayed promotional times are illustrative.'}
+          </Text>
           <View style={[styles.spotsPill, { backgroundColor: colors.accent }]}>
             <View style={styles.spotDot} />
-            <Text style={[styles.spotsText, { color: colors.accentForeground }]}>{session.remaining} {t('spotsLeft')}</Text>
+            <Text style={[styles.spotsText, { color: colors.accentForeground }]}>{offering?.remaining ?? '—'} {t('spotsLeft')}</Text>
           </View>
           <View style={[styles.instructorCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={[styles.instructorAvatar, { backgroundColor: colors.secondary }]}>
@@ -82,6 +88,7 @@ export default function SessionDetailScreen() {
             accessibilityRole="button"
             accessibilityLabel={isBooked ? t('booked') : t('reserveSpot')}
             testID="reserve-session-button"
+            disabled={app.memberLoading}
             onPress={reserve}
             style={({ pressed }) => [styles.reserveButton, { backgroundColor: colors.primary, opacity: pressed ? 0.88 : 1 }]}
           >
@@ -89,7 +96,7 @@ export default function SessionDetailScreen() {
             <Ionicons name={isBooked ? 'calendar-outline' : 'arrow-forward'} size={17} color={colors.primaryForeground} />
           </Pressable>
           <Text style={[styles.previewNote, { color: colors.mutedForeground }]}>
-            Reservation is saved on this device in preview mode.
+            Sample reservation only. It is not a confirmed partner booking.
           </Text>
         </View>
       </ScrollView>

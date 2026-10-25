@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { MemberNotice } from '@/components/MemberNotice';
 import {
   Image,
   Pressable,
@@ -64,9 +65,9 @@ export default function ExploreScreen() {
   );
   const align = app.language === 'en' ? 'left' : 'right';
 
-  const toggleEvent = (eventId: string) => {
+  const toggleEvent = async (eventId: string) => {
     const wasReserved = app.isEventReserved(eventId);
-    const result = wasReserved ? app.cancelEvent(eventId) : app.bookEvent(eventId);
+    const result = await (wasReserved ? app.cancelEvent(eventId) : app.bookEvent(eventId));
     if (result.ok) setNotice(wasReserved ? t('cancelled') : t('eventSaved'));
     else setNotice(result.reason === 'duplicate' ? t('alreadySaved') : t('notSaved'));
   };
@@ -134,7 +135,7 @@ export default function ExploreScreen() {
                 <View key={event.id} style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <Image source={event.image} style={styles.eventImage} />
                   <View style={styles.eventBody}>
-                    <Text style={[styles.eventDate, { color: colors.primary, textAlign: align }]}>{event.date} · {getCityLabel(event.cityId, app.language)}</Text>
+                    <Text style={[styles.eventDate, { color: colors.primary, textAlign: align }]}>{app.offeringTime('event', event.id)} · {getCityLabel(event.cityId, app.language)}</Text>
                     <Text style={[styles.eventTitle, { color: colors.foreground, textAlign: align }]}>{event.title}</Text>
                     <Text style={[styles.eventMeta, { color: colors.mutedForeground, textAlign: align }]}>{event.venue} · {event.access}</Text>
                     <Text style={[styles.eventDesc, { color: colors.foreground, textAlign: align }]}>{event.description}</Text>
@@ -169,7 +170,7 @@ export default function ExploreScreen() {
                 <Text style={[styles.emptyHint, { color: colors.mutedForeground }]}>{t('noEventsHint')}</Text>
               </View>
             ) : null}
-            <LocalNotice messageKey="localOnly" />
+            <MemberNotice />
           </View>
         ) : (<>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>

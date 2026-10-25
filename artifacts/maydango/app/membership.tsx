@@ -41,8 +41,8 @@ export default function MembershipScreen() {
             <Text style={styles.activeCaption}>{t('yourPass')}</Text>
             <View style={styles.activeTag}><View style={styles.activeDot} /><Text style={styles.activeWord}>{t('active')}</Text></View>
           </View>
-          <Text style={styles.activeTier}>{app.membershipTier} Membership</Text>
-          <Text style={styles.activeQuota}>{app.visitsRemaining} physical visits left this month</Text>
+          <Text style={styles.activeTier}>{app.membershipTier} · sample plan</Text>
+          <Text style={styles.activeQuota}>Local preview only — not a server membership</Text>
         </View>
         {plans.map((plan) => {
           const selected = plan.tier === app.membershipTier;

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { MemberNotice } from '@/components/MemberNotice';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
 import { LocalNotice } from '@/components/LocalNotice';
 import { coaches, courses, getCityLabel, pick, sessions } from '@/data/demo';
@@ -23,16 +24,16 @@ export default function OnlineScreen() {
   const started = courses.filter((c) => app.courseProgress[c.id]);
   const openCourse = (id: string) => router.push({ pathname: '/course/[id]', params: { id } });
 
-  const toggleLive = (id: string) => {
+  const toggleLive = async (id: string) => {
     const was = app.isSessionBooked(id);
-    const r = was ? app.cancelBooking(id) : app.bookSession(id);
+    const r = await (was ? app.cancelBooking(id) : app.bookSession(id));
     setMessage(r.ok ? (was ? t('cancelled') : t('booked')) : r.reason === 'duplicate' ? t('alreadySaved') : t('notSaved'));
   };
 
-  const submitRequest = (coachId: string) => {
+  const submitRequest = async (coachId: string) => {
     const slot = slotChoice[coachId];
     if (!slot) return setMessage(t('chooseSlotFirst'));
-    const r = app.requestCoaching(coachId, slot);
+    const r = await app.requestCoaching(coachId, slot);
     setMessage(r.ok ? t('requestSent') : r.reason === 'duplicate' ? t('alreadySaved') : r.reason === 'invalid' ? t('chooseSlotFirst') : t('notSaved'));
   };
 
@@ -40,6 +41,7 @@ export default function OnlineScreen() {
     <ScreenShell>
       <ScreenHeader eyebrow={t('onlineEyebrow')} title={t('online')} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <MemberNotice />
         <View style={[styles.intro, { backgroundColor: colors.primary }]}>
           <View style={styles.introCircle} />
           <Text style={[styles.introEyebrow, { textAlign: align }]}>{t('onlineIntroEyebrow')}</Text>
@@ -143,7 +145,7 @@ export default function OnlineScreen() {
                 <View key={session.id} style={[styles.liveCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <Image source={session.image} style={styles.liveImage} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.liveTime, { color: colors.primary, textAlign: align }]}>{session.time} · {session.duration}</Text>
+                    <Text style={[styles.liveTime, { color: colors.primary, textAlign: align }]}>{app.offeringTime('session', session.id)} · {session.duration}</Text>
                     <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{session.title}</Text>
                     <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
                       {t('withInstructor')} {session.instructor}{booked ? ` · ${t('statusReserved')}` : ''}
@@ -162,7 +164,7 @@ export default function OnlineScreen() {
                 </View>
               );
             })}
-            <LocalNotice messageKey="liveNotice" />
+            <Text style={{ color: colors.mutedForeground }}>Sample classes only. No live streaming is available. Reservations are saved to your account; server dates appear in Bookings.</Text>
           </>
         ) : (
           <>
@@ -193,7 +195,7 @@ export default function OnlineScreen() {
                           onPress={() => setSlotChoice((c) => ({ ...c, [coach.id]: slot.id }))}
                           style={[styles.slot, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.secondary : colors.card, opacity: active && !selected ? 0.5 : 1 }]}
                         >
-                          <Text style={[styles.slotText, { color: selected ? colors.primary : colors.foreground }]}>{pick(slot.label, app.language)}</Text>
+                          <Text style={[styles.slotText, { color: selected ? colors.primary : colors.foreground }]}>{app.offeringTime('coach', coach.id, slot.id)}</Text>
                         </Pressable>
                       );
                     })}
@@ -208,9 +210,10 @@ export default function OnlineScreen() {
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={`${active ? t('cancelRequest') : t('saveRequest')}: ${coach.name}`}
-                      onPress={() => {
+                      disabled={app.memberLoading}
+                      onPress={async () => {
                         if (active) {
-                          const r = app.cancelCoachRequest(coach.id, active.slot);
+                          const r = await app.cancelCoachRequest(coach.id, active.slot);
                           setMessage(r.ok ? t('cancelled') : t('notSaved'));
                         } else submitRequest(coach.id);
                       }}
@@ -224,7 +227,7 @@ export default function OnlineScreen() {
                 </View>
               );
             })}
-            <LocalNotice messageKey="coachingNotice" />
+            <Text style={{ color: colors.mutedForeground }}>Sample coaches only. Requests sync to your account but are not sent to a partner or confirmed. Server dates appear in Bookings.</Text>
           </>
         )}
       </ScrollView>

@@ -1,1 +1,3 @@
 - [MaydanGo Iraq scope](maydango-iraq-scope.md) — Build for all Iraqi regions, including Kurdistan, the south, and the west, with Arabic, Kurdish, and English.
+- [Account booking boundary](account-booking-boundary.md) — Explicit sample-only access; never convert local plan choices or old preview reservations into live entitlements.
+- [Workspace type compatibility](workspace-type-generation.md) — Avoid duplicate React declaration versions and conflicting Orval validator/model barrels.

@@ -11,6 +11,121 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /member/profile:
+    put:
+      operationId: saveMemberProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gender, birthDate]
+              properties:
+                gender: { type: string, enum: [female, male, unspecified] }
+                birthDate: { type: string }
+      responses:
+        "200":
+          description: Eligibility profile saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberState"
+  /member/catalog:
+    get:
+      operationId: getBookingCatalog
+      responses:
+        "200":
+          description: Server dates and available places
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, kind, targetId, slot, title, startsAt, cancellationDeadline, scope, remaining]
+                  properties:
+                    id: { type: string }
+                    kind: { type: string }
+                    targetId: { type: string }
+                    slot: { type: string }
+                    title: { type: string }
+                    startsAt: { type: string }
+                    cancellationDeadline: { type: string }
+                    scope: { type: string }
+                    remaining: { type: integer }
+  /member:
+    get:
+      operationId: getMemberState
+      responses:
+        "200":
+          description: Account-owned membership and reservations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberState"
+  /member/preview-membership:
+    post:
+      operationId: enablePreviewMembership
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [acknowledgeSampleData]
+              properties:
+                acknowledgeSampleData:
+                  type: boolean
+      responses:
+        "200":
+          description: Preview membership only; never live access
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberState"
+  /member/bookings:
+    post:
+      operationId: createMemberBooking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [kind, targetId]
+              properties:
+                kind:
+                  type: string
+                  enum: [session, event, coach]
+                targetId:
+                  type: string
+                slot:
+                  type: string
+      responses:
+        "201":
+          description: Reservation saved, not attendance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberState"
+  /member/bookings/{id}:
+    delete:
+      operationId: cancelMemberBooking
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Owner's reservation cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberState"
   /healthz:
     get:
       operationId: healthCheck
@@ -26,6 +141,44 @@ paths:
                 $ref: "#/components/schemas/HealthStatus"
 components:
   schemas:
+    MemberState:
+      type: object
+      required: [memberships, bookings]
+      properties:
+        profile:
+          type: [object, "null"]
+          required: [gender, birthDate]
+          properties:
+            gender: { type: string }
+            birthDate: { type: string }
+        memberships:
+          type: array
+          items:
+            type: object
+            required: [scope, status, tier, endsAt]
+            properties:
+              scope: { type: string }
+              status: { type: string }
+              tier: { type: string }
+              endsAt: { type: string }
+        bookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemberBooking"
+    MemberBooking:
+      type: object
+      required: [id, kind, targetId, slot, title, scope, startsAt, status, createdAt]
+      properties:
+        id: { type: string }
+        kind: { type: string }
+        targetId: { type: string }
+        slot: { type: string }
+        title: { type: string }
+        scope: { type: string }
+        startsAt: { type: string }
+        status: { type: string }
+        createdAt: { type: string }
+        cancelledAt: { type: [string, "null"] }
     HealthStatus:
       type: object
       properties:

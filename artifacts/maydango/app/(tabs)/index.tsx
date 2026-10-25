@@ -83,12 +83,12 @@ export default function HomeScreen() {
           <View style={styles.passGlow} />
           <View style={styles.passTop}>
             <View>
-              <Text style={styles.passEyebrow}>{t('yourPass')}</Text>
+              <Text style={styles.passEyebrow}>Sample plan · not live access</Text>
               <View style={styles.passTitleRow}>
                 <Text style={styles.passTier}>{app.membershipTier}</Text>
                 <View style={styles.activePill}>
                   <View style={styles.activeDot} />
-                  <Text style={styles.activeText}>{t('active')}</Text>
+                  <Text style={styles.activeText}>Preview</Text>
                 </View>
               </View>
             </View>
