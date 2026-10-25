@@ -8,3 +8,9 @@ MaydanGo serves people across Iraq, including the Kurdistan Region, southern Ira
 **Why:** The user explicitly set the platform's target market and languages and asked that the experience consider all Iraqi communities.
 
 **How to apply:** Keep city discovery, content, partner onboarding, messaging, and visual choices inclusive of the whole Iraqi market; do not default the product to Baghdad alone.
+
+The user wants nobody to feel discriminated against or disrespected. Online training from home, including for women and others who stay at home, and bookable online coaching are core product needs, not secondary extras.
+
+**Why:** The user explicitly emphasized respectful inclusion and at-home access alongside physical memberships.
+
+**How to apply:** Give physical and online services clear access paths; describe session eligibility neutrally and avoid assuming a person's abilities, preferences, or access based on their region or gender.

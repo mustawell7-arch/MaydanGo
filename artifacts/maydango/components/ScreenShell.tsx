@@ -3,6 +3,7 @@ import { Platform, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
+import { StorageBanner } from '@/components/LocalNotice';
 
 export function ScreenShell({ children }: { children: React.ReactNode }) {
   const colors = useColors();
@@ -18,6 +19,7 @@ export function ScreenShell({ children }: { children: React.ReactNode }) {
         direction: language === 'en' ? 'ltr' : 'rtl',
       }}
     >
+      <StorageBanner />
       {children}
     </View>
   );

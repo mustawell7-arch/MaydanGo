@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -13,7 +13,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
 import { FacilityCard } from '@/components/FacilityCard';
-import { categories, facilities } from '@/data/demo';
+import { categories, communityEvents, facilities } from '@/data/demo';
+import { LocalNotice } from '@/components/LocalNotice';
 import { cities, getCityLabel } from '@/data/demo';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
@@ -22,7 +23,13 @@ import { translate } from '@/lib/i18n';
 export default function ExploreScreen() {
   const colors = useColors();
   const app = useApp();
-  const params = useLocalSearchParams<{ category?: string }>();
+  const params = useLocalSearchParams<{ category?: string; kind?: string }>();
+  const [kind, setKind] = useState<'places' | 'events'>(params.kind === 'events' ? 'events' : 'places');
+  // Home banner can deep-link here with kind=events while the tab is already mounted.
+  useEffect(() => {
+    if (params.kind === 'events' || params.kind === 'places') setKind(params.kind);
+  }, [params.kind]);
+  const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState(params.category ?? 'All');
   const [view, setView] = useState<'list' | 'map'>('list');
@@ -43,6 +50,26 @@ export default function ExploreScreen() {
       }),
     [app.selectedCityId, query, category],
   );
+
+  const visibleEvents = useMemo(
+    () =>
+      communityEvents.filter((event) => {
+        const matchesCity = app.selectedCityId === 'all' || event.cityId === app.selectedCityId;
+        const matchesText = `${event.title} ${event.venue} ${event.city} ${event.description} ${event.access}`
+          .toLowerCase()
+          .includes(query.toLowerCase());
+        return matchesCity && matchesText;
+      }),
+    [app.selectedCityId, query],
+  );
+  const align = app.language === 'en' ? 'left' : 'right';
+
+  const toggleEvent = (eventId: string) => {
+    const wasReserved = app.isEventReserved(eventId);
+    const result = wasReserved ? app.cancelEvent(eventId) : app.bookEvent(eventId);
+    if (result.ok) setNotice(wasReserved ? t('cancelled') : t('eventSaved'));
+    else setNotice(result.reason === 'duplicate' ? t('alreadySaved') : t('notSaved'));
+  };
 
   return (
     <ScreenShell>
@@ -79,6 +106,72 @@ export default function ExploreScreen() {
           </Text>
           <Ionicons name="chevron-down" size={14} color={colors.mutedForeground} />
         </Pressable>
+        <View accessibilityRole="tablist" style={[styles.kindSwitch, { backgroundColor: colors.secondary }]}>
+          {(['places', 'events'] as const).map((value) => (
+            <Pressable
+              key={value}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: kind === value }}
+              onPress={() => { setKind(value); setNotice(null); }}
+              style={[styles.kindOption, kind === value && { backgroundColor: colors.card }]}
+            >
+              <Ionicons name={value === 'places' ? 'business-outline' : 'people-outline'} size={14} color={kind === value ? colors.primary : colors.mutedForeground} />
+              <Text style={[styles.toggleText, { color: kind === value ? colors.primary : colors.mutedForeground }]}>{t(value)}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {kind === 'events' ? (
+          <View style={styles.list}>
+            <Text style={[styles.eventsHint, { color: colors.mutedForeground, textAlign: align }]}>{t('eventsHint')}</Text>
+            {notice ? (
+              <View accessibilityLiveRegion="polite" style={[styles.toast, { backgroundColor: colors.primary }]}>
+                <Text style={[styles.toastText, { color: colors.primaryForeground }]}>{notice}</Text>
+              </View>
+            ) : null}
+            {visibleEvents.map((event) => {
+              const reserved = app.isEventReserved(event.id);
+              return (
+                <View key={event.id} style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <Image source={event.image} style={styles.eventImage} />
+                  <View style={styles.eventBody}>
+                    <Text style={[styles.eventDate, { color: colors.primary, textAlign: align }]}>{event.date} · {getCityLabel(event.cityId, app.language)}</Text>
+                    <Text style={[styles.eventTitle, { color: colors.foreground, textAlign: align }]}>{event.title}</Text>
+                    <Text style={[styles.eventMeta, { color: colors.mutedForeground, textAlign: align }]}>{event.venue} · {event.access}</Text>
+                    <Text style={[styles.eventDesc, { color: colors.foreground, textAlign: align }]}>{event.description}</Text>
+                    <View style={styles.eventFooter}>
+                      {reserved ? (
+                        <View style={[styles.statusPill, { backgroundColor: colors.secondary }]}>
+                          <Text style={[styles.statusText, { color: colors.primary }]}>{t('statusReserved')}</Text>
+                        </View>
+                      ) : <View />}
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`${reserved ? t('cancelReservation') : t('reserveEvent')}: ${event.title}`}
+                        onPress={() => toggleEvent(event.id)}
+                        style={({ pressed }) => [
+                          styles.eventButton,
+                          { backgroundColor: reserved ? colors.card : colors.accent, borderColor: reserved ? colors.destructive : colors.accent, opacity: pressed ? 0.85 : 1 },
+                        ]}
+                      >
+                        <Text style={[styles.eventButtonText, { color: reserved ? colors.destructive : colors.accentForeground }]}>
+                          {reserved ? t('cancelReservation') : t('reserveEvent')}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
+            {visibleEvents.length === 0 ? (
+              <View style={styles.empty}>
+                <Ionicons name="calendar-clear-outline" size={28} color={colors.mutedForeground} />
+                <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t('noEvents')}</Text>
+                <Text style={[styles.emptyHint, { color: colors.mutedForeground }]}>{t('noEventsHint')}</Text>
+              </View>
+            ) : null}
+            <LocalNotice messageKey="localOnly" />
+          </View>
+        ) : (<>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
           {categories.map((item) => {
             const selected = category === item;
@@ -192,6 +285,7 @@ export default function ExploreScreen() {
             ) : null}
           </View>
         )}
+        </>)}
       </ScrollView>
     </ScreenShell>
   );
@@ -199,6 +293,23 @@ export default function ExploreScreen() {
 
 const styles = StyleSheet.create({
   content: { paddingBottom: 34 },
+  kindSwitch: { marginHorizontal: 20, marginTop: 11, flexDirection: 'row', padding: 3, borderRadius: 13, gap: 2 },
+  kindOption: { flex: 1, minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 11 },
+  eventsHint: { fontSize: 11, marginTop: 14, marginBottom: 10 },
+  toast: { borderRadius: 12, padding: 10, marginBottom: 10 },
+  toastText: { fontSize: 11, fontWeight: '800' },
+  eventCard: { borderWidth: 1, borderRadius: 20, overflow: 'hidden', marginBottom: 12 },
+  eventImage: { width: '100%', height: 120 },
+  eventBody: { padding: 14 },
+  eventDate: { fontSize: 10, fontWeight: '800' },
+  eventTitle: { fontSize: 16, fontWeight: '800', marginTop: 4 },
+  eventMeta: { fontSize: 10, marginTop: 4 },
+  eventDesc: { fontSize: 12, lineHeight: 18, marginTop: 8 },
+  eventFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, gap: 8 },
+  statusPill: { paddingHorizontal: 9, paddingVertical: 6, borderRadius: 10, flexShrink: 1 },
+  statusText: { fontSize: 9, fontWeight: '900' },
+  eventButton: { minHeight: 40, paddingHorizontal: 13, justifyContent: 'center', borderRadius: 12, borderWidth: 1 },
+  eventButtonText: { fontSize: 11, fontWeight: '800' },
   searchBox: {
     marginHorizontal: 20,
     borderWidth: 1,

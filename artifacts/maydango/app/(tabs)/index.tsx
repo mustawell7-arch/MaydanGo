@@ -233,7 +233,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingBottom: 34 },
+  content: { paddingBottom: 110 },
   topBar: {
     paddingHorizontal: 22,
     paddingTop: 10,

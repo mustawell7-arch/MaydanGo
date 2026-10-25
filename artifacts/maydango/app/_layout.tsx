@@ -26,6 +26,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="facility/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="session/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="course/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="cities" options={{ headerShown: false }} />
       <Stack.Screen name="checkin" options={{ headerShown: false, presentation: 'modal' }} />
       <Stack.Screen name="membership" options={{ headerShown: false }} />

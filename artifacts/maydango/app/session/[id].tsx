@@ -28,7 +28,7 @@ export default function SessionDetailScreen() {
   }
 
   const facility = facilities.find((item) => item.id === session.facilityId);
-  const isBooked = app.bookings.some((booking) => booking.sessionId === session.id);
+  const isBooked = app.isSessionBooked(session.id);
 
   const reserve = () => {
     if (isBooked) {

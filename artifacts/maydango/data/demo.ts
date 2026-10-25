@@ -60,15 +60,22 @@ export type TrainingSession = {
   image: ImageSourcePropType;
 };
 
+export type L10n = { en: string; ar: string; ku: string };
+export const pick = (text: L10n, language: 'en' | 'ar' | 'ku') => text[language] ?? text.en;
+
+export type SampleLesson = { id: string; minutes: number; title: L10n; body: L10n };
+
 export type Course = {
   id: string;
   title: string;
+  localTitle: L10n;
+  summary: L10n;
   instructor: string;
-  lessons: number;
   duration: string;
   level: string;
-  progress: number;
   image: ImageSourcePropType;
+  /** Written sample lessons for the preview. Progress is derived from these only. */
+  sampleLessons: SampleLesson[];
 };
 
 export type CommunityEvent = {
@@ -90,6 +97,8 @@ export type Coach = {
   languages: string;
   availability: string;
   image: ImageSourcePropType;
+  /** Sample offered slots. Choosing one saves a local request only. */
+  slots: { id: string; label: L10n }[];
 };
 
 export const facilities: Facility[] = [
@@ -470,6 +479,10 @@ export const coaches: Coach[] = [
     languages: 'Arabic · English',
     availability: 'Today · 7:00 PM',
     image: require('../assets/images/maydango-yoga.jpg'),
+    slots: [
+      { id: 'noor-tue-19', label: { en: 'Tue · 7:00 PM · 30 min', ar: 'الثلاثاء · ٧:٠٠ مساءً · ٣٠ دقيقة', ku: 'سێشەممە · ٧:٠٠ ئێوارە · ٣٠ خولەک' } },
+      { id: 'noor-thu-18', label: { en: 'Thu · 6:00 PM · 30 min', ar: 'الخميس · ٦:٠٠ مساءً · ٣٠ دقيقة', ku: 'پێنجشەممە · ٦:٠٠ ئێوارە · ٣٠ خولەک' } },
+    ],
   },
   {
     id: 'coach-rojin',
@@ -478,6 +491,11 @@ export const coaches: Coach[] = [
     languages: 'Kurdish · Arabic · English',
     availability: 'Tomorrow · 11:00 AM',
     image: require('../assets/images/maydango-strength.jpg'),
+    slots: [
+      { id: 'rojin-wed-11', label: { en: 'Wed · 11:00 AM · 45 min', ar: 'الأربعاء · ١١:٠٠ صباحاً · ٤٥ دقيقة', ku: 'چوارشەممە · ١١:٠٠ بەیانی · ٤٥ خولەک' } },
+      { id: 'rojin-sat-17', label: { en: 'Sat · 5:00 PM · 45 min', ar: 'السبت · ٥:٠٠ مساءً · ٤٥ دقيقة', ku: 'شەممە · ٥:٠٠ ئێوارە · ٤٥ خولەک' } },
+      { id: 'rojin-sun-10', label: { en: 'Sun · 10:00 AM · 45 min', ar: 'الأحد · ١٠:٠٠ صباحاً · ٤٥ دقيقة', ku: 'یەکشەممە · ١٠:٠٠ بەیانی · ٤٥ خولەک' } },
+    ],
   },
   {
     id: 'coach-omar',
@@ -486,6 +504,10 @@ export const coaches: Coach[] = [
     languages: 'Arabic · Kurdish',
     availability: 'Tomorrow · 6:30 PM',
     image: require('../assets/images/maydango-padel.jpg'),
+    slots: [
+      { id: 'omar-mon-1830', label: { en: 'Mon · 6:30 PM · 40 min', ar: 'الاثنين · ٦:٣٠ مساءً · ٤٠ دقيقة', ku: 'دووشەممە · ٦:٣٠ ئێوارە · ٤٠ خولەک' } },
+      { id: 'omar-fri-16', label: { en: 'Fri · 4:00 PM · 40 min', ar: 'الجمعة · ٤:٠٠ مساءً · ٤٠ دقيقة', ku: 'هەینی · ٤:٠٠ ئێوارە · ٤٠ خولەک' } },
+    ],
   },
 ];
 
@@ -493,22 +515,106 @@ export const courses: Course[] = [
   {
     id: 'move-at-home',
     title: 'Move well at home',
+    localTitle: { en: 'Move well at home', ar: 'تحرّك جيداً في المنزل', ku: 'لە ماڵەوە باش بجوڵێ' },
+    summary: {
+      en: 'Gentle, practical movement for small spaces. No equipment needed, and every lesson can be done in everyday clothes.',
+      ar: 'حركة لطيفة وعملية تناسب المساحات الصغيرة. لا تحتاج إلى معدات، ويمكن أداء كل درس بملابسك اليومية.',
+      ku: 'جووڵەی نەرم و کرداری بۆ شوێنی بچووک. پێویستت بە ئامێر نییە و هەموو وانەیەک بە جلی ڕۆژانە دەکرێت.',
+    },
     instructor: 'Noor Ahmed',
-    lessons: 8,
-    duration: '2 hr 10 min',
+    duration: '48 min',
     level: 'Beginner',
-    progress: 38,
     image: require('../assets/images/maydango-yoga.jpg'),
+    sampleLessons: [
+      {
+        id: 'mah-1', minutes: 10,
+        title: { en: 'Wake up the spine', ar: 'إيقاظ العمود الفقري', ku: 'بەئاگاهێنانەوەی بڕبڕەی پشت' },
+        body: {
+          en: 'Sit tall on a chair or cushion. Slowly round your back as you breathe out, then lengthen as you breathe in. Repeat eight times, then add gentle side bends. Move only within a comfortable range.',
+          ar: 'اجلس مستقيماً على كرسي أو وسادة. قوّس ظهرك ببطء مع الزفير، ثم امدده مع الشهيق. كرّر ثماني مرات، ثم أضف انحناءات جانبية لطيفة. تحرّك ضمن المدى المريح لك فقط.',
+          ku: 'بە ڕاستی لەسەر کورسی یان سەرین دابنیشە. لە کاتی هەناسەدانەوەدا پشتت هێواش بچەمێنەوە، و لە کاتی هەناسەکێشاندا درێژی بکەرەوە. هەشت جار دووبارەی بکەرەوە، پاشان چەمانەوەی نەرمی لاتەنیشت زیاد بکە. تەنها لە مەودای ئاسوودەدا بجوڵێ.',
+        },
+      },
+      {
+        id: 'mah-2', minutes: 12,
+        title: { en: 'Hips and knees, kindly', ar: 'الوركان والركبتان برفق', ku: 'سمت و ئەژنۆ، بە نەرمی' },
+        body: {
+          en: 'Stand holding a wall or chair back. Do ten slow sit-to-stand movements from a chair, then ten small leg circles on each side. Rest whenever you need to.',
+          ar: 'قف مستنداً إلى جدار أو ظهر كرسي. أدِّ عشر حركات بطيئة من الجلوس إلى الوقوف، ثم عشر دوائر صغيرة بكل ساق. استرح متى احتجت.',
+          ku: 'بوەستە و دەست بە دیوار یان پشتی کورسییەوە بگرە. دە جار بە هێواشی لە کورسی هەستە و دابنیشە، پاشان دە بازنەی بچووک بە هەر قاچێک. هەر کاتێک پێویست بوو پشوو بدە.',
+        },
+      },
+      {
+        id: 'mah-3', minutes: 14,
+        title: { en: 'Shoulders after screen time', ar: 'الكتفان بعد وقت الشاشات', ku: 'شانەکان دوای کاتی شاشە' },
+        body: {
+          en: 'Roll your shoulders back ten times. Clasp your hands behind you, or hold a scarf if that is easier, and open the chest for five breaths. Finish with slow neck turns.',
+          ar: 'دوّر كتفيك للخلف عشر مرات. اشبك يديك خلفك، أو أمسك وشاحاً إن كان أسهل، وافتح صدرك لخمسة أنفاس. اختم بالتفاتات بطيئة للرقبة.',
+          ku: 'دە جار شانەکانت بەرەو دواوە بسووڕێنە. دەستەکانت لە پشتەوە بەیەکەوە ببەستە، یان ئەگەر ئاسانترە لەچکێک بگرە، و بۆ پێنج هەناسە سنگت بکەرەوە. بە سووڕاندنی هێواشی مل کۆتایی پێبهێنە.',
+        },
+      },
+      {
+        id: 'mah-4', minutes: 12,
+        title: { en: 'A calm ten-minute reset', ar: 'استراحة هادئة لعشر دقائق', ku: 'دە خولەکی ئارامبوونەوە' },
+        body: {
+          en: 'Lie down or sit comfortably. Breathe in for four counts and out for six. Let each part of the body soften, from the feet to the face. This lesson suits the end of a long day.',
+          ar: 'استلقِ أو اجلس بارتياح. تنفّس بعدّ أربعة وازفر بعدّ ستة. دع كل جزء من جسمك يسترخي، من القدمين حتى الوجه. هذا الدرس مناسب لنهاية يوم طويل.',
+          ku: 'ڕاکشێ یان بە ئاسوودەیی دابنیشە. بە ژماردنی چوار هەناسە بکێشە و بە شەش بیدەرەوە. لێگەڕێ هەموو بەشێکی لەشت نەرم بێتەوە، لە پێیەکانەوە تا ڕوخسار. ئەم وانەیە بۆ کۆتایی ڕۆژێکی درێژ گونجاوە.',
+        },
+      },
+    ],
   },
   {
     id: 'strong-foundations',
     title: 'Strong foundations',
+    localTitle: { en: 'Strong foundations', ar: 'أساسات قوية', ku: 'بناغەی بەهێز' },
+    summary: {
+      en: 'Bodyweight strength basics with clear form cues. Built for beginners who want confidence before joining a class.',
+      ar: 'أساسيات القوة بوزن الجسم مع إرشادات واضحة للأداء. مصممة للمبتدئين الذين يريدون الثقة قبل الانضمام إلى حصة.',
+      ku: 'بنەماکانی هێز بە کێشی لەش لەگەڵ ڕێنمایی ڕوون. بۆ تازەکاران کە دەیانەوێت پێش بەشداریکردن لە وانەیەک متمانەیان هەبێت.',
+    },
     instructor: 'Dina Kareem',
-    lessons: 10,
-    duration: '3 hr 20 min',
+    duration: '55 min',
     level: 'All levels',
-    progress: 0,
     image: require('../assets/images/maydango-strength.jpg'),
+    sampleLessons: [
+      {
+        id: 'sf-1', minutes: 13,
+        title: { en: 'The supported squat', ar: 'القرفصاء المدعومة', ku: 'چەمینەوەی پشتگیریکراو' },
+        body: {
+          en: 'Stand in front of a chair, feet hip-width apart. Sit back until you lightly touch the seat, then stand. Keep your chest open and knees following your toes. Three rounds of eight.',
+          ar: 'قف أمام كرسي وقدماك بعرض الوركين. اجلس للخلف حتى تلمس المقعد بخفة، ثم قف. حافظ على صدر منفتح وركبتين باتجاه أصابع القدمين. ثلاث جولات من ثماني مرات.',
+          ku: 'لە بەردەم کورسییەک بوەستە، پێیەکانت بە پانی سمت. بەرەو دواوە دابنیشە تا بە سووکی دەگەیتە کورسییەکە، پاشان هەستە. سنگت کراوە بێت و ئەژنۆکانت بەدوای پەنجەی پێدا بڕۆن. سێ خول، هەر خولێک هەشت جار.',
+        },
+      },
+      {
+        id: 'sf-2', minutes: 14,
+        title: { en: 'Wall push-ups', ar: 'تمرين الضغط على الجدار', ku: 'پاڵنانی دیوار' },
+        body: {
+          en: 'Place your hands on a wall at shoulder height. Step back, keep a straight line from head to heels, and bend your elbows slowly. When this feels easy, move to a table edge.',
+          ar: 'ضع يديك على الجدار بمستوى الكتفين. تراجع خطوة، وحافظ على خط مستقيم من الرأس إلى الكعبين، واثنِ مرفقيك ببطء. عندما يصبح سهلاً، انتقل إلى حافة طاولة.',
+          ku: 'دەستەکانت بە بەرزی شان لەسەر دیوار دابنێ. هەنگاوێک بگەڕێوە، هێڵێکی ڕاست لە سەرەوە تا پاژنە ڕابگرە، و بە هێواشی ئانیشکەکانت بچەمێنەوە. کاتێک ئاسان بوو، بڕۆ بۆ لێواری مێزێک.',
+        },
+      },
+      {
+        id: 'sf-3', minutes: 14,
+        title: { en: 'Core without crunches', ar: 'تقوية الجذع بلا تمارين البطن التقليدية', ku: 'ناوەڕاستی لەش بەبێ کرەنچ' },
+        body: {
+          en: 'Lie on your back with knees bent. Breathe out and gently press your lower back into the floor, then slowly extend one leg at a time. Six on each side, twice through.',
+          ar: 'استلقِ على ظهرك مع ثني الركبتين. ازفر واضغط أسفل ظهرك برفق نحو الأرض، ثم مدّ ساقاً واحدة في كل مرة ببطء. ست مرات لكل جانب، مرتين.',
+          ku: 'لەسەر پشت ڕاکشێ و ئەژنۆکانت بچەمێنەوە. هەناسە بدەرەوە و بە نەرمی خوارەوەی پشتت بە زەویدا بنێ، پاشان هەر جارە قاچێک بە هێواشی درێژ بکەرەوە. شەش جار بۆ هەر لایەک، دوو خول.',
+        },
+      },
+      {
+        id: 'sf-4', minutes: 14,
+        title: { en: 'Your first full circuit', ar: 'دورتك الكاملة الأولى', ku: 'یەکەم خولی تەواوت' },
+        body: {
+          en: 'Combine the last three lessons: eight squats, eight wall push-ups, six leg extensions per side. Rest one minute and repeat up to three times. Stop early if anything feels sharp or painful.',
+          ar: 'اجمع الدروس الثلاثة السابقة: ثماني قرفصاءات، ثماني ضغطات على الجدار، ست مدّات للساق لكل جانب. استرح دقيقة وكرّر حتى ثلاث مرات. توقف مبكراً إذا شعرت بألم حاد.',
+          ku: 'سێ وانەی پێشوو تێکەڵ بکە: هەشت چەمینەوە، هەشت پاڵنانی دیوار، شەش درێژکردنەوەی قاچ بۆ هەر لایەک. یەک خولەک پشوو بدە و تا سێ جار دووبارەی بکەرەوە. ئەگەر ئازارێکی تیژت هەست پێکرد زوو ڕابوەستە.',
+        },
+      },
+    ],
   },
 ];
 
