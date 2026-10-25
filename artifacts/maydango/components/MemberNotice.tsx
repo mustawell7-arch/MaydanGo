@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text, Pressable } from '@/components/Localized';
 import { router } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';

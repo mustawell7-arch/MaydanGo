@@ -1,13 +1,17 @@
 import { Link, Stack } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/components/Localized';
+import { useApp } from '@/contexts/AppContext';
+import { localize } from '@/lib/content';
 import { useColors } from '@/hooks/useColors';
 
 export default function NotFoundScreen() {
   const colors = useColors();
+  const { language } = useApp();
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
+      <Stack.Screen options={{ title: localize('Page not found', language) }} />
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Text style={[styles.title, { color: colors.foreground }]}>
           This screen doesn&apos;t exist.

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Pressable, Text, TextInput, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text, TextInput, Pressable } from '@/components/Localized';
+import { dateTime, errorCopy } from '@/lib/content';
 import { useAuth, useClerk, useUser, useSignIn, useSignUp, useSSO } from '@clerk/expo';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
@@ -33,11 +35,11 @@ export default function AccountScreen() {
   const run = async (fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(true); setError('');
-    try { await fn(); } catch (e: any) { setError(e?.errors?.[0]?.longMessage || e?.message || 'Unable to continue. Please try again.'); }
+    try { await fn(); } catch (e: unknown) { setError(errorCopy(e)); }
     finally { setBusy(false); }
   };
   const check = (result: { error?: { message?: string; longMessage?: string } | null }) => {
-    if (result.error) throw new Error(result.error.longMessage || result.error.message || 'Please check your details.');
+    if (result.error) throw result.error;
   };
   const finish = async () => {
     const attempt = mode === 'signup' ? signUp : signIn;
@@ -75,13 +77,13 @@ export default function AccountScreen() {
     <KeyboardAwareScrollViewCompat contentContainerStyle={{ padding: 22, paddingBottom: 50, gap: 14 }} keyboardShouldPersistTaps="handled">
       <Pressable onPress={() => router.replace('/')}><Text style={{ color: c.primary }}>Back to explore</Text></Pressable>
       {isSignedIn ? <>
-        <Text style={{ color: c.foreground }}>{user?.primaryEmailAddress?.emailAddress}</Text>
+        <Text raw style={{ color: c.foreground }}>{user?.primaryEmailAddress?.emailAddress}</Text>
         <Text style={{ color: c.foreground, fontWeight: '700' }}>Server-verified memberships</Text>
-        {app.memberMemberships.length ? app.memberMemberships.map(m => <Text key={m.scope} style={{ color: c.foreground }}>{m.scope === 'preview' ? 'Sample-only trial' : 'Live membership'} · {m.tier} · {m.status} · ends {new Date(m.endsAt).toLocaleDateString()}</Text>) : <Text style={{ color: c.mutedForeground }}>No active membership. Local plan selections do not grant access.</Text>}
+        {app.memberMemberships.length ? app.memberMemberships.map(m => <Text key={m.scope} style={{ color: c.foreground }}>{m.scope === 'preview' ? 'Sample-only trial' : 'Live membership'} · {m.tier} · {m.status} · ends {dateTime(m.endsAt, app.language, true)}</Text>) : <Text style={{ color: c.mutedForeground }}>No active membership. Local plan selections do not grant access.</Text>}
         <MemberNotice />
         <Text style={{ color: c.foreground, fontWeight: '700' }}>Eligibility details</Text>
         <Text style={{ color: c.mutedForeground }}>Required only for age- or gender-restricted sessions. These details are private to your account.</Text>
-        {app.memberProfile ? <Text style={{ color: c.foreground }}>Saved: {app.memberProfile.gender} · {app.memberProfile.birthDate}</Text> : null}
+        {app.memberProfile ? <Text style={{ color: c.foreground }}>Saved: {app.memberProfile.gender} · {app.memberProfile.birthDate ? dateTime(app.memberProfile.birthDate, app.language, true) : '—'}</Text> : null}
         <TextInput accessibilityLabel="Date of birth" placeholder="Date of birth: YYYY-MM-DD" placeholderTextColor={c.mutedForeground} value={birthDate} onChangeText={setBirthDate} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
         <View style={{ flexDirection: 'row', gap: 14 }}>
           {(['female', 'male', 'unspecified'] as const).map(g => <Pressable key={g} onPress={() => setGender(g)} accessibilityRole="radio" accessibilityState={{ checked: gender === g }}><Text style={{ color: c.primary, fontWeight: gender === g ? '800' : '400' }}>{g}</Text></Pressable>)}

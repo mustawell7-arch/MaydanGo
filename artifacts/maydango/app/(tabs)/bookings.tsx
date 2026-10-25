@@ -1,5 +1,6 @@
 import React from 'react';
-import { Image, ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, ImageSourcePropType, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, Pressable } from '@/components/Localized';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
@@ -9,6 +10,7 @@ import { coaches, communityEvents, facilities, getCityLabel, pick, sessions } fr
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { translate, type MessageKey } from '@/lib/i18n';
+import { dateTime } from '@/lib/content';
 
 type Row = {
   key: string;
@@ -32,7 +34,7 @@ export default function BookingsScreen() {
     if (!s) return [];
     const facility = facilities.find((f) => f.id === s.facilityId);
     return [{
-      key: `s-${b.sessionId}`, image: s.image, when: new Date(app.serverBookings.find(r => r.kind === 'session' && r.targetId === b.sessionId)!.startsAt).toLocaleString(), title: s.title,
+      key: `s-${b.sessionId}`, image: s.image, when: dateTime(app.serverBookings.find(r => r.kind === 'session' && r.targetId === b.sessionId)!.startsAt, app.language), title: s.title,
       meta: s.mode === 'online' ? `${t('onlineTag')} · ${s.instructor}` : `${facility?.name ?? ''} · ${s.instructor}`,
       status: b.status, onCancel: () => app.cancelBooking(b.sessionId), cancelLabel: t('cancelBooking'),
     }];
@@ -41,7 +43,7 @@ export default function BookingsScreen() {
     const ev = communityEvents.find((x) => x.id === e.eventId);
     if (!ev) return [];
     return [{
-      key: `e-${e.eventId}`, image: ev.image, when: new Date(app.serverBookings.find(r => r.kind === 'event' && r.targetId === e.eventId)!.startsAt).toLocaleString(), title: ev.title,
+      key: `e-${e.eventId}`, image: ev.image, when: dateTime(app.serverBookings.find(r => r.kind === 'event' && r.targetId === e.eventId)!.startsAt, app.language), title: ev.title,
       meta: ev.venue, status: e.status, onCancel: () => app.cancelEvent(e.eventId), cancelLabel: t('cancelReservation'),
     }];
   });
@@ -50,7 +52,7 @@ export default function BookingsScreen() {
     const slot = c?.slots.find((s) => s.id === r.slot);
     if (!c || !slot) return [];
     return [{
-      key: `c-${r.coachId}-${r.slot}`, image: c.image, when: new Date(app.serverBookings.find(b => b.kind === 'coach' && b.targetId === r.coachId && b.slot === r.slot)!.startsAt).toLocaleString(), title: c.name,
+      key: `c-${r.coachId}-${r.slot}`, image: c.image, when: dateTime(app.serverBookings.find(b => b.kind === 'coach' && b.targetId === r.coachId && b.slot === r.slot)!.startsAt, app.language), title: c.name,
       meta: c.specialty, status: r.status, onCancel: () => app.cancelCoachRequest(r.coachId, r.slot), cancelLabel: t('cancelRequest'),
     }];
   });

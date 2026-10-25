@@ -2,14 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { MemberNotice } from '@/components/MemberNotice';
 import {
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Text, Pressable, TextInput, Ionicons } from '@/components/Localized';
 import { router, useLocalSearchParams } from 'expo-router';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
@@ -20,6 +17,7 @@ import { cities, getCityLabel } from '@/data/demo';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { translate } from '@/lib/i18n';
+import { localize } from '@/lib/content';
 
 export default function ExploreScreen() {
   const colors = useColors();
@@ -36,12 +34,13 @@ export default function ExploreScreen() {
   const [view, setView] = useState<'list' | 'map'>('list');
   const t = (key: Parameters<typeof translate>[1]) => translate(app.language, key);
   const currentCity = getCityLabel(app.selectedCityId, app.language);
-  const cityName = cities.find((city) => city.id === app.selectedCityId)?.english ?? 'Iraq';
+  const cityName = currentCity;
   const visibleFacilities = useMemo(
     () =>
       facilities.filter((facility) => {
         const matchesCity = app.selectedCityId === 'all' || facility.cityId === app.selectedCityId;
-        const matchesText = `${facility.name} ${facility.category} ${facility.district} ${facility.activities.join(' ')}`
+        const source = `${facility.name} ${facility.category} ${facility.district} ${facility.activities.join(' ')}`;
+        const matchesText = `${source} ${localize(source, 'ar')} ${localize(source, 'ku')}`
           .toLowerCase()
           .includes(query.toLowerCase());
         const matchesCategory =
@@ -56,7 +55,8 @@ export default function ExploreScreen() {
     () =>
       communityEvents.filter((event) => {
         const matchesCity = app.selectedCityId === 'all' || event.cityId === app.selectedCityId;
-        const matchesText = `${event.title} ${event.venue} ${event.city} ${event.description} ${event.access}`
+        const source = `${event.title} ${event.venue} ${event.city} ${event.description} ${event.access}`;
+        const matchesText = `${source} ${localize(source, 'ar')} ${localize(source, 'ku')}`
           .toLowerCase()
           .includes(query.toLowerCase());
         return matchesCity && matchesText;

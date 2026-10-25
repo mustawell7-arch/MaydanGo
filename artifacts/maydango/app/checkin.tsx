@@ -3,14 +3,12 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
-  Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
-import { Ionicons } from '@expo/vector-icons';
+import { Text, Pressable, Ionicons } from '@/components/Localized';
 import { router } from 'expo-router';
 import { ScreenShell } from '@/components/ScreenShell';
 import { facilities } from '@/data/demo';
@@ -139,7 +137,7 @@ export default function CheckInScreen() {
           <Text style={[styles.successHint, { color: colors.mutedForeground }]}>{t('checkInSuccessHint')}</Text>
           <View style={[styles.reference, { backgroundColor: colors.secondary }]}>
             <Text style={[styles.referenceLabel, { color: colors.mutedForeground }]}>PREVIEW CONFIRMATION</Text>
-            <Text style={[styles.referenceValue, { color: colors.foreground }]}>MDG-{Date.now().toString().slice(-6)}</Text>
+            <Text raw style={[styles.referenceValue, { color: colors.foreground }]}>MDG-{Date.now().toString().slice(-6)}</Text>
           </View>
           <Pressable onPress={() => router.back()} style={[styles.doneButton, { backgroundColor: colors.primary }]}>
             <Text style={styles.doneText}>Done</Text>

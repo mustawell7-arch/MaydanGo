@@ -3,13 +3,11 @@ import {
   Image,
   Linking,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Text, Pressable, Ionicons } from '@/components/Localized';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScreenShell } from '@/components/ScreenShell';
 import { facilities, sessions } from '@/data/demo';

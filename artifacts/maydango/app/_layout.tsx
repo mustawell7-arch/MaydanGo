@@ -13,7 +13,8 @@ import {
 } from '@expo-google-fonts/inter';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { AppProvider } from '@/contexts/AppContext';
+import { AppProvider, useApp } from '@/contexts/AppContext';
+import { translate } from '@/lib/i18n';
 import { ClerkProvider, ClerkLoaded } from '@clerk/expo';
 import { tokenCache } from '@clerk/expo/token-cache';
 
@@ -23,8 +24,9 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
+  const { language } = useApp();
   return (
-    <Stack screenOptions={{ headerBackTitle: 'Back' }}>
+    <Stack screenOptions={{ headerBackTitle: translate(language, 'back') }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="facility/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="session/[id]" options={{ headerShown: false }} />

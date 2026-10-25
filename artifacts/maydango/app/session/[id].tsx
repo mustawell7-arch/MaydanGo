@@ -1,14 +1,13 @@
 import React from 'react';
 import {
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
   Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Text, Pressable, Ionicons } from '@/components/Localized';
+import { localize, dateTime } from '@/lib/content';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScreenShell } from '@/components/ScreenShell';
 import { facilities, sessions } from '@/data/demo';
@@ -38,7 +37,7 @@ export default function SessionDetailScreen() {
       return;
     }
     const result = await app.bookSession(session.id);
-    if (result.ok) Alert.alert('Reservation saved', 'Sample reservation saved to your account. This is not attendance or a live partner confirmation.');
+    if (result.ok) Alert.alert(localize('Reservation saved', app.language), localize('Sample reservation saved to your account. This is not attendance or a live partner confirmation.', app.language));
   };
 
   return (
@@ -58,7 +57,7 @@ export default function SessionDetailScreen() {
         <View style={styles.body}>
           <MemberNotice />
           <Text style={{ color: colors.foreground, marginBottom: 12 }}>
-            {offering ? `Sample date: ${new Date(offering.startsAt).toLocaleString()} · Cancel before ${new Date(offering.cancellationDeadline).toLocaleString()}` : 'Sign in to load the server schedule. Displayed promotional times are illustrative.'}
+            {offering ? `Sample date: ${dateTime(offering.startsAt, app.language)} · Cancel before ${dateTime(offering.cancellationDeadline, app.language)}` : 'Sign in to load the server schedule. Displayed promotional times are illustrative.'}
           </Text>
           <View style={[styles.spotsPill, { backgroundColor: colors.accent }]}>
             <View style={styles.spotDot} />

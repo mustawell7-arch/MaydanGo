@@ -1,12 +1,10 @@
 import React from 'react';
 import {
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Text, Pressable, Ionicons } from '@/components/Localized';
 import { router } from 'expo-router';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
 import { useApp } from '@/contexts/AppContext';
@@ -48,7 +46,7 @@ export default function ProfileScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.rowTitle, { color: colors.foreground }]}>{t('membership')}</Text>
-            <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>MaydanGo {app.membershipTier} · {t('active')}</Text>
+            <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>MaydanGo {app.membershipTier} · Preview</Text>
           </View>
           <Ionicons name="chevron-forward" size={17} color={colors.mutedForeground} />
         </Pressable>
@@ -60,7 +58,7 @@ export default function ProfileScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: colors.foreground }]}>{t('language')}</Text>
-              <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>English · العربية · کوردی</Text>
+              <Text raw style={[styles.rowSub, { color: colors.mutedForeground }]}>English · العربية · کوردی</Text>
             </View>
           </View>
           <View style={styles.languageOptions}>
@@ -77,7 +75,7 @@ export default function ProfileScreen() {
                     { backgroundColor: selected ? colors.primary : colors.secondary },
                   ]}
                 >
-                  <Text style={[styles.languageText, { color: selected ? colors.primaryForeground : colors.secondaryForeground }]}>
+                  <Text raw style={[styles.languageText, { color: selected ? colors.primaryForeground : colors.secondaryForeground }]}>
                     {languageName(language)}
                   </Text>
                 </Pressable>

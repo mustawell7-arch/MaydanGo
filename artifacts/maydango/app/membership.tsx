@@ -1,12 +1,11 @@
 import React from 'react';
 import {
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Text, Pressable, Ionicons } from '@/components/Localized';
+import { currency } from '@/lib/content';
 import { router } from 'expo-router';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
 import { useApp } from '@/contexts/AppContext';
@@ -39,7 +38,7 @@ export default function MembershipScreen() {
         <View style={[styles.activeCard, { backgroundColor: colors.primary }]}>
           <View style={styles.activeLine}>
             <Text style={styles.activeCaption}>{t('yourPass')}</Text>
-            <View style={styles.activeTag}><View style={styles.activeDot} /><Text style={styles.activeWord}>{t('active')}</Text></View>
+            <View style={styles.activeTag}><View style={styles.activeDot} /><Text style={styles.activeWord}>Preview</Text></View>
           </View>
           <Text style={styles.activeTier}>{app.membershipTier} · sample plan</Text>
           <Text style={styles.activeQuota}>Local preview only — not a server membership</Text>
@@ -54,8 +53,8 @@ export default function MembershipScreen() {
                   <Text style={[styles.planTag, { color: colors.mutedForeground }]}>{plan.tag}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[styles.price, { color: colors.foreground }]}>{plan.price}</Text>
-                  <Text style={[styles.currency, { color: colors.mutedForeground }]}>IQD / month · preview</Text>
+                  <Text style={[styles.price, { color: colors.foreground }]}>{currency(Number(plan.price.replaceAll(',', '')), app.language)}</Text>
+                  <Text style={[styles.currency, { color: colors.mutedForeground }]}>/ month · preview</Text>
                 </View>
               </View>
               <View style={[styles.divider, { backgroundColor: colors.border }]} />

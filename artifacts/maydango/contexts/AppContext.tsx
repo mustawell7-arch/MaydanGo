@@ -16,26 +16,32 @@ const defaults: LocalState = { language: 'en', selectedCityId: 'baghdad', favori
 // New preferences key leaves the old local preview reservations intact, but never imports them.
 const STORAGE_KEY = 'maydango-preferences-v2';
 function useAppState() {
-  const member = useMemberBookings();
   const [state, setState] = useState(defaults);
+  const member = useMemberBookings(state.language);
   const ref = useRef(state);
   const [hydrated, setHydrated] = useState(false);
   const [storageError, setStorageError] = useState<'load' | 'save' | null>(null);
   const [tick, setTick] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const saves = useRef(Promise.resolve());
   const commit = (fn: (s: LocalState) => LocalState) => { ref.current = fn(ref.current); setState(ref.current); };
   useEffect(() => {
     let active = true;
     AsyncStorage.getItem(STORAGE_KEY).then(value => {
       if (!active) return;
-      if (value) { const next = { ...defaults, ...JSON.parse(value) }; ref.current = next; setState(next); }
+      if (value) {
+        const saved = JSON.parse(value);
+        if (!['en', 'ar', 'ku'].includes(saved.language)) throw new Error('Invalid saved language');
+        const next = { ...defaults, ...saved }; ref.current = next; setState(next);
+      }
       setLoaded(true); setStorageError(null);
     }).catch(() => { if (active) setStorageError('load'); }).finally(() => { if (active) setHydrated(true); });
     return () => { active = false; };
   }, [tick]);
   useEffect(() => {
     if (!loaded) return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => setStorageError('save'));
+    // Keep rapid language/preferences changes in order on native storage too.
+    saves.current = saves.current.then(() => AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state))).catch(() => setStorageError('save'));
   }, [state, loaded]);
   const enrollCourse = (id: string): ActionResult => {
     if (!courses.some(c => c.id === id)) return { ok: false, reason: 'missing' };
@@ -56,7 +62,10 @@ function useAppState() {
     dismissStorageError: () => setStorageError(null),
     retrySave: () => {
       if (!loaded) setTick(t => t + 1);
-      else AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(ref.current)).then(() => setStorageError(null)).catch(() => setStorageError('save'));
+      else {
+        const value = JSON.stringify(ref.current);
+        saves.current = saves.current.then(() => AsyncStorage.setItem(STORAGE_KEY, value)).then(() => setStorageError(null)).catch(() => setStorageError('save'));
+      }
     },
     setLanguage: (language: Language) => commit(s => ({ ...s, language })),
     setSelectedCityId: (selectedCityId: string) => commit(s => ({ ...s, selectedCityId })),

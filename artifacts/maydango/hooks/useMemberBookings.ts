@@ -2,6 +2,8 @@ import { useAuth } from '@clerk/expo';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 import { router } from 'expo-router';
+import type { Language } from '@/lib/i18n';
+import { dateTime, errorCopy } from '@/lib/content';
 import {
   getMemberState, createMemberBooking, cancelMemberBooking, enablePreviewMembership,
   setBaseUrl, setAuthTokenGetter, type MemberState, type MemberBooking,
@@ -12,7 +14,7 @@ const domain = process.env.EXPO_PUBLIC_DOMAIN;
 if (domain) setBaseUrl(`https://${domain}`);
 const empty: MemberState = { memberships: [], bookings: [] };
 
-export function useMemberBookings() {
+export function useMemberBookings(language: Language) {
   const { userId, isSignedIn, getToken } = useAuth();
   const identity = useRef(userId);
   identity.current = userId;
@@ -34,7 +36,7 @@ export function useMemberBookings() {
       const [value, entries] = await Promise.all([getMemberState(), getBookingCatalog()]);
       if (identity.current === owner && revision === version.current) { setData({ owner, value }); setCatalog(entries); setError(null); }
     } catch (error) {
-      if (identity.current === owner && revision === version.current) setError(error instanceof Error ? error.message : 'Unable to load reservations.');
+      if (identity.current === owner && revision === version.current) setError(errorCopy(error));
     } finally { if (identity.current === owner && revision === version.current) setLoading(false); }
   }, [userId]);
   useEffect(() => {
@@ -56,7 +58,7 @@ export function useMemberBookings() {
       setData({ owner, value });
       return { ok: true as const };
     } catch (error) {
-      if (identity.current === owner) setError(error instanceof Error ? error.message : 'Unable to save. Try again.');
+      if (identity.current === owner) setError(errorCopy(error));
       return { ok: false as const, reason: 'invalid' as const };
     } finally {
       pending.current = false;
@@ -88,7 +90,7 @@ export function useMemberBookings() {
     memberProfile: current.profile, bookingCatalog: catalog,
     offeringTime: (kind: string, targetId: string, slot = '') => {
       const o = catalog.find(o => o.kind === kind && o.targetId === targetId && o.slot === slot);
-      return o ? new Date(o.startsAt).toLocaleString() : 'Sign in to view sample date';
+      return o ? dateTime(o.startsAt, language) : 'Sign in to view sample date';
     },
     saveProfile: (gender: 'female' | 'male' | 'unspecified', birthDate: string) => mutate(() => saveMemberProfile({ gender, birthDate })),
     enablePreview: () => mutate(() => enablePreviewMembership({ acknowledgeSampleData: true })),

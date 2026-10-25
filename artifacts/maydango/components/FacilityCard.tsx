@@ -1,12 +1,10 @@
 import React from 'react';
 import {
   Image,
-  Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Text, Pressable, Ionicons } from '@/components/Localized';
 import type { Facility } from '@/data/demo';
 import { useColors } from '@/hooks/useColors';
 
@@ -91,7 +89,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e4e8dc',
   },
-  compact: { width: 270, marginRight: 14 },
+  compact: { width: 290, marginEnd: 14 },
   full: { width: '100%', marginBottom: 14 },
   imageWrap: { height: 160, position: 'relative' },
   image: { width: '100%', height: '100%' },
@@ -130,6 +128,7 @@ const styles = StyleSheet.create({
   metaText: { fontSize: 12, fontWeight: '500' },
   bottomRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 12,

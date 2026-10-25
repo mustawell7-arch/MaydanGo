@@ -1,13 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Text, Pressable, TextInput, Ionicons } from '@/components/Localized';
 import { router } from 'expo-router';
 import { ScreenShell } from '@/components/ScreenShell';
 import { cities, getCityLabel } from '@/data/demo';
@@ -38,7 +35,7 @@ export default function CitiesScreen() {
   const filteredCities = useMemo(
     () =>
       cities.filter((city) =>
-        `${city.english} ${city.arabic} ${city.kurdish} ${city.region}`
+        `${city.english} ${city.arabic} ${city.kurdish} ${city.region} ${regionLabel(city.region, 'ar')} ${regionLabel(city.region, 'ku')}`
           .toLowerCase()
           .includes(query.toLowerCase()),
       ),

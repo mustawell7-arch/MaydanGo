@@ -1,5 +1,6 @@
 import React from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import { Text } from '@/components/Localized';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
@@ -8,7 +9,8 @@ import { StorageBanner } from '@/components/LocalNotice';
 export function ScreenShell({ children }: { children: React.ReactNode }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { language } = useApp();
+  const { language, hydrated } = useApp();
+  if (!hydrated) return null;
   return (
     <View
       style={{
@@ -20,6 +22,9 @@ export function ScreenShell({ children }: { children: React.ReactNode }) {
       }}
     >
       <StorageBanner />
+      <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 17, paddingHorizontal: 22, paddingVertical: 6 }}>
+        Sample catalog · illustrative places, schedules and prices. Not live partner availability.
+      </Text>
       {children}
     </View>
   );
