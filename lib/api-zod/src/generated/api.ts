@@ -8,6 +8,548 @@
 import * as zod from 'zod';
 
 
+
+
+export const getOperationsResponseOfferingsItemOneMinAgeMin = 0;
+
+export const getOperationsResponsePlansItemOneDurationDaysMax = 366;
+
+export const getOperationsResponsePlansItemOneRulesQuotaMin = 0;
+
+export const getOperationsResponsePlansItemOneRulesDailyLimitMin = 0;
+
+export const getOperationsResponsePlansItemOneRulesPhysicalQuotaMin = 0;
+
+export const getOperationsResponsePlansItemOneRulesPremiumQuotaMin = 0;
+
+export const getOperationsResponsePlansItemOneRulesLiveQuotaMin = 0;
+
+export const getOperationsResponsePlansItemOneRulesFacilityLimitsMinOne = 0;
+
+export const getOperationsResponsePlansItemOneRulesCategoryLimitsMinOne = 0;
+
+export const getOperationsResponsePlansItemOneRulesPartnerGroupLimitsMinOne = 0;
+
+
+
+export const GetOperationsResponse = zod.object({
+  "role": zod.enum(['admin', 'partner']),
+  "partnerId": zod.string().nullable(),
+  "partners": zod.array(zod.object({
+  "name": zod.string(),
+  "groupId": zod.string(),
+  "ownerUserId": zod.string()
+}).and(zod.object({
+  "id": zod.string(),
+  "approved": zod.boolean()
+}))),
+  "offerings": zod.array(zod.object({
+  "partnerId": zod.string(),
+  "title": zod.string(),
+  "kind": zod.enum(['session', 'event', 'coach']),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "category": zod.string(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "tiers": zod.array(zod.string()).min(1),
+  "startsAt": zod.string(),
+  "endsAt": zod.string(),
+  "cancellationDeadline": zod.string(),
+  "capacity": zod.number().int().min(1),
+  "gender": zod.enum(['all', 'female', 'male']).optional(),
+  "minAge": zod.number().int().min(getOperationsResponseOfferingsItemOneMinAgeMin).optional(),
+  "maxAge": zod.number().int().nullish(),
+  "additionalPayment": zod.boolean().optional(),
+  "active": zod.boolean()
+}).and(zod.object({
+  "id": zod.string(),
+  "targetId": zod.string(),
+  "slot": zod.string(),
+  "scope": zod.string(),
+  "cancelledAt": zod.string().nullish(),
+  "partnerName": zod.string().optional(),
+  "remaining": zod.number().int().optional()
+}))),
+  "plans": zod.array(zod.object({
+  "name": zod.string(),
+  "tier": zod.string(),
+  "kind": zod.enum(['paid', 'trial', 'corporate']),
+  "durationDays": zod.number().int().min(1).max(getOperationsResponsePlansItemOneDurationDaysMax),
+  "active": zod.boolean(),
+  "rules": zod.object({
+  "quota": zod.number().int().min(getOperationsResponsePlansItemOneRulesQuotaMin),
+  "dailyLimit": zod.number().int().min(getOperationsResponsePlansItemOneRulesDailyLimitMin),
+  "quotaMode": zod.enum(['shared', 'separate']),
+  "physicalQuota": zod.number().int().min(getOperationsResponsePlansItemOneRulesPhysicalQuotaMin),
+  "premiumQuota": zod.number().int().min(getOperationsResponsePlansItemOneRulesPremiumQuotaMin),
+  "liveQuota": zod.number().int().min(getOperationsResponsePlansItemOneRulesLiveQuotaMin),
+  "cities": zod.array(zod.string()).optional(),
+  "facilities": zod.array(zod.string()).optional(),
+  "categories": zod.array(zod.string()).optional(),
+  "facilityLimits": zod.record(zod.string(), zod.number().int().min(getOperationsResponsePlansItemOneRulesFacilityLimitsMinOne)).optional(),
+  "categoryLimits": zod.record(zod.string(), zod.number().int().min(getOperationsResponsePlansItemOneRulesCategoryLimitsMinOne)).optional(),
+  "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(getOperationsResponsePlansItemOneRulesPartnerGroupLimitsMinOne)).optional(),
+  "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
+  "corporateId": zod.string().optional()
+})
+}).and(zod.object({
+  "id": zod.string()
+})))
+})
+
+
+export const AddPartnerBody = zod.object({
+  "name": zod.string(),
+  "groupId": zod.string(),
+  "ownerUserId": zod.string()
+})
+
+export const AddPartnerResponse = zod.object({
+  "name": zod.string(),
+  "groupId": zod.string(),
+  "ownerUserId": zod.string()
+}).and(zod.object({
+  "id": zod.string(),
+  "approved": zod.boolean()
+}))
+
+
+export const ApprovePartnerParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ApprovePartnerBody = zod.object({
+  "approved": zod.boolean()
+})
+
+export const ApprovePartnerResponse = zod.object({
+  "name": zod.string(),
+  "groupId": zod.string(),
+  "ownerUserId": zod.string()
+}).and(zod.object({
+  "id": zod.string(),
+  "approved": zod.boolean()
+}))
+
+
+
+
+export const addLiveOfferingBodyMinAgeMin = 0;
+
+
+
+export const AddLiveOfferingBody = zod.object({
+  "partnerId": zod.string(),
+  "title": zod.string(),
+  "kind": zod.enum(['session', 'event', 'coach']),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "category": zod.string(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "tiers": zod.array(zod.string()).min(1),
+  "startsAt": zod.string(),
+  "endsAt": zod.string(),
+  "cancellationDeadline": zod.string(),
+  "capacity": zod.number().int().min(1),
+  "gender": zod.enum(['all', 'female', 'male']).optional(),
+  "minAge": zod.number().int().min(addLiveOfferingBodyMinAgeMin).optional(),
+  "maxAge": zod.number().int().nullish(),
+  "additionalPayment": zod.boolean().optional(),
+  "active": zod.boolean()
+})
+
+
+
+export const addLiveOfferingResponseOneMinAgeMin = 0;
+
+
+
+export const AddLiveOfferingResponse = zod.object({
+  "partnerId": zod.string(),
+  "title": zod.string(),
+  "kind": zod.enum(['session', 'event', 'coach']),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "category": zod.string(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "tiers": zod.array(zod.string()).min(1),
+  "startsAt": zod.string(),
+  "endsAt": zod.string(),
+  "cancellationDeadline": zod.string(),
+  "capacity": zod.number().int().min(1),
+  "gender": zod.enum(['all', 'female', 'male']).optional(),
+  "minAge": zod.number().int().min(addLiveOfferingResponseOneMinAgeMin).optional(),
+  "maxAge": zod.number().int().nullish(),
+  "additionalPayment": zod.boolean().optional(),
+  "active": zod.boolean()
+}).and(zod.object({
+  "id": zod.string(),
+  "targetId": zod.string(),
+  "slot": zod.string(),
+  "scope": zod.string(),
+  "cancelledAt": zod.string().nullish(),
+  "partnerName": zod.string().optional(),
+  "remaining": zod.number().int().optional()
+}))
+
+
+export const ChangeLiveOfferingParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+
+export const ChangeLiveOfferingBody = zod.object({
+  "capacity": zod.number().int().min(1),
+  "active": zod.boolean().optional()
+})
+
+
+
+export const changeLiveOfferingResponseOneMinAgeMin = 0;
+
+
+
+export const ChangeLiveOfferingResponse = zod.object({
+  "partnerId": zod.string(),
+  "title": zod.string(),
+  "kind": zod.enum(['session', 'event', 'coach']),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "category": zod.string(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "tiers": zod.array(zod.string()).min(1),
+  "startsAt": zod.string(),
+  "endsAt": zod.string(),
+  "cancellationDeadline": zod.string(),
+  "capacity": zod.number().int().min(1),
+  "gender": zod.enum(['all', 'female', 'male']).optional(),
+  "minAge": zod.number().int().min(changeLiveOfferingResponseOneMinAgeMin).optional(),
+  "maxAge": zod.number().int().nullish(),
+  "additionalPayment": zod.boolean().optional(),
+  "active": zod.boolean()
+}).and(zod.object({
+  "id": zod.string(),
+  "targetId": zod.string(),
+  "slot": zod.string(),
+  "scope": zod.string(),
+  "cancelledAt": zod.string().nullish(),
+  "partnerName": zod.string().optional(),
+  "remaining": zod.number().int().optional()
+}))
+
+
+export const CancelLiveOfferingParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const CancelLiveOfferingResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const addMembershipPlanBodyDurationDaysMax = 366;
+
+export const addMembershipPlanBodyRulesQuotaMin = 0;
+
+export const addMembershipPlanBodyRulesDailyLimitMin = 0;
+
+export const addMembershipPlanBodyRulesPhysicalQuotaMin = 0;
+
+export const addMembershipPlanBodyRulesPremiumQuotaMin = 0;
+
+export const addMembershipPlanBodyRulesLiveQuotaMin = 0;
+
+export const addMembershipPlanBodyRulesFacilityLimitsMinOne = 0;
+
+export const addMembershipPlanBodyRulesCategoryLimitsMinOne = 0;
+
+export const addMembershipPlanBodyRulesPartnerGroupLimitsMinOne = 0;
+
+
+
+export const AddMembershipPlanBody = zod.object({
+  "name": zod.string(),
+  "tier": zod.string(),
+  "kind": zod.enum(['paid', 'trial', 'corporate']),
+  "durationDays": zod.number().int().min(1).max(addMembershipPlanBodyDurationDaysMax),
+  "active": zod.boolean(),
+  "rules": zod.object({
+  "quota": zod.number().int().min(addMembershipPlanBodyRulesQuotaMin),
+  "dailyLimit": zod.number().int().min(addMembershipPlanBodyRulesDailyLimitMin),
+  "quotaMode": zod.enum(['shared', 'separate']),
+  "physicalQuota": zod.number().int().min(addMembershipPlanBodyRulesPhysicalQuotaMin),
+  "premiumQuota": zod.number().int().min(addMembershipPlanBodyRulesPremiumQuotaMin),
+  "liveQuota": zod.number().int().min(addMembershipPlanBodyRulesLiveQuotaMin),
+  "cities": zod.array(zod.string()).optional(),
+  "facilities": zod.array(zod.string()).optional(),
+  "categories": zod.array(zod.string()).optional(),
+  "facilityLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanBodyRulesFacilityLimitsMinOne)).optional(),
+  "categoryLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanBodyRulesCategoryLimitsMinOne)).optional(),
+  "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanBodyRulesPartnerGroupLimitsMinOne)).optional(),
+  "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
+  "corporateId": zod.string().optional()
+})
+})
+
+export const addMembershipPlanResponseOneDurationDaysMax = 366;
+
+export const addMembershipPlanResponseOneRulesQuotaMin = 0;
+
+export const addMembershipPlanResponseOneRulesDailyLimitMin = 0;
+
+export const addMembershipPlanResponseOneRulesPhysicalQuotaMin = 0;
+
+export const addMembershipPlanResponseOneRulesPremiumQuotaMin = 0;
+
+export const addMembershipPlanResponseOneRulesLiveQuotaMin = 0;
+
+export const addMembershipPlanResponseOneRulesFacilityLimitsMinOne = 0;
+
+export const addMembershipPlanResponseOneRulesCategoryLimitsMinOne = 0;
+
+export const addMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne = 0;
+
+
+
+export const AddMembershipPlanResponse = zod.object({
+  "name": zod.string(),
+  "tier": zod.string(),
+  "kind": zod.enum(['paid', 'trial', 'corporate']),
+  "durationDays": zod.number().int().min(1).max(addMembershipPlanResponseOneDurationDaysMax),
+  "active": zod.boolean(),
+  "rules": zod.object({
+  "quota": zod.number().int().min(addMembershipPlanResponseOneRulesQuotaMin),
+  "dailyLimit": zod.number().int().min(addMembershipPlanResponseOneRulesDailyLimitMin),
+  "quotaMode": zod.enum(['shared', 'separate']),
+  "physicalQuota": zod.number().int().min(addMembershipPlanResponseOneRulesPhysicalQuotaMin),
+  "premiumQuota": zod.number().int().min(addMembershipPlanResponseOneRulesPremiumQuotaMin),
+  "liveQuota": zod.number().int().min(addMembershipPlanResponseOneRulesLiveQuotaMin),
+  "cities": zod.array(zod.string()).optional(),
+  "facilities": zod.array(zod.string()).optional(),
+  "categories": zod.array(zod.string()).optional(),
+  "facilityLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanResponseOneRulesFacilityLimitsMinOne)).optional(),
+  "categoryLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanResponseOneRulesCategoryLimitsMinOne)).optional(),
+  "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
+  "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
+  "corporateId": zod.string().optional()
+})
+}).and(zod.object({
+  "id": zod.string()
+}))
+
+
+export const ReplaceMembershipPlanParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const replaceMembershipPlanBodyDurationDaysMax = 366;
+
+export const replaceMembershipPlanBodyRulesQuotaMin = 0;
+
+export const replaceMembershipPlanBodyRulesDailyLimitMin = 0;
+
+export const replaceMembershipPlanBodyRulesPhysicalQuotaMin = 0;
+
+export const replaceMembershipPlanBodyRulesPremiumQuotaMin = 0;
+
+export const replaceMembershipPlanBodyRulesLiveQuotaMin = 0;
+
+export const replaceMembershipPlanBodyRulesFacilityLimitsMinOne = 0;
+
+export const replaceMembershipPlanBodyRulesCategoryLimitsMinOne = 0;
+
+export const replaceMembershipPlanBodyRulesPartnerGroupLimitsMinOne = 0;
+
+
+
+export const ReplaceMembershipPlanBody = zod.object({
+  "name": zod.string(),
+  "tier": zod.string(),
+  "kind": zod.enum(['paid', 'trial', 'corporate']),
+  "durationDays": zod.number().int().min(1).max(replaceMembershipPlanBodyDurationDaysMax),
+  "active": zod.boolean(),
+  "rules": zod.object({
+  "quota": zod.number().int().min(replaceMembershipPlanBodyRulesQuotaMin),
+  "dailyLimit": zod.number().int().min(replaceMembershipPlanBodyRulesDailyLimitMin),
+  "quotaMode": zod.enum(['shared', 'separate']),
+  "physicalQuota": zod.number().int().min(replaceMembershipPlanBodyRulesPhysicalQuotaMin),
+  "premiumQuota": zod.number().int().min(replaceMembershipPlanBodyRulesPremiumQuotaMin),
+  "liveQuota": zod.number().int().min(replaceMembershipPlanBodyRulesLiveQuotaMin),
+  "cities": zod.array(zod.string()).optional(),
+  "facilities": zod.array(zod.string()).optional(),
+  "categories": zod.array(zod.string()).optional(),
+  "facilityLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanBodyRulesFacilityLimitsMinOne)).optional(),
+  "categoryLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanBodyRulesCategoryLimitsMinOne)).optional(),
+  "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanBodyRulesPartnerGroupLimitsMinOne)).optional(),
+  "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
+  "corporateId": zod.string().optional()
+})
+})
+
+export const replaceMembershipPlanResponseOneDurationDaysMax = 366;
+
+export const replaceMembershipPlanResponseOneRulesQuotaMin = 0;
+
+export const replaceMembershipPlanResponseOneRulesDailyLimitMin = 0;
+
+export const replaceMembershipPlanResponseOneRulesPhysicalQuotaMin = 0;
+
+export const replaceMembershipPlanResponseOneRulesPremiumQuotaMin = 0;
+
+export const replaceMembershipPlanResponseOneRulesLiveQuotaMin = 0;
+
+export const replaceMembershipPlanResponseOneRulesFacilityLimitsMinOne = 0;
+
+export const replaceMembershipPlanResponseOneRulesCategoryLimitsMinOne = 0;
+
+export const replaceMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne = 0;
+
+
+
+export const ReplaceMembershipPlanResponse = zod.object({
+  "name": zod.string(),
+  "tier": zod.string(),
+  "kind": zod.enum(['paid', 'trial', 'corporate']),
+  "durationDays": zod.number().int().min(1).max(replaceMembershipPlanResponseOneDurationDaysMax),
+  "active": zod.boolean(),
+  "rules": zod.object({
+  "quota": zod.number().int().min(replaceMembershipPlanResponseOneRulesQuotaMin),
+  "dailyLimit": zod.number().int().min(replaceMembershipPlanResponseOneRulesDailyLimitMin),
+  "quotaMode": zod.enum(['shared', 'separate']),
+  "physicalQuota": zod.number().int().min(replaceMembershipPlanResponseOneRulesPhysicalQuotaMin),
+  "premiumQuota": zod.number().int().min(replaceMembershipPlanResponseOneRulesPremiumQuotaMin),
+  "liveQuota": zod.number().int().min(replaceMembershipPlanResponseOneRulesLiveQuotaMin),
+  "cities": zod.array(zod.string()).optional(),
+  "facilities": zod.array(zod.string()).optional(),
+  "categories": zod.array(zod.string()).optional(),
+  "facilityLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanResponseOneRulesFacilityLimitsMinOne)).optional(),
+  "categoryLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanResponseOneRulesCategoryLimitsMinOne)).optional(),
+  "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
+  "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
+  "corporateId": zod.string().optional()
+})
+}).and(zod.object({
+  "id": zod.string()
+}))
+
+
+export const grantLiveAccessBodyOneReasonMin = 5;
+
+
+
+export const GrantLiveAccessBody = zod.object({
+  "userId": zod.string(),
+  "reason": zod.string().min(grantLiveAccessBodyOneReasonMin)
+}).and(zod.object({
+  "planId": zod.string(),
+  "corporateId": zod.string().optional()
+}))
+
+export const GrantLiveAccessResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const revokeLiveAccessBodyReasonMin = 5;
+
+
+
+export const RevokeLiveAccessBody = zod.object({
+  "userId": zod.string(),
+  "reason": zod.string().min(revokeLiveAccessBodyReasonMin)
+})
+
+export const RevokeLiveAccessResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+
+
+export const getLiveCatalogResponseOneMinAgeMin = 0;
+
+
+
+export const GetLiveCatalogResponseItem = zod.object({
+  "partnerId": zod.string(),
+  "title": zod.string(),
+  "kind": zod.enum(['session', 'event', 'coach']),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "category": zod.string(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "tiers": zod.array(zod.string()).min(1),
+  "startsAt": zod.string(),
+  "endsAt": zod.string(),
+  "cancellationDeadline": zod.string(),
+  "capacity": zod.number().int().min(1),
+  "gender": zod.enum(['all', 'female', 'male']).optional(),
+  "minAge": zod.number().int().min(getLiveCatalogResponseOneMinAgeMin).optional(),
+  "maxAge": zod.number().int().nullish(),
+  "additionalPayment": zod.boolean().optional(),
+  "active": zod.boolean()
+}).and(zod.object({
+  "id": zod.string(),
+  "targetId": zod.string(),
+  "slot": zod.string(),
+  "scope": zod.string(),
+  "cancelledAt": zod.string().nullish(),
+  "partnerName": zod.string().optional(),
+  "remaining": zod.number().int().optional()
+}))
+export const GetLiveCatalogResponse = zod.array(GetLiveCatalogResponseItem)
+
+
+export const getLivePlansResponseOneDurationDaysMax = 366;
+
+export const getLivePlansResponseOneRulesQuotaMin = 0;
+
+export const getLivePlansResponseOneRulesDailyLimitMin = 0;
+
+export const getLivePlansResponseOneRulesPhysicalQuotaMin = 0;
+
+export const getLivePlansResponseOneRulesPremiumQuotaMin = 0;
+
+export const getLivePlansResponseOneRulesLiveQuotaMin = 0;
+
+export const getLivePlansResponseOneRulesFacilityLimitsMinOne = 0;
+
+export const getLivePlansResponseOneRulesCategoryLimitsMinOne = 0;
+
+export const getLivePlansResponseOneRulesPartnerGroupLimitsMinOne = 0;
+
+
+
+export const GetLivePlansResponseItem = zod.object({
+  "name": zod.string(),
+  "tier": zod.string(),
+  "kind": zod.enum(['paid', 'trial', 'corporate']),
+  "durationDays": zod.number().int().min(1).max(getLivePlansResponseOneDurationDaysMax),
+  "active": zod.boolean(),
+  "rules": zod.object({
+  "quota": zod.number().int().min(getLivePlansResponseOneRulesQuotaMin),
+  "dailyLimit": zod.number().int().min(getLivePlansResponseOneRulesDailyLimitMin),
+  "quotaMode": zod.enum(['shared', 'separate']),
+  "physicalQuota": zod.number().int().min(getLivePlansResponseOneRulesPhysicalQuotaMin),
+  "premiumQuota": zod.number().int().min(getLivePlansResponseOneRulesPremiumQuotaMin),
+  "liveQuota": zod.number().int().min(getLivePlansResponseOneRulesLiveQuotaMin),
+  "cities": zod.array(zod.string()).optional(),
+  "facilities": zod.array(zod.string()).optional(),
+  "categories": zod.array(zod.string()).optional(),
+  "facilityLimits": zod.record(zod.string(), zod.number().int().min(getLivePlansResponseOneRulesFacilityLimitsMinOne)).optional(),
+  "categoryLimits": zod.record(zod.string(), zod.number().int().min(getLivePlansResponseOneRulesCategoryLimitsMinOne)).optional(),
+  "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(getLivePlansResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
+  "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
+  "corporateId": zod.string().optional()
+})
+}).and(zod.object({
+  "id": zod.string()
+}))
+export const GetLivePlansResponse = zod.array(GetLivePlansResponseItem)
+
+
 export const SaveMemberProfileBody = zod.object({
   "gender": zod.enum(['female', 'male', 'unspecified']),
   "birthDate": zod.string()
@@ -20,6 +562,7 @@ export const SaveMemberProfileResponse = zod.object({
 }).nullish(),
   "memberships": zod.array(zod.object({
   "scope": zod.string(),
+  "source": zod.string().optional(),
   "status": zod.string(),
   "tier": zod.string(),
   "endsAt": zod.string()
@@ -60,6 +603,7 @@ export const GetMemberStateResponse = zod.object({
 }).nullish(),
   "memberships": zod.array(zod.object({
   "scope": zod.string(),
+  "source": zod.string().optional(),
   "status": zod.string(),
   "tier": zod.string(),
   "endsAt": zod.string()
@@ -90,6 +634,7 @@ export const EnablePreviewMembershipResponse = zod.object({
 }).nullish(),
   "memberships": zod.array(zod.object({
   "scope": zod.string(),
+  "source": zod.string().optional(),
   "status": zod.string(),
   "tier": zod.string(),
   "endsAt": zod.string()
@@ -122,6 +667,7 @@ export const CreateMemberBookingResponse = zod.object({
 }).nullish(),
   "memberships": zod.array(zod.object({
   "scope": zod.string(),
+  "source": zod.string().optional(),
   "status": zod.string(),
   "tier": zod.string(),
   "endsAt": zod.string()
@@ -152,6 +698,7 @@ export const CancelMemberBookingResponse = zod.object({
 }).nullish(),
   "memberships": zod.array(zod.object({
   "scope": zod.string(),
+  "source": zod.string().optional(),
   "status": zod.string(),
   "tier": zod.string(),
   "endsAt": zod.string()

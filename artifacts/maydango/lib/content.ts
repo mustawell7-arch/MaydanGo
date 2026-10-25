@@ -1,10 +1,12 @@
 import type { Language } from './i18n';
 import { interfaceCopy } from './interface-copy';
+import { liveCopy } from './live-copy';
 
 // English source phrases are stable keys for the sample catalog. IDs and API values
 // are never translated. Sorani (ckb), not Latin-script Kurmanji, is used for ku.
 export const content: Record<string, readonly [string, string]> = {
   ...interfaceCopy,
+  ...liveCopy,
   'A bright, coach-led studio for strength, reformer Pilates and mindful movement. New members are welcome at every level.': ['استوديو مشرق بإشراف مدربين لتمارين القوة والبيلاتس بالأجهزة والحركة الواعية. نرحّب بالأعضاء الجدد من جميع المستويات.', 'ستۆدیۆیەکی ڕووناک بە سەرپەرشتی ڕاهێنەر بۆ هێز، پیلاتس بە ئامێر و جووڵەی ئاگادارانە. ئەندامانی نوێ لە هەموو ئاستێک بەخێرهاتنن.'],
   'Two panoramic courts, racket hire and welcoming group games for first-timers and experienced players.': ['ملعبان بإطلالة مفتوحة، وتأجير مضارب وألعاب جماعية ترحّب بالمبتدئين واللاعبين ذوي الخبرة.', 'دوو یاریگای کراوە، بەکرێگرتنی ڕاکێت و یاریی کۆمەڵایەتی بۆ تازەکاران و یاریزانە شارەزاکان.'],
   'Slow yoga, mobility and thoughtful recovery sessions in a calm neighborhood space.': ['يوغا هادئة وتمارين مرونة وحصص استشفاء مدروسة في مكان هادئ ضمن الحي.', 'یۆگای هێواش، نەرمونیانی و وانەی چاکبوونەوە لە شوێنێکی ئارامی گەڕەک.'],

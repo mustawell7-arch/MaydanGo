@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { db, memberships, offerings, reservations, attendance, memberProfiles } from "@workspace/db";
+import { db, memberships, offerings, reservations, attendance, memberProfiles, partners } from "@workspace/db";
 
 export class BookingError extends Error {
   constructor(public status: number, message: string) { super(message); }
@@ -28,14 +28,25 @@ export async function createReservation(userId: string, input: { kind: string; t
       eq(offerings.kind, input.kind), eq(offerings.targetId, input.targetId), eq(offerings.slot, input.slot),
     )).for("update");
     const now = new Date();
-    if (!o || !o.active) throw new BookingError(404, "This offering is not available.");
+    if (!o || !o.active || o.cancelledAt) throw new BookingError(404, "This offering is not available.");
+    if (o.scope === "live") {
+      const [partner] = o.partnerId ? await tx.select().from(partners).where(eq(partners.id, o.partnerId)).for("share") : [];
+      if (!partner?.approved) throw new BookingError(403, "This partner is not approved for live bookings.");
+    }
     if (o.startsAt <= now) throw new BookingError(409, "This session has already started.");
     const [m] = await tx.select().from(memberships).where(and(eq(memberships.userId, userId), eq(memberships.scope, o.scope)));
-    if (!m || !["active", "trial"].includes(m.status) || m.paymentStatus !== "paid" ||
+    const paymentEligible = m && (o.scope === "live"
+      ? (["trial", "corporate"].includes(m.source) && m.paymentStatus === "not_required")
+      : m.paymentStatus === "paid");
+    if (!m || !["active", "trial"].includes(m.status) || !paymentEligible ||
         m.startsAt > now || m.endsAt < o.endsAt || m.endsAt <= now) {
       throw new BookingError(403, "An active eligible membership is required for this date.");
     }
     const rules = m.rules;
+    if (o.scope === "live" && m.source === "trial" && !rules.trialAllowedTypes?.includes(o.accessType))
+      throw new BookingError(403, "This activity is not included in your trial.");
+    if (o.scope === "live" && m.source === "corporate" && (!rules.corporateId || m.corporateId !== rules.corporateId))
+      throw new BookingError(403, "Corporate eligibility is required.");
     if (o.gender !== "all" || o.minAge > 0 || o.maxAge !== null) {
       const [p] = await tx.select().from(memberProfiles).where(eq(memberProfiles.userId, userId));
       if (!p) throw new BookingError(403, "Save your eligibility details in Account before booking this session.");
@@ -65,15 +76,24 @@ export async function createReservation(userId: string, input: { kind: string; t
     const visited = used.filter(({ o: other }) => other.scope === o.scope && period(other.startsAt));
     // Reserve quota without manufacturing attendance; avoid double-counting checked-in reservations.
     const consumed = new Map([...held.map(x => x.o), ...visited.map(x => x.o)].map(x => [x.id, x]));
-    if (consumed.size >= rules.quota) throw new BookingError(403, "Your membership reservation allowance is exhausted.");
+    const uses = [...consumed.values()];
+    if (rules.quotaMode === "separate") {
+      const limit = o.accessType === "premium" ? rules.premiumQuota : o.accessType === "live" ? rules.liveQuota : rules.physicalQuota;
+      if (uses.filter(x => x.accessType === o.accessType).length >= (limit ?? 0))
+        throw new BookingError(403, "Your activity-type allowance is exhausted.");
+    } else if (consumed.size >= rules.quota) throw new BookingError(403, "Your membership reservation allowance is exhausted.");
+    const groupLimit = o.partnerGroup ? rules.partnerGroupLimits?.[o.partnerGroup] : undefined;
+    if (groupLimit !== undefined && uses.filter(x => x.partnerGroup === o.partnerGroup).length >= groupLimit)
+      throw new BookingError(403, "Your partner-group allowance is exhausted.");
     const facilityLimit = rules.facilityLimits?.[o.facility];
     const categoryLimit = rules.categoryLimits?.[o.category];
     if ((facilityLimit !== undefined && [...consumed.values()].filter(x => x.facility === o.facility).length >= facilityLimit) ||
         (categoryLimit !== undefined && [...consumed.values()].filter(x => x.category === o.category).length >= categoryLimit)) {
       throw new BookingError(403, "Your facility or activity allowance is exhausted.");
     }
-    const day = o.startsAt.toISOString().slice(0, 10);
-    if ([...consumed.values()].filter(x => x.startsAt.toISOString().slice(0, 10) === day).length >= rules.dailyLimit) {
+    const iraqDay = (date: Date) => new Date(date.getTime() + 3 * 3600000).toISOString().slice(0, 10);
+    const day = iraqDay(o.startsAt);
+    if (uses.filter(x => iraqDay(x.startsAt) === day).length >= rules.dailyLimit) {
       throw new BookingError(403, "Your daily booking limit has been reached.");
     }
     const places = await tx.select({ id: reservations.id }).from(reservations)

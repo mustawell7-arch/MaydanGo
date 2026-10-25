@@ -2,3 +2,4 @@
 - [Account booking boundary](account-booking-boundary.md) — Explicit sample-only access; never convert local plan choices or old preview reservations into live entitlements.
 - [Workspace type compatibility](workspace-type-generation.md) — Avoid duplicate React declaration versions and conflicting Orval validator/model barrels.
 - [Localization boundaries](localization-boundaries.md) — Sorani Kurdish, Iraq-time schedules, and native-speaker review remain explicit release constraints.
+- [Live access rollout](live-access-rollout.md) — Payments deferred until after testing; preserve the terms of existing reservations and grants.

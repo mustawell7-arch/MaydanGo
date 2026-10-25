@@ -1,0 +1,276 @@
+openapi: 3.1.0
+info: { title: Operations, version: 1.0.0 }
+paths:
+  /operations:
+    get:
+      operationId: getOperations
+      responses:
+        "200":
+          description: Authorized staff data, scoped to assigned partner
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OperationsState" }
+  /operations/partners:
+    post:
+      operationId: addPartner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerInput" }
+      responses:
+        "201":
+          description: Unapproved partner created by admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Partner" }
+  /operations/partners/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: approvePartner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerApproval" }
+      responses:
+        "200":
+          description: Approval changed by admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Partner" }
+  /operations/offerings:
+    post:
+      operationId: addLiveOffering
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OfferingInput" }
+      responses:
+        "201":
+          description: Dated live offering created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveOffering" }
+  /operations/offerings/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: changeLiveOffering
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OfferingUpdate" }
+      responses:
+        "200":
+          description: Capacity or publishing state updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveOffering" }
+  /operations/offerings/{id}/cancel:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: cancelLiveOffering
+      responses:
+        "200":
+          description: Future session cancelled; reservations released
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OperationSuccess" }
+  /operations/plans:
+    post:
+      operationId: addMembershipPlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PlanInput" }
+      responses:
+        "201":
+          description: Plan created by admin; does not activate memberships
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LivePlan" }
+  /operations/plans/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    put:
+      operationId: replaceMembershipPlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PlanInput" }
+      responses:
+        "200":
+          description: Plan updated for future grants
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LivePlan" }
+  /operations/grants:
+    post:
+      operationId: grantLiveAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccessGrantInput" }
+      responses:
+        "201":
+          description: Audited trial or corporate grant; paid plans always rejected
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OperationSuccess" }
+  /operations/revoke:
+    post:
+      operationId: revokeLiveAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccessRevokeInput" }
+      responses:
+        "200":
+          description: Live access terminated and active reservations cancelled
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OperationSuccess" }
+  /member/live-catalog:
+    get:
+      operationId: getLiveCatalog
+      responses:
+        "200":
+          description: Approved partners and future active live offerings only
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/LiveOffering" } }
+  /member/plans:
+    get:
+      operationId: getLivePlans
+      responses:
+        "200":
+          description: Active plans, informational only; checkout is deferred
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/LivePlan" } }
+components:
+  parameters:
+    Id: { name: id, in: path, required: true, schema: { type: string } }
+  schemas:
+    OperationSuccess:
+      type: object
+      required: [ok]
+      properties: { ok: { type: boolean } }
+    PartnerInput:
+      type: object
+      additionalProperties: false
+      required: [name, groupId, ownerUserId]
+      properties:
+        name: { type: string }
+        groupId: { type: string }
+        ownerUserId: { type: string }
+    Partner:
+      allOf:
+        - $ref: "#/components/schemas/PartnerInput"
+        - type: object
+          required: [id, approved]
+          properties: { id: { type: string }, approved: { type: boolean } }
+    PartnerApproval:
+      type: object
+      additionalProperties: false
+      required: [approved]
+      properties: { approved: { type: boolean } }
+    OfferingInput:
+      type: object
+      required: [partnerId, title, kind, city, facility, category, accessType, tiers, startsAt, endsAt, cancellationDeadline, capacity, active]
+      properties:
+        partnerId: { type: string }
+        title: { type: string }
+        kind: { type: string, enum: [session, event, coach] }
+        city: { type: string }
+        facility: { type: string }
+        category: { type: string }
+        accessType: { type: string, enum: [physical, premium, live] }
+        tiers: { type: array, items: { type: string }, minItems: 1 }
+        startsAt: { type: string }
+        endsAt: { type: string }
+        cancellationDeadline: { type: string }
+        capacity: { type: integer, minimum: 1 }
+        gender: { type: string, enum: [all, female, male] }
+        minAge: { type: integer, minimum: 0 }
+        maxAge: { type: [integer, "null"] }
+        additionalPayment: { type: boolean }
+        active: { type: boolean }
+    LiveOffering:
+      allOf:
+        - $ref: "#/components/schemas/OfferingInput"
+        - type: object
+          required: [id, targetId, slot, scope]
+          properties:
+            id: { type: string }
+            targetId: { type: string }
+            slot: { type: string }
+            scope: { type: string }
+            cancelledAt: { type: [string, "null"] }
+            partnerName: { type: string }
+            remaining: { type: integer }
+    OfferingUpdate:
+      type: object
+      additionalProperties: false
+      required: [capacity]
+      properties: { capacity: { type: integer, minimum: 1 }, active: { type: boolean } }
+    EntitlementRules:
+      type: object
+      additionalProperties: false
+      required: [quota, dailyLimit, quotaMode, physicalQuota, premiumQuota, liveQuota]
+      properties:
+        quota: { type: integer, minimum: 0 }
+        dailyLimit: { type: integer, minimum: 0 }
+        quotaMode: { type: string, enum: [shared, separate] }
+        physicalQuota: { type: integer, minimum: 0 }
+        premiumQuota: { type: integer, minimum: 0 }
+        liveQuota: { type: integer, minimum: 0 }
+        cities: { type: array, items: { type: string } }
+        facilities: { type: array, items: { type: string } }
+        categories: { type: array, items: { type: string } }
+        facilityLimits: { type: object, additionalProperties: { type: integer, minimum: 0 } }
+        categoryLimits: { type: object, additionalProperties: { type: integer, minimum: 0 } }
+        partnerGroupLimits: { type: object, additionalProperties: { type: integer, minimum: 0 } }
+        trialAllowedTypes: { type: array, items: { type: string, enum: [physical, premium, live] } }
+        corporateId: { type: string }
+    PlanInput:
+      type: object
+      additionalProperties: false
+      required: [name, tier, kind, durationDays, active, rules]
+      properties:
+        name: { type: string }
+        tier: { type: string }
+        kind: { type: string, enum: [paid, trial, corporate] }
+        durationDays: { type: integer, minimum: 1, maximum: 366 }
+        active: { type: boolean }
+        rules: { $ref: "#/components/schemas/EntitlementRules" }
+    LivePlan:
+      allOf:
+        - $ref: "#/components/schemas/PlanInput"
+        - type: object
+          required: [id]
+          properties: { id: { type: string } }
+    AccessRevokeInput:
+      type: object
+      required: [userId, reason]
+      properties: { userId: { type: string }, reason: { type: string, minLength: 5 } }
+    AccessGrantInput:
+      allOf:
+        - $ref: "#/components/schemas/AccessRevokeInput"
+        - type: object
+          required: [planId]
+          properties: { planId: { type: string }, corporateId: { type: string } }
+    OperationsState:
+      type: object
+      required: [role, partnerId, partners, offerings, plans]
+      properties:
+        role: { type: string, enum: [admin, partner] }
+        partnerId: { type: [string, "null"] }
+        partners: { type: array, items: { $ref: "#/components/schemas/Partner" } }
+        offerings: { type: array, items: { $ref: "#/components/schemas/LiveOffering" } }
+        plans: { type: array, items: { $ref: "#/components/schemas/LivePlan" } }

@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { z } from "zod";
-import { db, memberships, memberProfiles, offerings, reservations } from "@workspace/db";
-import { eq, and, inArray, sql } from "drizzle-orm";
+import { db, memberships, memberProfiles, offerings, reservations, partners, membershipPlans } from "@workspace/db";
+import { eq, and, inArray, sql, gt, asc, isNull } from "drizzle-orm";
 import { BookingError, memberState, createReservation, cancelReservation } from "../lib/reservations";
 
 const router = Router();
@@ -11,6 +11,18 @@ router.use((req, res, next) => {
   next();
 });
 router.get("/", async (req, res) => { res.json(await memberState(getAuth(req).userId!)); });
+router.get("/plans", async (_req, res) => {
+  res.json(await db.select().from(membershipPlans).where(eq(membershipPlans.active, true)));
+});
+router.get("/live-catalog", async (_req, res) => {
+  const rows = await db.select({ offering: offerings, partnerName: partners.name,
+    reserved: sql<number>`count(${reservations.id})::int`,
+  }).from(offerings).innerJoin(partners, eq(offerings.partnerId, partners.id))
+    .leftJoin(reservations, and(eq(reservations.offeringId, offerings.id), inArray(reservations.status, ["reserved", "requested"])))
+    .where(and(eq(offerings.scope, "live"), eq(offerings.active, true), isNull(offerings.cancelledAt), eq(partners.approved, true), gt(offerings.startsAt, new Date())))
+    .groupBy(offerings.id, partners.id).orderBy(asc(offerings.startsAt));
+  res.json(rows.map(r => ({ ...r.offering, partnerName: r.partnerName, remaining: Math.max(0, r.offering.capacity - r.reserved) })));
+});
 router.put("/profile", async (req, res) => {
   const parsed = z.object({
     gender: z.enum(["female", "male", "unspecified"]),
@@ -31,7 +43,7 @@ router.get("/catalog", async (_req, res) => {
     scope: offerings.scope, capacity: offerings.capacity,
     reserved: sql<number>`count(${reservations.id})::int`,
   }).from(offerings).leftJoin(reservations, and(eq(reservations.offeringId, offerings.id), inArray(reservations.status, ["reserved", "requested"])))
-    .where(eq(offerings.active, true)).groupBy(offerings.id);
+    .where(and(eq(offerings.active, true), eq(offerings.scope, "preview"))).groupBy(offerings.id);
   res.json(rows.map(r => ({ ...r, remaining: Math.max(0, r.capacity - r.reserved) })));
 });
 router.post("/preview-membership", async (req, res) => {

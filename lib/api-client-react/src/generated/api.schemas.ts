@@ -15,6 +15,7 @@ export type MemberStateProfile = {
 
 export type MemberStateMembershipsItem = {
   scope: string;
+  source?: string;
   status: string;
   tier: string;
   endsAt: string;
@@ -43,6 +44,192 @@ export interface MemberState {
 
 export interface HealthStatus {
   status: string;
+}
+
+export interface OperationSuccess {
+  ok: boolean;
+}
+
+export interface PartnerInput {
+  name: string;
+  groupId: string;
+  ownerUserId: string;
+}
+
+export type Partner = PartnerInput & {
+  id: string;
+  approved: boolean;
+};
+
+export interface PartnerApproval {
+  approved: boolean;
+}
+
+export type OfferingInputKind = typeof OfferingInputKind[keyof typeof OfferingInputKind];
+
+
+export const OfferingInputKind = {
+  session: 'session',
+  event: 'event',
+  coach: 'coach',
+} as const;
+
+export type OfferingInputAccessType = typeof OfferingInputAccessType[keyof typeof OfferingInputAccessType];
+
+
+export const OfferingInputAccessType = {
+  physical: 'physical',
+  premium: 'premium',
+  live: 'live',
+} as const;
+
+export type OfferingInputGender = typeof OfferingInputGender[keyof typeof OfferingInputGender];
+
+
+export const OfferingInputGender = {
+  all: 'all',
+  female: 'female',
+  male: 'male',
+} as const;
+
+export interface OfferingInput {
+  partnerId: string;
+  title: string;
+  kind: OfferingInputKind;
+  city: string;
+  facility: string;
+  category: string;
+  accessType: OfferingInputAccessType;
+  /** @minItems 1 */
+  tiers: string[];
+  startsAt: string;
+  endsAt: string;
+  cancellationDeadline: string;
+  /** @minimum 1 */
+  capacity: number;
+  gender?: OfferingInputGender;
+  /** @minimum 0 */
+  minAge?: number;
+  /** @nullable */
+  maxAge?: number | null;
+  additionalPayment?: boolean;
+  active: boolean;
+}
+
+export type LiveOffering = OfferingInput & ({
+  id: string;
+  targetId: string;
+  slot: string;
+  scope: string;
+  /** @nullable */
+  cancelledAt?: string | null;
+  partnerName?: string;
+  remaining?: number;
+});
+
+export interface OfferingUpdate {
+  /** @minimum 1 */
+  capacity: number;
+  active?: boolean;
+}
+
+export type EntitlementRulesQuotaMode = typeof EntitlementRulesQuotaMode[keyof typeof EntitlementRulesQuotaMode];
+
+
+export const EntitlementRulesQuotaMode = {
+  shared: 'shared',
+  separate: 'separate',
+} as const;
+
+export type EntitlementRulesFacilityLimits = {[key: string]: number};
+
+export type EntitlementRulesCategoryLimits = {[key: string]: number};
+
+export type EntitlementRulesPartnerGroupLimits = {[key: string]: number};
+
+export type EntitlementRulesTrialAllowedTypesItem = typeof EntitlementRulesTrialAllowedTypesItem[keyof typeof EntitlementRulesTrialAllowedTypesItem];
+
+
+export const EntitlementRulesTrialAllowedTypesItem = {
+  physical: 'physical',
+  premium: 'premium',
+  live: 'live',
+} as const;
+
+export interface EntitlementRules {
+  /** @minimum 0 */
+  quota: number;
+  /** @minimum 0 */
+  dailyLimit: number;
+  quotaMode: EntitlementRulesQuotaMode;
+  /** @minimum 0 */
+  physicalQuota: number;
+  /** @minimum 0 */
+  premiumQuota: number;
+  /** @minimum 0 */
+  liveQuota: number;
+  cities?: string[];
+  facilities?: string[];
+  categories?: string[];
+  facilityLimits?: EntitlementRulesFacilityLimits;
+  categoryLimits?: EntitlementRulesCategoryLimits;
+  partnerGroupLimits?: EntitlementRulesPartnerGroupLimits;
+  trialAllowedTypes?: EntitlementRulesTrialAllowedTypesItem[];
+  corporateId?: string;
+}
+
+export type PlanInputKind = typeof PlanInputKind[keyof typeof PlanInputKind];
+
+
+export const PlanInputKind = {
+  paid: 'paid',
+  trial: 'trial',
+  corporate: 'corporate',
+} as const;
+
+export interface PlanInput {
+  name: string;
+  tier: string;
+  kind: PlanInputKind;
+  /**
+     * @minimum 1
+     * @maximum 366
+     */
+  durationDays: number;
+  active: boolean;
+  rules: EntitlementRules;
+}
+
+export type LivePlan = PlanInput & {
+  id: string;
+};
+
+export interface AccessRevokeInput {
+  userId: string;
+  /** @minLength 5 */
+  reason: string;
+}
+
+export type AccessGrantInput = AccessRevokeInput & {
+  planId: string;
+  corporateId?: string;
+};
+
+export type OperationsStateRole = typeof OperationsStateRole[keyof typeof OperationsStateRole];
+
+
+export const OperationsStateRole = {
+  admin: 'admin',
+  partner: 'partner',
+} as const;
+
+export interface OperationsState {
+  role: OperationsStateRole;
+  /** @nullable */
+  partnerId: string | null;
+  partners: Partner[];
+  offerings: LiveOffering[];
+  plans: LivePlan[];
 }
 
 export type SaveMemberProfileBodyGender = typeof SaveMemberProfileBodyGender[keyof typeof SaveMemberProfileBodyGender];

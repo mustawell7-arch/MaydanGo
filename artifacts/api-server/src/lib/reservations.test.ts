@@ -2,13 +2,17 @@ import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
-import { db, pool, offerings, memberships, reservations, attendance, memberProfiles } from "@workspace/db";
+import { db, pool, offerings, memberships, reservations, attendance, memberProfiles, partners, operators, membershipPlans, accessGrants, operationAudit } from "@workspace/db";
+import express from "express";
+import operationsRouter from "../routes/operations";
+import memberRouter from "../routes/member";
 import { createReservation, cancelReservation, memberState, BookingError } from "./reservations";
 import app from "../app";
 
 const prefix = `test-${randomUUID()}`;
 const alice = `${prefix}-a`, bob = `${prefix}-b`;
 const ids: string[] = [];
+const partnerIds: string[] = [], planIds: string[] = [];
 const now = Date.now();
 const input = (targetId: string) => ({ kind: "session", targetId, slot: "" });
 async function offer(overrides: Partial<typeof offerings.$inferInsert> = {}) {
@@ -117,10 +121,114 @@ test("HTTP endpoints reject unauthenticated access and forged bearer tokens", as
     }
   } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
 });
+test("live operations: staff scope, approved inventory, server grants and quota models", async t => {
+  const adminId = `${prefix}-admin`, partnerUser = `${prefix}-partner`;
+  const harness = express();
+  harness.use(express.json());
+  // Isolated in-process harness only. Production app still verifies Clerk bearer tokens.
+  harness.use((req, _res, next) => {
+    Object.assign(req, { auth: Object.assign(
+      () => ({ userId: req.headers["x-test-user"], tokenType: "session_token" }),
+      { [Symbol.for("@clerk/express.auth")]: true },
+    ) });
+    next();
+  });
+  harness.use("/operations", operationsRouter); harness.use("/member", memberRouter);
+  const server = harness.listen(0);
+  await new Promise<void>(r => server.once("listening", r));
+  const port = (server.address() as { port: number }).port;
+  const call = async (path: string, user = adminId, method = "GET", body?: unknown) => {
+    const response = await fetch(`http://127.0.0.1:${port}${path}`, { method,
+      headers: { "Content-Type": "application/json", "x-test-user": user },
+      body: body === undefined ? undefined : JSON.stringify(body) });
+    return { status: response.status, data: await response.json() as any };
+  };
+  await db.insert(operators).values({ userId: adminId, role: "admin" });
+  try {
+    assert.equal((await call("/operations", alice)).status, 403);
+    const p = await call("/operations/partners", adminId, "POST", { name: "Isolated test partner", groupId: prefix, ownerUserId: partnerUser });
+    assert.equal(p.status, 201); partnerIds.push(p.data.id);
+    const offerBody = { partnerId: p.data.id, title: "Isolated live test", kind: "session", city: "baghdad", facility: prefix,
+      category: "fitness", accessType: "physical", tiers: ["M"], startsAt: new Date(now + 86400000).toISOString(),
+      endsAt: new Date(now + 90000000).toISOString(), cancellationDeadline: new Date(now + 80000000).toISOString(), capacity: 2, active: true };
+    await t.test("partner cannot self-approve, manage plans, or publish unapproved inventory", async () => {
+      assert.equal((await call(`/operations/partners/${p.data.id}`, partnerUser, "PATCH", { approved: true })).status, 403);
+      assert.equal((await call("/operations/plans", partnerUser, "POST", {})).status, 403);
+      assert.equal((await call("/operations/offerings", partnerUser, "POST", offerBody)).status, 403);
+      assert.equal((await call("/operations/offerings", partnerUser, "POST", { ...offerBody, partnerId: "other" })).status, 403);
+      assert.equal((await call(`/operations/partners/${p.data.id}`, adminId, "PATCH", { approved: true })).status, 200);
+    });
+    const o = await call("/operations/offerings", partnerUser, "POST", offerBody);
+    assert.equal(o.status, 201); ids.push(o.data.id);
+    const rules = { quota: 1, dailyLimit: 10, quotaMode: "separate", physicalQuota: 1, premiumQuota: 1, liveQuota: 1, trialAllowedTypes: ["physical", "premium", "live"] };
+    const planBody = { name: "Isolated trial", tier: "M", kind: "trial", durationDays: 7, active: true, rules };
+    const plan = await call("/operations/plans", adminId, "POST", planBody);
+    assert.equal(plan.status, 201); planIds.push(plan.data.id);
+    await t.test("sample access cannot book live; approved future offerings are discoverable", async () => {
+      await call("/member/preview-membership", alice, "POST", { acknowledgeSampleData: true });
+      assert.equal((await call("/member/bookings", alice, "POST", input(o.data.id))).status, 403);
+      const catalog = await call("/member/live-catalog", alice);
+      assert.ok(catalog.data.some((x: any) => x.id === o.data.id));
+      assert.ok(!(await call("/member/catalog", alice)).data.some((x: any) => x.id === o.data.id));
+    });
+    await t.test("admin grant snapshots rules; client tier spoofing and repeated trials are rejected", async () => {
+      assert.equal((await call("/operations/grants", partnerUser, "POST", { userId: alice, planId: plan.data.id, reason: "Test grant" })).status, 403);
+      assert.equal((await call("/operations/grants", adminId, "POST", { userId: alice, planId: plan.data.id, reason: "Test grant" })).status, 201);
+      assert.equal((await call("/member/bookings", alice, "POST", { ...input(o.data.id), tier: "XL" })).status, 400);
+      assert.equal((await call("/member/bookings", alice, "POST", input(o.data.id))).status, 201);
+      assert.equal((await call(`/operations/offerings/${o.data.id}`, partnerUser, "PATCH", { capacity: 0 })).status, 400);
+    });
+    await t.test("separate quotas allow premium independently; shared and partner-group limits deny", async () => {
+      const premium = await call("/operations/offerings", partnerUser, "POST", { ...offerBody, accessType: "premium" });
+      assert.equal(premium.status, 201); ids.push(premium.data.id);
+      const physical = await call("/operations/offerings", partnerUser, "POST", offerBody);
+      assert.equal(physical.status, 201); ids.push(physical.data.id);
+      assert.equal((await call("/member/bookings", alice, "POST", input(physical.data.id))).status, 403);
+      await db.update(memberships).set({ rules: { ...rules, quotaMode: "shared" } }).where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
+      assert.equal((await call("/member/bookings", alice, "POST", input(premium.data.id))).status, 403);
+      await db.update(memberships).set({ rules: { ...rules, quotaMode: "separate", partnerGroupLimits: { [prefix]: 1 } } }).where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
+      assert.equal((await call("/member/bookings", alice, "POST", input(premium.data.id))).status, 403);
+      await db.update(memberships).set({ rules: { ...rules, quotaMode: "separate" } }).where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
+      assert.equal((await call("/member/bookings", alice, "POST", input(premium.data.id))).status, 201);
+      assert.equal((await call(`/operations/offerings/${o.data.id}/cancel`, partnerUser, "POST", {})).status, 200);
+      // Cancellation is terminal, unlike a temporary unpublish.
+      assert.equal((await call(`/operations/offerings/${o.data.id}`, partnerUser, "PATCH", { capacity: 2, active: true })).status, 409);
+      assert.equal((await call(`/operations/offerings/${o.data.id}`, adminId, "PATCH", { capacity: 3 })).status, 409);
+      assert.equal((await call(`/operations/offerings/${o.data.id}/cancel`, partnerUser, "POST", {})).status, 200);
+      assert.ok(!(await call("/member/live-catalog", alice)).data.some((x: any) => x.id === o.data.id));
+      assert.equal((await call("/member/bookings", alice, "POST", input(o.data.id))).status, 404);
+      // Non-cancelled offerings can still be temporarily hidden and republished.
+      assert.equal((await call(`/operations/offerings/${physical.data.id}`, partnerUser, "PATCH", { capacity: 2, active: false })).status, 200);
+      assert.equal((await call(`/operations/offerings/${physical.data.id}`, partnerUser, "PATCH", { capacity: 2, active: true })).status, 200);
+      assert.equal((await call("/member/bookings", alice, "POST", input(physical.data.id))).status, 201);
+      assert.equal((await memberState(alice)).bookings.find(b => b.targetId === o.data.id)?.status, "partner_cancelled");
+    });
+    await t.test("revocation cancels active bookings, repeat trials and paid grants remain blocked", async () => {
+      assert.equal((await call("/operations/revoke", adminId, "POST", { userId: alice, reason: "Test revoke" })).status, 200);
+      assert.equal((await call("/operations/grants", adminId, "POST", { userId: alice, planId: plan.data.id, reason: "Test grant" })).status, 409);
+      await call(`/operations/plans/${plan.data.id}`, adminId, "PUT", { ...planBody, kind: "paid" });
+      assert.equal((await call("/operations/grants", adminId, "POST", { userId: bob, planId: plan.data.id, reason: "Test paid" })).status, 403);
+      await call(`/operations/plans/${plan.data.id}`, adminId, "PUT", { ...planBody, kind: "corporate", rules: { ...rules, corporateId: "test-company" } });
+      assert.equal((await call("/operations/grants", adminId, "POST", { userId: bob, planId: plan.data.id, reason: "Test corp", corporateId: "wrong" })).status, 403);
+      assert.equal((await call("/operations/grants", adminId, "POST", { userId: bob, planId: plan.data.id, reason: "Test corp", corporateId: "test-company" })).status, 201);
+      await call(`/operations/partners/${p.data.id}`, adminId, "PATCH", { approved: false });
+      assert.ok(!(await call("/member/live-catalog", bob)).data.some((x: any) => x.partnerId === p.data.id));
+      const activeId = ids.at(-1)!;
+      assert.equal((await call("/member/bookings", bob, "POST", input(activeId))).status, 403);
+    });
+  } finally {
+    await new Promise<void>(r => server.close(() => r()));
+    await db.delete(operators).where(inArray(operators.userId, [adminId, partnerUser]));
+    await db.delete(operationAudit).where(inArray(operationAudit.actorId, [adminId, partnerUser]));
+  }
+});
 after(async () => {
   await db.delete(reservations).where(inArray(reservations.userId, [alice, bob]));
   await db.delete(memberships).where(inArray(memberships.userId, [alice, bob]));
   await db.delete(memberProfiles).where(inArray(memberProfiles.userId, [alice, bob]));
   if (ids.length) await db.delete(offerings).where(inArray(offerings.id, ids));
+  await db.delete(accessGrants).where(inArray(accessGrants.userId, [alice, bob]));
+  if (planIds.length) await db.delete(membershipPlans).where(inArray(membershipPlans.id, planIds));
+  if (partnerIds.length) await db.delete(partners).where(inArray(partners.id, partnerIds));
   await pool.end();
 });

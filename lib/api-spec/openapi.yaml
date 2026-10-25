@@ -11,6 +11,30 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /operations:
+    $ref: "./operations.yaml#/paths/~1operations"
+  /operations/partners:
+    $ref: "./operations.yaml#/paths/~1operations~1partners"
+  /operations/partners/{id}:
+    $ref: "./operations.yaml#/paths/~1operations~1partners~1{id}"
+  /operations/offerings:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings"
+  /operations/offerings/{id}:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}"
+  /operations/offerings/{id}/cancel:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1cancel"
+  /operations/plans:
+    $ref: "./operations.yaml#/paths/~1operations~1plans"
+  /operations/plans/{id}:
+    $ref: "./operations.yaml#/paths/~1operations~1plans~1{id}"
+  /operations/grants:
+    $ref: "./operations.yaml#/paths/~1operations~1grants"
+  /operations/revoke:
+    $ref: "./operations.yaml#/paths/~1operations~1revoke"
+  /member/live-catalog:
+    $ref: "./operations.yaml#/paths/~1member~1live-catalog"
+  /member/plans:
+    $ref: "./operations.yaml#/paths/~1member~1plans"
   /member/profile:
     put:
       operationId: saveMemberProfile
@@ -158,6 +182,7 @@ components:
             required: [scope, status, tier, endsAt]
             properties:
               scope: { type: string }
+              source: { type: string }
               status: { type: string }
               tier: { type: string }
               endsAt: { type: string }

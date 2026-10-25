@@ -4,6 +4,11 @@ import { sql } from "drizzle-orm";
 export type AccessRules = {
   cities?: string[]; facilities?: string[]; categories?: string[];
   quota: number; dailyLimit: number;
+  quotaMode?: "shared" | "separate";
+  physicalQuota?: number; premiumQuota?: number; liveQuota?: number;
+  partnerGroupLimits?: Record<string, number>;
+  trialAllowedTypes?: string[];
+  corporateId?: string;
   facilityLimits?: Record<string, number>;
   categoryLimits?: Record<string, number>;
 };
@@ -18,6 +23,8 @@ export const memberships = pgTable("memberships", {
   status: text("status").notNull(),
   paymentStatus: text("payment_status").notNull(),
   tier: text("tier").notNull(),
+  source: text("source").notNull().default("legacy"),
+  corporateId: text("corporate_id"),
   startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
   endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
   rules: jsonb("rules").$type<AccessRules>().notNull(),
@@ -30,7 +37,11 @@ export const offerings = pgTable("booking_offerings", {
   slot: text("slot").notNull().default(""),
   title: text("title").notNull(),
   scope: text("scope").notNull(),
+  partnerId: text("partner_id"),
+  partnerGroup: text("partner_group"),
+  accessType: text("access_type").notNull().default("physical"),
   active: boolean("active").notNull().default(false),
+  cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
   city: text("city").notNull(),
   facility: text("facility").notNull(),
   category: text("category").notNull(),

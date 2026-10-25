@@ -93,6 +93,11 @@ export default function ExploreScreen() {
             </Pressable>
           ) : null}
         </View>
+        <Pressable testID="explore-live" accessibilityRole="button" onPress={() => router.push('/live')} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 16, backgroundColor: colors.accent }}>
+          <Ionicons name="radio-outline" size={18} color={colors.accentForeground} />
+          <Text style={{ flex: 1, color: colors.accentForeground, fontWeight: '700' }}>Real partner availability</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.accentForeground} />
+        </Pressable>
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push('/cities')}

@@ -28,6 +28,8 @@ function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerBackTitle: translate(language, 'back') }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="live" options={{ headerShown: false }} />
+      <Stack.Screen name="operations" options={{ headerShown: false }} />
       <Stack.Screen name="facility/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="session/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="course/[id]" options={{ headerShown: false }} />
