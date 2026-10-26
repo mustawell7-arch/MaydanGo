@@ -18,6 +18,7 @@ export const interfaceCopy: Record<string, readonly [string, string]> = {
   'Page not found': ['الصفحة غير موجودة', 'پەڕەکە نەدۆزرایەوە'],
   "This screen doesn't exist.": ['هذه الصفحة غير موجودة.', 'ئەم پەڕەیە بوونی نییە.'],
   'Go to home screen!': ['العودة للرئيسية', 'گەڕانەوە بۆ سەرەکی'],
+  Back: ['رجوع', 'گەڕانەوە'],
   'Sign in to manage your reservations.': ['سجّل الدخول لإدارة حجوزاتك.', 'بچۆ ژوورەوە بۆ بەڕێوەبردنی حجزەکانت.'],
   'Enter a valid birth date (YYYY-MM-DD) and gender.': ['أدخل تاريخ ميلاد صحيحاً (YYYY-MM-DD) والجنس.', 'ڕێکەوتی لەدایکبوونی دروست (YYYY-MM-DD) و ڕەگەز بنووسە.'],
   'Acknowledge that preview partners and bookings are not live.': ['أكّد فهمك أن الشركاء والحجوزات في المعاينة غير فعلية.', 'پشتڕاست بکەرەوە کە دەزانیت هاوبەش و حجزەکانی پێشبینین ڕاستەقینە نین.'],
