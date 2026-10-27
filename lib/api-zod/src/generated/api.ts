@@ -89,6 +89,47 @@ export const ScanCheckinQrResponse = zod.object({
 })
 
 
+/**
+ * @summary Request a short-lived code for the reservation owner
+ */
+export const RequestManualCheckinCodeParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const requestManualCheckinCodeResponseCodeRegExp = new RegExp('^\\d{8}$');
+
+
+export const RequestManualCheckinCodeResponse = zod.object({
+  "code": zod.string().regex(requestManualCheckinCodeResponseCodeRegExp),
+  "expiresAt": zod.string()
+})
+
+
+/**
+ * @summary Record a staff-assisted arrival after one-time code verification
+ */
+export const RecordManualCheckinParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const recordManualCheckinBodyCodeRegExp = new RegExp('^\\d{8}$');
+export const recordManualCheckinBodyReasonMin = 5;
+export const recordManualCheckinBodyReasonMax = 500;
+
+
+
+export const RecordManualCheckinBody = zod.object({
+  "code": zod.string().regex(recordManualCheckinBodyCodeRegExp),
+  "reason": zod.string().min(recordManualCheckinBodyReasonMin).max(recordManualCheckinBodyReasonMax)
+})
+
+export const RecordManualCheckinResponse = zod.object({
+  "ok": zod.boolean(),
+  "reference": zod.string(),
+  "status": zod.enum(['pending'])
+})
+
+
 export const ReviewAttendanceParams = zod.object({
   "id": zod.coerce.string()
 })

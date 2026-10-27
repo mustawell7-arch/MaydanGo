@@ -117,6 +117,51 @@ paths:
                 properties:
                   reference: { type: string }
                   status: { type: string }
+  /attendance/{id}/manual-code:
+    post:
+      operationId: requestManualCheckinCode
+      summary: Request a short-lived code for the reservation owner
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Single-use code, valid for up to five minutes
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [code, expiresAt]
+                properties:
+                  code: { type: string, pattern: "^\\d{8}$" }
+                  expiresAt: { type: string }
+  /attendance/{id}/manual:
+    post:
+      operationId: recordManualCheckin
+      summary: Record a staff-assisted arrival after one-time code verification
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, reason]
+              properties:
+                code: { type: string, pattern: "^\\d{8}$" }
+                reason: { type: string, minLength: 5, maxLength: 500 }
+      responses:
+        "200":
+          description: Arrival recorded as pending; another staff member must confirm
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, reference, status]
+                properties:
+                  ok: { type: boolean }
+                  reference: { type: string }
+                  status: { type: string, enum: [pending] }
   /attendance/{id}/review:
     post:
       operationId: reviewAttendance

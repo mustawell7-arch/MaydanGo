@@ -1,6 +1,6 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
-import { and, eq, inArray, sql } from "drizzle-orm";
-import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, memberships, offerings, operators, partners, reservations, memberProfiles } from "@workspace/db";
+import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, manualCheckinChallenges, memberships, offerings, operators, partners, reservations, memberProfiles } from "@workspace/db";
 import { z } from "zod";
 import { BookingError } from "./reservations";
 
@@ -20,6 +20,10 @@ export const scanInput = z.object({
 }).strict();
 export const reviewInput = z.object({
   action: z.enum(["confirm", "no_show", "dispute", "void", "resolve_confirm", "resolve_void", "accept_request", "lock"]),
+  reason: z.string().trim().min(5).max(500),
+}).strict();
+export const manualCheckinInput = z.object({
+  code: z.string().regex(/^\d{8}$/),
   reason: z.string().trim().min(5).max(500),
 }).strict();
 export function distance(a: number, b: number, c: number, d: number) {
@@ -107,7 +111,10 @@ export async function savePolicy(actor: string, id: string, input: z.infer<typeo
 export async function issueQr(actor: string, id: string, revoke = false) {
   return db.transaction(async tx => {
     const c = await context(tx, id); await staff(tx, actor, c.o.partnerId);
-    await tx.update(checkinChallenges).set({ consumedAt: new Date() }).where(eq(checkinChallenges.reservationId, id));
+    const now = new Date();
+    await tx.update(checkinChallenges).set({ consumedAt: now }).where(eq(checkinChallenges.reservationId, id));
+    await tx.update(manualCheckinChallenges).set({ consumedAt: now })
+      .where(and(eq(manualCheckinChallenges.reservationId, id), isNull(manualCheckinChallenges.consumedAt)));
     if (revoke) { await event(tx, id, actor, "qr.revoke", "", "", "QR deactivated"); return; }
     await eligible(tx, c);
     if (!c.p || new Date() < c.p.opensAt || new Date() >= c.p.closesAt || c.a) throw new BookingError(409, "Check-in is closed, unconfigured, or already recorded.");
@@ -116,6 +123,64 @@ export async function issueQr(actor: string, id: string, revoke = false) {
     await tx.insert(checkinChallenges).values({ id: randomUUID(), reservationId: id, digest: digest(token), expiresAt });
     await event(tx, id, actor, "qr.issue", "", "", "Single-use QR issued");
     return { token, expiresAt };
+  });
+}
+export async function issueManualCheckinCode(actor: string, id: string) {
+  return db.transaction(async tx => {
+    const c = await context(tx, id);
+    if (c.r.userId !== actor) throw new BookingError(403, "Only the member with this reservation can request its code.");
+    await eligible(tx, c);
+    const now = new Date();
+    if (!c.p || now < c.p.opensAt || now >= c.p.closesAt)
+      throw new BookingError(409, "Manual check-in is available only during the check-in window.");
+    if (c.a) throw new BookingError(409, "Arrival is already recorded for this reservation.");
+    const [latest] = await tx.select().from(manualCheckinChallenges)
+      .where(eq(manualCheckinChallenges.reservationId, id))
+      .orderBy(desc(manualCheckinChallenges.createdAt)).limit(1).for("update");
+    if (latest && now.getTime() - latest.createdAt.getTime() < 30000)
+      throw new BookingError(429, "Wait 30 seconds before requesting another code.");
+    await tx.update(checkinChallenges).set({ consumedAt: now }).where(eq(checkinChallenges.reservationId, id));
+    await tx.update(manualCheckinChallenges).set({ consumedAt: now })
+      .where(and(eq(manualCheckinChallenges.reservationId, id), isNull(manualCheckinChallenges.consumedAt)));
+    const code = randomInt(0, 100_000_000).toString().padStart(8, "0");
+    const expiresAt = new Date(Math.min(now.getTime() + 300000, c.p.closesAt.getTime()));
+    await tx.insert(manualCheckinChallenges).values({
+      id: randomUUID(), reservationId: id, digest: digest(code), createdAt: now, expiresAt,
+    });
+    await event(tx, id, actor, "manual.code.issue", "not_checked_in", "code_issued", "Member requested a staff-assisted check-in code");
+    return { code, expiresAt };
+  });
+}
+export async function recordManualCheckin(actor: string, id: string, input: z.infer<typeof manualCheckinInput>) {
+  return db.transaction(async tx => {
+    const c = await context(tx, id), op = await staff(tx, actor, c.o.partnerId);
+    if (op.role !== "partner") throw new BookingError(403, "Only assigned partner staff can record a manual arrival.");
+    await eligible(tx, c);
+    const now = new Date();
+    if (!c.p || now < c.p.opensAt || now >= c.p.closesAt)
+      throw new BookingError(409, "Manual check-in is available only during the check-in window.");
+    if (c.a) throw new BookingError(409, "Arrival is already recorded for this reservation.");
+    const [challenge] = await tx.select().from(manualCheckinChallenges)
+      .where(and(eq(manualCheckinChallenges.reservationId, id), isNull(manualCheckinChallenges.consumedAt)))
+      .orderBy(desc(manualCheckinChallenges.createdAt)).limit(1).for("update");
+    if (!challenge || challenge.expiresAt <= now || challenge.attempts >= 5)
+      throw new BookingError(409, "Manual code expired or is unavailable. Ask the member to request a new one.");
+    const expected = Buffer.from(challenge.digest, "hex"), received = Buffer.from(digest(input.code), "hex");
+    if (!timingSafeEqual(expected, received)) {
+      const attempts = challenge.attempts + 1, exhausted = attempts >= 5;
+      await tx.update(manualCheckinChallenges).set({ attempts, ...(exhausted ? { consumedAt: now } : {}) })
+        .where(eq(manualCheckinChallenges.id, challenge.id));
+      await event(tx, id, actor, "manual.code.failed", "not_checked_in", exhausted ? "code_locked" : "code_retry", input.reason);
+      return { ok: false as const, exhausted };
+    }
+    const reference = randomUUID();
+    await tx.insert(attendance).values({
+      id: reference, reservationId: c.r.id, userId: c.r.userId, offeringId: c.o.id,
+      checkedInAt: now, verifiedBy: actor, status: "pending", settlementEligible: false,
+    });
+    await tx.update(manualCheckinChallenges).set({ consumedAt: now }).where(eq(manualCheckinChallenges.id, challenge.id));
+    await event(tx, id, actor, "manual.checkin", "not_checked_in", reference, input.reason);
+    return { ok: true as const, reference, status: "pending" };
   });
 }
 export async function scanQr(actor: string, input: z.infer<typeof scanInput>) {
@@ -178,6 +243,10 @@ export async function review(actor: string, id: string, input: z.infer<typeof re
     if (action === "confirm") {
       if (actor === c.r.userId) throw new BookingError(403, "Another staff member must confirm your attendance.");
       if (c.a?.status !== "pending" || !c.a.verifiedBy) throw new BookingError(409, "A verified arrival is required before partner confirmation.");
+      const [manual] = await tx.select().from(attendanceEvents).where(and(
+        eq(attendanceEvents.reservationId, id), eq(attendanceEvents.action, "manual.checkin"), eq(attendanceEvents.after, c.a.id),
+      )).limit(1);
+      if (manual?.actorId === actor) throw new BookingError(403, "A different staff member must validate this manual arrival.");
     }
     if (action !== "no_show" && !c.a) throw new BookingError(409, "There is no attendance record to review.");
     if (action === "resolve_confirm") {

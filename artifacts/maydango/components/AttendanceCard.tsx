@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { getAttendance, issueCheckinQr, revokeCheckinQr, reviewAttendance, setCheckinPolicy } from '@workspace/api-client-react';
+import { getAttendance, issueCheckinQr, revokeCheckinQr, reviewAttendance, setCheckinPolicy, requestManualCheckinCode, recordManualCheckin } from '@workspace/api-client-react';
 import { Text, TextInput, Pressable } from '@/components/Localized';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
@@ -15,8 +15,10 @@ export function AttendanceCard({ row: r, role, refresh }: { row: Row; role: stri
   const staff = role === 'admin' || role === 'partner';
   const [reason, setReason] = useState(''), [error, setError] = useState(''), [busy, setBusy] = useState(false);
   const [qr, setQr] = useState<{ token: string; expiresAt: string } | null>(null);
+  const [memberCode, setMemberCode] = useState<{ code: string; expiresAt: string } | null>(null);
+  const [manualCode, setManualCode] = useState('');
   const [now, setNow] = useState(Date.now());
-  useEffect(() => { if (!qr) return; const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, [qr]);
+  useEffect(() => { if (!qr && !memberCode) return; const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, [qr, memberCode]);
   const [policy, setPolicy] = useState({ latitude: '', longitude: '', radius: '150',
     opensAt: new Date(new Date(r.startsAt).getTime() - 30 * 60000).toISOString(),
     closesAt: r.endsAt, correctionEndsAt: new Date(new Date(r.endsAt).getTime() + 86400000).toISOString() });
@@ -60,6 +62,30 @@ export function AttendanceCard({ row: r, role, refresh }: { row: Row; role: stri
         <Text raw style={{ color: c.foreground }}>{Math.ceil((new Date(qr.expiresAt).getTime() - now) / 1000)}s</Text>
       </View> : qr ? <Text style={{ color: c.destructive }}>QR expired. Issue a new code.</Text> : null}
     </> : null}
+    {role === 'member' && r.policy && r.bookingStatus === 'reserved' && r.status === 'not_checked_in' && !r.locked ? <View style={s.fields}>
+      {button('Request one-time staff code', async () => {
+        const issued = await requestManualCheckinCode(r.reservationId);
+        setMemberCode(issued); setNow(Date.now()); return issued;
+      })}
+      {memberCode && new Date(memberCode.expiresAt).getTime() > now ? <View style={[s.codeBox, { backgroundColor: c.secondary }]}>
+        <Text style={{ color: c.foreground }}>Show this one-time code to partner staff.</Text>
+        <Text raw selectable style={{ color: c.primary, fontSize: 28, fontWeight: '800', letterSpacing: 5, textAlign: 'center' }}>{memberCode.code}</Text>
+        <Text style={{ color: c.mutedForeground }}>Code expires in {Math.ceil((new Date(memberCode.expiresAt).getTime() - now) / 1000)} seconds.</Text>
+        <Text style={{ color: c.mutedForeground }}>Staff-assisted arrival still needs confirmation by a different staff member.</Text>
+      </View> : memberCode ? <Text style={{ color: c.destructive }}>Code expired. Request a new one.</Text> : null}
+    </View> : null}
+    {staff && r.policy && r.bookingStatus === 'reserved' && r.status === 'not_checked_in' && !r.locked ? <View style={s.fields}>
+      <TextInput accessibilityLabel="Member one-time code" placeholder="Enter the member's one-time code" value={manualCode}
+        onChangeText={v => setManualCode(v.replace(/\D/g, '').slice(0, 8))} keyboardType="number-pad" maxLength={8}
+        placeholderTextColor={c.mutedForeground} style={[s.input, { color: c.foreground, borderColor: c.border }]} />
+      {button('Record manual arrival', async () => {
+        if (manualCode.length !== 8 || reason.trim().length < 5) throw new Error('Manual check-in requires a reason and valid code.');
+        const result = await recordManualCheckin(r.reservationId, { code: manualCode, reason });
+        setManualCode('');
+        return result;
+      })}
+      <Text style={{ color: c.mutedForeground }}>Enter the code shown by the member. Another staff member must confirm the arrival.</Text>
+    </View> : null}
     {!r.locked && (staff || r.status !== 'not_checked_in') ? <>
       <TextInput accessibilityLabel="Reason for attendance review" placeholder="Reason for attendance review (required)" value={reason} onChangeText={setReason}
         placeholderTextColor={c.mutedForeground} style={[s.input, { color: c.foreground, borderColor: c.border }]} multiline />
@@ -83,5 +109,5 @@ const s = StyleSheet.create({
   card: { padding: 16, borderRadius: 16, borderWidth: 1, gap: 10 },
   fields: { gap: 10 }, input: { borderWidth: 1, borderRadius: 10, padding: 12, minHeight: 44 },
   button: { padding: 12, borderRadius: 10, minHeight: 44 },
-  qr: { alignItems: 'center', padding: 12, gap: 12 },
+  qr: { alignItems: 'center', padding: 12, gap: 12 }, codeBox: { alignItems: 'center', padding: 14, borderRadius: 14, gap: 8 },
 });

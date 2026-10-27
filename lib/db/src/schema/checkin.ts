@@ -18,6 +18,15 @@ export const checkinChallenges = pgTable("checkin_challenges", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   consumedAt: timestamp("consumed_at", { withTimezone: true }),
 });
+export const manualCheckinChallenges = pgTable("manual_checkin_challenges", {
+  id: text("id").primaryKey(),
+  reservationId: text("reservation_id").notNull().references(() => reservations.id),
+  digest: text("digest").notNull().unique(),
+  attempts: integer("attempts").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  consumedAt: timestamp("consumed_at", { withTimezone: true }),
+});
 export const attendanceEvents = pgTable("attendance_events", {
   id: text("id").primaryKey(),
   reservationId: text("reservation_id").notNull().references(() => reservations.id),

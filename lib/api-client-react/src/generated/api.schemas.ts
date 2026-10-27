@@ -289,6 +289,35 @@ export type ScanCheckinQr200 = {
   status: string;
 };
 
+export type RequestManualCheckinCode200 = {
+  /** @pattern ^\d{8}$ */
+  code: string;
+  expiresAt: string;
+};
+
+export type RecordManualCheckinBody = {
+  /** @pattern ^\d{8}$ */
+  code: string;
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason: string;
+};
+
+export type RecordManualCheckin200Status = typeof RecordManualCheckin200Status[keyof typeof RecordManualCheckin200Status];
+
+
+export const RecordManualCheckin200Status = {
+  pending: 'pending',
+} as const;
+
+export type RecordManualCheckin200 = {
+  ok: boolean;
+  reference: string;
+  status: RecordManualCheckin200Status;
+};
+
 export type ReviewAttendanceBodyAction = typeof ReviewAttendanceBodyAction[keyof typeof ReviewAttendanceBodyAction];
 
 

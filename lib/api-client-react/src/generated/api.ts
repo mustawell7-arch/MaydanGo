@@ -45,6 +45,9 @@ import type {
   PartnerApproval,
   PartnerInput,
   PlanInput,
+  RecordManualCheckin200,
+  RecordManualCheckinBody,
+  RequestManualCheckinCode200,
   ReviewAttendanceBody,
   SaveMemberProfileBody,
   ScanCheckinQr200,
@@ -472,6 +475,169 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getScanCheckinQrMutationOptions(options), queryClient);
+    }
+
+export const getRequestManualCheckinCodeUrl = (id: string,) => {
+
+
+
+
+  return `/api/attendance/${id}/manual-code`
+}
+
+/**
+ * @summary Request a short-lived code for the reservation owner
+ */
+export const requestManualCheckinCode = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<RequestManualCheckinCode200> => {
+
+  return customFetch<RequestManualCheckinCode200>(getRequestManualCheckinCodeUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRequestManualCheckinCodeMutationKey = () => ['requestManualCheckinCode'] as const;
+
+export const getRequestManualCheckinCodeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestManualCheckinCode>>, TError,RequestManualCheckinCodeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestManualCheckinCode>>, TError,RequestManualCheckinCodeMutationVariables, TContext> => {
+
+const mutationKey = getRequestManualCheckinCodeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestManualCheckinCode>>, RequestManualCheckinCodeMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  requestManualCheckinCode(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestManualCheckinCodeMutationResult = NonNullable<Awaited<ReturnType<typeof requestManualCheckinCode>>>
+
+    export type RequestManualCheckinCodeMutationError = ErrorType<unknown>
+    export type RequestManualCheckinCodeMutationVariables = {id: string}
+
+    /**
+ * @summary Request a short-lived code for the reservation owner
+ */
+export const useRequestManualCheckinCode = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestManualCheckinCode>>, TError,RequestManualCheckinCodeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof requestManualCheckinCode>>,
+        TError,
+        RequestManualCheckinCodeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestManualCheckinCodeMutationOptions(options), queryClient);
+    }
+
+export const getRecordManualCheckinUrl = (id: string,) => {
+
+
+
+
+  return `/api/attendance/${id}/manual`
+}
+
+/**
+ * @summary Record a staff-assisted arrival after one-time code verification
+ */
+export const recordManualCheckin = async (id: string,
+    recordManualCheckinBody: RecordManualCheckinBody, options?: Parameters<typeof customFetch>[1]): Promise<RecordManualCheckin200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RecordManualCheckin200>(getRecordManualCheckinUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(recordManualCheckinBody)
+  }
+);}
+
+
+
+
+
+export const getRecordManualCheckinMutationKey = () => ['recordManualCheckin'] as const;
+
+export const getRecordManualCheckinMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordManualCheckin>>, TError,RecordManualCheckinMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordManualCheckin>>, TError,RecordManualCheckinMutationVariables, TContext> => {
+
+const mutationKey = getRecordManualCheckinMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordManualCheckin>>, RecordManualCheckinMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordManualCheckin(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordManualCheckinMutationResult = NonNullable<Awaited<ReturnType<typeof recordManualCheckin>>>
+    export type RecordManualCheckinMutationBody = BodyType<RecordManualCheckinBody>
+    export type RecordManualCheckinMutationError = ErrorType<unknown>
+    export type RecordManualCheckinMutationVariables = {id: string;data: BodyType<RecordManualCheckinBody>}
+
+    /**
+ * @summary Record a staff-assisted arrival after one-time code verification
+ */
+export const useRecordManualCheckin = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordManualCheckin>>, TError,RecordManualCheckinMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof recordManualCheckin>>,
+        TError,
+        RecordManualCheckinMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordManualCheckinMutationOptions(options), queryClient);
     }
 
 export const getReviewAttendanceUrl = (id: string,) => {
