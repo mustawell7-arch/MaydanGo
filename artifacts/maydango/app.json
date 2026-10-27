@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "MaydanGo",
+    "name": "MaydanGO",
     "slug": "maydango",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -19,7 +19,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "MaydanGo uses your camera to scan facility check-in codes.",
+          "cameraPermission": "MaydanGO uses your camera to scan place check-in codes.",
           "barcodeScannerEnabled": true
         }
       ]

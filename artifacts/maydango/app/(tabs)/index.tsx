@@ -34,7 +34,7 @@ export default function HomeScreen() {
           <View style={styles.brand}>
             <Image source={require('../../assets/images/icon.png')} style={styles.logo} />
             <View>
-              <Text style={[styles.brandName, { color: colors.foreground }]}>MaydanGo</Text>
+              <Text style={[styles.brandName, { color: colors.foreground }]}>MaydanGO</Text>
               <Pressable onPress={() => router.push('/cities')} style={styles.location} accessibilityRole="button">
                 <Ionicons name="location-outline" size={13} color={colors.mutedForeground} />
                 <Text style={[styles.locationText, { color: colors.mutedForeground }]}>
@@ -81,7 +81,7 @@ export default function HomeScreen() {
           <View style={styles.passGlow} />
           <View style={styles.passTop}>
             <View>
-              <Text style={styles.passEyebrow}>Sample plan · not live access</Text>
+              <Text style={styles.passEyebrow}>Sample plan · no real access</Text>
               <View style={styles.passTitleRow}>
                 <Text style={styles.passTier}>{app.membershipTier}</Text>
                 <View style={styles.activePill}>
@@ -97,7 +97,7 @@ export default function HomeScreen() {
           <View style={styles.quotaBlock}>
             <View style={styles.quotaLabels}>
               <Text style={styles.quotaNumber}>{app.visitsRemaining} / 12</Text>
-              <Text style={styles.quotaCaption}>{t('visitsLeft')}</Text>
+              <Text style={styles.quotaCaption}>{t('visitsLeft').replace('{n}', String(app.visitsRemaining))}</Text>
             </View>
             <View style={styles.progressTrack}>
               <View

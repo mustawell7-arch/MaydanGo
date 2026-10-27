@@ -110,9 +110,21 @@ export function errorCopy(error: unknown): string {
 // Replace registered phrases only, with word boundaries and longest-match first.
 // Never pass user input, email addresses, IDs, or provider diagnostics here.
 export function localize(value: string, language: Language): string {
-  if (language === 'en') return value;
+  if (language === 'en') return englishStyle(value);
   const index = language === 'ar' ? 0 : 1;
   return value.replace(pattern, key => content[key][index]);
+}
+function englishStyle(value: string): string {
+  return value
+    .replace(/\bMaydanGo\b/g, 'MaydanGO')
+    .replace(/\bCancelled\b/g, 'Canceled')
+    .replace(/\bcancelled\b/g, 'canceled')
+    .replace(/\bEnrol\b/g, 'Enroll')
+    .replace(/\benrol\b/g, 'enroll')
+    .replace(/\borganiser\b/gi, match => match[0] === match[0].toUpperCase() ? 'Organizer' : 'organizer')
+    .replace(/\bcentre\b/gi, match => match[0] === match[0].toUpperCase() ? 'Center' : 'center')
+    .replace(/\bracket hire\b/gi, 'racket rental')
+    .replace(/Go to home screen!/g, 'Back to home');
 }
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 let pattern: RegExp;

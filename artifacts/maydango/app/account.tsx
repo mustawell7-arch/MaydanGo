@@ -73,18 +73,18 @@ export default function AccountScreen() {
   });
   const button = (title: string, onPress: () => void, id?: string) => <Pressable testID={id} accessibilityRole="button" disabled={busy || app.memberLoading} onPress={onPress} style={[styles.button, { backgroundColor: c.primary, opacity: busy ? .6 : 1 }]}><Text style={{ color: c.primaryForeground, fontWeight: '700' }}>{title}</Text></Pressable>;
   return <ScreenShell>
-    <ScreenHeader eyebrow="MAYDANGO" title={isSignedIn ? 'Your account' : 'Welcome to MaydanGo'} />
+    <ScreenHeader eyebrow="MAYDANGO" title={isSignedIn ? 'Your account' : 'Welcome to MaydanGO'} />
     <KeyboardAwareScrollViewCompat contentContainerStyle={{ padding: 22, paddingBottom: 50, gap: 14 }} keyboardShouldPersistTaps="handled">
       <Pressable onPress={() => router.replace('/')}><Text style={{ color: c.primary }}>Back to explore</Text></Pressable>
       {isSignedIn ? <>
         <Text raw style={{ color: c.foreground }}>{user?.primaryEmailAddress?.emailAddress}</Text>
         <Text style={{ color: c.foreground, fontWeight: '700' }}>Server-verified memberships</Text>
-        {app.memberMemberships.length ? app.memberMemberships.map(m => <Text key={m.scope} style={{ color: c.foreground }}>{m.scope === 'preview' ? 'Sample-only trial' : m.source === 'corporate' ? 'Corporate' : m.source === 'trial' ? 'Trial' : 'Live membership'} · {m.tier} · {m.status} · ends {dateTime(m.endsAt, app.language, true)}</Text>) : <Text style={{ color: c.mutedForeground }}>No active membership. Local plan selections do not grant access.</Text>}
+        {app.memberMemberships.length ? app.memberMemberships.map(m => <Text key={m.scope} style={{ color: c.foreground }}>{m.scope === 'preview' ? 'Sample-only trial' : m.source === 'corporate' ? 'Corporate' : m.source === 'trial' ? 'Trial' : 'Real membership'} · {m.tier} · {m.status} · ends {dateTime(m.endsAt, app.language, true)}</Text>) : <Text style={{ color: c.mutedForeground }}>No active membership. Local plan selections do not grant access.</Text>}
         <MemberNotice />
         <Pressable testID="link-live" accessibilityRole="button" onPress={() => router.push('/live')} style={[styles.button, { backgroundColor: c.accent }]}><Text style={{ color: c.accentForeground, fontWeight: '700' }}>Real partner availability</Text></Pressable>
         <Pressable testID="link-operations" accessibilityRole="button" onPress={() => router.push('/operations')} style={[styles.button, { backgroundColor: c.secondary }]}><Text style={{ color: c.secondaryForeground, fontWeight: '700' }}>Staff operations</Text></Pressable>
         <Text style={{ color: c.foreground, fontWeight: '700' }}>Eligibility details</Text>
-        <Text style={{ color: c.mutedForeground }}>Required only for age- or gender-restricted sessions. These details are private to your account.</Text>
+        <Text style={{ color: c.mutedForeground }}>Required only for classes with age or gender requirements. These details stay private to your account.</Text>
         {app.memberProfile ? <Text style={{ color: c.foreground }}>Saved: {app.memberProfile.gender} · {app.memberProfile.birthDate ? dateTime(app.memberProfile.birthDate, app.language, true) : '—'}</Text> : null}
         <TextInput accessibilityLabel="Date of birth" placeholder="Date of birth: YYYY-MM-DD" placeholderTextColor={c.mutedForeground} value={birthDate} onChangeText={setBirthDate} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
         <View style={{ flexDirection: 'row', gap: 14 }}>

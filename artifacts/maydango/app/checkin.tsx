@@ -32,7 +32,7 @@ export default function CheckInScreen() {
     lock.current = true; setBusy(true); setError('');
     const who = userId;
     try {
-      if (!/^MDG1:[a-f0-9]{64}$/.test(data)) throw new Error('Ask staff for a current MaydanGo QR code.');
+      if (!/^MDG1:[a-f0-9]{64}$/.test(data)) throw new Error('Ask staff for a current MaydanGO QR code.');
       let coords: { latitude: number; longitude: number; accuracy: number | null }, timestamp: number, mocked = false;
       if (Platform.OS === 'web') {
         const pos = await new Promise<GeolocationPosition>((resolve, reject) =>

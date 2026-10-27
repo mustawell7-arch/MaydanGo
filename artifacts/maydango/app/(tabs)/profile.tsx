@@ -30,7 +30,7 @@ export default function ProfileScreen() {
             <Text style={[styles.avatarText, { color: colors.primary }]}>M</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.name}>MaydanGo member</Text>
+            <Text style={styles.name}>MaydanGO member</Text>
             <Text style={styles.memberMeta}>{getCityLabel(app.selectedCityId, app.language)} · {t('memberNote')}</Text>
           </View>
           <View style={styles.memberBadge}>
@@ -46,7 +46,7 @@ export default function ProfileScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.rowTitle, { color: colors.foreground }]}>{t('membership')}</Text>
-            <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>MaydanGo {app.membershipTier} · Preview</Text>
+            <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>MaydanGO {app.membershipTier} · Preview</Text>
           </View>
           <Ionicons name="chevron-forward" size={17} color={colors.mutedForeground} />
         </Pressable>
@@ -89,7 +89,7 @@ export default function ProfileScreen() {
           <MenuRow icon="shield-checkmark-outline" label="Privacy & permissions" colors={colors} onPress={() => {}} last />
         </View>
         <View style={styles.footer}>
-          <Text style={[styles.footerBrand, { color: colors.primary }]}>MaydanGo</Text>
+          <Text style={[styles.footerBrand, { color: colors.primary }]}>MaydanGO</Text>
           <Text style={[styles.footerTagline, { color: colors.mutedForeground }]}>{t('guests')}</Text>
           <Text style={[styles.previewTag, { color: colors.mutedForeground }]}>{t('demoMode')}</Text>
         </View>

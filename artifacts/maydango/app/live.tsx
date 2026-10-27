@@ -59,8 +59,8 @@ export default function LiveScreen() {
 
       <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
         <Text style={[styles.label, { color: c.mutedForeground }]}>YOUR LIVE ACCESS</Text>
-        {live.length ? live.map(m => <Text key={m.scope + m.tier} style={{ color: c.foreground, fontWeight: '700' }}>{m.source === 'corporate' ? 'Corporate' : m.source === 'trial' ? 'Trial' : 'Live membership'} · {m.tier} · {m.status} · {dateTime(m.endsAt, app.language, true)}</Text>)
-          : <Text style={{ color: c.foreground, lineHeight: 20 }}>No live membership yet. Paid memberships are not available in the app yet; trial and corporate access is granted by MaydanGo staff.</Text>}
+        {live.length ? live.map(m => <Text key={m.scope + m.tier} style={{ color: c.foreground, fontWeight: '700' }}>{m.source === 'corporate' ? 'Corporate' : m.source === 'trial' ? 'Trial' : 'Real membership'} · {m.tier} · {m.status} · {dateTime(m.endsAt, app.language, true)}</Text>)
+          : <Text style={{ color: c.foreground, lineHeight: 20 }}>No real membership yet. Paid memberships aren’t available in the app. MaydanGO staff grant trial and company access.</Text>}
       </View>
 
       <View style={styles.chips}>

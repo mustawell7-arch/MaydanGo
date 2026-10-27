@@ -81,7 +81,7 @@ export default function FacilityDetailScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.sessionTime, { color: colors.primary }]}>{session.time}</Text>
                 <Text style={[styles.sessionName, { color: colors.foreground }]}>{session.title}</Text>
-                <Text style={[styles.sessionMeta, { color: colors.mutedForeground }]}>{session.instructor} · {session.remaining} {t('spotsLeft')}</Text>
+                <Text style={[styles.sessionMeta, { color: colors.mutedForeground }]}>{session.instructor} · {t('spotsLeft').replace('{n}', String(session.remaining))}</Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
             </Pressable>

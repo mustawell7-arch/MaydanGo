@@ -23,7 +23,7 @@ export function ScreenShell({ children, sample = true }: { children: React.React
     >
       <StorageBanner />
       {sample ? <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 17, paddingHorizontal: 22, paddingVertical: 6 }}>
-        Sample catalog · illustrative places, schedules and prices. Not live partner availability.
+        Sample catalog · example places, schedules and prices. Not real partner availability.
       </Text> : null}
       {children}
     </View>

@@ -32,7 +32,7 @@ async function event(tx: Tx, reservationId: string, actorId: string, action: str
 }
 async function context(tx: Tx, id: string) {
   const [initial] = await tx.select().from(reservations).where(eq(reservations.id, id));
-  if (!initial) throw new BookingError(404, "Reservation not found.");
+  if (!initial) throw new BookingError(404, "Booking not found.");
   // Same lock order as booking/revocation: account, offering, then reservation.
   await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${initial.userId}))`);
   const [o] = await tx.select().from(offerings).where(eq(offerings.id, initial.offeringId)).for("update");
@@ -69,7 +69,7 @@ async function eligible(tx: Tx, c: Awaited<ReturnType<typeof context>>) {
       (rules.categories && !rules.categories.includes(o.category)) ||
       (m.source === "trial" && !rules.trialAllowedTypes?.includes(o.accessType)) ||
       (m.source === "corporate" && (!rules.corporateId || rules.corporateId !== m.corporateId)))
-    throw new BookingError(403, "This membership does not include this offering.");
+    throw new BookingError(403, "Your membership doesn’t include this activity.");
   if (o.gender !== "all" || o.minAge || o.maxAge !== null) {
     const [profile] = await tx.select().from(memberProfiles).where(eq(memberProfiles.userId, r.userId));
     const birth = new Date(profile?.birthDate ?? "invalid");

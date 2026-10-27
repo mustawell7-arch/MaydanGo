@@ -609,9 +609,9 @@ export const courses: Course[] = [
         id: 'sf-4', minutes: 14,
         title: { en: 'Your first full circuit', ar: 'دورتك الكاملة الأولى', ku: 'یەکەم خولی تەواوت' },
         body: {
-          en: 'Combine the last three lessons: eight squats, eight wall push-ups, six leg extensions per side. Rest one minute and repeat up to three times. Stop early if anything feels sharp or painful.',
-          ar: 'اجمع الدروس الثلاثة السابقة: ثماني قرفصاءات، ثماني ضغطات على الجدار، ست مدّات للساق لكل جانب. استرح دقيقة وكرّر حتى ثلاث مرات. توقف مبكراً إذا شعرت بألم حاد.',
-          ku: 'سێ وانەی پێشوو تێکەڵ بکە: هەشت چەمینەوە، هەشت پاڵنانی دیوار، شەش درێژکردنەوەی قاچ بۆ هەر لایەک. یەک خولەک پشوو بدە و تا سێ جار دووبارەی بکەرەوە. ئەگەر ئازارێکی تیژت هەست پێکرد زوو ڕابوەستە.',
+    en: 'Combine the last three lessons: eight squats, eight wall push-ups, six leg extensions per side. Rest one minute and repeat up to three times. Stop right away if anything feels sharp or painful.',
+    ar: 'اجمع الدروس الثلاثة السابقة: ثماني قرفصاءات، ثماني ضغطات على الجدار، ست مدّات للساق لكل جانب. استرح دقيقة وكرّر حتى ثلاث مرات. أوقف التمرين فوراً إذا شعرت بألم حاد.',
+    ku: 'سێ وانەی پێشوو تێکەڵ بکە: هەشت چەمینەوە، هەشت پاڵنانی دیوار، شەش درێژکردنەوەی قاچ بۆ هەر لایەک. یەک خولەک پشوو بدە و تا سێ جار دووبارەی بکەرەوە. ئەگەر ئازارێکی تیژت هەست پێکرد، دەستبەجێ ڕابوەستە.',
         },
       },
     ],

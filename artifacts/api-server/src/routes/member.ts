@@ -7,7 +7,7 @@ import { BookingError, memberState, createReservation, cancelReservation } from 
 
 const router = Router();
 router.use((req, res, next) => {
-  if (!getAuth(req).userId) { res.status(401).json({ message: "Sign in to manage your reservations." }); return; }
+  if (!getAuth(req).userId) { res.status(401).json({ message: "Sign in to manage your bookings." }); return; }
   next();
 });
 router.get("/", async (req, res) => { res.json(await memberState(getAuth(req).userId!)); });
@@ -59,7 +59,7 @@ router.post("/preview-membership", async (req, res) => {
 });
 router.post("/bookings", async (req, res) => {
   const parsed = z.object({ kind: z.enum(["session", "event", "coach"]), targetId: z.string().min(1).max(100), slot: z.string().max(100).default("") }).strict().safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ message: "Invalid reservation request." }); return; }
+  if (!parsed.success) { res.status(400).json({ message: "Invalid booking request." }); return; }
   await createReservation(getAuth(req).userId!, parsed.data);
   res.status(201).json(await memberState(getAuth(req).userId!));
 });

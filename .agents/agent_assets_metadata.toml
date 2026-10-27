@@ -1,0 +1,30 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "w96rT9IvEAhB9fPp4W_Z3"
+uri = "file://generated-artifacts/language-review/maydango-ar-review.pdf"
+type = "pdf"
+title = "MaydanGo Iraqi Arabic review PDF"
+description = "Iraqi Arabic draft copy with English source phrases and space to approve or note corrections. 672 existing localized entries."
+logical_id = "bc1d33fa-cfb6-4c9c-b06d-ce507a3ec38d"
+content_hash = "sha256:37210651fa8f9ede8ed6d4ba86047c43240dca06cbe1987ac3ad17d2f2143d25"
+size = 3067477
+mtime_ms = 1792963315328
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/bc1d33fa-cfb6-4c9c-b06d-ce507a3ec38d/c150e4d4-2b37-4010-a0e6-7d3fd17fadd3"
+storage_version_token = "1792963352770067"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "hqhtCSp8-Y6feLXOfUF6P"
+uri = "file://generated-artifacts/language-review/maydango-ku-review.pdf"
+type = "pdf"
+title = "MaydanGo Sorani Kurdish review PDF"
+description = "Sorani Kurdish draft copy with English source phrases and space to approve or note corrections. 672 existing localized entries."
+logical_id = "884ac913-ceeb-4738-ad77-0ca85d46e194"
+content_hash = "sha256:417a1e93118703cba78f5f50f39610eb62f9701718cc207d35d6585d020d9c5f"
+size = 3064503
+mtime_ms = 1792963317816
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/884ac913-ceeb-4738-ad77-0ca85d46e194/9148d3bf-9611-413f-a917-49cac2a5a2e8"
+storage_version_token = "1792963353516758"
+content_type = "application/pdf"

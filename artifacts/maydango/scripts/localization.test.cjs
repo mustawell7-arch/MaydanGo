@@ -42,11 +42,25 @@ for (const language of ['ar', 'ku']) {
   assert.ok(localize('Women-only sessions', language) !== localize('Mixed sessions', language));
 }
 assert.equal(localize('MaydanGo', 'ar'), 'MaydanGo');
+assert.equal(localize('MaydanGo cancelled Enrol organiser Centre racket hire', 'en'), 'MaydanGO canceled Enroll organizer Center racket rental');
 assert.equal(localize('Anything unchanged', 'en'), 'Anything unchanged');
 assert.equal(isRtl('en'), false);
-assert.equal(errorCopy({ data: { message: 'This session is full.' } }), 'This session is full.');
+assert.equal(errorCopy({ data: { message: 'This class is full.' } }), 'This class is full.');
 assert.equal(errorCopy({ errors: [{ code: 'form_code_incorrect' }] }), 'The verification code is incorrect or expired. Request a new code.');
 assert.equal(errorCopy(new Error('secret provider details')), 'Account request failed. Please check your details and try again.');
+assert.equal(translate('en', 'checkInHint'), 'At the door? Scan to check in.');
+assert.equal(translate('ar', 'checkInHint'), 'وصلت؟ امسح الكود وسجّل وصولك.');
+assert.equal(translate('ku', 'checkInHint'), 'گەیشتیت؟ کۆدەکە سکان بکە و گەیشتنت تۆمار بکە.');
+assert.equal(translate('en', 'visitsLeft'), '{n} visits left');
+assert.equal(translate('en', 'spotsLeft'), '{n} spots left');
+assert.equal(translate('en', 'cancelled'), 'Booking canceled');
+assert.equal(translate('en', 'notAttendance'), 'A booking isn’t attendance. Arrival counts only after the place confirms it.');
+const finalCircuit = courses.flatMap(course => course.sampleLessons).find(lesson => lesson.id === 'sf-4');
+assert.ok(finalCircuit);
+assert.match(finalCircuit.body.en, /Stop right away if anything feels sharp or painful/);
+assert.match(finalCircuit.body.ar, /أوقف التمرين فوراً إذا شعرت بألم حاد/);
+assert.match(finalCircuit.body.ku, /دەستبەجێ ڕابوەستە/);
+assert.doesNotMatch(finalCircuit.body.en, /doctor|health condition/i);
 // Report authored JSX copy that still contains English, excluding branding.
 if (process.argv.includes('--audit')) {
   const scan = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => e.isDirectory() ? scan(path.join(dir, e.name)) : [path.join(dir, e.name)]);

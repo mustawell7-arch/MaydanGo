@@ -61,7 +61,7 @@ export default function OperationsScreen() {
   if (!ops.signedIn || ops.status === 403 || ops.status === 401) return <ScreenShell>{header}<View style={s.pad}>{back}
     <View style={[s.empty, { borderColor: c.border }]}><Ionicons name="lock-closed-outline" size={26} color={c.mutedForeground} />
       <Text style={{ color: c.foreground, fontWeight: '700', textAlign: 'center' }}>Staff access only</Text>
-      <Text style={{ color: c.mutedForeground, textAlign: 'center' }}>This area is for MaydanGo administrators and approved partners.</Text></View></View></ScreenShell>;
+      <Text style={{ color: c.mutedForeground, textAlign: 'center' }}>This area is for MaydanGO administrators and approved partners.</Text></View></View></ScreenShell>;
   if (ops.error && !ops.data) return <ScreenShell>{header}<View style={s.pad}>{back}<Text style={{ color: c.destructive }}>{ops.error}</Text><Btn c={c} title="Try again" onPress={() => void ops.refresh()} /></View></ScreenShell>;
   if (!ops.data) return <ScreenShell>{header}<View style={s.pad}>{[0, 1, 2].map(i => <View key={i} style={[s.skeleton, { backgroundColor: c.muted }]} />)}</View></ScreenShell>;
 

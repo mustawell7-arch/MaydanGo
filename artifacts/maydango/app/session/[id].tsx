@@ -57,11 +57,11 @@ export default function SessionDetailScreen() {
         <View style={styles.body}>
           <MemberNotice />
           <Text style={{ color: colors.foreground, marginBottom: 12 }}>
-            {offering ? `Sample date: ${dateTime(offering.startsAt, app.language)} · Cancel before ${dateTime(offering.cancellationDeadline, app.language)}` : 'Sign in to load the server schedule. Displayed promotional times are illustrative.'}
+            {offering ? `Sample date: ${dateTime(offering.startsAt, app.language)} · Cancel before ${dateTime(offering.cancellationDeadline, app.language)}` : 'Sign in to see available class times. Times shown here are examples.'}
           </Text>
           <View style={[styles.spotsPill, { backgroundColor: colors.accent }]}>
             <View style={styles.spotDot} />
-            <Text style={[styles.spotsText, { color: colors.accentForeground }]}>{offering?.remaining ?? '—'} {t('spotsLeft')}</Text>
+            <Text style={[styles.spotsText, { color: colors.accentForeground }]}>{offering ? t('spotsLeft').replace('{n}', String(offering.remaining)) : '—'}</Text>
           </View>
           <View style={[styles.instructorCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={[styles.instructorAvatar, { backgroundColor: colors.secondary }]}>
@@ -69,11 +69,11 @@ export default function SessionDetailScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.instructorName, { color: colors.foreground }]}>{session.instructor}</Text>
-              <Text style={[styles.instructorLabel, { color: colors.mutedForeground }]}>MaydanGo instructor</Text>
+              <Text style={[styles.instructorLabel, { color: colors.mutedForeground }]}>MaydanGO instructor</Text>
             </View>
             <Ionicons name="checkmark-circle" size={18} color="#4e9664" />
           </View>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>About this session</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>About this class</Text>
           <Text style={[styles.description, { color: colors.mutedForeground }]}>
             Move with expert guidance in a welcoming group. Arrive a few minutes early and tell the instructor if you are new.
           </Text>

@@ -249,10 +249,6 @@ export default function ExploreScreen() {
                   <Ionicons name="fitness" size={14} color="#ffffff" />
                 </Pressable>
               ))}
-              <View style={styles.mapNotice}>
-                <Ionicons name="information-circle-outline" size={13} color="#718076" />
-                <Text style={styles.mapNoticeText}>{t('showMapNote')}</Text>
-              </View>
             </View>
             <View style={styles.mapList}>
               {visibleFacilities.slice(0, 2).map((facility) => (
@@ -349,8 +345,6 @@ const styles = StyleSheet.create({
   mapLabel: { position: 'absolute', top: 17, left: 17, backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 7, paddingHorizontal: 8, paddingVertical: 5 },
   mapLabelText: { color: '#718076', fontSize: 9, fontWeight: '900', letterSpacing: 1.5 },
   mapPin: { position: 'absolute', width: 32, height: 32, marginLeft: -16, marginTop: -16, backgroundColor: '#214c3d', borderColor: '#ffffff', borderWidth: 3, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  mapNotice: { position: 'absolute', right: 10, bottom: 10, left: 10, padding: 8, backgroundColor: 'rgba(255,255,255,0.88)', borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 5 },
-  mapNoticeText: { color: '#718076', fontSize: 9, flex: 1 },
   mapList: { gap: 8, marginTop: 10 },
   mapListItem: { padding: 9, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
   mapThumb: { width: 46, height: 46, borderRadius: 12 },
