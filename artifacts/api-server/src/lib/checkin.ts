@@ -289,11 +289,21 @@ export async function roster(actor: string) {
       ? op.role === "admin" ? undefined : eq(offerings.partnerId, op.partnerId ?? "")
       : eq(reservations.userId, actor)));
   const events = rows.length ? await db.select().from(attendanceEvents).where(inArray(attendanceEvents.reservationId, rows.map(x => x.r.id))) : [];
+  const userIds = [...new Set(rows.map(({ r }) => r.userId))];
+  const manualVisitCounts = userIds.length ? await db.select({
+    userId: reservations.userId,
+    count: sql<number>`count(*)::int`,
+  }).from(attendanceEvents).innerJoin(reservations, eq(attendanceEvents.reservationId, reservations.id))
+    .where(and(inArray(reservations.userId, userIds), eq(attendanceEvents.action, "manual.checkin")))
+    .groupBy(reservations.userId) : [];
+  const manualCountByUser = new Map(manualVisitCounts.map(({ userId, count }) => [userId, count]));
   return { role: isStaff ? op.role : "member", rows: rows.map(({ r, o, a, p }) => ({
     reservationId: r.id, userId: r.userId, title: o.title, facility: o.facility, startsAt: o.startsAt, endsAt: o.endsAt,
     bookingStatus: r.status, status: a?.status ?? "not_checked_in", reference: a?.id,
     checkedInAt: a?.verifiedBy ? a.checkedInAt : undefined,
     settlementEligible: a?.settlementEligible ?? false,
+    manualCheckin: events.some(e => e.reservationId === r.id && e.action === "manual.checkin"),
+    manualRepeatUse: (manualCountByUser.get(r.userId) ?? 0) > 1,
     locked: !!a?.lockedAt || (!!p && new Date() >= p.correctionEndsAt), policy: p ?? undefined,
     events: events.filter(e => e.reservationId === r.id).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
   })) };

@@ -1,24 +1,28 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db, pool, partners, operators, offerings, memberships, reservations, attendance, checkinPolicies, checkinChallenges, manualCheckinChallenges, attendanceEvents } from "@workspace/db";
-import { savePolicy, issueQr, scanQr, review, roster, scanInput, issueManualCheckinCode, recordManualCheckin } from "./checkin";
+import { savePolicy, issueQr, scanQr, review, roster, scanInput, issueManualCheckinCode, recordManualCheckin, manualCheckinInput } from "./checkin";
 import { BookingError, createReservation } from "./reservations";
 import app from "../app";
 
 const prefix = `checkin-test-${randomUUID()}`;
-const member = `${prefix}-member`, staff = `${prefix}-staff`, admin = `${prefix}-admin`, stranger = `${prefix}-stranger`;
+const member = `${prefix}-member`, staff = `${prefix}-staff`, secondStaff = `${prefix}-second-staff`, admin = `${prefix}-admin`, stranger = `${prefix}-stranger`;
 const p = `${prefix}-partner`, o = `${prefix}-offering`, r = `${prefix}-reservation`;
 const nextOffering = `${prefix}-next`;
 const manualReservation = `${prefix}-manual-reservation`;
-const users = [member, staff, admin, stranger];
+const users = [member, staff, secondStaff, admin, stranger];
 const now = Date.now();
 const reject = (f: () => Promise<unknown>, status: number) => assert.rejects(f, e => e instanceof BookingError && e.status === status);
 const location = () => ({ latitude: 33.3, longitude: 44.4, accuracy: 5, capturedAt: new Date().toISOString() });
 test("secure attendance: authentication, partner scope, eligibility, atomic replay protection and audited reconciliation", async t => {
   await db.insert(partners).values({ id: p, name: prefix, groupId: prefix, ownerUserId: staff, approved: true });
-  await db.insert(operators).values([{ userId: staff, role: "partner", partnerId: p }, { userId: admin, role: "admin" }]);
+  await db.insert(operators).values([
+    { userId: staff, role: "partner", partnerId: p },
+    { userId: secondStaff, role: "partner", partnerId: p },
+    { userId: admin, role: "admin" },
+  ]);
   await db.insert(offerings).values({ id: o, targetId: o, kind: "session", title: prefix, scope: "live", partnerId: p,
     active: true, city: "baghdad", facility: prefix, category: "gym", tiers: ["M"], capacity: 3,
     startsAt: new Date(now - 60000), endsAt: new Date(now + 3600000), cancellationDeadline: new Date(now - 120000) });
@@ -154,9 +158,17 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     await db.insert(reservations).values({ id: manualReservation, userId: member, offeringId: o, status: "reserved" });
 
     await reject(() => issueManualCheckinCode(stranger, manualReservation), 403);
+    assert.equal(manualCheckinInput.safeParse({ code: "12345678", reason: "   " }).success, false,
+      "manual exception reason must not be blank");
+    await db.update(memberships).set({ status: "terminated" }).where(eq(memberships.userId, member));
+    await reject(() => issueManualCheckinCode(member, manualReservation), 403);
+    await db.update(memberships).set({ status: "trial" }).where(eq(memberships.userId, member));
     const first = await issueManualCheckinCode(member, manualReservation);
     assert.match(first.code, /^\d{8}$/);
     await reject(() => recordManualCheckin(stranger, manualReservation, {
+      code: first.code, reason: "Member is present at the desk",
+    }), 403);
+    await reject(() => recordManualCheckin(admin, manualReservation, {
       code: first.code, reason: "Member is present at the desk",
     }), 403);
 
@@ -183,12 +195,28 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     const [arrival] = await db.select().from(attendance).where(eq(attendance.reservationId, manualReservation));
     assert.equal(arrival.status, "pending");
     assert.equal(arrival.settlementEligible, false);
+    const [manualEventBeforeReview] = await db.select().from(attendanceEvents).where(and(
+      eq(attendanceEvents.reservationId, manualReservation), eq(attendanceEvents.action, "manual.checkin"),
+    ));
     await reject(() => review(staff, manualReservation, {
       action: "confirm", reason: "Manual arrival requires another staff member",
     }), 403);
     assert.equal((await roster(member)).rows.find(row => row.reservationId === manualReservation)?.settlementEligible, false);
-    await review(admin, manualReservation, { action: "confirm", reason: "Second staff member verified arrival" });
-    assert.equal((await roster(member)).rows.find(row => row.reservationId === manualReservation)?.settlementEligible, true);
+    // A prior staff-assisted arrival makes this new exception visibly repeat use.
+    await db.insert(attendanceEvents).values({
+      id: randomUUID(), reservationId: r, actorId: staff, action: "manual.checkin",
+      before: "not_checked_in", after: "prior-manual-visit", reason: "Prior manually verified visit",
+    });
+    let memberRow = (await roster(member)).rows.find(row => row.reservationId === manualReservation)!;
+    assert.equal(memberRow.manualCheckin, true);
+    assert.equal(memberRow.manualRepeatUse, true);
+    assert.equal(memberRow.settlementEligible, false);
+    await review(secondStaff, manualReservation, { action: "confirm", reason: "Second assigned staff member verified arrival" });
+    memberRow = (await roster(member)).rows.find(row => row.reservationId === manualReservation)!;
+    assert.equal(memberRow.settlementEligible, true);
+    const [manualEventAfterReview] = await db.select().from(attendanceEvents).where(eq(attendanceEvents.id, manualEventBeforeReview.id));
+    assert.deepEqual(manualEventAfterReview, manualEventBeforeReview,
+      "review appends a new audit event and does not change the original manual check-in event");
   });
 });
 after(async () => {

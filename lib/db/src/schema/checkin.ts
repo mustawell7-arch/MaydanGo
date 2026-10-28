@@ -37,3 +37,5 @@ export const attendanceEvents = pgTable("attendance_events", {
   reason: text("reason").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+// Attendance events are append-only audit records. Application flows must
+// create a new event for every change and never update or delete an existing one.

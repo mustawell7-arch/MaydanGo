@@ -52,7 +52,7 @@ paths:
                     type: array
                     items:
                       type: object
-                      required: [reservationId, userId, title, facility, startsAt, endsAt, bookingStatus, status, settlementEligible, locked, events]
+                      required: [reservationId, userId, title, facility, startsAt, endsAt, bookingStatus, status, settlementEligible, manualCheckin, manualRepeatUse, locked, events]
                       properties:
                         reservationId: { type: string }
                         userId: { type: string }
@@ -63,6 +63,8 @@ paths:
                         bookingStatus: { type: string }
                         status: { type: string }
                         settlementEligible: { type: boolean }
+                        manualCheckin: { type: boolean, description: True when this reservation has a staff-assisted arrival audit event }
+                        manualRepeatUse: { type: boolean, description: True after the member has more than one staff-assisted arrival }
                         locked: { type: boolean }
                         reference: { type: string }
                         checkedInAt: { type: string }

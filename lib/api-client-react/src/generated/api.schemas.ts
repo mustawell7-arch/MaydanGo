@@ -716,6 +716,10 @@ export type GetAttendance200RowsItem = {
   bookingStatus: string;
   status: string;
   settlementEligible: boolean;
+  /** True when this reservation has a staff-assisted arrival audit event */
+  manualCheckin: boolean;
+  /** True after the member has more than one staff-assisted arrival */
+  manualRepeatUse: boolean;
   locked: boolean;
   reference?: string;
   checkedInAt?: string;

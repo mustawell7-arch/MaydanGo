@@ -53,6 +53,8 @@ export const GetAttendanceResponse = zod.object({
   "bookingStatus": zod.string(),
   "status": zod.string(),
   "settlementEligible": zod.boolean(),
+  "manualCheckin": zod.boolean().describe('True when this reservation has a staff-assisted arrival audit event'),
+  "manualRepeatUse": zod.boolean().describe('True after the member has more than one staff-assisted arrival'),
   "locked": zod.boolean(),
   "reference": zod.string().optional(),
   "checkedInAt": zod.string().optional(),

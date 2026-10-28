@@ -37,6 +37,12 @@ export function AttendanceCard({ row: r, role, refresh }: { row: Row; role: stri
     {staff ? <Text raw selectable style={{ color: c.mutedForeground }}>Member: {r.userId}</Text> : null}
     <Text raw style={{ color: c.foreground }}>Reservation: {r.bookingStatus} · Attendance: {r.status}</Text>
     <Text style={{ color: c.primary }}>{r.locked ? 'Locked' : r.settlementEligible ? 'Partner confirmed — settlement eligible' : 'Not settlement eligible'}</Text>
+    {r.manualRepeatUse ? <Text accessibilityRole="alert" style={{ color: c.destructive, fontWeight: '700' }}>
+      Repeated staff-assisted check-in — review the reason before confirming.
+    </Text> : null}
+    {r.manualCheckin && r.status === 'pending' ? <Text style={{ color: c.mutedForeground }}>
+      Staff-assisted arrival is on settlement hold until a different authorized staff member validates it.
+    </Text> : null}
     {r.reference ? <Text raw selectable style={{ color: c.mutedForeground }}>{r.reference}</Text> : null}
     {r.policy ? <Text raw style={{ color: c.mutedForeground }}>
       Check-in: {dateTime(r.policy.opensAt, language)} — {dateTime(r.policy.closesAt, language)}{'\n'}
@@ -63,6 +69,9 @@ export function AttendanceCard({ row: r, role, refresh }: { row: Row; role: stri
       </View> : qr ? <Text style={{ color: c.destructive }}>QR expired. Issue a new code.</Text> : null}
     </> : null}
     {role === 'member' && r.policy && r.bookingStatus === 'reserved' && r.status === 'not_checked_in' && !r.locked ? <View style={s.fields}>
+      <Text style={{ color: c.mutedForeground }}>
+        If the camera or location check-in fails, ask partner staff for help and generate a one-time code to show them.
+      </Text>
       {button('Request one-time staff code', async () => {
         const issued = await requestManualCheckinCode(r.reservationId);
         setMemberCode(issued); setNow(Date.now()); return issued;
@@ -75,6 +84,9 @@ export function AttendanceCard({ row: r, role, refresh }: { row: Row; role: stri
       </View> : memberCode ? <Text style={{ color: c.destructive }}>Code expired. Request a new one.</Text> : null}
     </View> : null}
     {staff && r.policy && r.bookingStatus === 'reserved' && r.status === 'not_checked_in' && !r.locked ? <View style={s.fields}>
+      <Text style={{ color: c.mutedForeground }}>
+        Use this exception only when the member cannot check in by camera or location. Enter their code and record the reason.
+      </Text>
       <TextInput accessibilityLabel="Member one-time code" placeholder="Enter the member's one-time code" value={manualCode}
         onChangeText={v => setManualCode(v.replace(/\D/g, '').slice(0, 8))} keyboardType="number-pad" maxLength={8}
         placeholderTextColor={c.mutedForeground} style={[s.input, { color: c.foreground, borderColor: c.border }]} />
