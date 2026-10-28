@@ -5,6 +5,8 @@ import { db, memberships, memberProfiles, offerings, reservations, partners, mem
 import { eq, and, inArray, sql, gt, asc, isNull } from "drizzle-orm";
 import { BookingError, memberState, createReservation, cancelReservation } from "../lib/reservations";
 import learningRouter from "./learning";
+import { memberSupportRouter } from "./support";
+import { sendMemberNotification } from "../lib/notifications";
 
 const router = Router();
 router.use((req, res, next) => {
@@ -12,6 +14,7 @@ router.use((req, res, next) => {
   next();
 });
 router.use(learningRouter);
+router.use(memberSupportRouter);
 router.get("/", async (req, res) => { res.json(await memberState(getAuth(req).userId!)); });
 router.get("/plans", async (_req, res) => {
   res.json(await db.select().from(membershipPlans).where(eq(membershipPlans.active, true)));
@@ -71,11 +74,20 @@ router.post("/preview-membership", async (req, res) => {
 router.post("/bookings", async (req, res) => {
   const parsed = z.object({ kind: z.enum(["session", "event", "coach"]), targetId: z.string().min(1).max(100), slot: z.string().max(100).default("") }).strict().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ message: "Invalid booking request." }); return; }
-  await createReservation(getAuth(req).userId!, parsed.data);
+  const ownerId = getAuth(req).userId!;
+  const reservation = await createReservation(ownerId, parsed.data);
+  const [offering] = await db.select({ scope: offerings.scope }).from(offerings)
+    .where(eq(offerings.id, reservation.offeringId)).limit(1);
+  if (offering?.scope === "live") void sendMemberNotification(ownerId, "booking_created");
   res.status(201).json(await memberState(getAuth(req).userId!));
 });
 router.delete("/bookings/:id", async (req, res) => {
-  await cancelReservation(getAuth(req).userId!, String(req.params.id));
+  const ownerId = getAuth(req).userId!;
+  const [offering] = await db.select({ scope: offerings.scope }).from(reservations)
+    .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
+    .where(and(eq(reservations.id, String(req.params.id)), eq(reservations.userId, ownerId))).limit(1);
+  const cancelled = await cancelReservation(ownerId, String(req.params.id));
+  if (cancelled && offering?.scope === "live") void sendMemberNotification(ownerId, "booking_cancelled");
   res.json(await memberState(getAuth(req).userId!));
 });
 router.use((error: unknown, _req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => {

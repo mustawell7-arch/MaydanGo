@@ -106,6 +106,209 @@ export interface HealthStatus {
   status: string;
 }
 
+export type SupportTicketStatus = typeof SupportTicketStatus[keyof typeof SupportTicketStatus];
+
+
+export const SupportTicketStatus = {
+  open: 'open',
+  in_progress: 'in_progress',
+  waiting_member: 'waiting_member',
+  resolved: 'resolved',
+  closed: 'closed',
+} as const;
+
+export type SupportTicketCategory = typeof SupportTicketCategory[keyof typeof SupportTicketCategory];
+
+
+export const SupportTicketCategory = {
+  booking: 'booking',
+  account: 'account',
+  access: 'access',
+  safety: 'safety',
+  other: 'other',
+} as const;
+
+export type SupportedLanguage = typeof SupportedLanguage[keyof typeof SupportedLanguage];
+
+
+export const SupportedLanguage = {
+  en: 'en',
+  ar: 'ar',
+  ku: 'ku',
+} as const;
+
+export interface SupportTicketInput {
+  /**
+     * @minLength 4
+     * @maxLength 120
+     */
+  subject: string;
+  category: SupportTicketCategory;
+  /**
+     * @minLength 10
+     * @maxLength 5000
+     */
+  message: string;
+  language: SupportedLanguage;
+}
+
+export interface SupportReplyInput {
+  /**
+     * @minLength 1
+     * @maxLength 5000
+     */
+  message: string;
+  language: SupportedLanguage;
+}
+
+export interface SupportTicketSummary {
+  id: string;
+  subject: string;
+  category: SupportTicketCategory;
+  status: SupportTicketStatus;
+  language: SupportedLanguage;
+  createdAt: string;
+  updatedAt: string;
+  lastMessageAt: string;
+}
+
+export interface SupportTicketEvent {
+  action: string;
+  /** @nullable */
+  previousStatus?: string | null;
+  /** @nullable */
+  nextStatus?: string | null;
+  createdAt: string;
+}
+
+export type SupportMessageAuthorRole = typeof SupportMessageAuthorRole[keyof typeof SupportMessageAuthorRole];
+
+
+export const SupportMessageAuthorRole = {
+  member: 'member',
+  support: 'support',
+  admin: 'admin',
+} as const;
+
+export interface SupportMessage {
+  id: string;
+  authorRole: SupportMessageAuthorRole;
+  message: string;
+  language: SupportedLanguage;
+  createdAt: string;
+}
+
+export type SupportTicketDetail = SupportTicketSummary & {
+  messages: SupportMessage[];
+  events: SupportTicketEvent[];
+};
+
+export type SupportStaffTicketSummary = SupportTicketSummary & ({
+  memberUserId: string;
+  /** @nullable */
+  assignedTo: string | null;
+});
+
+export type SupportStaffMessage = SupportMessage & {
+  authorId: string;
+};
+
+export type SupportStaffEvent = SupportTicketEvent & ({
+  actorId: string;
+  /** @nullable */
+  previousAssignee: string | null;
+  /** @nullable */
+  nextAssignee: string | null;
+  detail: string;
+});
+
+export type SupportStaffTicketDetail = SupportStaffTicketSummary & {
+  messages: SupportStaffMessage[];
+  events: SupportStaffEvent[];
+};
+
+export interface SupportStaffTicketUpdate {
+  status?: SupportTicketStatus;
+  assignedTo?: string | null;
+}
+
+export type SupportAgentRole = typeof SupportAgentRole[keyof typeof SupportAgentRole];
+
+
+export const SupportAgentRole = {
+  admin: 'admin',
+  support: 'support',
+} as const;
+
+export interface SupportAgent {
+  userId: string;
+  role: SupportAgentRole;
+}
+
+export interface SupportAgentInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  userId: string;
+}
+
+export interface NotificationSettings {
+  pushEnabled: boolean;
+  language: SupportedLanguage;
+  /** @minimum 0 */
+  registeredDevices: number;
+}
+
+export interface NotificationSettingsInput {
+  pushEnabled: boolean;
+  language: SupportedLanguage;
+}
+
+export type PushDeviceInputPlatform = typeof PushDeviceInputPlatform[keyof typeof PushDeviceInputPlatform];
+
+
+export const PushDeviceInputPlatform = {
+  ios: 'ios',
+  android: 'android',
+} as const;
+
+export interface PushDeviceInput {
+  /**
+     * @minLength 20
+     * @maxLength 512
+     * @pattern ^(Expo|Exponent)PushToken\[[A-Za-z0-9_-]+\]$
+     */
+  token: string;
+  platform: PushDeviceInputPlatform;
+  language: SupportedLanguage;
+}
+
+export interface PushDeviceRemoval {
+  /**
+     * @minLength 20
+     * @maxLength 512
+     */
+  token: string;
+}
+
+export type NotificationFailureStatus = typeof NotificationFailureStatus[keyof typeof NotificationFailureStatus];
+
+
+export const NotificationFailureStatus = {
+  failed: 'failed',
+} as const;
+
+export interface NotificationFailure {
+  id: string;
+  userId: string;
+  kind: string;
+  title: string;
+  status: NotificationFailureStatus;
+  error: string;
+  createdAt: string;
+}
+
 export interface OperationSuccess {
   ok: boolean;
 }
@@ -529,6 +732,10 @@ export const ReviewAttendanceBodyAction = {
 export type ReviewAttendanceBody = {
   action: ReviewAttendanceBodyAction;
   reason: string;
+};
+
+export type GetSupportStaffTicketsParams = {
+status?: SupportTicketStatus;
 };
 
 export type SaveMemberProfileBodyGender = typeof SaveMemberProfileBodyGender[keyof typeof SaveMemberProfileBodyGender];

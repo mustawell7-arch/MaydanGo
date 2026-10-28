@@ -1,6 +1,182 @@
 openapi: 3.1.0
 info: { title: Operations, version: 1.0.0 }
 paths:
+  /member/support/tickets:
+    get:
+      operationId: getMemberSupportTickets
+      responses:
+        "200":
+          description: Tickets owned by the signed-in member
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/SupportTicketSummary" } }
+    post:
+      operationId: createMemberSupportTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportTicketInput" }
+      responses:
+        "201":
+          description: Private support conversation created for the signed-in member
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportTicketDetail" }
+  /member/support/tickets/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getMemberSupportTicket
+      responses:
+        "200":
+          description: Ticket and replies belonging to the signed-in member
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportTicketDetail" }
+  /member/support/tickets/{id}/replies:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: replyMemberSupportTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportReplyInput" }
+      responses:
+        "201":
+          description: Member reply saved to the owned ticket
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportTicketDetail" }
+  /member/notifications/settings:
+    get:
+      operationId: getMemberNotificationSettings
+      responses:
+        "200":
+          description: Signed-in member's push preference and registered device count
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationSettings" }
+    put:
+      operationId: updateMemberNotificationSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotificationSettingsInput" }
+      responses:
+        "200":
+          description: Notification preference updated for the signed-in member
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationSettings" }
+  /member/notifications/devices:
+    post:
+      operationId: registerMemberPushDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PushDeviceInput" }
+      responses:
+        "200":
+          description: Device registered after explicit member opt-in
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationSettings" }
+    delete:
+      operationId: unregisterMemberPushDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PushDeviceRemoval" }
+      responses:
+        "200":
+          description: Device removed and push disabled when no registered devices remain
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationSettings" }
+  /support/staff/tickets:
+    get:
+      operationId: getSupportStaffTickets
+      parameters:
+        - { name: status, in: query, required: false, schema: { $ref: "#/components/schemas/SupportTicketStatus" } }
+      responses:
+        "200":
+          description: Support queue, accessible only to authorized support staff and administrators
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/SupportStaffTicketSummary" } }
+  /support/staff/tickets/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getSupportStaffTicket
+      responses:
+        "200":
+          description: Staff view of a ticket, its replies, and its status and assignment history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportStaffTicketDetail" }
+    patch:
+      operationId: updateSupportStaffTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportStaffTicketUpdate" }
+      responses:
+        "200":
+          description: Ticket status or assignment updated and audited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportStaffTicketDetail" }
+  /support/staff/tickets/{id}/replies:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: replySupportStaffTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportReplyInput" }
+      responses:
+        "201":
+          description: Staff reply saved and member notification attempted separately
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportStaffTicketDetail" }
+  /support/staff/agents:
+    get:
+      operationId: getSupportStaffAgents
+      responses:
+        "200":
+          description: Authorized support team roster
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/SupportAgent" } }
+    post:
+      operationId: addSupportStaffAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportAgentInput" }
+      responses:
+        "201":
+          description: Support role assigned by an administrator
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportAgent" }
+  /support/staff/notification-failures:
+    get:
+      operationId: getSupportNotificationFailures
+      responses:
+        "200":
+          description: Recent failed operational push attempts without exposing device tokens
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/NotificationFailure" } }
   /operations:
     get:
       operationId: getOperations
@@ -264,6 +440,160 @@ components:
   parameters:
     Id: { name: id, in: path, required: true, schema: { type: string } }
   schemas:
+    SupportTicketStatus:
+      type: string
+      enum: [open, in_progress, waiting_member, resolved, closed]
+    SupportTicketCategory:
+      type: string
+      enum: [booking, account, access, safety, other]
+    SupportedLanguage:
+      type: string
+      enum: [en, ar, ku]
+    SupportTicketInput:
+      type: object
+      additionalProperties: false
+      required: [subject, category, message, language]
+      properties:
+        subject: { type: string, minLength: 4, maxLength: 120 }
+        category: { $ref: "#/components/schemas/SupportTicketCategory" }
+        message: { type: string, minLength: 10, maxLength: 5000 }
+        language: { $ref: "#/components/schemas/SupportedLanguage" }
+    SupportReplyInput:
+      type: object
+      additionalProperties: false
+      required: [message, language]
+      properties:
+        message: { type: string, minLength: 1, maxLength: 5000 }
+        language: { $ref: "#/components/schemas/SupportedLanguage" }
+    SupportTicketSummary:
+      type: object
+      required: [id, subject, category, status, language, createdAt, updatedAt, lastMessageAt]
+      properties:
+        id: { type: string }
+        subject: { type: string }
+        category: { $ref: "#/components/schemas/SupportTicketCategory" }
+        status: { $ref: "#/components/schemas/SupportTicketStatus" }
+        language: { $ref: "#/components/schemas/SupportedLanguage" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        lastMessageAt: { type: string, format: date-time }
+    SupportTicketEvent:
+      type: object
+      required: [action, createdAt]
+      properties:
+        action: { type: string }
+        previousStatus: { type: [string, "null"] }
+        nextStatus: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+    SupportMessage:
+      type: object
+      required: [id, authorRole, message, language, createdAt]
+      properties:
+        id: { type: string }
+        authorRole: { type: string, enum: [member, support, admin] }
+        message: { type: string }
+        language: { $ref: "#/components/schemas/SupportedLanguage" }
+        createdAt: { type: string, format: date-time }
+    SupportTicketDetail:
+      allOf:
+        - $ref: "#/components/schemas/SupportTicketSummary"
+        - type: object
+          required: [messages, events]
+          properties:
+            messages: { type: array, items: { $ref: "#/components/schemas/SupportMessage" } }
+            events: { type: array, items: { $ref: "#/components/schemas/SupportTicketEvent" } }
+    SupportStaffTicketSummary:
+      allOf:
+        - $ref: "#/components/schemas/SupportTicketSummary"
+        - type: object
+          required: [memberUserId, assignedTo]
+          properties:
+            memberUserId: { type: string }
+            assignedTo: { type: [string, "null"] }
+    SupportStaffMessage:
+      allOf:
+        - $ref: "#/components/schemas/SupportMessage"
+        - type: object
+          required: [authorId]
+          properties: { authorId: { type: string } }
+    SupportStaffEvent:
+      allOf:
+        - $ref: "#/components/schemas/SupportTicketEvent"
+        - type: object
+          required: [actorId, previousAssignee, nextAssignee, detail]
+          properties:
+            actorId: { type: string }
+            previousAssignee: { type: [string, "null"] }
+            nextAssignee: { type: [string, "null"] }
+            detail: { type: string }
+    SupportStaffTicketDetail:
+      allOf:
+        - $ref: "#/components/schemas/SupportStaffTicketSummary"
+        - type: object
+          required: [messages, events]
+          properties:
+            messages: { type: array, items: { $ref: "#/components/schemas/SupportStaffMessage" } }
+            events: { type: array, items: { $ref: "#/components/schemas/SupportStaffEvent" } }
+    SupportStaffTicketUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        status: { $ref: "#/components/schemas/SupportTicketStatus" }
+        assignedTo:
+          anyOf:
+            - type: string
+            - type: "null"
+    SupportAgent:
+      type: object
+      required: [userId, role]
+      properties:
+        userId: { type: string }
+        role: { type: string, enum: [admin, support] }
+    SupportAgentInput:
+      type: object
+      additionalProperties: false
+      required: [userId]
+      properties: { userId: { type: string, minLength: 1, maxLength: 160 } }
+    NotificationSettings:
+      type: object
+      required: [pushEnabled, language, registeredDevices]
+      properties:
+        pushEnabled: { type: boolean }
+        language: { $ref: "#/components/schemas/SupportedLanguage" }
+        registeredDevices: { type: integer, minimum: 0 }
+    NotificationSettingsInput:
+      type: object
+      additionalProperties: false
+      required: [pushEnabled, language]
+      properties:
+        pushEnabled: { type: boolean }
+        language: { $ref: "#/components/schemas/SupportedLanguage" }
+    PushDeviceInput:
+      type: object
+      additionalProperties: false
+      required: [token, platform, language]
+      properties:
+        token: { type: string, minLength: 20, maxLength: 512, pattern: "^(Expo|Exponent)PushToken\\[[A-Za-z0-9_-]+\\]$" }
+        platform: { type: string, enum: [ios, android] }
+        language: { $ref: "#/components/schemas/SupportedLanguage" }
+    PushDeviceRemoval:
+      type: object
+      additionalProperties: false
+      required: [token]
+      properties:
+        token: { type: string, minLength: 20, maxLength: 512 }
+    NotificationFailure:
+      type: object
+      required: [id, userId, kind, title, status, error, createdAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        kind: { type: string }
+        title: { type: string }
+        status: { type: string, enum: [failed] }
+        error: { type: string }
+        createdAt: { type: string, format: date-time }
     OperationSuccess:
       type: object
       required: [ok]

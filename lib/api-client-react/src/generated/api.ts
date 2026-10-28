@@ -39,6 +39,7 @@ import type {
   EnablePreviewMembershipBody,
   GetAttendance200,
   GetBookingCatalog200Item,
+  GetSupportStaffTicketsParams,
   HealthStatus,
   IssueCheckinQr200,
   JoinAccess,
@@ -47,6 +48,9 @@ import type {
   LivePlan,
   MemberLiveClass,
   MemberState,
+  NotificationFailure,
+  NotificationSettings,
+  NotificationSettingsInput,
   OfferingInput,
   OfferingUpdate,
   OperationSuccess,
@@ -57,13 +61,24 @@ import type {
   PlanInput,
   PublicOffering,
   PublicPlan,
+  PushDeviceInput,
+  PushDeviceRemoval,
   RecordManualCheckin200,
   RecordManualCheckinBody,
   RequestManualCheckinCode200,
   ReviewAttendanceBody,
   SaveMemberProfileBody,
   ScanCheckinQr200,
-  ScanCheckinQrBody
+  ScanCheckinQrBody,
+  SupportAgent,
+  SupportAgentInput,
+  SupportReplyInput,
+  SupportStaffTicketDetail,
+  SupportStaffTicketSummary,
+  SupportStaffTicketUpdate,
+  SupportTicketDetail,
+  SupportTicketInput,
+  SupportTicketSummary
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -2593,6 +2608,1337 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getCreateLiveClassJoinMutationOptions(options), queryClient);
     }
+
+export const getGetMemberSupportTicketsUrl = () => {
+
+
+
+
+  return `/api/member/support/tickets`
+}
+
+export const getMemberSupportTickets = async ( options?: Parameters<typeof customFetch>[1]): Promise<SupportTicketSummary[]> => {
+
+  return customFetch<SupportTicketSummary[]>(getGetMemberSupportTicketsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberSupportTicketsQueryKey = () => {
+    return [
+    `/api/member/support/tickets`
+    ] as const;
+    }
+
+
+export const getGetMemberSupportTicketsQueryOptions = <TData = Awaited<ReturnType<typeof getMemberSupportTickets>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTickets>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberSupportTicketsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberSupportTickets>>> = ({ signal }) => getMemberSupportTickets({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTickets>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberSupportTicketsQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberSupportTickets>>>
+export type GetMemberSupportTicketsQueryError = ErrorType<unknown>
+
+
+export function useGetMemberSupportTickets<TData = Awaited<ReturnType<typeof getMemberSupportTickets>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTickets>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberSupportTickets>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberSupportTickets>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberSupportTickets<TData = Awaited<ReturnType<typeof getMemberSupportTickets>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTickets>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberSupportTickets>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberSupportTickets>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberSupportTickets<TData = Awaited<ReturnType<typeof getMemberSupportTickets>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTickets>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberSupportTickets<TData = Awaited<ReturnType<typeof getMemberSupportTickets>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTickets>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberSupportTicketsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateMemberSupportTicketUrl = () => {
+
+
+
+
+  return `/api/member/support/tickets`
+}
+
+export const createMemberSupportTicket = async (supportTicketInput: SupportTicketInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportTicketDetail> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportTicketDetail>(getCreateMemberSupportTicketUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportTicketInput)
+  }
+);}
+
+
+
+
+
+export const getCreateMemberSupportTicketMutationKey = () => ['createMemberSupportTicket'] as const;
+
+export const getCreateMemberSupportTicketMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMemberSupportTicket>>, TError,CreateMemberSupportTicketMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createMemberSupportTicket>>, TError,CreateMemberSupportTicketMutationVariables, TContext> => {
+
+const mutationKey = getCreateMemberSupportTicketMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMemberSupportTicket>>, CreateMemberSupportTicketMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createMemberSupportTicket(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMemberSupportTicketMutationResult = NonNullable<Awaited<ReturnType<typeof createMemberSupportTicket>>>
+    export type CreateMemberSupportTicketMutationBody = BodyType<SupportTicketInput>
+    export type CreateMemberSupportTicketMutationError = ErrorType<unknown>
+    export type CreateMemberSupportTicketMutationVariables = {data: BodyType<SupportTicketInput>}
+
+    export const useCreateMemberSupportTicket = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMemberSupportTicket>>, TError,CreateMemberSupportTicketMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createMemberSupportTicket>>,
+        TError,
+        CreateMemberSupportTicketMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateMemberSupportTicketMutationOptions(options), queryClient);
+    }
+
+export const getGetMemberSupportTicketUrl = (id: string,) => {
+
+
+
+
+  return `/api/member/support/tickets/${id}`
+}
+
+export const getMemberSupportTicket = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<SupportTicketDetail> => {
+
+  return customFetch<SupportTicketDetail>(getGetMemberSupportTicketUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberSupportTicketQueryKey = (id: string,) => {
+    return [
+    `/api/member/support/tickets/${id}`
+    ] as const;
+    }
+
+
+export const getGetMemberSupportTicketQueryOptions = <TData = Awaited<ReturnType<typeof getMemberSupportTicket>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTicket>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberSupportTicketQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberSupportTicket>>> = ({ signal }) => getMemberSupportTicket(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTicket>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberSupportTicketQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberSupportTicket>>>
+export type GetMemberSupportTicketQueryError = ErrorType<unknown>
+
+
+export function useGetMemberSupportTicket<TData = Awaited<ReturnType<typeof getMemberSupportTicket>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTicket>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberSupportTicket>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberSupportTicket>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberSupportTicket<TData = Awaited<ReturnType<typeof getMemberSupportTicket>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTicket>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberSupportTicket>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberSupportTicket>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberSupportTicket<TData = Awaited<ReturnType<typeof getMemberSupportTicket>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTicket>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberSupportTicket<TData = Awaited<ReturnType<typeof getMemberSupportTicket>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTicket>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberSupportTicketQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getReplyMemberSupportTicketUrl = (id: string,) => {
+
+
+
+
+  return `/api/member/support/tickets/${id}/replies`
+}
+
+export const replyMemberSupportTicket = async (id: string,
+    supportReplyInput: SupportReplyInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportTicketDetail> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportTicketDetail>(getReplyMemberSupportTicketUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportReplyInput)
+  }
+);}
+
+
+
+
+
+export const getReplyMemberSupportTicketMutationKey = () => ['replyMemberSupportTicket'] as const;
+
+export const getReplyMemberSupportTicketMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replyMemberSupportTicket>>, TError,ReplyMemberSupportTicketMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof replyMemberSupportTicket>>, TError,ReplyMemberSupportTicketMutationVariables, TContext> => {
+
+const mutationKey = getReplyMemberSupportTicketMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof replyMemberSupportTicket>>, ReplyMemberSupportTicketMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  replyMemberSupportTicket(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReplyMemberSupportTicketMutationResult = NonNullable<Awaited<ReturnType<typeof replyMemberSupportTicket>>>
+    export type ReplyMemberSupportTicketMutationBody = BodyType<SupportReplyInput>
+    export type ReplyMemberSupportTicketMutationError = ErrorType<unknown>
+    export type ReplyMemberSupportTicketMutationVariables = {id: string;data: BodyType<SupportReplyInput>}
+
+    export const useReplyMemberSupportTicket = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replyMemberSupportTicket>>, TError,ReplyMemberSupportTicketMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof replyMemberSupportTicket>>,
+        TError,
+        ReplyMemberSupportTicketMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReplyMemberSupportTicketMutationOptions(options), queryClient);
+    }
+
+export const getGetMemberNotificationSettingsUrl = () => {
+
+
+
+
+  return `/api/member/notifications/settings`
+}
+
+export const getMemberNotificationSettings = async ( options?: Parameters<typeof customFetch>[1]): Promise<NotificationSettings> => {
+
+  return customFetch<NotificationSettings>(getGetMemberNotificationSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberNotificationSettingsQueryKey = () => {
+    return [
+    `/api/member/notifications/settings`
+    ] as const;
+    }
+
+
+export const getGetMemberNotificationSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getMemberNotificationSettings>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberNotificationSettings>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberNotificationSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberNotificationSettings>>> = ({ signal }) => getMemberNotificationSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberNotificationSettings>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberNotificationSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberNotificationSettings>>>
+export type GetMemberNotificationSettingsQueryError = ErrorType<unknown>
+
+
+export function useGetMemberNotificationSettings<TData = Awaited<ReturnType<typeof getMemberNotificationSettings>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberNotificationSettings>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberNotificationSettings>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberNotificationSettings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberNotificationSettings<TData = Awaited<ReturnType<typeof getMemberNotificationSettings>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberNotificationSettings>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberNotificationSettings>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberNotificationSettings>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberNotificationSettings<TData = Awaited<ReturnType<typeof getMemberNotificationSettings>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberNotificationSettings>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberNotificationSettings<TData = Awaited<ReturnType<typeof getMemberNotificationSettings>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberNotificationSettings>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberNotificationSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateMemberNotificationSettingsUrl = () => {
+
+
+
+
+  return `/api/member/notifications/settings`
+}
+
+export const updateMemberNotificationSettings = async (notificationSettingsInput: NotificationSettingsInput, options?: Parameters<typeof customFetch>[1]): Promise<NotificationSettings> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<NotificationSettings>(getUpdateMemberNotificationSettingsUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(notificationSettingsInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateMemberNotificationSettingsMutationKey = () => ['updateMemberNotificationSettings'] as const;
+
+export const getUpdateMemberNotificationSettingsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMemberNotificationSettings>>, TError,UpdateMemberNotificationSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMemberNotificationSettings>>, TError,UpdateMemberNotificationSettingsMutationVariables, TContext> => {
+
+const mutationKey = getUpdateMemberNotificationSettingsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMemberNotificationSettings>>, UpdateMemberNotificationSettingsMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateMemberNotificationSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMemberNotificationSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateMemberNotificationSettings>>>
+    export type UpdateMemberNotificationSettingsMutationBody = BodyType<NotificationSettingsInput>
+    export type UpdateMemberNotificationSettingsMutationError = ErrorType<unknown>
+    export type UpdateMemberNotificationSettingsMutationVariables = {data: BodyType<NotificationSettingsInput>}
+
+    export const useUpdateMemberNotificationSettings = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMemberNotificationSettings>>, TError,UpdateMemberNotificationSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateMemberNotificationSettings>>,
+        TError,
+        UpdateMemberNotificationSettingsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateMemberNotificationSettingsMutationOptions(options), queryClient);
+    }
+
+export const getRegisterMemberPushDeviceUrl = () => {
+
+
+
+
+  return `/api/member/notifications/devices`
+}
+
+export const registerMemberPushDevice = async (pushDeviceInput: PushDeviceInput, options?: Parameters<typeof customFetch>[1]): Promise<NotificationSettings> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<NotificationSettings>(getRegisterMemberPushDeviceUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(pushDeviceInput)
+  }
+);}
+
+
+
+
+
+export const getRegisterMemberPushDeviceMutationKey = () => ['registerMemberPushDevice'] as const;
+
+export const getRegisterMemberPushDeviceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerMemberPushDevice>>, TError,RegisterMemberPushDeviceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof registerMemberPushDevice>>, TError,RegisterMemberPushDeviceMutationVariables, TContext> => {
+
+const mutationKey = getRegisterMemberPushDeviceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerMemberPushDevice>>, RegisterMemberPushDeviceMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  registerMemberPushDevice(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterMemberPushDeviceMutationResult = NonNullable<Awaited<ReturnType<typeof registerMemberPushDevice>>>
+    export type RegisterMemberPushDeviceMutationBody = BodyType<PushDeviceInput>
+    export type RegisterMemberPushDeviceMutationError = ErrorType<unknown>
+    export type RegisterMemberPushDeviceMutationVariables = {data: BodyType<PushDeviceInput>}
+
+    export const useRegisterMemberPushDevice = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerMemberPushDevice>>, TError,RegisterMemberPushDeviceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof registerMemberPushDevice>>,
+        TError,
+        RegisterMemberPushDeviceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRegisterMemberPushDeviceMutationOptions(options), queryClient);
+    }
+
+export const getUnregisterMemberPushDeviceUrl = () => {
+
+
+
+
+  return `/api/member/notifications/devices`
+}
+
+export const unregisterMemberPushDevice = async (pushDeviceRemoval: PushDeviceRemoval, options?: Parameters<typeof customFetch>[1]): Promise<NotificationSettings> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<NotificationSettings>(getUnregisterMemberPushDeviceUrl(),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(pushDeviceRemoval)
+  }
+);}
+
+
+
+
+
+export const getUnregisterMemberPushDeviceMutationKey = () => ['unregisterMemberPushDevice'] as const;
+
+export const getUnregisterMemberPushDeviceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unregisterMemberPushDevice>>, TError,UnregisterMemberPushDeviceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unregisterMemberPushDevice>>, TError,UnregisterMemberPushDeviceMutationVariables, TContext> => {
+
+const mutationKey = getUnregisterMemberPushDeviceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unregisterMemberPushDevice>>, UnregisterMemberPushDeviceMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  unregisterMemberPushDevice(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnregisterMemberPushDeviceMutationResult = NonNullable<Awaited<ReturnType<typeof unregisterMemberPushDevice>>>
+    export type UnregisterMemberPushDeviceMutationBody = BodyType<PushDeviceRemoval>
+    export type UnregisterMemberPushDeviceMutationError = ErrorType<unknown>
+    export type UnregisterMemberPushDeviceMutationVariables = {data: BodyType<PushDeviceRemoval>}
+
+    export const useUnregisterMemberPushDevice = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unregisterMemberPushDevice>>, TError,UnregisterMemberPushDeviceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof unregisterMemberPushDevice>>,
+        TError,
+        UnregisterMemberPushDeviceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUnregisterMemberPushDeviceMutationOptions(options), queryClient);
+    }
+
+export const getGetSupportStaffTicketsUrl = (params?: GetSupportStaffTicketsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/support/staff/tickets?${stringifiedParams}` : `/api/support/staff/tickets`
+}
+
+export const getSupportStaffTickets = async (params?: GetSupportStaffTicketsParams, options?: Parameters<typeof customFetch>[1]): Promise<SupportStaffTicketSummary[]> => {
+
+  return customFetch<SupportStaffTicketSummary[]>(getGetSupportStaffTicketsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportStaffTicketsQueryKey = (params?: GetSupportStaffTicketsParams,) => {
+    return [
+    `/api/support/staff/tickets`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetSupportStaffTicketsQueryOptions = <TData = Awaited<ReturnType<typeof getSupportStaffTickets>>, TError = ErrorType<unknown>>(params?: GetSupportStaffTicketsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTickets>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportStaffTicketsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportStaffTickets>>> = ({ signal }) => getSupportStaffTickets(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTickets>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSupportStaffTicketsQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportStaffTickets>>>
+export type GetSupportStaffTicketsQueryError = ErrorType<unknown>
+
+
+export function useGetSupportStaffTickets<TData = Awaited<ReturnType<typeof getSupportStaffTickets>>, TError = ErrorType<unknown>>(
+ params: undefined |  GetSupportStaffTicketsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTickets>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportStaffTickets>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportStaffTickets>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportStaffTickets<TData = Awaited<ReturnType<typeof getSupportStaffTickets>>, TError = ErrorType<unknown>>(
+ params?: GetSupportStaffTicketsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTickets>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportStaffTickets>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportStaffTickets>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportStaffTickets<TData = Awaited<ReturnType<typeof getSupportStaffTickets>>, TError = ErrorType<unknown>>(
+ params?: GetSupportStaffTicketsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTickets>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSupportStaffTickets<TData = Awaited<ReturnType<typeof getSupportStaffTickets>>, TError = ErrorType<unknown>>(
+ params?: GetSupportStaffTicketsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTickets>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSupportStaffTicketsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetSupportStaffTicketUrl = (id: string,) => {
+
+
+
+
+  return `/api/support/staff/tickets/${id}`
+}
+
+export const getSupportStaffTicket = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<SupportStaffTicketDetail> => {
+
+  return customFetch<SupportStaffTicketDetail>(getGetSupportStaffTicketUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportStaffTicketQueryKey = (id: string,) => {
+    return [
+    `/api/support/staff/tickets/${id}`
+    ] as const;
+    }
+
+
+export const getGetSupportStaffTicketQueryOptions = <TData = Awaited<ReturnType<typeof getSupportStaffTicket>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicket>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportStaffTicketQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportStaffTicket>>> = ({ signal }) => getSupportStaffTicket(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicket>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSupportStaffTicketQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportStaffTicket>>>
+export type GetSupportStaffTicketQueryError = ErrorType<unknown>
+
+
+export function useGetSupportStaffTicket<TData = Awaited<ReturnType<typeof getSupportStaffTicket>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicket>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportStaffTicket>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportStaffTicket>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportStaffTicket<TData = Awaited<ReturnType<typeof getSupportStaffTicket>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicket>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportStaffTicket>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportStaffTicket>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportStaffTicket<TData = Awaited<ReturnType<typeof getSupportStaffTicket>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicket>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSupportStaffTicket<TData = Awaited<ReturnType<typeof getSupportStaffTicket>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicket>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSupportStaffTicketQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateSupportStaffTicketUrl = (id: string,) => {
+
+
+
+
+  return `/api/support/staff/tickets/${id}`
+}
+
+export const updateSupportStaffTicket = async (id: string,
+    supportStaffTicketUpdate: SupportStaffTicketUpdate, options?: Parameters<typeof customFetch>[1]): Promise<SupportStaffTicketDetail> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportStaffTicketDetail>(getUpdateSupportStaffTicketUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportStaffTicketUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateSupportStaffTicketMutationKey = () => ['updateSupportStaffTicket'] as const;
+
+export const getUpdateSupportStaffTicketMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSupportStaffTicket>>, TError,UpdateSupportStaffTicketMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSupportStaffTicket>>, TError,UpdateSupportStaffTicketMutationVariables, TContext> => {
+
+const mutationKey = getUpdateSupportStaffTicketMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSupportStaffTicket>>, UpdateSupportStaffTicketMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSupportStaffTicket(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSupportStaffTicketMutationResult = NonNullable<Awaited<ReturnType<typeof updateSupportStaffTicket>>>
+    export type UpdateSupportStaffTicketMutationBody = BodyType<SupportStaffTicketUpdate>
+    export type UpdateSupportStaffTicketMutationError = ErrorType<unknown>
+    export type UpdateSupportStaffTicketMutationVariables = {id: string;data: BodyType<SupportStaffTicketUpdate>}
+
+    export const useUpdateSupportStaffTicket = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSupportStaffTicket>>, TError,UpdateSupportStaffTicketMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateSupportStaffTicket>>,
+        TError,
+        UpdateSupportStaffTicketMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateSupportStaffTicketMutationOptions(options), queryClient);
+    }
+
+export const getReplySupportStaffTicketUrl = (id: string,) => {
+
+
+
+
+  return `/api/support/staff/tickets/${id}/replies`
+}
+
+export const replySupportStaffTicket = async (id: string,
+    supportReplyInput: SupportReplyInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportStaffTicketDetail> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportStaffTicketDetail>(getReplySupportStaffTicketUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportReplyInput)
+  }
+);}
+
+
+
+
+
+export const getReplySupportStaffTicketMutationKey = () => ['replySupportStaffTicket'] as const;
+
+export const getReplySupportStaffTicketMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replySupportStaffTicket>>, TError,ReplySupportStaffTicketMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof replySupportStaffTicket>>, TError,ReplySupportStaffTicketMutationVariables, TContext> => {
+
+const mutationKey = getReplySupportStaffTicketMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof replySupportStaffTicket>>, ReplySupportStaffTicketMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  replySupportStaffTicket(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReplySupportStaffTicketMutationResult = NonNullable<Awaited<ReturnType<typeof replySupportStaffTicket>>>
+    export type ReplySupportStaffTicketMutationBody = BodyType<SupportReplyInput>
+    export type ReplySupportStaffTicketMutationError = ErrorType<unknown>
+    export type ReplySupportStaffTicketMutationVariables = {id: string;data: BodyType<SupportReplyInput>}
+
+    export const useReplySupportStaffTicket = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replySupportStaffTicket>>, TError,ReplySupportStaffTicketMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof replySupportStaffTicket>>,
+        TError,
+        ReplySupportStaffTicketMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReplySupportStaffTicketMutationOptions(options), queryClient);
+    }
+
+export const getGetSupportStaffAgentsUrl = () => {
+
+
+
+
+  return `/api/support/staff/agents`
+}
+
+export const getSupportStaffAgents = async ( options?: Parameters<typeof customFetch>[1]): Promise<SupportAgent[]> => {
+
+  return customFetch<SupportAgent[]>(getGetSupportStaffAgentsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportStaffAgentsQueryKey = () => {
+    return [
+    `/api/support/staff/agents`
+    ] as const;
+    }
+
+
+export const getGetSupportStaffAgentsQueryOptions = <TData = Awaited<ReturnType<typeof getSupportStaffAgents>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffAgents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportStaffAgentsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportStaffAgents>>> = ({ signal }) => getSupportStaffAgents({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffAgents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSupportStaffAgentsQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportStaffAgents>>>
+export type GetSupportStaffAgentsQueryError = ErrorType<unknown>
+
+
+export function useGetSupportStaffAgents<TData = Awaited<ReturnType<typeof getSupportStaffAgents>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffAgents>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportStaffAgents>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportStaffAgents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportStaffAgents<TData = Awaited<ReturnType<typeof getSupportStaffAgents>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffAgents>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportStaffAgents>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportStaffAgents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportStaffAgents<TData = Awaited<ReturnType<typeof getSupportStaffAgents>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffAgents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSupportStaffAgents<TData = Awaited<ReturnType<typeof getSupportStaffAgents>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffAgents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSupportStaffAgentsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAddSupportStaffAgentUrl = () => {
+
+
+
+
+  return `/api/support/staff/agents`
+}
+
+export const addSupportStaffAgent = async (supportAgentInput: SupportAgentInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportAgent> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportAgent>(getAddSupportStaffAgentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportAgentInput)
+  }
+);}
+
+
+
+
+
+export const getAddSupportStaffAgentMutationKey = () => ['addSupportStaffAgent'] as const;
+
+export const getAddSupportStaffAgentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSupportStaffAgent>>, TError,AddSupportStaffAgentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addSupportStaffAgent>>, TError,AddSupportStaffAgentMutationVariables, TContext> => {
+
+const mutationKey = getAddSupportStaffAgentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addSupportStaffAgent>>, AddSupportStaffAgentMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  addSupportStaffAgent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddSupportStaffAgentMutationResult = NonNullable<Awaited<ReturnType<typeof addSupportStaffAgent>>>
+    export type AddSupportStaffAgentMutationBody = BodyType<SupportAgentInput>
+    export type AddSupportStaffAgentMutationError = ErrorType<unknown>
+    export type AddSupportStaffAgentMutationVariables = {data: BodyType<SupportAgentInput>}
+
+    export const useAddSupportStaffAgent = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSupportStaffAgent>>, TError,AddSupportStaffAgentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof addSupportStaffAgent>>,
+        TError,
+        AddSupportStaffAgentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddSupportStaffAgentMutationOptions(options), queryClient);
+    }
+
+export const getGetSupportNotificationFailuresUrl = () => {
+
+
+
+
+  return `/api/support/staff/notification-failures`
+}
+
+export const getSupportNotificationFailures = async ( options?: Parameters<typeof customFetch>[1]): Promise<NotificationFailure[]> => {
+
+  return customFetch<NotificationFailure[]>(getGetSupportNotificationFailuresUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportNotificationFailuresQueryKey = () => {
+    return [
+    `/api/support/staff/notification-failures`
+    ] as const;
+    }
+
+
+export const getGetSupportNotificationFailuresQueryOptions = <TData = Awaited<ReturnType<typeof getSupportNotificationFailures>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportNotificationFailures>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportNotificationFailuresQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportNotificationFailures>>> = ({ signal }) => getSupportNotificationFailures({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportNotificationFailures>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSupportNotificationFailuresQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportNotificationFailures>>>
+export type GetSupportNotificationFailuresQueryError = ErrorType<unknown>
+
+
+export function useGetSupportNotificationFailures<TData = Awaited<ReturnType<typeof getSupportNotificationFailures>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportNotificationFailures>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportNotificationFailures>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportNotificationFailures>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportNotificationFailures<TData = Awaited<ReturnType<typeof getSupportNotificationFailures>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportNotificationFailures>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportNotificationFailures>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportNotificationFailures>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportNotificationFailures<TData = Awaited<ReturnType<typeof getSupportNotificationFailures>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportNotificationFailures>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSupportNotificationFailures<TData = Awaited<ReturnType<typeof getSupportNotificationFailures>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportNotificationFailures>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSupportNotificationFailuresQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetLivePlansUrl = () => {
 

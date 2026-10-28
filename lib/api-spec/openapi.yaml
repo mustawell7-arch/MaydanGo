@@ -243,6 +243,26 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1live-classes"
   /member/live-classes/{id}/join:
     $ref: "./operations.yaml#/paths/~1member~1live-classes~1{id}~1join"
+  /member/support/tickets:
+    $ref: "./operations.yaml#/paths/~1member~1support~1tickets"
+  /member/support/tickets/{id}:
+    $ref: "./operations.yaml#/paths/~1member~1support~1tickets~1{id}"
+  /member/support/tickets/{id}/replies:
+    $ref: "./operations.yaml#/paths/~1member~1support~1tickets~1{id}~1replies"
+  /member/notifications/settings:
+    $ref: "./operations.yaml#/paths/~1member~1notifications~1settings"
+  /member/notifications/devices:
+    $ref: "./operations.yaml#/paths/~1member~1notifications~1devices"
+  /support/staff/tickets:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1tickets"
+  /support/staff/tickets/{id}:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}"
+  /support/staff/tickets/{id}/replies:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1replies"
+  /support/staff/agents:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1agents"
+  /support/staff/notification-failures:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1notification-failures"
   /member/plans:
     $ref: "./operations.yaml#/paths/~1member~1plans"
   /member/profile:

@@ -2,6 +2,7 @@ export * from "./bookings";
 export * from "./operations";
 export * from "./checkin";
 export * from "./learning";
+export * from "./support";
 // Export your models here. Add one export per file
 // export * from "./posts";
 //

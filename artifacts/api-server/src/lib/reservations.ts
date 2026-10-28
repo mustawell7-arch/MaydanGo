@@ -111,12 +111,13 @@ export async function cancelReservation(userId: string, id: string) {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
     const [r] = await tx.select().from(reservations).where(and(eq(reservations.id, id), eq(reservations.userId, userId))).for("update");
     if (!r) throw new BookingError(404, "Booking not found.");
-    if (r.status === "cancelled") return;
+    if (r.status === "cancelled") return false;
     if (!["reserved", "requested"].includes(r.status)) throw new BookingError(409, "This booking can’t be canceled.");
     if ((await tx.select().from(attendance).where(eq(attendance.reservationId, id))).length)
       throw new BookingError(409, "Attendance already exists. Request an attendance review.");
     const [o] = await tx.select().from(offerings).where(eq(offerings.id, r.offeringId));
     if (new Date() >= o.cancellationDeadline) throw new BookingError(409, "The cancellation deadline has passed. Contact support.");
     await tx.update(reservations).set({ status: "cancelled", cancelledAt: new Date() }).where(eq(reservations.id, r.id));
+    return true;
   });
 }

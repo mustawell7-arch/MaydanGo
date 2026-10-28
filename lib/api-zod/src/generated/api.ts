@@ -1500,6 +1500,387 @@ export const CreateLiveClassJoinResponse = zod.object({
 })
 
 
+export const GetMemberSupportTicketsResponseItem = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+})
+export const GetMemberSupportTicketsResponse = zod.array(GetMemberSupportTicketsResponseItem)
+
+
+export const createMemberSupportTicketBodySubjectMin = 4;
+export const createMemberSupportTicketBodySubjectMax = 120;
+
+export const createMemberSupportTicketBodyMessageMin = 10;
+export const createMemberSupportTicketBodyMessageMax = 5000;
+
+
+
+export const CreateMemberSupportTicketBody = zod.object({
+  "subject": zod.string().min(createMemberSupportTicketBodySubjectMin).max(createMemberSupportTicketBodySubjectMax),
+  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "message": zod.string().min(createMemberSupportTicketBodyMessageMin).max(createMemberSupportTicketBodyMessageMax),
+  "language": zod.enum(['en', 'ar', 'ku'])
+})
+
+export const CreateMemberSupportTicketResponse = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "message": zod.string(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date()
+})),
+  "events": zod.array(zod.object({
+  "action": zod.string(),
+  "previousStatus": zod.string().nullish(),
+  "nextStatus": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+export const GetMemberSupportTicketParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetMemberSupportTicketResponse = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "message": zod.string(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date()
+})),
+  "events": zod.array(zod.object({
+  "action": zod.string(),
+  "previousStatus": zod.string().nullish(),
+  "nextStatus": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+export const ReplyMemberSupportTicketParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const replyMemberSupportTicketBodyMessageMax = 5000;
+
+
+
+export const ReplyMemberSupportTicketBody = zod.object({
+  "message": zod.string().min(1).max(replyMemberSupportTicketBodyMessageMax),
+  "language": zod.enum(['en', 'ar', 'ku'])
+})
+
+export const ReplyMemberSupportTicketResponse = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "message": zod.string(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date()
+})),
+  "events": zod.array(zod.object({
+  "action": zod.string(),
+  "previousStatus": zod.string().nullish(),
+  "nextStatus": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+export const getMemberNotificationSettingsResponseRegisteredDevicesMin = 0;
+
+
+
+export const GetMemberNotificationSettingsResponse = zod.object({
+  "pushEnabled": zod.boolean(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "registeredDevices": zod.number().int().min(getMemberNotificationSettingsResponseRegisteredDevicesMin)
+})
+
+
+export const UpdateMemberNotificationSettingsBody = zod.object({
+  "pushEnabled": zod.boolean(),
+  "language": zod.enum(['en', 'ar', 'ku'])
+})
+
+export const updateMemberNotificationSettingsResponseRegisteredDevicesMin = 0;
+
+
+
+export const UpdateMemberNotificationSettingsResponse = zod.object({
+  "pushEnabled": zod.boolean(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "registeredDevices": zod.number().int().min(updateMemberNotificationSettingsResponseRegisteredDevicesMin)
+})
+
+
+export const registerMemberPushDeviceBodyTokenMin = 20;
+export const registerMemberPushDeviceBodyTokenMax = 512;
+
+
+export const registerMemberPushDeviceBodyTokenRegExp = new RegExp('^(Expo|Exponent)PushToken\\[[A-Za-z0-9_-]+\\]$');
+
+
+export const RegisterMemberPushDeviceBody = zod.object({
+  "token": zod.string().min(registerMemberPushDeviceBodyTokenMin).max(registerMemberPushDeviceBodyTokenMax).regex(registerMemberPushDeviceBodyTokenRegExp),
+  "platform": zod.enum(['ios', 'android']),
+  "language": zod.enum(['en', 'ar', 'ku'])
+})
+
+export const registerMemberPushDeviceResponseRegisteredDevicesMin = 0;
+
+
+
+export const RegisterMemberPushDeviceResponse = zod.object({
+  "pushEnabled": zod.boolean(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "registeredDevices": zod.number().int().min(registerMemberPushDeviceResponseRegisteredDevicesMin)
+})
+
+
+export const unregisterMemberPushDeviceBodyTokenMin = 20;
+export const unregisterMemberPushDeviceBodyTokenMax = 512;
+
+
+
+export const UnregisterMemberPushDeviceBody = zod.object({
+  "token": zod.string().min(unregisterMemberPushDeviceBodyTokenMin).max(unregisterMemberPushDeviceBodyTokenMax)
+})
+
+export const unregisterMemberPushDeviceResponseRegisteredDevicesMin = 0;
+
+
+
+export const UnregisterMemberPushDeviceResponse = zod.object({
+  "pushEnabled": zod.boolean(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "registeredDevices": zod.number().int().min(unregisterMemberPushDeviceResponseRegisteredDevicesMin)
+})
+
+
+export const GetSupportStaffTicketsQueryParams = zod.object({
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']).optional()
+})
+
+export const GetSupportStaffTicketsResponseItem = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "memberUserId": zod.string(),
+  "assignedTo": zod.string().nullable()
+}))
+export const GetSupportStaffTicketsResponse = zod.array(GetSupportStaffTicketsResponseItem)
+
+
+export const GetSupportStaffTicketParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetSupportStaffTicketResponse = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "memberUserId": zod.string(),
+  "assignedTo": zod.string().nullable()
+})).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "message": zod.string(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date()
+}).and(zod.object({
+  "authorId": zod.string()
+}))),
+  "events": zod.array(zod.object({
+  "action": zod.string(),
+  "previousStatus": zod.string().nullish(),
+  "nextStatus": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}).and(zod.object({
+  "actorId": zod.string(),
+  "previousAssignee": zod.string().nullable(),
+  "nextAssignee": zod.string().nullable(),
+  "detail": zod.string()
+})))
+}))
+
+
+export const UpdateSupportStaffTicketParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateSupportStaffTicketBody = zod.object({
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']).optional(),
+  "assignedTo": zod.union([zod.string(),zod.null()]).optional()
+})
+
+export const UpdateSupportStaffTicketResponse = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "memberUserId": zod.string(),
+  "assignedTo": zod.string().nullable()
+})).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "message": zod.string(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date()
+}).and(zod.object({
+  "authorId": zod.string()
+}))),
+  "events": zod.array(zod.object({
+  "action": zod.string(),
+  "previousStatus": zod.string().nullish(),
+  "nextStatus": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}).and(zod.object({
+  "actorId": zod.string(),
+  "previousAssignee": zod.string().nullable(),
+  "nextAssignee": zod.string().nullable(),
+  "detail": zod.string()
+})))
+}))
+
+
+export const ReplySupportStaffTicketParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const replySupportStaffTicketBodyMessageMax = 5000;
+
+
+
+export const ReplySupportStaffTicketBody = zod.object({
+  "message": zod.string().min(1).max(replySupportStaffTicketBodyMessageMax),
+  "language": zod.enum(['en', 'ar', 'ku'])
+})
+
+export const ReplySupportStaffTicketResponse = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "memberUserId": zod.string(),
+  "assignedTo": zod.string().nullable()
+})).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "message": zod.string(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date()
+}).and(zod.object({
+  "authorId": zod.string()
+}))),
+  "events": zod.array(zod.object({
+  "action": zod.string(),
+  "previousStatus": zod.string().nullish(),
+  "nextStatus": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}).and(zod.object({
+  "actorId": zod.string(),
+  "previousAssignee": zod.string().nullable(),
+  "nextAssignee": zod.string().nullable(),
+  "detail": zod.string()
+})))
+}))
+
+
+export const GetSupportStaffAgentsResponseItem = zod.object({
+  "userId": zod.string(),
+  "role": zod.enum(['admin', 'support'])
+})
+export const GetSupportStaffAgentsResponse = zod.array(GetSupportStaffAgentsResponseItem)
+
+
+export const addSupportStaffAgentBodyUserIdMax = 160;
+
+
+
+export const AddSupportStaffAgentBody = zod.object({
+  "userId": zod.string().min(1).max(addSupportStaffAgentBodyUserIdMax)
+})
+
+export const AddSupportStaffAgentResponse = zod.object({
+  "userId": zod.string(),
+  "role": zod.enum(['admin', 'support'])
+})
+
+
+export const GetSupportNotificationFailuresResponseItem = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "kind": zod.string(),
+  "title": zod.string(),
+  "status": zod.enum(['failed']),
+  "error": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const GetSupportNotificationFailuresResponse = zod.array(GetSupportNotificationFailuresResponseItem)
+
+
 export const getLivePlansResponseOneDurationDaysMax = 366;
 
 export const getLivePlansResponseOneRulesQuotaMin = 0;

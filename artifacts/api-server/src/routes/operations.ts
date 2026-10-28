@@ -11,6 +11,7 @@ import {
   CreateLearningCourseBody, CreateLearningCourseResponse,
   UpdateLearningCourseBody, UpdateLearningCourseResponse,
 } from "@workspace/api-zod";
+import { sendMemberNotification } from "../lib/notifications";
 
 const router = Router();
 router.use(async (req, res, next) => {
@@ -131,12 +132,14 @@ router.patch("/offerings/:id", async (req, res) => {
   res.json(row);
 });
 router.post("/offerings/:id/cancel", async (req, res) => {
-  await db.transaction(async tx => {
+  const affectedUsers = await db.transaction(async tx => {
     const [o] = await tx.select().from(offerings).where(and(eq(offerings.id, String(req.params.id)), eq(offerings.scope, "live"))).for("update");
     if (!o) throw new BookingError(404, "Offering not found.");
     own(res, o.partnerId);
-    if (o.cancelledAt) return;
+    if (o.cancelledAt) return [];
     if (o.startsAt <= new Date()) throw new BookingError(409, "Past sessions require attendance review.");
+    const heldReservations = await tx.select({ userId: reservations.userId }).from(reservations)
+      .where(and(eq(reservations.offeringId, o.id), inArray(reservations.status, ["reserved", "requested"])));
     await tx.update(offerings).set({ active: false, cancelledAt: new Date() }).where(eq(offerings.id, o.id));
     const arrivals = await tx.select().from(attendance).where(eq(attendance.offeringId, o.id));
     for (const a of arrivals) {
@@ -148,7 +151,9 @@ router.post("/offerings/:id/cancel", async (req, res) => {
     await tx.update(reservations).set({ status: "partner_cancelled", cancelledAt: new Date() })
       .where(and(eq(reservations.offeringId, o.id), inArray(reservations.status, ["reserved", "requested"])));
     await audit(tx, res.locals.operator.userId, "offering.cancel", o.id);
+    return heldReservations.map(r => r.userId);
   });
+  for (const userId of new Set(affectedUsers)) void sendMemberNotification(userId, "booking_cancelled");
   res.json({ ok: true });
 });
 router.post("/courses", async (req, res) => {
@@ -305,14 +310,23 @@ router.post("/grants", async (req, res) => {
 router.post("/revoke", async (req, res) => {
   admin(res);
   const input = z.object({ userId: z.string().min(1).max(160), reason: z.string().trim().min(5).max(500) }).strict().parse(req.body);
-  await db.transaction(async tx => {
+  const bookingsCancelled = await db.transaction(async tx => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${input.userId}))`);
     await tx.update(memberships).set({ status: "terminated" }).where(and(eq(memberships.userId, input.userId), eq(memberships.scope, "live")));
     const live = await tx.select({ id: offerings.id }).from(offerings).where(eq(offerings.scope, "live"));
+    let hadBookings = false;
+    if (live.length) {
+      const held = await tx.select({ id: reservations.id }).from(reservations)
+        .where(and(eq(reservations.userId, input.userId), inArray(reservations.offeringId, live.map(o => o.id)),
+          inArray(reservations.status, ["reserved", "requested"])));
+      hadBookings = held.length > 0;
+    }
     if (live.length) await tx.update(reservations).set({ status: "cancelled", cancelledAt: new Date() })
       .where(and(eq(reservations.userId, input.userId), inArray(reservations.offeringId, live.map(o => o.id)), inArray(reservations.status, ["reserved", "requested"])));
     await audit(tx, res.locals.operator.userId, "membership.revoke", input.userId, input.reason);
+    return hadBookings;
   });
+  if (bookingsCancelled) void sendMemberNotification(input.userId, "booking_cancelled");
   res.json({ ok: true });
 });
 router.use((error: unknown, _req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => {

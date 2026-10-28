@@ -85,7 +85,7 @@ export default function ProfileScreen() {
         </View>
         <View style={styles.menuList}>
           <MenuRow icon="heart-outline" label={t('favorites')} value={`${app.favorites.length}`} colors={colors} onPress={() => router.push('/explore')} />
-          <MenuRow icon="help-circle-outline" label={t('help')} colors={colors} onPress={() => {}} />
+          <MenuRow icon="help-circle-outline" label={t('help')} colors={colors} onPress={() => router.push('/support')} />
           <MenuRow icon="shield-checkmark-outline" label="Privacy & permissions" colors={colors} onPress={() => {}} last />
         </View>
         <View style={styles.footer}>
