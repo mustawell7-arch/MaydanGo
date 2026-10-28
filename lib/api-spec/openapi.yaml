@@ -215,6 +215,12 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}"
   /operations/offerings/{id}/cancel:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1cancel"
+  /operations/courses:
+    $ref: "./operations.yaml#/paths/~1operations~1courses"
+  /operations/courses/{id}:
+    $ref: "./operations.yaml#/paths/~1operations~1courses~1{id}"
+  /operations/courses/{id}/lessons:
+    $ref: "./operations.yaml#/paths/~1operations~1courses~1{id}~1lessons"
   /operations/plans:
     $ref: "./operations.yaml#/paths/~1operations~1plans"
   /operations/plans/{id}:
@@ -225,6 +231,18 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1revoke"
   /member/live-catalog:
     $ref: "./operations.yaml#/paths/~1member~1live-catalog"
+  /member/courses:
+    $ref: "./operations.yaml#/paths/~1member~1courses"
+  /member/courses/{id}:
+    $ref: "./operations.yaml#/paths/~1member~1courses~1{id}"
+  /member/courses/{id}/enroll:
+    $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1enroll"
+  /member/courses/{id}/progress:
+    $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1progress"
+  /member/live-classes:
+    $ref: "./operations.yaml#/paths/~1member~1live-classes"
+  /member/live-classes/{id}/join:
+    $ref: "./operations.yaml#/paths/~1member~1live-classes~1{id}~1join"
   /member/plans:
     $ref: "./operations.yaml#/paths/~1member~1plans"
   /member/profile:

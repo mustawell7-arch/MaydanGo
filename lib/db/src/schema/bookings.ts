@@ -1,5 +1,6 @@
 import { pgTable, text, timestamp, integer, boolean, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import type { LocalizedText } from "./learning";
 
 export type AccessRules = {
   cities?: string[]; facilities?: string[]; categories?: string[];
@@ -36,6 +37,9 @@ export const offerings = pgTable("booking_offerings", {
   targetId: text("target_id").notNull(),
   slot: text("slot").notNull().default(""),
   title: text("title").notNull(),
+  localizedTitle: jsonb("localized_title").$type<LocalizedText>(),
+  localizedDescription: jsonb("localized_description").$type<LocalizedText>(),
+  joinUrl: text("join_url"),
   scope: text("scope").notNull(),
   partnerId: text("partner_id"),
   partnerGroup: text("partner_group"),

@@ -152,9 +152,31 @@ export const OfferingInputGender = {
   male: 'male',
 } as const;
 
+export interface LocalizedText {
+  /**
+     * @minLength 1
+     * @maxLength 240
+     */
+  en: string;
+  /**
+     * @minLength 1
+     * @maxLength 240
+     */
+  ar: string;
+  /**
+     * @minLength 1
+     * @maxLength 240
+     */
+  ku: string;
+}
+
 export interface OfferingInput {
   partnerId: string;
   title: string;
+  localizedTitle?: LocalizedText | null;
+  localizedDescription?: LocalizedText | null;
+  /** @nullable */
+  joinUrl?: string | null;
   kind: OfferingInputKind;
   city: string;
   facility: string;
@@ -185,12 +207,133 @@ export type LiveOffering = OfferingInput & ({
   cancelledAt?: string | null;
   partnerName?: string;
   remaining?: number;
+  canJoin?: boolean;
 });
 
 export interface OfferingUpdate {
   /** @minimum 1 */
   capacity: number;
   active?: boolean;
+  localizedTitle?: LocalizedText;
+  localizedDescription?: LocalizedText;
+  /** @nullable */
+  joinUrl?: string | null;
+}
+
+export type CourseMetadataInputLevel = typeof CourseMetadataInputLevel[keyof typeof CourseMetadataInputLevel];
+
+
+export const CourseMetadataInputLevel = {
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
+  'all-levels': 'all-levels',
+} as const;
+
+export interface CourseMetadataInput {
+  localizedTitle: LocalizedText;
+  localizedSummary: LocalizedText;
+  localizedInstructor: LocalizedText;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  category: string;
+  level: CourseMetadataInputLevel;
+  /**
+     * @minimum 1
+     * @maximum 10000
+     */
+  durationMinutes: number;
+  /** @nullable */
+  thumbnailUrl: string | null;
+  published: boolean;
+}
+
+export interface LessonInput {
+  /** @minimum 1 */
+  position: number;
+  localizedTitle: LocalizedText;
+  localizedContent: LocalizedText;
+  /**
+     * @minimum 1
+     * @maximum 1000
+     */
+  durationMinutes: number;
+  mediaUrl: string;
+}
+
+export type CourseInput = CourseMetadataInput & {
+  /** @minItems 1 */
+  lessons: LessonInput[];
+};
+
+export type CourseAdminRecord = CourseMetadataInput & {
+  id: string;
+  title: string;
+  lessonCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CourseSummary = CourseMetadataInput & {
+  id: string;
+  title: string;
+  lessonCount: number;
+  enrolled: boolean;
+  completedLessons: number;
+};
+
+export interface CourseLesson {
+  id: string;
+  position: number;
+  localizedTitle: LocalizedText;
+  localizedContent: LocalizedText | null;
+  durationMinutes: number;
+  /** @nullable */
+  mediaUrl: string | null;
+  completed: boolean;
+}
+
+export type CourseDetailAccessState = typeof CourseDetailAccessState[keyof typeof CourseDetailAccessState];
+
+
+export const CourseDetailAccessState = {
+  membership_required: 'membership_required',
+  enrollment_required: 'enrollment_required',
+  ready: 'ready',
+} as const;
+
+export type CourseDetail = CourseSummary & {
+  accessState: CourseDetailAccessState;
+  lessons: CourseLesson[];
+};
+
+export interface CourseProgressInput {
+  /** @minLength 1 */
+  lessonId: string;
+  completed: boolean;
+}
+
+export interface MemberLiveClass {
+  id: string;
+  title: string;
+  localizedTitle: LocalizedText | null;
+  localizedDescription: LocalizedText | null;
+  city: string;
+  facility: string;
+  partnerName: string;
+  startsAt: string;
+  endsAt: string;
+  /** @minimum 0 */
+  remaining: number;
+  booked: boolean;
+  canJoin: boolean;
+}
+
+export interface JoinAccess {
+  url: string;
+  validUntil: string;
 }
 
 export type EntitlementRulesQuotaMode = typeof EntitlementRulesQuotaMode[keyof typeof EntitlementRulesQuotaMode];

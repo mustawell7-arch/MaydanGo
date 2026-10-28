@@ -1,11 +1,16 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
-import { db, operators, partners, offerings, reservations, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents } from "@workspace/db";
+import { db, operators, partners, offerings, reservations, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, learningCourses, learningLessons } from "@workspace/db";
 import { BookingError } from "../lib/reservations";
 import { offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
+import {
+  AddLearningLessonBody, AddLearningLessonResponse, ChangeLiveOfferingBody,
+  CreateLearningCourseBody, CreateLearningCourseResponse,
+  UpdateLearningCourseBody, UpdateLearningCourseResponse,
+} from "@workspace/api-zod";
 
 const router = Router();
 router.use(async (req, res, next) => {
@@ -21,6 +26,14 @@ const admin = (res: import("express").Response) => {
   if (res.locals.operator.role !== "admin") throw new BookingError(403, "Administrator access is required.");
 };
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+const secureHttps = (value: string | null | undefined) => {
+  if (!value) return false;
+  try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; }
+  catch { return false; }
+};
+function ensureHttps(value: string | null | undefined, label: string) {
+  if (!secureHttps(value)) throw new BookingError(400, `${label} must be an HTTPS link.`);
+}
 async function audit(tx: Tx, actorId: string, action: string, targetId: string, detail = "") {
   await tx.insert(operationAudit).values({ id: randomUUID(), actorId, action, targetId, detail });
 }
@@ -71,7 +84,10 @@ router.post("/offerings", async (req, res) => {
     if (!p) throw new BookingError(404, "Partner not found.");
     if (data.active && !p.approved) throw new BookingError(403, "Partner approval is required before publishing.");
     const id = randomUUID();
+    if (data.accessType === "live" && data.active) ensureHttps(data.joinUrl, "Live class join link");
+    if (data.joinUrl) ensureHttps(data.joinUrl, "Live class join link");
     const [o] = await tx.insert(offerings).values({ ...data, id, targetId: id, slot: "", scope: "live",
+      localizedTitle: data.localizedTitle ?? null, localizedDescription: data.localizedDescription ?? null, joinUrl: data.joinUrl ?? null,
       partnerGroup: p.groupId, startsAt: new Date(data.startsAt), endsAt: new Date(data.endsAt),
       cancellationDeadline: new Date(data.cancellationDeadline) }).returning();
     await audit(tx, res.locals.operator.userId, "offering.create", id);
@@ -80,20 +96,35 @@ router.post("/offerings", async (req, res) => {
   res.status(201).json(row);
 });
 router.patch("/offerings/:id", async (req, res) => {
-  const data = z.object({ capacity: z.number().int().min(1).max(100000), active: z.boolean().optional() }).strict().parse(req.body);
+  const data = ChangeLiveOfferingBody.parse(req.body);
   const row = await db.transaction(async tx => {
     const [o] = await tx.select().from(offerings).where(and(eq(offerings.id, String(req.params.id)), eq(offerings.scope, "live"))).for("update");
     if (!o) throw new BookingError(404, "Offering not found.");
     own(res, o.partnerId);
     if (o.cancelledAt) throw new BookingError(409, "Cancelled offerings cannot be edited or republished. Create a replacement.");
     if (o.startsAt <= new Date()) throw new BookingError(409, "Past offerings cannot be edited.");
+    const nextActive = data.active ?? o.active;
+    const nextTitle = data.localizedTitle ?? o.localizedTitle;
+    const nextDescription = data.localizedDescription ?? o.localizedDescription;
+    const nextJoinUrl = data.joinUrl !== undefined ? data.joinUrl : o.joinUrl;
+    if (o.accessType === "live" && nextActive) {
+      if (!nextTitle || !nextDescription) throw new BookingError(400, "Live classes need English, Arabic and Sorani details.");
+      ensureHttps(nextJoinUrl, "Live class join link");
+    }
+    if (data.joinUrl) ensureHttps(data.joinUrl, "Live class join link");
     if (data.active) {
       const [p] = await tx.select().from(partners).where(eq(partners.id, o.partnerId!)).for("share");
       if (!p?.approved) throw new BookingError(403, "Partner approval is required.");
     }
     const held = await tx.select().from(reservations).where(and(eq(reservations.offeringId, o.id), inArray(reservations.status, ["reserved", "requested"])));
     if (held.length > data.capacity) throw new BookingError(409, "Capacity cannot be below existing reservations.");
-    const [result] = await tx.update(offerings).set(data).where(eq(offerings.id, o.id)).returning();
+    const [result] = await tx.update(offerings).set({
+      capacity: data.capacity,
+      ...(data.active !== undefined ? { active: data.active } : {}),
+      ...(data.localizedTitle !== undefined ? { localizedTitle: data.localizedTitle } : {}),
+      ...(data.localizedDescription !== undefined ? { localizedDescription: data.localizedDescription } : {}),
+      ...(data.joinUrl !== undefined ? { joinUrl: data.joinUrl } : {}),
+    }).where(eq(offerings.id, o.id)).returning();
     await audit(tx, res.locals.operator.userId, "offering.update", o.id);
     return result;
   });
@@ -120,6 +151,108 @@ router.post("/offerings/:id/cancel", async (req, res) => {
   });
   res.json({ ok: true });
 });
+router.post("/courses", async (req, res) => {
+  admin(res);
+  const parsed = CreateLearningCourseBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ message: "Check the course details and lesson content." }); return; }
+  const data = parsed.data;
+  const positions = data.lessons.map(lesson => lesson.position).sort((a, b) => a - b);
+  if (positions.some((position, index) => position !== index + 1)) {
+    res.status(400).json({ message: "Lesson positions must start at 1 and have no gaps or duplicates." }); return;
+  }
+  if (data.lessons.some(lesson => !secureHttps(lesson.mediaUrl))) {
+    res.status(400).json({ message: "Each course lesson needs a secure HTTPS recording link." }); return;
+  }
+  if (data.thumbnailUrl) ensureHttps(data.thumbnailUrl, "Course image");
+  const id = randomUUID();
+  const created = await db.transaction(async tx => {
+    const [course] = await tx.insert(learningCourses).values({
+      id,
+      title: data.localizedTitle.en,
+      localizedTitle: data.localizedTitle,
+      localizedSummary: data.localizedSummary,
+      localizedInstructor: data.localizedInstructor,
+      category: data.category.trim(),
+      level: data.level,
+      durationMinutes: data.durationMinutes,
+      thumbnailUrl: data.thumbnailUrl,
+      published: data.published,
+    }).returning();
+    await tx.insert(learningLessons).values(data.lessons.map(lesson => ({
+      id: randomUUID(),
+      courseId: id,
+      position: lesson.position,
+      localizedTitle: lesson.localizedTitle,
+      localizedContent: lesson.localizedContent,
+      durationMinutes: lesson.durationMinutes,
+      mediaUrl: lesson.mediaUrl,
+    })));
+    await audit(tx, getAuth(req).userId!, "course.create", id, `lessons=${data.lessons.length}`);
+    return { ...course, lessonCount: data.lessons.length };
+  });
+  res.status(201).json(CreateLearningCourseResponse.parse(created));
+});
+
+router.put("/courses/:id", async (req, res) => {
+  admin(res);
+  const parsed = UpdateLearningCourseBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ message: "Check the course details." }); return; }
+  const data = parsed.data;
+  if (data.thumbnailUrl) ensureHttps(data.thumbnailUrl, "Course image");
+  const id = String(req.params.id);
+  const updated = await db.transaction(async tx => {
+    const [existing] = await tx.select().from(learningCourses).where(eq(learningCourses.id, id)).for("update");
+    if (!existing) throw new BookingError(404, "Course not found.");
+    const [count] = await tx.select({ count: sql<number>`count(*)::int` }).from(learningLessons)
+      .where(eq(learningLessons.courseId, id));
+    if (data.published && count.count < 1) throw new BookingError(409, "Add at least one recorded lesson before publishing.");
+    const [course] = await tx.update(learningCourses).set({
+      title: data.localizedTitle.en,
+      localizedTitle: data.localizedTitle,
+      localizedSummary: data.localizedSummary,
+      localizedInstructor: data.localizedInstructor,
+      category: data.category.trim(),
+      level: data.level,
+      durationMinutes: data.durationMinutes,
+      thumbnailUrl: data.thumbnailUrl,
+      published: data.published,
+      updatedAt: new Date(),
+    }).where(eq(learningCourses.id, id)).returning();
+    await audit(tx, getAuth(req).userId!, "course.update", id, `published=${data.published}`);
+    return { ...course, lessonCount: count.count };
+  });
+  res.json(UpdateLearningCourseResponse.parse(updated));
+});
+
+router.post("/courses/:id/lessons", async (req, res) => {
+  admin(res);
+  const parsed = AddLearningLessonBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ message: "Check the lesson details." }); return; }
+  const data = parsed.data;
+  ensureHttps(data.mediaUrl, "Lesson recording");
+  const courseId = String(req.params.id);
+  const lesson = await db.transaction(async tx => {
+    const [course] = await tx.select({ id: learningCourses.id }).from(learningCourses)
+      .where(eq(learningCourses.id, courseId)).for("update");
+    if (!course) throw new BookingError(404, "Course not found.");
+    const [last] = await tx.select({ position: learningLessons.position }).from(learningLessons)
+      .where(eq(learningLessons.courseId, courseId)).orderBy(desc(learningLessons.position)).limit(1);
+    if (data.position !== (last?.position ?? 0) + 1) {
+      throw new BookingError(409, `The next lesson position is ${(last?.position ?? 0) + 1}.`);
+    }
+    const [added] = await tx.insert(learningLessons).values({
+      id: randomUUID(), courseId, position: data.position,
+      localizedTitle: data.localizedTitle,
+      localizedContent: data.localizedContent,
+      durationMinutes: data.durationMinutes,
+      mediaUrl: data.mediaUrl,
+    }).returning();
+    await audit(tx, getAuth(req).userId!, "course.lesson.create", added.id, `course=${courseId}`);
+    return { ...added, completed: false };
+  });
+  res.status(201).json(AddLearningLessonResponse.parse(lesson));
+});
+
 router.post("/plans", async (req, res) => {
   admin(res);
   const data = planInput.parse(req.body);

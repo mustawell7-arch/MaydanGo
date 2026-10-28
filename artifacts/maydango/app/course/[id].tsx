@@ -1,20 +1,28 @@
 import React, { useState } from 'react';
-import { Image, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, Pressable } from '@/components/Localized';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { ScreenShell } from '@/components/ScreenShell';
-import { LocalNotice } from '@/components/LocalNotice';
-import { courses, pick } from '@/data/demo';
+import {
+  getGetMemberCourseQueryKey, getGetMemberCoursesQueryKey,
+  useEnrollMemberCourse, useGetMemberCourse, useUpdateCourseProgress,
+} from '@workspace/api-client-react';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { translate, type MessageKey } from '@/lib/i18n';
+import { errorCopy } from '@/lib/content';
 
 export default function CourseDetailScreen() {
   const colors = useColors();
   const app = useApp();
+  const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const course = courses.find((c) => c.id === id);
+  const courseQuery = useGetMemberCourse(id);
+  const course = courseQuery.data;
+  const enrollMutation = useEnrollMemberCourse();
+  const progressMutation = useUpdateCourseProgress();
   const [openLesson, setOpenLesson] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const t = (key: MessageKey) => translate(app.language, key);
@@ -26,6 +34,9 @@ export default function CourseDetailScreen() {
     </Pressable>
   );
 
+  if (courseQuery.isLoading) {
+    return <ScreenShell><View style={styles.missing}>{back}<ActivityIndicator color={colors.primary} /><Text style={{ color: colors.mutedForeground }}>{t('coursesLoading')}</Text></View></ScreenShell>;
+  }
   if (!course) {
     return (
       <ScreenShell>
@@ -37,56 +48,75 @@ export default function CourseDetailScreen() {
     );
   }
 
-  const progress = app.courseProgress[course.id];
-  const pct = app.courseCompletion(course.id);
+  const pct = course.lessonCount ? Math.round(course.completedLessons / course.lessonCount * 100) : 0;
+  const ready = course.accessState === 'ready';
+  const saveProgress = async (lessonId: string, completed: boolean) => {
+    try {
+      await progressMutation.mutateAsync({ id: course.id, data: { lessonId, completed } });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetMemberCourseQueryKey(course.id) }),
+        queryClient.invalidateQueries({ queryKey: getGetMemberCoursesQueryKey() }),
+      ]);
+    } catch (error) { setMessage(errorCopy(error)); }
+  };
+  const enroll = async () => {
+    try {
+      await enrollMutation.mutateAsync({ id: course.id });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetMemberCourseQueryKey(course.id) }),
+        queryClient.invalidateQueries({ queryKey: getGetMemberCoursesQueryKey() }),
+      ]);
+      setMessage(t('enrolled'));
+    } catch (error) { setMessage(errorCopy(error)); }
+  };
 
   return (
     <ScreenShell>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
-          <Image source={course.image} style={styles.heroImage} resizeMode="cover" />
+          {course.thumbnailUrl
+            ? <Image source={{ uri: course.thumbnailUrl }} style={styles.heroImage} resizeMode="cover" />
+            : <View style={[styles.heroImage, styles.heroFallback, { backgroundColor: colors.secondary }]}><Ionicons name="fitness-outline" size={42} color={colors.primary} /></View>}
           <View style={styles.shade} />
           <View style={styles.heroTop}>{back}</View>
           <View style={styles.heroText}>
-            <Text style={[styles.kicker, { textAlign: align }]}>{course.level} · {course.duration} · {course.instructor}</Text>
-            <Text style={[styles.heroTitle, { textAlign: align }]}>{pick(course.localTitle, app.language)}</Text>
+            <Text style={[styles.kicker, { textAlign: align }]}>{t(course.level === 'all-levels' ? 'allLevels' : course.level)} · {course.durationMinutes} {t('minutesShort')} · {course.localizedInstructor[app.language] || course.localizedInstructor.en}</Text>
+            <Text style={[styles.heroTitle, { textAlign: align }]}>{course.localizedTitle[app.language] || course.localizedTitle.en}</Text>
           </View>
         </View>
         <View style={styles.body}>
-          <Text style={[styles.summary, { color: colors.foreground, textAlign: align }]}>{pick(course.summary, app.language)}</Text>
+          <Text style={[styles.summary, { color: colors.foreground, textAlign: align }]}>{course.localizedSummary[app.language] || course.localizedSummary.en}</Text>
 
-          {progress ? (
+          {course.enrolled ? (
             <View style={[styles.progressCard, { backgroundColor: colors.secondary }]}>
               <View style={styles.progressRow}>
                 <Text style={[styles.progressPct, { color: colors.primary }]}>{pct}%</Text>
                 <Text style={[styles.progressLabel, { color: colors.mutedForeground }]}>
-                  {t('complete')} · {progress.completedLessons.length}/{course.sampleLessons.length} {t('lessons')}
+                  {t('courseProgressLabel')} · {course.completedLessons}/{course.lessonCount} {t('lessons')}
                 </Text>
               </View>
               <View style={[styles.track, { backgroundColor: colors.card }]}>
                 <View style={[styles.fill, { width: `${pct}%`, backgroundColor: colors.primary }]} />
               </View>
             </View>
-          ) : (
+          ) : null}
+          {course.accessState === 'membership_required' ? (
             <View style={[styles.progressCard, { backgroundColor: colors.secondary }]}>
-              <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align }]}>{t('enrolToTrack')}</Text>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => {
-                  const r = app.enrollCourse(course.id);
-                  setMessage(r.ok ? t('enrolled') : r.reason === 'duplicate' ? t('alreadySaved') : t('notSaved'));
-                  if (r.ok) setOpenLesson(course.sampleLessons[0]?.id ?? null);
-                }}
-                style={({ pressed }) => [styles.enrolButton, { backgroundColor: colors.primary, opacity: pressed ? 0.88 : 1 }]}
-              >
-                <Text style={[styles.enrolText, { color: colors.primaryForeground }]}>{t('enrol')}</Text>
+              <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align }]}>{t('membershipRequired')}</Text>
+            </View>
+          ) : course.accessState === 'enrollment_required' ? (
+            <View style={[styles.progressCard, { backgroundColor: colors.secondary }]}>
+              <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align }]}>{t('enrollmentRequired')}</Text>
+              <Pressable accessibilityRole="button" disabled={enrollMutation.isPending} onPress={() => void enroll()}
+                style={({ pressed }) => [styles.enrolButton, { backgroundColor: colors.primary, opacity: pressed || enrollMutation.isPending ? 0.65 : 1 }]}>
+                <Text style={[styles.enrolText, { color: colors.primaryForeground }]}>{enrollMutation.isPending ? t('coursesLoading') : t('enrol')}</Text>
               </Pressable>
             </View>
-          )}
+          ) : null}
           {message ? <Text accessibilityLiveRegion="polite" style={[styles.message, { color: colors.primary, textAlign: align }]}>{message}</Text> : null}
 
-          {course.sampleLessons.map((lesson, index) => {
-            const done = !!progress?.completedLessons.includes(lesson.id);
+          {course.lessons.map((lesson, index) => {
+            const done = lesson.completed;
             const open = openLesson === lesson.id;
             return (
               <View key={lesson.id} style={[styles.lesson, { backgroundColor: colors.card, borderColor: done ? colors.primary : colors.border }]}>
@@ -100,36 +130,42 @@ export default function CourseDetailScreen() {
                     {done ? <Ionicons name="checkmark" size={15} color={colors.primaryForeground} /> : <Text style={[styles.lessonNumText, { color: colors.primary }]}>{index + 1}</Text>}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.lessonKicker, { color: colors.mutedForeground, textAlign: align }]}>{t('lessonWord')} {index + 1} · {lesson.minutes} {t('minutesShort')}</Text>
-                    <Text style={[styles.lessonTitle, { color: colors.foreground, textAlign: align }]}>{pick(lesson.title, app.language)}</Text>
+                    <Text style={[styles.lessonKicker, { color: colors.mutedForeground, textAlign: align }]}>{t('lessonWord')} {lesson.position ?? index + 1} · {lesson.durationMinutes} {t('minutesShort')}</Text>
+                    <Text style={[styles.lessonTitle, { color: colors.foreground, textAlign: align }]}>{lesson.localizedTitle[app.language] || lesson.localizedTitle.en}</Text>
                   </View>
                   <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={17} color={colors.mutedForeground} />
                 </Pressable>
                 {open ? (
                   <View style={styles.lessonBody}>
-                    <Text style={[styles.lessonText, { color: colors.foreground, textAlign: align }]}>{pick(lesson.body, app.language)}</Text>
-                    {progress ? (
+                    {ready && lesson.localizedContent ? <Text style={[styles.lessonText, { color: colors.foreground, textAlign: align }]}>{lesson.localizedContent[app.language] || lesson.localizedContent.en}</Text>
+                      : <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align }]}>{t(course.accessState === 'membership_required' ? 'membershipRequired' : 'enrollmentRequired')}</Text>}
+                    {ready && lesson.mediaUrl ? (
+                      <Pressable accessibilityRole="button" onPress={() => void Linking.openURL(lesson.mediaUrl!).catch(error => setMessage(errorCopy(error)))}
+                        style={[styles.doneButton, { backgroundColor: colors.accent }]}>
+                        <Ionicons name="play-circle-outline" size={17} color={colors.accentForeground} />
+                        <Text style={[styles.doneText, { color: colors.accentForeground }]}>{t('viewCourse')}</Text>
+                      </Pressable>
+                    ) : null}
+                    {ready ? (
                       <Pressable
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: done }}
-                        onPress={() => {
-                          const r = app.toggleLesson(course.id, lesson.id);
-                          if (!r.ok) setMessage(t('notSaved'));
-                        }}
-                        style={[styles.doneButton, done ? { borderColor: colors.primary, borderWidth: 1 } : { backgroundColor: colors.accent }]}
+                        disabled={progressMutation.isPending}
+                        onPress={() => void saveProgress(lesson.id, !done)}
+                        style={[styles.doneButton, done ? { borderColor: colors.primary, borderWidth: 1 } : { backgroundColor: colors.accent }, progressMutation.isPending && { opacity: .6 }]}
                       >
                         <Ionicons name={done ? 'checkmark-circle' : 'ellipse-outline'} size={16} color={done ? colors.primary : colors.accentForeground} />
                         <Text style={[styles.doneText, { color: done ? colors.primary : colors.accentForeground }]}>{done ? t('markUndone') : t('markDone')}</Text>
                       </Pressable>
                     ) : (
-                      <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align, marginTop: 10 }]}>{t('enrolToTrack')}</Text>
+                      <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align, marginTop: 10 }]}>{t('enrollmentRequired')}</Text>
                     )}
                   </View>
                 ) : null}
               </View>
             );
           })}
-          <LocalNotice messageKey="courseNotice" />
+          <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align, marginTop: 12 }]}>{t('courseNotice')}</Text>
         </View>
       </ScrollView>
     </ScreenShell>
@@ -142,6 +178,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '800' },
   hero: { height: 250, marginHorizontal: 16, borderRadius: 26, overflow: 'hidden' },
   heroImage: { width: '100%', height: '100%' },
+  heroFallback: { alignItems: 'center', justifyContent: 'center' },
   shade: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(16,40,31,0.48)' },
   heroTop: { position: 'absolute', top: 14, left: 14, right: 14, flexDirection: 'row' },
   backButton: { width: 42, height: 42, borderRadius: 15, backgroundColor: '#c6e57d', alignItems: 'center', justifyContent: 'center' },

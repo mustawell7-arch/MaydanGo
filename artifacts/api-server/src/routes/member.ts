@@ -4,12 +4,14 @@ import { z } from "zod";
 import { db, memberships, memberProfiles, offerings, reservations, partners, membershipPlans } from "@workspace/db";
 import { eq, and, inArray, sql, gt, asc, isNull } from "drizzle-orm";
 import { BookingError, memberState, createReservation, cancelReservation } from "../lib/reservations";
+import learningRouter from "./learning";
 
 const router = Router();
 router.use((req, res, next) => {
   if (!getAuth(req).userId) { res.status(401).json({ message: "Sign in to manage your bookings." }); return; }
   next();
 });
+router.use(learningRouter);
 router.get("/", async (req, res) => { res.json(await memberState(getAuth(req).userId!)); });
 router.get("/plans", async (_req, res) => {
   res.json(await db.select().from(membershipPlans).where(eq(membershipPlans.active, true)));
@@ -21,7 +23,16 @@ router.get("/live-catalog", async (_req, res) => {
     .leftJoin(reservations, and(eq(reservations.offeringId, offerings.id), inArray(reservations.status, ["reserved", "requested"])))
     .where(and(eq(offerings.scope, "live"), eq(offerings.active, true), isNull(offerings.cancelledAt), eq(partners.approved, true), gt(offerings.startsAt, new Date())))
     .groupBy(offerings.id, partners.id).orderBy(asc(offerings.startsAt));
-  res.json(rows.map(r => ({ ...r.offering, partnerName: r.partnerName, remaining: Math.max(0, r.offering.capacity - r.reserved) })));
+  res.json(rows.map(({ offering: o, partnerName, reserved }) => ({
+    id: o.id, targetId: o.targetId, slot: o.slot, scope: o.scope,
+    partnerId: o.partnerId, partnerName, title: o.title,
+    localizedTitle: o.localizedTitle, localizedDescription: o.localizedDescription,
+    kind: o.kind, city: o.city, facility: o.facility, category: o.category, accessType: o.accessType,
+    tiers: o.tiers, startsAt: o.startsAt, endsAt: o.endsAt, cancellationDeadline: o.cancellationDeadline,
+    capacity: o.capacity, gender: o.gender, minAge: o.minAge, maxAge: o.maxAge,
+    additionalPayment: o.additionalPayment, active: o.active, cancelledAt: o.cancelledAt,
+    remaining: Math.max(0, o.capacity - reserved),
+  })));
 });
 router.put("/profile", async (req, res) => {
   const parsed = z.object({

@@ -2,7 +2,7 @@ import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
-import { db, pool, offerings, memberships, reservations, attendance, memberProfiles, partners, operators, membershipPlans, accessGrants, operationAudit } from "@workspace/db";
+import { db, pool, offerings, memberships, reservations, attendance, memberProfiles, partners, operators, membershipPlans, accessGrants, operationAudit, learningCourses, learningLessons, courseEnrollments, lessonProgress } from "@workspace/db";
 import express from "express";
 import operationsRouter from "../routes/operations";
 import memberRouter from "../routes/member";
@@ -14,6 +14,7 @@ const prefix = `test-${randomUUID()}`;
 const alice = `${prefix}-a`, bob = `${prefix}-b`;
 const ids: string[] = [];
 const partnerIds: string[] = [], planIds: string[] = [];
+const courseIds: string[] = [];
 const now = Date.now();
 const input = (targetId: string) => ({ kind: "session", targetId, slot: "" });
 async function offer(overrides: Partial<typeof offerings.$inferInsert> = {}) {
@@ -197,6 +198,83 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       assert.equal((await call("/member/bookings", alice, "POST", input(o.data.id))).status, 201);
       assert.equal((await call(`/operations/offerings/${o.data.id}`, partnerUser, "PATCH", { capacity: 0 })).status, 400);
     });
+    await t.test("localized courses keep lessons and progress on the owning account", async () => {
+      const content = (en: string, ar: string, ku: string) => ({ en, ar, ku });
+      const created = await call("/operations/courses", adminId, "POST", {
+        localizedTitle: content("Strength at home", "القوة في المنزل", "هێز لە ماڵەوە"),
+        localizedSummary: content("A short beginner course.", "دورة قصيرة للمبتدئين.", "کۆرسێکی کورت بۆ دەستپێکەران."),
+        localizedInstructor: content("MaydanGo team", "فريق MaydanGo", "تیمی MaydanGo"),
+        category: "fitness", level: "beginner", durationMinutes: 12, thumbnailUrl: null, published: true,
+        lessons: [{
+          position: 1, localizedTitle: content("First steps", "الخطوات الأولى", "هەنگاوەکانی سەرەتا"),
+          localizedContent: content("Move at your own pace.", "تحرك حسب وتيرتك.", "بە خێرایی خۆت بجوڵێ."),
+          durationMinutes: 12, mediaUrl: "https://example.test/lesson-1",
+        }],
+      });
+      assert.equal(created.status, 201); courseIds.push(created.data.id);
+
+      const bobPreview = await call("/member/preview-membership", bob, "POST", { acknowledgeSampleData: true });
+      assert.equal(bobPreview.status, 200);
+      const restricted = await call(`/member/courses/${created.data.id}`, bob);
+      assert.equal(restricted.status, 200);
+      assert.equal(restricted.data.accessState, "membership_required");
+      assert.equal(restricted.data.lessons[0].mediaUrl, null);
+      assert.equal(restricted.data.lessons[0].localizedContent, null);
+
+      const enrolled = await call(`/member/courses/${created.data.id}/enroll`, alice, "POST", {});
+      assert.equal(enrolled.status, 200);
+      assert.equal(enrolled.data.accessState, "ready");
+      assert.equal(enrolled.data.lessons[0].mediaUrl, "https://example.test/lesson-1");
+      assert.equal(enrolled.data.lessons[0].localizedContent.ku, "بە خێرایی خۆت بجوڵێ.");
+      const progress = await call(`/member/courses/${created.data.id}/progress`, alice, "PUT", {
+        lessonId: enrolled.data.lessons[0].id, completed: true,
+      });
+      assert.equal(progress.status, 200);
+      assert.equal(progress.data.completedLessons, 1);
+      const restored = await call("/member/courses", alice);
+      assert.equal(restored.data.find((row: any) => row.id === created.data.id).completedLessons, 1);
+      const otherAccount = await call("/member/courses", bob);
+      assert.equal(otherAccount.data.find((row: any) => row.id === created.data.id).completedLessons, 0);
+      assert.equal((await call(`/member/courses/${created.data.id}/progress`, bob, "PUT", {
+        lessonId: enrolled.data.lessons[0].id, completed: true,
+      })).status, 403);
+    });
+    await t.test("live class details are localized and join links stay private until eligibility checks pass", async () => {
+      const start = new Date(Date.now() + 10 * 60_000);
+      const liveBody = {
+        ...offerBody, title: "Online mobility", accessType: "live",
+        startsAt: start.toISOString(),
+        endsAt: new Date(start.getTime() + 60 * 60_000).toISOString(),
+        cancellationDeadline: new Date(start.getTime() - 5 * 60_000).toISOString(),
+        localizedTitle: { en: "Online mobility", ar: "حركة أونلاين", ku: "جووڵەی ئۆنلاین" },
+        localizedDescription: { en: "Move from home.", ar: "تمرّن من المنزل.", ku: "لە ماڵەوە ڕاهێنان بکە." },
+        joinUrl: "https://example.test/private-class-room",
+      };
+      const created = await call("/operations/offerings", partnerUser, "POST", liveBody);
+      assert.equal(created.status, 201); ids.push(created.data.id);
+      const catalog = await call("/member/live-catalog", alice);
+      const card = catalog.data.find((row: any) => row.id === created.data.id);
+      assert.equal(card.localizedTitle.ku, "جووڵەی ئۆنلاین");
+      assert.equal(card.joinUrl, undefined);
+      const beforeBooking = await call("/member/live-classes", alice);
+      const session = beforeBooking.data.find((row: any) => row.id === created.data.id);
+      assert.equal(session.canJoin, false);
+      assert.equal(session.joinUrl, undefined);
+      assert.equal((await call(`/member/live-classes/${created.data.id}/join`, alice, "POST", {})).status, 403);
+      assert.equal((await call("/member/bookings", alice, "POST", input(created.data.id))).status, 201);
+      const afterBooking = await call("/member/live-classes", alice);
+      assert.equal(afterBooking.data.find((row: any) => row.id === created.data.id).canJoin, true);
+
+      const joinResponse = await fetch(`http://127.0.0.1:${port}/member/live-classes/${created.data.id}/join`, {
+        method: "POST", headers: { "Content-Type": "application/json", "x-test-user": alice }, body: "{}",
+      });
+      assert.equal(joinResponse.status, 200);
+      assert.equal(joinResponse.headers.get("cache-control"), "no-store");
+      assert.equal((await joinResponse.json() as any).url, liveBody.joinUrl);
+      assert.equal((await call(`/member/live-classes/${created.data.id}/join`, bob, "POST", {})).status, 403);
+      const publicCatalog = await fetch(`http://127.0.0.1:${port}/public/catalog`).then(response => response.json()) as any[];
+      assert.equal(publicCatalog.find((row: any) => row.id === created.data.id)?.joinUrl, undefined);
+    });
     await t.test("separate quotas allow premium independently; shared and partner-group limits deny", async () => {
       const premium = await call("/operations/offerings", partnerUser, "POST", { ...offerBody, accessType: "premium" });
       assert.equal(premium.status, 201); ids.push(premium.data.id);
@@ -248,6 +326,16 @@ after(async () => {
   await db.delete(memberships).where(inArray(memberships.userId, [alice, bob]));
   await db.delete(memberProfiles).where(inArray(memberProfiles.userId, [alice, bob]));
   if (ids.length) await db.delete(offerings).where(inArray(offerings.id, ids));
+  if (courseIds.length) {
+    const enrollments = await db.select({ id: courseEnrollments.id }).from(courseEnrollments)
+      .where(inArray(courseEnrollments.courseId, courseIds));
+    if (enrollments.length) {
+      await db.delete(lessonProgress).where(inArray(lessonProgress.enrollmentId, enrollments.map(row => row.id)));
+      await db.delete(courseEnrollments).where(inArray(courseEnrollments.id, enrollments.map(row => row.id)));
+    }
+    await db.delete(learningLessons).where(inArray(learningLessons.courseId, courseIds));
+    await db.delete(learningCourses).where(inArray(learningCourses.id, courseIds));
+  }
   await db.delete(accessGrants).where(inArray(accessGrants.userId, [alice, bob]));
   if (planIds.length) await db.delete(membershipPlans).where(inArray(membershipPlans.id, planIds));
   if (partnerIds.length) await db.delete(partners).where(inArray(partners.id, partnerIds));

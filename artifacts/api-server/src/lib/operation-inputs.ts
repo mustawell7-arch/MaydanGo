@@ -4,6 +4,15 @@ const label = z.string().trim().min(1).max(160);
 const quota = z.number().int().min(0).max(100000);
 const limits = z.record(z.string().min(1).max(160), quota).optional();
 const names = z.array(label).max(100).optional();
+const localizedText = z.object({
+  en: z.string().trim().min(1).max(240),
+  ar: z.string().trim().min(1).max(240),
+  ku: z.string().trim().min(1).max(240),
+}).strict();
+const secureUrl = z.string().trim().url().max(2048).refine(value => {
+  try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; }
+  catch { return false; }
+}, "Use a verified HTTPS link.");
 export const rulesInput = z.object({
   quota, dailyLimit: quota, quotaMode: z.enum(["shared", "separate"]),
   physicalQuota: quota, premiumQuota: quota, liveQuota: quota,
@@ -24,6 +33,9 @@ export const planInput = z.object({
 export const partnerInput = z.object({ name: label, groupId: label, ownerUserId: label }).strict();
 export const offeringInput = z.object({
   partnerId: label, title: label, kind: z.enum(["session", "event", "coach"]),
+  localizedTitle: localizedText.nullable().optional(),
+  localizedDescription: localizedText.nullable().optional(),
+  joinUrl: secureUrl.nullable().optional(),
   city: label, facility: label, category: label,
   accessType: z.enum(["physical", "premium", "live"]),
   tiers: z.array(label).min(1).max(30),
@@ -34,6 +46,14 @@ export const offeringInput = z.object({
   minAge: z.number().int().min(0).max(120).default(0),
   maxAge: z.number().int().min(0).max(120).nullable().default(null),
   additionalPayment: z.boolean().default(false), active: z.boolean(),
-}).strict().refine(o => new Date(o.startsAt) > new Date() && new Date(o.endsAt) > new Date(o.startsAt)
-  && new Date(o.cancellationDeadline) <= new Date(o.startsAt) && (o.maxAge === null || o.maxAge >= o.minAge),
-{ message: "Use a future start, later end, cancellation deadline no later than start, and valid ages." });
+}).strict().superRefine((o, ctx) => {
+  if (o.accessType === "live" && o.active) {
+    if (!o.localizedTitle) ctx.addIssue({ code: "custom", path: ["localizedTitle"], message: "Live classes need English, Arabic and Sorani titles." });
+    if (!o.localizedDescription) ctx.addIssue({ code: "custom", path: ["localizedDescription"], message: "Live classes need English, Arabic and Sorani descriptions." });
+    if (!o.joinUrl) ctx.addIssue({ code: "custom", path: ["joinUrl"], message: "An HTTPS class link is required before publishing." });
+  }
+  if (!(new Date(o.startsAt) > new Date() && new Date(o.endsAt) > new Date(o.startsAt)
+    && new Date(o.cancellationDeadline) <= new Date(o.startsAt) && (o.maxAge === null || o.maxAge >= o.minAge))) {
+    ctx.addIssue({ code: "custom", message: "Use a future start, later end, cancellation deadline no later than start, and valid ages." });
+  }
+});

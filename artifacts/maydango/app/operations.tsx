@@ -93,6 +93,7 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
   const { language } = useApp();
   const approved = d.partners.filter(p => p.approved);
   const [f, setF] = useState({ partnerId: d.partnerId ?? approved[0]?.id ?? '', title: '', kind: 'session' as Offering['kind'], city: '', facility: '', category: '',
+    localizedTitleEn: '', localizedTitleAr: '', localizedTitleKu: '', localizedDescriptionEn: '', localizedDescriptionAr: '', localizedDescriptionKu: '', joinUrl: '',
     accessType: 'physical' as Offering['accessType'], tiers: ['M'] as string[], startsAt: '', endsAt: '', cancellationDeadline: '', capacity: '12', gender: 'all' as 'all' | 'female' | 'male', minAge: '0', maxAge: '', additionalPayment: false, active: true });
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -104,11 +105,20 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
       : iraqInstant(f.endsAt) <= iraqInstant(f.startsAt) ? 'End must be after start.' : iraqInstant(f.cancellationDeadline) > iraqInstant(f.startsAt) ? 'Cancellation deadline must be before start.'
       : !isInt(f.capacity, 1) ? 'Capacity must be a whole number of at least 1.' : !f.tiers.length ? 'Select at least one tier.'
       : !isInt(f.minAge) || Number(f.minAge) > 120 || (f.maxAge && (!isInt(f.maxAge) || Number(f.maxAge) > 120 || Number(f.minAge) > Number(f.maxAge))) ? 'Check the age range.'
-      : iraqInstant(f.startsAt).getTime() <= Date.now() ? 'Start must be in the future.' : null;
+      : iraqInstant(f.startsAt).getTime() <= Date.now() ? 'Start must be in the future.'
+      : f.accessType === 'live' && (!f.localizedTitleEn.trim() || !f.localizedTitleAr.trim() || !f.localizedTitleKu.trim()
+        || !f.localizedDescriptionEn.trim() || !f.localizedDescriptionAr.trim() || !f.localizedDescriptionKu.trim()) ? 'Live classes need titles and descriptions in English, Iraqi Arabic and Sorani.'
+      : f.accessType === 'live' && f.active && !/^https:\/\/[^ ]+$/i.test(f.joinUrl.trim()) ? 'Published live classes need a secure HTTPS join link.' : null;
     if (err) { setMsg({ ok: false, text: err }); return; }
     setBusy('create'); setMsg(null);
     try {
-      await api('/operations/offerings', { method: 'POST', body: { ...f, title: f.title.trim(), city: f.city.trim(), facility: f.facility.trim(), category: f.category.trim(),
+      const { localizedTitleEn, localizedTitleAr, localizedTitleKu, localizedDescriptionEn, localizedDescriptionAr, localizedDescriptionKu, joinUrl, ...offering } = f;
+      await api('/operations/offerings', { method: 'POST', body: { ...offering, title: f.title.trim(), city: f.city.trim(), facility: f.facility.trim(), category: f.category.trim(),
+        ...(f.accessType === 'live' ? {
+          localizedTitle: { en: localizedTitleEn.trim(), ar: localizedTitleAr.trim(), ku: localizedTitleKu.trim() },
+          localizedDescription: { en: localizedDescriptionEn.trim(), ar: localizedDescriptionAr.trim(), ku: localizedDescriptionKu.trim() },
+          joinUrl: joinUrl.trim() || null,
+        } : {}),
         startsAt: iraqInstant(f.startsAt).toISOString(), endsAt: iraqInstant(f.endsAt).toISOString(), cancellationDeadline: iraqInstant(f.cancellationDeadline).toISOString(),
         capacity: Number(f.capacity), minAge: Number(f.minAge), maxAge: f.maxAge ? Number(f.maxAge) : null, additionalPayment: f.additionalPayment } });
       setMsg({ ok: true, text: 'Offering saved.' }); setF(x => ({ ...x, title: '' })); await refresh();
@@ -137,8 +147,14 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
       {d.role === 'admin' ? <Choice c={c} label="PARTNER" options={approved.map(p => p.id)} value={f.partnerId} onChange={set('partnerId')} names={Object.fromEntries(approved.map(p => [p.id, p.name]))} /> : null}
       {d.role === 'admin' && !approved.length ? <Text style={{ color: c.mutedForeground }}>Approve a partner first.</Text> : null}
       <Field c={c} label="TITLE" value={f.title} onChange={set('title')} />
-      <Choice c={c} label="TYPE" options={['session', 'event', 'coach'] as const} value={f.kind} onChange={v => setF(x => ({ ...x, kind: v }))} names={{ session: 'Session', event: 'Event', coach: 'Coaching' }} />
-      <Choice c={c} label="ACCESS" options={['physical', 'premium', 'live'] as const} value={f.accessType} onChange={v => setF(x => ({ ...x, accessType: v }))} names={{ physical: 'Physical', premium: 'Premium', live: 'Live online' }} />
+       <Choice c={c} label="TYPE" options={['session', 'event', 'coach'] as const} value={f.kind} onChange={v => setF(x => ({ ...x, kind: v }))} names={{ session: 'Session', event: 'Event', coach: 'Coaching' }} />
+       <Choice c={c} label="ACCESS" options={['physical', 'premium', 'live'] as const} value={f.accessType} onChange={v => setF(x => ({ ...x, accessType: v, ...(v === 'live' ? { kind: 'session' as const } : {}) }))} names={{ physical: 'Physical', premium: 'Premium', live: 'Live online' }} />
+       {f.accessType === 'live' ? <>
+         <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Member-facing details are required in all three app languages. The join link is only returned to an eligible member who has booked and is inside the join window.</Text>
+         <View style={s.wrap}><Field c={c} label="TITLE · ENGLISH" value={f.localizedTitleEn} onChange={set('localizedTitleEn')} /><Field c={c} label="العنوان · العربية العراقية" value={f.localizedTitleAr} onChange={set('localizedTitleAr')} /><Field c={c} label="ناونیشان · سۆرانی" value={f.localizedTitleKu} onChange={set('localizedTitleKu')} /></View>
+         <View style={s.wrap}><Field c={c} label="DESCRIPTION · ENGLISH" value={f.localizedDescriptionEn} onChange={set('localizedDescriptionEn')} multiline /><Field c={c} label="الوصف · العربية العراقية" value={f.localizedDescriptionAr} onChange={set('localizedDescriptionAr')} multiline /><Field c={c} label="وەسف · سۆرانی" value={f.localizedDescriptionKu} onChange={set('localizedDescriptionKu')} multiline /></View>
+         <Field c={c} label="SECURE JOIN LINK · HTTPS" value={f.joinUrl} onChange={set('joinUrl')} placeholder="https://…" />
+       </> : null}
       <Choice c={c} label="TIERS" options={['M', 'L', 'XL']} value={f.tiers} onChange={v => setF(x => ({ ...x, tiers: x.tiers.includes(v) ? x.tiers.filter(t => t !== v) : [...x.tiers, v] }))} />
       <View style={s.wrap}><Field c={c} label="CITY" value={f.city} onChange={set('city')} placeholder="baghdad" /><Field c={c} label="FACILITY" value={f.facility} onChange={set('facility')} /><Field c={c} label="CATEGORY" value={f.category} onChange={set('category')} /></View>
       <View style={s.wrap}><Field c={c} label="STARTS" value={f.startsAt} onChange={set('startsAt')} placeholder="2025-06-01T18:00" /><Field c={c} label="ENDS" value={f.endsAt} onChange={set('endsAt')} placeholder="2025-06-01T19:00" /><Field c={c} label="CANCEL BY" value={f.cancellationDeadline} onChange={set('cancellationDeadline')} placeholder="2025-06-01T12:00" /></View>
@@ -152,6 +168,7 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
     {!d.offerings.length ? <Text style={{ color: c.mutedForeground }}>No offerings yet.</Text> : d.offerings.map(o => <View key={o.id} style={[s.card, { backgroundColor: c.card, borderColor: c.border, opacity: o.active ? 1 : .6 }]}>
       <Text raw style={{ color: c.foreground, fontWeight: '800', fontSize: 16 }}>{o.title}</Text>
       <Text raw style={{ color: c.mutedForeground }}>{d.partners.find(p => p.id === o.partnerId)?.name ?? o.partnerId} · {o.facility} · {o.city} · {o.accessType}</Text>
+       {o.accessType === 'live' ? <Text style={{ color: c.mutedForeground, fontSize: 11 }}>Language details: {o.localizedTitle ? 'English · Iraqi Arabic · Sorani' : 'missing'} · Secure join link: {o.joinUrl ? 'configured' : 'missing'}</Text> : null}
       <Text style={{ color: c.foreground }}>{dateTime(o.startsAt, language)}</Text>
       {o.cancelledAt ? <Text style={{ color: c.destructive, fontWeight: '700' }}>Cancelled permanently. Create a replacement offering.</Text> : !o.active ? <Text style={{ color: c.destructive, fontWeight: '700' }}>Draft, not visible to members</Text> : null}
       {o.cancelledAt ? null : Date.parse(o.startsAt) <= Date.now() ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Past offerings cannot be edited.</Text> : <View style={[s.wrap, { alignItems: 'flex-end' }]}>

@@ -1,34 +1,62 @@
 import React, { useState } from 'react';
-import { Image, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, Pressable } from '@/components/Localized';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  getGetMemberCoursesQueryKey, getGetMemberLiveClassesQueryKey,
+  useCreateLiveClassJoin, useGetMemberCourses, useGetMemberLiveClasses,
+} from '@workspace/api-client-react';
 import { MemberNotice } from '@/components/MemberNotice';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
-import { LocalNotice } from '@/components/LocalNotice';
-import { coaches, courses, getCityLabel, pick, sessions } from '@/data/demo';
+import { coaches } from '@/data/demo';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
-import { translate, type MessageKey } from '@/lib/i18n';
+import { translate, type Language, type MessageKey } from '@/lib/i18n';
+import { errorCopy } from '@/lib/content';
 
 type Mode = 'courses' | 'live' | 'coaching';
+type Localized = { en: string; ar: string; ku: string };
+const localText = (value: Localized | null | undefined, language: Language) => value?.[language] || value?.en || '';
+const iraqDateTime = (value: string, language: Language) => new Intl.DateTimeFormat(
+  language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ',
+  { timeZone: 'Asia/Baghdad', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' },
+).format(new Date(value));
 
 export default function OnlineScreen() {
   const colors = useColors();
   const app = useApp();
+  const queryClient = useQueryClient();
   const [mode, setMode] = useState<Mode>('courses');
   const [slotChoice, setSlotChoice] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const t = (key: MessageKey) => translate(app.language, key);
   const align = app.language === 'en' ? 'left' : 'right';
-  const liveSessions = sessions.filter((s) => s.mode === 'online');
-  const started = courses.filter((c) => app.courseProgress[c.id]);
+  const coursesQuery = useGetMemberCourses({ query: { enabled: mode === 'courses' } });
+  const liveQuery = useGetMemberLiveClasses({ query: { enabled: mode === 'live', refetchInterval: 30_000 } });
+  const joinMutation = useCreateLiveClassJoin();
+  const courseRows = coursesQuery.data ?? [];
+  const liveClasses = liveQuery.data ?? [];
+  const started = courseRows.filter((course) => course.enrolled);
   const openCourse = (id: string) => router.push({ pathname: '/course/[id]', params: { id } });
 
-  const toggleLive = async (id: string) => {
-    const was = app.isSessionBooked(id);
+  const toggleLive = async (id: string, was: boolean) => {
     const r = await (was ? app.cancelBooking(id) : app.bookSession(id));
     setMessage(r.ok ? (was ? t('cancelled') : t('booked')) : r.reason === 'duplicate' ? t('alreadySaved') : t('notSaved'));
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: getGetMemberLiveClassesQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: getGetMemberCoursesQueryKey() }),
+    ]);
+  };
+
+  const joinLive = async (id: string) => {
+    try {
+      const access = await joinMutation.mutateAsync({ id });
+      await Linking.openURL(access.url);
+    } catch (error) {
+      setMessage(errorCopy(error));
+    }
   };
 
   const submitRequest = async (coachId: string) => {
@@ -74,98 +102,119 @@ export default function OnlineScreen() {
 
         {mode === 'courses' ? (
           <>
-            <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: align }]}>{t('continueLearning')}</Text>
-            {started.length === 0 ? (
-              <Text style={[styles.catalogMeta, { color: colors.mutedForeground, marginBottom: 14, textAlign: align }]}>{t('notStartedYet')}</Text>
-            ) : null}
-            {started.map((course) => {
-              const pct = app.courseCompletion(course.id);
-              return (
-                <Pressable
-                  key={course.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${t('continueCourse')}: ${pick(course.localTitle, app.language)}, ${pct}% ${t('complete')}`}
-                  onPress={() => openCourse(course.id)}
-                  style={[styles.courseCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                >
-                  <Image source={course.image} style={styles.courseImage} />
-                  <View style={styles.courseBody}>
-                    <Text style={[styles.courseKicker, { color: colors.mutedForeground, textAlign: align }]}>{course.level} · {course.duration}</Text>
-                    <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{pick(course.localTitle, app.language)}</Text>
-                    <View style={[styles.courseProgressTrack, { backgroundColor: colors.secondary }]}>
-                      <View style={[styles.courseProgressFill, { width: `${pct}%`, backgroundColor: colors.primary }]} />
-                    </View>
-                    <View style={styles.courseFooter}>
-                      <Text style={[styles.progressLabel, { color: colors.mutedForeground }]}>{pct}% {t('complete')}</Text>
-                      {/* Visual label only: the whole card is the single pressable. */}
-                      <View style={[styles.continueButton, { backgroundColor: colors.accent }]}>
-                        <Text style={[styles.continueText, { color: colors.accentForeground }]}>{t('continueCourse')}</Text>
+            {coursesQuery.isLoading ? <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={{ color: colors.mutedForeground }}>{t('coursesLoading')}</Text></View> : null}
+            {coursesQuery.isError ? <Text style={[styles.catalogMeta, { color: colors.destructive, textAlign: align }]}>{t('catalogLoadError')}</Text> : null}
+            {!coursesQuery.isLoading && !coursesQuery.isError && courseRows.length === 0
+              ? <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{t('noPublishedCourses')}</Text> : null}
+            {started.length > 0 ? <>
+              <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: align }]}>{t('continueLearning')}</Text>
+              {started.map((course) => {
+                const pct = course.lessonCount ? Math.round(course.completedLessons / course.lessonCount * 100) : 0;
+                return (
+                  <Pressable key={course.id} accessibilityRole="button"
+                    accessibilityLabel={`${t('continueCourse')}: ${localText(course.localizedTitle, app.language)}, ${pct}% ${t('complete')}`}
+                    onPress={() => openCourse(course.id)}
+                    style={[styles.courseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    {course.thumbnailUrl
+                      ? <Image source={{ uri: course.thumbnailUrl }} style={styles.courseImage} />
+                      : <View style={[styles.courseImage, styles.courseImageFallback, { backgroundColor: colors.secondary }]}><Ionicons name="fitness-outline" size={30} color={colors.primary} /></View>}
+                    <View style={styles.courseBody}>
+                      <Text style={[styles.courseKicker, { color: colors.mutedForeground, textAlign: align }]}>{t(course.level === 'all-levels' ? 'allLevels' : course.level)} · {course.durationMinutes} {t('minutesShort')}</Text>
+                      <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{localText(course.localizedTitle, app.language)}</Text>
+                      <View style={[styles.courseProgressTrack, { backgroundColor: colors.secondary }]}>
+                        <View style={[styles.courseProgressFill, { width: `${pct}%`, backgroundColor: colors.primary }]} />
+                      </View>
+                      <View style={styles.courseFooter}>
+                        <Text style={[styles.progressLabel, { color: colors.mutedForeground }]}>{course.completedLessons}/{course.lessonCount} {t('lessons')} · {pct}% {t('complete')}</Text>
+                        <View style={[styles.continueButton, { backgroundColor: colors.accent }]}>
+                          <Text style={[styles.continueText, { color: colors.accentForeground }]}>{t('continueCourse')}</Text>
+                        </View>
                       </View>
                     </View>
-                  </View>
-                </Pressable>
-              );
-            })}
-            <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 18, textAlign: align }]}>{t('courses')}</Text>
-            {courses.map((course) => {
-              const enrolled = !!app.courseProgress[course.id];
-              return (
-                <Pressable
-                  key={course.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${t('viewCourse')}: ${pick(course.localTitle, app.language)}`}
-                  onPress={() => openCourse(course.id)}
-                  style={[styles.catalogRow, { borderBottomColor: colors.border }]}
-                >
-                  <Image source={course.image} style={styles.catalogImage} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{pick(course.localTitle, app.language)}</Text>
-                    <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
-                      {course.instructor} · {course.sampleLessons.length} {t('lessons')}{enrolled ? ` · ${t('enrolled')}` : ''}
-                    </Text>
-                  </View>
-                  <View style={[styles.playButton, { backgroundColor: colors.secondary }]}>
-                    <Ionicons name={enrolled ? 'play' : 'chevron-forward'} size={15} color={colors.primary} style={app.language !== 'en' && !enrolled ? { transform: [{ scaleX: -1 }] } : undefined} />
-                  </View>
-                </Pressable>
-              );
-            })}
-            <LocalNotice messageKey="courseNotice" />
+                  </Pressable>
+                );
+              })}
+            </> : null}
+            {courseRows.length > 0 ? <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 18, textAlign: align }]}>{t('courses')}</Text> : null}
+            {!started.length && courseRows.length > 0 ? <Text style={[styles.catalogMeta, { color: colors.mutedForeground, marginBottom: 10, textAlign: align }]}>{t('notStartedYet')}</Text> : null}
+            {courseRows.map((course) => (
+              <Pressable key={course.id} accessibilityRole="button"
+                accessibilityLabel={`${t('viewCourse')}: ${localText(course.localizedTitle, app.language)}`}
+                onPress={() => openCourse(course.id)} style={[styles.catalogRow, { borderBottomColor: colors.border }]}>
+                {course.thumbnailUrl
+                  ? <Image source={{ uri: course.thumbnailUrl }} style={styles.catalogImage} />
+                  : <View style={[styles.catalogImage, styles.catalogImageFallback, { backgroundColor: colors.secondary }]}><Ionicons name="fitness-outline" size={20} color={colors.primary} /></View>}
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{localText(course.localizedTitle, app.language)}</Text>
+                  <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
+                    {localText(course.localizedInstructor, app.language)} · {course.lessonCount} {t('lessons')}{course.enrolled ? ` · ${t('enrolled')}` : ''}
+                  </Text>
+                  <Text numberOfLines={2} style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{localText(course.localizedSummary, app.language)}</Text>
+                </View>
+                <View style={[styles.playButton, { backgroundColor: colors.secondary }]}>
+                  <Ionicons name={course.enrolled ? 'play' : 'chevron-forward'} size={15} color={colors.primary} style={app.language !== 'en' && !course.enrolled ? { transform: [{ scaleX: -1 }] } : undefined} />
+                </View>
+              </Pressable>
+            ))}
+            <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align, marginTop: 12 }]}>{t('courseNotice')}</Text>
           </>
         ) : mode === 'live' ? (
           <>
             <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: align }]}>
-              {t('liveOnline')} · {getCityLabel(app.selectedCityId === 'all' ? 'baghdad' : app.selectedCityId, app.language)} {t('liveTime')}
+              {t('liveOnline')} · {t('liveTime')}
             </Text>
-            {liveSessions.length === 0 ? (
-              <Text style={[styles.catalogMeta, { color: colors.mutedForeground }]}>{t('noLive')}</Text>
-            ) : null}
-            {liveSessions.map((session) => {
-              const booked = app.isSessionBooked(session.id);
+            {liveQuery.isLoading ? <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={{ color: colors.mutedForeground }}>{t('liveLoading')}</Text></View> : null}
+            {liveQuery.isError ? <Text style={[styles.catalogMeta, { color: colors.destructive, textAlign: align }]}>{t('catalogLoadError')}</Text> : null}
+            {!liveQuery.isLoading && !liveQuery.isError && liveClasses.length === 0
+              ? <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{t('noLive')}</Text> : null}
+            {liveClasses.map((session) => {
+              const title = localText(session.localizedTitle, app.language) || session.title;
+              const description = localText(session.localizedDescription, app.language);
+              const booked = session.booked;
+              const canCancel = booked && Date.parse(session.startsAt) > Date.now();
+              const duration = Math.max(1, Math.round((Date.parse(session.endsAt) - Date.parse(session.startsAt)) / 60000));
               return (
                 <View key={session.id} style={[styles.liveCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <Image source={session.image} style={styles.liveImage} />
+                  <View style={[styles.liveImage, styles.liveIcon, { backgroundColor: colors.secondary }]}><Ionicons name="videocam-outline" size={23} color={colors.primary} /></View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.liveTime, { color: colors.primary, textAlign: align }]}>{app.offeringTime('session', session.id)} · {session.duration}</Text>
-                    <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{session.title}</Text>
+                    <Text style={[styles.liveTime, { color: colors.primary, textAlign: align }]}>{iraqDateTime(session.startsAt, app.language)} · {duration} {t('minutesShort')}</Text>
+                    <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{title}</Text>
                     <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
-                      {t('withInstructor')} {session.instructor}{booked ? ` · ${t('statusReserved')}` : ''}
+                      {session.partnerName} · {session.facility}, {session.city}{booked ? ` · ${t('bookedLive')}` : ''}
                     </Text>
+                    {description ? <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{description}</Text> : null}
+                    <View style={styles.liveActions}>
+                      {session.canJoin ? (
+                        <Pressable accessibilityRole="button" accessibilityLabel={`${t('joinClass')}: ${title}`}
+                          disabled={joinMutation.isPending} onPress={() => void joinLive(session.id)}
+                          style={[styles.joinButton, { backgroundColor: colors.primary, opacity: joinMutation.isPending ? .55 : 1 }]}>
+                          <Text style={[styles.joinText, { color: colors.primaryForeground }]}>{joinMutation.isPending ? t('liveLoading') : t('joinClass')}</Text>
+                        </Pressable>
+                      ) : booked && canCancel ? (
+                        <Pressable accessibilityRole="button" accessibilityLabel={`${t('cancelLiveBooking')}: ${title}`}
+                          disabled={app.memberLoading} onPress={() => void toggleLive(session.id, true)}
+                          style={[styles.joinButton, { borderColor: colors.destructive, borderWidth: 1 }]}>
+                          <Text style={[styles.joinText, { color: colors.destructive }]}>{t('cancelLiveBooking')}</Text>
+                        </Pressable>
+                      ) : booked ? (
+                        <Text style={[styles.progressLabel, { color: colors.primary }]}>{t('bookedLive')}</Text>
+                      ) : session.remaining < 1 ? (
+                        <Text style={[styles.progressLabel, { color: colors.mutedForeground }]}>{t('fullyBooked')}</Text>
+                      ) : Date.parse(session.startsAt) <= Date.now() ? (
+                        <Text style={[styles.progressLabel, { color: colors.mutedForeground }]}>{t('bookingClosed')}</Text>
+                      ) : (
+                        <Pressable accessibilityRole="button" accessibilityLabel={`${t('bookOnline')}: ${title}`}
+                          disabled={app.memberLoading} onPress={() => void toggleLive(session.id, false)}
+                          style={[styles.joinButton, { backgroundColor: colors.accent }]}>
+                          <Text style={[styles.joinText, { color: colors.accentForeground }]}>{t('bookOnline')}</Text>
+                        </Pressable>
+                      )}
+                    </View>
                   </View>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`${booked ? t('cancelBooking') : t('bookOnline')}: ${session.title}`}
-                    onPress={() => toggleLive(session.id)}
-                    style={[styles.joinButton, booked ? { borderColor: colors.destructive, borderWidth: 1 } : { backgroundColor: colors.accent }]}
-                  >
-                    <Text style={[styles.joinText, { color: booked ? colors.destructive : colors.accentForeground }]}>
-                      {booked ? t('cancel') : t('bookOnline')}
-                    </Text>
-                  </Pressable>
                 </View>
               );
             })}
-            <Text style={{ color: colors.mutedForeground }}>Sample classes only. No live streaming is available. Reservations are saved to your account; server dates appear in Bookings.</Text>
+            <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align, marginTop: 8 }]}>{t('liveNotice')}</Text>
           </>
         ) : (
           <>
@@ -248,11 +297,13 @@ const styles = StyleSheet.create({
   segmentOption: { flex: 1, minHeight: 40, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 },
   segmentText: { fontSize: 11, fontWeight: '800' },
   liveDot: { width: 6, height: 6, borderRadius: 4, backgroundColor: '#d85c4e' },
+  loading: { minHeight: 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   toast: { borderRadius: 12, padding: 10, marginBottom: 12 },
   toastText: { fontSize: 11, fontWeight: '800' },
   sectionTitle: { fontSize: 16, fontWeight: '800', marginBottom: 11 },
   courseCard: { borderRadius: 20, borderWidth: 1, overflow: 'hidden', marginBottom: 11 },
   courseImage: { width: '100%', height: 127 },
+  courseImageFallback: { alignItems: 'center', justifyContent: 'center' },
   courseBody: { padding: 14 },
   courseKicker: { fontSize: 9, fontWeight: '700' },
   courseTitle: { fontSize: 14, fontWeight: '800', marginTop: 4 },
@@ -264,10 +315,13 @@ const styles = StyleSheet.create({
   continueText: { fontSize: 10, fontWeight: '800' },
   catalogRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, borderBottomWidth: 1 },
   catalogImage: { width: 51, height: 51, borderRadius: 15 },
+  catalogImageFallback: { alignItems: 'center', justifyContent: 'center' },
   catalogMeta: { fontSize: 10, marginTop: 4 },
   playButton: { width: 34, height: 34, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   liveCard: { borderWidth: 1, borderRadius: 18, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 9 },
   liveImage: { width: 59, height: 59, borderRadius: 14 },
+  liveIcon: { alignItems: 'center', justifyContent: 'center' },
+  liveActions: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 7 },
   liveTime: { fontSize: 9, fontWeight: '800' },
   joinButton: { minHeight: 40, paddingHorizontal: 12, justifyContent: 'center', borderRadius: 11 },
   joinText: { fontSize: 10, fontWeight: '900' },

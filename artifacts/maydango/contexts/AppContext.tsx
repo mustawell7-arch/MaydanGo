@@ -2,17 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useMemberBookings } from '@/hooks/useMemberBookings';
 import type { Language } from '@/lib/i18n';
-import { courses } from '@/data/demo';
 
-export type ActionResult = { ok: true } | { ok: false; reason: 'missing' | 'duplicate' | 'invalid' | 'notActive' };
-export type CourseProgress = { enrolledAt: string; completedLessons: string[] };
 type LocalState = {
   language: Language; selectedCityId: string; favorites: string[];
-  courseProgress: Record<string, CourseProgress>;
   checkIns: { facilityId: string; checkedInAt: string }[];
   membershipTier: 'M' | 'L' | 'XL'; visitsRemaining: number;
 };
-const defaults: LocalState = { language: 'en', selectedCityId: 'baghdad', favorites: [], courseProgress: {}, checkIns: [], membershipTier: 'M', visitsRemaining: 8 };
+const defaults: LocalState = { language: 'en', selectedCityId: 'baghdad', favorites: [], checkIns: [], membershipTier: 'M', visitsRemaining: 8 };
 // New preferences key leaves the old local preview reservations intact, but never imports them.
 const STORAGE_KEY = 'maydango-preferences-v2';
 function useAppState() {
@@ -32,6 +28,8 @@ function useAppState() {
       if (value) {
         const saved = JSON.parse(value);
         if (!['en', 'ar', 'ku'].includes(saved.language)) throw new Error('Invalid saved language');
+        // Discard old sample-course progress. Account progress now comes only from the learning API.
+        delete saved.courseProgress;
         const next = { ...defaults, ...saved }; ref.current = next; setState(next);
       }
       setLoaded(true); setStorageError(null);
@@ -43,22 +41,8 @@ function useAppState() {
     // Keep rapid language/preferences changes in order on native storage too.
     saves.current = saves.current.then(() => AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state))).catch(() => setStorageError('save'));
   }, [state, loaded]);
-  const enrollCourse = (id: string): ActionResult => {
-    if (!courses.some(c => c.id === id)) return { ok: false, reason: 'missing' };
-    if (ref.current.courseProgress[id]) return { ok: false, reason: 'duplicate' };
-    commit(s => ({ ...s, courseProgress: { ...s.courseProgress, [id]: { enrolledAt: new Date().toISOString(), completedLessons: [] } } }));
-    return { ok: true };
-  };
-  const toggleLesson = (id: string, lesson: string): ActionResult => {
-    if (!courses.find(c => c.id === id)?.sampleLessons.some(l => l.id === lesson)) return { ok: false, reason: 'missing' };
-    if (!ref.current.courseProgress[id]) return { ok: false, reason: 'notActive' };
-    commit(s => { const p = s.courseProgress[id]; return { ...s, courseProgress: { ...s.courseProgress, [id]: { ...p,
-      completedLessons: p.completedLessons.includes(lesson) ? p.completedLessons.filter(l => l !== lesson) : [...p.completedLessons, lesson],
-    } } }; });
-    return { ok: true };
-  };
   return {
-    ...state, ...member, hydrated, storageError, enrollCourse, toggleLesson,
+    ...state, ...member, hydrated, storageError,
     dismissStorageError: () => setStorageError(null),
     retrySave: () => {
       if (!loaded) setTick(t => t + 1);
@@ -70,10 +54,6 @@ function useAppState() {
     setLanguage: (language: Language) => commit(s => ({ ...s, language })),
     setSelectedCityId: (selectedCityId: string) => commit(s => ({ ...s, selectedCityId })),
     toggleFavorite: (id: string) => commit(s => ({ ...s, favorites: s.favorites.includes(id) ? s.favorites.filter(x => x !== id) : [...s.favorites, id] })),
-    courseCompletion: (id: string) => {
-      const c = courses.find(c => c.id === id);
-      return c ? Math.round((state.courseProgress[id]?.completedLessons.filter(l => c.sampleLessons.some(s => s.id === l)).length ?? 0) / c.sampleLessons.length * 100) : 0;
-    },
     // Preview-only controls cannot grant a server membership or produce verified attendance.
     setMembershipTier: (membershipTier: LocalState['membershipTier']) => commit(s => ({ ...s, membershipTier })),
   };
