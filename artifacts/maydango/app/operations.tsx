@@ -1,12 +1,13 @@
 import React, { useCallback, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
+import { requestMembershipRefund } from '@workspace/api-client-react';
 import { Text, TextInput, Pressable, Ionicons } from '@/components/Localized';
 import { ScreenShell, ScreenHeader } from '@/components/ScreenShell';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
-import { dateTime, errorCopy } from '@/lib/content';
+import { dateTime, errorCopy, localize } from '@/lib/content';
 import { HttpError, useAuthedResource, type Operations, type Offering, type Plan, type Rules } from '@/lib/live-api';
 
 type Tab = 'offerings' | 'plans' | 'partners' | 'access';
@@ -183,7 +184,8 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
 
 const blankRules: Rules = { quota: 8, dailyLimit: 1, quotaMode: 'shared', physicalQuota: 8, premiumQuota: 0, liveQuota: 0 };
 function PlansTab({ c, d, api, refresh }: TabProps) {
-  const toForm = (p?: Plan) => { const r = p?.rules ?? blankRules; return { id: p?.id ?? null as string | null, name: p?.name ?? '', tier: p?.tier ?? 'M', kind: p?.kind ?? 'trial' as Plan['kind'], durationDays: String(p?.durationDays ?? 30), active: p?.active ?? true,
+  const { language } = useApp();
+  const toForm = (p?: Plan) => { const r = p?.rules ?? blankRules; return { id: p?.id ?? null as string | null, name: p?.name ?? '', tier: p?.tier ?? 'M', kind: p?.kind ?? 'trial' as Plan['kind'], durationDays: String(p?.durationDays ?? 30), active: p?.active ?? true, priceIqd: p?.priceIqd == null ? '' : String(p.priceIqd),
     quota: String(r.quota), dailyLimit: String(r.dailyLimit), quotaMode: r.quotaMode, physicalQuota: String(r.physicalQuota), premiumQuota: String(r.premiumQuota), liveQuota: String(r.liveQuota),
     cities: (r.cities ?? []).join(', '), facilities: (r.facilities ?? []).join(', '), categories: (r.categories ?? []).join(', '), facilityLimits: fromLimits(r.facilityLimits), categoryLimits: fromLimits(r.categoryLimits),
     partnerGroupLimits: fromLimits(r.partnerGroupLimits), trialAllowedTypes: (r.trialAllowedTypes ?? []).join(', '), corporateId: r.corporateId ?? '' }; };
@@ -195,7 +197,11 @@ function PlansTab({ c, d, api, refresh }: TabProps) {
     const fl = limits(f.facilityLimits), cl = limits(f.categoryLimits), gl = limits(f.partnerGroupLimits);
     const nums = ['quota', 'dailyLimit', 'physicalQuota', 'premiumQuota', 'liveQuota'] as const;
     const err = !f.name.trim() ? 'Plan name is required.' : !isInt(f.durationDays, 1) ? 'Duration must be at least 1 day.' : nums.some(k => !isInt(f[k])) ? 'Quotas must be whole numbers.'
-      : !fl || !cl || !gl ? 'Limits use the format key:number, key:number.' : f.kind === 'trial' && (!csv(f.trialAllowedTypes).length || csv(f.trialAllowedTypes).some(t => !['physical', 'premium', 'live'].includes(t))) ? 'Trial plans need allowed types, e.g. physical, live.' : f.kind === 'corporate' && !f.corporateId.trim() ? 'Corporate plans need a corporate ID.' : null;
+      : f.kind === 'paid' && !isInt(f.priceIqd, 1) ? 'Paid plans need a whole-number IQD price.' : null;
+    if (!err) {
+      const secondaryErr = !fl || !cl || !gl ? 'Limits use the format key:number, key:number.' : f.kind === 'trial' && (!csv(f.trialAllowedTypes).length || csv(f.trialAllowedTypes).some(t => !['physical', 'premium', 'live'].includes(t))) ? 'Trial plans need allowed types, e.g. physical, live.' : f.kind === 'corporate' && !f.corporateId.trim() ? 'Corporate plans need a corporate ID.' : null;
+      if (secondaryErr) { setMsg({ ok: false, text: secondaryErr }); return; }
+    }
     if (err) { setMsg({ ok: false, text: err }); return; }
     const rules: Rules = { quota: Number(f.quota), dailyLimit: Number(f.dailyLimit), quotaMode: f.quotaMode, physicalQuota: Number(f.physicalQuota), premiumQuota: Number(f.premiumQuota), liveQuota: Number(f.liveQuota) };
     if (csv(f.cities).length) rules.cities = csv(f.cities); if (csv(f.facilities).length) rules.facilities = csv(f.facilities); if (csv(f.categories).length) rules.categories = csv(f.categories);
@@ -203,7 +209,7 @@ function PlansTab({ c, d, api, refresh }: TabProps) {
     if (csv(f.trialAllowedTypes).length) rules.trialAllowedTypes = csv(f.trialAllowedTypes); if (f.corporateId.trim()) rules.corporateId = f.corporateId.trim();
     setBusy(true); setMsg(null);
     try {
-      await api(f.id ? `/operations/plans/${f.id}` : '/operations/plans', { method: f.id ? 'PUT' : 'POST', body: { name: f.name.trim(), tier: f.tier, kind: f.kind, durationDays: Number(f.durationDays), active: f.active, rules } });
+      await api(f.id ? `/operations/plans/${f.id}` : '/operations/plans', { method: f.id ? 'PUT' : 'POST', body: { name: f.name.trim(), tier: f.tier, kind: f.kind, durationDays: Number(f.durationDays), active: f.active, rules, priceIqd: f.kind === 'paid' ? Number(f.priceIqd) : null } });
       setMsg({ ok: true, text: 'Plan saved.' }); setF(toForm()); await refresh();
     } catch (e) { setMsg(fail(e)); } finally { setBusy(false); }
   };
@@ -214,7 +220,10 @@ function PlansTab({ c, d, api, refresh }: TabProps) {
       <Choice c={c} label="TIER" options={['M', 'L', 'XL']} value={f.tier} onChange={set('tier')} />
       <Choice c={c} label="KIND" options={['paid', 'trial', 'corporate'] as const} value={f.kind} onChange={v => setF(x => ({ ...x, kind: v }))} names={{ paid: 'Paid plan', trial: 'Trial', corporate: 'Corporate' }} />
       {f.id ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Edits apply to new grants only. Existing memberships keep the rules they started with.</Text> : null}
-      {f.kind === 'paid' ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Paid plans are listed only. Checkout is not available yet, so they cannot be activated.</Text> : null}
+       {f.kind === 'paid' ? <>
+         <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{localize('Set the membership price in IQD. Checkout stays closed until the PayTabs Iraq account, recurring billing, payout eligibility, and signed callback are verified.', language)}</Text>
+         <Field c={c} label="PRICE (IQD)" value={f.priceIqd} onChange={set('priceIqd')} numeric />
+       </> : null}
       <View style={s.wrap}><Field c={c} label="DAYS" value={f.durationDays} onChange={set('durationDays')} numeric /><Field c={c} label="TOTAL QUOTA" value={f.quota} onChange={set('quota')} numeric /><Field c={c} label="DAILY LIMIT" value={f.dailyLimit} onChange={set('dailyLimit')} numeric /></View>
       <Choice c={c} label="QUOTA MODE" options={['shared', 'separate'] as const} value={f.quotaMode} onChange={v => setF(x => ({ ...x, quotaMode: v }))} names={{ shared: 'Shared', separate: 'Separate' }} />
       <View style={s.wrap}><Field c={c} label="PHYSICAL" value={f.physicalQuota} onChange={set('physicalQuota')} numeric /><Field c={c} label="PREMIUM" value={f.premiumQuota} onChange={set('premiumQuota')} numeric /><Field c={c} label="LIVE" value={f.liveQuota} onChange={set('liveQuota')} numeric /></View>
@@ -274,9 +283,11 @@ function PartnersTab({ c, d, api, refresh }: TabProps) {
 }
 
 function AccessTab({ c, d, api }: Omit<TabProps, 'refresh'>) {
+  const app = useApp();
   const grantable = d.plans.filter(p => p.kind !== 'paid' && p.active);
   const [g, setG] = useState({ userId: '', planId: grantable[0]?.id ?? '', corporateId: '', reason: '' });
   const [r, setR] = useState({ userId: '', reason: '' });
+  const [refund, setRefund] = useState({ userId: '', reason: '' });
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const plan = grantable.find(p => p.id === g.planId);
@@ -293,8 +304,27 @@ function AccessTab({ c, d, api }: Omit<TabProps, 'refresh'>) {
     try { await api('/operations/revoke', { method: 'POST', body: { userId: r.userId.trim(), reason: r.reason.trim() } }); setR({ userId: '', reason: '' }); setMsg({ ok: true, text: 'Access revoked.' }); }
     catch (e) { setMsg(fail(e)); } finally { setBusy(null); }
   };
+  const issueRefund = () => {
+    if (!refund.userId.trim() || refund.reason.trim().length < 5) {
+      setMsg({ ok: false, text: 'Member user ID and a reason of at least 5 characters are required.' }); return;
+    }
+    Alert.alert(localize('Issue full refund?', app.language),
+      localize('This refunds the latest paid charge and cancels the paid membership if PayTabs confirms the refund.', app.language), [
+      { text: localize('Keep payment', app.language), style: 'cancel' },
+      { text: localize('Refund latest charge', app.language), style: 'destructive', onPress: () => {
+        setBusy('refund'); setMsg(null);
+        void requestMembershipRefund({ userId: refund.userId.trim(), reason: refund.reason.trim() })
+          .then(result => {
+            setRefund({ userId: '', reason: '' });
+            setMsg({ ok: true, text: result.status === 'completed' ? 'Refund completed and paid access ended.' : 'Refund is being verified. Access remains unchanged until PayTabs confirms it.' });
+          })
+          .catch(() => setMsg({ ok: false, text: 'Refund request could not be completed. Check details and try again.' }))
+          .finally(() => setBusy(null));
+      } },
+    ]);
+  };
   return <View style={{ gap: 12 }}>
-    <Text style={{ color: c.mutedForeground, lineHeight: 19 }}>Only trial and corporate plans can be granted. Paid access requires checkout, which is not available yet.</Text>
+    <Text style={{ color: c.mutedForeground, lineHeight: 19 }}>Only trial and corporate plans can be granted. Paid access requires a verified provider payment.</Text>
     <Msg c={c} m={msg} />
     <View style={[s.card, { backgroundColor: c.card, borderColor: c.border }]}>
       <Text style={[s.h, { color: c.foreground }]}>Grant access</Text>
@@ -310,6 +340,13 @@ function AccessTab({ c, d, api }: Omit<TabProps, 'refresh'>) {
       <Field c={c} label="USER ID" value={r.userId} onChange={v => setR(x => ({ ...x, userId: v }))} placeholder="user_..." />
       <Field c={c} label="REASON" value={r.reason} onChange={v => setR(x => ({ ...x, reason: v }))} multiline />
       <Btn c={c} title="Revoke access" tone="danger" onPress={() => void revoke()} busy={busy === 'r'} id="ops-revoke" />
+    </View>
+    <View style={[s.card, { backgroundColor: c.card, borderColor: c.destructive }]}>
+      <Text style={[s.h, { color: c.foreground }]}>Refund latest paid charge</Text>
+      <Text style={{ color: c.mutedForeground, fontSize: 12 }}>A confirmed full refund also cancels the paid subscription and future live reservations. Trial and corporate access are not changed.</Text>
+      <Field c={c} label="MEMBER USER ID" value={refund.userId} onChange={v => setRefund(x => ({ ...x, userId: v }))} placeholder="user_..." />
+      <Field c={c} label="REASON" value={refund.reason} onChange={v => setRefund(x => ({ ...x, reason: v }))} multiline />
+      <Btn c={c} title="Refund latest charge" tone="danger" onPress={issueRefund} busy={busy === 'refund'} id="ops-refund" />
     </View>
   </View>;
 }

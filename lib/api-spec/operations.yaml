@@ -355,6 +355,20 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/OperationSuccess" }
+  /operations/refunds:
+    post:
+      operationId: requestMembershipRefund
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RefundRequest" }
+      responses:
+        "200":
+          description: Full latest-charge refund result; pending refunds keep access unchanged
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RefundResult" }
   /member/live-catalog:
     get:
       operationId: getLiveCatalog
@@ -432,10 +446,42 @@ paths:
       operationId: getLivePlans
       responses:
         "200":
-          description: Active plans, informational only; checkout is deferred
+          description: Active plans; paid plans are purchasable only when provider checks pass
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/LivePlan" } }
+  /member/checkout:
+    post:
+      operationId: createMemberCheckout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemberCheckoutInput" }
+      responses:
+        "200":
+          description: Provider-hosted checkout URL; the URL alone never activates access
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberCheckoutResult" }
+  /member/subscription:
+    get:
+      operationId: getMemberSubscription
+      responses:
+        "200":
+          description: Signed-in member's own paid subscription state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberSubscriptionResponse" }
+  /member/subscription/cancel:
+    post:
+      operationId: cancelMemberSubscription
+      responses:
+        "200":
+          description: Renewal stopped at period end; access remains until then
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberCancellationResult" }
 components:
   parameters:
     Id: { name: id, in: path, required: true, schema: { type: string } }
@@ -810,7 +856,7 @@ components:
     PlanInput:
       type: object
       additionalProperties: false
-      required: [name, tier, kind, durationDays, active, rules]
+      required: [name, tier, kind, durationDays, active, rules, priceIqd]
       properties:
         name: { type: string }
         tier: { type: string }
@@ -818,12 +864,56 @@ components:
         durationDays: { type: integer, minimum: 1, maximum: 366 }
         active: { type: boolean }
         rules: { $ref: "#/components/schemas/EntitlementRules" }
+        priceIqd: { type: [integer, "null"], minimum: 1, maximum: 1000000000 }
     LivePlan:
       allOf:
         - $ref: "#/components/schemas/PlanInput"
         - type: object
           required: [id]
-          properties: { id: { type: string } }
+          properties:
+            id: { type: string }
+            purchasable: { type: boolean }
+            priceLabel: { type: [string, "null"] }
+            availabilityMessage: { type: [string, "null"] }
+    MemberCheckoutInput:
+      type: object
+      additionalProperties: false
+      required: [planId]
+      properties:
+        planId: { type: string, format: uuid }
+    MemberCheckoutResult:
+      type: object
+      required: [purchaseUrl]
+      properties: { purchaseUrl: { type: string, format: uri } }
+    MemberSubscriptionResponse:
+      oneOf:
+        - type: "null"
+        - type: object
+          required: [status, paymentStatus, cancelAtPeriodEnd, periodEndsAt, recoveryUrl]
+          properties:
+            status: { type: string }
+            paymentStatus: { type: string }
+            cancelAtPeriodEnd: { type: boolean }
+            periodEndsAt: { type: [string, "null"], format: date-time }
+            recoveryUrl: { type: [string, "null"], format: uri }
+            refundStatus: { type: string }
+    MemberCancellationResult:
+      type: object
+      required: [cancelAtPeriodEnd, periodEndsAt]
+      properties:
+        cancelAtPeriodEnd: { type: boolean }
+        periodEndsAt: { type: [string, "null"], format: date-time }
+    RefundRequest:
+      type: object
+      additionalProperties: false
+      required: [userId, reason]
+      properties:
+        userId: { type: string, minLength: 1, maxLength: 160 }
+        reason: { type: string, minLength: 5, maxLength: 500 }
+    RefundResult:
+      type: object
+      required: [status]
+      properties: { status: { type: string, enum: [completed, pending] } }
     AccessRevokeInput:
       type: object
       required: [userId, reason]

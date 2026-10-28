@@ -36,7 +36,8 @@ export async function createReservation(userId: string, input: { kind: string; t
     if (o.startsAt <= now) throw new BookingError(409, "This class has already started.");
     const [m] = await tx.select().from(memberships).where(and(eq(memberships.userId, userId), eq(memberships.scope, o.scope)));
     const paymentEligible = m && (o.scope === "live"
-      ? (["trial", "corporate"].includes(m.source) && m.paymentStatus === "not_required")
+      ? ((["trial", "corporate"].includes(m.source) && m.paymentStatus === "not_required") ||
+         (m.source === "paid" && m.paymentStatus === "paid"))
       : m.paymentStatus === "paid");
     if (!m || !["active", "trial"].includes(m.status) || !paymentEligible ||
         m.startsAt > now || m.endsAt < o.endsAt || m.endsAt <= now) {

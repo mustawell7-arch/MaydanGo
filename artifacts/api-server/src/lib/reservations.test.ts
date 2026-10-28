@@ -106,6 +106,36 @@ test("authenticated booking service: ownership, durable history, eligibility and
     const late = await createReservation(alice, input(await offer({ cancellationDeadline: new Date(now - 1) })));
     await rejects(() => cancelReservation(alice, late.id), 409);
   });
+  await t.test("live booking requires a verified paid grant while trial access remains unpaid", async () => {
+    const livePartner = `${prefix}-payment-partner`;
+    partnerIds.push(livePartner);
+    await db.insert(partners).values({
+      id: livePartner, name: "Payment test partner", groupId: `${prefix}-payment-group`,
+      ownerUserId: `${prefix}-payment-owner`, approved: true,
+    });
+    const paidOffering = await offer({ scope: "live", partnerId: livePartner, accessType: "physical" });
+    const secondOffering = await offer({ scope: "live", partnerId: livePartner, accessType: "physical" });
+    await db.insert(memberships).values({
+      userId: alice, scope: "live", status: "active", source: "paid", paymentStatus: "paid", tier: "M",
+      startsAt: new Date(now - 86400000), endsAt: new Date(now + 10 * 86400000),
+      rules: { quota: 10, dailyLimit: 10, trialAllowedTypes: ["physical"] },
+    });
+    assert.equal((await createReservation(alice, input(paidOffering))).status, "reserved");
+
+    await db.update(memberships).set({ paymentStatus: "not_required" })
+      .where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
+    await rejects(() => createReservation(alice, input(secondOffering)), 403);
+
+    await db.update(memberships).set({ source: "trial", paymentStatus: "paid" })
+      .where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
+    await rejects(() => createReservation(alice, input(secondOffering)), 403);
+    await db.update(memberships).set({ paymentStatus: "not_required" })
+      .where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
+    assert.equal((await createReservation(alice, input(secondOffering))).status, "reserved");
+    await db.delete(reservations).where(inArray(reservations.offeringId, [paidOffering, secondOffering]));
+    await db.delete(memberships).where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
+  });
+
   await t.test("coaching is requested, never confirmed or attended", async () => {
     const coach = await offer({ kind: "coach", slot: "slot-1" });
     const row = await createReservation(alice, { kind: "coach", targetId: coach, slot: "slot-1" });
@@ -163,7 +193,7 @@ test("live operations: staff scope, approved inventory, server grants and quota 
     const o = await call("/operations/offerings", partnerUser, "POST", offerBody);
     assert.equal(o.status, 201); ids.push(o.data.id);
     const rules = { quota: 1, dailyLimit: 10, quotaMode: "separate", physicalQuota: 1, premiumQuota: 1, liveQuota: 1, trialAllowedTypes: ["physical", "premium", "live"] };
-    const planBody = { name: "Isolated trial", tier: "M", kind: "trial", durationDays: 7, active: true, rules };
+    const planBody = { name: "Isolated trial", tier: "M", kind: "trial", durationDays: 7, active: true, priceIqd: null, rules };
     const plan = await call("/operations/plans", adminId, "POST", planBody);
     assert.equal(plan.status, 201); planIds.push(plan.data.id);
     await t.test("public catalog and plans expose only approved live summaries without authentication", async () => {
@@ -303,7 +333,7 @@ test("live operations: staff scope, approved inventory, server grants and quota 
     await t.test("revocation cancels active bookings, repeat trials and paid grants remain blocked", async () => {
       assert.equal((await call("/operations/revoke", adminId, "POST", { userId: alice, reason: "Test revoke" })).status, 200);
       assert.equal((await call("/operations/grants", adminId, "POST", { userId: alice, planId: plan.data.id, reason: "Test grant" })).status, 409);
-      await call(`/operations/plans/${plan.data.id}`, adminId, "PUT", { ...planBody, kind: "paid" });
+      await call(`/operations/plans/${plan.data.id}`, adminId, "PUT", { ...planBody, kind: "paid", priceIqd: 5000 });
       assert.equal((await call("/operations/grants", adminId, "POST", { userId: bob, planId: plan.data.id, reason: "Test paid" })).status, 403);
       await call(`/operations/plans/${plan.data.id}`, adminId, "PUT", { ...planBody, kind: "corporate", rules: { ...rules, corporateId: "test-company" } });
       assert.equal((await call("/operations/grants", adminId, "POST", { userId: bob, planId: plan.data.id, reason: "Test corp", corporateId: "wrong" })).status, 403);

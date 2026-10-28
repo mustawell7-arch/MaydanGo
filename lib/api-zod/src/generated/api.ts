@@ -209,6 +209,8 @@ export const getOperationsResponsePlansItemOneRulesCategoryLimitsMinOne = 0;
 
 export const getOperationsResponsePlansItemOneRulesPartnerGroupLimitsMinOne = 0;
 
+export const getOperationsResponsePlansItemOnePriceIqdMax = 1000000000;
+
 
 
 export const GetOperationsResponse = zod.object({
@@ -282,9 +284,13 @@ export const GetOperationsResponse = zod.object({
   "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(getOperationsResponsePlansItemOneRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
   "corporateId": zod.string().optional()
-})
+}),
+  "priceIqd": zod.number().int().min(1).max(getOperationsResponsePlansItemOnePriceIqdMax).nullable()
 }).and(zod.object({
-  "id": zod.string()
+  "id": zod.string(),
+  "purchasable": zod.boolean().optional(),
+  "priceLabel": zod.string().nullish(),
+  "availabilityMessage": zod.string().nullish()
 })))
 })
 
@@ -860,6 +866,8 @@ export const addMembershipPlanBodyRulesCategoryLimitsMinOne = 0;
 
 export const addMembershipPlanBodyRulesPartnerGroupLimitsMinOne = 0;
 
+export const addMembershipPlanBodyPriceIqdMax = 1000000000;
+
 
 
 export const AddMembershipPlanBody = zod.object({
@@ -883,7 +891,8 @@ export const AddMembershipPlanBody = zod.object({
   "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanBodyRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
   "corporateId": zod.string().optional()
-})
+}),
+  "priceIqd": zod.number().int().min(1).max(addMembershipPlanBodyPriceIqdMax).nullable()
 })
 
 export const addMembershipPlanResponseOneDurationDaysMax = 366;
@@ -903,6 +912,8 @@ export const addMembershipPlanResponseOneRulesFacilityLimitsMinOne = 0;
 export const addMembershipPlanResponseOneRulesCategoryLimitsMinOne = 0;
 
 export const addMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne = 0;
+
+export const addMembershipPlanResponseOnePriceIqdMax = 1000000000;
 
 
 
@@ -927,9 +938,13 @@ export const AddMembershipPlanResponse = zod.object({
   "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
   "corporateId": zod.string().optional()
-})
+}),
+  "priceIqd": zod.number().int().min(1).max(addMembershipPlanResponseOnePriceIqdMax).nullable()
 }).and(zod.object({
-  "id": zod.string()
+  "id": zod.string(),
+  "purchasable": zod.boolean().optional(),
+  "priceLabel": zod.string().nullish(),
+  "availabilityMessage": zod.string().nullish()
 }))
 
 
@@ -955,6 +970,8 @@ export const replaceMembershipPlanBodyRulesCategoryLimitsMinOne = 0;
 
 export const replaceMembershipPlanBodyRulesPartnerGroupLimitsMinOne = 0;
 
+export const replaceMembershipPlanBodyPriceIqdMax = 1000000000;
+
 
 
 export const ReplaceMembershipPlanBody = zod.object({
@@ -978,7 +995,8 @@ export const ReplaceMembershipPlanBody = zod.object({
   "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanBodyRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
   "corporateId": zod.string().optional()
-})
+}),
+  "priceIqd": zod.number().int().min(1).max(replaceMembershipPlanBodyPriceIqdMax).nullable()
 })
 
 export const replaceMembershipPlanResponseOneDurationDaysMax = 366;
@@ -998,6 +1016,8 @@ export const replaceMembershipPlanResponseOneRulesFacilityLimitsMinOne = 0;
 export const replaceMembershipPlanResponseOneRulesCategoryLimitsMinOne = 0;
 
 export const replaceMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne = 0;
+
+export const replaceMembershipPlanResponseOnePriceIqdMax = 1000000000;
 
 
 
@@ -1022,9 +1042,13 @@ export const ReplaceMembershipPlanResponse = zod.object({
   "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
   "corporateId": zod.string().optional()
-})
+}),
+  "priceIqd": zod.number().int().min(1).max(replaceMembershipPlanResponseOnePriceIqdMax).nullable()
 }).and(zod.object({
-  "id": zod.string()
+  "id": zod.string(),
+  "purchasable": zod.boolean().optional(),
+  "priceLabel": zod.string().nullish(),
+  "availabilityMessage": zod.string().nullish()
 }))
 
 
@@ -1056,6 +1080,23 @@ export const RevokeLiveAccessBody = zod.object({
 
 export const RevokeLiveAccessResponse = zod.object({
   "ok": zod.boolean()
+})
+
+
+export const requestMembershipRefundBodyUserIdMax = 160;
+
+export const requestMembershipRefundBodyReasonMin = 5;
+export const requestMembershipRefundBodyReasonMax = 500;
+
+
+
+export const RequestMembershipRefundBody = zod.object({
+  "userId": zod.string().min(1).max(requestMembershipRefundBodyUserIdMax),
+  "reason": zod.string().min(requestMembershipRefundBodyReasonMin).max(requestMembershipRefundBodyReasonMax)
+})
+
+export const RequestMembershipRefundResponse = zod.object({
+  "status": zod.enum(['completed', 'pending'])
 })
 
 
@@ -1899,6 +1940,8 @@ export const getLivePlansResponseOneRulesCategoryLimitsMinOne = 0;
 
 export const getLivePlansResponseOneRulesPartnerGroupLimitsMinOne = 0;
 
+export const getLivePlansResponseOnePriceIqdMax = 1000000000;
+
 
 
 export const GetLivePlansResponseItem = zod.object({
@@ -1922,11 +1965,40 @@ export const GetLivePlansResponseItem = zod.object({
   "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(getLivePlansResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
   "corporateId": zod.string().optional()
-})
+}),
+  "priceIqd": zod.number().int().min(1).max(getLivePlansResponseOnePriceIqdMax).nullable()
 }).and(zod.object({
-  "id": zod.string()
+  "id": zod.string(),
+  "purchasable": zod.boolean().optional(),
+  "priceLabel": zod.string().nullish(),
+  "availabilityMessage": zod.string().nullish()
 }))
 export const GetLivePlansResponse = zod.array(GetLivePlansResponseItem)
+
+
+export const CreateMemberCheckoutBody = zod.object({
+  "planId": zod.string().uuid()
+})
+
+export const CreateMemberCheckoutResponse = zod.object({
+  "purchaseUrl": zod.string().url()
+})
+
+
+export const GetMemberSubscriptionResponse = zod.union([zod.null(),zod.object({
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "cancelAtPeriodEnd": zod.boolean(),
+  "periodEndsAt": zod.coerce.date().nullable(),
+  "recoveryUrl": zod.string().url().nullable(),
+  "refundStatus": zod.string().optional()
+})])
+
+
+export const CancelMemberSubscriptionResponse = zod.object({
+  "cancelAtPeriodEnd": zod.boolean(),
+  "periodEndsAt": zod.coerce.date().nullable()
+})
 
 
 export const SaveMemberProfileBody = zod.object({

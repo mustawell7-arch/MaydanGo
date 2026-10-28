@@ -1,12 +1,14 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { z } from "zod";
-import { db, memberships, memberProfiles, offerings, reservations, partners, membershipPlans } from "@workspace/db";
+import { db, memberships, memberProfiles, offerings, reservations, partners } from "@workspace/db";
 import { eq, and, inArray, sql, gt, asc, isNull } from "drizzle-orm";
 import { BookingError, memberState, createReservation, cancelReservation } from "../lib/reservations";
 import learningRouter from "./learning";
 import { memberSupportRouter } from "./support";
 import { sendMemberNotification } from "../lib/notifications";
+import { PaymentError } from "../lib/payment-config";
+import { cancelMemberSubscription, createMemberCheckout, listMemberPlans, memberSubscription } from "../lib/payments-paytabs";
 
 const router = Router();
 router.use((req, res, next) => {
@@ -16,8 +18,18 @@ router.use((req, res, next) => {
 router.use(learningRouter);
 router.use(memberSupportRouter);
 router.get("/", async (req, res) => { res.json(await memberState(getAuth(req).userId!)); });
-router.get("/plans", async (_req, res) => {
-  res.json(await db.select().from(membershipPlans).where(eq(membershipPlans.active, true)));
+router.get("/plans", async (_req, res) => { res.json(await listMemberPlans()); });
+router.post("/checkout", async (req, res) => {
+  const parsed = z.object({ planId: z.string().uuid() }).strict().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ message: "Choose a valid membership plan." }); return; }
+  res.json(await createMemberCheckout(getAuth(req).userId!, parsed.data.planId));
+});
+router.get("/subscription", async (req, res) => {
+  res.json(await memberSubscription(getAuth(req).userId!));
+});
+router.post("/subscription/cancel", async (req, res) => {
+  if (req.body && Object.keys(req.body).length) { res.status(400).json({ message: "No cancellation details are accepted from the app." }); return; }
+  res.json(await cancelMemberSubscription(getAuth(req).userId!));
 });
 router.get("/live-catalog", async (_req, res) => {
   const rows = await db.select({ offering: offerings, partnerName: partners.name,
@@ -92,6 +104,7 @@ router.delete("/bookings/:id", async (req, res) => {
 });
 router.use((error: unknown, _req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => {
   if (error instanceof BookingError) { res.status(error.status).json({ message: error.message }); return; }
+  if (error instanceof PaymentError) { res.status(error.status).json({ message: error.message }); return; }
   next(error);
 });
 export default router;

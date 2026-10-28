@@ -1,6 +1,7 @@
 import { pgTable, text, timestamp, integer, boolean, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import type { LocalizedText } from "./learning";
+import { membershipBilling } from "./payments";
 
 export type AccessRules = {
   cities?: string[]; facilities?: string[]; categories?: string[];
@@ -25,11 +26,15 @@ export const memberships = pgTable("memberships", {
   paymentStatus: text("payment_status").notNull(),
   tier: text("tier").notNull(),
   source: text("source").notNull().default("legacy"),
+  billingId: text("billing_id").references(() => membershipBilling.id),
   corporateId: text("corporate_id"),
   startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
   endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
   rules: jsonb("rules").$type<AccessRules>().notNull(),
-}, t => [uniqueIndex("membership_owner_scope").on(t.userId, t.scope)]);
+}, t => [
+  uniqueIndex("membership_owner_scope").on(t.userId, t.scope),
+  uniqueIndex("membership_billing_owner").on(t.billingId).where(sql`${t.billingId} is not null`),
+]);
 
 export const offerings = pgTable("booking_offerings", {
   id: text("id").primaryKey(),

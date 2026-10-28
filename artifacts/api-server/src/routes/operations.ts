@@ -13,6 +13,10 @@ import {
 } from "@workspace/api-zod";
 import { sendMemberNotification } from "../lib/notifications";
 
+import { PaymentError } from "../lib/payment-config";
+
+import { cancelPaidSubscriptionImmediately, requestFullRefund, validatePaidPlan } from "../lib/payments-paytabs";
+
 const router = Router();
 router.use(async (req, res, next) => {
   const userId = getAuth(req).userId;
@@ -45,10 +49,11 @@ function own(res: import("express").Response, partnerId: string | null) {
 router.get("/", async (_req, res) => {
   const op = res.locals.operator;
   const isAdmin = op.role === "admin";
+  const plans = isAdmin ? await db.select().from(membershipPlans) : [];
   res.json({ role: op.role, partnerId: op.partnerId,
     partners: await db.select().from(partners).where(isAdmin ? undefined : eq(partners.id, op.partnerId ?? "")),
     offerings: await db.select().from(offerings).where(and(eq(offerings.scope, "live"), isAdmin ? undefined : eq(offerings.partnerId, op.partnerId ?? ""))),
-    plans: isAdmin ? await db.select().from(membershipPlans) : [],
+    plans: plans.map(({ whopPlanId: _legacyProviderId, ...plan }) => plan),
   });
 });
 router.post("/partners", async (req, res) => {
@@ -261,6 +266,7 @@ router.post("/courses/:id/lessons", async (req, res) => {
 router.post("/plans", async (req, res) => {
   admin(res);
   const data = planInput.parse(req.body);
+  if (data.kind === "paid") validatePaidPlan(data.priceIqd);
   const row = await db.transaction(async tx => {
     const [p] = await tx.insert(membershipPlans).values({ ...data, id: randomUUID() }).returning();
     await audit(tx, res.locals.operator.userId, "plan.create", p.id);
@@ -271,6 +277,7 @@ router.post("/plans", async (req, res) => {
 router.put("/plans/:id", async (req, res) => {
   admin(res);
   const data = planInput.parse(req.body);
+  if (data.kind === "paid") validatePaidPlan(data.priceIqd);
   const row = await db.transaction(async tx => {
     const [p] = await tx.update(membershipPlans).set(data).where(eq(membershipPlans.id, String(req.params.id))).returning();
     if (!p) throw new BookingError(404, "Plan not found.");
@@ -297,7 +304,7 @@ router.post("/grants", async (req, res) => {
       throw new BookingError(409, "Revoke the existing membership before granting a replacement.");
     const startsAt = new Date(), endsAt = new Date(startsAt.getTime() + p.durationDays * 86400000);
     const membership = { scope: "live", status: p.kind === "trial" ? "trial" : "active",
-      paymentStatus: "not_required", tier: p.tier, source: p.kind, corporateId: input.corporateId ?? null,
+      paymentStatus: "not_required", tier: p.tier, source: p.kind, billingId: null, corporateId: input.corporateId ?? null,
       startsAt, endsAt, rules: p.rules };
     await tx.insert(memberships).values({ userId: input.userId, ...membership })
       .onConflictDoUpdate({ target: [memberships.userId, memberships.scope], set: membership });
@@ -310,6 +317,11 @@ router.post("/grants", async (req, res) => {
 router.post("/revoke", async (req, res) => {
   admin(res);
   const input = z.object({ userId: z.string().min(1).max(160), reason: z.string().trim().min(5).max(500) }).strict().parse(req.body);
+  const hadBookingsBeforeProviderCancel = (await db.select({ id: reservations.id }).from(reservations)
+    .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
+    .where(and(eq(reservations.userId, input.userId), eq(offerings.scope, "live"),
+      inArray(reservations.status, ["reserved", "requested"]))).limit(1)).length > 0;
+  await cancelPaidSubscriptionImmediately(input.userId);
   const bookingsCancelled = await db.transaction(async tx => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${input.userId}))`);
     await tx.update(memberships).set({ status: "terminated" }).where(and(eq(memberships.userId, input.userId), eq(memberships.scope, "live")));
@@ -326,12 +338,26 @@ router.post("/revoke", async (req, res) => {
     await audit(tx, res.locals.operator.userId, "membership.revoke", input.userId, input.reason);
     return hadBookings;
   });
-  if (bookingsCancelled) void sendMemberNotification(input.userId, "booking_cancelled");
+  if (bookingsCancelled || hadBookingsBeforeProviderCancel) void sendMemberNotification(input.userId, "booking_cancelled");
   res.json({ ok: true });
+});
+router.post("/refunds", async (req, res) => {
+  admin(res);
+  const input = z.object({
+    userId: z.string().trim().min(1).max(160),
+    reason: z.string().trim().min(5).max(500),
+  }).strict().parse(req.body);
+  const result = await requestFullRefund(input.userId, input.reason);
+  await db.transaction(async tx => {
+    await audit(tx, res.locals.operator.userId, "membership.refund", input.userId,
+      `${result.status}: ${input.reason}`);
+  });
+  res.json(result);
 });
 router.use((error: unknown, _req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => {
   if (error instanceof z.ZodError) { res.status(400).json({ message: error.issues.map(i => i.message).join(" ") }); return; }
   if (error instanceof BookingError) { res.status(error.status).json({ message: error.message }); return; }
+  if (error instanceof PaymentError) { res.status(error.status).json({ message: error.message }); return; }
   next(error);
 });
 export default router;

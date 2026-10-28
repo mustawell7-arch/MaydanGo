@@ -604,11 +604,72 @@ export interface PlanInput {
   durationDays: number;
   active: boolean;
   rules: EntitlementRules;
+  /**
+     * @minimum 1
+     * @maximum 1000000000
+     * @nullable
+     */
+  priceIqd: number | null;
 }
 
-export type LivePlan = PlanInput & {
+export type LivePlan = PlanInput & ({
   id: string;
-};
+  purchasable?: boolean;
+  /** @nullable */
+  priceLabel?: string | null;
+  /** @nullable */
+  availabilityMessage?: string | null;
+});
+
+export interface MemberCheckoutInput {
+  planId: string;
+}
+
+export interface MemberCheckoutResult {
+  purchaseUrl: string;
+}
+
+export type MemberSubscriptionResponse = {
+  status: string;
+  paymentStatus: string;
+  cancelAtPeriodEnd: boolean;
+  /** @nullable */
+  periodEndsAt: string | null;
+  /** @nullable */
+  recoveryUrl: string | null;
+  refundStatus?: string;
+} | null;
+
+export interface MemberCancellationResult {
+  cancelAtPeriodEnd: boolean;
+  /** @nullable */
+  periodEndsAt: string | null;
+}
+
+export interface RefundRequest {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  userId: string;
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason: string;
+}
+
+export type RefundResultStatus = typeof RefundResultStatus[keyof typeof RefundResultStatus];
+
+
+export const RefundResultStatus = {
+  completed: 'completed',
+  pending: 'pending',
+} as const;
+
+export interface RefundResult {
+  status: RefundResultStatus;
+}
 
 export interface AccessRevokeInput {
   userId: string;

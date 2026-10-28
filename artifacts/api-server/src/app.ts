@@ -6,6 +6,7 @@ import { logger } from "./lib/logger";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware, getClerkProxyHost } from "./middlewares/clerkProxyMiddleware";
+import paymentWebhookRouter from "./routes/payment-webhook";
 
 const app: Express = express();
 
@@ -42,6 +43,8 @@ app.use((req, res, next) => {
   }
   cors({ origin: origin || false, credentials: true })(req, res, next);
 });
+// PayTabs signs the complete callback body, so verify the original bytes before JSON parsing.
+app.use("/api/payments", express.raw({ type: "application/json", limit: "1mb" }), paymentWebhookRouter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(clerkMiddleware((req) => ({

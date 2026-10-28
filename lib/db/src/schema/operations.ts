@@ -1,4 +1,5 @@
-import { pgTable, text, boolean, integer, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, integer, jsonb, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import type { AccessRules } from "./bookings";
 
 export const partners = pgTable("partners", {
@@ -20,9 +21,12 @@ export const membershipPlans = pgTable("membership_plans", {
   tier: text("tier").notNull(),
   kind: text("kind").notNull(),
   durationDays: integer("duration_days").notNull(),
+  priceIqd: integer("price_iqd"),
+  // Kept only so the additive schema update does not drop old provider data.
+  whopPlanId: text("whop_plan_id"),
   active: boolean("active").notNull().default(false),
   rules: jsonb("rules").$type<AccessRules>().notNull(),
-});
+}, t => [uniqueIndex("membership_plans_whop_plan").on(t.whopPlanId).where(sql`${t.whopPlanId} is not null`)]);
 export const accessGrants = pgTable("access_grants", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull(),

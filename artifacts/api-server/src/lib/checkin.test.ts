@@ -62,6 +62,13 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     await db.update(memberships).set({ status: "terminated" }).where(eq(memberships.userId, member));
     await reject(() => issueQr(staff, r), 403);
     await db.update(memberships).set({ status: "trial" }).where(eq(memberships.userId, member));
+    await db.update(memberships).set({ paymentStatus: "paid" }).where(eq(memberships.userId, member));
+    await reject(() => issueQr(staff, r), 403);
+    await db.update(memberships).set({ source: "paid", paymentStatus: "past_due" }).where(eq(memberships.userId, member));
+    await reject(() => issueQr(staff, r), 403);
+    await db.update(memberships).set({ paymentStatus: "paid" }).where(eq(memberships.userId, member));
+    await issueQr(staff, r);
+    await db.update(memberships).set({ source: "trial", paymentStatus: "not_required" }).where(eq(memberships.userId, member));
     token = (await issueQr(staff, r))!.token;
   });
   await t.test("owner, forged/old QR, geofence, accuracy, stale and mocked location enforced", async () => {

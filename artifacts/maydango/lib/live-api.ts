@@ -20,7 +20,8 @@ export type Offering = {
   capacity: number; gender: 'all' | 'female' | 'male'; minAge: number; maxAge: number | null; additionalPayment: boolean; active: boolean;
   targetId: string; slot: string; scope: string; cancelledAt: string | null; partnerName?: string; remaining?: number;
 };
-export type Plan = { id: string; name: string; tier: string; kind: 'paid' | 'trial' | 'corporate'; durationDays: number; active: boolean; rules: Rules };
+export type Plan = { id: string; name: string; tier: string; kind: 'paid' | 'trial' | 'corporate'; durationDays: number; active: boolean; rules: Rules; priceIqd?: number | null; purchasable?: boolean; priceLabel?: string | null; availabilityMessage?: string | null };
+export type Subscription = { status: string; paymentStatus: string; cancelAtPeriodEnd: boolean; periodEndsAt: string | null; recoveryUrl: string | null };
 export type Operations = { role: 'admin' | 'partner'; partnerId: string | null; partners: Partner[]; offerings: Offering[]; plans: Plan[] };
 
 export class HttpError extends Error { constructor(public status: number, message: string) { super(message); } }

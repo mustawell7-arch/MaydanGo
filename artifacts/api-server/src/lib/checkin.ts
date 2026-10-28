@@ -64,8 +64,12 @@ async function eligible(tx: Tx, c: Awaited<ReturnType<typeof context>>) {
   if (!partner?.approved) throw new BookingError(403, "Partner approval is required.");
   const [m] = await tx.select().from(memberships).where(and(eq(memberships.userId, r.userId), eq(memberships.scope, "live")));
   const now = new Date();
-  if (!m || !["active", "trial"].includes(m.status) || !["trial", "corporate"].includes(m.source) ||
-      m.paymentStatus !== "not_required" || m.startsAt > now || m.endsAt <= now || m.endsAt < o.endsAt)
+  const paymentEligible = m && (
+    (["trial", "corporate"].includes(m.source) && m.paymentStatus === "not_required") ||
+    (m.source === "paid" && m.paymentStatus === "paid")
+  );
+  if (!m || !["active", "trial"].includes(m.status) || !paymentEligible ||
+      m.startsAt > now || m.endsAt <= now || m.endsAt < o.endsAt)
     throw new BookingError(403, "An active eligible membership is required.");
   const rules = m.rules;
   if (!o.tiers.includes(m.tier) || o.additionalPayment ||

@@ -229,6 +229,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1grants"
   /operations/revoke:
     $ref: "./operations.yaml#/paths/~1operations~1revoke"
+  /operations/refunds:
+    $ref: "./operations.yaml#/paths/~1operations~1refunds"
   /member/live-catalog:
     $ref: "./operations.yaml#/paths/~1member~1live-catalog"
   /member/courses:
@@ -265,6 +267,12 @@ paths:
     $ref: "./operations.yaml#/paths/~1support~1staff~1notification-failures"
   /member/plans:
     $ref: "./operations.yaml#/paths/~1member~1plans"
+  /member/checkout:
+    $ref: "./operations.yaml#/paths/~1member~1checkout"
+  /member/subscription:
+    $ref: "./operations.yaml#/paths/~1member~1subscription"
+  /member/subscription/cancel:
+    $ref: "./operations.yaml#/paths/~1member~1subscription~1cancel"
   /member/profile:
     put:
       operationId: saveMemberProfile

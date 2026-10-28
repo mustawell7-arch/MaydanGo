@@ -24,11 +24,16 @@ export const rulesInput = z.object({
 export const planInput = z.object({
   name: label, tier: label, kind: z.enum(["paid", "trial", "corporate"]),
   durationDays: z.number().int().min(1).max(366), active: z.boolean(), rules: rulesInput,
+  priceIqd: z.number().int().min(1).max(1_000_000_000).nullable(),
 }).strict().superRefine((p, ctx) => {
   if (p.kind === "corporate" && !p.rules.corporateId)
     ctx.addIssue({ code: "custom", message: "Corporate plans require an organization ID." });
   if (p.kind === "trial" && !p.rules.trialAllowedTypes)
     ctx.addIssue({ code: "custom", message: "Trial plans require allowed activity types." });
+  if (p.kind === "paid" && p.priceIqd === null)
+    ctx.addIssue({ code: "custom", message: "Paid plans require a price in IQD." });
+  if (p.kind !== "paid" && p.priceIqd !== null)
+    ctx.addIssue({ code: "custom", message: "Only paid plans can have a payment price." });
 });
 export const partnerInput = z.object({ name: label, groupId: label, ownerUserId: label }).strict();
 export const offeringInput = z.object({

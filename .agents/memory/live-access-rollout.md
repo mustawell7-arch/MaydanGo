@@ -2,11 +2,11 @@
 name: Live access rollout
 description: Payment deferral and safe operational access decisions for MaydanGo.
 ---
-The user requested continuing app programming and adding Stripe or another payment option in a later phase after testing.
+The user selected PayTabs and asked to proceed with integration preparation. Start with a separate PayTabs test profile; this merchant's live Iraq payout eligibility still needs confirmation.
 
-**Why:** The user explicitly deferred payment-provider selection and connection.
+**Why:** The user explicitly chose PayTabs and asked to continue setup before creating the test account.
 
-**How to apply:** Do not silently implement or enable paid membership activation while this deferral stands. Keep sample access isolated; administrative trials and verified corporate grants must not be represented as payments.
+**How to apply:** Keep test credentials and test mode separate from live credentials. Never enable live payments until this merchant's Iraq payout eligibility and recurring agreements are verified; keep sample access isolated and never represent trial or corporate grants as paid.
 
 Existing reservations must not be silently moved to new dates or eligibility rules.
 

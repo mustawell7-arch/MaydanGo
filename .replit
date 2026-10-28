@@ -22,3 +22,12 @@ timeoutMs = 20000
 [nix]
 channel = "stable-25_05"
 packages = ["freetype", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "mupdf", "openjpeg", "swig", "xcbuild"]
+
+[userenv]
+
+[userenv.development]
+MAYDANGO_PAYMENTS_ENABLED = "false"
+MAYDANGO_PAYOUTS_VERIFIED = "false"
+MAYDANGO_PAYTABS_RECURRING_VERIFIED = "false"
+PAYTABS_CALLBACK_URL = "https://ae877da1-f25f-4b89-90ab-12bbbd996789-00-3ez9fps0k6xfg-ad5nj9xc.kira.replit.dev/api/payments/webhook"
+PAYTABS_RETURN_URL = "https://ae877da1-f25f-4b89-90ab-12bbbd996789-00-3ez9fps0k6xfg-ad5nj9xc.kira.replit.dev/api/payments/return"

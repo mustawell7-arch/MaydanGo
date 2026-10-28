@@ -1,12 +1,19 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import {
+  cancelMemberSubscription,
+  createMemberCheckout,
+  useGetLivePlans,
+  useGetMemberSubscription,
+} from '@workspace/api-client-react';
 import { Text, Pressable, Ionicons } from '@/components/Localized';
 import { ScreenShell, ScreenHeader } from '@/components/ScreenShell';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
-import { dateTime } from '@/lib/content';
-import { useAuthedResource, type Offering, type Plan } from '@/lib/live-api';
+import { dateTime, localize } from '@/lib/content';
+import { useAuthedResource, type Offering } from '@/lib/live-api';
 
 type Filter = 'all' | 'physical' | 'premium' | 'live';
 
@@ -14,17 +21,53 @@ export default function LiveScreen() {
   const c = useColors();
   const app = useApp();
   const catalog = useAuthedResource<Offering[]>('/member/live-catalog');
-  const plans = useAuthedResource<Plan[]>('/member/plans');
+  const plans = useGetLivePlans({ query: { enabled: catalog.signedIn } });
+  const subscription = useGetMemberSubscription({ query: { enabled: catalog.signedIn } });
   const [filter, setFilter] = useState<Filter>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: 'ok' | 'err'; text: string } | null>(null);
-  const refreshCatalog = catalog.refresh, refreshPlans = plans.refresh, refreshMember = app.refreshMember;
-  useFocusEffect(useCallback(() => { void refreshCatalog(); void refreshPlans(); void refreshMember(); }, [refreshCatalog, refreshPlans, refreshMember]));
+  const refreshCatalog = catalog.refresh, refreshPlans = plans.refetch, refreshMember = app.refreshMember;
+  useFocusEffect(useCallback(() => { void refreshCatalog(); void refreshPlans(); void subscription.refetch(); void refreshMember(); },
+    [refreshCatalog, refreshPlans, subscription.refetch, refreshMember]));
 
   const live = app.memberMemberships.filter(m => m.scope !== 'preview');
   const items = useMemo(() => (catalog.data ?? []).filter(o => o.active && (filter === 'all' || o.accessType === filter))
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt)), [catalog.data, filter]);
   const booked = (o: Offering) => app.serverBookings.some(b => b.kind === o.kind && b.targetId === o.targetId && b.slot === o.slot && b.status !== 'cancelled' && String(b.status) !== 'partner_cancelled');
+  const billingBusy = !!busyId?.startsWith('billing:');
+  const hasCurrentLiveAccess = live.some(m => ['active', 'trial'].includes(m.status) && Date.parse(m.endsAt) > Date.now());
+  const hasUnresolvedPaidAccess = subscription.data?.paymentStatus === 'past_due' ||
+    live.some(m => m.source === 'paid' && m.status === 'paused');
+
+  const startCheckout = async (plan: NonNullable<typeof plans.data>[number]) => {
+    if (billingBusy || !plan.purchasable || hasCurrentLiveAccess || hasUnresolvedPaidAccess) return;
+    setBusyId(`billing:${plan.id}`); setNotice(null);
+    try {
+      const result = await createMemberCheckout({ planId: plan.id });
+      await WebBrowser.openBrowserAsync(result.purchaseUrl);
+      await Promise.all([plans.refetch(), subscription.refetch(), app.refreshMember()]);
+    } catch {
+      setNotice({ tone: 'err', text: 'Checkout could not be opened. Try again.' });
+    } finally { setBusyId(null); }
+  };
+
+  const cancelSubscription = () => Alert.alert(
+    localize('Cancel subscription?', app.language),
+    localize('Renewal will stop at the end of the current billing period. Your paid access remains active until then.', app.language),
+    [
+      { text: localize('Keep subscription', app.language), style: 'cancel' },
+      { text: localize('Cancel renewal', app.language), style: 'destructive', onPress: () => {
+        setBusyId('billing:cancel'); setNotice(null);
+        void cancelMemberSubscription()
+          .then(async () => {
+            setNotice({ tone: 'ok', text: 'Renewal is cancelled. Access remains active through the current period.' });
+            await Promise.all([subscription.refetch(), app.refreshMember()]);
+          })
+          .catch(() => setNotice({ tone: 'err', text: 'Subscription could not be cancelled. Try again.' }))
+          .finally(() => setBusyId(null));
+      } },
+    ],
+  );
 
   const act = async (o: Pick<Offering, 'id' | 'kind' | 'targetId' | 'slot'>, cancel: boolean) => {
     if (busyId) return;
@@ -47,7 +90,7 @@ export default function LiveScreen() {
 
   return <ScreenShell>
     <ScreenHeader eyebrow="LIVE AVAILABILITY" title="Real partner sessions" />
-    <ScrollView contentContainerStyle={styles.pad} refreshControl={<RefreshControl refreshing={catalog.loading} onRefresh={() => { void catalog.refresh(); void plans.refresh(); }} />}>
+    <ScrollView contentContainerStyle={styles.pad} refreshControl={<RefreshControl refreshing={catalog.loading || plans.isLoading || subscription.isLoading} onRefresh={() => { void catalog.refresh(); void plans.refetch(); void subscription.refetch(); void app.refreshMember(); }} />}>
       <Pressable onPress={() => router.back()} accessibilityRole="button" style={styles.row}><Ionicons name="chevron-back" size={16} color={c.primary} /><Text style={{ color: c.primary }}>Back</Text></Pressable>
       <View style={[styles.banner, { backgroundColor: c.accent }]}>
         <View style={[styles.dot, { backgroundColor: c.primary }]} />
@@ -59,8 +102,25 @@ export default function LiveScreen() {
 
       <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
         <Text style={[styles.label, { color: c.mutedForeground }]}>YOUR LIVE ACCESS</Text>
-        {live.length ? live.map(m => <Text key={m.scope + m.tier} style={{ color: c.foreground, fontWeight: '700' }}>{m.source === 'corporate' ? 'Corporate' : m.source === 'trial' ? 'Trial' : 'Real membership'} · {m.tier} · {m.status} · {dateTime(m.endsAt, app.language, true)}</Text>)
-          : <Text style={{ color: c.foreground, lineHeight: 20 }}>No real membership yet. Paid memberships aren’t available in the app. MaydanGO staff grant trial and company access.</Text>}
+        {live.length ? live.map(m => <Text key={m.scope + m.tier} style={{ color: c.foreground, fontWeight: '700' }}>{m.source === 'corporate' ? 'Corporate' : m.source === 'trial' ? 'Trial' : 'Paid membership'} · {m.tier} · {m.status} · {dateTime(m.endsAt, app.language, true)}</Text>)
+          : <Text style={{ color: c.foreground, lineHeight: 20 }}>No live membership yet. Trial and company access are granted by MaydanGO staff. Paid plans appear below when checkout is enabled.</Text>}
+        {subscription.data?.recoveryUrl ? <>
+          <Text style={{ color: c.destructive, lineHeight: 20 }}>
+            {subscription.data.paymentStatus === 'past_due'
+              ? 'Payment needs attention. Paid booking access is paused until the provider confirms payment.'
+              : 'Complete the payment verification to finish setting up your membership.'}
+          </Text>
+          {subscription.data.recoveryUrl ? <Pressable accessibilityRole="button" disabled={billingBusy}
+            onPress={() => void WebBrowser.openBrowserAsync(subscription.data!.recoveryUrl!)}>
+            <Text style={{ color: c.primary, fontWeight: '700' }}>Resolve payment</Text>
+          </Pressable> : null}
+        </> : null}
+        {subscription.data?.cancelAtPeriodEnd && subscription.data.periodEndsAt ? <Text style={{ color: c.mutedForeground }}>Renewal is cancelled. Access ends {dateTime(subscription.data.periodEndsAt, app.language, true)}.</Text> : null}
+        {subscription.data && !subscription.data.cancelAtPeriodEnd && ['active', 'past_due'].includes(subscription.data.status) ?
+          <Pressable accessibilityRole="button" disabled={billingBusy} onPress={cancelSubscription}
+            style={[styles.cta, { backgroundColor: c.secondary, opacity: billingBusy ? .55 : 1 }]}>
+            <Text style={{ color: c.secondaryForeground, fontWeight: '700' }}>{busyId === 'billing:cancel' ? 'Working…' : 'Cancel subscription renewal'}</Text>
+          </Pressable> : null}
       </View>
 
       <View style={styles.chips}>
@@ -121,10 +181,20 @@ export default function LiveScreen() {
       <Text style={[styles.label, { color: c.mutedForeground, marginTop: 10 }]}>MEMBERSHIP PLANS</Text>
       {(plans.data ?? []).map(p => <View key={p.id} style={[styles.card, { backgroundColor: c.secondary, borderColor: c.border }]}>
         <View style={styles.between}><Text raw style={{ color: c.foreground, fontWeight: '800' }}>{p.name}</Text><Text style={{ color: c.primary, fontWeight: '700' }}>{p.tier}</Text></View>
-        <Text style={{ color: c.mutedForeground }}>{p.kind === 'paid' ? 'Paid plan' : p.kind === 'trial' ? 'Trial' : 'Corporate'} · {p.durationDays} days · {p.rules.quota} visits</Text>
+        <Text style={{ color: c.mutedForeground }}>{p.kind === 'paid' ? 'Paid plan' : p.kind === 'trial' ? 'Trial' : 'Corporate'} · {p.durationDays} days · {p.rules.quota} visits{p.priceLabel ? ` · ${p.priceLabel}` : ''}</Text>
+        {p.kind === 'paid' ? p.purchasable ?
+          <Pressable accessibilityRole="button" disabled={billingBusy || hasCurrentLiveAccess || hasUnresolvedPaidAccess}
+            onPress={() => void startCheckout(p)}
+            style={[styles.cta, { backgroundColor: c.primary, opacity: billingBusy || hasCurrentLiveAccess || hasUnresolvedPaidAccess ? .55 : 1 }]}>
+            <Text style={{ color: c.primaryForeground, fontWeight: '700' }}>
+              {busyId === `billing:${p.id}` ? 'Opening checkout…' : hasUnresolvedPaidAccess ? 'Resolve payment' : hasCurrentLiveAccess ? 'Current membership active' : 'Buy membership'}
+            </Text>
+          </Pressable>
+          : <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{p.availabilityMessage ?? 'Paid checkout is not enabled yet. No charge or access activation can occur until payment and payout checks are complete.'}</Text>
+          : null}
       </View>)}
       {plans.data && !plans.data.length ? <Text style={{ color: c.mutedForeground }}>No plans published yet.</Text> : null}
-      <Text style={{ color: c.mutedForeground, fontSize: 12, lineHeight: 18 }}>Online payment is coming later. No plan can be purchased or activated by payment in the app today.</Text>
+      {plans.error ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Membership plans could not be loaded. Try again.</Text> : null}
     </ScrollView>
   </ScreenShell>;
 }
