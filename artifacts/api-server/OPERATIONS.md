@@ -112,3 +112,26 @@ and replay protections, and `pnpm --filter @workspace/api-server run test:paymen
 for checkout, paid-access lifecycle, signed webhook rejection, and idempotency
 coverage. Real provider checkout and payout eligibility still require the final
 PayTabs merchant connection and account verification.
+
+## Check-in evidence and device validation
+
+GPS is a supporting signal, not proof that a member is physically present. The
+mobile app sends coordinates, reported accuracy, capture time, and the platform's
+mock-location indicator; a modified or compromised client can falsify these
+values. The mock-location indicator is useful for rejecting obvious mock reports,
+but it is not device attestation and cannot rule out GPS spoofing. Do not treat a
+successful scan as confirmed attendance or settlement eligibility. An authorized
+partner staff member must independently confirm every arrival; that confirmation
+remains mandatory even when GPS is fresh and inside the configured radius.
+
+The automated `test:checkin` suite verifies server-side location rejection,
+mocked/stale location rejection, QR replacement and expiry, single-use replay
+protection, concurrent scans, and that a scan remains pending and ineligible
+until partner confirmation. It does not exercise camera hardware, operating
+system permission prompts, background/resume behavior, mobile network loss, or
+real facility coordinates and GPS accuracy. Those checks require physical iOS
+and Android devices and an approved facility/test reservation. Record the
+device/OS, test facility, configured radius, reported GPS accuracy, and outcome
+for each platform before relying on the radius operationally. Never loosen the
+radius based only on simulated coordinates or use real member attendance for
+testing.
