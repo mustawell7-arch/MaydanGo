@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@plugin "@tailwindcss/typography";
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --font-sans: var(--app-font-sans);
+  --font-serif: var(--app-font-serif);
+  --font-mono: var(--app-font-mono);
+  --radius-md: var(--radius);
+}
+
+:root {
+  --background: 42 42% 96%;
+  --foreground: 169 27% 15%;
+  --border: 40 18% 84%;
+  --input: 40 18% 84%;
+  --card: 42 38% 98%;
+  --card-foreground: 169 27% 15%;
+  --primary: 168 45% 27%;
+  --primary-foreground: 42 42% 96%;
+  --secondary: 25 84% 66%;
+  --secondary-foreground: 169 27% 15%;
+  --muted: 40 24% 91%;
+  --muted-foreground: 169 12% 40%;
+  --accent: 45 82% 76%;
+  --accent-foreground: 169 27% 15%;
+  --ring: 168 45% 27%;
+  --app-font-sans: 'DM Sans', 'Noto Sans Arabic', sans-serif;
+  --app-font-serif: 'Manrope', 'Noto Sans Arabic', sans-serif;
+  --app-font-mono: ui-monospace, monospace;
+  --radius: 1rem;
+}
+
+.dark {
+  --background: 169 27% 12%;
+  --foreground: 42 42% 94%;
+  --border: 169 15% 27%;
+  --input: 169 15% 27%;
+  --card: 169 23% 16%;
+  --card-foreground: 42 42% 94%;
+  --primary: 164 39% 66%;
+  --primary-foreground: 169 27% 12%;
+  --secondary: 25 72% 64%;
+  --secondary-foreground: 169 27% 12%;
+  --muted: 169 18% 21%;
+  --muted-foreground: 42 18% 70%;
+  --accent: 45 65% 64%;
+  --accent-foreground: 169 27% 12%;
+  --ring: 164 39% 66%;
+}
+
+@layer base {
+  * { @apply border-border; }
+  html { scroll-behavior: smooth; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--app-font-sans);
+    margin: 0;
+  }
+  button, a { -webkit-tap-highlight-color: transparent; }
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 3px solid hsl(var(--secondary));
+    outline-offset: 3px;
+  }
+}
+
+:root { font-synthesis: none; }
+.font-display { font-family: var(--app-font-serif); }
+.rtl-copy { font-family: 'Noto Sans Arabic', 'DM Sans', sans-serif; }
+.site-shell { min-height: 100dvh; overflow: hidden; }
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .13;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.2'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+.rise-in { animation: rise-in .65s cubic-bezier(.2,.75,.25,1) both; }
+@keyframes rise-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+.nav-link { position: relative; }
+.nav-link::after { content: ''; position: absolute; inset-inline: 0; bottom: -7px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .22s ease; }
+.nav-link:hover::after, .nav-link[aria-current="page"]::after { transform: scaleX(1); }
+.hero-orbit { border: 1px solid rgba(238, 230, 207, .28); border-radius: 50%; position: absolute; }
+.offering-card { transition: transform .25s ease, border-color .25s ease; }
+.offering-card:hover { transform: translateY(-4px); border-color: hsl(var(--primary) / .35); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}

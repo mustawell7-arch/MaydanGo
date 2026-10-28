@@ -5,6 +5,57 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type PublicOfferingKind = typeof PublicOfferingKind[keyof typeof PublicOfferingKind];
+
+
+export const PublicOfferingKind = {
+  session: 'session',
+  event: 'event',
+  coach: 'coach',
+} as const;
+
+export type PublicOfferingAccessType = typeof PublicOfferingAccessType[keyof typeof PublicOfferingAccessType];
+
+
+export const PublicOfferingAccessType = {
+  physical: 'physical',
+  premium: 'premium',
+  live: 'live',
+} as const;
+
+export interface PublicOffering {
+  id: string;
+  kind: PublicOfferingKind;
+  title: string;
+  city: string;
+  facility: string;
+  category: string;
+  accessType: PublicOfferingAccessType;
+  startsAt: string;
+  endsAt: string;
+  /** @minimum 0 */
+  remaining: number;
+  partnerName: string;
+}
+
+export type PublicPlanKind = typeof PublicPlanKind[keyof typeof PublicPlanKind];
+
+
+export const PublicPlanKind = {
+  paid: 'paid',
+  trial: 'trial',
+  corporate: 'corporate',
+} as const;
+
+export interface PublicPlan {
+  id: string;
+  name: string;
+  tier: string;
+  kind: PublicPlanKind;
+  /** @minimum 1 */
+  durationDays: number;
+}
+
 export interface CheckinPolicy {
   latitude: number;
   longitude: number;

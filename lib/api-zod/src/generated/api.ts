@@ -8,6 +8,39 @@
 import * as zod from 'zod';
 
 
+export const getPublicCatalogResponseRemainingMin = 0;
+
+
+
+export const GetPublicCatalogResponseItem = zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['session', 'event', 'coach']),
+  "title": zod.string(),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "category": zod.string(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "remaining": zod.number().int().min(getPublicCatalogResponseRemainingMin),
+  "partnerName": zod.string()
+})
+export const GetPublicCatalogResponse = zod.array(GetPublicCatalogResponseItem)
+
+
+
+
+
+export const GetPublicPlansResponseItem = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "tier": zod.string(),
+  "kind": zod.enum(['paid', 'trial', 'corporate']),
+  "durationDays": zod.number().int().min(1)
+})
+export const GetPublicPlansResponse = zod.array(GetPublicPlansResponseItem)
+
+
 export const GetAttendanceResponse = zod.object({
   "role": zod.string(),
   "rows": zod.array(zod.object({

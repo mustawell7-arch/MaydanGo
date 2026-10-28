@@ -11,6 +11,30 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /public/catalog:
+    get:
+      operationId: getPublicCatalog
+      responses:
+        "200":
+          description: Future offerings from active, approved live partners only
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PublicOffering"
+  /public/plans:
+    get:
+      operationId: getPublicPlans
+      responses:
+        "200":
+          description: Active membership plan details for information only; no payment or activation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PublicPlan"
   /attendance:
     get:
       operationId: getAttendance
@@ -333,6 +357,30 @@ paths:
                 $ref: "#/components/schemas/HealthStatus"
 components:
   schemas:
+    PublicOffering:
+      type: object
+      required: [id, kind, title, city, facility, category, accessType, startsAt, endsAt, remaining, partnerName]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [session, event, coach] }
+        title: { type: string }
+        city: { type: string }
+        facility: { type: string }
+        category: { type: string }
+        accessType: { type: string, enum: [physical, premium, live] }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        remaining: { type: integer, minimum: 0 }
+        partnerName: { type: string }
+    PublicPlan:
+      type: object
+      required: [id, name, tier, kind, durationDays]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        tier: { type: string }
+        kind: { type: string, enum: [paid, trial, corporate] }
+        durationDays: { type: integer, minimum: 1 }
     CheckinPolicy:
       type: object
       required: [latitude, longitude, radius, opensAt, closesAt, correctionEndsAt]

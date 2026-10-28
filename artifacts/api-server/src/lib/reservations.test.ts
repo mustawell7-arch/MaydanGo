@@ -6,6 +6,7 @@ import { db, pool, offerings, memberships, reservations, attendance, memberProfi
 import express from "express";
 import operationsRouter from "../routes/operations";
 import memberRouter from "../routes/member";
+import publicRouter from "../routes/public";
 import { createReservation, cancelReservation, memberState, BookingError } from "./reservations";
 import app from "../app";
 
@@ -133,7 +134,7 @@ test("live operations: staff scope, approved inventory, server grants and quota 
     ) });
     next();
   });
-  harness.use("/operations", operationsRouter); harness.use("/member", memberRouter);
+  harness.use("/operations", operationsRouter); harness.use("/member", memberRouter); harness.use("/public", publicRouter);
   const server = harness.listen(0);
   await new Promise<void>(r => server.once("listening", r));
   const port = (server.address() as { port: number }).port;
@@ -164,6 +165,24 @@ test("live operations: staff scope, approved inventory, server grants and quota 
     const planBody = { name: "Isolated trial", tier: "M", kind: "trial", durationDays: 7, active: true, rules };
     const plan = await call("/operations/plans", adminId, "POST", planBody);
     assert.equal(plan.status, 201); planIds.push(plan.data.id);
+    await t.test("public catalog and plans expose only approved live summaries without authentication", async () => {
+      const catalogResponse = await fetch(`http://127.0.0.1:${port}/public/catalog`);
+      assert.equal(catalogResponse.status, 200);
+      const catalog = await catalogResponse.json() as any[];
+      const publicOffering = catalog.find((x: any) => x.id === o.data.id);
+      assert.equal(publicOffering?.partnerName, "Isolated test partner");
+      assert.equal(publicOffering?.remaining, 2);
+      assert.equal(publicOffering?.scope, undefined);
+      assert.equal(publicOffering?.capacity, undefined);
+
+      const plansResponse = await fetch(`http://127.0.0.1:${port}/public/plans`);
+      assert.equal(plansResponse.status, 200);
+      const plans = await plansResponse.json() as any[];
+      const publicPlan = plans.find((x: any) => x.id === plan.data.id);
+      assert.deepEqual(publicPlan, {
+        id: plan.data.id, name: "Isolated trial", tier: "M", kind: "trial", durationDays: 7,
+      });
+    });
     await t.test("sample access cannot book live; approved future offerings are discoverable", async () => {
       await call("/member/preview-membership", alice, "POST", { acknowledgeSampleData: true });
       assert.equal((await call("/member/bookings", alice, "POST", input(o.data.id))).status, 403);
@@ -213,6 +232,8 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       assert.equal((await call("/operations/grants", adminId, "POST", { userId: bob, planId: plan.data.id, reason: "Test corp", corporateId: "test-company" })).status, 201);
       await call(`/operations/partners/${p.data.id}`, adminId, "PATCH", { approved: false });
       assert.ok(!(await call("/member/live-catalog", bob)).data.some((x: any) => x.partnerId === p.data.id));
+      const publicCatalog = await fetch(`http://127.0.0.1:${port}/public/catalog`).then(r => r.json()) as any[];
+      assert.ok(!publicCatalog.some((x: any) => x.id === o.data.id));
       const activeId = ids.at(-1)!;
       assert.equal((await call("/member/bookings", bob, "POST", input(activeId))).status, 403);
     });

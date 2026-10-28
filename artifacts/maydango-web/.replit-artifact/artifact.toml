@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/maydango-web/"
+title = "MaydanGo Website"
+description = "The official public MaydanGo website: discover memberships, approved facilities and online fitness opportunities across Iraq in English, Arabic and Sorani Kurdish."
+version = "1.0.0"
+id = "artifacts/maydango-web"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/maydango-web/" ]
+localPort = 25780
+
+[services.development]
+run = "pnpm --filter @workspace/maydango-web run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/maydango-web", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/maydango-web/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25780"
+BASE_PATH = "/maydango-web/"

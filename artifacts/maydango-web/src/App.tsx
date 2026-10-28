@@ -1,0 +1,734 @@
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ArrowDown, ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronDown, CircleHelp, Clock3, Dumbbell, Globe2, HeartHandshake, House, MapPin, Menu, MoveUpRight, Play, RotateCw, Sparkles, Users, X } from 'lucide-react';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { useGetPublicCatalog, getGetPublicCatalogQueryKey, useGetPublicPlans, getGetPublicPlansQueryKey } from '@workspace/api-client-react';
+import type { PublicOffering, PublicPlan } from '@workspace/api-client-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import NotFound from '@/pages/not-found';
+import { Route, Switch, useLocation, Router as WouterRouter, Link } from 'wouter';
+import './index.css';
+
+const queryClient = new QueryClient();
+type Language = 'en' | 'ar' | 'ku';
+type Copy = Record<string, string>;
+
+const translations: Record<Language, Copy> = {
+  en: {
+    home: 'Home', how: 'How it works', plans: 'Membership', facilities: 'Facilities', online: 'Train online', legal: 'Legal information',
+    partner: 'Partner with us', corporate: 'For organisations', help: 'Help', contact: 'Contact',
+    mainNavigation: 'Main navigation', selectLanguage: 'Select language', openMenu: 'Open menu', closeMenu: 'Close menu',
+    eyebrow: 'A little more movement, wherever you are',
+    hero: 'Make room for\nfeeling good.',
+    intro: 'One membership for movement in your city and guidance from home. Built with local places, coaches and communities across Iraq.',
+    explore: 'Explore membership', discover: 'Find your kind of movement', steps: 'A simple way to get moving',
+    step1: 'Choose your way', step1d: 'Explore local facilities, classes and coaching—or find sessions to follow from home.',
+    step2: 'Ask what fits', step2d: 'See the public options, then ask our team about current availability and what each includes.',
+    step3: 'Move at your pace', step3d: 'Make movement part of your week, in a place and rhythm that works for you.',
+    community: 'Movement belongs to everyone.',
+    communityd: 'From a studio in Erbil to an evening walk in Basra, wellbeing takes many forms. MaydanGo brings more of them within reach.',
+    local: 'Made for many ways of living', locald: 'Find welcoming spaces and at-home guidance across cities, regions and routines.',
+    live: 'Live local opportunities', empty: 'No live opportunities to show just now.',
+    emptySub: 'When approved partners publish future availability, it will appear here.',
+    loading: 'Checking current availability…', error: 'We could not load current availability.',
+    retry: 'Try again', noInventory: 'Nothing listed at the moment',
+    noInventoryText: 'This is an honest snapshot of live inventory. Please check back later or ask us for updates.',
+    notCheckout: 'Membership checkout is not enabled. These options are a starting point for an availability enquiry.',
+    ask: 'Ask about availability', getUpdates: 'Get updates', exploreFacilities: 'Explore facilities',
+    exploreOnline: 'Explore online training', currentOfferings: 'Available sessions and events',
+    kind: 'Format', location: 'Location', partnerName: 'Hosted by', starts: 'Starts',
+    sessionType: 'Class', eventType: 'Event', coachType: 'Coaching',
+    physicalType: 'In person', premiumType: 'Premium', liveType: 'Online',
+    paidPlan: 'Paid plan', trialPlan: 'Trial plan', corporatePlan: 'Organisation plan',
+    directions: 'Local partners, shared purpose', directionsD: 'We welcome spaces and instructors who help people feel at home in movement.',
+    onlineTitle: 'A way to move from home, too', onlineD: 'Follow live online sessions when available, or find a pace that fits your own space and day.',
+    homeFirst: 'A studio nearby or a corner at home.', homeFirstD: 'Wellbeing is not one-size-fits-all. Choose the setting that feels right today.',
+    footerNote: 'A wellbeing membership made in Iraq, for everyday life.',
+    noDestination: 'This destination is not configured yet. Please check back for verified contact details.',
+    send: 'Send an enquiry', formNote: 'We’ll prepare an email draft for you. This site does not send or store it.',
+    learnMore: 'Learn more', availabilityTitle: 'Ask us what is available', availabilityD: 'Tell us what you are looking for and we will help you understand the current options.',
+    faq1: 'Is MaydanGo available in my city?', faq1d: 'Our public catalogue shows future offerings from active, approved partners. If your area is not listed today, availability may change.',
+    faq2: 'Can I train from home?', faq2d: 'Yes. Online and live options may be listed alongside in-person sessions when partners publish them.',
+    faq3: 'Can I buy or activate a membership here?', faq3d: 'No. Checkout and activation are not enabled on this website. You can ask about availability or request updates.',
+    faq4: 'Who can take part?', faq4d: 'MaydanGo aims to make movement welcoming to people with different routines, abilities and goals. Check each provider’s details before attending.',
+    readDraft: 'Informational draft — not legal advice and not lawyer-approved.',
+    contactUnavailable: 'A verified contact destination has not been configured.',
+    featurePlace: 'Find a place', featurePlaceD: 'Discover local studios, facilities and sessions.',
+    featureHome: 'Move at home', featureHomeD: 'Make room for a routine that works where you are.',
+    featureWelcome: 'Feel welcome', featureWelcomeD: 'Explore options shaped by local partners.',
+    geography: 'Baghdad · Erbil · Basra · and beyond', heroStamp: 'your pace, your place',
+    legalTitle: 'The important details.', helpTitle: 'Good to know.',
+    contactTitle: 'Let’s find the right next step.', partnerTitle: 'Make your space part of the movement.',
+    corporateTitle: 'More room for wellbeing at work.',
+    partnerIntro: 'MaydanGo connects people with places and coaches that make wellbeing feel closer to everyday life. Tell us about your work and we can explore a fit together.',
+    corporateIntro: 'Explore ways to make local movement and at-home options easier to discover for your people. We can discuss what may fit your organisation and location.',
+    partnerBullet1: 'Share upcoming sessions with a wider local community.',
+    partnerBullet2: 'Help more people discover the work you already do.',
+    partnerBullet3: 'Start with a conversation—no commitment is implied.',
+    corporateBullet1: 'A conversation shaped around your team and context.',
+    corporateBullet2: 'Options may include local facilities or online sessions.',
+    corporateBullet3: 'No plan, price or activation is promised on this page.',
+    verifiedContinue: 'Continue to the verified enquiry destination.',
+    contactTopic: 'What is your enquiry about?', topicMembership: 'Membership availability',
+    topicPartner: 'Partner enquiry', topicCorporate: 'Organisation enquiry', topicOther: 'Something else',
+    previewEnquiry: 'Prepare an email draft', localFormNotice: 'Nothing was sent or stored. Use the verified contact route on this page if available.',
+    emailMaydanGo: 'Email MaydanGo',
+    nameLabel: 'Your name', emailLabel: 'Your email', messageLabel: 'Your message',
+    openEmailDraft: 'Open email draft', draftReady: 'Your email draft is ready to review.',
+    legalWebsite: 'Website use', legalWebsiteD: 'MaydanGo provides information about wellbeing and movement opportunities. Public availability may change, and details should be confirmed with the relevant provider before making plans.',
+    legalMembership: 'Membership and availability', legalMembershipD: 'This website does not process payments, sell memberships, activate access or guarantee a place. Public plans are summaries only. An availability enquiry is not a purchase or membership confirmation.',
+    legalPartner: 'Partners and providers', legalPartnerD: 'Offerings are published by approved active partners. Please confirm suitability, timing, location, access details and any participation requirements directly before attending.',
+    legalPrivacy: 'Privacy note', legalPrivacyD: 'This website may display information necessary to describe public offerings. The contact enquiry interface does not submit or store a message. For privacy questions, use the configured contact route if available.',
+    legalStatus: 'Informational status', legalStatusD: 'This content is an informational draft only. It is not legal advice and does not state that it has been reviewed or approved by a lawyer. It should be reviewed for the relevant jurisdictions before formal use.',
+    legalDisclaimer: 'This content is an informational draft only. It is not legal advice and does not state that it has been reviewed or approved by a lawyer.',
+    durationDays: 'days', place: 'places', placeOne: 'place',
+    appDownload: 'Continue on your device', appDestinationsUnavailable: 'Verified app-store destinations have not been configured yet.',
+    iosApp: 'Open MaydanGo for iOS', androidApp: 'Open MaydanGo for Android',
+    regionNote: 'IRAQ · KURDISTAN · WEST · SOUTH', movementNote: 'MOVEMENT, YOUR WAY',
+  },
+  ar: {
+    home: 'الرئيسية', how: 'كيف تعمل', plans: 'العضوية', facilities: 'المرافق', online: 'تدريب عبر الإنترنت', legal: 'معلومات قانونية',
+    partner: 'كن شريكاً', corporate: 'للمؤسسات', help: 'المساعدة', contact: 'تواصل معنا',
+    mainNavigation: 'التنقل الرئيسي', selectLanguage: 'اختر اللغة', openMenu: 'افتح القائمة', closeMenu: 'أغلق القائمة',
+    eyebrow: 'حركة أكثر قليلاً، أينما كنت',
+    hero: 'اترك مساحة\nللشعور الأفضل.',
+    intro: 'عضوية واحدة للحركة في مدينتك وللتوجيه من المنزل. نبنيها مع الأماكن والمدربين والمجتمعات المحلية في أنحاء العراق.',
+    explore: 'استكشف العضوية', discover: 'اكتشف ما يناسبك من الحركة', steps: 'طريقة بسيطة لبدء الحركة',
+    step1: 'اختر طريقتك', step1d: 'استكشف المرافق والدروس والتدريب القريب، أو ابحث عن جلسات من المنزل.',
+    step2: 'اسأل عمّا يناسبك', step2d: 'اطّلع على الخيارات العامة، ثم اسأل فريقنا عن التوفر الحالي وما يتضمنه كل خيار.',
+    step3: 'تحرك بإيقاعك', step3d: 'اجعل الحركة جزءاً من أسبوعك، في مكان وإيقاع يناسبانك.',
+    community: 'الحركة للجميع.',
+    communityd: 'من استوديو في أربيل إلى نزهة مسائية في البصرة، للعافية أشكال كثيرة. تجمع MaydanGo المزيد منها في متناولك.',
+    local: 'مصممة لأساليب حياة متنوعة', locald: 'اعثر على أماكن مرحبة وإرشاد منزلي في مدن ومناطق وروتينات مختلفة.',
+    live: 'فرص متاحة الآن', empty: 'لا توجد فرص مباشرة للعرض حالياً.',
+    emptySub: 'ستظهر هنا المواعيد المستقبلية عندما ينشرها الشركاء المعتمدون.',
+    loading: 'نتحقق من التوفر الحالي…', error: 'تعذر تحميل التوفر الحالي.',
+    retry: 'أعد المحاولة', noInventory: 'لا توجد خيارات مدرجة الآن',
+    noInventoryText: 'هذه صورة صادقة للتوفر الحالي. تحقق لاحقاً أو اسألنا عن التحديثات.',
+    notCheckout: 'الدفع للعضوية غير متاح. هذه الخيارات نقطة بداية للاستفسار عن التوفر.',
+    ask: 'استفسر عن التوفر', getUpdates: 'اطلب التحديثات', exploreFacilities: 'استكشف المرافق',
+    exploreOnline: 'استكشف التدريب عبر الإنترنت', currentOfferings: 'الجلسات والفعاليات المتاحة',
+    kind: 'النوع', location: 'الموقع', partnerName: 'الجهة المضيفة', starts: 'يبدأ',
+    sessionType: 'حصة', eventType: 'فعالية', coachType: 'تدريب',
+    physicalType: 'حضوري', premiumType: 'مميز', liveType: 'عبر الإنترنت',
+    paidPlan: 'خطة مدفوعة', trialPlan: 'خطة تجريبية', corporatePlan: 'خطة للمؤسسات',
+    directions: 'شركاء محليون وهدف مشترك', directionsD: 'نرحب بالأماكن والمدربين الذين يجعلون الحركة مساحة مريحة للجميع.',
+    onlineTitle: 'مساحة للحركة من المنزل أيضاً', onlineD: 'تابع الجلسات المباشرة المتاحة عبر الإنترنت، أو اختر إيقاعاً يناسب يومك ومساحتك.',
+    homeFirst: 'استوديو قريب أو مساحة في المنزل.', homeFirstD: 'العافية ليست قالباً واحداً. اختر المكان الذي يلائمك اليوم.',
+    footerNote: 'عضوية للعافية من العراق، للحياة اليومية.',
+    noDestination: 'لم يتم إعداد وجهة التواصل بعد. تحقق لاحقاً من بيانات التواصل المعتمدة.',
+    send: 'أرسل استفساراً', formNote: 'سنجهز مسودة بريد إلكتروني لتراجعها. هذا الموقع لا يرسلها ولا يخزنها.',
+    learnMore: 'اعرف المزيد', availabilityTitle: 'اسألنا عمّا هو متاح', availabilityD: 'أخبرنا بما تبحث عنه وسنساعدك على فهم الخيارات الحالية.',
+    faq1: 'هل MaydanGo متاحة في مدينتي؟', faq1d: 'يعرض دليلنا العام الفرص المستقبلية من الشركاء النشطين والمعتمدين. قد يتغير التوفر إذا لم تظهر منطقتك الآن.',
+    faq2: 'هل يمكنني التدريب من المنزل؟', faq2d: 'نعم. قد تظهر الخيارات المباشرة وعبر الإنترنت إلى جانب الجلسات الحضورية عندما ينشرها الشركاء.',
+    faq3: 'هل يمكنني شراء عضوية أو تفعيلها هنا؟', faq3d: 'لا. الدفع والتفعيل غير متاحين على هذا الموقع. يمكنك الاستفسار عن التوفر أو طلب التحديثات.',
+    faq4: 'من يمكنه المشاركة؟', faq4d: 'تسعى MaydanGo لجعل الحركة مرحبة بأشخاص ذوي روتينات وقدرات وأهداف مختلفة. تحقق من تفاصيل كل جهة قبل الحضور.',
+    readDraft: 'مسودة معلوماتية — ليست نصيحة قانونية ولم يراجعها محامٍ.',
+    contactUnavailable: 'لم يتم إعداد وجهة تواصل معتمدة.',
+    featurePlace: 'اعثر على مكان', featurePlaceD: 'اكتشف الاستوديوهات والمرافق والجلسات المحلية.',
+    featureHome: 'تحرك من المنزل', featureHomeD: 'خصص مساحة لروتين يناسب مكانك.',
+    featureWelcome: 'مكان مرحب', featureWelcomeD: 'اكتشف خيارات يشكلها الشركاء المحليون.',
+    geography: 'بغداد · أربيل · البصرة · ومناطق أخرى', heroStamp: 'إيقاعك ومكانك',
+    legalTitle: 'تفاصيل مهمة.', helpTitle: 'معلومات مفيدة.',
+    contactTitle: 'لنجد الخطوة التالية المناسبة.', partnerTitle: 'اجعل مكانك جزءاً من الحركة.',
+    corporateTitle: 'مساحة أكبر للعافية في العمل.',
+    partnerIntro: 'تربط MaydanGo الناس بأماكن ومدربين يجعلون العافية أقرب للحياة اليومية. أخبرنا عن عملك لنستكشف فرص التعاون.',
+    corporateIntro: 'استكشف طرقاً تساعد فريقك على اكتشاف الحركة المحلية وخيارات المنزل. يمكننا مناقشة ما يناسب مؤسستكم وموقعكم.',
+    partnerBullet1: 'شارك جلساتك القادمة مع مجتمع محلي أوسع.',
+    partnerBullet2: 'ساعد المزيد من الناس على اكتشاف العمل الذي تقدمه.',
+    partnerBullet3: 'ابدأ بحوار دون أن يعني ذلك أي التزام.',
+    corporateBullet1: 'حوار يراعي فريقك وسياق مؤسستك.',
+    corporateBullet2: 'قد تشمل الخيارات مرافق محلية أو جلسات عبر الإنترنت.',
+    corporateBullet3: 'لا يوجد وعد بخطة أو سعر أو تفعيل في هذه الصفحة.',
+    verifiedContinue: 'تابع إلى وجهة الاستفسار المعتمدة.',
+    contactTopic: 'ما موضوع استفسارك؟', topicMembership: 'التوفر للعضوية',
+    topicPartner: 'استفسار شراكة', topicCorporate: 'استفسار مؤسسة', topicOther: 'موضوع آخر',
+    previewEnquiry: 'جهّز مسودة بريد إلكتروني', localFormNotice: 'لم يتم إرسال المعلومات أو تخزينها. استخدم وسيلة التواصل المعتمدة في الصفحة إن توفرت.',
+    emailMaydanGo: 'راسل MaydanGo',
+    nameLabel: 'اسمك', emailLabel: 'بريدك الإلكتروني', messageLabel: 'رسالتك',
+    openEmailDraft: 'افتح مسودة البريد', draftReady: 'مسودة البريد جاهزة للمراجعة.',
+    legalWebsite: 'استخدام الموقع', legalWebsiteD: 'تقدم MaydanGo معلومات عن العافية وفرص الحركة. قد يتغير التوفر العام، وينبغي تأكيد التفاصيل مع الجهة المعنية قبل التخطيط.',
+    legalMembership: 'العضوية والتوفر', legalMembershipD: 'لا يعالج هذا الموقع المدفوعات ولا يبيع العضويات ولا يفعّل الوصول ولا يضمن مكاناً. الخطط العامة ملخصات فقط. الاستفسار عن التوفر ليس شراءً أو تأكيداً للعضوية.',
+    legalPartner: 'الشركاء والجهات المقدمة', legalPartnerD: 'ينشر الشركاء النشطون والمعتمدون الخيارات. يرجى تأكيد الملاءمة والوقت والموقع وتفاصيل الوصول ومتطلبات المشاركة مباشرة قبل الحضور.',
+    legalPrivacy: 'ملاحظة الخصوصية', legalPrivacyD: 'قد يعرض الموقع معلومات لازمة لوصف الخيارات العامة. واجهة الاستفسار لا ترسل الرسائل ولا تخزنها. لأسئلة الخصوصية استخدم جهة التواصل المعدة إن توفرت.',
+    legalStatus: 'الطبيعة المعلوماتية', legalStatusD: 'هذا المحتوى مسودة معلوماتية فقط، وليس نصيحة قانونية ولا يدعي مراجعة محامٍ له أو اعتماده. ينبغي مراجعته وفق الاختصاصات ذات الصلة قبل استخدامه رسمياً.',
+    legalDisclaimer: 'هذا المحتوى مسودة معلوماتية فقط، وليس نصيحة قانونية ولا يدعي مراجعته أو اعتماده من محامٍ.',
+    durationDays: 'يوماً', place: 'أماكن', placeOne: 'مكان',
+    appDownload: 'تابع على جهازك', appDestinationsUnavailable: 'لم يتم إعداد وجهات التطبيق المعتمدة بعد.',
+    iosApp: 'افتح MaydanGo لنظام iOS', androidApp: 'افتح MaydanGo لنظام Android',
+    regionNote: 'العراق · كردستان · غرب العراق · جنوبه', movementNote: 'الحركة على طريقتك',
+  },
+  ku: {
+    home: 'سەرەتا', how: 'چۆن کار دەکات', plans: 'ئەندامێتی', facilities: 'شوێنەکان', online: 'ڕاهێنانی ئۆنلاین', legal: 'زانیاریی یاسایی',
+    partner: 'بەشداربە', corporate: 'بۆ دامەزراوەکان', help: 'یارمەتی', contact: 'پەیوەندی',
+    mainNavigation: 'ڕێنمایی سەرەکی', selectLanguage: 'زمان هەڵبژێرە', openMenu: 'کردنەوەی لیست', closeMenu: 'داخستنی لیست',
+    eyebrow: 'جووڵەیەکی زیاتر، لە هەر شوێنێک بیت',
+    hero: 'شوێنێک دابنێ\nبۆ هەستکردنی باشتر.',
+    intro: 'یەک ئەندامێتی بۆ جووڵە لە شارەکەت و ڕێنمایی لە ماڵەوە. لەگەڵ شوێن و ڕاهێنەر و کۆمەڵگە خۆجێییەکان لە سەرانسەری عێراق دروستکراوە.',
+    explore: 'ئەندامێتی ببینە', discover: 'جۆری جووڵەی خۆت بدۆزەوە', steps: 'ڕێگایەکی سادە بۆ جووڵە',
+    step1: 'ڕێگاکەت هەڵبژێرە', step1d: 'شوێن و وانە و ڕاهێنەری نزیک ببینە، یان وانەیەک بدۆزەوە بۆ ماڵەوە.',
+    step2: 'بپرسە چی گونجاوە', step2d: 'هەڵبژاردە گشتییەکان ببینە، پاشان لە تیمەکەمان بپرسە لە بەردەستبوونی ئێستا و ناوەڕۆکی هەر هەڵبژاردەیەک.',
+    step3: 'بە خێرایی خۆت بجوڵێ', step3d: 'جووڵە بکە بە بەشێک لە هەفتەکەت، لە شوێن و ڕێتمێک کە گونجاوە.',
+    community: 'جووڵە بۆ هەمووانە.',
+    communityd: 'لە ستۆدیۆیەک لە هەولێرەوە تا پیاسەی ئێوارە لە بەسرە، تەندروستی شێوەی زۆری هەیە. MaydanGo زیاتر لەمانە دەخاتە بەردەست.',
+    local: 'بۆ شێوازی ژیانی جیاواز', locald: 'شوێنی دڵخواز و ڕێنمایی لە ماڵەوە لە شار و ناوچە و ڕۆتینی جیاوازدا بدۆزەوە.',
+    live: 'هەڵبژاردە بەردەستەکان', empty: 'ئێستا هیچ هەڵبژاردەیەکی بەردەست نییە.',
+    emptySub: 'کاتێک هاوبەشە پەسەندکراوەکان کاتی داهاتوو بڵاو دەکەنەوە، لێرە دەردەکەوێت.',
+    loading: 'بەردەستبوونی ئێستا دەبینین…', error: 'نەتوانرا بەردەستبوونی ئێستا باربکرێت.',
+    retry: 'دووبارە هەوڵبدە', noInventory: 'ئێستا هیچ هەڵبژاردەیەک نییە',
+    noInventoryText: 'ئەمە وێنەی ڕاستیی بەردەستبوونی ئێستایە. دواتر سەردان بکە یان داوای نوێکاری بکە.',
+    notCheckout: 'پارەدان بۆ ئەندامێتی چالاک نییە. ئەم هەڵبژاردانە بۆ پرسیارکردن دەستپێکێکن.',
+    ask: 'لە بەردەستبوون بپرسە', getUpdates: 'نوێکاری وەربگرە', exploreFacilities: 'شوێنەکان ببینە',
+    exploreOnline: 'ڕاهێنانی ئۆنلاین ببینە', currentOfferings: 'وانە و چالاکییە بەردەستەکان',
+    kind: 'جۆر', location: 'شوێن', partnerName: 'لە لایەن', starts: 'دەستپێدەکات',
+    sessionType: 'وانە', eventType: 'بۆنە', coachType: 'ڕاهێنان',
+    physicalType: 'ڕووبەڕوو', premiumType: 'تایبەت', liveType: 'ئۆنلاین',
+    paidPlan: 'پلانی پارەدان', trialPlan: 'پلانی تاقیکردنەوە', corporatePlan: 'پلانی دامەزراوە',
+    directions: 'هاوبەشانی خۆجێیی، ئامانجی هاوبەش', directionsD: 'پێشوازی لە شوێن و ڕاهێنەر دەکەین کە جووڵە بۆ خەڵک دڵخواز دەکەن.',
+    onlineTitle: 'ڕێگایەک بۆ جووڵە لە ماڵەوەش', onlineD: 'بەشداری وانەی ئۆنلاین بکە کاتێک بەردەستە، یان ڕێتمێکی گونجاو بۆ شوێن و ڕۆژەکەت هەڵبژێرە.',
+    homeFirst: 'ستۆدیۆیەکی نزیک یان گوشەیەک لە ماڵەوە.', homeFirstD: 'تەندروستی یەک شێوە نییە. ئەو شوێنە هەڵبژێرە کە ئەمڕۆ گونجاوە.',
+    footerNote: 'ئەندامێتی تەندروستی لە عێراق بۆ ژیانی ڕۆژانە.',
+    noDestination: 'ئەم شوێنەی پەیوەندی هێشتا ڕێکنەخراوە. دواتر زانیاری پەیوەندی پەسەندکراو ببینە.',
+    send: 'پرسیارێک بنێرە', formNote: 'ئێمە ڕەشنووسی ئیمەیڵێک بۆت ئامادە دەکەین تا پێداچوونەوەی بۆ بکەیت. ئەم ماڵپەڕە نایەنێرێت و هەڵیناگرێت.',
+    learnMore: 'زیاتر بزانە', availabilityTitle: 'لە بەردەستبوون بپرسە', availabilityD: 'بڵێ چی دەگەڕێیت و یارمەتیت دەدەین هەڵبژاردەکانی ئێستا تێبگەیت.',
+    faq1: 'MaydanGo لە شارەکەم بەردەستە؟', faq1d: 'کاتالۆگی گشتیی ئێمە هەڵبژاردە داهاتووەکانی هاوبەشانی چالاک و پەسەندکراو پیشان دەدات. بەردەستبوون دەگۆڕێت.',
+    faq2: 'دەتوانم لە ماڵەوە ڕاهێنان بکەم؟', faq2d: 'بەڵێ. هەڵبژاردە ئۆنلاین و ڕاستەوخۆکان لەگەڵ وانەی ڕووبەڕوو دەردەکەون کاتێک هاوبەشەکان بڵاویان دەکەنەوە.',
+    faq3: 'دەتوانم لێرە ئەندامێتی بکڕم یان چالاکی بکەم؟', faq3d: 'نەخێر. پارەدان و چالاککردن لەم ماڵپەڕەدا چالاک نییە. دەتوانیت لە بەردەستبوون بپرسیت یان نوێکاری داوا بکەیت.',
+    faq4: 'کێ دەتوانێت بەشداربێت؟', faq4d: 'MaydanGo هەوڵ دەدات جووڵە بۆ خەڵک بە ڕۆتین و توانایی و ئامانجی جیاواز دڵخواز بکات. پێش چوون وردەکاریی دابینکەر ببینە.',
+    readDraft: 'ڕەشنووسی زانیاری — ڕاوێژی یاسایی نییە و لەلایەن پارێزەرەوە پەسەند نەکراوە.',
+    contactUnavailable: 'شوێنی پەیوەندی پەسەندکراو ڕێکنەخراوە.',
+    featurePlace: 'شوێنێک بدۆزەوە', featurePlaceD: 'ستۆدیۆ و شوێن و وانە خۆجێییەکان ببینە.',
+    featureHome: 'لە ماڵەوە بجوڵێ', featureHomeD: 'شوێنێک بۆ ڕۆتینێک دابنێ کە گونجاوە.',
+    featureWelcome: 'بەخێربێیت', featureWelcomeD: 'هەڵبژاردەی دروستکراو لەلایەن هاوبەشانی خۆجێیی ببینە.',
+    geography: 'بەغدا · هەولێر · بەسرە · و زیاتر', heroStamp: 'ڕێتم و شوێنی تۆ',
+    legalTitle: 'وردەکاریی گرنگ.', helpTitle: 'زانیاریی باش.',
+    contactTitle: 'با هەنگاوی داهاتوو بدۆزینەوە.', partnerTitle: 'شوێنەکەت ببە بەشێک لە جووڵە.',
+    corporateTitle: 'شوێنێکی زیاتر بۆ تەندروستی لە کاردا.',
+    partnerIntro: 'MaydanGo خەڵک دەبەستێتەوە بە شوێن و ڕاهێنەر کە تەندروستی دەهێنێتە نزیک ژیانی ڕۆژانە. باسی کارەکەت بکە تا گونجاوی هاوکاری ببینین.',
+    corporateIntro: 'ڕێگا بدۆزەرەوە بۆ ئەوەی جووڵەی خۆجێیی و هەڵبژاردەی ماڵەوە بۆ تیمەکەت ئاسانتر بێت. دەتوانین لەسەر گونجاوی دامەزراوە و شوێنەکەت گفتوگۆ بکەین.',
+    partnerBullet1: 'وانە داهاتووەکانت لەگەڵ کۆمەڵگەیەکی خۆجێی فراوانتر هاوبەش بکە.',
+    partnerBullet2: 'یارمەتی خەڵکی زیاتر بدە کاری ئێستات بدۆزنەوە.',
+    partnerBullet3: 'بە گفتوگۆ دەستپێبکە، بەبێ ئەوەی پابەندی دروست بێت.',
+    corporateBullet1: 'گفتوگۆیەک بەپێی تیم و بارودۆخی دامەزراوەکەت.',
+    corporateBullet2: 'هەڵبژاردەکان لەوانەیە شوێنی خۆجێیی یان وانەی ئۆنلاین بگرنەوە.',
+    corporateBullet3: 'لەم پەڕەیەدا هیچ پلان و نرخ و چالاککردنێک بەڵێن نادرێت.',
+    verifiedContinue: 'بەردەوامبە بۆ شوێنی پرسیاری پەسەندکراو.',
+    contactTopic: 'پرسیارەکەت لەسەر چییە؟', topicMembership: 'بەردەستبوونی ئەندامێتی',
+    topicPartner: 'پرسیاری هاوبەشی', topicCorporate: 'پرسیاری دامەزراوە', topicOther: 'شتێکی تر',
+    previewEnquiry: 'ڕەشنووسی ئیمەیڵێک ئامادە بکە', localFormNotice: 'هیچ زانیارییەک نەنێردرا و هەڵنەگیرا. ئەگەر هەیە، ڕێگای پەیوەندی پەسەندکراوی ئەم پەڕەیە بەکاربهێنە.',
+    emailMaydanGo: 'ئیمەیڵ بۆ MaydanGo',
+    nameLabel: 'ناوت', emailLabel: 'ئیمەیڵەکەت', messageLabel: 'پەیامەکەت',
+    openEmailDraft: 'کردنەوەی ڕەشنووسی ئیمەیڵ', draftReady: 'ڕەشنووسی ئیمەیڵ بۆ پێداچوونەوە ئامادەیە.',
+    legalWebsite: 'بەکارهێنانی ماڵپەڕ', legalWebsiteD: 'MaydanGo زانیاری لەسەر تەندروستی و هەڵبژاردەی جووڵە پێشکەش دەکات. بەردەستبوونی گشتی لەوانەیە بگۆڕێت؛ پێش پلان دانان وردەکاری لەگەڵ دابینکەری پەیوەندیدار پشتڕاست بکەرەوە.',
+    legalMembership: 'ئەندامێتی و بەردەستبوون', legalMembershipD: 'ئەم ماڵپەڕە پارەدان ناکات، ئەندامێتی نافرۆشێت، دەستگەیشتن چالاک ناکات و شوێنێک مسۆگەر ناکات. پلانە گشتییەکان تەنها پوختەیە. پرسیارکردن لە بەردەستبوون بە مانای کڕین یان پشتڕاستکردنەوەی ئەندامێتی نییە.',
+    legalPartner: 'هاوبەش و دابینکەران', legalPartnerD: 'هەڵبژاردەکان لەلایەن هاوبەشانی چالاک و پەسەندکراوەوە بڵاو دەکرێنەوە. تکایە پێش بەشداری گونجاوی، کات، شوێن، وردەکاریی دەستگەیشتن و داواکارییەکان لەگەڵ دابینکەر پشتڕاست بکەرەوە.',
+    legalPrivacy: 'تێبینی تایبەتمەندی', legalPrivacyD: 'ئەم ماڵپەڕە لەوانەیە زانیاریی پێویست بۆ وەسفکردنی هەڵبژاردە گشتییەکان پیشان بدات. ڕووکاری پرسیار پەیام نانێرێت و هەڵیناگرێت. بۆ پرسیاری تایبەتمەندی ئەگەر هەبوو ڕێگای پەیوەندی ڕێکخراو بەکاربهێنە.',
+    legalStatus: 'بارودۆخی زانیاری', legalStatusD: 'ئەم ناوەڕۆکە تەنها ڕەشنووسی زانیارییە. ڕاوێژی یاسایی نییە و بانگەشەی پەسەندکردن یان پێداچوونەوەی پارێزەر ناکات. پێش بەکارهێنانی فەرمی، بەپێی دادوەریی پەیوەندیدار پێداچوونەوەی بۆ بکرێت.',
+    legalDisclaimer: 'ئەم ناوەڕۆکە تەنها ڕەشنووسی زانیارییە، ڕاوێژی یاسایی نییە و بانگەشەی پێداچوونەوە یان پەسەندکردنی پارێزەر ناکات.',
+    durationDays: 'ڕۆژ', place: 'شوێن', placeOne: 'شوێن',
+    appDownload: 'لەسەر ئامێرەکەت بەردەوامبە', appDestinationsUnavailable: 'شوێنی پەسەندکراوی ئەپ هێشتا ڕێکنەخراوە.',
+    iosApp: 'MaydanGo بۆ iOS بکەرەوە', androidApp: 'MaydanGo بۆ Android بکەرەوە',
+    regionNote: 'عێراق · کوردستان · ڕۆژئاوا · باشوور', movementNote: 'جووڵە بە شێوازی خۆت',
+  }
+};
+
+const routeMeta: Record<string, { title: string; description: string }> = {
+  '/': { title: 'MaydanGo — Make room for feeling good', description: 'Local fitness and wellbeing, in your city and from home. Discover MaydanGo across Iraq.' },
+  '/how-it-works': { title: 'How MaydanGo works', description: 'A simple guide to finding movement and wellbeing with MaydanGo.' },
+  '/membership-plans': { title: 'Membership options | MaydanGo', description: 'Explore active public membership summaries and ask about current availability.' },
+  '/facilities': { title: 'Facilities & local sessions | MaydanGo', description: 'See future public sessions from approved, active MaydanGo partners.' },
+  '/online-training': { title: 'Online training | MaydanGo', description: 'Find live online movement opportunities and guidance for training at home.' },
+  '/partner': { title: 'Partner with MaydanGo', description: 'Bring your local facility, coaching or movement programme to the MaydanGo community.' },
+  '/corporate': { title: 'MaydanGo for organisations', description: 'Explore wellbeing membership conversations for teams and organisations.' },
+  '/help': { title: 'Help & common questions | MaydanGo', description: 'Answers about availability, online training and MaydanGo membership.' },
+  '/contact': { title: 'Contact MaydanGo', description: 'Find the verified contact route for MaydanGo.' },
+  '/legal': { title: 'Legal information | MaydanGo', description: 'Informational draft terms and privacy notes for the MaydanGo website.' },
+};
+
+const routes = [
+  ['/', 'home'], ['/how-it-works', 'how'], ['/membership-plans', 'plans'], ['/facilities', 'facilities'],
+  ['/online-training', 'online'], ['/partner', 'partner'], ['/corporate', 'corporate'], ['/help', 'help'],
+  ['/contact', 'contact'], ['/legal', 'legal'],
+] as const;
+
+function destination(key: string) {
+  const env = import.meta.env as Record<string, string | undefined>;
+  return env[key]?.trim() || '';
+}
+
+function verifiedHttpsDestination(key: string) {
+  const value = destination(key);
+  if (!value) return '';
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && url.hostname && !url.username && !url.password ? url.href : '';
+  } catch {
+    return '';
+  }
+}
+
+function verifiedContactEmail() {
+  const email = destination('VITE_CONTACT_EMAIL');
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
+}
+
+function Layout({ children, language, setLanguage }: { children: ReactNode; language: Language; setLanguage: (language: Language) => void }) {
+  const [location] = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const t = translations[language];
+  const rtl = language !== 'en';
+  useEffect(() => {
+    const meta = routeMeta[location] || routeMeta['/'];
+    document.title = meta.title;
+    const description = document.querySelector('meta[name="description"]');
+    if (description) description.setAttribute('content', meta.description);
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', meta.title);
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content', meta.description);
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', meta.title);
+    document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', meta.description);
+    document.documentElement.lang = language === 'ku' ? 'ckb' : language;
+    document.documentElement.dir = rtl ? 'rtl' : 'ltr';
+    document.documentElement.classList.toggle('rtl-copy', rtl);
+    localStorage.setItem('maydango-language', language);
+  }, [location, language, rtl]);
+
+  const changeLanguage = (value: Language) => setLanguage(value);
+  return (
+    <div className={`site-shell ${rtl ? 'rtl-copy' : ''}`} dir={rtl ? 'rtl' : 'ltr'}>
+      <div className="bg-[#174e43] px-5 py-2 text-center text-[11px] font-semibold tracking-[.12em] text-[#f4ead6]">
+        <span>{t.regionNote}</span>
+        <span className="mx-3 opacity-40">/</span>
+        <span>{t.movementNote}</span>
+      </div>
+      <header className="relative z-20 mx-auto flex max-w-[1440px] items-center justify-between px-5 py-5 md:px-10 lg:px-14">
+        <Link href="/" className="group flex items-center gap-2.5 text-foreground" aria-label="MaydanGo home" data-testid="link-brand-home">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-background transition-transform group-hover:rotate-[-8deg]">
+            <span className="block h-[17px] w-[17px] rounded-full border-[2px] border-current border-t-transparent rotate-[-35deg]" />
+          </span>
+          <span className="font-display text-[22px] font-extrabold tracking-[-.07em]">maydan<span className="text-primary">go</span></span>
+        </Link>
+        <nav className="hidden items-center gap-6 xl:flex" aria-label={t.mainNavigation}>
+          {routes.slice(1, 6).map(([href, key]) => <NavLink key={href} href={href} active={location === href}>{key === 'legal' ? key : t[key]}</NavLink>)}
+          <details className="group relative">
+            <summary className="nav-link flex cursor-pointer list-none items-center gap-1 text-[13px] font-semibold text-foreground/75 hover:text-foreground" data-testid="button-more-navigation">
+              {language === 'en' ? 'More' : language === 'ar' ? 'المزيد' : 'زیاتر'} <ChevronDown size={14} />
+            </summary>
+            <div className="invisible absolute end-0 top-full mt-3 min-w-44 rounded-xl border border-border bg-card p-2 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 group-open:visible group-open:opacity-100">
+              {routes.slice(6).map(([href, key]) => <Link key={href} href={href} className="block rounded-lg px-3 py-2 text-sm text-foreground/80 hover:bg-muted" data-testid={`link-nav-${key}`}>{t[key] || key}</Link>)}
+            </div>
+          </details>
+        </nav>
+        <div className="hidden items-center gap-4 xl:flex">
+          <LanguageSelect language={language} onChange={changeLanguage} t={t} />
+          <Link href="/membership-plans" className="rounded-full bg-primary px-5 py-3 text-[13px] font-bold text-primary-foreground transition hover:-translate-y-0.5" data-testid="link-membership-header">{t.explore}</Link>
+        </div>
+        <div className="flex items-center gap-3 xl:hidden">
+          <LanguageSelect language={language} onChange={changeLanguage} compact t={t} />
+          <button onClick={() => setMenuOpen(!menuOpen)} className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card" aria-label={menuOpen ? t.closeMenu : t.openMenu} aria-expanded={menuOpen} data-testid="button-mobile-menu">
+            {menuOpen ? <X size={19} /> : <Menu size={19} />}
+          </button>
+        </div>
+      </header>
+      {menuOpen && <nav className="relative z-20 mx-5 mb-4 grid grid-cols-2 gap-1 rounded-2xl border border-border bg-card p-3 shadow-lg xl:hidden" aria-label={t.mainNavigation}>
+        {routes.map(([href, key]) => <Link key={href} href={href} onClick={() => setMenuOpen(false)} className={`rounded-xl px-3 py-3 text-sm font-semibold ${location === href ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`} data-testid={`link-mobile-${key}`}>{t[key] || key}</Link>)}
+      </nav>}
+      <main>{children}</main>
+      <Footer t={t} />
+    </div>
+  );
+}
+
+function NavLink({ href, active, children }: { href: string; active: boolean; children: ReactNode }) {
+  return <Link href={href} className="nav-link text-[13px] font-semibold text-foreground/75 transition hover:text-foreground" aria-current={active ? 'page' : undefined} data-testid={`link-nav-${href.replaceAll('/', '') || 'home'}`}>{children}</Link>;
+}
+
+function LanguageSelect({ language, onChange, compact = false, t }: { language: Language; onChange: (language: Language) => void; compact?: boolean; t: Copy }) {
+  return <label className="flex items-center gap-1.5 text-xs font-bold text-foreground/70" aria-label={t.selectLanguage}>
+    {!compact && <Globe2 size={15} />}
+    <select value={language} onChange={e => onChange(e.target.value as Language)} className="max-w-[112px] cursor-pointer border-0 bg-transparent py-2 text-xs font-bold text-foreground outline-none" data-testid="select-language">
+      <option value="en">EN</option><option value="ar">العربية</option><option value="ku">کوردی</option>
+    </select>
+  </label>;
+}
+
+function Footer({ t }: { t: Copy }) {
+  return <footer className="bg-[#123d36] text-[#f4ead6]">
+    <div className="mx-auto grid max-w-[1440px] gap-10 px-5 py-14 md:grid-cols-[1.4fr_1fr_1fr] md:px-10 lg:px-14">
+      <div>
+        <Link href="/" className="font-display text-[26px] font-extrabold tracking-[-.07em]" data-testid="link-footer-brand">maydan<span className="text-[#ef9d72]">go</span></Link>
+        <p className="mt-4 max-w-xs text-sm leading-6 text-[#f4ead6]/70">{t.footerNote}</p>
+        <p className="mt-7 text-[10px] font-semibold tracking-[.16em] text-[#f4ead6]/45">IRAQ, IN MOTION</p>
+      </div>
+      <div>
+        <h2 className="text-[11px] font-bold uppercase tracking-[.16em] text-[#ef9d72]">{t.learnMore}</h2>
+        <div className="mt-4 grid gap-3 text-sm text-[#f4ead6]/80">
+          {routes.slice(1, 6).map(([href, key]) => <Link key={href} href={href} className="w-fit hover:text-white" data-testid={`link-footer-${key}`}>{t[key]}</Link>)}
+        </div>
+      </div>
+      <div>
+        <h2 className="text-[11px] font-bold uppercase tracking-[.16em] text-[#ef9d72]">{t.contact}</h2>
+        <div className="mt-4 grid gap-3 text-sm text-[#f4ead6]/80">
+          {routes.slice(6).map(([href, key]) => <Link key={href} href={href} className="w-fit hover:text-white" data-testid={`link-footer-${key}`}>{t[key] || key}</Link>)}
+        </div>
+      </div>
+    </div>
+    <div className="border-t border-white/10 px-5 py-4 text-center text-[11px] text-[#f4ead6]/55">© {new Date().getFullYear()} MaydanGo · {t.readDraft}</div>
+  </footer>;
+}
+
+function PageWrap({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <div className={`mx-auto max-w-[1440px] px-5 md:px-10 lg:px-14 ${className}`}>{children}</div>;
+}
+
+function SectionKicker({ children, light = false }: { children: ReactNode; light?: boolean }) {
+  return <p className={`mb-5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.16em] ${light ? 'text-[#f0a17c]' : 'text-primary'}`}><span className="h-px w-7 bg-current" />{children}</p>;
+}
+
+function ActionLink({ href, children, light = false, testId }: { href: string; children: ReactNode; light?: boolean; testId?: string }) {
+  return <Link href={href} className={`group inline-flex items-center gap-3 rounded-full px-6 py-3.5 text-sm font-bold transition hover:-translate-y-0.5 ${light ? 'bg-[#f2a17c] text-[#173e37] hover:bg-[#f7b497]' : 'bg-primary text-primary-foreground hover:brightness-110'}`} data-testid={testId}>
+    {children}<ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+  </Link>;
+}
+
+function HomePage({ t, language }: { t: Copy; language: Language }) {
+  const catalog = useGetPublicCatalog({ query: { queryKey: getGetPublicCatalogQueryKey() } });
+  const upcoming = (catalog.data || []).slice(0, 2);
+  return <>
+    <section className="relative mx-3 overflow-hidden rounded-[2rem] bg-[#174e43] text-[#f4ead6] md:mx-6">
+      <div className="grain pointer-events-none absolute inset-0" />
+      <div className="relative mx-auto grid min-h-[600px] max-w-[1440px] items-center gap-10 px-7 py-16 md:min-h-[670px] md:grid-cols-[1.05fr_.95fr] md:px-12 lg:px-20">
+        <div className="relative z-10 rise-in">
+          <SectionKicker light>{t.eyebrow}</SectionKicker>
+          <h1 className="font-display max-w-[680px] whitespace-pre-line text-[clamp(3.6rem,8vw,7.5rem)] font-extrabold leading-[.91] tracking-[-.075em]">{t.hero}</h1>
+          <p className="mt-7 max-w-[490px] text-[16px] leading-7 text-[#f4ead6]/75">{t.intro}</p>
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <ActionLink href="/membership-plans" light testId="link-hero-membership">{t.explore}</ActionLink>
+            <Link href="/how-it-works" className="inline-flex items-center gap-2 px-2 py-3 text-sm font-semibold text-[#f4ead6]/85 hover:text-white" data-testid="link-hero-how">{t.how}<ArrowDown size={15} /></Link>
+          </div>
+          <div className="mt-12 flex items-center gap-4 text-[11px] font-semibold uppercase tracking-[.13em] text-[#f4ead6]/55">
+            <span className="h-px w-10 bg-[#ef9d72]" /> {t.geography}
+          </div>
+        </div>
+      <HeroArtwork label={t.heroStamp} />
+      </div>
+      <div className="absolute bottom-6 end-7 hidden text-[10px] font-semibold tracking-[.17em] text-[#f4ead6]/40 md:block">36°11' N / 44°00' E</div>
+    </section>
+    <PageWrap className="py-24 md:py-32">
+      <div className="grid gap-12 md:grid-cols-[.75fr_1fr] md:items-end">
+        <div><SectionKicker>{t.local}</SectionKicker><h2 className="font-display max-w-xl text-4xl font-bold leading-[1.08] tracking-[-.055em] md:text-6xl">{t.homeFirst}</h2></div>
+        <div className="max-w-xl md:justify-self-end"><p className="text-lg leading-8 text-foreground/65">{t.homeFirstD}</p><div className="mt-6 flex flex-wrap gap-3"><ActionLink href="/facilities" testId="link-home-facilities">{t.exploreFacilities}</ActionLink><Link href="/online-training" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-3.5 text-sm font-bold hover:bg-muted" data-testid="link-home-online">{t.exploreOnline}<ArrowUpRight size={15} /></Link></div></div>
+      </div>
+      <div className="mt-16 grid border-y border-border md:grid-cols-3">
+        {[{icon: <MapPin />, title: t.featurePlace, body: t.featurePlaceD}, {icon: <House />, title: t.featureHome, body: t.featureHomeD}, {icon: <HeartHandshake />, title: t.featureWelcome, body: t.featureWelcomeD}].map((item, i) => <div className={`py-8 md:px-7 ${i ? 'border-t border-border md:border-s-0 md:border-t-0 md:border-s' : ''}`} key={item.title}><div className="mb-6 text-primary">{item.icon}</div><h3 className="font-display text-2xl font-bold tracking-[-.04em]">{item.title}</h3><p className="mt-2 max-w-[250px] text-sm leading-6 text-foreground/60">{item.body}</p></div>)}
+      </div>
+    </PageWrap>
+    <section className="bg-[#eadfcd] py-20 md:py-28">
+      <PageWrap>
+        <div className="grid gap-12 md:grid-cols-[.8fr_1fr]">
+          <div><SectionKicker>{t.steps}</SectionKicker><h2 className="font-display max-w-md text-4xl font-bold leading-[1.07] tracking-[-.06em] md:text-6xl">{t.community}</h2><p className="mt-5 max-w-md leading-7 text-foreground/65">{t.communityd}</p></div>
+          <div className="grid gap-0">
+            {[[t.step1, t.step1d], [t.step2, t.step2d], [t.step3, t.step3d]].map(([title, description], i) => <article key={title} className="flex gap-5 border-b border-foreground/15 py-5 first:border-t">
+              <span className="font-mono text-xs text-primary">0{i + 1}</span><div><h3 className="font-display text-xl font-bold tracking-[-.03em]">{title}</h3><p className="mt-2 max-w-lg text-sm leading-6 text-foreground/60">{description}</p></div><ArrowRight className="ms-auto mt-1 shrink-0 text-primary" size={16} />
+            </article>)}
+          </div>
+        </div>
+      </PageWrap>
+    </section>
+    <PageWrap className="py-24 md:py-28">
+      <div className="flex flex-wrap items-end justify-between gap-5">
+        <div><SectionKicker>{t.live}</SectionKicker><h2 className="font-display text-4xl font-bold tracking-[-.055em] md:text-5xl">{t.currentOfferings}</h2></div>
+        <Link href="/facilities" className="inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-home-all-offerings">{t.exploreFacilities}<ArrowUpRight size={16} /></Link>
+      </div>
+       <OfferingCards offerings={upcoming} language={language} loading={catalog.isLoading} error={catalog.isError} retry={() => catalog.refetch()} t={t} compact />
+    </PageWrap>
+    <section className="mx-3 mb-3 rounded-[2rem] bg-[#e98960] px-6 py-14 text-[#173e37] md:mx-6 md:px-14 md:py-20">
+      <PageWrap className="!px-0">
+        <div className="grid gap-9 md:grid-cols-[1fr_auto] md:items-center">
+          <div><SectionKicker>{t.directions}</SectionKicker><h2 className="font-display max-w-2xl text-4xl font-extrabold leading-[1.02] tracking-[-.065em] md:text-6xl">{t.directionsD}</h2></div>
+          <ActionLink href="/partner" testId="link-home-partner">{t.partner}</ActionLink>
+        </div>
+      </PageWrap>
+    </section>
+  </>;
+}
+
+function HeroArtwork({ label }: { label: string }) {
+  return <div className="relative mx-auto aspect-square w-full max-w-[570px]">
+    <div className="absolute inset-[7%] rounded-full bg-[#ef9d72]" />
+    <div className="hero-orbit inset-[0%] rotate-[-24deg]" />
+    <div className="hero-orbit inset-[12%] rotate-[35deg]" />
+    <div className="absolute inset-[16%] overflow-hidden rounded-[48%_52%_40%_60%] bg-[#dcaa70]">
+      <div className="absolute bottom-[-9%] start-[-10%] h-[61%] w-[130%] rotate-[-14deg] rounded-[50%] bg-[#d8805e]" />
+      <div className="absolute bottom-[5%] end-[-15%] h-[36%] w-[120%] rotate-[12deg] rounded-[50%] bg-[#a85f4f]" />
+      <div className="absolute bottom-0 start-[28%] h-[68%] w-[44%] rounded-t-[48%] bg-[#f0ce9b]" />
+      <div className="absolute bottom-[31%] start-[41%] h-[33%] w-[18%] rounded-[45%] bg-[#234f44]" />
+      <div className="absolute bottom-[48%] start-[38%] h-[15%] w-[24%] rounded-full bg-[#173e37]" />
+      <div className="absolute bottom-[22%] start-[20%] h-[34%] w-[30%] rotate-[-24deg] rounded-[50%] bg-[#f4ead6]" />
+      <div className="absolute bottom-[22%] end-[17%] h-[36%] w-[30%] rotate-[22deg] rounded-[50%] bg-[#ef9d72]" />
+    </div>
+    <div className="absolute end-[3%] top-[17%] rounded-full border border-[#f4ead6]/45 bg-[#174e43] px-4 py-3 text-[9px] font-bold uppercase tracking-[.16em] text-[#f4ead6] rotate-[9deg]">{label}</div>
+    <div className="absolute bottom-[8%] start-[2%] flex h-16 w-16 items-center justify-center rounded-full bg-[#f2d07d] text-[#174e43] shadow-lg"><Play size={21} fill="currentColor" /></div>
+    <span className="absolute start-[16%] top-[11%] h-3 w-3 rounded-full bg-[#f2d07d]" />
+    <span className="absolute end-[15%] bottom-[14%] h-2 w-2 rounded-full bg-[#f4ead6]" />
+  </div>;
+}
+
+function OfferingCards({ offerings, language, loading, error, retry, t, compact = false }: { offerings: PublicOffering[]; language: Language; loading: boolean; error: boolean; retry: () => void; t: Copy; compact?: boolean }) {
+  if (loading) return <div className={`mt-8 grid gap-4 ${compact ? 'md:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-3'}`} aria-label={t.loading} aria-live="polite">{[1, 2, 3].slice(0, compact ? 2 : 3).map(n => <div key={n} className="h-52 animate-pulse rounded-2xl border border-border bg-muted/70" />)}</div>;
+  if (error) return <div className="mt-8 rounded-2xl border border-[#bd8065]/30 bg-[#f2e4d6] p-6" role="alert"><p className="font-semibold">{t.error}</p><button onClick={retry} className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="button-retry-catalog"><RotateCw size={14} />{t.retry}</button></div>;
+  if (!offerings.length) return <div className="mt-8 rounded-2xl border border-dashed border-border bg-card/65 px-6 py-10 text-center">
+    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-primary"><CalendarDays size={21} /></div><p className="font-display text-xl font-bold">{compact ? t.empty : t.noInventory}</p><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">{compact ? t.emptySub : t.noInventoryText}</p>
+  </div>;
+  return <div className={`mt-8 grid gap-4 ${compact ? 'md:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-3'}`}>
+    {offerings.map(item => <article key={item.id} className="offering-card rounded-2xl border border-border bg-card p-5" data-testid={`card-offering-${item.id}`}>
+      <div className="flex items-start justify-between gap-4"><span className="rounded-full bg-[#e7efe8] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-primary">{item.category}</span><span className="text-xs font-semibold text-foreground/45">{item.remaining} {item.remaining === 1 ? t.placeOne : t.place}</span></div>
+      <h3 className="mt-5 font-display text-2xl font-bold leading-tight tracking-[-.04em]">{item.title}</h3>
+       <p className="mt-2 text-sm text-foreground/55">{item.kind === 'session' ? t.sessionType : item.kind === 'event' ? t.eventType : t.coachType} · {item.accessType === 'physical' ? t.physicalType : item.accessType === 'premium' ? t.premiumType : t.liveType}</p>
+      <div className="mt-5 grid gap-2 border-t border-border pt-4 text-xs text-foreground/65">
+        <p className="flex items-center gap-2"><MapPin size={14} className="text-primary" />{item.facility}, {item.city}</p>
+         <p className="flex items-center gap-2"><Clock3 size={14} className="text-primary" />{new Date(item.startsAt).toLocaleString(language === 'ar' ? 'ar-IQ' : language === 'ku' ? 'ckb-IQ' : 'en-IQ', { timeZone: 'Asia/Baghdad', dateStyle: 'medium', timeStyle: 'short' })}</p>
+        <p className="flex items-center gap-2"><Users size={14} className="text-primary" />{item.partnerName}</p>
+      </div>
+    </article>)}
+  </div>;
+}
+
+function PageHero({ kicker, title, description }: { kicker: string; title: string; description: string }) {
+  return <section className="relative overflow-hidden bg-[#174e43] py-16 text-[#f4ead6] md:py-24">
+    <div className="absolute -end-10 -top-28 h-80 w-80 rounded-full border border-white/10" /><div className="absolute -end-2 -top-20 h-64 w-64 rounded-full border border-white/10" />
+    <PageWrap className="relative"><SectionKicker light>{kicker}</SectionKicker><h1 className="font-display max-w-4xl text-5xl font-extrabold leading-[.98] tracking-[-.07em] md:text-7xl">{title}</h1><p className="mt-6 max-w-2xl text-base leading-7 text-[#f4ead6]/70 md:text-lg">{description}</p></PageWrap>
+  </section>;
+}
+
+function HowPage({ t }: { t: Copy }) {
+  return <>
+    <PageHero kicker={t.how} title={t.steps} description={t.intro} />
+    <PageWrap className="py-16 md:py-24">
+      <div className="grid gap-12 md:grid-cols-[.75fr_1fr]">
+        <div><SectionKicker>{t.local}</SectionKicker><h2 className="font-display text-4xl font-bold leading-tight tracking-[-.05em] md:text-5xl">{t.community}</h2><p className="mt-5 leading-7 text-foreground/65">{t.communityd}</p></div>
+        <div className="grid gap-4">
+          {[{num:'01', title:t.step1, text:t.step1d, icon:<MapPin />}, {num:'02', title:t.step2, text:t.step2d, icon:<Sparkles />}, {num:'03', title:t.step3, text:t.step3d, icon:<Dumbbell />}].map(s => <article key={s.num} className="flex gap-5 rounded-2xl border border-border bg-card p-6 md:p-7"><span className="font-mono text-xs text-primary">{s.num}</span><div className="flex-1"><span className="text-primary">{s.icon}</span><h3 className="mt-4 font-display text-2xl font-bold">{s.title}</h3><p className="mt-2 text-sm leading-6 text-foreground/60">{s.text}</p></div></article>)}
+        </div>
+      </div>
+      <div className="mt-16 rounded-[2rem] bg-[#eadfcd] p-8 md:flex md:items-center md:justify-between md:p-12"><div><SectionKicker>{t.notCheckout}</SectionKicker><h2 className="font-display text-3xl font-bold tracking-tight">{t.availabilityTitle}</h2></div><ActionLink href="/membership-plans" testId="link-how-plans">{t.ask}</ActionLink></div>
+    </PageWrap>
+  </>;
+}
+
+function PlansPage({ t }: { t: Copy }) {
+  const plansQuery = useGetPublicPlans({ query: { queryKey: getGetPublicPlansQueryKey() } });
+  const plans = plansQuery.data || [];
+  return <>
+    <PageHero kicker={t.plans} title={t.availabilityTitle} description={t.availabilityD} />
+    <PageWrap className="py-14 md:py-20">
+      <div className="mb-8 flex items-start gap-3 rounded-2xl border border-[#dcaf82]/50 bg-[#f1e6d6] p-5 text-sm leading-6 text-foreground/75"><CircleHelp className="mt-0.5 shrink-0 text-primary" size={19} /><p>{t.notCheckout}</p></div>
+      {plansQuery.isLoading ? <div className="grid gap-4 md:grid-cols-3" aria-label={t.loading}>{[1,2,3].map(i => <div key={i} className="h-64 animate-pulse rounded-2xl bg-muted" />)}</div>
+        : plansQuery.isError ? <ErrorState text={t.error} retry={() => plansQuery.refetch()} t={t} />
+           : plans.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{plans.map((plan: PublicPlan) => <article key={plan.id} className="rounded-2xl border border-border bg-card p-6" data-testid={`card-plan-${plan.id}`}><span className="rounded-full bg-[#e7efe8] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-primary">{plan.kind === 'paid' ? t.paidPlan : plan.kind === 'trial' ? t.trialPlan : t.corporatePlan} · {plan.tier}</span><h2 className="mt-7 font-display text-3xl font-bold tracking-[-.05em]">{plan.name}</h2><p className="mt-2 text-sm text-foreground/60">{plan.durationDays} {t.durationDays}</p><Link href="/contact" className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid={`link-plan-enquiry-${plan.id}`}>{t.ask}<ArrowUpRight size={15} /></Link></article>)}</div>
+          : <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted text-primary"><Dumbbell size={20} /></div><h2 className="mt-4 font-display text-2xl font-bold">{t.noInventory}</h2><p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">{t.noInventoryText}</p></div>}
+      <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-7"><p className="max-w-xl text-sm text-foreground/60">{t.notCheckout}</p><ActionLink href="/contact" testId="link-plans-contact">{t.getUpdates}</ActionLink></div>
+    </PageWrap>
+  </>;
+}
+
+function ErrorState({ text, retry, t }: { text: string; retry: () => void; t: Copy }) {
+  return <div role="alert" className="rounded-2xl border border-[#bd8065]/30 bg-[#f2e4d6] p-6"><p className="font-semibold">{text}</p><button onClick={retry} className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="button-retry-data"><RotateCw size={14} />{t.retry}</button></div>;
+}
+
+function FacilitiesPage({ t, language }: { t: Copy; language: Language }) {
+  const catalog = useGetPublicCatalog({ query: { queryKey: getGetPublicCatalogQueryKey() } });
+  return <>
+    <PageHero kicker={t.facilities} title={t.discover} description={t.directionsD} />
+    <PageWrap className="py-14 md:py-20">
+      <div className="mb-10 grid gap-5 md:grid-cols-[1fr_auto] md:items-end"><div><SectionKicker>{t.live}</SectionKicker><h2 className="font-display text-4xl font-bold tracking-[-.05em]">{t.currentOfferings}</h2></div><p className="max-w-md text-sm leading-6 text-foreground/60">{t.emptySub}</p></div>
+      <OfferingCards offerings={catalog.data || []} language={language} loading={catalog.isLoading} error={catalog.isError} retry={() => catalog.refetch()} t={t} />
+      <div className="mt-14 grid gap-8 rounded-[2rem] bg-[#eadfcd] p-8 md:grid-cols-2 md:items-center md:p-12"><div><SectionKicker>{t.directions}</SectionKicker><h2 className="font-display text-3xl font-bold tracking-[-.05em]">{t.local}</h2><p className="mt-3 max-w-lg text-sm leading-6 text-foreground/65">{t.locald}</p></div><div className="flex flex-wrap gap-3"><ActionLink href="/partner">{t.partner}</ActionLink><Link href="/help" className="inline-flex items-center gap-2 rounded-full border border-foreground/20 px-5 py-3.5 text-sm font-bold" data-testid="link-facilities-help">{t.help}<ArrowUpRight size={15} /></Link></div></div>
+    </PageWrap>
+  </>;
+}
+
+function OnlinePage({ t, language }: { t: Copy; language: Language }) {
+  const catalog = useGetPublicCatalog({ query: { queryKey: getGetPublicCatalogQueryKey() } });
+  const live = useMemo(() => (catalog.data || []).filter(o => o.accessType === 'live'), [catalog.data]);
+  const iosUrl = verifiedHttpsDestination('VITE_IOS_APP_URL');
+  const androidUrl = verifiedHttpsDestination('VITE_ANDROID_APP_URL');
+  return <>
+    <PageHero kicker={t.online} title={t.onlineTitle} description={t.onlineD} />
+    <PageWrap className="py-14 md:py-20">
+      <div className="grid gap-8 md:grid-cols-[.8fr_1.2fr]">
+        <div className="rounded-[2rem] bg-[#e98960] p-7 md:p-9"><div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#173e37]/25"><House size={22} /></div><h2 className="mt-7 font-display text-3xl font-bold leading-tight tracking-[-.05em]">{t.homeFirst}</h2><p className="mt-3 text-sm leading-6 text-[#173e37]/75">{t.homeFirstD}</p><Link href="/how-it-works" className="mt-6 inline-flex items-center gap-2 text-sm font-bold" data-testid="link-online-how">{t.learnMore}<ArrowUpRight size={15} /></Link></div>
+         <div><SectionKicker>{t.live}</SectionKicker><h2 className="font-display text-3xl font-bold tracking-[-.05em]">{t.currentOfferings}</h2><OfferingCards offerings={live} language={language} loading={catalog.isLoading} error={catalog.isError} retry={() => catalog.refetch()} t={t} compact /></div>
+      </div>
+      <section className="mt-12 rounded-2xl border border-border bg-card p-6 md:flex md:items-center md:justify-between">
+        <div><SectionKicker>{t.appDownload}</SectionKicker><p className="max-w-xl text-sm leading-6 text-foreground/60">{!iosUrl && !androidUrl ? t.appDestinationsUnavailable : t.onlineD}</p></div>
+        <div className="mt-4 flex flex-wrap gap-3 md:mt-0">
+          {iosUrl && <a href={iosUrl} target="_blank" rel="noreferrer" className="rounded-full border border-border px-4 py-3 text-sm font-bold hover:bg-muted" data-testid="link-ios-app">{t.iosApp}<ArrowUpRight size={14} className="ms-2 inline" /></a>}
+          {androidUrl && <a href={androidUrl} target="_blank" rel="noreferrer" className="rounded-full border border-border px-4 py-3 text-sm font-bold hover:bg-muted" data-testid="link-android-app">{t.androidApp}<ArrowUpRight size={14} className="ms-2 inline" /></a>}
+        </div>
+      </section>
+      <div className="mt-14 rounded-2xl border border-border bg-card px-6 py-7 md:flex md:items-center md:justify-between"><div><h2 className="font-display text-2xl font-bold">{t.availabilityTitle}</h2><p className="mt-2 text-sm text-foreground/60">{t.notCheckout}</p></div><ActionLink href="/contact" testId="link-online-updates">{t.getUpdates}</ActionLink></div>
+    </PageWrap>
+  </>;
+}
+
+const landingCopy: Record<string, { kicker: string; title: string; intro: string; bullets: string[]; env: string; cta: string }> = {
+  partner: { kicker: 'partner', title: 'partnerTitle', intro: 'partnerIntro', bullets: ['partnerBullet1', 'partnerBullet2', 'partnerBullet3'], env: 'VITE_PARTNER_ENQUIRY_URL', cta: 'partner' },
+  corporate: { kicker: 'corporate', title: 'corporateTitle', intro: 'corporateIntro', bullets: ['corporateBullet1', 'corporateBullet2', 'corporateBullet3'], env: 'VITE_CORPORATE_ENQUIRY_URL', cta: 'corporate' },
+};
+
+function EnquiryPage({ type, t }: { type: 'partner' | 'corporate'; t: Copy }) {
+  const content = landingCopy[type];
+  const url = verifiedHttpsDestination(content.env);
+  return <>
+    <PageHero kicker={t[content.kicker]} title={t[content.title]} description={t[content.intro]} />
+    <PageWrap className="py-14 md:py-20">
+      <div className="grid gap-12 md:grid-cols-[1fr_.75fr]">
+        <div className="grid gap-0">{content.bullets.map((key, index) => <div className="flex gap-4 border-b border-border py-6 first:border-t" key={key}><span className="font-mono text-xs text-primary">0{index + 1}</span><p className="max-w-lg text-lg leading-7">{t[key]}</p><Check className="ms-auto mt-1 shrink-0 text-primary" size={18} /></div>)}</div>
+        <aside className="rounded-[2rem] bg-[#eadfcd] p-7 md:p-9"><SectionKicker>{t.contact}</SectionKicker><h2 className="font-display text-3xl font-bold tracking-[-.05em]">{t[content.cta]}</h2><p className="mt-4 text-sm leading-6 text-foreground/65">{url ? t.verifiedContinue : t.noDestination}</p>{url ? <a href={url} target="_blank" rel="noreferrer" className="mt-7 inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground" data-testid={`link-${type}-enquiry`}>{t[content.cta]}<MoveUpRight size={16} /></a> : <p className="mt-7 rounded-xl border border-border bg-card/70 p-4 text-xs leading-5 text-foreground/60" role="status">{t.contactUnavailable}</p>}</aside>
+      </div>
+    </PageWrap>
+  </>;
+}
+
+function HelpPage({ t }: { t: Copy }) {
+  const questions = [[t.faq1, t.faq1d], [t.faq2, t.faq2d], [t.faq3, t.faq3d], [t.faq4, t.faq4d]];
+  return <>
+    <PageHero kicker={t.help} title={t.helpTitle} description={t.availabilityD} />
+    <PageWrap className="py-14 md:py-20">
+      <div className="grid gap-14 md:grid-cols-[.65fr_1fr]">
+        <div><SectionKicker>{t.help}</SectionKicker><h2 className="font-display text-4xl font-bold leading-tight tracking-[-.05em]">{t.availabilityTitle}</h2><p className="mt-4 max-w-sm text-sm leading-6 text-foreground/60">{t.availabilityD}</p><Link href="/contact" className="mt-7 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground" data-testid="link-help-contact-cta">{t.contact}<ArrowUpRight size={15} /></Link></div>
+        <div>{questions.map(([question, answer], i) => <details key={question} className="group border-b border-border py-5 first:border-t" open={i === 0}><summary className="flex cursor-pointer list-none items-center justify-between gap-5 font-display text-xl font-bold tracking-[-.03em]"><span>{question}</span><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border transition group-open:rotate-45"><span className="text-xl font-normal">+</span></span></summary><p className="max-w-xl pt-4 text-sm leading-6 text-foreground/65">{answer}</p></details>)}</div>
+      </div>
+      <div className="mt-14 rounded-2xl bg-[#eadfcd] p-7 md:flex md:items-center md:justify-between"><p className="font-display text-2xl font-bold">{t.notCheckout}</p><Link href="/membership-plans" className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-primary md:mt-0" data-testid="link-help-plans">{t.plans}<ArrowUpRight size={15} /></Link></div>
+    </PageWrap>
+  </>;
+}
+
+function ContactPage({ t }: { t: Copy }) {
+  const email = verifiedContactEmail();
+  const [draftHref, setDraftHref] = useState('');
+  const form = useForm<ContactFormValues>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: { topic: 'membership', name: '', replyEmail: '', message: '' },
+  });
+  const handleSubmit = (values: ContactFormValues) => {
+    if (!email) return;
+    const topics: Record<string, string> = {
+      membership: t.topicMembership, partner: t.topicPartner, corporate: t.topicCorporate, other: t.topicOther,
+    };
+    const subject = topics[values.topic] || t.topicOther;
+    const body = [
+      `${t.contactTopic}: ${subject}`,
+      `${t.nameLabel}: ${values.name || '-'}`,
+      `${t.emailLabel}: ${values.replyEmail || '-'}`,
+      '',
+      values.message,
+    ].join('\n');
+    setDraftHref(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+  };
+  return <>
+    <PageHero kicker={t.contact} title={t.contactTitle} description={t.availabilityD} />
+    <PageWrap className="py-14 md:py-20">
+      <div className="grid gap-12 md:grid-cols-[.8fr_1fr]">
+        <div><SectionKicker>{t.contact}</SectionKicker><h2 className="font-display text-4xl font-bold tracking-[-.05em]">{t.availabilityTitle}</h2><p className="mt-4 max-w-md leading-7 text-foreground/60">{t.availabilityD}</p>
+          {email ? <a href={`mailto:${email}`} className="mt-7 inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground" data-testid="link-contact-email">{t.emailMaydanGo}<ArrowUpRight size={16} /></a> : <p role="status" className="mt-7 rounded-2xl border border-dashed border-border bg-card p-5 text-sm leading-6 text-foreground/60">{t.noDestination}</p>}
+        </div>
+        <div className="rounded-[2rem] border border-border bg-card p-7 md:p-9"><SectionKicker>{t.send}</SectionKicker><h2 className="font-display text-2xl font-bold">{t.availabilityTitle}</h2><p className="mt-3 text-sm leading-6 text-foreground/60">{t.formNote}</p>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="mt-6 grid gap-4">
+              <FormField control={form.control} name="topic" render={({ field }) => <FormItem>
+                <FormLabel>{t.contactTopic}</FormLabel>
+                <FormControl><select {...field} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-normal" data-testid="select-contact-topic">
+                  <option value="membership">{t.topicMembership}</option><option value="partner">{t.topicPartner}</option><option value="corporate">{t.topicCorporate}</option><option value="other">{t.topicOther}</option>
+                </select></FormControl><FormMessage />
+              </FormItem>} />
+              <FormField control={form.control} name="name" render={({ field }) => <FormItem>
+                <FormLabel>{t.nameLabel}</FormLabel><FormControl><Input autoComplete="name" maxLength={100} {...field} data-testid="input-contact-name" /></FormControl><FormMessage />
+              </FormItem>} />
+              <FormField control={form.control} name="replyEmail" render={({ field }) => <FormItem>
+                <FormLabel>{t.emailLabel}</FormLabel><FormControl><Input type="email" autoComplete="email" maxLength={254} {...field} data-testid="input-contact-email" /></FormControl><FormMessage />
+              </FormItem>} />
+              <FormField control={form.control} name="message" render={({ field }) => <FormItem>
+                <FormLabel>{t.messageLabel}</FormLabel><FormControl><Textarea required minLength={5} maxLength={1500} rows={5} {...field} data-testid="input-contact-message" /></FormControl><FormMessage />
+              </FormItem>} />
+              <button disabled={!email} className="inline-flex w-fit items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50" type="submit" data-testid="button-contact-enquiry">{t.previewEnquiry}<ArrowUpRight size={15} /></button>
+              {!email && <p className="text-xs leading-5 text-muted-foreground" role="status">{t.contactUnavailable}</p>}
+              {draftHref && <div className="rounded-xl bg-muted p-4" role="status"><p className="text-sm font-medium">{t.draftReady}</p><a href={draftHref} className="mt-2 inline-flex items-center gap-2 font-bold text-primary" data-testid="link-open-email-draft">{t.openEmailDraft}<ArrowUpRight size={14} /></a></div>}
+            </form>
+          </Form>
+        </div>
+      </div>
+    </PageWrap>
+  </>;
+}
+
+const contactSchema = z.object({
+  topic: z.enum(['membership', 'partner', 'corporate', 'other']),
+  name: z.string().trim().max(100),
+  replyEmail: z.string().trim().max(254).refine(value => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)),
+  message: z.string().trim().min(5).max(1500),
+});
+type ContactFormValues = z.infer<typeof contactSchema>;
+
+function LegalPage({ t }: { t: Copy }) {
+  return <>
+    <PageHero kicker={t.legal} title={t.legalTitle} description={t.readDraft} />
+    <PageWrap className="py-14 md:py-20">
+      <div className="mx-auto max-w-3xl">
+        <div role="note" className="mb-10 rounded-2xl border border-[#dcaf82]/50 bg-[#f1e6d6] p-5 text-sm font-semibold leading-6">{t.legalDisclaimer}</div>
+        <article className="prose prose-stone max-w-none">
+          <h2>{t.legalWebsite}</h2><p>{t.legalWebsiteD}</p>
+          <h2>{t.legalMembership}</h2><p>{t.legalMembershipD}</p>
+          <h2>{t.legalPartner}</h2><p>{t.legalPartnerD}</p>
+          <h2>{t.legalPrivacy}</h2><p>{t.legalPrivacyD}</p>
+          <h2>{t.legalStatus}</h2><p>{t.legalStatusD}</p>
+        </article>
+      </div>
+    </PageWrap>
+  </>;
+}
+
+function ContentRouter() {
+  const [location] = useLocation();
+  const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('maydango-language') as Language) || 'en');
+  const t = translations[language];
+  return <Layout key={location} language={language} setLanguage={setLanguage}>
+    <ErrorBoundary resetKey={location}>
+      <Switch>
+        <Route path="/" component={() => <HomePage t={t} language={language} />} />
+        <Route path="/how-it-works" component={() => <HowPage t={t} />} />
+        <Route path="/membership-plans" component={() => <PlansPage t={t} />} />
+        <Route path="/facilities" component={() => <FacilitiesPage t={t} language={language} />} />
+        <Route path="/online-training" component={() => <OnlinePage t={t} language={language} />} />
+        <Route path="/partner" component={() => <EnquiryPage type="partner" t={t} />} />
+        <Route path="/corporate" component={() => <EnquiryPage type="corporate" t={t} />} />
+        <Route path="/help" component={() => <HelpPage t={t} />} />
+        <Route path="/contact" component={() => <ContactPage t={t} />} />
+        <Route path="/legal" component={() => <LegalPage t={t} />} />
+        <Route component={NotFound} />
+      </Switch>
+    </ErrorBoundary>
+  </Layout>;
+}
+
+function Router() {
+  return <ContentRouter />;
+}
+
+function App() {
+  return <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><Router /></WouterRouter>
+      <Toaster />
+    </TooltipProvider>
+  </QueryClientProvider>;
+}
+
+export default App;

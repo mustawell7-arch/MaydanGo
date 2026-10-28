@@ -45,6 +45,8 @@ import type {
   PartnerApproval,
   PartnerInput,
   PlanInput,
+  PublicOffering,
+  PublicPlan,
   RecordManualCheckin200,
   RecordManualCheckinBody,
   RequestManualCheckinCode200,
@@ -80,6 +82,196 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetPublicCatalogUrl = () => {
+
+
+
+
+  return `/api/public/catalog`
+}
+
+export const getPublicCatalog = async ( options?: Parameters<typeof customFetch>[1]): Promise<PublicOffering[]> => {
+
+  return customFetch<PublicOffering[]>(getGetPublicCatalogUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicCatalogQueryKey = () => {
+    return [
+    `/api/public/catalog`
+    ] as const;
+    }
+
+
+export const getGetPublicCatalogQueryOptions = <TData = Awaited<ReturnType<typeof getPublicCatalog>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCatalog>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicCatalogQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicCatalog>>> = ({ signal }) => getPublicCatalog({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicCatalog>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPublicCatalogQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicCatalog>>>
+export type GetPublicCatalogQueryError = ErrorType<unknown>
+
+
+export function useGetPublicCatalog<TData = Awaited<ReturnType<typeof getPublicCatalog>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCatalog>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicCatalog>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicCatalog>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicCatalog<TData = Awaited<ReturnType<typeof getPublicCatalog>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCatalog>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicCatalog>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicCatalog>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicCatalog<TData = Awaited<ReturnType<typeof getPublicCatalog>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCatalog>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPublicCatalog<TData = Awaited<ReturnType<typeof getPublicCatalog>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCatalog>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPublicCatalogQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicPlansUrl = () => {
+
+
+
+
+  return `/api/public/plans`
+}
+
+export const getPublicPlans = async ( options?: Parameters<typeof customFetch>[1]): Promise<PublicPlan[]> => {
+
+  return customFetch<PublicPlan[]>(getGetPublicPlansUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicPlansQueryKey = () => {
+    return [
+    `/api/public/plans`
+    ] as const;
+    }
+
+
+export const getGetPublicPlansQueryOptions = <TData = Awaited<ReturnType<typeof getPublicPlans>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicPlans>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicPlansQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicPlans>>> = ({ signal }) => getPublicPlans({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicPlans>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPublicPlansQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicPlans>>>
+export type GetPublicPlansQueryError = ErrorType<unknown>
+
+
+export function useGetPublicPlans<TData = Awaited<ReturnType<typeof getPublicPlans>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicPlans>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicPlans>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicPlans>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicPlans<TData = Awaited<ReturnType<typeof getPublicPlans>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicPlans>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicPlans>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicPlans>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicPlans<TData = Awaited<ReturnType<typeof getPublicPlans>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicPlans>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPublicPlans<TData = Awaited<ReturnType<typeof getPublicPlans>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicPlans>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPublicPlansQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetAttendanceUrl = () => {
 
