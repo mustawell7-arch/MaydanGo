@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, boolean, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, boolean, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import type { LocalizedText } from "./learning";
 import { membershipBilling } from "./payments";
@@ -74,6 +74,21 @@ export const reservations = pgTable("reservations", {
   cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
 }, t => [uniqueIndex("one_active_reservation").on(t.userId, t.offeringId)
   .where(sql`${t.status} in ('reserved', 'requested')`)]);
+
+export const waitlistEntries = pgTable("waitlist_entries", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  offeringId: text("offering_id").notNull().references(() => offerings.id),
+  status: text("status").notNull().default("waiting"),
+  reservationId: text("reservation_id").references(() => reservations.id),
+  reason: text("reason"),
+  joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  uniqueIndex("one_waiting_entry_per_member_offering").on(t.userId, t.offeringId)
+    .where(sql`${t.status} = 'waiting'`),
+  index("waitlist_offering_order").on(t.offeringId, t.joinedAt, t.id),
+]);
 
 // Attendance is intentionally separate. Customer booking endpoints never insert here.
 export const attendance = pgTable("attendance", {

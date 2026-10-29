@@ -1,11 +1,15 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import {
   cancelMemberSubscription,
   createMemberCheckout,
+  getGetMemberWaitlistQueryKey,
+  useGetMemberWaitlist,
   useGetLivePlans,
+  useJoinMemberWaitlist,
+  useLeaveMemberWaitlist,
   useGetMemberSubscription,
 } from '@workspace/api-client-react';
 import { Text, Pressable, Ionicons } from '@/components/Localized';
@@ -14,21 +18,34 @@ import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { dateTime, localize } from '@/lib/content';
 import { useAuthedResource, type Offering } from '@/lib/live-api';
+import { translate, type MessageKey } from '@/lib/i18n';
 
 type Filter = 'all' | 'physical' | 'premium' | 'live';
 
 export default function LiveScreen() {
   const c = useColors();
   const app = useApp();
+  const t = (key: MessageKey) => translate(app.language, key);
   const catalog = useAuthedResource<Offering[]>('/member/live-catalog');
   const plans = useGetLivePlans({ query: { enabled: catalog.signedIn } });
   const subscription = useGetMemberSubscription({ query: { enabled: catalog.signedIn } });
+  const waitlist = useGetMemberWaitlist({ query: { enabled: catalog.signedIn, refetchInterval: 30_000 } });
+  const joinQueue = useJoinMemberWaitlist();
+  const leaveQueue = useLeaveMemberWaitlist();
+  const seenPromotions = useRef(new Set<string>());
   const [filter, setFilter] = useState<Filter>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: 'ok' | 'err'; text: string } | null>(null);
   const refreshCatalog = catalog.refresh, refreshPlans = plans.refetch, refreshMember = app.refreshMember;
-  useFocusEffect(useCallback(() => { void refreshCatalog(); void refreshPlans(); void subscription.refetch(); void refreshMember(); },
-    [refreshCatalog, refreshPlans, subscription.refetch, refreshMember]));
+  useFocusEffect(useCallback(() => { void refreshCatalog(); void refreshPlans(); void subscription.refetch(); void refreshMember(); void waitlist.refetch(); },
+    [refreshCatalog, refreshPlans, subscription.refetch, refreshMember, waitlist.refetch]));
+  useEffect(() => {
+    const newPromotion = waitlist.data?.find(entry => entry.status === 'promoted' && !seenPromotions.current.has(entry.id));
+    if (!newPromotion) return;
+    seenPromotions.current.add(newPromotion.id);
+    setNotice({ tone: 'ok', text: t('waitlistPromotionNotice') });
+    void Promise.all([app.refreshMember(), catalog.refresh()]);
+  }, [waitlist.data, app.refreshMember, catalog.refresh, app.language]);
 
   const live = app.memberMemberships.filter(m => m.scope !== 'preview');
   const items = useMemo(() => (catalog.data ?? []).filter(o => o.active && (filter === 'all' || o.accessType === filter))
@@ -80,6 +97,30 @@ export default function LiveScreen() {
     setNotice(r.ok ? { tone: 'ok', text: cancel ? 'Reservation cancelled.' : 'Reserved with the partner.' } : { tone: 'err', text: app.memberError ?? 'This reservation could not be completed. Check your membership eligibility.' });
   };
 
+  const changeWaitlist = async (offering: Offering, entryId?: string) => {
+    if (busyId) return;
+    setBusyId(`waitlist:${offering.id}`);
+    setNotice(null);
+    try {
+      if (entryId) {
+        await leaveQueue.mutateAsync({ id: entryId });
+        setNotice({ tone: 'ok', text: t('waitlistLeft') });
+      } else {
+        const entry = await joinQueue.mutateAsync({ data: { offeringId: offering.id } });
+        setNotice({ tone: 'ok', text: t('waitlistJoined').replace('{n}', String(entry.position ?? '—')) });
+      }
+      await Promise.all([
+        waitlist.refetch(),
+        catalog.refresh(),
+        app.refreshMember(),
+      ]);
+    } catch (error) {
+      setNotice({ tone: 'err', text: error instanceof Error ? error.message : t('waitlistLoadError') });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   if (!catalog.signedIn) return <ScreenShell>
     <ScreenHeader eyebrow="LIVE AVAILABILITY" title="Real partner sessions" />
     <View style={styles.pad}>
@@ -90,7 +131,7 @@ export default function LiveScreen() {
 
   return <ScreenShell>
     <ScreenHeader eyebrow="LIVE AVAILABILITY" title="Real partner sessions" />
-    <ScrollView contentContainerStyle={styles.pad} refreshControl={<RefreshControl refreshing={catalog.loading || plans.isLoading || subscription.isLoading} onRefresh={() => { void catalog.refresh(); void plans.refetch(); void subscription.refetch(); void app.refreshMember(); }} />}>
+    <ScrollView contentContainerStyle={styles.pad} refreshControl={<RefreshControl refreshing={catalog.loading || plans.isLoading || subscription.isLoading || waitlist.isFetching} onRefresh={() => { void catalog.refresh(); void plans.refetch(); void subscription.refetch(); void app.refreshMember(); void waitlist.refetch(); }} />}>
       <Pressable onPress={() => router.back()} accessibilityRole="button" style={styles.row}><Ionicons name="chevron-back" size={16} color={c.primary} /><Text style={{ color: c.primary }}>Back</Text></Pressable>
       <View style={[styles.banner, { backgroundColor: c.accent }]}>
         <View style={[styles.dot, { backgroundColor: c.primary }]} />
@@ -142,10 +183,15 @@ export default function LiveScreen() {
         <Text style={{ color: c.mutedForeground, textAlign: 'center', lineHeight: 19 }}>Partners are being onboarded. Pull to refresh or browse sample listings meanwhile.</Text>
       </View> : items.map(o => {
         const mine = booked(o), full = (o.remaining ?? 1) <= 0 || (!mine && o.additionalPayment);
+        const queueEntry = waitlist.data?.find(entry => entry.offeringId === o.id && entry.status === 'waiting');
+        const canWaitlist = full && !mine && !o.additionalPayment && o.scope === 'live' && o.kind !== 'coach';
+        const actionBusy = busyId === o.id || busyId === `waitlist:${o.id}`;
         return <View key={o.id} style={[styles.card, { backgroundColor: c.card, borderColor: mine ? c.primary : c.border }]}>
           <View style={styles.between}>
             <Text style={[styles.label, { color: c.primary }]}>{o.accessType === 'live' ? 'Live online' : o.accessType === 'premium' ? 'Premium' : 'Physical'} · {o.kind === 'coach' ? 'Coaching' : o.kind === 'event' ? 'Event' : 'Session'}</Text>
-            <Text style={{ color: full ? c.destructive : c.mutedForeground, fontSize: 12, fontWeight: '700' }}>{full ? 'Full' : `${o.remaining ?? '—'} / ${o.capacity}`}</Text>
+            <Text style={{ color: full ? c.destructive : c.mutedForeground, fontSize: 12, fontWeight: '700' }}>
+              {queueEntry ? t('waitlistPosition').replace('{n}', String(queueEntry.position ?? '—')) : full ? 'Full' : `${o.remaining ?? '—'} / ${o.capacity}`}
+            </Text>
           </View>
           <Text raw style={{ color: c.foreground, fontSize: 18, fontWeight: '800' }}>{o.title}</Text>
           <Text raw style={{ color: c.mutedForeground }}>{o.partnerName ?? ''} · {o.facility} · {o.city}</Text>
@@ -154,12 +200,47 @@ export default function LiveScreen() {
           {o.additionalPayment ? <Text style={{ color: c.destructive, fontSize: 12, fontWeight: '700' }}>Additional payment required. Booking is unavailable until payments launch.</Text> : null}
           {o.gender !== 'all' || o.minAge > 0 || o.maxAge !== null ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{o.gender === 'female' ? 'Women only' : o.gender === 'male' ? 'Men only' : 'Everyone'} · {o.minAge}{o.maxAge !== null ? `–${o.maxAge}` : '+'}</Text> : null}
           <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Tiers: {o.tiers.join(', ')}</Text>
-          <Pressable testID={`live-book-${o.id}`} accessibilityRole="button" disabled={!!busyId || (!mine && (full || o.additionalPayment))} onPress={() => void act(o, mine)}
-            style={[styles.cta, { backgroundColor: mine ? c.secondary : c.primary, opacity: busyId === o.id || (!mine && full) ? .55 : 1 }]}>
-            <Text style={{ color: mine ? c.secondaryForeground : c.primaryForeground, fontWeight: '700' }}>{busyId === o.id ? 'Working…' : mine ? 'Cancel reservation' : full ? 'Full' : 'Reserve'}</Text>
+          <Pressable testID={`live-book-${o.id}`} accessibilityRole="button"
+            disabled={!!busyId || (!mine && full && !canWaitlist) || (!!queueEntry && !canWaitlist)}
+            onPress={() => queueEntry
+              ? void changeWaitlist(o, queueEntry.id)
+              : canWaitlist
+                ? void changeWaitlist(o)
+                : void act(o, mine)}
+            style={[styles.cta, { backgroundColor: mine || queueEntry ? c.secondary : c.primary, opacity: actionBusy || (!mine && full && !canWaitlist) ? .55 : 1 }]}>
+            <Text style={{ color: mine || queueEntry ? c.secondaryForeground : c.primaryForeground, fontWeight: '700' }}>
+              {actionBusy ? 'Working…' : mine ? 'Cancel reservation' : queueEntry ? t('waitlistLeave') : canWaitlist ? t('waitlistJoin') : full ? 'Full' : 'Reserve'}
+            </Text>
           </Pressable>
         </View>;
       })}
+
+      {waitlist.error ? <Text accessibilityRole="alert" style={{ color: c.destructive }}>{t('waitlistLoadError')}</Text> : null}
+      <View style={styles.between}>
+        <Text style={[styles.label, { color: c.mutedForeground, marginTop: 10 }]}>{t('waitlistTitle')}</Text>
+        <Ionicons name="time-outline" size={18} color={c.primary} />
+      </View>
+      {waitlist.data?.length ? waitlist.data.map(entry => (
+        <View key={entry.id} style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={{ color: c.foreground, fontWeight: '800' }} numberOfLines={2}>
+            {entry.localizedTitle?.[app.language] || localize(entry.title, app.language)}
+          </Text>
+          <Text style={{ color: c.mutedForeground }}>{localize(entry.facility, app.language)} · {localize(entry.city, app.language)}</Text>
+          <Text style={{ color: c.mutedForeground }}>{dateTime(entry.startsAt, app.language)}</Text>
+          <Text style={{ color: entry.status === 'cancelled' ? c.destructive : c.primary, fontWeight: '700' }}>
+            {entry.status === 'waiting'
+              ? t('waitlistPosition').replace('{n}', String(entry.position ?? '—'))
+              : entry.status === 'promoted' ? t('waitlistPromoted') : t('waitlistCancelled')}
+          </Text>
+          {entry.status === 'waiting' ? <Pressable accessibilityRole="button" disabled={!!busyId}
+            onPress={() => {
+              const offering = catalog.data?.find(item => item.id === entry.offeringId);
+              if (offering) void changeWaitlist(offering, entry.id);
+            }}>
+            <Text style={{ color: c.primary, fontWeight: '700' }}>{t('waitlistLeave')}</Text>
+          </Pressable> : null}
+        </View>
+      )) : !waitlist.isLoading ? <Text style={{ color: c.mutedForeground }}>{t('waitlistEmpty')}</Text> : null}
 
       {(() => {
         // History is account-owned, not derived from the currently published catalogue.

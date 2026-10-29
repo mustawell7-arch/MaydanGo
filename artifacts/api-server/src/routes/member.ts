@@ -3,9 +3,11 @@ import { getAuth } from "@clerk/express";
 import { z } from "zod";
 import { db, memberships, memberProfiles, offerings, reservations, partners } from "@workspace/db";
 import { eq, and, inArray, sql, gt, asc, isNull } from "drizzle-orm";
-import { BookingError, memberState, createReservation, cancelReservation } from "../lib/reservations";
+import { BookingError, memberState, createReservation } from "../lib/reservations";
 import learningRouter from "./learning";
 import { memberSupportRouter } from "./support";
+import waitlistRouter from "./waitlist";
+import { cancelReservationAndPromote } from "../lib/waitlist";
 import { sendMemberNotification } from "../lib/notifications";
 import { PaymentError } from "../lib/payment-config";
 import { cancelMemberSubscription, createMemberCheckout, listMemberPlans, memberSubscription } from "../lib/payments-paytabs";
@@ -17,6 +19,7 @@ router.use((req, res, next) => {
 });
 router.use(learningRouter);
 router.use(memberSupportRouter);
+router.use("/waitlist", waitlistRouter);
 router.get("/", async (req, res) => { res.json(await memberState(getAuth(req).userId!)); });
 router.get("/plans", async (_req, res) => { res.json(await listMemberPlans()); });
 router.post("/checkout", async (req, res) => {
@@ -98,8 +101,8 @@ router.delete("/bookings/:id", async (req, res) => {
   const [offering] = await db.select({ scope: offerings.scope }).from(reservations)
     .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
     .where(and(eq(reservations.id, String(req.params.id)), eq(reservations.userId, ownerId))).limit(1);
-  const cancelled = await cancelReservation(ownerId, String(req.params.id));
-  if (cancelled && offering?.scope === "live") void sendMemberNotification(ownerId, "booking_cancelled");
+  const result = await cancelReservationAndPromote(ownerId, String(req.params.id));
+  if (result.cancelled && offering?.scope === "live") void sendMemberNotification(ownerId, "booking_cancelled");
   res.json(await memberState(getAuth(req).userId!));
 });
 router.use((error: unknown, _req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => {

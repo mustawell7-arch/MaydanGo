@@ -235,6 +235,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1refunds"
   /member/live-catalog:
     $ref: "./operations.yaml#/paths/~1member~1live-catalog"
+  /member/waitlist:
+    $ref: "./operations.yaml#/paths/~1member~1waitlist"
+  /member/waitlist/{id}:
+    $ref: "./operations.yaml#/paths/~1member~1waitlist~1{id}"
   /member/courses:
     $ref: "./operations.yaml#/paths/~1member~1courses"
   /member/courses/{id}:

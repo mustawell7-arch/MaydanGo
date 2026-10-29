@@ -1162,6 +1162,80 @@ export const GetLiveCatalogResponseItem = zod.object({
 export const GetLiveCatalogResponse = zod.array(GetLiveCatalogResponseItem)
 
 
+export const getMemberWaitlistResponseLocalizedTitleOneEnMax = 240;
+
+export const getMemberWaitlistResponseLocalizedTitleOneArMax = 240;
+
+export const getMemberWaitlistResponseLocalizedTitleOneKuMax = 240;
+
+
+
+
+export const GetMemberWaitlistResponseItem = zod.object({
+  "id": zod.string(),
+  "offeringId": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberWaitlistResponseLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(getMemberWaitlistResponseLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(getMemberWaitlistResponseLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "kind": zod.enum(['session', 'event', 'coach']),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "status": zod.enum(['waiting', 'promoted', 'cancelled']),
+  "position": zod.number().int().min(1).nullable(),
+  "joinedAt": zod.coerce.date()
+})
+export const GetMemberWaitlistResponse = zod.array(GetMemberWaitlistResponseItem)
+
+
+export const joinMemberWaitlistBodyOfferingIdMax = 120;
+
+
+
+export const JoinMemberWaitlistBody = zod.object({
+  "offeringId": zod.string().min(1).max(joinMemberWaitlistBodyOfferingIdMax)
+})
+
+export const joinMemberWaitlistResponseLocalizedTitleOneEnMax = 240;
+
+export const joinMemberWaitlistResponseLocalizedTitleOneArMax = 240;
+
+export const joinMemberWaitlistResponseLocalizedTitleOneKuMax = 240;
+
+
+
+
+export const JoinMemberWaitlistResponse = zod.object({
+  "id": zod.string(),
+  "offeringId": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(joinMemberWaitlistResponseLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(joinMemberWaitlistResponseLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(joinMemberWaitlistResponseLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "kind": zod.enum(['session', 'event', 'coach']),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "status": zod.enum(['waiting', 'promoted', 'cancelled']),
+  "position": zod.number().int().min(1).nullable(),
+  "joinedAt": zod.coerce.date()
+})
+
+
+export const LeaveMemberWaitlistParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const LeaveMemberWaitlistResponse = zod.object({
+  "left": zod.boolean()
+})
+
+
 export const getMemberCoursesResponseOneLocalizedTitleEnMax = 240;
 
 export const getMemberCoursesResponseOneLocalizedTitleArMax = 240;

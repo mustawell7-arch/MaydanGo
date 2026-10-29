@@ -378,6 +378,42 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/LiveOffering" } }
+  /member/waitlist:
+    get:
+      operationId: getMemberWaitlist
+      responses:
+        "200":
+          description: The member's ordered live-class waitlist entries and recent promotions
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/WaitlistEntry" } }
+    post:
+      operationId: joinMemberWaitlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WaitlistJoinInput" }
+      responses:
+        "201":
+          description: The member joins the end of the ordered queue
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WaitlistEntry" }
+  /member/waitlist/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    delete:
+      operationId: leaveMemberWaitlist
+      responses:
+        "200":
+          description: The member's active queue entry is withdrawn
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [left]
+                properties:
+                  left: { type: boolean }
   /member/courses:
     get:
       operationId: getMemberCourses
@@ -806,6 +842,30 @@ components:
       properties:
         lessonId: { type: string, minLength: 1 }
         completed: { type: boolean }
+    WaitlistJoinInput:
+      type: object
+      additionalProperties: false
+      required: [offeringId]
+      properties:
+        offeringId: { type: string, minLength: 1, maxLength: 120 }
+    WaitlistEntry:
+      type: object
+      required: [id, offeringId, title, localizedTitle, kind, city, facility, startsAt, status, position, joinedAt]
+      properties:
+        id: { type: string }
+        offeringId: { type: string }
+        title: { type: string }
+        localizedTitle:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedText"
+            - type: "null"
+        kind: { type: string, enum: [session, event, coach] }
+        city: { type: string }
+        facility: { type: string }
+        startsAt: { type: string, format: date-time }
+        status: { type: string, enum: [waiting, promoted, cancelled] }
+        position: { type: ["integer", "null"], minimum: 1 }
+        joinedAt: { type: string, format: date-time }
     MemberLiveClass:
       type: object
       required: [id, title, localizedTitle, localizedDescription, city, facility, partnerName, startsAt, endsAt, remaining, booked, canJoin]

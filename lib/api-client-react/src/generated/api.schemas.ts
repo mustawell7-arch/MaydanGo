@@ -518,6 +518,50 @@ export interface CourseProgressInput {
   completed: boolean;
 }
 
+export interface WaitlistJoinInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  offeringId: string;
+}
+
+export type WaitlistEntryKind = typeof WaitlistEntryKind[keyof typeof WaitlistEntryKind];
+
+
+export const WaitlistEntryKind = {
+  session: 'session',
+  event: 'event',
+  coach: 'coach',
+} as const;
+
+export type WaitlistEntryStatus = typeof WaitlistEntryStatus[keyof typeof WaitlistEntryStatus];
+
+
+export const WaitlistEntryStatus = {
+  waiting: 'waiting',
+  promoted: 'promoted',
+  cancelled: 'cancelled',
+} as const;
+
+export interface WaitlistEntry {
+  id: string;
+  offeringId: string;
+  title: string;
+  localizedTitle: LocalizedText | null;
+  kind: WaitlistEntryKind;
+  city: string;
+  facility: string;
+  startsAt: string;
+  status: WaitlistEntryStatus;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  position: number | null;
+  joinedAt: string;
+}
+
 export interface MemberLiveClass {
   id: string;
   title: string;
@@ -797,6 +841,10 @@ export const ReviewAttendanceBodyAction = {
 export type ReviewAttendanceBody = {
   action: ReviewAttendanceBodyAction;
   reason: string;
+};
+
+export type LeaveMemberWaitlist200 = {
+  left: boolean;
 };
 
 export type GetSupportStaffTicketsParams = {
