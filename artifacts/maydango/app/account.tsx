@@ -86,7 +86,7 @@ export default function AccountScreen() {
         <Text style={{ color: c.foreground, fontWeight: '700' }}>Eligibility details</Text>
         <Text style={{ color: c.mutedForeground }}>Required only for classes with age or gender requirements. These details stay private to your account.</Text>
         {app.memberProfile ? <Text style={{ color: c.foreground }}>Saved: {app.memberProfile.gender} · {app.memberProfile.birthDate ? dateTime(app.memberProfile.birthDate, app.language, true) : '—'}</Text> : null}
-        <TextInput accessibilityLabel="Date of birth" placeholder="Date of birth: YYYY-MM-DD" placeholderTextColor={c.mutedForeground} value={birthDate} onChangeText={setBirthDate} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
+        <TextInput inputDirection="ltr" accessibilityLabel="Date of birth" placeholder="Date of birth: YYYY-MM-DD" placeholderTextColor={c.mutedForeground} value={birthDate} onChangeText={setBirthDate} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
         <View style={{ flexDirection: 'row', gap: 14 }}>
           {(['female', 'male', 'unspecified'] as const).map(g => <Pressable key={g} onPress={() => setGender(g)} accessibilityRole="radio" accessibilityState={{ checked: gender === g }}><Text style={{ color: c.primary, fontWeight: gender === g ? '800' : '400' }}>{g}</Text></Pressable>)}
         </View>
@@ -99,7 +99,7 @@ export default function AccountScreen() {
       </> : <>
         <Text style={{ color: c.mutedForeground }}>Sign in to keep reservations securely on your account across devices.</Text>
         {!verify && reset !== 'code' ? <>
-          <TextInput testID="auth-email" accessibilityLabel="Email address" placeholder="Email address" placeholderTextColor={c.mutedForeground} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
+          <TextInput inputDirection="ltr" testID="auth-email" accessibilityLabel="Email address" placeholder="Email address" placeholderTextColor={c.mutedForeground} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
           <TextInput testID="auth-password" accessibilityLabel="Password" placeholder="Password" placeholderTextColor={c.mutedForeground} secureTextEntry value={password} onChangeText={setPassword} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
         </> : <TextInput testID="auth-code" accessibilityLabel="Email verification code" placeholder="Email verification code" placeholderTextColor={c.mutedForeground} value={code} onChangeText={setCode} keyboardType="number-pad" style={[styles.input, { color: c.foreground, borderColor: c.border }]} />}
         <View nativeID="clerk-captcha" />

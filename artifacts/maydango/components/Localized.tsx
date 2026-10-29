@@ -3,6 +3,7 @@ import { Text as NativeText, TextInput as NativeInput, Pressable as NativePressa
 import { Ionicons as NativeIcon } from '@expo/vector-icons';
 import { useApp } from '@/contexts/AppContext';
 import { localize, number } from '@/lib/content';
+import { inputTextDirection, type TextDirection } from '@/lib/text-direction';
 
 // Presentation boundary for authored catalog/interface copy. Not for user input.
 // Keep raw values (emails, references, identifiers) out of translation.
@@ -23,11 +24,12 @@ export function Pressable(props: PressableProps) {
   const { language } = useApp();
   return <NativePressable {...props} accessibilityLabel={props.accessibilityLabel && localize(props.accessibilityLabel, language)} />;
 }
-export function TextInput(props: TextInputProps) {
+export function TextInput({ inputDirection, ...props }: TextInputProps & { inputDirection?: TextDirection }) {
   const { language } = useApp();
+  const direction = inputTextDirection(language, inputDirection);
   return <NativeInput {...props} placeholder={props.placeholder && localize(props.placeholder, language)}
     accessibilityLabel={props.accessibilityLabel && localize(props.accessibilityLabel, language)}
-    style={[{ textAlign: language === 'en' ? 'left' : 'right' }, props.style]} />;
+    style={[{ textAlign: direction === 'ltr' ? 'left' : 'right', writingDirection: direction }, props.style]} />;
 }
 export function Ionicons(props: React.ComponentProps<typeof NativeIcon>) {
   const { language } = useApp();

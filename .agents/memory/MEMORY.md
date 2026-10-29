@@ -4,3 +4,6 @@
 - [Localization boundaries](localization-boundaries.md) — Sorani Kurdish, Iraq-time schedules, and native-speaker review remain explicit release constraints.
 - [Live access rollout](live-access-rollout.md) — Payments deferred until after testing; preserve the terms of existing reservations and grants.
 - [Attendance trust](attendance-trust.md) — GPS supports arrival evidence; partner confirmation is mandatory, and closed-record overrides need separate approval.
+- [Expo tunnel subdomains](expo-tunnel-subdomains.md) — Fixed ngrok subdomains can remain occupied after a local workflow stops; app-specific suffixes avoid prior endpoints.
+- [Expo phone launch routing](expo-phone-launch.md) — A Replit-branded phone 404 can be separate from a healthy Expo tunnel; verify the Expo manifest and bundles before changing app code.
+- [Partner operations platform](partner-operations-platform.md) — MaydanGo partner tools belong in the web portal.

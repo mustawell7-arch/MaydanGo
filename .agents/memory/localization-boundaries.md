@@ -14,6 +14,12 @@ MaydanGO customer-facing copy should use a friendly Iraqi Arabic, Erbil Sorani, 
 
 **How to apply:** Use this voice for future MaydanGO customer copy while keeping claims and safety guidance semantically consistent across languages.
 
+Approved-copy PDFs can contain right-to-left text-layer artifacts, including duplicated letters, misplaced diacritics, and reversed Sorani phrase order. Automated repairs may leave or introduce these errors.
+
+**Why:** The revised MaydanGo PDF's extracted Arabic contained duplicated alifs and displaced marks, while an automated Sorani repair reversed a visible phrase.
+
+**How to apply:** Render representative Arabic and Sorani PDF pages and compare their visible wording and order before importing extracted strings. Counts and automated checks do not establish linguistic accuracy; native-speaker review remains required.
+
 Expo can emit a React Native DevTools warning about missing `libglib` while Metro and the browser preview still run successfully.
 
 **Why:** This occurred in the Linux workspace during a localization preview; it did not prevent the web bundle from rendering.

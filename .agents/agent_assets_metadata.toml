@@ -28,3 +28,31 @@ mtime_ms = 1792963317816
 storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/884ac913-ceeb-4738-ad77-0ca85d46e194/9148d3bf-9611-413f-a917-49cac2a5a2e8"
 storage_version_token = "1792963353516758"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "2zsF-pshAlSyXdBNV-knm"
+uri = "file://artifacts/maydango-web/WEBSITE_COPY_REVIEW.csv"
+type = "table"
+title = "MaydanGo website wording review"
+description = "Editable CSV with current English, Iraqi Arabic, and Sorani Kurdish website copy side by side. English-only strings are flagged for review."
+logical_id = "c0ef3fd1-7cc3-4362-aa61-58706a4c436b"
+content_hash = "sha256:f5cd96e4fb8ca9d8bca08ec3f2d652ac3e9b1fbadaa403d123b9cc275703a1ae"
+size = 38061
+mtime_ms = 1793193958831
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/c0ef3fd1-7cc3-4362-aa61-58706a4c436b/c9250d4e-1b43-4775-b474-d9660606192f"
+storage_version_token = "1793193959700206"
+content_type = "text/csv"
+
+[[outputs]]
+id = "VIqwKnwVJ5zCVVx4Dns2t"
+uri = "file://artifacts/maydango-web/WEBSITE_COPY_REVIEW.pdf"
+type = "pdf"
+title = "MaydanGo website wording review PDF"
+description = "One A4 PDF with the current website copy arranged in order: English, Arabic, then Sorani Kurdish. Missing translations are clearly flagged for review."
+logical_id = "a7c21912-5228-455c-8861-1e471d269ee2"
+content_hash = "sha256:7f23b3c06d9525a5fee996fa22c36fd86aa12627c324395280f68dbc581753f1"
+size = 934579
+mtime_ms = 1793194116486
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/a7c21912-5228-455c-8861-1e471d269ee2/cec4b207-bee2-439d-ac92-626d63d07d99"
+storage_version_token = "1793194144457290"
+content_type = "application/pdf"

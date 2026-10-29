@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { ClerkProvider, SignIn, SignUp, useAuth, useClerk } from '@clerk/react';
+import { publishableKeyFromHost } from '@clerk/react/internal';
+import { shadcn } from '@clerk/themes';
 import { ArrowDown, ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronDown, CircleHelp, Clock3, Dumbbell, Globe2, HeartHandshake, House, MapPin, Menu, MoveUpRight, Play, RotateCw, Sparkles, Users, X } from 'lucide-react';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
@@ -13,14 +16,90 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import NotFound from '@/pages/not-found';
-import { Route, Switch, useLocation, Router as WouterRouter, Link } from 'wouter';
+import approvedCopy from '@/approved-copy.json';
+import { Route, Switch, useLocation, Router as WouterRouter, Link, Redirect } from 'wouter';
+import PartnerPortal from '@/pages/partner-portal';
 import './index.css';
 
 const queryClient = new QueryClient();
+const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+function stripBase(path: string) {
+  return basePath && path.startsWith(basePath) ? path.slice(basePath.length) || '/' : path;
+}
+
+if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
+
+const clerkAppearance = {
+  theme: shadcn,
+  cssLayerName: 'clerk',
+  options: {
+    logoPlacement: 'inside' as const,
+    logoLinkUrl: basePath || '/',
+    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+    socialButtonsPlacement: 'top' as const,
+    socialButtonsVariant: 'blockButton' as const,
+  },
+  variables: {
+    colorPrimary: '#174d43',
+    colorForeground: '#173d35',
+    colorMutedForeground: '#60756b',
+    colorDanger: '#a33d2e',
+    colorBackground: '#fffdf7',
+    colorInput: '#fffdf7',
+    colorInputForeground: '#173d35',
+    colorNeutral: '#d8d2c4',
+    fontFamily: "'DM Sans', 'Noto Sans Arabic', sans-serif",
+    borderRadius: '1rem',
+  },
+  elements: {
+    rootBox: 'w-full flex justify-center',
+    cardBox: 'bg-[#fffdf7] rounded-3xl w-[440px] max-w-full overflow-hidden shadow-xl',
+    card: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    headerTitle: 'text-[#173d35] font-bold',
+    headerSubtitle: 'text-[#60756b]',
+    socialButtonsBlockButtonText: 'text-[#173d35] font-semibold',
+    formFieldLabel: 'text-[#36564b] font-semibold',
+    footerActionLink: 'text-[#174d43] font-bold',
+    footerActionText: 'text-[#60756b]',
+    dividerText: 'text-[#60756b]',
+    identityPreviewEditButton: 'text-[#174d43]',
+    formFieldSuccessText: 'text-[#2d6d4a]',
+    formFieldErrorText: 'text-[#9a4435]',
+    formFieldHintText: 'text-[#60756b]',
+    formFieldAction: 'text-[#174d43] font-semibold',
+    formResendCodeLink: 'text-[#174d43] font-semibold',
+    alertText: 'text-[#8f352a]',
+    identityPreviewText: 'text-[#173d35]',
+    logoBox: 'h-12',
+    logoImage: 'max-h-12 object-contain',
+    socialButtonsBlockButton: 'border-[#d8d2c4] bg-[#fffdf7] hover:bg-[#f3f0e5]',
+    alternativeMethodsBlockButton: 'text-[#174d43]',
+    formButtonPrimary: 'bg-[#174d43] text-[#fff9e9] hover:bg-[#226556]',
+    formFieldInput: 'border-[#d8d2c4] bg-[#fffdf7] text-[#173d35]',
+    formFieldInputShowPasswordButton: 'text-[#536b61]',
+    formFieldInputShowPasswordIcon: 'text-[#536b61]',
+    footerAction: 'text-[#60756b]',
+    dividerLine: 'bg-[#d8d2c4]',
+    alert: 'border-[#e4c3b7] bg-[#fff5f1]',
+    otpCodeFieldInput: 'border-[#d8d2c4] bg-[#fffdf7] text-[#173d35]',
+    otpCodeField: 'text-[#173d35]',
+    badge: 'bg-[#e9e5d7] text-[#36564b]',
+    formFieldRow: 'text-[#173d35]',
+    formFieldLabelRow: 'text-[#36564b]',
+    formFieldInputGroup: 'text-[#173d35]',
+    formFieldInputGroupIcon: 'text-[#60756b]',
+    formFieldInputGroupInput: 'text-[#173d35]',
+    main: 'text-[#173d35]',
+  },
+};
 type Language = 'en' | 'ar' | 'ku';
 type Copy = Record<string, string>;
 
-const translations: Record<Language, Copy> = {
+const legacyTranslations: Record<Language, Copy> = {
   en: {
     home: 'Home', how: 'How it works', plans: 'Membership', facilities: 'Facilities', online: 'Train online', legal: 'Legal information',
     partner: 'Partner with us', corporate: 'For organisations', help: 'Help', contact: 'Contact',
@@ -239,18 +318,29 @@ const translations: Record<Language, Copy> = {
   }
 };
 
-const routeMeta: Record<string, { title: string; description: string }> = {
-  '/': { title: 'MaydanGo — Make room for feeling good', description: 'Local fitness and wellbeing, in your city and from home. Discover MaydanGo across Iraq.' },
-  '/how-it-works': { title: 'How MaydanGo works', description: 'A simple guide to finding movement and wellbeing with MaydanGo.' },
-  '/membership-plans': { title: 'Membership options | MaydanGo', description: 'Explore active public membership summaries and ask about current availability.' },
-  '/facilities': { title: 'Facilities & local sessions | MaydanGo', description: 'See future public sessions from approved, active MaydanGo partners.' },
-  '/online-training': { title: 'Online training | MaydanGo', description: 'Find live online movement opportunities and guidance for training at home.' },
-  '/partner': { title: 'Partner with MaydanGo', description: 'Bring your local facility, coaching or movement programme to the MaydanGo community.' },
-  '/corporate': { title: 'MaydanGo for organisations', description: 'Explore wellbeing membership conversations for teams and organisations.' },
-  '/help': { title: 'Help & common questions | MaydanGo', description: 'Answers about availability, online training and MaydanGo membership.' },
-  '/contact': { title: 'Contact MaydanGo', description: 'Find the verified contact route for MaydanGo.' },
-  '/legal': { title: 'Legal information | MaydanGo', description: 'Informational draft terms and privacy notes for the MaydanGo website.' },
+const translations: Record<Language, Copy> = {
+  en: { ...legacyTranslations.en, ...(approvedCopy.en as Copy) },
+  ar: { ...legacyTranslations.ar, ...(approvedCopy.ar as Copy) },
+  ku: { ...legacyTranslations.ku, ...(approvedCopy.ku as Copy) },
 };
+
+function savedLanguage(): Language {
+  const value = localStorage.getItem('maydango-language');
+  return value === 'ar' || value === 'ku' ? value : 'en';
+}
+
+function countUnit(count: number, kind: 'days' | 'places', language: Language, t: Copy) {
+  if (language === 'ar') {
+    const plural = new Intl.PluralRules('ar').select(count);
+    if (kind === 'days') return plural === 'few' ? 'أيام' : t.durationDays;
+    return plural === 'few' || plural === 'zero' ? t.place : t.placeOne;
+  }
+  if (kind === 'places') {
+    if (language === 'ku') return t.placeOne;
+    return count === 1 ? t.placeOne : t.place;
+  }
+  return t.durationDays;
+}
 
 const routes = [
   ['/', 'home'], ['/how-it-works', 'how'], ['/membership-plans', 'plans'], ['/facilities', 'facilities'],
@@ -285,14 +375,16 @@ function Layout({ children, language, setLanguage }: { children: ReactNode; lang
   const t = translations[language];
   const rtl = language !== 'en';
   useEffect(() => {
-    const meta = routeMeta[location] || routeMeta['/'];
-    document.title = meta.title;
+    const hasRouteCopy = Object.prototype.hasOwnProperty.call(t, `page_title:${location}`);
+    const title = hasRouteCopy ? t[`page_title:${location}`] : t.not_found_title;
+    const pageDescription = hasRouteCopy ? t[`page_description:${location}`] : t.not_found_description;
+    document.title = title;
     const description = document.querySelector('meta[name="description"]');
-    if (description) description.setAttribute('content', meta.description);
-    document.querySelector('meta[property="og:title"]')?.setAttribute('content', meta.title);
-    document.querySelector('meta[property="og:description"]')?.setAttribute('content', meta.description);
-    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', meta.title);
-    document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', meta.description);
+    if (description) description.setAttribute('content', pageDescription);
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', title);
+    document.querySelector('meta[property="og:description"]')?.setAttribute('content', pageDescription);
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', title);
+    document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', pageDescription);
     document.documentElement.lang = language === 'ku' ? 'ckb' : language;
     document.documentElement.dir = rtl ? 'rtl' : 'ltr';
     document.documentElement.classList.toggle('rtl-copy', rtl);
@@ -308,7 +400,7 @@ function Layout({ children, language, setLanguage }: { children: ReactNode; lang
         <span>{t.movementNote}</span>
       </div>
       <header className="relative z-20 mx-auto flex max-w-[1440px] items-center justify-between px-5 py-5 md:px-10 lg:px-14">
-        <Link href="/" className="group flex items-center gap-2.5 text-foreground" aria-label="MaydanGo home" data-testid="link-brand-home">
+        <Link href="/" className="group flex items-center gap-2.5 text-foreground" aria-label={t.brand_home_accessible_label} data-testid="link-brand-home">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-background transition-transform group-hover:rotate-[-8deg]">
             <span className="block h-[17px] w-[17px] rounded-full border-[2px] border-current border-t-transparent rotate-[-35deg]" />
           </span>
@@ -318,7 +410,7 @@ function Layout({ children, language, setLanguage }: { children: ReactNode; lang
           {routes.slice(1, 6).map(([href, key]) => <NavLink key={href} href={href} active={location === href}>{key === 'legal' ? key : t[key]}</NavLink>)}
           <details className="group relative">
             <summary className="nav-link flex cursor-pointer list-none items-center gap-1 text-[13px] font-semibold text-foreground/75 hover:text-foreground" data-testid="button-more-navigation">
-              {language === 'en' ? 'More' : language === 'ar' ? 'المزيد' : 'زیاتر'} <ChevronDown size={14} />
+              {t.more_navigation} <ChevronDown size={14} />
             </summary>
             <div className="invisible absolute end-0 top-full mt-3 min-w-44 rounded-xl border border-border bg-card p-2 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 group-open:visible group-open:opacity-100">
               {routes.slice(6).map(([href, key]) => <Link key={href} href={href} className="block rounded-lg px-3 py-2 text-sm text-foreground/80 hover:bg-muted" data-testid={`link-nav-${key}`}>{t[key] || key}</Link>)}
@@ -364,7 +456,7 @@ function Footer({ t }: { t: Copy }) {
       <div>
         <Link href="/" className="font-display text-[26px] font-extrabold tracking-[-.07em]" data-testid="link-footer-brand">maydan<span className="text-[#ef9d72]">go</span></Link>
         <p className="mt-4 max-w-xs text-sm leading-6 text-[#f4ead6]/70">{t.footerNote}</p>
-        <p className="mt-7 text-[10px] font-semibold tracking-[.16em] text-[#f4ead6]/45">IRAQ, IN MOTION</p>
+        <p className="mt-7 text-[10px] font-semibold tracking-[.16em] text-[#f4ead6]/45">{t.footer_tagline}</p>
       </div>
       <div>
         <h2 className="text-[11px] font-bold uppercase tracking-[.16em] text-[#ef9d72]">{t.learnMore}</h2>
@@ -488,7 +580,7 @@ function OfferingCards({ offerings, language, loading, error, retry, t, compact 
   </div>;
   return <div className={`mt-8 grid gap-4 ${compact ? 'md:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-3'}`}>
     {offerings.map(item => <article key={item.id} className="offering-card rounded-2xl border border-border bg-card p-5" data-testid={`card-offering-${item.id}`}>
-      <div className="flex items-start justify-between gap-4"><span className="rounded-full bg-[#e7efe8] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-primary">{item.category}</span><span className="text-xs font-semibold text-foreground/45">{item.remaining} {item.remaining === 1 ? t.placeOne : t.place}</span></div>
+      <div className="flex items-start justify-between gap-4"><span className="rounded-full bg-[#e7efe8] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-primary">{item.category}</span><span className="text-xs font-semibold text-foreground/45">{item.remaining} {countUnit(item.remaining, 'places', language, t)}</span></div>
       <h3 className="mt-5 font-display text-2xl font-bold leading-tight tracking-[-.04em]">{item.title}</h3>
        <p className="mt-2 text-sm text-foreground/55">{item.kind === 'session' ? t.sessionType : item.kind === 'event' ? t.eventType : t.coachType} · {item.accessType === 'physical' ? t.physicalType : item.accessType === 'premium' ? t.premiumType : t.liveType}</p>
       <div className="mt-5 grid gap-2 border-t border-border pt-4 text-xs text-foreground/65">
@@ -522,7 +614,7 @@ function HowPage({ t }: { t: Copy }) {
   </>;
 }
 
-function PlansPage({ t }: { t: Copy }) {
+function PlansPage({ t, language }: { t: Copy; language: Language }) {
   const plansQuery = useGetPublicPlans({ query: { queryKey: getGetPublicPlansQueryKey() } });
   const plans = plansQuery.data || [];
   return <>
@@ -531,7 +623,7 @@ function PlansPage({ t }: { t: Copy }) {
       <div className="mb-8 flex items-start gap-3 rounded-2xl border border-[#dcaf82]/50 bg-[#f1e6d6] p-5 text-sm leading-6 text-foreground/75"><CircleHelp className="mt-0.5 shrink-0 text-primary" size={19} /><p>{t.notCheckout}</p></div>
       {plansQuery.isLoading ? <div className="grid gap-4 md:grid-cols-3" aria-label={t.loading}>{[1,2,3].map(i => <div key={i} className="h-64 animate-pulse rounded-2xl bg-muted" />)}</div>
         : plansQuery.isError ? <ErrorState text={t.error} retry={() => plansQuery.refetch()} t={t} />
-           : plans.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{plans.map((plan: PublicPlan) => <article key={plan.id} className="rounded-2xl border border-border bg-card p-6" data-testid={`card-plan-${plan.id}`}><span className="rounded-full bg-[#e7efe8] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-primary">{plan.kind === 'paid' ? t.paidPlan : plan.kind === 'trial' ? t.trialPlan : t.corporatePlan} · {plan.tier}</span><h2 className="mt-7 font-display text-3xl font-bold tracking-[-.05em]">{plan.name}</h2><p className="mt-2 text-sm text-foreground/60">{plan.durationDays} {t.durationDays}</p><Link href="/contact" className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid={`link-plan-enquiry-${plan.id}`}>{t.ask}<ArrowUpRight size={15} /></Link></article>)}</div>
+           : plans.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{plans.map((plan: PublicPlan) => <article key={plan.id} className="rounded-2xl border border-border bg-card p-6" data-testid={`card-plan-${plan.id}`}><span className="rounded-full bg-[#e7efe8] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-primary">{plan.kind === 'paid' ? t.paidPlan : plan.kind === 'trial' ? t.trialPlan : t.corporatePlan} · {plan.tier}</span><h2 className="mt-7 font-display text-3xl font-bold tracking-[-.05em]">{plan.name}</h2><p className="mt-2 text-sm text-foreground/60">{plan.durationDays} {countUnit(plan.durationDays, 'days', language, t)}</p><Link href="/contact" className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid={`link-plan-enquiry-${plan.id}`}>{t.ask}<ArrowUpRight size={15} /></Link></article>)}</div>
           : <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted text-primary"><Dumbbell size={20} /></div><h2 className="mt-4 font-display text-2xl font-bold">{t.noInventory}</h2><p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">{t.noInventoryText}</p></div>}
       <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-7"><p className="max-w-xl text-sm text-foreground/60">{t.notCheckout}</p><ActionLink href="/contact" testId="link-plans-contact">{t.getUpdates}</ActionLink></div>
     </PageWrap>
@@ -591,7 +683,7 @@ function EnquiryPage({ type, t }: { type: 'partner' | 'corporate'; t: Copy }) {
     <PageWrap className="py-14 md:py-20">
       <div className="grid gap-12 md:grid-cols-[1fr_.75fr]">
         <div className="grid gap-0">{content.bullets.map((key, index) => <div className="flex gap-4 border-b border-border py-6 first:border-t" key={key}><span className="font-mono text-xs text-primary">0{index + 1}</span><p className="max-w-lg text-lg leading-7">{t[key]}</p><Check className="ms-auto mt-1 shrink-0 text-primary" size={18} /></div>)}</div>
-        <aside className="rounded-[2rem] bg-[#eadfcd] p-7 md:p-9"><SectionKicker>{t.contact}</SectionKicker><h2 className="font-display text-3xl font-bold tracking-[-.05em]">{t[content.cta]}</h2><p className="mt-4 text-sm leading-6 text-foreground/65">{url ? t.verifiedContinue : t.noDestination}</p>{url ? <a href={url} target="_blank" rel="noreferrer" className="mt-7 inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground" data-testid={`link-${type}-enquiry`}>{t[content.cta]}<MoveUpRight size={16} /></a> : <p className="mt-7 rounded-xl border border-border bg-card/70 p-4 text-xs leading-5 text-foreground/60" role="status">{t.contactUnavailable}</p>}</aside>
+        <aside className="rounded-[2rem] bg-[#eadfcd] p-7 md:p-9"><SectionKicker>{t.contact}</SectionKicker><h2 className="font-display text-3xl font-bold tracking-[-.05em]">{t[content.cta]}</h2><p className="mt-4 text-sm leading-6 text-foreground/65">{url ? t.verifiedContinue : t.noDestination}</p>{url ? <a href={url} target="_blank" rel="noreferrer" className="mt-7 inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground" data-testid={`link-${type}-enquiry`}>{t[content.cta]}<MoveUpRight size={16} /></a> : <p className="mt-7 rounded-xl border border-border bg-card/70 p-4 text-xs leading-5 text-foreground/60" role="status">{t.contactUnavailable}</p>}{type === 'partner' && <div className="mt-8 border-t border-[#cdbba5] pt-5"><p className="text-xs leading-5 text-foreground/65">{t.approved_partner_prompt}</p><Link href="/sign-in" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-partner-portal-sign-in">{t.partner_operations_sign_in}<ArrowRight size={15} /></Link></div>}</aside>
       </div>
     </PageWrap>
   </>;
@@ -697,14 +789,14 @@ function LegalPage({ t }: { t: Copy }) {
 
 function ContentRouter() {
   const [location] = useLocation();
-  const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('maydango-language') as Language) || 'en');
+  const [language, setLanguage] = useState<Language>(savedLanguage);
   const t = translations[language];
   return <Layout key={location} language={language} setLanguage={setLanguage}>
     <ErrorBoundary resetKey={location}>
       <Switch>
         <Route path="/" component={() => <HomePage t={t} language={language} />} />
         <Route path="/how-it-works" component={() => <HowPage t={t} />} />
-        <Route path="/membership-plans" component={() => <PlansPage t={t} />} />
+        <Route path="/membership-plans" component={() => <PlansPage t={t} language={language} />} />
         <Route path="/facilities" component={() => <FacilitiesPage t={t} language={language} />} />
         <Route path="/online-training" component={() => <OnlinePage t={t} language={language} />} />
         <Route path="/partner" component={() => <EnquiryPage type="partner" t={t} />} />
@@ -712,23 +804,79 @@ function ContentRouter() {
         <Route path="/help" component={() => <HelpPage t={t} />} />
         <Route path="/contact" component={() => <ContactPage t={t} />} />
         <Route path="/legal" component={() => <LegalPage t={t} />} />
-        <Route component={NotFound} />
+        <Route component={() => <NotFound title={t.not_found_title} description={t.not_found_description} />} />
       </Switch>
     </ErrorBoundary>
   </Layout>;
 }
 
 function Router() {
-  return <ContentRouter />;
+  return <Switch>
+    <Route path="/partner-portal" component={PartnerPortal} />
+    <Route path="/sign-in/*?" component={SignInPage} />
+    <Route path="/sign-up/*?" component={SignUpPage} />
+    <Route path="/" component={HomeRedirect} />
+    <Route component={ContentRouter} />
+  </Switch>;
+}
+
+function HomeRedirect() {
+  const { isLoaded, isSignedIn } = useAuth();
+  if (!isLoaded) return <main className="min-h-[100dvh] bg-background" aria-label={translations[savedLanguage()].loading} />;
+  return isSignedIn ? <Redirect to="/partner-portal" /> : <ContentRouter />;
+}
+
+function SignInPage() {
+  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f3f0e5] px-4 py-10"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></div>;
+}
+
+function SignUpPage() {
+  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f3f0e5] px-4 py-10"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></div>;
+}
+
+function ClerkQueryClientCacheInvalidator() {
+  const { addListener } = useClerk();
+  const client = useQueryClient();
+  const previousUserId = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const unsubscribe = addListener(({ user }) => {
+      const userId = user?.id ?? null;
+      if (previousUserId.current !== undefined && previousUserId.current !== userId) client.clear();
+      previousUserId.current = userId;
+    });
+    return unsubscribe;
+  }, [addListener, client]);
+  return null;
+}
+
+function ClerkProviderWithRoutes() {
+  const [, setLocation] = useLocation();
+  const t = translations[savedLanguage()];
+  return <ClerkProvider
+    publishableKey={clerkPubKey}
+    proxyUrl={clerkProxyUrl}
+    appearance={clerkAppearance}
+    signInUrl={`${basePath}/sign-in`}
+    signUpUrl={`${basePath}/sign-up`}
+    localization={{
+      signIn: { start: { title: t.sign_in_title, subtitle: t.sign_in_subtitle } },
+      signUp: { start: { title: t.sign_up_title, subtitle: t.sign_up_subtitle } },
+    }}
+    routerPush={to => setLocation(stripBase(to))}
+    routerReplace={to => setLocation(stripBase(to), { replace: true })}
+  >
+    <QueryClientProvider client={queryClient}>
+      <ClerkQueryClientCacheInvalidator />
+      <Router />
+    </QueryClientProvider>
+  </ClerkProvider>;
 }
 
 function App() {
-  return <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><Router /></WouterRouter>
+  return <TooltipProvider>
+      <WouterRouter base={basePath}><ClerkProviderWithRoutes /></WouterRouter>
       <Toaster />
-    </TooltipProvider>
-  </QueryClientProvider>;
+    </TooltipProvider>;
 }
 
 export default App;

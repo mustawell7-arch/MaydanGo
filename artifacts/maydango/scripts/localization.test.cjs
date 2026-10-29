@@ -11,6 +11,7 @@ require.extensions['.jpg'] = (module) => { module.exports = 1; };
 const { content, localize, locale, number, currency, dateTime, errorCopy } = require('../lib/content.ts');
 const { facilities, sessions, communityEvents, coaches, courses } = require('../data/demo.ts');
 const { translate, isRtl } = require('../lib/i18n.ts');
+const { inputTextDirection } = require('../lib/text-direction.ts');
 let checked = 0;
 for (const language of ['ar', 'ku']) {
   for (const [key, translations] of Object.entries(content)) {
@@ -45,6 +46,10 @@ assert.equal(localize('MaydanGo', 'ar'), 'MaydanGo');
 assert.equal(localize('MaydanGo cancelled Enrol organiser Centre racket hire', 'en'), 'MaydanGO canceled Enroll organizer Center racket rental');
 assert.equal(localize('Anything unchanged', 'en'), 'Anything unchanged');
 assert.equal(isRtl('en'), false);
+assert.equal(inputTextDirection('en'), 'ltr');
+assert.equal(inputTextDirection('ar'), 'rtl');
+assert.equal(inputTextDirection('ku'), 'rtl');
+assert.equal(inputTextDirection('ar', 'ltr'), 'ltr');
 assert.equal(errorCopy({ data: { message: 'This class is full.' } }), 'This class is full.');
 assert.equal(errorCopy({ errors: [{ code: 'form_code_incorrect' }] }), 'The verification code is incorrect or expired. Request a new code.');
 assert.equal(errorCopy(new Error('secret provider details')), 'Account request failed. Please check your details and try again.');

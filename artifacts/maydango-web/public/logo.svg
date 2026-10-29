@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 64" fill="none">
+  <rect width="54" height="54" x="5" y="5" rx="18" fill="#174D43"/>
+  <path d="M18 37.5c7.2-13 12.2-17 16.8-17 5 0 8.1 5.4 13.2 17" stroke="#F5EACB" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="31.7" cy="24" r="3.2" fill="#D9865B"/>
+  <text x="73" y="42" fill="#174D43" font-family="DM Sans, sans-serif" font-size="29" font-weight="700" letter-spacing="-1.4">MaydanGo</text>
+</svg>

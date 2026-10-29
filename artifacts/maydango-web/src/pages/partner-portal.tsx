@@ -1,0 +1,224 @@
+import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useChangeLiveOffering, useGetAttendance, useGetOperations, useRecordManualCheckin, useReviewAttendance } from '@workspace/api-client-react';
+import type { OfferingInput, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody } from '@workspace/api-client-react';
+import { useAuth, useClerk } from '@clerk/react';
+import { Link, Redirect } from 'wouter';
+import { Activity, ArrowLeft, ArrowUpRight, CalendarDays, Check, CircleAlert, Clock3, Dumbbell, LogOut, Plus, RefreshCw, ShieldCheck, Users, X } from 'lucide-react';
+
+type Tab = 'overview' | 'offerings' | 'attendance' | 'partners';
+type ReviewAction = ReviewAttendanceBody['action'];
+const formatDate = (value: string) => new Intl.DateTimeFormat('en-IQ', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Baghdad' }).format(new Date(value));
+const localIso = (value: string) => new Date(`${value}:00+03:00`).toISOString();
+
+function fieldClass() {
+  return 'mt-1 w-full rounded-xl border border-[#d8d2c4] bg-[#fffdf7] px-3.5 py-2.5 text-sm text-[#173d35] placeholder:text-[#8b9288] focus:border-[#28695a] focus:outline-none focus:ring-2 focus:ring-[#28695a]/15';
+}
+function LabelField({ label, children }: { label: string; children: ReactNode }) {
+  return <label className="block text-xs font-semibold text-[#51665e]">{label}{children}</label>;
+}
+function Button({ children, onClick, kind = 'primary', disabled = false, type = 'button' }: { children: ReactNode; onClick?: () => void; kind?: 'primary' | 'quiet' | 'danger'; disabled?: boolean; type?: 'button' | 'submit' }) {
+  const style = kind === 'primary' ? 'bg-[#174d43] text-[#fff9e9] hover:bg-[#226556]' : kind === 'danger' ? 'border border-[#d9a89a] bg-[#fff5f1] text-[#9a4435] hover:bg-[#ffe8e0]' : 'border border-[#d8d2c4] bg-transparent text-[#36564b] hover:bg-[#f1eddf]';
+  return <button type={type} onClick={onClick} disabled={disabled} className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${style}`}>{children}</button>;
+}
+
+function OfferingForm({ partnerId, partners, isAdmin, onClose, onSaved }: { partnerId: string; partners: { id: string; name: string }[]; isAdmin: boolean; onClose: () => void; onSaved: () => void }) {
+  const add = useAddLiveOffering();
+  const [message, setMessage] = useState('');
+  const [selectedPartnerId, setSelectedPartnerId] = useState(partnerId);
+  const [form, setForm] = useState({
+    title: '', kind: 'session' as OfferingInput['kind'], city: '', facility: '', category: '', accessType: 'physical' as OfferingInput['accessType'],
+    startsAt: '', endsAt: '', cancellationDeadline: '', capacity: '', gender: 'all' as NonNullable<OfferingInput['gender']>, minAge: '', maxAge: '', joinUrl: '', tiers: '', active: false,
+    localizedTitleEn: '', localizedTitleAr: '', localizedTitleKu: '',
+    localizedDescriptionEn: '', localizedDescriptionAr: '', localizedDescriptionKu: '',
+  });
+  const update = (key: keyof typeof form, value: string | boolean) => setForm(current => ({ ...current, [key]: value }));
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (!selectedPartnerId) { setMessage('Select a partner before creating this offering.'); return; }
+    const isLive = form.accessType === 'live';
+    if (isLive && [form.localizedTitleEn, form.localizedTitleAr, form.localizedTitleKu, form.localizedDescriptionEn, form.localizedDescriptionAr, form.localizedDescriptionKu].some(value => !value.trim())) {
+      setMessage('Live online offerings need a title and description in English, Iraqi Arabic, and Sorani.');
+      return;
+    }
+    if (isLive && !/^https:\/\//i.test(form.joinUrl.trim())) {
+      setMessage('Live online offerings require a secure HTTPS join URL.');
+      return;
+    }
+    const data: OfferingInput = {
+      partnerId: selectedPartnerId, title: form.title.trim(), kind: form.kind, city: form.city.trim(), facility: form.facility.trim(), category: form.category.trim(),
+      accessType: form.accessType, tiers: form.tiers.split(',').map(item => item.trim()).filter(Boolean),
+      startsAt: localIso(form.startsAt), endsAt: localIso(form.endsAt), cancellationDeadline: localIso(form.cancellationDeadline),
+      capacity: Number(form.capacity), gender: form.gender, ...(form.minAge ? { minAge: Number(form.minAge) } : {}), maxAge: form.maxAge ? Number(form.maxAge) : null,
+      joinUrl: form.joinUrl.trim() || null, active: form.active,
+      ...(isLive ? {
+        localizedTitle: { en: form.localizedTitleEn.trim(), ar: form.localizedTitleAr.trim(), ku: form.localizedTitleKu.trim() },
+        localizedDescription: { en: form.localizedDescriptionEn.trim(), ar: form.localizedDescriptionAr.trim(), ku: form.localizedDescriptionKu.trim() },
+      } : {}),
+    };
+    add.mutate({ data }, { onSuccess: () => { onSaved(); onClose(); }, onError: () => setMessage('The offering could not be saved. Check the details and try again.') });
+  };
+  const dateInput = (key: 'startsAt' | 'endsAt' | 'cancellationDeadline', label: string) => <LabelField label={label}><input required type="datetime-local" className={fieldClass()} value={form[key]} onChange={e => update(key, e.target.value)} /></LabelField>;
+  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#102e27]/45 p-0 backdrop-blur-sm sm:items-center sm:p-5" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+    <section role="dialog" aria-modal="true" aria-labelledby="offering-form-title" className="max-h-[94dvh] w-full overflow-y-auto rounded-t-[1.8rem] bg-[#f8f5eb] p-5 shadow-2xl sm:max-w-3xl sm:rounded-[1.8rem] sm:p-8">
+      <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#a76445]">Partner operations</p><h2 id="offering-form-title" className="mt-2 font-display text-2xl font-bold text-[#173d35]">Create an offering</h2></div><button onClick={onClose} aria-label="Close form" className="rounded-full p-2 hover:bg-[#ebe6d8]"><X size={19} /></button></div>
+      <form onSubmit={submit} className="mt-6 grid gap-4 sm:grid-cols-2">
+        {isAdmin && <LabelField label="Partner"><select required className={fieldClass()} value={selectedPartnerId} onChange={e => setSelectedPartnerId(e.target.value)}><option value="">Choose a partner</option>{partners.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></LabelField>}
+        <LabelField label="Offering title"><input required maxLength={160} className={fieldClass()} value={form.title} onChange={e => update('title', e.target.value)} /></LabelField>
+        <LabelField label="Format"><select className={fieldClass()} value={form.kind} onChange={e => update('kind', e.target.value)}><option value="session">Session</option><option value="event">Event</option><option value="coach">Coaching</option></select></LabelField>
+        <LabelField label="City"><input required className={fieldClass()} value={form.city} onChange={e => update('city', e.target.value)} /></LabelField>
+        <LabelField label="Facility"><input required className={fieldClass()} value={form.facility} onChange={e => update('facility', e.target.value)} /></LabelField>
+        <LabelField label="Category"><input required className={fieldClass()} value={form.category} onChange={e => update('category', e.target.value)} /></LabelField>
+        <LabelField label="Access"><select className={fieldClass()} value={form.accessType} onChange={e => update('accessType', e.target.value)}><option value="physical">In person</option><option value="premium">Premium</option><option value="live">Live online</option></select></LabelField>
+        {form.accessType === 'live' && <div className="rounded-2xl border border-[#dbcbb1] bg-[#f2ebda] p-4 sm:col-span-2">
+          <p className="text-sm font-bold text-[#36564b]">Online class details</p>
+          <p className="mt-1 text-xs leading-5 text-[#687a71]">Provide translations for all three supported languages and a secure HTTPS access link.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <LabelField label="Title · English"><input required maxLength={240} className={fieldClass()} value={form.localizedTitleEn} onChange={e => update('localizedTitleEn', e.target.value)} /></LabelField>
+            <LabelField label="Title · Iraqi Arabic"><input required maxLength={240} dir="rtl" className={fieldClass()} value={form.localizedTitleAr} onChange={e => update('localizedTitleAr', e.target.value)} /></LabelField>
+            <LabelField label="Title · Sorani Kurdish"><input required maxLength={240} dir="rtl" className={fieldClass()} value={form.localizedTitleKu} onChange={e => update('localizedTitleKu', e.target.value)} /></LabelField>
+            <LabelField label="Description · English"><textarea required maxLength={240} rows={3} className={fieldClass()} value={form.localizedDescriptionEn} onChange={e => update('localizedDescriptionEn', e.target.value)} /></LabelField>
+            <LabelField label="Description · Iraqi Arabic"><textarea required maxLength={240} rows={3} dir="rtl" className={fieldClass()} value={form.localizedDescriptionAr} onChange={e => update('localizedDescriptionAr', e.target.value)} /></LabelField>
+            <LabelField label="Description · Sorani Kurdish"><textarea required maxLength={240} rows={3} dir="rtl" className={fieldClass()} value={form.localizedDescriptionKu} onChange={e => update('localizedDescriptionKu', e.target.value)} /></LabelField>
+          </div>
+        </div>}
+        {dateInput('startsAt', 'Starts at')}{dateInput('endsAt', 'Ends at')}{dateInput('cancellationDeadline', 'Cancellation deadline')}
+        <LabelField label="Capacity"><input required min="1" type="number" className={fieldClass()} value={form.capacity} onChange={e => update('capacity', e.target.value)} /></LabelField>
+        <LabelField label="Gender access"><select className={fieldClass()} value={form.gender} onChange={e => update('gender', e.target.value)}><option value="all">All</option><option value="female">Female</option><option value="male">Male</option></select></LabelField>
+        <LabelField label="Minimum age"><input type="number" min="0" className={fieldClass()} value={form.minAge} onChange={e => update('minAge', e.target.value)} /></LabelField>
+        <LabelField label="Maximum age (optional)"><input type="number" min="0" className={fieldClass()} value={form.maxAge} onChange={e => update('maxAge', e.target.value)} /></LabelField>
+        <LabelField label="Membership tiers (comma separated)"><input required placeholder="Use tiers configured for your offering" className={fieldClass()} value={form.tiers} onChange={e => update('tiers', e.target.value)} /></LabelField>
+        <LabelField label="Join URL (optional)"><input type="url" className={fieldClass()} value={form.joinUrl} onChange={e => update('joinUrl', e.target.value)} /></LabelField>
+        <label className="flex items-center gap-3 rounded-xl bg-[#eeeadc] px-4 py-3 text-sm font-medium text-[#36564b] sm:col-span-2"><input type="checkbox" checked={form.active} onChange={e => update('active', e.target.checked)} className="accent-[#174d43]" />Publish as active</label>
+        {message && <p role="alert" className="text-sm text-[#a33d2e] sm:col-span-2">{message}</p>}
+        <div className="flex justify-end gap-3 pt-2 sm:col-span-2"><Button kind="quiet" onClick={onClose}>Cancel</Button><Button type="submit" disabled={add.isPending}><Plus size={16} />{add.isPending ? 'Saving…' : 'Create offering'}</Button></div>
+      </form>
+    </section>
+  </div>;
+}
+
+function ManualCheckinForm({ reservationId, onClose, onSuccess }: { reservationId: string; onClose: () => void; onSuccess: () => void }) {
+  const recordCheckin = useRecordManualCheckin();
+  const [code, setCode] = useState('');
+  const [reason, setReason] = useState('');
+  const [message, setMessage] = useState('');
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    const data: RecordManualCheckinBody = { code, reason: reason.trim() };
+    recordCheckin.mutate({ id: reservationId, data }, {
+      onSuccess: () => {
+        setCode('');
+        setReason('');
+        onSuccess();
+      },
+      onError: () => {
+        setCode('');
+        setMessage('The server did not accept this code. It may be invalid, expired, or the attempt limit may have been reached. Ask the member to request a fresh code from their own reservation; staff cannot issue codes.');
+      },
+    });
+  };
+  return <form onSubmit={submit} className="mt-4 rounded-2xl border border-[#dbcbb1] bg-[#f2ebda] p-4">
+    <p className="text-sm font-bold text-[#36564b]">Verify member check-in code</p>
+    <p className="mt-1 text-xs leading-5 text-[#687a71]">The member must request this short-lived code from their own reservation. This verifies the code only; the server still enforces the attendance policy.</p>
+    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <LabelField label="8-digit member code"><input required autoComplete="off" inputMode="numeric" pattern="[0-9]{8}" minLength={8} maxLength={8} value={code} onChange={event => setCode(event.target.value.replace(/\D/g, '').slice(0, 8))} className={fieldClass()} /></LabelField>
+      <LabelField label="Audit reason (at least 5 characters)"><input required minLength={5} maxLength={500} value={reason} onChange={event => setReason(event.target.value)} className={fieldClass()} /></LabelField>
+    </div>
+    {message && <p role="alert" className="mt-3 text-xs leading-5 text-[#9a4435]">{message}</p>}
+    <div className="mt-3 flex justify-end gap-2"><Button kind="quiet" onClick={onClose}>Dismiss</Button><Button type="submit" disabled={recordCheckin.isPending || code.length !== 8 || reason.trim().length < 5}>{recordCheckin.isPending ? 'Verifying…' : 'Verify and record arrival'}</Button></div>
+  </form>;
+}
+
+export default function PartnerPortal() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const { signOut } = useClerk();
+  const client = useQueryClient();
+  const operations = useGetOperations({ query: { retry: false, enabled: isLoaded && isSignedIn } });
+  const attendance = useGetAttendance({ query: { retry: false, enabled: isLoaded && isSignedIn } });
+  const addPartner = useAddPartner();
+  const approvePartner = useApprovePartner();
+  const updateOffering = useChangeLiveOffering();
+  const cancelOffering = useCancelLiveOffering();
+  const review = useReviewAttendance();
+  const [tab, setTab] = useState<Tab>('overview');
+  const [showCreate, setShowCreate] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [reviewing, setReviewing] = useState<{ id: string; action: ReviewAction } | null>(null);
+  const [manualChecking, setManualChecking] = useState<string | null>(null);
+  const [reason, setReason] = useState('');
+  const [notice, setNotice] = useState('');
+  const [partnerForm, setPartnerForm] = useState<PartnerInput>({ name: '', groupId: '', ownerUserId: '' });
+  const role = operations.data?.role;
+  const offerings = operations.data?.offerings ?? [];
+  const rows = attendance.data?.rows ?? [];
+  const activeOfferings = useMemo(() => offerings.filter(item => item.active && !item.cancelledAt).length, [offerings]);
+  const invalidate = () => {
+    void client.invalidateQueries({ queryKey: ['/api/operations'] });
+    void client.invalidateQueries({ queryKey: ['/api/attendance'] });
+  };
+
+  if (!isLoaded) return <main className="min-h-[100dvh] bg-[#f3f0e5] p-6"><div className="mx-auto max-w-6xl animate-pulse"><div className="h-16 w-64 rounded-xl bg-[#e2dece]" /><div className="mt-8 h-64 rounded-3xl bg-[#e2dece]" /></div></main>;
+  if (!isSignedIn) return <Redirect to="/" />;
+  const apiStatus = (operations.error as { status?: number } | null)?.status;
+  if (operations.isError && (apiStatus === 401 || apiStatus === 403)) return <main className="grid min-h-[100dvh] place-items-center bg-[#f3f0e5] p-5"><section className="max-w-lg rounded-[2rem] border border-[#ddd7c6] bg-[#fffdf7] p-8 text-center shadow-sm"><div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[#f2dfd5] text-[#9a4435]"><ShieldCheck /></div><h1 className="mt-5 font-display text-3xl font-bold text-[#173d35]">Portal access is not enabled</h1><p className="mt-3 text-sm leading-6 text-[#61736b]">Your MaydanGo account is signed in, but it does not have an approved partner or administrator role. No partner or attendance information is available for this account.</p><div className="mt-6 flex justify-center gap-3"><Link href="/" className="rounded-xl border border-[#d8d2c4] px-4 py-2.5 text-sm font-semibold text-[#36564b]">Public website</Link><Button onClick={() => signOut({ redirectUrl: '/' })}><LogOut size={15} />Sign out</Button></div></section></main>;
+  if (operations.isError) return <main className="grid min-h-[100dvh] place-items-center bg-[#f3f0e5] p-5"><section className="max-w-md rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-8 text-center"><CircleAlert className="mx-auto text-[#a76445]" size={30} /><h1 className="mt-4 font-display text-2xl font-bold text-[#173d35]">Could not load operations</h1><p className="mt-2 text-sm text-[#61736b]">The MaydanGo operations service did not respond. Your partner scope has not been loaded.</p><Button onClick={() => { void operations.refetch(); }}><RefreshCw size={15} />Try again</Button></section></main>;
+  if (operations.isLoading || !operations.data) return <main className="min-h-[100dvh] bg-[#f3f0e5] p-6"><div className="mx-auto max-w-6xl animate-pulse"><div className="h-16 w-64 rounded-xl bg-[#e2dece]" /><div className="mt-8 h-64 rounded-3xl bg-[#e2dece]" /></div></main>;
+
+  const isAdmin = role === 'admin';
+  const partner = operations.data.partners.find(item => item.id === operations.data.partnerId);
+  const title = isAdmin ? 'Operations desk' : partner?.name ?? 'Partner workspace';
+  const mutationError = (label: string) => setNotice(`${label} could not be completed. The server did not accept the change.`);
+  const handleApproval = (id: string, approved: boolean) => approvePartner.mutate({ id, data: { approved } }, { onSuccess: invalidate, onError: () => mutationError('Partner review') });
+  const handleStatus = (id: string, active: boolean, capacity: number) => {
+    const data: OfferingUpdate = { active, capacity };
+    updateOffering.mutate({ id, data }, { onSuccess: invalidate, onError: () => mutationError('Offering update') });
+  };
+  const runReview = (event: FormEvent) => {
+    event.preventDefault();
+    if (!reviewing || reason.trim().length < 5) return;
+    review.mutate({ id: reviewing.id, data: { action: reviewing.action, reason: reason.trim() } }, {
+      onSuccess: () => { invalidate(); setReviewing(null); setReason(''); setNotice('Attendance review recorded.'); },
+      onError: () => mutationError('Attendance review'),
+    });
+  };
+  const actionLabel: Record<string, string> = { confirm: 'Confirm', no_show: 'Mark no-show', dispute: 'Dispute', resolve_confirm: 'Resolve: confirm', resolve_void: 'Resolve: void', accept_request: 'Accept request' };
+  return <main className="min-h-[100dvh] bg-[#f3f0e5] text-[#173d35]">
+    <div className="min-h-[100dvh] lg:grid lg:grid-cols-[248px_1fr]">
+      <aside className="border-b border-[#dcd6c6] bg-[#e9e5d7] px-5 py-4 lg:sticky lg:top-0 lg:h-[100dvh] lg:border-b-0 lg:border-r lg:px-6 lg:py-7">
+        <Link href="/" className="inline-flex items-center gap-3"><img src={`${import.meta.env.BASE_URL}logo.svg`} alt="MaydanGo" className="h-10 w-10" /><span className="font-display text-lg font-bold tracking-tight">MaydanGo<span className="block font-sans text-[9px] font-bold uppercase tracking-[.18em] text-[#a76445]">Partner operations</span></span></Link>
+        <div className="mt-8 hidden rounded-2xl bg-[#f8f5eb] p-4 lg:block"><p className="text-[9px] font-bold uppercase tracking-[.17em] text-[#a76445]">Workspace</p><p className="mt-2 truncate text-sm font-bold">{title}</p><p className="mt-1 text-xs text-[#687a71]">{isAdmin ? 'Administrator access' : 'Partner access'}</p></div>
+        <nav aria-label="Portal navigation" className="mt-5 flex gap-2 overflow-x-auto lg:mt-8 lg:flex-col">
+          {([['overview', Activity, 'Overview'], ['offerings', Dumbbell, 'Offerings'], ['attendance', CalendarDays, 'Attendance'], ...(isAdmin ? [['partners', Users, 'Partners'] as const] : [])] as const).map(([id, Icon, label]) => <button key={id} onClick={() => setTab(id as Tab)} aria-current={tab === id ? 'page' : undefined} className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${tab === id ? 'bg-[#174d43] text-[#fff9e9]' : 'text-[#536b61] hover:bg-[#dedaca]'}`}><Icon size={16} />{label}</button>)}
+        </nav>
+        <div className="mt-8 hidden border-t border-[#d6d0bf] pt-5 lg:block"><Link href="/" className="flex items-center gap-2 text-xs font-semibold text-[#63766d] hover:text-[#174d43]"><ArrowLeft size={14} />Public MaydanGo site</Link><button onClick={() => signOut({ redirectUrl: '/' })} className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-[#63766d] hover:text-[#9a4435]"><LogOut size={14} />Sign out</button></div>
+      </aside>
+      <section className="min-w-0 px-4 py-7 sm:px-7 lg:px-10 lg:py-9">
+        <header className="mx-auto flex max-w-6xl items-center justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.21em] text-[#a76445]">MAYDANGO · IRAQ</p><h1 className="mt-2 font-display text-3xl font-bold tracking-[-.04em] sm:text-4xl">{tab === 'overview' ? 'Good to see you.' : tab === 'offerings' ? 'Offerings' : tab === 'attendance' ? 'Attendance review' : 'Partner approvals'}</h1><p className="mt-2 text-sm text-[#687a71]">{title}</p></div><div className="flex items-center gap-2 lg:hidden"><Button kind="quiet" onClick={() => signOut({ redirectUrl: '/' })}><LogOut size={15} />Exit</Button></div><div className="hidden items-center gap-2 rounded-full border border-[#d8d2c4] bg-[#fffdf7] px-3 py-2 text-xs font-semibold text-[#536b61] sm:flex"><span className="h-2 w-2 rounded-full bg-[#4a8a69]" />Server-scoped access</div></header>
+        {notice && <div role="status" className="mx-auto mt-5 flex max-w-6xl items-center justify-between rounded-xl border border-[#d8c6a5] bg-[#fff8e8] px-4 py-3 text-sm text-[#715533]">{notice}<button onClick={() => setNotice('')} aria-label="Dismiss notice"><X size={15} /></button></div>}
+        <div className="mx-auto mt-8 max-w-6xl">
+          {tab === 'overview' && <div>
+            <div className="grid gap-4 sm:grid-cols-3"><article className="rounded-3xl bg-[#174d43] p-5 text-[#fff9e9] sm:col-span-2 sm:p-7"><div className="flex items-start justify-between"><span className="text-xs font-semibold uppercase tracking-[.16em] text-[#d4dfcf]">Your MaydanGo space</span><Activity size={19} className="text-[#e1a17e]" /></div><p className="mt-9 max-w-lg font-display text-2xl font-semibold leading-tight sm:text-3xl">{isAdmin ? 'A clear view of partner activity and attendance.' : 'Bring your sessions and community into view.'}</p><p className="mt-3 max-w-lg text-sm leading-6 text-[#d1dfd6]">{isAdmin ? 'Review the partner and offering records returned for your administrator account.' : 'Manage the live opportunities and attendance roster assigned to your partner account.'}</p></article>
+              <article className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6"><p className="text-xs font-semibold uppercase tracking-[.13em] text-[#6e8077]">Active offerings</p><p className="mt-4 font-display text-4xl font-bold">{activeOfferings}</p><p className="mt-2 text-xs text-[#75847c]">Of {offerings.length} server-listed offerings</p><button onClick={() => setTab('offerings')} className="mt-5 inline-flex items-center gap-1 text-xs font-bold text-[#28695a]">Manage offerings<ArrowUpRight size={13} /></button></article></div>
+            <div className="mt-5 grid gap-4 md:grid-cols-[1.2fr_.8fr]"><article className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6"><div className="flex items-center justify-between"><div><h2 className="font-display text-xl font-bold">Next on the roster</h2><p className="mt-1 text-xs text-[#75847c]">Attendance records in your server scope</p></div><button onClick={() => setTab('attendance')} className="text-xs font-bold text-[#28695a]">View all</button></div>{attendance.isLoading ? <div className="mt-5 h-16 animate-pulse rounded-xl bg-[#eeeadc]" /> : attendance.isError ? <button className="mt-5 text-sm font-semibold text-[#9a4435]" onClick={() => void attendance.refetch()}>Roster unavailable · Retry</button> : rows.length ? <div className="mt-4 divide-y divide-[#ece7d9]">{rows.slice(0, 4).map(row => <div key={row.reservationId} className="flex items-center justify-between gap-4 py-3"><div className="min-w-0"><p className="truncate text-sm font-semibold">{row.title}</p><p className="mt-1 text-xs text-[#75847c]">{row.facility} · {formatDate(row.startsAt)}</p></div><span className="rounded-full bg-[#eeeadc] px-2.5 py-1 text-[10px] font-bold text-[#536b61]">{row.status.replaceAll('_', ' ')}</span></div>)}</div> : <p className="mt-5 rounded-xl bg-[#f5f1e6] p-4 text-sm text-[#75847c]">No attendance records were returned for this scope.</p>}</article>
+              <article className="rounded-3xl border border-[#ddd7c6] bg-[#f0ead9] p-5 sm:p-6"><div className="flex items-center gap-2"><ShieldCheck size={17} className="text-[#28695a]" /><h2 className="font-display text-xl font-bold">Scoped by the server</h2></div><p className="mt-3 text-sm leading-6 text-[#62756b]">Your account role and partner boundary come from the operations service. Actions are checked again by MaydanGo when saved.</p><p className="mt-5 text-[10px] font-bold uppercase tracking-[.16em] text-[#a76445]">{isAdmin ? 'Administrator' : 'Partner operator'} · {rows.length} roster records</p></article></div>
+          </div>}
+          {tab === 'offerings' && <section><div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm text-[#75847c]">Create and maintain opportunities from the authorized operations record.</p></div><Button onClick={() => setShowCreate(true)}><Plus size={16} />New offering</Button></div>{offerings.length ? <div className="grid gap-4">{offerings.map(item => <article key={item.id} className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${item.active && !item.cancelledAt ? 'bg-[#e1efdf] text-[#2d6d4a]' : 'bg-[#eeeadc] text-[#756e5b]'}`}>{item.cancelledAt ? 'Cancelled' : item.active ? 'Active' : 'Draft'}</span><span className="text-[10px] font-bold uppercase tracking-wide text-[#a76445]">{item.kind}</span></div><h2 className="mt-3 font-display text-xl font-bold">{item.title}</h2><p className="mt-1 text-sm text-[#687a71]">{item.facility}, {item.city} · {item.category}</p><p className="mt-3 text-xs text-[#75847c]">{formatDate(item.startsAt)} – {formatDate(item.endsAt)}{item.remaining !== undefined ? ` · ${item.remaining} remaining` : ''}</p>{isAdmin && item.partnerName && <p className="mt-2 text-xs text-[#75847c]">Partner: {item.partnerName}</p>}</div><div className="flex shrink-0 flex-wrap gap-2">{!item.cancelledAt && <><Button kind="quiet" onClick={() => setEditing(item.id)}>Capacity / state</Button><Button kind="quiet" onClick={() => handleStatus(item.id, !item.active, item.capacity)}>{item.active ? 'Make draft' : 'Activate'}</Button><Button kind="danger" onClick={() => { if (window.confirm(`Cancel “${item.title}”? Cancelling releases existing reservations and notifies members. This cannot be undone.`)) cancelOffering.mutate({ id: item.id }, { onSuccess: invalidate, onError: () => mutationError('Cancellation') }); }}>Cancel</Button></>}</div></div>
+              {editing === item.id && <form className="mt-5 grid gap-3 rounded-2xl bg-[#f2efe4] p-4 sm:grid-cols-[1fr_auto_auto]" onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); handleStatus(item.id, data.get('active') === 'on', Number(data.get('capacity'))); setEditing(null); }}><LabelField label="Capacity"><input required min="1" name="capacity" defaultValue={item.capacity} type="number" className={fieldClass()} /></LabelField><label className="flex items-center gap-2 self-end pb-3 text-sm font-medium"><input name="active" type="checkbox" defaultChecked={item.active} className="accent-[#174d43]" />Active</label><div className="flex items-end gap-2"><Button type="submit" disabled={updateOffering.isPending}>Save</Button><Button kind="quiet" onClick={() => setEditing(null)}>Close</Button></div></form>}
+            </article>)}</div> : <div className="rounded-3xl border border-dashed border-[#d5cfbf] bg-[#fffdf7]/60 p-10 text-center"><Dumbbell className="mx-auto text-[#a76445]" /><h2 className="mt-4 font-display text-xl font-bold">No offerings returned</h2><p className="mt-2 text-sm text-[#75847c]">Create an offering to start managing your available sessions and events.</p></div>}</section>}
+          {tab === 'attendance' && <section><div className="mb-5 flex items-end justify-between"><p className="max-w-2xl text-sm leading-6 text-[#687a71]">Review reservations in the server-scoped roster. Member names are not returned or displayed; each decision requires a reason and is recorded by the service.</p><Button kind="quiet" onClick={() => void attendance.refetch()}><RefreshCw size={15} />Refresh</Button></div>{attendance.isLoading ? <div className="h-48 animate-pulse rounded-3xl bg-[#e5e0d1]" /> : attendance.isError ? <div role="alert" className="rounded-3xl border border-[#e0c4b9] bg-[#fff7f3] p-7"><p className="font-semibold">Attendance roster unavailable</p><Button onClick={() => void attendance.refetch()}>Retry</Button></div> : rows.length ? <div className="grid gap-4">{rows.map(row => {
+            const state = `${row.status} ${row.bookingStatus}`.toLowerCase();
+            const actions: ReviewAction[] = state.includes('disput') ? ['resolve_confirm', 'resolve_void'] : state.includes('request') ? ['accept_request', 'dispute'] : ['confirm', 'no_show', 'dispute'];
+            const attendanceDetails = row as typeof row & { manualCheckin?: boolean; manualRepeatUse?: boolean };
+            const hasCurrentPolicyWindow = row.policy !== undefined && Number.isFinite(Date.parse(row.policy.opensAt)) && Number.isFinite(Date.parse(row.policy.closesAt)) && Date.now() >= Date.parse(row.policy.opensAt) && Date.now() <= Date.parse(row.policy.closesAt);
+            const canManualCheckin = role === 'partner' && !row.locked && row.status === 'not_checked_in' && row.bookingStatus === 'reserved' && hasCurrentPolicyWindow;
+            return <article key={row.reservationId} className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5"><div className="flex flex-col justify-between gap-4 sm:flex-row"><div><div className="flex flex-wrap gap-2"><span className="rounded-full bg-[#eeeadc] px-2.5 py-1 text-[10px] font-bold text-[#536b61]">{row.status.replaceAll('_', ' ')}</span>{row.locked && <span className="rounded-full bg-[#f2dfd5] px-2.5 py-1 text-[10px] font-bold text-[#9a4435]">Locked</span>}{row.settlementEligible && <span className="rounded-full bg-[#e1efdf] px-2.5 py-1 text-[10px] font-bold text-[#2d6d4a]">Settlement eligible</span>}</div><h2 className="mt-3 font-display text-lg font-bold">{row.title}</h2><p className="mt-1 text-sm text-[#687a71]">{row.facility} · {formatDate(row.startsAt)}</p><p className="mt-2 font-mono text-[10px] text-[#8b9288]">Reservation {row.reference || row.reservationId}</p>{row.checkedInAt && <p className="mt-2 text-xs text-[#687a71]">Checked in {formatDate(row.checkedInAt)}{attendanceDetails.manualCheckin ? ' · staff-assisted audit' : ''}{attendanceDetails.manualRepeatUse ? ' · repeat use noted' : ''}</p>}</div><div className="flex flex-wrap items-center gap-2">{!row.locked && actions.map(action => <Button key={action} kind={action === 'dispute' || action === 'no_show' || action === 'resolve_void' ? 'quiet' : 'primary'} onClick={() => { setReviewing({ id: row.reservationId, action }); setReason(''); }}>{actionLabel[action]}</Button>)}{canManualCheckin && <Button kind="quiet" onClick={() => setManualChecking(row.reservationId)}>Verify member code</Button>}</div></div>{manualChecking === row.reservationId && <ManualCheckinForm reservationId={row.reservationId} onClose={() => setManualChecking(null)} onSuccess={() => { setManualChecking(null); invalidate(); setNotice('Manual check-in recorded by the server.'); }} />}{row.events.length > 0 && <details className="mt-4 border-t border-[#ece7d9] pt-3"><summary className="cursor-pointer text-xs font-bold text-[#536b61]">Audit history · {row.events.length}</summary><ul className="mt-3 space-y-2">{row.events.map((event, index) => <li key={`${event.createdAt}-${index}`} className="text-xs text-[#687a71]"><span className="font-semibold">{event.action.replaceAll('_', ' ')}</span> · {event.reason} · {formatDate(event.createdAt)}</li>)}</ul></details>}
+              {reviewing?.id === row.reservationId && <form onSubmit={runReview} className="mt-4 rounded-2xl bg-[#f2efe4] p-4"><label className="block text-xs font-semibold text-[#51665e]">{actionLabel[reviewing.action]} — audit reason (at least 5 characters)<textarea required minLength={5} maxLength={500} rows={3} value={reason} onChange={e => setReason(e.target.value)} className={fieldClass()} placeholder="Record the reason for this decision" /></label><div className="mt-3 flex justify-end gap-2"><Button kind="quiet" onClick={() => setReviewing(null)}>Dismiss</Button><Button type="submit" disabled={review.isPending || reason.trim().length < 5}>{review.isPending ? 'Recording…' : 'Record review'}</Button></div></form>}</article>;
+          })}</div> : <div className="rounded-3xl border border-dashed border-[#d5cfbf] bg-[#fffdf7]/60 p-10 text-center"><CalendarDays className="mx-auto text-[#a76445]" /><h2 className="mt-4 font-display text-xl font-bold">Roster is clear</h2><p className="mt-2 text-sm text-[#75847c]">No attendance rows were returned for this account.</p></div>}</section>}
+          {tab === 'partners' && isAdmin && <section className="grid gap-5 xl:grid-cols-[.8fr_1.2fr]"><form className="h-fit rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5" onSubmit={event => { event.preventDefault(); addPartner.mutate({ data: partnerForm }, { onSuccess: () => { invalidate(); setPartnerForm({ name: '', groupId: '', ownerUserId: '' }); setNotice('Partner record created.'); }, onError: () => mutationError('Partner creation') }); }}><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a76445]">Administrator action</p><h2 className="mt-2 font-display text-xl font-bold">Add partner record</h2><p className="mt-2 text-xs leading-5 text-[#75847c]">Provide all three identifiers directly. No partner owner or group is inferred.</p><div className="mt-4 grid gap-3"><LabelField label="Partner name"><input required className={fieldClass()} value={partnerForm.name} onChange={e => setPartnerForm({ ...partnerForm, name: e.target.value })} /></LabelField><LabelField label="Group ID"><input required className={fieldClass()} value={partnerForm.groupId} onChange={e => setPartnerForm({ ...partnerForm, groupId: e.target.value })} /></LabelField><LabelField label="Owner user ID"><input required className={fieldClass()} value={partnerForm.ownerUserId} onChange={e => setPartnerForm({ ...partnerForm, ownerUserId: e.target.value })} /></LabelField><Button type="submit" disabled={addPartner.isPending}><Plus size={15} />Create partner</Button></div></form><div className="grid content-start gap-3">{operations.data.partners.map(partnerItem => <article key={partnerItem.id} className="flex flex-col justify-between gap-4 rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:flex-row sm:items-center"><div><div className="flex items-center gap-2"><h3 className="font-display text-lg font-bold">{partnerItem.name}</h3><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${partnerItem.approved ? 'bg-[#e1efdf] text-[#2d6d4a]' : 'bg-[#f2dfd5] text-[#9a4435]'}`}>{partnerItem.approved ? 'Approved' : 'Pending'}</span></div><p className="mt-2 font-mono text-[10px] text-[#8b9288]">Partner ID {partnerItem.id} · Group {partnerItem.groupId}</p></div><Button kind={partnerItem.approved ? 'quiet' : 'primary'} disabled={approvePartner.isPending} onClick={() => handleApproval(partnerItem.id, !partnerItem.approved)}>{partnerItem.approved ? <X size={15} /> : <Check size={15} />}{partnerItem.approved ? 'Revoke approval' : 'Approve partner'}</Button></article>)}</div></section>}
+        </div>
+        <footer className="mx-auto mt-12 flex max-w-6xl items-center justify-between border-t border-[#ddd7c6] pt-5 text-[10px] font-semibold uppercase tracking-[.14em] text-[#879187]"><span>MaydanGo partner operations</span><span className="flex items-center gap-1"><Clock3 size={12} /> Iraq local time</span></footer>
+      </section>
+    </div>
+    {showCreate && <OfferingForm partnerId={isAdmin ? '' : operations.data.partnerId ?? ''} partners={operations.data.partners.filter(item => item.approved)} isAdmin={isAdmin} onClose={() => setShowCreate(false)} onSaved={() => { invalidate(); setNotice('Offering created.'); }} />}
+  </main>;
+}

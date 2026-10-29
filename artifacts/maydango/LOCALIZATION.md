@@ -4,7 +4,7 @@ The customer app supports English, Arabic (Iraq), and Sorani Kurdish (`ku` in sa
 
 `lib/i18n.ts` holds keyed UI messages; `lib/content.ts` and `lib/interface-copy.ts` hold source-phrase translations for the sample catalog and account interface. `components/Localized.tsx` is the presentation boundary for authored copy, numbers, accessibility labels, and directional icons. Use its `raw` prop for user-generated text and identifiers; never translate arbitrary personal data. Courses retain their existing trilingual title/lesson objects.
 
-Dates from the API use `Asia/Baghdad`, not the viewer's device timezone. The catalog's relative day/time strings are illustrative only. Membership prices use IQD without fractional digits. Persisted language changes are serialized to avoid out-of-order native storage writes. Screen content waits for preferences to load.
+Dates from the API use `Asia/Baghdad`, not the viewer's device timezone. The catalog's relative day/time strings are illustrative only. Membership prices use IQD without fractional digits. Persisted language changes are serialized to avoid out-of-order native storage writes. Screen content waits for preferences to load. Mixed-direction fields such as email addresses and ISO dates use explicit LTR input direction while surrounding content remains RTL.
 
 ## Automated verification
 
@@ -31,6 +31,20 @@ On physical iOS and Android devices, review all three languages at large text si
 - The user approved applying the attached English, Iraqi Arabic, and Sorani suggestions with consistency and safety fixes. Selected app, account, booking/check-in, membership, facility, and exercise copy has been updated: check-in wording now means recording arrival (not entering), the map launch note is hidden, visible visit/spot counts include their numbers, the sharp/painful-sensation stop instruction is retained in all three languages, and the optional doctor-advice sentence was not added. The remaining suggestion rows have not all been reconciled against the app source, so do not treat the PDFs as fully implemented.
 - Automated localization checks pass after these copy updates. Physical iOS/Android verification is still pending; the user-approved wording does not replace testing navigation, accessibility, text scaling, native input direction, or cold-start language persistence on devices.
 - Recheck after the copy changes: localization and mocked preference-persistence scripts passed. The mobile typecheck still reports 38 errors in the same six files; the API typecheck reports 51 errors in six files, including missing `@workspace/db` exports. The API workflow builds and listens, and the Expo web preview bundles despite an optional React Native DevTools `libglib` warning. The screenshot showed English only and is not device verification.
+
+## Verification attempt — 2026-10-28
+
+- Android device verification: unavailable in this workspace (`adb` is not installed and no connected device interface is exposed).
+- iOS device verification: unavailable (`xcrun` reports no Apple developer root; `xctrace` and Simulator cannot be used).
+- Expo launch-path check: the tunnel status, iOS/Android manifests, and both native JavaScript bundles returned HTTP 200. The supplied phone screenshot shows a Replit.com “Page not found” page rather than Expo Go; physical app verification is still pending.
+- A later web-preview capture rendered the home screen after preference hydration. Its earlier blank capture was during startup and is not evidence of a native-device failure or pass.
+- Localization script: passed after adding direction checks for English, Arabic, Sorani, and an explicit LTR override.
+- Preferences script: passed language persistence, cold hydration, rapid changes, and invalid-data recovery using mocked hooks and storage; this remains a mock, not a device restart.
+- Mobile typecheck: failed with 12 existing errors in `app/live.tsx`, `app/operations.tsx`, and `components/AttendanceCard.tsx`; none are in the localization changes.
+- Shared copy from the revised approved PDF was applied to the native home headline, Iraq-region label, nearby/home section, online-training heading, and membership labels in English, Iraqi Arabic, and Sorani. Web-only copy was not added to app-only routes.
+- In the phone-sized web preview, Arabic and Sorani rendered on home, facility details, empty bookings, membership, and account sign-in screens. RTL content and localized facility-save, email, and password labels were present; the email field rendered LTR. The unauthenticated course route returned 401 and showed the localized unavailable state, so signed-in lesson content was not reviewed.
+- The signed-out browser preview did not expose the date-of-birth input; its source uses explicit LTR direction and an accessibility label. Native large-text behavior, VoiceOver/TalkBack, native tab ordering, and physical cold restart remain unverified. These browser checks do not replace device results.
+- Device matrix below remains pending. No device models, OS versions, or physical outcomes were available to record.
 
 | Physical platform | Arabic | Sorani | Device / OS / build / tester / evidence |
 | --- | --- | --- | --- |
