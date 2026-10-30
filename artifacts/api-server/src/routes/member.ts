@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { z } from "zod";
-import { db, memberships, memberProfiles, offerings, reservations, partners } from "@workspace/db";
+import { db, memberships, memberProfiles, offerings, reservations, partners, waitlistEntries } from "@workspace/db";
 import { eq, and, inArray, sql, gt, asc, isNull } from "drizzle-orm";
-import { BookingError, memberState, createReservation } from "../lib/reservations";
+import {
+  BookingError, memberState, createReservation, cancelReservation,
+  acceptWaitlistOffer, joinWaitlist, leaveWaitlist,
+} from "../lib/reservations";
 import learningRouter from "./learning";
 import { memberSupportRouter } from "./support";
-import waitlistRouter from "./waitlist";
-import { cancelReservationAndPromote } from "../lib/waitlist";
 import { sendMemberNotification } from "../lib/notifications";
 import { PaymentError } from "../lib/payment-config";
 import { cancelMemberSubscription, createMemberCheckout, listMemberPlans, memberSubscription } from "../lib/payments-paytabs";
@@ -19,7 +20,6 @@ router.use((req, res, next) => {
 });
 router.use(learningRouter);
 router.use(memberSupportRouter);
-router.use("/waitlist", waitlistRouter);
 router.get("/", async (req, res) => { res.json(await memberState(getAuth(req).userId!)); });
 router.get("/plans", async (_req, res) => { res.json(await listMemberPlans()); });
 router.post("/checkout", async (req, res) => {
@@ -35,21 +35,29 @@ router.post("/subscription/cancel", async (req, res) => {
   res.json(await cancelMemberSubscription(getAuth(req).userId!));
 });
 router.get("/live-catalog", async (_req, res) => {
+  const now = new Date();
   const rows = await db.select({ offering: offerings, partnerName: partners.name,
     reserved: sql<number>`count(${reservations.id})::int`,
   }).from(offerings).innerJoin(partners, eq(offerings.partnerId, partners.id))
     .leftJoin(reservations, and(eq(reservations.offeringId, offerings.id), inArray(reservations.status, ["reserved", "requested"])))
-    .where(and(eq(offerings.scope, "live"), eq(offerings.active, true), isNull(offerings.cancelledAt), eq(partners.approved, true), gt(offerings.startsAt, new Date())))
+    .where(and(eq(offerings.scope, "live"), eq(offerings.active, true), isNull(offerings.cancelledAt), eq(partners.approved, true), gt(offerings.startsAt, now)))
     .groupBy(offerings.id, partners.id).orderBy(asc(offerings.startsAt));
+  const activeOffers = await db.select({
+    offeringId: waitlistEntries.offeringId,
+    count: sql<number>`count(*)::int`,
+  }).from(waitlistEntries)
+    .where(and(eq(waitlistEntries.status, "offered"), gt(waitlistEntries.offerExpiresAt, now)))
+    .groupBy(waitlistEntries.offeringId);
+  const offeredByClass = new Map(activeOffers.map(row => [row.offeringId, Number(row.count)]));
   res.json(rows.map(({ offering: o, partnerName, reserved }) => ({
     id: o.id, targetId: o.targetId, slot: o.slot, scope: o.scope,
     partnerId: o.partnerId, partnerName, title: o.title,
     localizedTitle: o.localizedTitle, localizedDescription: o.localizedDescription,
     kind: o.kind, city: o.city, facility: o.facility, category: o.category, accessType: o.accessType,
     tiers: o.tiers, startsAt: o.startsAt, endsAt: o.endsAt, cancellationDeadline: o.cancellationDeadline,
-    capacity: o.capacity, gender: o.gender, minAge: o.minAge, maxAge: o.maxAge,
+     capacity: o.capacity, waitlistOfferMinutes: o.waitlistOfferMinutes, gender: o.gender, minAge: o.minAge, maxAge: o.maxAge,
     additionalPayment: o.additionalPayment, active: o.active, cancelledAt: o.cancelledAt,
-    remaining: Math.max(0, o.capacity - reserved),
+    remaining: Math.max(0, o.capacity - reserved - (offeredByClass.get(o.id) ?? 0)),
   })));
 });
 router.put("/profile", async (req, res) => {
@@ -101,8 +109,20 @@ router.delete("/bookings/:id", async (req, res) => {
   const [offering] = await db.select({ scope: offerings.scope }).from(reservations)
     .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
     .where(and(eq(reservations.id, String(req.params.id)), eq(reservations.userId, ownerId))).limit(1);
-  const result = await cancelReservationAndPromote(ownerId, String(req.params.id));
-  if (result.cancelled && offering?.scope === "live") void sendMemberNotification(ownerId, "booking_cancelled");
+  const cancelled = await cancelReservation(ownerId, String(req.params.id));
+  if (cancelled && offering?.scope === "live") void sendMemberNotification(ownerId, "booking_cancelled");
+  res.json(await memberState(getAuth(req).userId!));
+});
+router.post("/offerings/:id/waitlist", async (req, res) => {
+  await joinWaitlist(getAuth(req).userId!, String(req.params.id));
+  res.json(await memberState(getAuth(req).userId!));
+});
+router.delete("/waitlist/:id", async (req, res) => {
+  await leaveWaitlist(getAuth(req).userId!, String(req.params.id));
+  res.json(await memberState(getAuth(req).userId!));
+});
+router.post("/waitlist/:id/accept", async (req, res) => {
+  await acceptWaitlistOffer(getAuth(req).userId!, String(req.params.id));
   res.json(await memberState(getAuth(req).userId!));
 });
 router.use((error: unknown, _req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => {

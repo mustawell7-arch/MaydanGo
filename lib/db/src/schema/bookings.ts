@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, boolean, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, boolean, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import type { LocalizedText } from "./learning";
 import { membershipBilling } from "./payments";
@@ -59,6 +59,7 @@ export const offerings = pgTable("booking_offerings", {
   endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
   cancellationDeadline: timestamp("cancellation_deadline", { withTimezone: true }).notNull(),
   capacity: integer("capacity").notNull(),
+  waitlistOfferMinutes: integer("waitlist_offer_minutes").notNull().default(30),
   additionalPayment: boolean("additional_payment").notNull().default(false),
   gender: text("gender").notNull().default("all"),
   minAge: integer("min_age").notNull().default(0),
@@ -79,15 +80,15 @@ export const waitlistEntries = pgTable("waitlist_entries", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull(),
   offeringId: text("offering_id").notNull().references(() => offerings.id),
-  status: text("status").notNull().default("waiting"),
-  reservationId: text("reservation_id").references(() => reservations.id),
-  reason: text("reason"),
-  joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  queuePosition: integer("queue_position").notNull(),
+  status: text("status").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  offerExpiresAt: timestamp("offer_expires_at", { withTimezone: true }),
+  respondedAt: timestamp("responded_at", { withTimezone: true }),
 }, t => [
-  uniqueIndex("one_waiting_entry_per_member_offering").on(t.userId, t.offeringId)
-    .where(sql`${t.status} = 'waiting'`),
-  index("waitlist_offering_order").on(t.offeringId, t.joinedAt, t.id),
+  uniqueIndex("waitlist_position_per_offering").on(t.offeringId, t.queuePosition),
+  uniqueIndex("one_active_waitlist_entry").on(t.userId, t.offeringId)
+    .where(sql`${t.status} in ('waiting', 'offered')`),
 ]);
 
 // Attendance is intentionally separate. Customer booking endpoints never insert here.

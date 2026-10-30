@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useChangeLiveOffering, useGetAttendance, useGetOperations, useRecordManualCheckin, useReviewAttendance } from '@workspace/api-client-react';
+import { useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useChangeLiveOffering, useGetAttendance, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReviewAttendance } from '@workspace/api-client-react';
 import type { OfferingInput, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody } from '@workspace/api-client-react';
 import { useAuth, useClerk } from '@clerk/react';
 import { Link, Redirect } from 'wouter';
@@ -28,7 +28,7 @@ function OfferingForm({ partnerId, partners, isAdmin, onClose, onSaved }: { part
   const [selectedPartnerId, setSelectedPartnerId] = useState(partnerId);
   const [form, setForm] = useState({
     title: '', kind: 'session' as OfferingInput['kind'], city: '', facility: '', category: '', accessType: 'physical' as OfferingInput['accessType'],
-    startsAt: '', endsAt: '', cancellationDeadline: '', capacity: '', gender: 'all' as NonNullable<OfferingInput['gender']>, minAge: '', maxAge: '', joinUrl: '', tiers: '', active: false,
+    startsAt: '', endsAt: '', cancellationDeadline: '', capacity: '', waitlistOfferMinutes: '30', gender: 'all' as NonNullable<OfferingInput['gender']>, minAge: '', maxAge: '', joinUrl: '', tiers: '', active: false,
     localizedTitleEn: '', localizedTitleAr: '', localizedTitleKu: '',
     localizedDescriptionEn: '', localizedDescriptionAr: '', localizedDescriptionKu: '',
   });
@@ -49,7 +49,8 @@ function OfferingForm({ partnerId, partners, isAdmin, onClose, onSaved }: { part
       partnerId: selectedPartnerId, title: form.title.trim(), kind: form.kind, city: form.city.trim(), facility: form.facility.trim(), category: form.category.trim(),
       accessType: form.accessType, tiers: form.tiers.split(',').map(item => item.trim()).filter(Boolean),
       startsAt: localIso(form.startsAt), endsAt: localIso(form.endsAt), cancellationDeadline: localIso(form.cancellationDeadline),
-      capacity: Number(form.capacity), gender: form.gender, ...(form.minAge ? { minAge: Number(form.minAge) } : {}), maxAge: form.maxAge ? Number(form.maxAge) : null,
+      capacity: Number(form.capacity), waitlistOfferMinutes: Number(form.waitlistOfferMinutes),
+      gender: form.gender, ...(form.minAge ? { minAge: Number(form.minAge) } : {}), maxAge: form.maxAge ? Number(form.maxAge) : null,
       joinUrl: form.joinUrl.trim() || null, active: form.active,
       ...(isLive ? {
         localizedTitle: { en: form.localizedTitleEn.trim(), ar: form.localizedTitleAr.trim(), ku: form.localizedTitleKu.trim() },
@@ -84,6 +85,7 @@ function OfferingForm({ partnerId, partners, isAdmin, onClose, onSaved }: { part
         </div>}
         {dateInput('startsAt', 'Starts at')}{dateInput('endsAt', 'Ends at')}{dateInput('cancellationDeadline', 'Cancellation deadline')}
         <LabelField label="Capacity"><input required min="1" type="number" className={fieldClass()} value={form.capacity} onChange={e => update('capacity', e.target.value)} /></LabelField>
+        <LabelField label="Waitlist offer window (minutes)"><input required min="5" max="1440" type="number" className={fieldClass()} value={form.waitlistOfferMinutes} onChange={e => update('waitlistOfferMinutes', e.target.value)} /></LabelField>
         <LabelField label="Gender access"><select className={fieldClass()} value={form.gender} onChange={e => update('gender', e.target.value)}><option value="all">All</option><option value="female">Female</option><option value="male">Male</option></select></LabelField>
         <LabelField label="Minimum age"><input type="number" min="0" className={fieldClass()} value={form.minAge} onChange={e => update('minAge', e.target.value)} /></LabelField>
         <LabelField label="Maximum age (optional)"><input type="number" min="0" className={fieldClass()} value={form.maxAge} onChange={e => update('maxAge', e.target.value)} /></LabelField>
@@ -129,6 +131,31 @@ function ManualCheckinForm({ reservationId, onClose, onSuccess }: { reservationI
   </form>;
 }
 
+function WaitlistPanel({ offeringId }: { offeringId: string }) {
+  const [open, setOpen] = useState(false);
+  const waitlist = useGetOfferingWaitlist(offeringId, { query: { enabled: open, refetchInterval: 30_000 } });
+  return <section className="mt-5 border-t border-[#ece7d9] pt-4">
+    <button type="button" aria-expanded={open} onClick={() => setOpen(value => !value)}
+      className="flex w-full items-center justify-between gap-3 text-left text-sm font-bold text-[#28695a]">
+      <span>Waitlist and offers</span>
+      <span className="rounded-full bg-[#eeeadc] px-2.5 py-1 text-[10px] text-[#536b61]">{waitlist.data?.length ?? '—'}</span>
+    </button>
+    {open ? waitlist.isLoading ? <p className="mt-3 text-xs text-[#75847c]">Loading waitlist…</p>
+      : waitlist.isError ? <div role="alert" className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-[#fff7f3] p-3 text-xs text-[#9a4435]">
+        <span>Waitlist unavailable. No member account details are shown.</span>
+        <button type="button" onClick={() => void waitlist.refetch()} className="font-bold">Retry</button>
+      </div>
+      : waitlist.data?.length ? <ol className="mt-3 divide-y divide-[#ece7d9]">
+        {waitlist.data.map(entry => <li key={entry.id} className="flex items-center justify-between gap-4 py-3">
+          <div>
+            <p className="text-xs font-bold text-[#36564b]">#{entry.queuePosition} · {entry.status.replaceAll('_', ' ')}</p>
+            <p className="mt-1 text-[10px] text-[#75847c]">Joined {formatDate(entry.createdAt)}{entry.offerExpiresAt ? ` · offer ends ${formatDate(entry.offerExpiresAt)}` : ''}</p>
+          </div>
+        </li>)}
+      </ol> : <p className="mt-3 rounded-xl bg-[#f5f1e6] p-3 text-xs text-[#75847c]">No waitlist entries have been recorded.</p> : null}
+  </section>;
+}
+
 export default function PartnerPortal() {
   const { isLoaded, isSignedIn } = useAuth();
   const { signOut } = useClerk();
@@ -170,8 +197,8 @@ export default function PartnerPortal() {
   const title = isAdmin ? 'Operations desk' : partner?.name ?? 'Partner workspace';
   const mutationError = (label: string) => setNotice(`${label} could not be completed. The server did not accept the change.`);
   const handleApproval = (id: string, approved: boolean) => approvePartner.mutate({ id, data: { approved } }, { onSuccess: invalidate, onError: () => mutationError('Partner review') });
-  const handleStatus = (id: string, active: boolean, capacity: number) => {
-    const data: OfferingUpdate = { active, capacity };
+  const handleStatus = (id: string, active: boolean, capacity: number, waitlistOfferMinutes?: number) => {
+    const data: OfferingUpdate = { active, capacity, ...(waitlistOfferMinutes === undefined ? {} : { waitlistOfferMinutes }) };
     updateOffering.mutate({ id, data }, { onSuccess: invalidate, onError: () => mutationError('Offering update') });
   };
   const runReview = (event: FormEvent) => {
@@ -203,8 +230,13 @@ export default function PartnerPortal() {
             <div className="mt-5 grid gap-4 md:grid-cols-[1.2fr_.8fr]"><article className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6"><div className="flex items-center justify-between"><div><h2 className="font-display text-xl font-bold">Next on the roster</h2><p className="mt-1 text-xs text-[#75847c]">Attendance records in your server scope</p></div><button onClick={() => setTab('attendance')} className="text-xs font-bold text-[#28695a]">View all</button></div>{attendance.isLoading ? <div className="mt-5 h-16 animate-pulse rounded-xl bg-[#eeeadc]" /> : attendance.isError ? <button className="mt-5 text-sm font-semibold text-[#9a4435]" onClick={() => void attendance.refetch()}>Roster unavailable · Retry</button> : rows.length ? <div className="mt-4 divide-y divide-[#ece7d9]">{rows.slice(0, 4).map(row => <div key={row.reservationId} className="flex items-center justify-between gap-4 py-3"><div className="min-w-0"><p className="truncate text-sm font-semibold">{row.title}</p><p className="mt-1 text-xs text-[#75847c]">{row.facility} · {formatDate(row.startsAt)}</p></div><span className="rounded-full bg-[#eeeadc] px-2.5 py-1 text-[10px] font-bold text-[#536b61]">{row.status.replaceAll('_', ' ')}</span></div>)}</div> : <p className="mt-5 rounded-xl bg-[#f5f1e6] p-4 text-sm text-[#75847c]">No attendance records were returned for this scope.</p>}</article>
               <article className="rounded-3xl border border-[#ddd7c6] bg-[#f0ead9] p-5 sm:p-6"><div className="flex items-center gap-2"><ShieldCheck size={17} className="text-[#28695a]" /><h2 className="font-display text-xl font-bold">Scoped by the server</h2></div><p className="mt-3 text-sm leading-6 text-[#62756b]">Your account role and partner boundary come from the operations service. Actions are checked again by MaydanGo when saved.</p><p className="mt-5 text-[10px] font-bold uppercase tracking-[.16em] text-[#a76445]">{isAdmin ? 'Administrator' : 'Partner operator'} · {rows.length} roster records</p></article></div>
           </div>}
-          {tab === 'offerings' && <section><div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm text-[#75847c]">Create and maintain opportunities from the authorized operations record.</p></div><Button onClick={() => setShowCreate(true)}><Plus size={16} />New offering</Button></div>{offerings.length ? <div className="grid gap-4">{offerings.map(item => <article key={item.id} className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${item.active && !item.cancelledAt ? 'bg-[#e1efdf] text-[#2d6d4a]' : 'bg-[#eeeadc] text-[#756e5b]'}`}>{item.cancelledAt ? 'Cancelled' : item.active ? 'Active' : 'Draft'}</span><span className="text-[10px] font-bold uppercase tracking-wide text-[#a76445]">{item.kind}</span></div><h2 className="mt-3 font-display text-xl font-bold">{item.title}</h2><p className="mt-1 text-sm text-[#687a71]">{item.facility}, {item.city} · {item.category}</p><p className="mt-3 text-xs text-[#75847c]">{formatDate(item.startsAt)} – {formatDate(item.endsAt)}{item.remaining !== undefined ? ` · ${item.remaining} remaining` : ''}</p>{isAdmin && item.partnerName && <p className="mt-2 text-xs text-[#75847c]">Partner: {item.partnerName}</p>}</div><div className="flex shrink-0 flex-wrap gap-2">{!item.cancelledAt && <><Button kind="quiet" onClick={() => setEditing(item.id)}>Capacity / state</Button><Button kind="quiet" onClick={() => handleStatus(item.id, !item.active, item.capacity)}>{item.active ? 'Make draft' : 'Activate'}</Button><Button kind="danger" onClick={() => { if (window.confirm(`Cancel “${item.title}”? Cancelling releases existing reservations and notifies members. This cannot be undone.`)) cancelOffering.mutate({ id: item.id }, { onSuccess: invalidate, onError: () => mutationError('Cancellation') }); }}>Cancel</Button></>}</div></div>
+           {tab === 'offerings' && <section><div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm text-[#75847c]">Create and maintain opportunities from the authorized operations record.</p></div><Button onClick={() => setShowCreate(true)}><Plus size={16} />New offering</Button></div>{offerings.length ? <div className="grid gap-4">{offerings.map(item => <article key={item.id} className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${item.active && !item.cancelledAt ? 'bg-[#e1efdf] text-[#2d6d4a]' : 'bg-[#eeeadc] text-[#756e5b]'}`}>{item.cancelledAt ? 'Cancelled' : item.active ? 'Active' : 'Draft'}</span><span className="text-[10px] font-bold uppercase tracking-wide text-[#a76445]">{item.kind}</span></div><h2 className="mt-3 font-display text-xl font-bold">{item.title}</h2><p className="mt-1 text-sm text-[#687a71]">{item.facility}, {item.city} · {item.category}</p><p className="mt-3 text-xs text-[#75847c]">{formatDate(item.startsAt)} – {formatDate(item.endsAt)}{item.remaining !== undefined ? ` · ${item.remaining} remaining` : ''}</p><p className="mt-2 text-xs text-[#75847c]">Waitlist offers expire after {item.waitlistOfferMinutes ?? 30} minutes.</p>{isAdmin && item.partnerName && <p className="mt-2 text-xs text-[#75847c]">Partner: {item.partnerName}</p>}</div><div className="flex shrink-0 flex-wrap gap-2">{!item.cancelledAt && <><Button kind="quiet" onClick={() => setEditing(item.id)}>Capacity / state</Button><Button kind="quiet" onClick={() => handleStatus(item.id, !item.active, item.capacity)}>{item.active ? 'Make draft' : 'Activate'}</Button><Button kind="danger" onClick={() => { if (window.confirm(`Cancel “${item.title}”? Cancelling releases existing reservations and notifies members. This cannot be undone.`)) cancelOffering.mutate({ id: item.id }, { onSuccess: invalidate, onError: () => mutationError('Cancellation') }); }}>Cancel</Button></>}</div></div>
               {editing === item.id && <form className="mt-5 grid gap-3 rounded-2xl bg-[#f2efe4] p-4 sm:grid-cols-[1fr_auto_auto]" onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); handleStatus(item.id, data.get('active') === 'on', Number(data.get('capacity'))); setEditing(null); }}><LabelField label="Capacity"><input required min="1" name="capacity" defaultValue={item.capacity} type="number" className={fieldClass()} /></LabelField><label className="flex items-center gap-2 self-end pb-3 text-sm font-medium"><input name="active" type="checkbox" defaultChecked={item.active} className="accent-[#174d43]" />Active</label><div className="flex items-end gap-2"><Button type="submit" disabled={updateOffering.isPending}>Save</Button><Button kind="quiet" onClick={() => setEditing(null)}>Close</Button></div></form>}
+              {!item.cancelledAt && <form className="mt-4 flex flex-wrap items-end gap-3 rounded-2xl bg-[#f2efe4] p-4" onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); handleStatus(item.id, item.active, item.capacity, Number(data.get('waitlistOfferMinutes'))); }}>
+                <LabelField label="Waitlist offer window (minutes)"><input required min="5" max="1440" name="waitlistOfferMinutes" defaultValue={item.waitlistOfferMinutes ?? 30} type="number" className={fieldClass()} /></LabelField>
+                <Button type="submit" disabled={updateOffering.isPending}>Save offer window</Button>
+              </form>}
+              <WaitlistPanel offeringId={item.id} />
             </article>)}</div> : <div className="rounded-3xl border border-dashed border-[#d5cfbf] bg-[#fffdf7]/60 p-10 text-center"><Dumbbell className="mx-auto text-[#a76445]" /><h2 className="mt-4 font-display text-xl font-bold">No offerings returned</h2><p className="mt-2 text-sm text-[#75847c]">Create an offering to start managing your available sessions and events.</p></div>}</section>}
           {tab === 'waitlist' && <section>
             <div className="mb-5 flex flex-wrap items-end justify-between gap-4">

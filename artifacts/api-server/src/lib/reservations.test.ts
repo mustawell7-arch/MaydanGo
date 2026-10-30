@@ -2,17 +2,18 @@ import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
-import { db, pool, offerings, memberships, reservations, attendance, memberProfiles, partners, operators, membershipPlans, accessGrants, operationAudit, learningCourses, learningLessons, courseEnrollments, lessonProgress } from "@workspace/db";
+import { db, pool, offerings, memberships, reservations, waitlistEntries, attendance, memberProfiles, partners, operators, membershipPlans, accessGrants, operationAudit, learningCourses, learningLessons, courseEnrollments, lessonProgress } from "@workspace/db";
 import express from "express";
 import operationsRouter from "../routes/operations";
 import memberRouter from "../routes/member";
 import publicRouter from "../routes/public";
-import { createReservation, cancelReservation, memberState, BookingError } from "./reservations";
+import { createReservation, cancelReservation, memberState, joinWaitlist, leaveWaitlist, acceptWaitlistOffer, processWaitlistQueue, BookingError } from "./reservations";
 import app from "../app";
 
 const prefix = `test-${randomUUID()}`;
 const alice = `${prefix}-a`, bob = `${prefix}-b`;
 const ids: string[] = [];
+const waitlistUsers: string[] = [];
 const partnerIds: string[] = [], planIds: string[] = [];
 const courseIds: string[] = [];
 const now = Date.now();
@@ -142,6 +143,49 @@ test("authenticated booking service: ownership, durable history, eligibility and
     assert.equal(row.status, "requested");
   });
 });
+test("live session waitlists preserve order, offer cancelled places, and hand off expired offers", async () => {
+  const owner = `${prefix}-wait-owner`, first = `${prefix}-wait-first`, second = `${prefix}-wait-second`, third = `${prefix}-wait-third`;
+  const partnerId = `${prefix}-wait-partner`;
+  waitlistUsers.push(owner, first, second, third);
+  partnerIds.push(partnerId);
+  await db.insert(partners).values({ id: partnerId, name: "Waitlist test partner", groupId: prefix, ownerUserId: owner, approved: true });
+  for (const userId of waitlistUsers) await db.insert(memberships).values({
+    userId, scope: "live", status: "active", source: "paid", paymentStatus: "paid", tier: "M",
+    startsAt: new Date(now - 86400000), endsAt: new Date(now + 10 * 86400000),
+    rules: { quota: 10, dailyLimit: 10 },
+  });
+
+  const liveOffer = (overrides: Partial<typeof offerings.$inferInsert> = {}) => offer({
+    scope: "live", partnerId, capacity: 1, ...overrides,
+  });
+  const firstOffering = await liveOffer();
+  const original = await createReservation(owner, input(firstOffering));
+  const firstEntry = await joinWaitlist(first, firstOffering);
+  const secondEntry = await joinWaitlist(second, firstOffering);
+  assert.equal(firstEntry.queuePosition, 1);
+  assert.equal(secondEntry.queuePosition, 2);
+  await rejects(() => joinWaitlist(third, firstOffering), 409);
+  await cancelReservation(owner, original.id);
+  assert.equal((await memberState(first)).waitlists.find(row => row.id === firstEntry.id)?.status, "offered");
+  assert.equal((await memberState(second)).waitlists.find(row => row.id === secondEntry.id)?.status, "waiting");
+  await rejects(() => createReservation(third, input(firstOffering)), 409);
+  assert.equal(await acceptWaitlistOffer(first, firstEntry.id), true);
+  assert.equal((await memberState(first)).waitlists.find(row => row.id === firstEntry.id)?.status, "booked");
+  assert.ok((await memberState(first)).bookings.some(row => row.targetId === firstOffering && row.status === "reserved"));
+
+  const secondOffering = await liveOffer();
+  const secondOriginal = await createReservation(owner, input(secondOffering));
+  const expiring = await joinWaitlist(first, secondOffering);
+  const next = await joinWaitlist(second, secondOffering);
+  await cancelReservation(owner, secondOriginal.id);
+  await db.update(waitlistEntries).set({ offerExpiresAt: new Date(Date.now() - 1000) })
+    .where(eq(waitlistEntries.id, expiring.id));
+  await processWaitlistQueue(new Date(), [secondOffering]);
+  assert.equal((await memberState(first)).waitlists.find(row => row.id === expiring.id)?.status, "expired");
+  assert.equal((await memberState(second)).waitlists.find(row => row.id === next.id)?.status, "offered");
+  assert.equal(await leaveWaitlist(second, next.id), true);
+  assert.equal((await memberState(second)).waitlists.find(row => row.id === next.id)?.status, "left");
+});
 test("HTTP endpoints reject unauthenticated access and forged bearer tokens", async () => {
   const server = app.listen(0);
   await new Promise<void>(resolve => server.once("listening", resolve));
@@ -220,6 +264,20 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       const catalog = await call("/member/live-catalog", alice);
       assert.ok(catalog.data.some((x: any) => x.id === o.data.id));
       assert.ok(!(await call("/member/catalog", alice)).data.some((x: any) => x.id === o.data.id));
+      assert.deepEqual((await call(`/operations/offerings/${o.data.id}/waitlist`, partnerUser)).data, []);
+      assert.equal((await call(`/operations/offerings/${o.data.id}/waitlist`, alice)).status, 403);
+    });
+    await t.test("partner staff can inspect queue order without receiving member identities", async () => {
+      await db.insert(waitlistEntries).values({
+        id: `${prefix}-staff-waitlist`, userId: bob, offeringId: o.data.id, queuePosition: 1,
+        status: "offered", offerExpiresAt: new Date(Date.now() + 60_000),
+      });
+      const result = await call(`/operations/offerings/${o.data.id}/waitlist`, partnerUser);
+      assert.equal(result.status, 200);
+      assert.equal(result.data[0].queuePosition, 1);
+      assert.equal(result.data[0].status, "offered");
+      assert.equal(result.data[0].userId, undefined);
+      assert.equal((await call(`/operations/offerings/${o.data.id}/waitlist`, alice)).status, 403);
     });
     await t.test("admin grant snapshots rules; client tier spoofing and repeated trials are rejected", async () => {
       assert.equal((await call("/operations/grants", partnerUser, "POST", { userId: alice, planId: plan.data.id, reason: "Test grant" })).status, 403);
@@ -352,9 +410,11 @@ test("live operations: staff scope, approved inventory, server grants and quota 
   }
 });
 after(async () => {
-  await db.delete(reservations).where(inArray(reservations.userId, [alice, bob]));
-  await db.delete(memberships).where(inArray(memberships.userId, [alice, bob]));
+  const users = [alice, bob, ...waitlistUsers];
+  await db.delete(reservations).where(inArray(reservations.userId, users));
+  await db.delete(memberships).where(inArray(memberships.userId, users));
   await db.delete(memberProfiles).where(inArray(memberProfiles.userId, [alice, bob]));
+  if (ids.length) await db.delete(waitlistEntries).where(inArray(waitlistEntries.offeringId, ids));
   if (ids.length) await db.delete(offerings).where(inArray(offerings.id, ids));
   if (courseIds.length) {
     const enrollments = await db.select({ id: courseEnrollments.id }).from(courseEnrollments)
@@ -366,7 +426,7 @@ after(async () => {
     await db.delete(learningLessons).where(inArray(learningLessons.courseId, courseIds));
     await db.delete(learningCourses).where(inArray(learningCourses.id, courseIds));
   }
-  await db.delete(accessGrants).where(inArray(accessGrants.userId, [alice, bob]));
+  await db.delete(accessGrants).where(inArray(accessGrants.userId, users));
   if (planIds.length) await db.delete(membershipPlans).where(inArray(membershipPlans.id, planIds));
   if (partnerIds.length) await db.delete(partners).where(inArray(partners.id, partnerIds));
   await pool.end();

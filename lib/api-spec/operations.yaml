@@ -244,6 +244,16 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/LiveOffering" }
+  /operations/offerings/{id}/waitlist:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getOfferingWaitlist
+      responses:
+        "200":
+          description: Ordered waitlist and current offer state for an authorized partner offering
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/OfferingWaitlistEntry" } }
   /operations/offerings/{id}/cancel:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     post:
@@ -378,42 +388,6 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/LiveOffering" } }
-  /member/waitlist:
-    get:
-      operationId: getMemberWaitlist
-      responses:
-        "200":
-          description: The member's ordered live-class waitlist entries and recent promotions
-          content:
-            application/json:
-              schema: { type: array, items: { $ref: "#/components/schemas/WaitlistEntry" } }
-    post:
-      operationId: joinMemberWaitlist
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/WaitlistJoinInput" }
-      responses:
-        "201":
-          description: The member joins the end of the ordered queue
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/WaitlistEntry" }
-  /member/waitlist/{id}:
-    parameters: [{ $ref: "#/components/parameters/Id" }]
-    delete:
-      operationId: leaveMemberWaitlist
-      responses:
-        "200":
-          description: The member's active queue entry is withdrawn
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [left]
-                properties:
-                  left: { type: boolean }
   /member/courses:
     get:
       operationId: getMemberCourses
@@ -477,6 +451,36 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/JoinAccess" }
+  /member/offerings/{id}/waitlist:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: joinMemberWaitlist
+      responses:
+        "200":
+          description: Account's waitlist entries after joining a full live class
+          content:
+            application/json:
+              schema: { $ref: "./openapi.yaml#/components/schemas/MemberState" }
+  /member/waitlist/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    delete:
+      operationId: leaveMemberWaitlist
+      responses:
+        "200":
+          description: Account's waitlist entries after leaving the queue
+          content:
+            application/json:
+              schema: { $ref: "./openapi.yaml#/components/schemas/MemberState" }
+  /member/waitlist/{id}/accept:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: acceptMemberWaitlistOffer
+      responses:
+        "200":
+          description: Account state after accepting a place offer
+          content:
+            application/json:
+              schema: { $ref: "./openapi.yaml#/components/schemas/MemberState" }
   /member/plans:
     get:
       operationId: getLivePlans
@@ -724,6 +728,7 @@ components:
         endsAt: { type: string }
         cancellationDeadline: { type: string }
         capacity: { type: integer, minimum: 1 }
+        waitlistOfferMinutes: { type: integer, minimum: 5, maximum: 1440, default: 30 }
         gender: { type: string, enum: [all, female, male] }
         minAge: { type: integer, minimum: 0 }
         maxAge: { type: [integer, "null"] }
@@ -743,12 +748,24 @@ components:
             partnerName: { type: string }
             remaining: { type: integer }
             canJoin: { type: boolean }
+            waitlistOfferMinutes: { type: integer, minimum: 5, maximum: 1440 }
+    OfferingWaitlistEntry:
+      type: object
+      required: [id, queuePosition, status, createdAt]
+      properties:
+        id: { type: string }
+        queuePosition: { type: integer, minimum: 1 }
+        status: { type: string, enum: [waiting, offered, booked, expired, left, ineligible, closed] }
+        createdAt: { type: string, format: date-time }
+        offerExpiresAt: { type: ["string", "null"], format: date-time }
+        respondedAt: { type: ["string", "null"], format: date-time }
     OfferingUpdate:
       type: object
       additionalProperties: false
       required: [capacity]
       properties:
         capacity: { type: integer, minimum: 1 }
+        waitlistOfferMinutes: { type: integer, minimum: 5, maximum: 1440 }
         active: { type: boolean }
         localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
         localizedDescription: { $ref: "#/components/schemas/LocalizedText" }
@@ -842,30 +859,6 @@ components:
       properties:
         lessonId: { type: string, minLength: 1 }
         completed: { type: boolean }
-    WaitlistJoinInput:
-      type: object
-      additionalProperties: false
-      required: [offeringId]
-      properties:
-        offeringId: { type: string, minLength: 1, maxLength: 120 }
-    WaitlistEntry:
-      type: object
-      required: [id, offeringId, title, localizedTitle, kind, city, facility, startsAt, status, position, joinedAt]
-      properties:
-        id: { type: string }
-        offeringId: { type: string }
-        title: { type: string }
-        localizedTitle:
-          anyOf:
-            - $ref: "#/components/schemas/LocalizedText"
-            - type: "null"
-        kind: { type: string, enum: [session, event, coach] }
-        city: { type: string }
-        facility: { type: string }
-        startsAt: { type: string, format: date-time }
-        status: { type: string, enum: [waiting, promoted, cancelled] }
-        position: { type: ["integer", "null"], minimum: 1 }
-        joinedAt: { type: string, format: date-time }
     MemberLiveClass:
       type: object
       required: [id, title, localizedTitle, localizedDescription, city, facility, partnerName, startsAt, endsAt, remaining, booked, canJoin]

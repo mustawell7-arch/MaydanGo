@@ -6,13 +6,14 @@ import type { Language } from '@/lib/i18n';
 import { dateTime, errorCopy } from '@/lib/content';
 import {
   getMemberState, createMemberBooking, cancelMemberBooking, enablePreviewMembership,
+  joinMemberWaitlist, leaveMemberWaitlist, acceptMemberWaitlistOffer,
   setBaseUrl, setAuthTokenGetter, type MemberState, type MemberBooking,
   saveMemberProfile, getBookingCatalog,
 } from '@workspace/api-client-react';
 
 const domain = process.env.EXPO_PUBLIC_DOMAIN;
 if (domain) setBaseUrl(`https://${domain}`);
-const empty: MemberState = { memberships: [], bookings: [] };
+const empty: MemberState = { memberships: [], bookings: [], waitlists: [] };
 
 export function useMemberBookings(language: Language) {
   const { userId, isSignedIn, getToken } = useAuth();
@@ -97,6 +98,10 @@ export function useMemberBookings(language: Language) {
     bookSession: (id: string) => create('session', id),
     bookEvent: (id: string) => create('event', id),
     requestCoaching: (id: string, slot: string) => create('coach', id, slot),
+    joinWaitlist: (offeringId: string) => mutate(() => joinMemberWaitlist(offeringId)),
+    leaveWaitlist: (entryId: string) => mutate(() => leaveMemberWaitlist(entryId)),
+    acceptWaitlistOffer: (entryId: string) => mutate(() => acceptMemberWaitlistOffer(entryId)),
+    waitlists: current.waitlists,
     cancelBooking: (id: string) => cancel('session', id),
     cancelEvent: (id: string) => cancel('event', id),
     cancelCoachRequest: (id: string, slot: string) => cancel('coach', id, slot),

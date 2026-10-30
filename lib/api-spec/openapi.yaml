@@ -215,6 +215,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1offerings"
   /operations/offerings/{id}:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}"
+  /operations/offerings/{id}/waitlist:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1waitlist"
   /operations/offerings/{id}/cancel:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1cancel"
   /operations/courses:
@@ -235,10 +237,6 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1refunds"
   /member/live-catalog:
     $ref: "./operations.yaml#/paths/~1member~1live-catalog"
-  /member/waitlist:
-    $ref: "./operations.yaml#/paths/~1member~1waitlist"
-  /member/waitlist/{id}:
-    $ref: "./operations.yaml#/paths/~1member~1waitlist~1{id}"
   /member/courses:
     $ref: "./operations.yaml#/paths/~1member~1courses"
   /member/courses/{id}:
@@ -251,6 +249,12 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1live-classes"
   /member/live-classes/{id}/join:
     $ref: "./operations.yaml#/paths/~1member~1live-classes~1{id}~1join"
+  /member/offerings/{id}/waitlist:
+    $ref: "./operations.yaml#/paths/~1member~1offerings~1{id}~1waitlist"
+  /member/waitlist/{id}:
+    $ref: "./operations.yaml#/paths/~1member~1waitlist~1{id}"
+  /member/waitlist/{id}/accept:
+    $ref: "./operations.yaml#/paths/~1member~1waitlist~1{id}~1accept"
   /member/support/tickets:
     $ref: "./operations.yaml#/paths/~1member~1support~1tickets"
   /member/support/tickets/{id}:
@@ -445,7 +449,7 @@ components:
         correctionEndsAt: { type: string }
     MemberState:
       type: object
-      required: [memberships, bookings]
+      required: [memberships, bookings, waitlists]
       properties:
         profile:
           type: [object, "null"]
@@ -468,6 +472,23 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MemberBooking"
+        waitlists:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemberWaitlistEntry"
+    MemberWaitlistEntry:
+      type: object
+      required: [id, offeringId, title, startsAt, queuePosition, status, createdAt]
+      properties:
+        id: { type: string }
+        offeringId: { type: string }
+        title: { type: string }
+        startsAt: { type: string, format: date-time }
+        queuePosition: { type: integer, minimum: 1 }
+        status: { type: string, enum: [waiting, offered, booked, expired, left, ineligible, closed] }
+        createdAt: { type: string, format: date-time }
+        offerExpiresAt: { type: ["string", "null"], format: date-time }
+        respondedAt: { type: ["string", "null"], format: date-time }
     MemberBooking:
       type: object
       required: [id, kind, targetId, slot, title, scope, startsAt, status, createdAt]

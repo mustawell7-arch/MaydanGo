@@ -191,7 +191,14 @@ export const getOperationsResponseOfferingsItemOneLocalizedDescriptionOneKuMax =
 
 
 
+export const getOperationsResponseOfferingsItemOneWaitlistOfferMinutesDefault = 30;
+export const getOperationsResponseOfferingsItemOneWaitlistOfferMinutesMin = 5;
+export const getOperationsResponseOfferingsItemOneWaitlistOfferMinutesMax = 1440;
+
 export const getOperationsResponseOfferingsItemOneMinAgeMin = 0;
+
+export const getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMin = 5;
+export const getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMax = 1440;
 
 export const getOperationsResponseWaitlistItemLocalizedTitleOneEnMax = 240;
 
@@ -257,6 +264,7 @@ export const GetOperationsResponse = zod.object({
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
   "capacity": zod.number().int().min(1),
+  "waitlistOfferMinutes": zod.number().int().min(getOperationsResponseOfferingsItemOneWaitlistOfferMinutesMin).max(getOperationsResponseOfferingsItemOneWaitlistOfferMinutesMax).default(getOperationsResponseOfferingsItemOneWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
   "minAge": zod.number().int().min(getOperationsResponseOfferingsItemOneMinAgeMin).optional(),
   "maxAge": zod.number().int().nullish(),
@@ -270,7 +278,8 @@ export const GetOperationsResponse = zod.object({
   "cancelledAt": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.number().int().optional(),
-  "canJoin": zod.boolean().optional()
+  "canJoin": zod.boolean().optional(),
+  "waitlistOfferMinutes": zod.number().int().min(getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMin).max(getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMax).optional()
 }))),
   "waitlist": zod.array(zod.object({
   "id": zod.string(),
@@ -367,6 +376,10 @@ export const addLiveOfferingBodyLocalizedDescriptionOneKuMax = 240;
 
 
 
+export const addLiveOfferingBodyWaitlistOfferMinutesDefault = 30;
+export const addLiveOfferingBodyWaitlistOfferMinutesMin = 5;
+export const addLiveOfferingBodyWaitlistOfferMinutesMax = 1440;
+
 export const addLiveOfferingBodyMinAgeMin = 0;
 
 
@@ -395,6 +408,7 @@ export const AddLiveOfferingBody = zod.object({
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
   "capacity": zod.number().int().min(1),
+  "waitlistOfferMinutes": zod.number().int().min(addLiveOfferingBodyWaitlistOfferMinutesMin).max(addLiveOfferingBodyWaitlistOfferMinutesMax).default(addLiveOfferingBodyWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
   "minAge": zod.number().int().min(addLiveOfferingBodyMinAgeMin).optional(),
   "maxAge": zod.number().int().nullish(),
@@ -416,7 +430,14 @@ export const addLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
 
 
 
+export const addLiveOfferingResponseOneWaitlistOfferMinutesDefault = 30;
+export const addLiveOfferingResponseOneWaitlistOfferMinutesMin = 5;
+export const addLiveOfferingResponseOneWaitlistOfferMinutesMax = 1440;
+
 export const addLiveOfferingResponseOneMinAgeMin = 0;
+
+export const addLiveOfferingResponseTwoWaitlistOfferMinutesMin = 5;
+export const addLiveOfferingResponseTwoWaitlistOfferMinutesMax = 1440;
 
 
 
@@ -444,6 +465,7 @@ export const AddLiveOfferingResponse = zod.object({
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
   "capacity": zod.number().int().min(1),
+  "waitlistOfferMinutes": zod.number().int().min(addLiveOfferingResponseOneWaitlistOfferMinutesMin).max(addLiveOfferingResponseOneWaitlistOfferMinutesMax).default(addLiveOfferingResponseOneWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
   "minAge": zod.number().int().min(addLiveOfferingResponseOneMinAgeMin).optional(),
   "maxAge": zod.number().int().nullish(),
@@ -457,7 +479,8 @@ export const AddLiveOfferingResponse = zod.object({
   "cancelledAt": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.number().int().optional(),
-  "canJoin": zod.boolean().optional()
+  "canJoin": zod.boolean().optional(),
+  "waitlistOfferMinutes": zod.number().int().min(addLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(addLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional()
 }))
 
 
@@ -465,6 +488,9 @@ export const ChangeLiveOfferingParams = zod.object({
   "id": zod.coerce.string()
 })
 
+
+export const changeLiveOfferingBodyWaitlistOfferMinutesMin = 5;
+export const changeLiveOfferingBodyWaitlistOfferMinutesMax = 1440;
 
 export const changeLiveOfferingBodyLocalizedTitleEnMax = 240;
 
@@ -482,6 +508,7 @@ export const changeLiveOfferingBodyLocalizedDescriptionKuMax = 240;
 
 export const ChangeLiveOfferingBody = zod.object({
   "capacity": zod.number().int().min(1),
+  "waitlistOfferMinutes": zod.number().int().min(changeLiveOfferingBodyWaitlistOfferMinutesMin).max(changeLiveOfferingBodyWaitlistOfferMinutesMax).optional(),
   "active": zod.boolean().optional(),
   "localizedTitle": zod.object({
   "en": zod.string().min(1).max(changeLiveOfferingBodyLocalizedTitleEnMax),
@@ -510,7 +537,14 @@ export const changeLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
 
 
 
+export const changeLiveOfferingResponseOneWaitlistOfferMinutesDefault = 30;
+export const changeLiveOfferingResponseOneWaitlistOfferMinutesMin = 5;
+export const changeLiveOfferingResponseOneWaitlistOfferMinutesMax = 1440;
+
 export const changeLiveOfferingResponseOneMinAgeMin = 0;
+
+export const changeLiveOfferingResponseTwoWaitlistOfferMinutesMin = 5;
+export const changeLiveOfferingResponseTwoWaitlistOfferMinutesMax = 1440;
 
 
 
@@ -538,6 +572,7 @@ export const ChangeLiveOfferingResponse = zod.object({
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
   "capacity": zod.number().int().min(1),
+  "waitlistOfferMinutes": zod.number().int().min(changeLiveOfferingResponseOneWaitlistOfferMinutesMin).max(changeLiveOfferingResponseOneWaitlistOfferMinutesMax).default(changeLiveOfferingResponseOneWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
   "minAge": zod.number().int().min(changeLiveOfferingResponseOneMinAgeMin).optional(),
   "maxAge": zod.number().int().nullish(),
@@ -551,8 +586,27 @@ export const ChangeLiveOfferingResponse = zod.object({
   "cancelledAt": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.number().int().optional(),
-  "canJoin": zod.boolean().optional()
+  "canJoin": zod.boolean().optional(),
+  "waitlistOfferMinutes": zod.number().int().min(changeLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(changeLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional()
 }))
+
+
+export const GetOfferingWaitlistParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+
+export const GetOfferingWaitlistResponseItem = zod.object({
+  "id": zod.string(),
+  "queuePosition": zod.number().int().min(1),
+  "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
+  "createdAt": zod.coerce.date(),
+  "offerExpiresAt": zod.coerce.date().nullish(),
+  "respondedAt": zod.coerce.date().nullish()
+})
+export const GetOfferingWaitlistResponse = zod.array(GetOfferingWaitlistResponseItem)
 
 
 export const CancelLiveOfferingParams = zod.object({
@@ -1138,7 +1192,14 @@ export const getLiveCatalogResponseOneLocalizedDescriptionOneKuMax = 240;
 
 
 
+export const getLiveCatalogResponseOneWaitlistOfferMinutesDefault = 30;
+export const getLiveCatalogResponseOneWaitlistOfferMinutesMin = 5;
+export const getLiveCatalogResponseOneWaitlistOfferMinutesMax = 1440;
+
 export const getLiveCatalogResponseOneMinAgeMin = 0;
+
+export const getLiveCatalogResponseTwoWaitlistOfferMinutesMin = 5;
+export const getLiveCatalogResponseTwoWaitlistOfferMinutesMax = 1440;
 
 
 
@@ -1166,6 +1227,7 @@ export const GetLiveCatalogResponseItem = zod.object({
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
   "capacity": zod.number().int().min(1),
+  "waitlistOfferMinutes": zod.number().int().min(getLiveCatalogResponseOneWaitlistOfferMinutesMin).max(getLiveCatalogResponseOneWaitlistOfferMinutesMax).default(getLiveCatalogResponseOneWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
   "minAge": zod.number().int().min(getLiveCatalogResponseOneMinAgeMin).optional(),
   "maxAge": zod.number().int().nullish(),
@@ -1179,83 +1241,10 @@ export const GetLiveCatalogResponseItem = zod.object({
   "cancelledAt": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.number().int().optional(),
-  "canJoin": zod.boolean().optional()
+  "canJoin": zod.boolean().optional(),
+  "waitlistOfferMinutes": zod.number().int().min(getLiveCatalogResponseTwoWaitlistOfferMinutesMin).max(getLiveCatalogResponseTwoWaitlistOfferMinutesMax).optional()
 }))
 export const GetLiveCatalogResponse = zod.array(GetLiveCatalogResponseItem)
-
-
-export const getMemberWaitlistResponseLocalizedTitleOneEnMax = 240;
-
-export const getMemberWaitlistResponseLocalizedTitleOneArMax = 240;
-
-export const getMemberWaitlistResponseLocalizedTitleOneKuMax = 240;
-
-
-
-
-export const GetMemberWaitlistResponseItem = zod.object({
-  "id": zod.string(),
-  "offeringId": zod.string(),
-  "title": zod.string(),
-  "localizedTitle": zod.union([zod.object({
-  "en": zod.string().min(1).max(getMemberWaitlistResponseLocalizedTitleOneEnMax),
-  "ar": zod.string().min(1).max(getMemberWaitlistResponseLocalizedTitleOneArMax),
-  "ku": zod.string().min(1).max(getMemberWaitlistResponseLocalizedTitleOneKuMax)
-}),zod.null()]),
-  "kind": zod.enum(['session', 'event', 'coach']),
-  "city": zod.string(),
-  "facility": zod.string(),
-  "startsAt": zod.coerce.date(),
-  "status": zod.enum(['waiting', 'promoted', 'cancelled']),
-  "position": zod.number().int().min(1).nullable(),
-  "joinedAt": zod.coerce.date()
-})
-export const GetMemberWaitlistResponse = zod.array(GetMemberWaitlistResponseItem)
-
-
-export const joinMemberWaitlistBodyOfferingIdMax = 120;
-
-
-
-export const JoinMemberWaitlistBody = zod.object({
-  "offeringId": zod.string().min(1).max(joinMemberWaitlistBodyOfferingIdMax)
-})
-
-export const joinMemberWaitlistResponseLocalizedTitleOneEnMax = 240;
-
-export const joinMemberWaitlistResponseLocalizedTitleOneArMax = 240;
-
-export const joinMemberWaitlistResponseLocalizedTitleOneKuMax = 240;
-
-
-
-
-export const JoinMemberWaitlistResponse = zod.object({
-  "id": zod.string(),
-  "offeringId": zod.string(),
-  "title": zod.string(),
-  "localizedTitle": zod.union([zod.object({
-  "en": zod.string().min(1).max(joinMemberWaitlistResponseLocalizedTitleOneEnMax),
-  "ar": zod.string().min(1).max(joinMemberWaitlistResponseLocalizedTitleOneArMax),
-  "ku": zod.string().min(1).max(joinMemberWaitlistResponseLocalizedTitleOneKuMax)
-}),zod.null()]),
-  "kind": zod.enum(['session', 'event', 'coach']),
-  "city": zod.string(),
-  "facility": zod.string(),
-  "startsAt": zod.coerce.date(),
-  "status": zod.enum(['waiting', 'promoted', 'cancelled']),
-  "position": zod.number().int().min(1).nullable(),
-  "joinedAt": zod.coerce.date()
-})
-
-
-export const LeaveMemberWaitlistParams = zod.object({
-  "id": zod.coerce.string()
-})
-
-export const LeaveMemberWaitlistResponse = zod.object({
-  "left": zod.boolean()
-})
 
 
 export const getMemberCoursesResponseOneLocalizedTitleEnMax = 240;
@@ -1636,6 +1625,141 @@ export const CreateLiveClassJoinParams = zod.object({
 export const CreateLiveClassJoinResponse = zod.object({
   "url": zod.string().url(),
   "validUntil": zod.coerce.date()
+})
+
+
+export const JoinMemberWaitlistParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+
+export const JoinMemberWaitlistResponse = zod.object({
+  "profile": zod.object({
+  "gender": zod.string(),
+  "birthDate": zod.string()
+}).nullish(),
+  "memberships": zod.array(zod.object({
+  "scope": zod.string(),
+  "source": zod.string().optional(),
+  "status": zod.string(),
+  "tier": zod.string(),
+  "endsAt": zod.string()
+})),
+  "bookings": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.string(),
+  "targetId": zod.string(),
+  "slot": zod.string(),
+  "title": zod.string(),
+  "scope": zod.string(),
+  "startsAt": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "cancelledAt": zod.string().nullish()
+})),
+  "waitlists": zod.array(zod.object({
+  "id": zod.string(),
+  "offeringId": zod.string(),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "queuePosition": zod.number().int().min(1),
+  "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
+  "createdAt": zod.coerce.date(),
+  "offerExpiresAt": zod.coerce.date().nullish(),
+  "respondedAt": zod.coerce.date().nullish()
+}))
+})
+
+
+export const LeaveMemberWaitlistParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+
+export const LeaveMemberWaitlistResponse = zod.object({
+  "profile": zod.object({
+  "gender": zod.string(),
+  "birthDate": zod.string()
+}).nullish(),
+  "memberships": zod.array(zod.object({
+  "scope": zod.string(),
+  "source": zod.string().optional(),
+  "status": zod.string(),
+  "tier": zod.string(),
+  "endsAt": zod.string()
+})),
+  "bookings": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.string(),
+  "targetId": zod.string(),
+  "slot": zod.string(),
+  "title": zod.string(),
+  "scope": zod.string(),
+  "startsAt": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "cancelledAt": zod.string().nullish()
+})),
+  "waitlists": zod.array(zod.object({
+  "id": zod.string(),
+  "offeringId": zod.string(),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "queuePosition": zod.number().int().min(1),
+  "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
+  "createdAt": zod.coerce.date(),
+  "offerExpiresAt": zod.coerce.date().nullish(),
+  "respondedAt": zod.coerce.date().nullish()
+}))
+})
+
+
+export const AcceptMemberWaitlistOfferParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+
+export const AcceptMemberWaitlistOfferResponse = zod.object({
+  "profile": zod.object({
+  "gender": zod.string(),
+  "birthDate": zod.string()
+}).nullish(),
+  "memberships": zod.array(zod.object({
+  "scope": zod.string(),
+  "source": zod.string().optional(),
+  "status": zod.string(),
+  "tier": zod.string(),
+  "endsAt": zod.string()
+})),
+  "bookings": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.string(),
+  "targetId": zod.string(),
+  "slot": zod.string(),
+  "title": zod.string(),
+  "scope": zod.string(),
+  "startsAt": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "cancelledAt": zod.string().nullish()
+})),
+  "waitlists": zod.array(zod.object({
+  "id": zod.string(),
+  "offeringId": zod.string(),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "queuePosition": zod.number().int().min(1),
+  "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
+  "createdAt": zod.coerce.date(),
+  "offerExpiresAt": zod.coerce.date().nullish(),
+  "respondedAt": zod.coerce.date().nullish()
+}))
 })
 
 
@@ -2104,6 +2228,9 @@ export const SaveMemberProfileBody = zod.object({
   "birthDate": zod.string()
 })
 
+
+
+
 export const SaveMemberProfileResponse = zod.object({
   "profile": zod.object({
   "gender": zod.string(),
@@ -2127,6 +2254,17 @@ export const SaveMemberProfileResponse = zod.object({
   "status": zod.string(),
   "createdAt": zod.string(),
   "cancelledAt": zod.string().nullish()
+})),
+  "waitlists": zod.array(zod.object({
+  "id": zod.string(),
+  "offeringId": zod.string(),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "queuePosition": zod.number().int().min(1),
+  "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
+  "createdAt": zod.coerce.date(),
+  "offerExpiresAt": zod.coerce.date().nullish(),
+  "respondedAt": zod.coerce.date().nullish()
 }))
 })
 
@@ -2143,6 +2281,9 @@ export const GetBookingCatalogResponseItem = zod.object({
   "remaining": zod.number().int()
 })
 export const GetBookingCatalogResponse = zod.array(GetBookingCatalogResponseItem)
+
+
+
 
 
 export const GetMemberStateResponse = zod.object({
@@ -2168,6 +2309,17 @@ export const GetMemberStateResponse = zod.object({
   "status": zod.string(),
   "createdAt": zod.string(),
   "cancelledAt": zod.string().nullish()
+})),
+  "waitlists": zod.array(zod.object({
+  "id": zod.string(),
+  "offeringId": zod.string(),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "queuePosition": zod.number().int().min(1),
+  "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
+  "createdAt": zod.coerce.date(),
+  "offerExpiresAt": zod.coerce.date().nullish(),
+  "respondedAt": zod.coerce.date().nullish()
 }))
 })
 
@@ -2175,6 +2327,9 @@ export const GetMemberStateResponse = zod.object({
 export const EnablePreviewMembershipBody = zod.object({
   "acknowledgeSampleData": zod.boolean()
 })
+
+
+
 
 export const EnablePreviewMembershipResponse = zod.object({
   "profile": zod.object({
@@ -2199,6 +2354,17 @@ export const EnablePreviewMembershipResponse = zod.object({
   "status": zod.string(),
   "createdAt": zod.string(),
   "cancelledAt": zod.string().nullish()
+})),
+  "waitlists": zod.array(zod.object({
+  "id": zod.string(),
+  "offeringId": zod.string(),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "queuePosition": zod.number().int().min(1),
+  "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
+  "createdAt": zod.coerce.date(),
+  "offerExpiresAt": zod.coerce.date().nullish(),
+  "respondedAt": zod.coerce.date().nullish()
 }))
 })
 
@@ -2208,6 +2374,9 @@ export const CreateMemberBookingBody = zod.object({
   "targetId": zod.string(),
   "slot": zod.string().optional()
 })
+
+
+
 
 export const CreateMemberBookingResponse = zod.object({
   "profile": zod.object({
@@ -2232,6 +2401,17 @@ export const CreateMemberBookingResponse = zod.object({
   "status": zod.string(),
   "createdAt": zod.string(),
   "cancelledAt": zod.string().nullish()
+})),
+  "waitlists": zod.array(zod.object({
+  "id": zod.string(),
+  "offeringId": zod.string(),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "queuePosition": zod.number().int().min(1),
+  "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
+  "createdAt": zod.coerce.date(),
+  "offerExpiresAt": zod.coerce.date().nullish(),
+  "respondedAt": zod.coerce.date().nullish()
 }))
 })
 
@@ -2239,6 +2419,9 @@ export const CreateMemberBookingResponse = zod.object({
 export const CancelMemberBookingParams = zod.object({
   "id": zod.coerce.string()
 })
+
+
+
 
 export const CancelMemberBookingResponse = zod.object({
   "profile": zod.object({
@@ -2263,6 +2446,17 @@ export const CancelMemberBookingResponse = zod.object({
   "status": zod.string(),
   "createdAt": zod.string(),
   "cancelledAt": zod.string().nullish()
+})),
+  "waitlists": zod.array(zod.object({
+  "id": zod.string(),
+  "offeringId": zod.string(),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "queuePosition": zod.number().int().min(1),
+  "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
+  "createdAt": zod.coerce.date(),
+  "offerExpiresAt": zod.coerce.date().nullish(),
+  "respondedAt": zod.coerce.date().nullish()
 }))
 })
 

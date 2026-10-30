@@ -56,10 +56,17 @@ export default function BookingsScreen() {
       meta: c.specialty, status: r.status, onCancel: () => app.cancelCoachRequest(r.coachId, r.slot), cancelLabel: t('cancelRequest'),
     }];
   });
+  const waitlistRows = [...app.waitlists]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 12);
   const activeCount = [...sessionRows, ...eventRows, ...coachRows].filter((r) => r.status !== 'cancelled').length;
-  const hasAny = sessionRows.length + eventRows.length + coachRows.length > 0;
+  const hasAny = sessionRows.length + eventRows.length + coachRows.length + waitlistRows.length > 0;
 
   const statusLabel = (s: Row['status']) => (s === 'reserved' ? t('statusReserved') : s === 'requested' ? t('statusRequested') : t('statusCancelled'));
+  const waitlistStatusLabel = (status: string) => t(({
+    waiting: 'waitlistWaiting', offered: 'waitlistOffered', booked: 'waitlistBooked',
+    expired: 'waitlistExpired', left: 'waitlistLeft', ineligible: 'waitlistIneligible', closed: 'waitlistClosed',
+  } as Record<string, MessageKey>)[status] ?? 'waitlistClosed');
 
   const section = (title: MessageKey, rows: Row[]) => {
     if (!rows.length) return null;
@@ -113,6 +120,37 @@ export default function BookingsScreen() {
         </View>
         {hasAny ? (
           <>
+            {waitlistRows.length ? <View style={{ marginBottom: 8 }}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: align }]}>{t('waitlistSection')}</Text>
+              {waitlistRows.map((entry) => {
+                const actionable = entry.status === 'waiting' || entry.status === 'offered';
+                return <View key={entry.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.when, { color: colors.primary, textAlign: align }]}>{dateTime(entry.startsAt, app.language)}</Text>
+                    <Text style={[styles.title, { color: colors.foreground, textAlign: align }]}>{entry.title}</Text>
+                    <Text style={[styles.meta, { color: colors.mutedForeground, textAlign: align }]}>
+                      {waitlistStatusLabel(entry.status)}
+                      {['waiting', 'offered'].includes(entry.status) ? ` · ${t('waitlistPosition').replace('{n}', String(entry.queuePosition))}` : ''}
+                    </Text>
+                    {entry.status === 'offered' && entry.offerExpiresAt ? <Text style={[styles.meta, { color: colors.destructive, textAlign: align }]}>
+                      {t('waitlistDeadline').replace('{date}', dateTime(entry.offerExpiresAt, app.language, true))}
+                    </Text> : null}
+                    {actionable ? <View style={styles.footer}>
+                      {entry.status === 'offered' ? <Pressable disabled={app.memberLoading} accessibilityRole="button"
+                        accessibilityLabel={`${t('waitlistAccept')}: ${entry.title}`}
+                        onPress={() => void app.acceptWaitlistOffer(entry.id)} hitSlop={6} style={styles.cancelButton}>
+                        <Text style={[styles.cancelText, { color: colors.primary }]}>{t('waitlistAccept')}</Text>
+                      </Pressable> : null}
+                      <Pressable disabled={app.memberLoading} accessibilityRole="button"
+                        accessibilityLabel={`${t('waitlistLeave')}: ${entry.title}`}
+                        onPress={() => void app.leaveWaitlist(entry.id)} hitSlop={6} style={styles.cancelButton}>
+                        <Text style={[styles.cancelText, { color: colors.destructive }]}>{t('waitlistLeave')}</Text>
+                      </Pressable>
+                    </View> : null}
+                  </View>
+                </View>;
+              })}
+            </View> : null}
             {section('classesSection', sessionRows)}
             {section('eventsSection', eventRows)}
             {section('coachingSection', coachRows)}

@@ -47,6 +47,7 @@ export const offeringInput = z.object({
   startsAt: z.string().datetime({ offset: true }), endsAt: z.string().datetime({ offset: true }),
   cancellationDeadline: z.string().datetime({ offset: true }),
   capacity: z.number().int().min(1).max(100000),
+  waitlistOfferMinutes: z.number().int().min(5).max(1440).default(30),
   gender: z.enum(["all", "female", "male"]).default("all"),
   minAge: z.number().int().min(0).max(120).default(0),
   maxAge: z.number().int().min(0).max(120).nullable().default(null),

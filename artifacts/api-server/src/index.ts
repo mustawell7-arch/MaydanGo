@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { processWaitlistQueue } from "./lib/reservations";
 
 const rawPort = process.env["PORT"];
 
@@ -22,4 +23,10 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+  void processWaitlistQueue().catch(err => logger.error({ err }, "Initial waitlist processing failed"));
 });
+
+const waitlistExpiryTimer = setInterval(() => {
+  void processWaitlistQueue().catch(err => logger.error({ err }, "Waitlist processing failed"));
+}, 15_000);
+waitlistExpiryTimer.unref();
