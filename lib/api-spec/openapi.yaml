@@ -291,6 +291,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1partners~1{id}"
   /operations/offerings:
     $ref: "./operations.yaml#/paths/~1operations~1offerings"
+  /operations/offerings/recurring:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings~1recurring"
   /operations/offerings/{id}:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}"
   /operations/offerings/{id}/waitlist:

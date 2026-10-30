@@ -74,6 +74,8 @@ import type {
   PushDeviceRemoval,
   RecordManualCheckin200,
   RecordManualCheckinBody,
+  RecurringOfferingsInput,
+  RecurringOfferingsResponse,
   RefundRequest,
   RefundResult,
   RequestManualCheckinCode200,
@@ -1809,6 +1811,88 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getAddLiveOfferingMutationOptions(options), queryClient);
+    }
+
+export const getCreateRecurringOfferingsUrl = () => {
+
+
+
+
+  return `/api/operations/offerings/recurring`
+}
+
+export const createRecurringOfferings = async (recurringOfferingsInput: RecurringOfferingsInput, options?: Parameters<typeof customFetch>[1]): Promise<RecurringOfferingsResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<RecurringOfferingsResponse>(getCreateRecurringOfferingsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(recurringOfferingsInput)
+  }
+);}
+
+
+
+
+
+export const getCreateRecurringOfferingsMutationKey = () => ['createRecurringOfferings'] as const;
+
+export const getCreateRecurringOfferingsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRecurringOfferings>>, TError,CreateRecurringOfferingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createRecurringOfferings>>, TError,CreateRecurringOfferingsMutationVariables, TContext> => {
+
+const mutationKey = getCreateRecurringOfferingsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createRecurringOfferings>>, CreateRecurringOfferingsMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createRecurringOfferings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateRecurringOfferingsMutationResult = NonNullable<Awaited<ReturnType<typeof createRecurringOfferings>>>
+    export type CreateRecurringOfferingsMutationBody = BodyType<RecurringOfferingsInput>
+    export type CreateRecurringOfferingsMutationError = ErrorType<unknown>
+    export type CreateRecurringOfferingsMutationVariables = {data: BodyType<RecurringOfferingsInput>}
+
+    export const useCreateRecurringOfferings = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRecurringOfferings>>, TError,CreateRecurringOfferingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createRecurringOfferings>>,
+        TError,
+        CreateRecurringOfferingsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateRecurringOfferingsMutationOptions(options), queryClient);
     }
 
 export const getChangeLiveOfferingUrl = (id: string,) => {

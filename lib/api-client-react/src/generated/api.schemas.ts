@@ -649,6 +649,23 @@ export interface OfferingInput {
   active: boolean;
 }
 
+export interface RecurringSchedule {
+  /** Last local date to include, no more than 90 days after the first date. */
+  repeatUntil: string;
+  /**
+     * @minItems 1
+     * @maxItems 7
+     * @items.minimum 0
+     * @items.maximum 6
+     */
+  weekdays: number[];
+}
+
+export interface RecurringOfferingsInput {
+  template: OfferingInput;
+  schedule: RecurringSchedule;
+}
+
 export type LiveOffering = OfferingInput & ({
   id: string;
   targetId: string;
@@ -665,6 +682,11 @@ export type LiveOffering = OfferingInput & ({
      */
   waitlistOfferMinutes?: number;
 });
+
+/**
+ * @minItems 1
+ */
+export type RecurringOfferingsResponse = LiveOffering[];
 
 export type OfferingWaitlistEntryStatus = typeof OfferingWaitlistEntryStatus[keyof typeof OfferingWaitlistEntryStatus];
 

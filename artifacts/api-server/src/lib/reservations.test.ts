@@ -238,6 +238,45 @@ test("live operations: staff scope, approved inventory, server grants and quota 
     });
     const o = await call("/operations/offerings", partnerUser, "POST", offerBody);
     assert.equal(o.status, 201); ids.push(o.data.id);
+    await t.test("weekly schedules create an atomic, partner-scoped set of individual offerings", async () => {
+      const startDay = new Date(Date.now() + 10 * 86400000);
+      const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Baghdad", year: "numeric", month: "2-digit", day: "2-digit",
+      }).formatToParts(startDay).map(part => [part.type, part.value]));
+      const localDate = `${parts.year}-${parts.month}-${parts.day}`;
+      const weekday = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day))).getUTCDay();
+      const repeatUntil = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day) + 14))
+        .toISOString().slice(0, 10);
+      const recurringTemplate = {
+        ...offerBody,
+        startsAt: `${localDate}T09:00:00+03:00`,
+        endsAt: `${localDate}T10:00:00+03:00`,
+        cancellationDeadline: `${localDate}T08:00:00+03:00`,
+      };
+      const body = { template: recurringTemplate, schedule: { repeatUntil, weekdays: [weekday] } };
+      const created = await call("/operations/offerings/recurring", partnerUser, "POST", body);
+      assert.equal(created.status, 201, JSON.stringify(created.data));
+      assert.equal(created.data.length, 3);
+      assert.ok(created.data.every((row: any) => row.partnerId === p.data.id));
+      ids.push(...created.data.map((row: any) => row.id));
+
+      const beforeDuplicate = await db.select().from(offerings).where(and(
+        eq(offerings.partnerId, p.data.id), eq(offerings.city, recurringTemplate.city),
+        eq(offerings.facility, recurringTemplate.facility),
+      ));
+      const duplicate = await call("/operations/offerings/recurring", partnerUser, "POST", body);
+      assert.equal(duplicate.status, 409);
+      const afterDuplicate = await db.select().from(offerings).where(and(
+        eq(offerings.partnerId, p.data.id), eq(offerings.city, recurringTemplate.city),
+        eq(offerings.facility, recurringTemplate.facility),
+      ));
+      assert.equal(afterDuplicate.length, beforeDuplicate.length);
+
+      const otherPartner = await call("/operations/offerings/recurring", partnerUser, "POST", {
+        ...body, template: { ...recurringTemplate, partnerId: "another-partner" },
+      });
+      assert.equal(otherPartner.status, 403);
+    });
     const rules = { quota: 1, dailyLimit: 10, quotaMode: "separate", physicalQuota: 1, premiumQuota: 1, liveQuota: 1, trialAllowedTypes: ["physical", "premium", "live"] };
     const planBody = { name: "Isolated trial", tier: "M", kind: "trial", durationDays: 7, active: true, priceIqd: null, rules };
     const plan = await call("/operations/plans", adminId, "POST", planBody);

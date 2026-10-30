@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, inArray, sql, asc, gt, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, sql, asc, gt, isNull, lt } from "drizzle-orm";
 import { z } from "zod";
 import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, learningCourses, learningLessons, facilityProfiles } from "@workspace/db";
 import { BookingError, processWaitlistQueue } from "../lib/reservations";
@@ -9,11 +9,13 @@ import { createFacilityProfileInput, facilityProfileFields, offeringInput, partn
 import {
   AddLearningLessonBody, AddLearningLessonResponse, ChangeLiveOfferingBody,
   CreateLearningCourseBody, CreateLearningCourseResponse,
-  CreateFacilityProfileBody, CreateFacilityProfileResponse, GetOperationFacilitiesResponse,
+  CreateFacilityProfileBody, CreateFacilityProfileResponse, CreateRecurringOfferingsBody,
+  CreateRecurringOfferingsResponse, GetOperationFacilitiesResponse,
   UpdateFacilityProfileBody, UpdateFacilityProfileResponse,
   UpdateLearningCourseBody, UpdateLearningCourseResponse,
 } from "@workspace/api-zod";
 import { sendMemberNotification } from "../lib/notifications";
+import { expandWeeklyOffering } from "../lib/recurring-offerings";
 
 import { PaymentError } from "../lib/payment-config";
 
@@ -181,6 +183,65 @@ router.post("/offerings", async (req, res) => {
     return o;
   });
   res.status(201).json(row);
+});
+router.post("/offerings/recurring", async (req, res) => {
+  const body = CreateRecurringOfferingsBody.parse(req.body);
+  const template = offeringInput.parse(body.template);
+  const schedule = { ...body.schedule, repeatUntil: body.schedule.repeatUntil.toISOString().slice(0, 10) };
+  const occurrences = expandWeeklyOffering(template, schedule);
+  own(res, template.partnerId);
+
+  const created = await db.transaction(async tx => {
+    const venueKey = `${template.city.trim().toLowerCase()}|${template.facility.trim().toLowerCase()}`;
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${template.partnerId}), hashtext(${venueKey}))`);
+
+    const [partner] = await tx.select().from(partners).where(eq(partners.id, template.partnerId)).for("share");
+    if (!partner) throw new BookingError(404, "Partner not found.");
+    if (template.active && !partner.approved) throw new BookingError(403, "Partner approval is required before publishing.");
+    if (template.accessType === "live" && template.active) ensureHttps(template.joinUrl, "Live class join link");
+    if (template.joinUrl) ensureHttps(template.joinUrl, "Live class join link");
+
+    const first = occurrences[0];
+    const last = occurrences[occurrences.length - 1];
+    const existing = await tx.select({
+      id: offerings.id, startsAt: offerings.startsAt, endsAt: offerings.endsAt,
+    }).from(offerings).where(and(
+      eq(offerings.scope, "live"),
+      eq(offerings.partnerId, template.partnerId),
+      sql`lower(${offerings.city}) = lower(${template.city})`,
+      sql`lower(${offerings.facility}) = lower(${template.facility})`,
+      isNull(offerings.cancelledAt),
+      lt(offerings.startsAt, new Date(last.endsAt)),
+      gt(offerings.endsAt, new Date(first.startsAt)),
+    ));
+    const conflict = existing.find(row => occurrences.some(occurrence =>
+      new Date(occurrence.startsAt) < row.endsAt && new Date(occurrence.endsAt) > row.startsAt,
+    ));
+    if (conflict) throw new BookingError(409, "One or more sessions overlap an existing offering at this facility. No sessions were created.");
+
+    const rows = [];
+    for (const data of occurrences) {
+      const id = randomUUID();
+      const [row] = await tx.insert(offerings).values({
+        ...data, id, targetId: id, slot: "", scope: "live", partnerGroup: partner.groupId,
+        localizedTitle: data.localizedTitle ?? null, localizedDescription: data.localizedDescription ?? null,
+        joinUrl: data.joinUrl ?? null, startsAt: new Date(data.startsAt), endsAt: new Date(data.endsAt),
+        cancellationDeadline: new Date(data.cancellationDeadline),
+      }).returning();
+      await audit(tx, res.locals.operator.userId, "offering.create.recurring", id,
+        `weekdays=${schedule.weekdays.join(",")};repeatUntil=${schedule.repeatUntil}`);
+      rows.push(row);
+    }
+    return rows;
+  });
+
+  const response = created.map(row => ({
+    ...row,
+    startsAt: row.startsAt.toISOString(),
+    endsAt: row.endsAt.toISOString(),
+    cancellationDeadline: row.cancellationDeadline.toISOString(),
+  }));
+  res.status(201).json(CreateRecurringOfferingsResponse.parse(response));
 });
 router.patch("/offerings/:id", async (req, res) => {
   const data = ChangeLiveOfferingBody.parse(req.body);

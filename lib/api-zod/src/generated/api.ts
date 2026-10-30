@@ -1321,6 +1321,140 @@ export const AddLiveOfferingResponse = zod.object({
 }))
 
 
+export const createRecurringOfferingsBodyTemplateLocalizedTitleOneEnMax = 240;
+
+export const createRecurringOfferingsBodyTemplateLocalizedTitleOneArMax = 240;
+
+export const createRecurringOfferingsBodyTemplateLocalizedTitleOneKuMax = 240;
+
+export const createRecurringOfferingsBodyTemplateLocalizedDescriptionOneEnMax = 240;
+
+export const createRecurringOfferingsBodyTemplateLocalizedDescriptionOneArMax = 240;
+
+export const createRecurringOfferingsBodyTemplateLocalizedDescriptionOneKuMax = 240;
+
+
+
+export const createRecurringOfferingsBodyTemplateWaitlistOfferMinutesDefault = 30;
+export const createRecurringOfferingsBodyTemplateWaitlistOfferMinutesMin = 5;
+export const createRecurringOfferingsBodyTemplateWaitlistOfferMinutesMax = 1440;
+
+export const createRecurringOfferingsBodyTemplateMinAgeMin = 0;
+
+export const createRecurringOfferingsBodyScheduleWeekdaysItemMin = 0;
+export const createRecurringOfferingsBodyScheduleWeekdaysItemMax = 6;
+
+export const createRecurringOfferingsBodyScheduleWeekdaysMax = 7;
+
+
+
+export const CreateRecurringOfferingsBody = zod.object({
+  "template": zod.object({
+  "partnerId": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedTitleOneKuMax)
+}),zod.null()]).optional(),
+  "localizedDescription": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedDescriptionOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedDescriptionOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "joinUrl": zod.string().url().nullish(),
+  "kind": zod.enum(['session', 'event', 'coach']),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "category": zod.string(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "tiers": zod.array(zod.string()).min(1),
+  "startsAt": zod.string(),
+  "endsAt": zod.string(),
+  "cancellationDeadline": zod.string(),
+  "capacity": zod.number().int().min(1),
+  "waitlistOfferMinutes": zod.number().int().min(createRecurringOfferingsBodyTemplateWaitlistOfferMinutesMin).max(createRecurringOfferingsBodyTemplateWaitlistOfferMinutesMax).default(createRecurringOfferingsBodyTemplateWaitlistOfferMinutesDefault),
+  "gender": zod.enum(['all', 'female', 'male']).optional(),
+  "minAge": zod.number().int().min(createRecurringOfferingsBodyTemplateMinAgeMin).optional(),
+  "maxAge": zod.number().int().nullish(),
+  "additionalPayment": zod.boolean().optional(),
+  "active": zod.boolean()
+}),
+  "schedule": zod.object({
+  "repeatUntil": zod.coerce.date().describe('Last local date to include, no more than 90 days after the first date.'),
+  "weekdays": zod.array(zod.number().int().min(createRecurringOfferingsBodyScheduleWeekdaysItemMin).max(createRecurringOfferingsBodyScheduleWeekdaysItemMax).describe('Sunday is 0 and Saturday is 6.')).min(1).max(createRecurringOfferingsBodyScheduleWeekdaysMax)
+})
+})
+
+export const createRecurringOfferingsResponseOneLocalizedTitleOneEnMax = 240;
+
+export const createRecurringOfferingsResponseOneLocalizedTitleOneArMax = 240;
+
+export const createRecurringOfferingsResponseOneLocalizedTitleOneKuMax = 240;
+
+export const createRecurringOfferingsResponseOneLocalizedDescriptionOneEnMax = 240;
+
+export const createRecurringOfferingsResponseOneLocalizedDescriptionOneArMax = 240;
+
+export const createRecurringOfferingsResponseOneLocalizedDescriptionOneKuMax = 240;
+
+
+
+export const createRecurringOfferingsResponseOneWaitlistOfferMinutesDefault = 30;
+export const createRecurringOfferingsResponseOneWaitlistOfferMinutesMin = 5;
+export const createRecurringOfferingsResponseOneWaitlistOfferMinutesMax = 1440;
+
+export const createRecurringOfferingsResponseOneMinAgeMin = 0;
+
+export const createRecurringOfferingsResponseTwoWaitlistOfferMinutesMin = 5;
+export const createRecurringOfferingsResponseTwoWaitlistOfferMinutesMax = 1440;
+
+
+
+export const CreateRecurringOfferingsResponseItem = zod.object({
+  "partnerId": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedTitleOneKuMax)
+}),zod.null()]).optional(),
+  "localizedDescription": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "joinUrl": zod.string().url().nullish(),
+  "kind": zod.enum(['session', 'event', 'coach']),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "category": zod.string(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "tiers": zod.array(zod.string()).min(1),
+  "startsAt": zod.string(),
+  "endsAt": zod.string(),
+  "cancellationDeadline": zod.string(),
+  "capacity": zod.number().int().min(1),
+  "waitlistOfferMinutes": zod.number().int().min(createRecurringOfferingsResponseOneWaitlistOfferMinutesMin).max(createRecurringOfferingsResponseOneWaitlistOfferMinutesMax).default(createRecurringOfferingsResponseOneWaitlistOfferMinutesDefault),
+  "gender": zod.enum(['all', 'female', 'male']).optional(),
+  "minAge": zod.number().int().min(createRecurringOfferingsResponseOneMinAgeMin).optional(),
+  "maxAge": zod.number().int().nullish(),
+  "additionalPayment": zod.boolean().optional(),
+  "active": zod.boolean()
+}).and(zod.object({
+  "id": zod.string(),
+  "targetId": zod.string(),
+  "slot": zod.string(),
+  "scope": zod.string(),
+  "cancelledAt": zod.string().nullish(),
+  "partnerName": zod.string().optional(),
+  "remaining": zod.number().int().optional(),
+  "canJoin": zod.boolean().optional(),
+  "waitlistOfferMinutes": zod.number().int().min(createRecurringOfferingsResponseTwoWaitlistOfferMinutesMin).max(createRecurringOfferingsResponseTwoWaitlistOfferMinutesMax).optional()
+}))
+export const CreateRecurringOfferingsResponse = zod.array(CreateRecurringOfferingsResponseItem).min(1)
+
+
 export const ChangeLiveOfferingParams = zod.object({
   "id": zod.coerce.string()
 })

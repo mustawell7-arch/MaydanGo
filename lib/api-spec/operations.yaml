@@ -229,6 +229,20 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/LiveOffering" }
+  /operations/offerings/recurring:
+    post:
+      operationId: createRecurringOfferings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RecurringOfferingsInput" }
+      responses:
+        "201":
+          description: Individually bookable future sessions created as one atomic batch
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecurringOfferingsResponse" }
   /operations/offerings/{id}:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     patch:
@@ -734,6 +748,29 @@ components:
         maxAge: { type: [integer, "null"] }
         additionalPayment: { type: boolean }
         active: { type: boolean }
+    RecurringSchedule:
+      type: object
+      additionalProperties: false
+      required: [repeatUntil, weekdays]
+      properties:
+        repeatUntil: { type: string, format: date, description: "Last local date to include, no more than 90 days after the first date." }
+        weekdays:
+          type: array
+          minItems: 1
+          maxItems: 7
+          uniqueItems: true
+          items: { type: integer, minimum: 0, maximum: 6, description: "Sunday is 0 and Saturday is 6." }
+    RecurringOfferingsInput:
+      type: object
+      additionalProperties: false
+      required: [template, schedule]
+      properties:
+        template: { $ref: "#/components/schemas/OfferingInput" }
+        schedule: { $ref: "#/components/schemas/RecurringSchedule" }
+    RecurringOfferingsResponse:
+      type: array
+      minItems: 1
+      items: { $ref: "#/components/schemas/LiveOffering" }
     LiveOffering:
       allOf:
         - $ref: "#/components/schemas/OfferingInput"
