@@ -193,6 +193,13 @@ export const getOperationsResponseOfferingsItemOneLocalizedDescriptionOneKuMax =
 
 export const getOperationsResponseOfferingsItemOneMinAgeMin = 0;
 
+export const getOperationsResponseWaitlistItemLocalizedTitleOneEnMax = 240;
+
+export const getOperationsResponseWaitlistItemLocalizedTitleOneArMax = 240;
+
+export const getOperationsResponseWaitlistItemLocalizedTitleOneKuMax = 240;
+
+
 export const getOperationsResponsePlansItemOneDurationDaysMax = 366;
 
 export const getOperationsResponsePlansItemOneRulesQuotaMin = 0;
@@ -265,6 +272,21 @@ export const GetOperationsResponse = zod.object({
   "remaining": zod.number().int().optional(),
   "canJoin": zod.boolean().optional()
 }))),
+  "waitlist": zod.array(zod.object({
+  "id": zod.string(),
+  "offeringId": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(getOperationsResponseWaitlistItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(getOperationsResponseWaitlistItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(getOperationsResponseWaitlistItemLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "joinedAt": zod.coerce.date(),
+  "position": zod.number().int().min(1)
+})),
   "plans": zod.array(zod.object({
   "name": zod.string(),
   "tier": zod.string(),

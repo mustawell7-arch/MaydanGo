@@ -4,8 +4,9 @@ import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
 import { and, eq, inArray } from "drizzle-orm";
 import express from "express";
-import { db, pool, memberships, offerings, partners, reservations, waitlistEntries } from "@workspace/db";
+import { db, pool, memberships, offerings, operators, partners, reservations, waitlistEntries } from "@workspace/db";
 import memberRouter from "../routes/member";
+import operationsRouter from "../routes/operations";
 import { createReservation } from "./reservations";
 
 const prefix = `waitlist-test-${randomUUID()}`;
@@ -13,9 +14,13 @@ const owner = `${prefix}-owner`;
 const first = `${prefix}-first`;
 const second = `${prefix}-second`;
 const third = `${prefix}-third`;
-const users = [owner, first, second, third];
+const otherMember = `${prefix}-other-member`;
+const users = [owner, first, second, third, otherMember];
 const partnerId = `${prefix}-partner`;
 const offeringId = `${prefix}-class`;
+const otherPartnerId = `${prefix}-other-partner`;
+const otherOfferingId = `${prefix}-other-class`;
+const otherWaitlistId = `${prefix}-other-entry`;
 const reservationIds: string[] = [];
 const waitlistIds: string[] = [];
 let server: Server | null = null;
@@ -30,6 +35,7 @@ app.use((req, _res, next) => {
   next();
 });
 app.use("/member", memberRouter);
+app.use("/operations", operationsRouter);
 
 const call = async (path: string, user: string, method = "GET", body?: unknown) => {
   const response = await fetch(`http://127.0.0.1:${(server!.address() as { port: number }).port}${path}`, {
@@ -44,9 +50,12 @@ after(async () => {
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
   if (waitlistIds.length) await db.delete(waitlistEntries).where(inArray(waitlistEntries.id, waitlistIds));
   await db.delete(reservations).where(eq(reservations.offeringId, offeringId));
+  await db.delete(operators).where(eq(operators.userId, owner));
   await db.delete(memberships).where(inArray(memberships.userId, users));
   await db.delete(offerings).where(eq(offerings.id, offeringId));
+  await db.delete(offerings).where(eq(offerings.id, otherOfferingId));
   await db.delete(partners).where(eq(partners.id, partnerId));
+  await db.delete(partners).where(eq(partners.id, otherPartnerId));
   await pool.end();
 });
 
@@ -55,6 +64,10 @@ test("full live classes promote the first eligible member after a cancellation",
   await db.insert(partners).values({
     id: partnerId, name: "Waitlist test partner", groupId: prefix, ownerUserId: `${prefix}-staff`, approved: true,
   });
+  await db.insert(partners).values({
+    id: otherPartnerId, name: "Other waitlist partner", groupId: `${prefix}-other`, ownerUserId: `${prefix}-other-staff`, approved: true,
+  });
+  await db.insert(operators).values({ userId: owner, role: "partner", partnerId });
   await db.insert(offerings).values({
     id: offeringId, targetId: offeringId, kind: "session", slot: "", title: "Waitlist test class",
     scope: "live", partnerId, partnerGroup: prefix, accessType: "physical", active: true,
@@ -62,6 +75,18 @@ test("full live classes promote the first eligible member after a cancellation",
     startsAt, endsAt: new Date(startsAt.getTime() + 3600000),
     cancellationDeadline: new Date(startsAt.getTime() - 3600000), capacity: 1,
   });
+  await db.insert(offerings).values({
+    id: otherOfferingId, targetId: otherOfferingId, kind: "session", slot: "", title: "Other partner class",
+    scope: "live", partnerId: otherPartnerId, partnerGroup: `${prefix}-other`, accessType: "physical", active: true,
+    city: "erbil", facility: "other-waitlist-test", category: "fitness", tiers: ["M"],
+    startsAt, endsAt: new Date(startsAt.getTime() + 3600000),
+    cancellationDeadline: new Date(startsAt.getTime() - 3600000), capacity: 1,
+  });
+  await db.insert(waitlistEntries).values({
+    id: otherWaitlistId, userId: otherMember, offeringId: otherOfferingId, status: "waiting",
+    joinedAt: new Date(Date.now() - 60000), updatedAt: new Date(),
+  });
+  waitlistIds.push(otherWaitlistId);
   await db.insert(memberships).values(users.map(userId => ({
     userId, scope: "live", status: "trial", paymentStatus: "not_required", source: "trial", tier: "M",
     startsAt: new Date(Date.now() - 60000), endsAt: new Date(Date.now() + 7 * 86400000),
@@ -83,6 +108,14 @@ test("full live classes promote the first eligible member after a cancellation",
   assert.equal(firstJoin.data.position, 1);
   assert.equal(secondJoin.data.position, 2);
   assert.equal(thirdJoin.data.position, 3);
+  const partnerQueue = await call("/operations", owner);
+  assert.equal(partnerQueue.status, 200);
+  assert.deepEqual(partnerQueue.data.waitlist.map((entry: { id: string; position: number }) => entry.id), [
+    firstJoin.data.id, secondJoin.data.id, thirdJoin.data.id,
+  ]);
+  assert.deepEqual(partnerQueue.data.waitlist.map((entry: { position: number }) => entry.position), [1, 2, 3]);
+  assert.ok(partnerQueue.data.waitlist.every((entry: Record<string, unknown>) => !("userId" in entry)));
+  assert.ok(partnerQueue.data.waitlist.every((entry: { offeringId: string }) => entry.offeringId === offeringId));
 
   const repeated = await call("/member/waitlist", second, "POST", { offeringId });
   assert.equal(repeated.data.id, secondJoin.data.id);

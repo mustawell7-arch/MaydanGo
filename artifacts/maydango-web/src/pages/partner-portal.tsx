@@ -6,7 +6,7 @@ import { useAuth, useClerk } from '@clerk/react';
 import { Link, Redirect } from 'wouter';
 import { Activity, ArrowLeft, ArrowUpRight, CalendarDays, Check, CircleAlert, Clock3, Dumbbell, LogOut, Plus, RefreshCw, ShieldCheck, Users, X } from 'lucide-react';
 
-type Tab = 'overview' | 'offerings' | 'attendance' | 'partners';
+type Tab = 'overview' | 'offerings' | 'attendance' | 'waitlist' | 'partners';
 type ReviewAction = ReviewAttendanceBody['action'];
 const formatDate = (value: string) => new Intl.DateTimeFormat('en-IQ', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Baghdad' }).format(new Date(value));
 const localIso = (value: string) => new Date(`${value}:00+03:00`).toISOString();
@@ -133,7 +133,7 @@ export default function PartnerPortal() {
   const { isLoaded, isSignedIn } = useAuth();
   const { signOut } = useClerk();
   const client = useQueryClient();
-  const operations = useGetOperations({ query: { retry: false, enabled: isLoaded && isSignedIn } });
+  const operations = useGetOperations({ query: { retry: false, enabled: isLoaded && isSignedIn, refetchInterval: 30_000 } });
   const attendance = useGetAttendance({ query: { retry: false, enabled: isLoaded && isSignedIn } });
   const addPartner = useAddPartner();
   const approvePartner = useApprovePartner();
@@ -150,6 +150,7 @@ export default function PartnerPortal() {
   const [partnerForm, setPartnerForm] = useState<PartnerInput>({ name: '', groupId: '', ownerUserId: '' });
   const role = operations.data?.role;
   const offerings = operations.data?.offerings ?? [];
+  const waitlist = operations.data?.waitlist ?? [];
   const rows = attendance.data?.rows ?? [];
   const activeOfferings = useMemo(() => offerings.filter(item => item.active && !item.cancelledAt).length, [offerings]);
   const invalidate = () => {
@@ -188,12 +189,12 @@ export default function PartnerPortal() {
         <Link href="/" className="inline-flex items-center gap-3"><img src={`${import.meta.env.BASE_URL}logo.svg`} alt="MaydanGo" className="h-10 w-10" /><span className="font-display text-lg font-bold tracking-tight">MaydanGo<span className="block font-sans text-[9px] font-bold uppercase tracking-[.18em] text-[#a76445]">Partner operations</span></span></Link>
         <div className="mt-8 hidden rounded-2xl bg-[#f8f5eb] p-4 lg:block"><p className="text-[9px] font-bold uppercase tracking-[.17em] text-[#a76445]">Workspace</p><p className="mt-2 truncate text-sm font-bold">{title}</p><p className="mt-1 text-xs text-[#687a71]">{isAdmin ? 'Administrator access' : 'Partner access'}</p></div>
         <nav aria-label="Portal navigation" className="mt-5 flex gap-2 overflow-x-auto lg:mt-8 lg:flex-col">
-          {([['overview', Activity, 'Overview'], ['offerings', Dumbbell, 'Offerings'], ['attendance', CalendarDays, 'Attendance'], ...(isAdmin ? [['partners', Users, 'Partners'] as const] : [])] as const).map(([id, Icon, label]) => <button key={id} onClick={() => setTab(id as Tab)} aria-current={tab === id ? 'page' : undefined} className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${tab === id ? 'bg-[#174d43] text-[#fff9e9]' : 'text-[#536b61] hover:bg-[#dedaca]'}`}><Icon size={16} />{label}</button>)}
+         {([['overview', Activity, 'Overview'], ['offerings', Dumbbell, 'Offerings'], ['attendance', CalendarDays, 'Attendance'], ['waitlist', Clock3, `Waiting list · ${waitlist.length}`], ...(isAdmin ? [['partners', Users, 'Partners'] as const] : [])] as const).map(([id, Icon, label]) => <button key={id} onClick={() => setTab(id as Tab)} aria-current={tab === id ? 'page' : undefined} className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${tab === id ? 'bg-[#174d43] text-[#fff9e9]' : 'text-[#536b61] hover:bg-[#dedaca]'}`}><Icon size={16} />{label}</button>)}
         </nav>
         <div className="mt-8 hidden border-t border-[#d6d0bf] pt-5 lg:block"><Link href="/" className="flex items-center gap-2 text-xs font-semibold text-[#63766d] hover:text-[#174d43]"><ArrowLeft size={14} />Public MaydanGo site</Link><button onClick={() => signOut({ redirectUrl: '/' })} className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-[#63766d] hover:text-[#9a4435]"><LogOut size={14} />Sign out</button></div>
       </aside>
       <section className="min-w-0 px-4 py-7 sm:px-7 lg:px-10 lg:py-9">
-        <header className="mx-auto flex max-w-6xl items-center justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.21em] text-[#a76445]">MAYDANGO · IRAQ</p><h1 className="mt-2 font-display text-3xl font-bold tracking-[-.04em] sm:text-4xl">{tab === 'overview' ? 'Good to see you.' : tab === 'offerings' ? 'Offerings' : tab === 'attendance' ? 'Attendance review' : 'Partner approvals'}</h1><p className="mt-2 text-sm text-[#687a71]">{title}</p></div><div className="flex items-center gap-2 lg:hidden"><Button kind="quiet" onClick={() => signOut({ redirectUrl: '/' })}><LogOut size={15} />Exit</Button></div><div className="hidden items-center gap-2 rounded-full border border-[#d8d2c4] bg-[#fffdf7] px-3 py-2 text-xs font-semibold text-[#536b61] sm:flex"><span className="h-2 w-2 rounded-full bg-[#4a8a69]" />Server-scoped access</div></header>
+         <header className="mx-auto flex max-w-6xl items-center justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.21em] text-[#a76445]">MAYDANGO · IRAQ</p><h1 className="mt-2 font-display text-3xl font-bold tracking-[-.04em] sm:text-4xl">{tab === 'overview' ? 'Good to see you.' : tab === 'offerings' ? 'Offerings' : tab === 'attendance' ? 'Attendance review' : tab === 'waitlist' ? 'Waiting list' : 'Partner approvals'}</h1><p className="mt-2 text-sm text-[#687a71]">{title}</p></div><div className="flex items-center gap-2 lg:hidden"><Button kind="quiet" onClick={() => signOut({ redirectUrl: '/' })}><LogOut size={15} />Exit</Button></div><div className="hidden items-center gap-2 rounded-full border border-[#d8d2c4] bg-[#fffdf7] px-3 py-2 text-xs font-semibold text-[#536b61] sm:flex"><span className="h-2 w-2 rounded-full bg-[#4a8a69]" />Server-scoped access</div></header>
         {notice && <div role="status" className="mx-auto mt-5 flex max-w-6xl items-center justify-between rounded-xl border border-[#d8c6a5] bg-[#fff8e8] px-4 py-3 text-sm text-[#715533]">{notice}<button onClick={() => setNotice('')} aria-label="Dismiss notice"><X size={15} /></button></div>}
         <div className="mx-auto mt-8 max-w-6xl">
           {tab === 'overview' && <div>
@@ -205,6 +206,27 @@ export default function PartnerPortal() {
           {tab === 'offerings' && <section><div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm text-[#75847c]">Create and maintain opportunities from the authorized operations record.</p></div><Button onClick={() => setShowCreate(true)}><Plus size={16} />New offering</Button></div>{offerings.length ? <div className="grid gap-4">{offerings.map(item => <article key={item.id} className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${item.active && !item.cancelledAt ? 'bg-[#e1efdf] text-[#2d6d4a]' : 'bg-[#eeeadc] text-[#756e5b]'}`}>{item.cancelledAt ? 'Cancelled' : item.active ? 'Active' : 'Draft'}</span><span className="text-[10px] font-bold uppercase tracking-wide text-[#a76445]">{item.kind}</span></div><h2 className="mt-3 font-display text-xl font-bold">{item.title}</h2><p className="mt-1 text-sm text-[#687a71]">{item.facility}, {item.city} · {item.category}</p><p className="mt-3 text-xs text-[#75847c]">{formatDate(item.startsAt)} – {formatDate(item.endsAt)}{item.remaining !== undefined ? ` · ${item.remaining} remaining` : ''}</p>{isAdmin && item.partnerName && <p className="mt-2 text-xs text-[#75847c]">Partner: {item.partnerName}</p>}</div><div className="flex shrink-0 flex-wrap gap-2">{!item.cancelledAt && <><Button kind="quiet" onClick={() => setEditing(item.id)}>Capacity / state</Button><Button kind="quiet" onClick={() => handleStatus(item.id, !item.active, item.capacity)}>{item.active ? 'Make draft' : 'Activate'}</Button><Button kind="danger" onClick={() => { if (window.confirm(`Cancel “${item.title}”? Cancelling releases existing reservations and notifies members. This cannot be undone.`)) cancelOffering.mutate({ id: item.id }, { onSuccess: invalidate, onError: () => mutationError('Cancellation') }); }}>Cancel</Button></>}</div></div>
               {editing === item.id && <form className="mt-5 grid gap-3 rounded-2xl bg-[#f2efe4] p-4 sm:grid-cols-[1fr_auto_auto]" onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); handleStatus(item.id, data.get('active') === 'on', Number(data.get('capacity'))); setEditing(null); }}><LabelField label="Capacity"><input required min="1" name="capacity" defaultValue={item.capacity} type="number" className={fieldClass()} /></LabelField><label className="flex items-center gap-2 self-end pb-3 text-sm font-medium"><input name="active" type="checkbox" defaultChecked={item.active} className="accent-[#174d43]" />Active</label><div className="flex items-end gap-2"><Button type="submit" disabled={updateOffering.isPending}>Save</Button><Button kind="quiet" onClick={() => setEditing(null)}>Close</Button></div></form>}
             </article>)}</div> : <div className="rounded-3xl border border-dashed border-[#d5cfbf] bg-[#fffdf7]/60 p-10 text-center"><Dumbbell className="mx-auto text-[#a76445]" /><h2 className="mt-4 font-display text-xl font-bold">No offerings returned</h2><p className="mt-2 text-sm text-[#75847c]">Create an offering to start managing your available sessions and events.</p></div>}</section>}
+          {tab === 'waitlist' && <section>
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+              <p className="max-w-2xl text-sm leading-6 text-[#687a71]">View the live queue for your upcoming offerings. The server shares queue order and timing only; member identities stay private in this view.</p>
+              <Button kind="quiet" onClick={() => void operations.refetch()}><RefreshCw size={15} />Refresh</Button>
+            </div>
+            {waitlist.length ? <div className="grid gap-3">{waitlist.map(entry => (
+              <article key={entry.id} className="flex flex-col justify-between gap-4 rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:flex-row sm:items-center">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#a76445]">{formatDate(entry.startsAt)} · {entry.facility}, {entry.city}</p>
+                  <h2 className="mt-2 font-display text-lg font-bold">{entry.localizedTitle?.en || entry.title}</h2>
+                  <p className="mt-1 text-xs text-[#75847c]">Joined {formatDate(entry.joinedAt)}</p>
+                </div>
+                <span aria-label={`Waiting-list position ${entry.position}`} className="inline-flex w-fit shrink-0 items-center gap-2 rounded-full bg-[#e1efdf] px-3 py-2 text-xs font-bold text-[#2d6d4a]">
+                  <Clock3 size={14} />Position {entry.position}
+                </span>
+              </article>
+            ))}</div> : <div className="rounded-3xl border border-dashed border-[#d5cfbf] bg-[#fffdf7]/60 p-10 text-center">
+              <Clock3 className="mx-auto text-[#a76445]" /><h2 className="mt-4 font-display text-xl font-bold">No one is waiting</h2>
+              <p className="mt-2 text-sm text-[#75847c]">Active queues for your upcoming offerings will appear here.</p>
+            </div>}
+          </section>}
           {tab === 'attendance' && <section><div className="mb-5 flex items-end justify-between"><p className="max-w-2xl text-sm leading-6 text-[#687a71]">Review reservations in the server-scoped roster. Member names are not returned or displayed; each decision requires a reason and is recorded by the service.</p><Button kind="quiet" onClick={() => void attendance.refetch()}><RefreshCw size={15} />Refresh</Button></div>{attendance.isLoading ? <div className="h-48 animate-pulse rounded-3xl bg-[#e5e0d1]" /> : attendance.isError ? <div role="alert" className="rounded-3xl border border-[#e0c4b9] bg-[#fff7f3] p-7"><p className="font-semibold">Attendance roster unavailable</p><Button onClick={() => void attendance.refetch()}>Retry</Button></div> : rows.length ? <div className="grid gap-4">{rows.map(row => {
             const state = `${row.status} ${row.bookingStatus}`.toLowerCase();
             const actions: ReviewAction[] = state.includes('disput') ? ['resolve_confirm', 'resolve_void'] : state.includes('request') ? ['accept_request', 'dispute'] : ['confirm', 'no_show', 'dispute'];

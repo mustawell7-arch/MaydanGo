@@ -734,12 +734,26 @@ export const OperationsStateRole = {
   partner: 'partner',
 } as const;
 
+export interface PartnerWaitlistEntry {
+  id: string;
+  offeringId: string;
+  title: string;
+  localizedTitle: LocalizedText | null;
+  city: string;
+  facility: string;
+  startsAt: string;
+  joinedAt: string;
+  /** @minimum 1 */
+  position: number;
+}
+
 export interface OperationsState {
   role: OperationsStateRole;
   /** @nullable */
   partnerId: string | null;
   partners: Partner[];
   offerings: LiveOffering[];
+  waitlist: PartnerWaitlistEntry[];
   plans: LivePlan[];
 }
 

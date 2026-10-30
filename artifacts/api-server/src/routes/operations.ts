@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, operators, partners, offerings, reservations, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, learningCourses, learningLessons, waitlistEntries } from "@workspace/db";
 import { BookingError } from "../lib/reservations";
@@ -50,10 +50,28 @@ function own(res: import("express").Response, partnerId: string | null) {
 router.get("/", async (_req, res) => {
   const op = res.locals.operator;
   const isAdmin = op.role === "admin";
-  const plans = isAdmin ? await db.select().from(membershipPlans) : [];
+  const [partnerRows, offeringRows, plans, queueRows] = await Promise.all([
+    db.select().from(partners).where(isAdmin ? undefined : eq(partners.id, op.partnerId ?? "")),
+    db.select().from(offerings).where(and(eq(offerings.scope, "live"), isAdmin ? undefined : eq(offerings.partnerId, op.partnerId ?? ""))),
+    isAdmin ? db.select().from(membershipPlans) : Promise.resolve([]),
+    db.select({
+      id: waitlistEntries.id, offeringId: waitlistEntries.offeringId, joinedAt: waitlistEntries.joinedAt,
+      title: offerings.title, localizedTitle: offerings.localizedTitle, city: offerings.city, facility: offerings.facility,
+      startsAt: offerings.startsAt,
+    }).from(waitlistEntries).innerJoin(offerings, eq(waitlistEntries.offeringId, offerings.id))
+      .where(and(eq(waitlistEntries.status, "waiting"), eq(offerings.scope, "live"), eq(offerings.active, true),
+        isNull(offerings.cancelledAt), gt(offerings.startsAt, new Date()),
+        isAdmin ? undefined : eq(offerings.partnerId, op.partnerId ?? "")))
+      .orderBy(asc(offerings.startsAt), asc(waitlistEntries.joinedAt), asc(waitlistEntries.id)),
+  ]);
+  const queueCounts = new Map<string, number>();
+  const waitlist = queueRows.map(row => {
+    const position = (queueCounts.get(row.offeringId) ?? 0) + 1;
+    queueCounts.set(row.offeringId, position);
+    return { ...row, position };
+  });
   res.json({ role: op.role, partnerId: op.partnerId,
-    partners: await db.select().from(partners).where(isAdmin ? undefined : eq(partners.id, op.partnerId ?? "")),
-    offerings: await db.select().from(offerings).where(and(eq(offerings.scope, "live"), isAdmin ? undefined : eq(offerings.partnerId, op.partnerId ?? ""))),
+    partners: partnerRows, offerings: offeringRows, waitlist,
     plans: plans.map(({ whopPlanId: _legacyProviderId, ...plan }) => plan),
   });
 });

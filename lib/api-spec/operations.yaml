@@ -986,10 +986,27 @@ components:
           properties: { planId: { type: string }, corporateId: { type: string } }
     OperationsState:
       type: object
-      required: [role, partnerId, partners, offerings, plans]
+      required: [role, partnerId, partners, offerings, waitlist, plans]
       properties:
         role: { type: string, enum: [admin, partner] }
         partnerId: { type: [string, "null"] }
         partners: { type: array, items: { $ref: "#/components/schemas/Partner" } }
         offerings: { type: array, items: { $ref: "#/components/schemas/LiveOffering" } }
+        waitlist: { type: array, items: { $ref: "#/components/schemas/PartnerWaitlistEntry" } }
         plans: { type: array, items: { $ref: "#/components/schemas/LivePlan" } }
+    PartnerWaitlistEntry:
+      type: object
+      required: [id, offeringId, title, localizedTitle, city, facility, startsAt, joinedAt, position]
+      properties:
+        id: { type: string }
+        offeringId: { type: string }
+        title: { type: string }
+        localizedTitle:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedText"
+            - type: "null"
+        city: { type: string }
+        facility: { type: string }
+        startsAt: { type: string, format: date-time }
+        joinedAt: { type: string, format: date-time }
+        position: { type: integer, minimum: 1 }
