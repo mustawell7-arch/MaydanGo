@@ -5,6 +5,220 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface LocalizedFacilityText {
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  en: string;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  ar: string;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  ku: string;
+}
+
+export interface FacilityOpeningDay {
+  /**
+     * Sunday is 0 and Saturday is 6
+     * @minimum 0
+     * @maximum 6
+     */
+  day: number;
+  closed: boolean;
+  /**
+     * @nullable
+     * @pattern ^([01][0-9]|2[0-3]):[0-5][0-9]$
+     */
+  opensAt: string | null;
+  /**
+     * @nullable
+     * @pattern ^([01][0-9]|2[0-3]):[0-5][0-9]$
+     */
+  closesAt: string | null;
+}
+
+export interface FacilityProfileInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  partnerId: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  city: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  facility: string;
+  localizedName: LocalizedFacilityText;
+  localizedDistrict: LocalizedFacilityText;
+  localizedAddress: LocalizedFacilityText;
+  localizedDescription: LocalizedFacilityText;
+  /** @maxItems 30 */
+  activities: LocalizedFacilityText[];
+  /** @maxItems 30 */
+  amenities: LocalizedFacilityText[];
+  /** @maxItems 30 */
+  accessibility: LocalizedFacilityText[];
+  /** @maxItems 7 */
+  openingHours: FacilityOpeningDay[];
+  /**
+     * @maxLength 40
+     * @nullable
+     */
+  contactPhone: string | null;
+  /**
+     * @maxLength 2048
+     * @nullable
+     */
+  websiteUrl: string | null;
+  /**
+     * @minimum -90
+     * @maximum 90
+     * @nullable
+     */
+  latitude: number | null;
+  /**
+     * @minimum -180
+     * @maximum 180
+     * @nullable
+     */
+  longitude: number | null;
+}
+
+export interface FacilityProfileUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  city: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  facility: string;
+  localizedName: LocalizedFacilityText;
+  localizedDistrict: LocalizedFacilityText;
+  localizedAddress: LocalizedFacilityText;
+  localizedDescription: LocalizedFacilityText;
+  /** @maxItems 30 */
+  activities: LocalizedFacilityText[];
+  /** @maxItems 30 */
+  amenities: LocalizedFacilityText[];
+  /** @maxItems 30 */
+  accessibility: LocalizedFacilityText[];
+  /** @maxItems 7 */
+  openingHours: FacilityOpeningDay[];
+  /**
+     * @maxLength 40
+     * @nullable
+     */
+  contactPhone: string | null;
+  /**
+     * @maxLength 2048
+     * @nullable
+     */
+  websiteUrl: string | null;
+  /**
+     * @minimum -90
+     * @maximum 90
+     * @nullable
+     */
+  latitude: number | null;
+  /**
+     * @minimum -180
+     * @maximum 180
+     * @nullable
+     */
+  longitude: number | null;
+}
+
+export interface FacilityProfile {
+  id: string;
+  partnerId: string;
+  city: string;
+  facility: string;
+  localizedName: LocalizedFacilityText;
+  localizedDistrict: LocalizedFacilityText;
+  localizedAddress: LocalizedFacilityText;
+  localizedDescription: LocalizedFacilityText;
+  activities: LocalizedFacilityText[];
+  amenities: LocalizedFacilityText[];
+  accessibility: LocalizedFacilityText[];
+  openingHours: FacilityOpeningDay[];
+  /** @nullable */
+  contactPhone: string | null;
+  /** @nullable */
+  websiteUrl: string | null;
+  /** @nullable */
+  latitude: number | null;
+  /** @nullable */
+  longitude: number | null;
+  updatedAt: string;
+}
+
+export type PublicFacilitySessionAccessType = typeof PublicFacilitySessionAccessType[keyof typeof PublicFacilitySessionAccessType];
+
+
+export const PublicFacilitySessionAccessType = {
+  physical: 'physical',
+  premium: 'premium',
+  live: 'live',
+} as const;
+
+export type PublicFacilitySessionGender = typeof PublicFacilitySessionGender[keyof typeof PublicFacilitySessionGender];
+
+
+export const PublicFacilitySessionGender = {
+  all: 'all',
+  female: 'female',
+  male: 'male',
+} as const;
+
+export interface PublicFacilitySession {
+  id: string;
+  title: string;
+  localizedTitle: LocalizedFacilityText | null;
+  category: string;
+  startsAt: string;
+  endsAt: string;
+  accessType: PublicFacilitySessionAccessType;
+  gender: PublicFacilitySessionGender;
+  /** @minimum 0 */
+  minAge: number;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  maxAge: number | null;
+}
+
+export type PublicFacilityOpeningStatus = typeof PublicFacilityOpeningStatus[keyof typeof PublicFacilityOpeningStatus];
+
+
+export const PublicFacilityOpeningStatus = {
+  open: 'open',
+  closed: 'closed',
+  unavailable: 'unavailable',
+} as const;
+
+export type PublicFacility = FacilityProfile & ({
+  partnerName: string;
+  openingStatus: PublicFacilityOpeningStatus;
+  /** @nullable */
+  closesAt: string | null;
+  upcomingSessions: PublicFacilitySession[];
+});
+
 export type PublicOfferingKind = typeof PublicOfferingKind[keyof typeof PublicOfferingKind];
 
 

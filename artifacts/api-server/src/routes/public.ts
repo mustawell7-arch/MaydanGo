@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { and, asc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { db, membershipPlans, offerings, partners, reservations } from "@workspace/db";
+import facilitiesPublicRouter from "./facilities-public";
 
 const router = Router();
+router.use(facilitiesPublicRouter);
 
 router.get("/catalog", async (_req, res) => {
   const rows = await db

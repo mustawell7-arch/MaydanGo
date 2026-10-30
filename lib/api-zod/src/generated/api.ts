@@ -8,6 +8,843 @@
 import * as zod from 'zod';
 
 
+export const getPublicFacilitiesResponseOneLocalizedNameEnMax = 500;
+
+export const getPublicFacilitiesResponseOneLocalizedNameArMax = 500;
+
+export const getPublicFacilitiesResponseOneLocalizedNameKuMax = 500;
+
+export const getPublicFacilitiesResponseOneLocalizedDistrictEnMax = 500;
+
+export const getPublicFacilitiesResponseOneLocalizedDistrictArMax = 500;
+
+export const getPublicFacilitiesResponseOneLocalizedDistrictKuMax = 500;
+
+export const getPublicFacilitiesResponseOneLocalizedAddressEnMax = 500;
+
+export const getPublicFacilitiesResponseOneLocalizedAddressArMax = 500;
+
+export const getPublicFacilitiesResponseOneLocalizedAddressKuMax = 500;
+
+export const getPublicFacilitiesResponseOneLocalizedDescriptionEnMax = 500;
+
+export const getPublicFacilitiesResponseOneLocalizedDescriptionArMax = 500;
+
+export const getPublicFacilitiesResponseOneLocalizedDescriptionKuMax = 500;
+
+export const getPublicFacilitiesResponseOneActivitiesItemEnMax = 500;
+
+export const getPublicFacilitiesResponseOneActivitiesItemArMax = 500;
+
+export const getPublicFacilitiesResponseOneActivitiesItemKuMax = 500;
+
+export const getPublicFacilitiesResponseOneAmenitiesItemEnMax = 500;
+
+export const getPublicFacilitiesResponseOneAmenitiesItemArMax = 500;
+
+export const getPublicFacilitiesResponseOneAmenitiesItemKuMax = 500;
+
+export const getPublicFacilitiesResponseOneAccessibilityItemEnMax = 500;
+
+export const getPublicFacilitiesResponseOneAccessibilityItemArMax = 500;
+
+export const getPublicFacilitiesResponseOneAccessibilityItemKuMax = 500;
+
+export const getPublicFacilitiesResponseOneOpeningHoursItemDayMin = 0;
+export const getPublicFacilitiesResponseOneOpeningHoursItemDayMax = 6;
+
+export const getPublicFacilitiesResponseOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getPublicFacilitiesResponseOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOneEnMax = 500;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOneArMax = 500;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOneKuMax = 500;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemMinAgeMin = 0;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemMaxAgeMin = 0;
+
+
+
+export const GetPublicFacilitiesResponseItem = zod.object({
+  "id": zod.string(),
+  "partnerId": zod.string(),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "localizedName": zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseOneLocalizedNameEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseOneLocalizedNameArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseOneLocalizedNameKuMax)
+}),
+  "localizedDistrict": zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseOneLocalizedDistrictEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseOneLocalizedDistrictArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseOneLocalizedDistrictKuMax)
+}),
+  "localizedAddress": zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseOneLocalizedAddressEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseOneLocalizedAddressArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseOneLocalizedAddressKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseOneLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseOneLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseOneLocalizedDescriptionKuMax)
+}),
+  "activities": zod.array(zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseOneActivitiesItemEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseOneActivitiesItemArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseOneActivitiesItemKuMax)
+})),
+  "amenities": zod.array(zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseOneAmenitiesItemEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseOneAmenitiesItemArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseOneAmenitiesItemKuMax)
+})),
+  "accessibility": zod.array(zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseOneAccessibilityItemEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseOneAccessibilityItemArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseOneAccessibilityItemKuMax)
+})),
+  "openingHours": zod.array(zod.object({
+  "day": zod.number().int().min(getPublicFacilitiesResponseOneOpeningHoursItemDayMin).max(getPublicFacilitiesResponseOneOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(getPublicFacilitiesResponseOneOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(getPublicFacilitiesResponseOneOpeningHoursItemClosesAtRegExp).nullable()
+})),
+  "contactPhone": zod.string().nullable(),
+  "websiteUrl": zod.string().url().nullable(),
+  "latitude": zod.number().nullable(),
+  "longitude": zod.number().nullable(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "partnerName": zod.string(),
+  "openingStatus": zod.enum(['open', 'closed', 'unavailable']),
+  "closesAt": zod.string().nullable(),
+  "upcomingSessions": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "category": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "gender": zod.enum(['all', 'female', 'male']),
+  "minAge": zod.number().int().min(getPublicFacilitiesResponseTwoUpcomingSessionsItemMinAgeMin),
+  "maxAge": zod.number().int().min(getPublicFacilitiesResponseTwoUpcomingSessionsItemMaxAgeMin).nullable()
+}))
+}))
+export const GetPublicFacilitiesResponse = zod.array(GetPublicFacilitiesResponseItem)
+
+
+export const GetPublicFacilityParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getPublicFacilityResponseOneLocalizedNameEnMax = 500;
+
+export const getPublicFacilityResponseOneLocalizedNameArMax = 500;
+
+export const getPublicFacilityResponseOneLocalizedNameKuMax = 500;
+
+export const getPublicFacilityResponseOneLocalizedDistrictEnMax = 500;
+
+export const getPublicFacilityResponseOneLocalizedDistrictArMax = 500;
+
+export const getPublicFacilityResponseOneLocalizedDistrictKuMax = 500;
+
+export const getPublicFacilityResponseOneLocalizedAddressEnMax = 500;
+
+export const getPublicFacilityResponseOneLocalizedAddressArMax = 500;
+
+export const getPublicFacilityResponseOneLocalizedAddressKuMax = 500;
+
+export const getPublicFacilityResponseOneLocalizedDescriptionEnMax = 500;
+
+export const getPublicFacilityResponseOneLocalizedDescriptionArMax = 500;
+
+export const getPublicFacilityResponseOneLocalizedDescriptionKuMax = 500;
+
+export const getPublicFacilityResponseOneActivitiesItemEnMax = 500;
+
+export const getPublicFacilityResponseOneActivitiesItemArMax = 500;
+
+export const getPublicFacilityResponseOneActivitiesItemKuMax = 500;
+
+export const getPublicFacilityResponseOneAmenitiesItemEnMax = 500;
+
+export const getPublicFacilityResponseOneAmenitiesItemArMax = 500;
+
+export const getPublicFacilityResponseOneAmenitiesItemKuMax = 500;
+
+export const getPublicFacilityResponseOneAccessibilityItemEnMax = 500;
+
+export const getPublicFacilityResponseOneAccessibilityItemArMax = 500;
+
+export const getPublicFacilityResponseOneAccessibilityItemKuMax = 500;
+
+export const getPublicFacilityResponseOneOpeningHoursItemDayMin = 0;
+export const getPublicFacilityResponseOneOpeningHoursItemDayMax = 6;
+
+export const getPublicFacilityResponseOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getPublicFacilityResponseOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneEnMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneArMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneKuMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemMinAgeMin = 0;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemMaxAgeMin = 0;
+
+
+
+export const GetPublicFacilityResponse = zod.object({
+  "id": zod.string(),
+  "partnerId": zod.string(),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "localizedName": zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseOneLocalizedNameEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseOneLocalizedNameArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseOneLocalizedNameKuMax)
+}),
+  "localizedDistrict": zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseOneLocalizedDistrictEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseOneLocalizedDistrictArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseOneLocalizedDistrictKuMax)
+}),
+  "localizedAddress": zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseOneLocalizedAddressEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseOneLocalizedAddressArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseOneLocalizedAddressKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseOneLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseOneLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseOneLocalizedDescriptionKuMax)
+}),
+  "activities": zod.array(zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseOneActivitiesItemEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseOneActivitiesItemArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseOneActivitiesItemKuMax)
+})),
+  "amenities": zod.array(zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseOneAmenitiesItemEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseOneAmenitiesItemArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseOneAmenitiesItemKuMax)
+})),
+  "accessibility": zod.array(zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseOneAccessibilityItemEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseOneAccessibilityItemArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseOneAccessibilityItemKuMax)
+})),
+  "openingHours": zod.array(zod.object({
+  "day": zod.number().int().min(getPublicFacilityResponseOneOpeningHoursItemDayMin).max(getPublicFacilityResponseOneOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(getPublicFacilityResponseOneOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(getPublicFacilityResponseOneOpeningHoursItemClosesAtRegExp).nullable()
+})),
+  "contactPhone": zod.string().nullable(),
+  "websiteUrl": zod.string().url().nullable(),
+  "latitude": zod.number().nullable(),
+  "longitude": zod.number().nullable(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "partnerName": zod.string(),
+  "openingStatus": zod.enum(['open', 'closed', 'unavailable']),
+  "closesAt": zod.string().nullable(),
+  "upcomingSessions": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "category": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "gender": zod.enum(['all', 'female', 'male']),
+  "minAge": zod.number().int().min(getPublicFacilityResponseTwoUpcomingSessionsItemMinAgeMin),
+  "maxAge": zod.number().int().min(getPublicFacilityResponseTwoUpcomingSessionsItemMaxAgeMin).nullable()
+}))
+}))
+
+
+export const getOperationFacilitiesResponseLocalizedNameEnMax = 500;
+
+export const getOperationFacilitiesResponseLocalizedNameArMax = 500;
+
+export const getOperationFacilitiesResponseLocalizedNameKuMax = 500;
+
+export const getOperationFacilitiesResponseLocalizedDistrictEnMax = 500;
+
+export const getOperationFacilitiesResponseLocalizedDistrictArMax = 500;
+
+export const getOperationFacilitiesResponseLocalizedDistrictKuMax = 500;
+
+export const getOperationFacilitiesResponseLocalizedAddressEnMax = 500;
+
+export const getOperationFacilitiesResponseLocalizedAddressArMax = 500;
+
+export const getOperationFacilitiesResponseLocalizedAddressKuMax = 500;
+
+export const getOperationFacilitiesResponseLocalizedDescriptionEnMax = 500;
+
+export const getOperationFacilitiesResponseLocalizedDescriptionArMax = 500;
+
+export const getOperationFacilitiesResponseLocalizedDescriptionKuMax = 500;
+
+export const getOperationFacilitiesResponseActivitiesItemEnMax = 500;
+
+export const getOperationFacilitiesResponseActivitiesItemArMax = 500;
+
+export const getOperationFacilitiesResponseActivitiesItemKuMax = 500;
+
+export const getOperationFacilitiesResponseAmenitiesItemEnMax = 500;
+
+export const getOperationFacilitiesResponseAmenitiesItemArMax = 500;
+
+export const getOperationFacilitiesResponseAmenitiesItemKuMax = 500;
+
+export const getOperationFacilitiesResponseAccessibilityItemEnMax = 500;
+
+export const getOperationFacilitiesResponseAccessibilityItemArMax = 500;
+
+export const getOperationFacilitiesResponseAccessibilityItemKuMax = 500;
+
+export const getOperationFacilitiesResponseOpeningHoursItemDayMin = 0;
+export const getOperationFacilitiesResponseOpeningHoursItemDayMax = 6;
+
+export const getOperationFacilitiesResponseOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getOperationFacilitiesResponseOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+
+
+export const GetOperationFacilitiesResponseItem = zod.object({
+  "id": zod.string(),
+  "partnerId": zod.string(),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "localizedName": zod.object({
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedNameEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedNameArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedNameKuMax)
+}),
+  "localizedDistrict": zod.object({
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedDistrictEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedDistrictArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedDistrictKuMax)
+}),
+  "localizedAddress": zod.object({
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedAddressEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedAddressArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedAddressKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedDescriptionKuMax)
+}),
+  "activities": zod.array(zod.object({
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseActivitiesItemEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseActivitiesItemArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseActivitiesItemKuMax)
+})),
+  "amenities": zod.array(zod.object({
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseAmenitiesItemEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseAmenitiesItemArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseAmenitiesItemKuMax)
+})),
+  "accessibility": zod.array(zod.object({
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseAccessibilityItemEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseAccessibilityItemArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseAccessibilityItemKuMax)
+})),
+  "openingHours": zod.array(zod.object({
+  "day": zod.number().int().min(getOperationFacilitiesResponseOpeningHoursItemDayMin).max(getOperationFacilitiesResponseOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(getOperationFacilitiesResponseOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(getOperationFacilitiesResponseOpeningHoursItemClosesAtRegExp).nullable()
+})),
+  "contactPhone": zod.string().nullable(),
+  "websiteUrl": zod.string().url().nullable(),
+  "latitude": zod.number().nullable(),
+  "longitude": zod.number().nullable(),
+  "updatedAt": zod.coerce.date()
+})
+export const GetOperationFacilitiesResponse = zod.array(GetOperationFacilitiesResponseItem)
+
+
+export const createFacilityProfileBodyPartnerIdMax = 160;
+
+export const createFacilityProfileBodyCityMax = 160;
+
+export const createFacilityProfileBodyFacilityMax = 160;
+
+export const createFacilityProfileBodyLocalizedNameEnMax = 500;
+
+export const createFacilityProfileBodyLocalizedNameArMax = 500;
+
+export const createFacilityProfileBodyLocalizedNameKuMax = 500;
+
+export const createFacilityProfileBodyLocalizedDistrictEnMax = 500;
+
+export const createFacilityProfileBodyLocalizedDistrictArMax = 500;
+
+export const createFacilityProfileBodyLocalizedDistrictKuMax = 500;
+
+export const createFacilityProfileBodyLocalizedAddressEnMax = 500;
+
+export const createFacilityProfileBodyLocalizedAddressArMax = 500;
+
+export const createFacilityProfileBodyLocalizedAddressKuMax = 500;
+
+export const createFacilityProfileBodyLocalizedDescriptionEnMax = 500;
+
+export const createFacilityProfileBodyLocalizedDescriptionArMax = 500;
+
+export const createFacilityProfileBodyLocalizedDescriptionKuMax = 500;
+
+export const createFacilityProfileBodyActivitiesItemEnMax = 500;
+
+export const createFacilityProfileBodyActivitiesItemArMax = 500;
+
+export const createFacilityProfileBodyActivitiesItemKuMax = 500;
+
+export const createFacilityProfileBodyActivitiesMax = 30;
+
+export const createFacilityProfileBodyAmenitiesItemEnMax = 500;
+
+export const createFacilityProfileBodyAmenitiesItemArMax = 500;
+
+export const createFacilityProfileBodyAmenitiesItemKuMax = 500;
+
+export const createFacilityProfileBodyAmenitiesMax = 30;
+
+export const createFacilityProfileBodyAccessibilityItemEnMax = 500;
+
+export const createFacilityProfileBodyAccessibilityItemArMax = 500;
+
+export const createFacilityProfileBodyAccessibilityItemKuMax = 500;
+
+export const createFacilityProfileBodyAccessibilityMax = 30;
+
+export const createFacilityProfileBodyOpeningHoursItemDayMin = 0;
+export const createFacilityProfileBodyOpeningHoursItemDayMax = 6;
+
+export const createFacilityProfileBodyOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const createFacilityProfileBodyOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const createFacilityProfileBodyOpeningHoursMax = 7;
+
+export const createFacilityProfileBodyContactPhoneMax = 40;
+
+export const createFacilityProfileBodyWebsiteUrlMax = 2048;
+
+export const createFacilityProfileBodyLatitudeMin = -90;
+export const createFacilityProfileBodyLatitudeMax = 90;
+
+export const createFacilityProfileBodyLongitudeMin = -180;
+export const createFacilityProfileBodyLongitudeMax = 180;
+
+
+
+export const CreateFacilityProfileBody = zod.object({
+  "partnerId": zod.string().min(1).max(createFacilityProfileBodyPartnerIdMax),
+  "city": zod.string().min(1).max(createFacilityProfileBodyCityMax),
+  "facility": zod.string().min(1).max(createFacilityProfileBodyFacilityMax),
+  "localizedName": zod.object({
+  "en": zod.string().min(1).max(createFacilityProfileBodyLocalizedNameEnMax),
+  "ar": zod.string().min(1).max(createFacilityProfileBodyLocalizedNameArMax),
+  "ku": zod.string().min(1).max(createFacilityProfileBodyLocalizedNameKuMax)
+}),
+  "localizedDistrict": zod.object({
+  "en": zod.string().min(1).max(createFacilityProfileBodyLocalizedDistrictEnMax),
+  "ar": zod.string().min(1).max(createFacilityProfileBodyLocalizedDistrictArMax),
+  "ku": zod.string().min(1).max(createFacilityProfileBodyLocalizedDistrictKuMax)
+}),
+  "localizedAddress": zod.object({
+  "en": zod.string().min(1).max(createFacilityProfileBodyLocalizedAddressEnMax),
+  "ar": zod.string().min(1).max(createFacilityProfileBodyLocalizedAddressArMax),
+  "ku": zod.string().min(1).max(createFacilityProfileBodyLocalizedAddressKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(createFacilityProfileBodyLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(createFacilityProfileBodyLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(createFacilityProfileBodyLocalizedDescriptionKuMax)
+}),
+  "activities": zod.array(zod.object({
+  "en": zod.string().min(1).max(createFacilityProfileBodyActivitiesItemEnMax),
+  "ar": zod.string().min(1).max(createFacilityProfileBodyActivitiesItemArMax),
+  "ku": zod.string().min(1).max(createFacilityProfileBodyActivitiesItemKuMax)
+})).max(createFacilityProfileBodyActivitiesMax),
+  "amenities": zod.array(zod.object({
+  "en": zod.string().min(1).max(createFacilityProfileBodyAmenitiesItemEnMax),
+  "ar": zod.string().min(1).max(createFacilityProfileBodyAmenitiesItemArMax),
+  "ku": zod.string().min(1).max(createFacilityProfileBodyAmenitiesItemKuMax)
+})).max(createFacilityProfileBodyAmenitiesMax),
+  "accessibility": zod.array(zod.object({
+  "en": zod.string().min(1).max(createFacilityProfileBodyAccessibilityItemEnMax),
+  "ar": zod.string().min(1).max(createFacilityProfileBodyAccessibilityItemArMax),
+  "ku": zod.string().min(1).max(createFacilityProfileBodyAccessibilityItemKuMax)
+})).max(createFacilityProfileBodyAccessibilityMax),
+  "openingHours": zod.array(zod.object({
+  "day": zod.number().int().min(createFacilityProfileBodyOpeningHoursItemDayMin).max(createFacilityProfileBodyOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(createFacilityProfileBodyOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(createFacilityProfileBodyOpeningHoursItemClosesAtRegExp).nullable()
+})).max(createFacilityProfileBodyOpeningHoursMax),
+  "contactPhone": zod.string().max(createFacilityProfileBodyContactPhoneMax).nullable(),
+  "websiteUrl": zod.string().url().max(createFacilityProfileBodyWebsiteUrlMax).nullable(),
+  "latitude": zod.number().min(createFacilityProfileBodyLatitudeMin).max(createFacilityProfileBodyLatitudeMax).nullable(),
+  "longitude": zod.number().min(createFacilityProfileBodyLongitudeMin).max(createFacilityProfileBodyLongitudeMax).nullable()
+})
+
+export const createFacilityProfileResponseLocalizedNameEnMax = 500;
+
+export const createFacilityProfileResponseLocalizedNameArMax = 500;
+
+export const createFacilityProfileResponseLocalizedNameKuMax = 500;
+
+export const createFacilityProfileResponseLocalizedDistrictEnMax = 500;
+
+export const createFacilityProfileResponseLocalizedDistrictArMax = 500;
+
+export const createFacilityProfileResponseLocalizedDistrictKuMax = 500;
+
+export const createFacilityProfileResponseLocalizedAddressEnMax = 500;
+
+export const createFacilityProfileResponseLocalizedAddressArMax = 500;
+
+export const createFacilityProfileResponseLocalizedAddressKuMax = 500;
+
+export const createFacilityProfileResponseLocalizedDescriptionEnMax = 500;
+
+export const createFacilityProfileResponseLocalizedDescriptionArMax = 500;
+
+export const createFacilityProfileResponseLocalizedDescriptionKuMax = 500;
+
+export const createFacilityProfileResponseActivitiesItemEnMax = 500;
+
+export const createFacilityProfileResponseActivitiesItemArMax = 500;
+
+export const createFacilityProfileResponseActivitiesItemKuMax = 500;
+
+export const createFacilityProfileResponseAmenitiesItemEnMax = 500;
+
+export const createFacilityProfileResponseAmenitiesItemArMax = 500;
+
+export const createFacilityProfileResponseAmenitiesItemKuMax = 500;
+
+export const createFacilityProfileResponseAccessibilityItemEnMax = 500;
+
+export const createFacilityProfileResponseAccessibilityItemArMax = 500;
+
+export const createFacilityProfileResponseAccessibilityItemKuMax = 500;
+
+export const createFacilityProfileResponseOpeningHoursItemDayMin = 0;
+export const createFacilityProfileResponseOpeningHoursItemDayMax = 6;
+
+export const createFacilityProfileResponseOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const createFacilityProfileResponseOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+
+
+export const CreateFacilityProfileResponse = zod.object({
+  "id": zod.string(),
+  "partnerId": zod.string(),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "localizedName": zod.object({
+  "en": zod.string().min(1).max(createFacilityProfileResponseLocalizedNameEnMax),
+  "ar": zod.string().min(1).max(createFacilityProfileResponseLocalizedNameArMax),
+  "ku": zod.string().min(1).max(createFacilityProfileResponseLocalizedNameKuMax)
+}),
+  "localizedDistrict": zod.object({
+  "en": zod.string().min(1).max(createFacilityProfileResponseLocalizedDistrictEnMax),
+  "ar": zod.string().min(1).max(createFacilityProfileResponseLocalizedDistrictArMax),
+  "ku": zod.string().min(1).max(createFacilityProfileResponseLocalizedDistrictKuMax)
+}),
+  "localizedAddress": zod.object({
+  "en": zod.string().min(1).max(createFacilityProfileResponseLocalizedAddressEnMax),
+  "ar": zod.string().min(1).max(createFacilityProfileResponseLocalizedAddressArMax),
+  "ku": zod.string().min(1).max(createFacilityProfileResponseLocalizedAddressKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(createFacilityProfileResponseLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(createFacilityProfileResponseLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(createFacilityProfileResponseLocalizedDescriptionKuMax)
+}),
+  "activities": zod.array(zod.object({
+  "en": zod.string().min(1).max(createFacilityProfileResponseActivitiesItemEnMax),
+  "ar": zod.string().min(1).max(createFacilityProfileResponseActivitiesItemArMax),
+  "ku": zod.string().min(1).max(createFacilityProfileResponseActivitiesItemKuMax)
+})),
+  "amenities": zod.array(zod.object({
+  "en": zod.string().min(1).max(createFacilityProfileResponseAmenitiesItemEnMax),
+  "ar": zod.string().min(1).max(createFacilityProfileResponseAmenitiesItemArMax),
+  "ku": zod.string().min(1).max(createFacilityProfileResponseAmenitiesItemKuMax)
+})),
+  "accessibility": zod.array(zod.object({
+  "en": zod.string().min(1).max(createFacilityProfileResponseAccessibilityItemEnMax),
+  "ar": zod.string().min(1).max(createFacilityProfileResponseAccessibilityItemArMax),
+  "ku": zod.string().min(1).max(createFacilityProfileResponseAccessibilityItemKuMax)
+})),
+  "openingHours": zod.array(zod.object({
+  "day": zod.number().int().min(createFacilityProfileResponseOpeningHoursItemDayMin).max(createFacilityProfileResponseOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(createFacilityProfileResponseOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(createFacilityProfileResponseOpeningHoursItemClosesAtRegExp).nullable()
+})),
+  "contactPhone": zod.string().nullable(),
+  "websiteUrl": zod.string().url().nullable(),
+  "latitude": zod.number().nullable(),
+  "longitude": zod.number().nullable(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const UpdateFacilityProfileParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updateFacilityProfileBodyCityMax = 160;
+
+export const updateFacilityProfileBodyFacilityMax = 160;
+
+export const updateFacilityProfileBodyLocalizedNameEnMax = 500;
+
+export const updateFacilityProfileBodyLocalizedNameArMax = 500;
+
+export const updateFacilityProfileBodyLocalizedNameKuMax = 500;
+
+export const updateFacilityProfileBodyLocalizedDistrictEnMax = 500;
+
+export const updateFacilityProfileBodyLocalizedDistrictArMax = 500;
+
+export const updateFacilityProfileBodyLocalizedDistrictKuMax = 500;
+
+export const updateFacilityProfileBodyLocalizedAddressEnMax = 500;
+
+export const updateFacilityProfileBodyLocalizedAddressArMax = 500;
+
+export const updateFacilityProfileBodyLocalizedAddressKuMax = 500;
+
+export const updateFacilityProfileBodyLocalizedDescriptionEnMax = 500;
+
+export const updateFacilityProfileBodyLocalizedDescriptionArMax = 500;
+
+export const updateFacilityProfileBodyLocalizedDescriptionKuMax = 500;
+
+export const updateFacilityProfileBodyActivitiesItemEnMax = 500;
+
+export const updateFacilityProfileBodyActivitiesItemArMax = 500;
+
+export const updateFacilityProfileBodyActivitiesItemKuMax = 500;
+
+export const updateFacilityProfileBodyActivitiesMax = 30;
+
+export const updateFacilityProfileBodyAmenitiesItemEnMax = 500;
+
+export const updateFacilityProfileBodyAmenitiesItemArMax = 500;
+
+export const updateFacilityProfileBodyAmenitiesItemKuMax = 500;
+
+export const updateFacilityProfileBodyAmenitiesMax = 30;
+
+export const updateFacilityProfileBodyAccessibilityItemEnMax = 500;
+
+export const updateFacilityProfileBodyAccessibilityItemArMax = 500;
+
+export const updateFacilityProfileBodyAccessibilityItemKuMax = 500;
+
+export const updateFacilityProfileBodyAccessibilityMax = 30;
+
+export const updateFacilityProfileBodyOpeningHoursItemDayMin = 0;
+export const updateFacilityProfileBodyOpeningHoursItemDayMax = 6;
+
+export const updateFacilityProfileBodyOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const updateFacilityProfileBodyOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const updateFacilityProfileBodyOpeningHoursMax = 7;
+
+export const updateFacilityProfileBodyContactPhoneMax = 40;
+
+export const updateFacilityProfileBodyWebsiteUrlMax = 2048;
+
+export const updateFacilityProfileBodyLatitudeMin = -90;
+export const updateFacilityProfileBodyLatitudeMax = 90;
+
+export const updateFacilityProfileBodyLongitudeMin = -180;
+export const updateFacilityProfileBodyLongitudeMax = 180;
+
+
+
+export const UpdateFacilityProfileBody = zod.object({
+  "city": zod.string().min(1).max(updateFacilityProfileBodyCityMax),
+  "facility": zod.string().min(1).max(updateFacilityProfileBodyFacilityMax),
+  "localizedName": zod.object({
+  "en": zod.string().min(1).max(updateFacilityProfileBodyLocalizedNameEnMax),
+  "ar": zod.string().min(1).max(updateFacilityProfileBodyLocalizedNameArMax),
+  "ku": zod.string().min(1).max(updateFacilityProfileBodyLocalizedNameKuMax)
+}),
+  "localizedDistrict": zod.object({
+  "en": zod.string().min(1).max(updateFacilityProfileBodyLocalizedDistrictEnMax),
+  "ar": zod.string().min(1).max(updateFacilityProfileBodyLocalizedDistrictArMax),
+  "ku": zod.string().min(1).max(updateFacilityProfileBodyLocalizedDistrictKuMax)
+}),
+  "localizedAddress": zod.object({
+  "en": zod.string().min(1).max(updateFacilityProfileBodyLocalizedAddressEnMax),
+  "ar": zod.string().min(1).max(updateFacilityProfileBodyLocalizedAddressArMax),
+  "ku": zod.string().min(1).max(updateFacilityProfileBodyLocalizedAddressKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(updateFacilityProfileBodyLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(updateFacilityProfileBodyLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(updateFacilityProfileBodyLocalizedDescriptionKuMax)
+}),
+  "activities": zod.array(zod.object({
+  "en": zod.string().min(1).max(updateFacilityProfileBodyActivitiesItemEnMax),
+  "ar": zod.string().min(1).max(updateFacilityProfileBodyActivitiesItemArMax),
+  "ku": zod.string().min(1).max(updateFacilityProfileBodyActivitiesItemKuMax)
+})).max(updateFacilityProfileBodyActivitiesMax),
+  "amenities": zod.array(zod.object({
+  "en": zod.string().min(1).max(updateFacilityProfileBodyAmenitiesItemEnMax),
+  "ar": zod.string().min(1).max(updateFacilityProfileBodyAmenitiesItemArMax),
+  "ku": zod.string().min(1).max(updateFacilityProfileBodyAmenitiesItemKuMax)
+})).max(updateFacilityProfileBodyAmenitiesMax),
+  "accessibility": zod.array(zod.object({
+  "en": zod.string().min(1).max(updateFacilityProfileBodyAccessibilityItemEnMax),
+  "ar": zod.string().min(1).max(updateFacilityProfileBodyAccessibilityItemArMax),
+  "ku": zod.string().min(1).max(updateFacilityProfileBodyAccessibilityItemKuMax)
+})).max(updateFacilityProfileBodyAccessibilityMax),
+  "openingHours": zod.array(zod.object({
+  "day": zod.number().int().min(updateFacilityProfileBodyOpeningHoursItemDayMin).max(updateFacilityProfileBodyOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(updateFacilityProfileBodyOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(updateFacilityProfileBodyOpeningHoursItemClosesAtRegExp).nullable()
+})).max(updateFacilityProfileBodyOpeningHoursMax),
+  "contactPhone": zod.string().max(updateFacilityProfileBodyContactPhoneMax).nullable(),
+  "websiteUrl": zod.string().url().max(updateFacilityProfileBodyWebsiteUrlMax).nullable(),
+  "latitude": zod.number().min(updateFacilityProfileBodyLatitudeMin).max(updateFacilityProfileBodyLatitudeMax).nullable(),
+  "longitude": zod.number().min(updateFacilityProfileBodyLongitudeMin).max(updateFacilityProfileBodyLongitudeMax).nullable()
+})
+
+export const updateFacilityProfileResponseLocalizedNameEnMax = 500;
+
+export const updateFacilityProfileResponseLocalizedNameArMax = 500;
+
+export const updateFacilityProfileResponseLocalizedNameKuMax = 500;
+
+export const updateFacilityProfileResponseLocalizedDistrictEnMax = 500;
+
+export const updateFacilityProfileResponseLocalizedDistrictArMax = 500;
+
+export const updateFacilityProfileResponseLocalizedDistrictKuMax = 500;
+
+export const updateFacilityProfileResponseLocalizedAddressEnMax = 500;
+
+export const updateFacilityProfileResponseLocalizedAddressArMax = 500;
+
+export const updateFacilityProfileResponseLocalizedAddressKuMax = 500;
+
+export const updateFacilityProfileResponseLocalizedDescriptionEnMax = 500;
+
+export const updateFacilityProfileResponseLocalizedDescriptionArMax = 500;
+
+export const updateFacilityProfileResponseLocalizedDescriptionKuMax = 500;
+
+export const updateFacilityProfileResponseActivitiesItemEnMax = 500;
+
+export const updateFacilityProfileResponseActivitiesItemArMax = 500;
+
+export const updateFacilityProfileResponseActivitiesItemKuMax = 500;
+
+export const updateFacilityProfileResponseAmenitiesItemEnMax = 500;
+
+export const updateFacilityProfileResponseAmenitiesItemArMax = 500;
+
+export const updateFacilityProfileResponseAmenitiesItemKuMax = 500;
+
+export const updateFacilityProfileResponseAccessibilityItemEnMax = 500;
+
+export const updateFacilityProfileResponseAccessibilityItemArMax = 500;
+
+export const updateFacilityProfileResponseAccessibilityItemKuMax = 500;
+
+export const updateFacilityProfileResponseOpeningHoursItemDayMin = 0;
+export const updateFacilityProfileResponseOpeningHoursItemDayMax = 6;
+
+export const updateFacilityProfileResponseOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const updateFacilityProfileResponseOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+
+
+export const UpdateFacilityProfileResponse = zod.object({
+  "id": zod.string(),
+  "partnerId": zod.string(),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "localizedName": zod.object({
+  "en": zod.string().min(1).max(updateFacilityProfileResponseLocalizedNameEnMax),
+  "ar": zod.string().min(1).max(updateFacilityProfileResponseLocalizedNameArMax),
+  "ku": zod.string().min(1).max(updateFacilityProfileResponseLocalizedNameKuMax)
+}),
+  "localizedDistrict": zod.object({
+  "en": zod.string().min(1).max(updateFacilityProfileResponseLocalizedDistrictEnMax),
+  "ar": zod.string().min(1).max(updateFacilityProfileResponseLocalizedDistrictArMax),
+  "ku": zod.string().min(1).max(updateFacilityProfileResponseLocalizedDistrictKuMax)
+}),
+  "localizedAddress": zod.object({
+  "en": zod.string().min(1).max(updateFacilityProfileResponseLocalizedAddressEnMax),
+  "ar": zod.string().min(1).max(updateFacilityProfileResponseLocalizedAddressArMax),
+  "ku": zod.string().min(1).max(updateFacilityProfileResponseLocalizedAddressKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(updateFacilityProfileResponseLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(updateFacilityProfileResponseLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(updateFacilityProfileResponseLocalizedDescriptionKuMax)
+}),
+  "activities": zod.array(zod.object({
+  "en": zod.string().min(1).max(updateFacilityProfileResponseActivitiesItemEnMax),
+  "ar": zod.string().min(1).max(updateFacilityProfileResponseActivitiesItemArMax),
+  "ku": zod.string().min(1).max(updateFacilityProfileResponseActivitiesItemKuMax)
+})),
+  "amenities": zod.array(zod.object({
+  "en": zod.string().min(1).max(updateFacilityProfileResponseAmenitiesItemEnMax),
+  "ar": zod.string().min(1).max(updateFacilityProfileResponseAmenitiesItemArMax),
+  "ku": zod.string().min(1).max(updateFacilityProfileResponseAmenitiesItemKuMax)
+})),
+  "accessibility": zod.array(zod.object({
+  "en": zod.string().min(1).max(updateFacilityProfileResponseAccessibilityItemEnMax),
+  "ar": zod.string().min(1).max(updateFacilityProfileResponseAccessibilityItemArMax),
+  "ku": zod.string().min(1).max(updateFacilityProfileResponseAccessibilityItemKuMax)
+})),
+  "openingHours": zod.array(zod.object({
+  "day": zod.number().int().min(updateFacilityProfileResponseOpeningHoursItemDayMin).max(updateFacilityProfileResponseOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(updateFacilityProfileResponseOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(updateFacilityProfileResponseOpeningHoursItemClosesAtRegExp).nullable()
+})),
+  "contactPhone": zod.string().nullable(),
+  "websiteUrl": zod.string().url().nullable(),
+  "latitude": zod.number().nullable(),
+  "longitude": zod.number().nullable(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const DeleteFacilityProfileParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DeleteFacilityProfileResponse = zod.void()
+
+
 export const getPublicCatalogResponseRemainingMin = 0;
 
 

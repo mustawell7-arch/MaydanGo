@@ -8,16 +8,58 @@ import {
 } from 'react-native';
 import { Text, Pressable, TextInput, Ionicons } from '@/components/Localized';
 import { router, useLocalSearchParams } from 'expo-router';
-import Svg, { Path, Rect } from 'react-native-svg';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
 import { FacilityCard } from '@/components/FacilityCard';
-import { categories, communityEvents, facilities } from '@/data/demo';
-import { LocalNotice } from '@/components/LocalNotice';
-import { cities, getCityLabel } from '@/data/demo';
+import { communityEvents, cities, getCityLabel } from '@/data/demo';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { translate } from '@/lib/i18n';
-import { localize } from '@/lib/content';
+import { facilityText, cityIdForFacility, eligibilityKey } from '@/lib/facility-content';
+import { getGetPublicFacilitiesQueryKey, useGetPublicFacilities } from '@workspace/api-client-react';
+
+function FilterRow({
+  title,
+  anyLabel,
+  options,
+  selected,
+  onSelect,
+  colors,
+}: {
+  title: string;
+  anyLabel: string;
+  options: { key: string; label: string }[];
+  selected: string | null;
+  onSelect: (value: string | null) => void;
+  colors: ReturnType<typeof useColors>;
+}) {
+  if (!options.length) return null;
+  return (
+    <View style={styles.filterSection}>
+      <Text style={[styles.filterTitle, { color: colors.mutedForeground }]}>{title}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+        {[{ key: '', label: anyLabel }, ...options].map(option => {
+          const active = option.key === '' ? selected === null : selected === option.key;
+          return (
+            <Pressable
+              key={option.key || 'any'}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              onPress={() => onSelect(option.key || null)}
+              style={[
+                styles.chip,
+                { backgroundColor: active ? colors.primary : colors.card, borderColor: colors.border },
+              ]}
+            >
+              <Text style={[styles.chipText, { color: active ? colors.primaryForeground : colors.foreground }]}>
+                {option.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
 
 export default function ExploreScreen() {
   const colors = useColors();
@@ -31,24 +73,70 @@ export default function ExploreScreen() {
   const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState(params.category ?? 'All');
-  const [view, setView] = useState<'list' | 'map'>('list');
+  const [openNowOnly, setOpenNowOnly] = useState(false);
+  const [selectedAmenity, setSelectedAmenity] = useState<string | null>(null);
+  const [selectedAccessibility, setSelectedAccessibility] = useState<string | null>(null);
+  const [selectedEligibility, setSelectedEligibility] = useState<string | null>(null);
+  const facilitiesQuery = useGetPublicFacilities({
+    query: { queryKey: getGetPublicFacilitiesQueryKey(), refetchInterval: 60_000 },
+  });
+  const facilities = facilitiesQuery.data ?? [];
   const t = (key: Parameters<typeof translate>[1]) => translate(app.language, key);
   const currentCity = getCityLabel(app.selectedCityId, app.language);
-  const cityName = currentCity;
+  useEffect(() => {
+    setCategory('All');
+    setSelectedAmenity(null);
+    setSelectedAccessibility(null);
+    setSelectedEligibility(null);
+  }, [app.language]);
+  const categories = useMemo(() => [
+    ...new Set(facilities.flatMap(facility => facility.activities.map(activity => facilityText(activity, app.language)))),
+  ], [facilities, app.language]);
+  const amenityOptions = useMemo(() => {
+    const values = new Map<string, string>();
+    facilities.flatMap(facility => facility.amenities).forEach(value => values.set(JSON.stringify(value), facilityText(value, app.language)));
+    return [...values].map(([key, label]) => ({ key, label }));
+  }, [facilities, app.language]);
+  const accessibilityOptions = useMemo(() => {
+    const values = new Map<string, string>();
+    facilities.flatMap(facility => facility.accessibility).forEach(value => values.set(JSON.stringify(value), facilityText(value, app.language)));
+    return [...values].map(([key, label]) => ({ key, label }));
+  }, [facilities, app.language]);
+  const eligibilityOptions = useMemo(() => {
+    const values = new Map<string, string>();
+    facilities.flatMap(facility => facility.upcomingSessions).forEach(session => {
+      const key = eligibilityKey(session);
+      const gender = session.gender === 'female' ? t('womenOnly') : session.gender === 'male' ? t('menOnly') : t('allMembers');
+      const age = session.maxAge !== null
+        ? t('ageRangeLabel').replace('{min}', String(session.minAge)).replace('{max}', String(session.maxAge))
+        : session.minAge > 0 ? t('ageMinimum').replace('{age}', String(session.minAge)) : null;
+      values.set(key, age ? t('ageAndGender').replace('{gender}', gender).replace('{age}', age) : gender);
+    });
+    return [...values].map(([key, label]) => ({ key, label }));
+  }, [facilities, app.language]);
   const visibleFacilities = useMemo(
-    () =>
-      facilities.filter((facility) => {
-        const matchesCity = app.selectedCityId === 'all' || facility.cityId === app.selectedCityId;
-        const source = `${facility.name} ${facility.category} ${facility.district} ${facility.activities.join(' ')}`;
-        const matchesText = `${source} ${localize(source, 'ar')} ${localize(source, 'ku')}`
-          .toLowerCase()
-          .includes(query.toLowerCase());
-        const matchesCategory =
-          category === 'All' || facility.activities.some((item) => item.toLowerCase().includes(category.toLowerCase())) ||
-          facility.category.toLowerCase().includes(category.toLowerCase());
-        return matchesCity && matchesText && matchesCategory;
-      }),
-    [app.selectedCityId, query, category],
+    () => facilities.filter(facility => {
+      const matchesCity = app.selectedCityId === 'all' || cityIdForFacility(facility.city) === app.selectedCityId;
+      const searchValues = [
+        facility.localizedName.en, facility.localizedName.ar, facility.localizedName.ku,
+        facility.localizedDistrict.en, facility.localizedDistrict.ar, facility.localizedDistrict.ku,
+        facility.localizedDescription.en, facility.localizedDescription.ar, facility.localizedDescription.ku,
+        facility.city,
+        ...facility.activities.flatMap(item => [item.en, item.ar, item.ku]),
+        ...facility.amenities.flatMap(item => [item.en, item.ar, item.ku]),
+        ...facility.accessibility.flatMap(item => [item.en, item.ar, item.ku]),
+      ];
+      const matchesText = searchValues.join(' ').toLocaleLowerCase().includes(query.toLocaleLowerCase());
+      const matchesCategory = category === 'All' || facility.activities.some(item =>
+        facilityText(item, app.language).toLocaleLowerCase() === category.toLocaleLowerCase(),
+      );
+      const matchesAmenity = !selectedAmenity || facility.amenities.some(item => JSON.stringify(item) === selectedAmenity);
+      const matchesAccessibility = !selectedAccessibility || facility.accessibility.some(item => JSON.stringify(item) === selectedAccessibility);
+      const matchesEligibility = !selectedEligibility || facility.upcomingSessions.some(session => eligibilityKey(session) === selectedEligibility);
+      return matchesCity && matchesText && matchesCategory && matchesAmenity && matchesAccessibility &&
+        matchesEligibility && (!openNowOnly || facility.openingStatus === 'open');
+    }),
+    [facilities, app.selectedCityId, app.language, query, category, selectedAmenity, selectedAccessibility, selectedEligibility, openNowOnly],
   );
 
   const visibleEvents = useMemo(
@@ -56,7 +144,7 @@ export default function ExploreScreen() {
       communityEvents.filter((event) => {
         const matchesCity = app.selectedCityId === 'all' || event.cityId === app.selectedCityId;
         const source = `${event.title} ${event.venue} ${event.city} ${event.description} ${event.access}`;
-        const matchesText = `${source} ${localize(source, 'ar')} ${localize(source, 'ku')}`
+        const matchesText = `${source}`
           .toLowerCase()
           .includes(query.toLowerCase());
         return matchesCity && matchesText;
@@ -73,7 +161,7 @@ export default function ExploreScreen() {
   };
 
   return (
-    <ScreenShell>
+    <ScreenShell sample={kind === 'events'}>
       <ScreenHeader eyebrow={currentCity} title={t('explore')} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -95,7 +183,7 @@ export default function ExploreScreen() {
         </View>
         <Pressable testID="explore-live" accessibilityRole="button" onPress={() => router.push('/live')} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 16, backgroundColor: colors.accent }}>
           <Ionicons name="radio-outline" size={18} color={colors.accentForeground} />
-          <Text style={{ flex: 1, color: colors.accentForeground, fontWeight: '700' }}>Real partner availability</Text>
+          <Text style={{ flex: 1, color: colors.accentForeground, fontWeight: '700' }}>{t('realPartnerAvailability')}</Text>
           <Ionicons name="chevron-forward" size={16} color={colors.accentForeground} />
         </Pressable>
         <Pressable
@@ -179,16 +267,15 @@ export default function ExploreScreen() {
           </View>
         ) : (<>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          {categories.map((item) => {
+          {['All', ...categories].map(item => {
             const selected = category === item;
             return (
               <Pressable
                 key={item}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
                 onPress={() => setCategory(item)}
-                style={[
-                  styles.chip,
-                  { backgroundColor: selected ? colors.primary : colors.card, borderColor: colors.border },
-                ]}
+                style={[styles.chip, { backgroundColor: selected ? colors.primary : colors.card, borderColor: colors.border }]}
               >
                 <Text style={[styles.chipText, { color: selected ? colors.primaryForeground : colors.foreground }]}>
                   {item === 'All' ? t('allActivities') : item}
@@ -198,78 +285,48 @@ export default function ExploreScreen() {
           })}
         </ScrollView>
         <View style={styles.filterBar}>
-          <View style={styles.openPill}>
-            <View style={styles.openDot} />
-            <Text style={[styles.openPillText, { color: colors.primary }]}>{t('openNow')}</Text>
-          </View>
-          <View style={[styles.viewToggle, { backgroundColor: colors.secondary }]}>
-            <Pressable
-              onPress={() => setView('list')}
-              style={[styles.toggleOption, view === 'list' && { backgroundColor: colors.card }]}
-            >
-              <Ionicons name="list-outline" size={15} color={view === 'list' ? colors.primary : colors.mutedForeground} />
-              <Text style={[styles.toggleText, { color: view === 'list' ? colors.primary : colors.mutedForeground }]}>{t('list')}</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setView('map')}
-              style={[styles.toggleOption, view === 'map' && { backgroundColor: colors.card }]}
-            >
-              <Ionicons name="map-outline" size={15} color={view === 'map' ? colors.primary : colors.mutedForeground} />
-              <Text style={[styles.toggleText, { color: view === 'map' ? colors.primary : colors.mutedForeground }]}>{t('map')}</Text>
-            </Pressable>
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: openNowOnly }}
+            onPress={() => setOpenNowOnly(value => !value)}
+            style={[styles.openPill, { backgroundColor: openNowOnly ? colors.primary : colors.secondary }]}
+          >
+            <View style={[styles.openDot, { backgroundColor: openNowOnly ? colors.primaryForeground : colors.primary }]} />
+            <Text style={[styles.openPillText, { color: openNowOnly ? colors.primaryForeground : colors.primary }]}>{t('openNow')}</Text>
+          </Pressable>
+          <Text style={[styles.updatedHint, { color: colors.mutedForeground }]}>{t('iraqTime')}</Text>
         </View>
-        {view === 'map' ? (
-          <View style={styles.mapWrap}>
-            <View style={styles.map}>
-              <Svg width="100%" height="100%" viewBox="0 0 360 330">
-                <Rect x="0" y="0" width="360" height="330" fill="#e9eddf" />
-                <Path d="M-12 94 C60 72 112 120 174 101 S285 50 382 71" stroke="#f7f6ee" strokeWidth="23" fill="none" />
-                <Path d="M-15 215 C44 177 125 196 182 218 S296 267 383 230" stroke="#f7f6ee" strokeWidth="18" fill="none" />
-                <Path d="M88 -10 C105 59 145 102 159 164 S149 276 183 344" stroke="#f7f6ee" strokeWidth="16" fill="none" />
-                <Path d="M255 -8 C227 60 226 112 255 159 S308 239 276 340" stroke="#d2e5dd" strokeWidth="26" fill="none" />
-                <Path d="M255 -8 C227 60 226 112 255 159 S308 239 276 340" stroke="#a3c6b7" strokeWidth="2" fill="none" />
-                <Path d="M17 148 L333 133 M22 284 L340 50 M46 29 L324 296" stroke="#d7ddcf" strokeWidth="2" fill="none" />
-              </Svg>
-              <View style={styles.mapLabel}><Text style={styles.mapLabelText}>{cityName.toUpperCase()}</Text></View>
+        <FilterRow title={t('amenities')} anyLabel={t('anyAmenity')} options={amenityOptions}
+          selected={selectedAmenity} onSelect={setSelectedAmenity} colors={colors} />
+        <FilterRow title={t('accessibility')} anyLabel={t('anyAccessNeed')} options={accessibilityOptions}
+          selected={selectedAccessibility} onSelect={setSelectedAccessibility} colors={colors} />
+        <FilterRow title={t('sessionSuitability')} anyLabel={t('anySessionSuitability')} options={eligibilityOptions}
+          selected={selectedEligibility} onSelect={setSelectedEligibility} colors={colors} />
+        <View style={styles.list}>
+          {facilitiesQuery.isLoading ? (
+            <Text style={[styles.emptyHint, { color: colors.mutedForeground }]}>{t('loadingFacilities')}</Text>
+          ) : facilitiesQuery.isError ? (
+            <View style={styles.empty}>
+              <Text style={[styles.emptyHint, { color: colors.destructive }]}>{t('facilityLoadError')}</Text>
+              <Pressable accessibilityRole="button" onPress={() => void facilitiesQuery.refetch()}>
+                <Text style={[styles.retryText, { color: colors.primary }]}>{t('tryAgain')}</Text>
+              </Pressable>
+            </View>
+          ) : facilities.length === 0 ? (
+            <View style={styles.empty}>
+              <Ionicons name="business-outline" size={28} color={colors.mutedForeground} />
+              <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t('noPlaces')}</Text>
+              <Text style={[styles.emptyHint, { color: colors.mutedForeground }]}>{t('noPublishedFacilities')}</Text>
+            </View>
+          ) : visibleFacilities.length === 0 ? (
+            <View style={styles.empty}>
+              <Ionicons name="search-outline" size={28} color={colors.mutedForeground} />
+              <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t('noPlaces')}</Text>
+              <Text style={[styles.emptyHint, { color: colors.mutedForeground }]}>{t('trySearch')}</Text>
+            </View>
+          ) : (
+            <>
               {visibleFacilities.map((facility) => (
-                <Pressable
-                  key={facility.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${facility.name}`}
-                  onPress={() => router.push({ pathname: '/facility/[id]', params: { id: facility.id } })}
-                  style={[
-                    styles.mapPin,
-                    {
-                      left: `${facility.mapPosition.x}%`,
-                      top: `${facility.mapPosition.y}%`,
-                    },
-                  ]}
-                >
-                  <Ionicons name="fitness" size={14} color="#ffffff" />
-                </Pressable>
-              ))}
-            </View>
-            <View style={styles.mapList}>
-              {visibleFacilities.slice(0, 2).map((facility) => (
-                <Pressable
-                  key={facility.id}
-                  onPress={() => router.push({ pathname: '/facility/[id]', params: { id: facility.id } })}
-                  style={[styles.mapListItem, { backgroundColor: colors.card }]}
-                >
-                  <Image source={facility.image} style={styles.mapThumb} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.mapFacilityName, { color: colors.foreground }]}>{facility.name}</Text>
-                    <Text style={[styles.mapFacilityMeta, { color: colors.mutedForeground }]}>{facility.district} · {facility.distance}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={17} color={colors.mutedForeground} />
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        ) : (
-          <View style={styles.list}>
-            {visibleFacilities.map((facility) => (
               <FacilityCard
                 key={facility.id}
                 facility={facility}
@@ -278,15 +335,9 @@ export default function ExploreScreen() {
                 onToggleFavorite={() => app.toggleFavorite(facility.id)}
               />
             ))}
-            {visibleFacilities.length === 0 ? (
-              <View style={styles.empty}>
-                <Ionicons name="search-outline" size={28} color={colors.mutedForeground} />
-                <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t('noPlaces')}</Text>
-                <Text style={[styles.emptyHint, { color: colors.mutedForeground }]}>{t('trySearch')}</Text>
-              </View>
-            ) : null}
-          </View>
-        )}
+            </>
+          )}
+        </View>
         </>)}
       </ScrollView>
     </ScreenShell>
@@ -333,21 +384,13 @@ const styles = StyleSheet.create({
   openPill: { flexDirection: 'row', gap: 6, alignItems: 'center', backgroundColor: '#e9eddf', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 14 },
   openDot: { width: 6, height: 6, borderRadius: 4, backgroundColor: '#4c875d' },
   openPillText: { fontSize: 10, fontWeight: '800' },
-  viewToggle: { flexDirection: 'row', padding: 3, borderRadius: 12, gap: 2 },
-  toggleOption: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9, paddingVertical: 6, borderRadius: 10 },
+  updatedHint: { fontSize: 10 },
+  filterSection: { marginBottom: 6 },
+  filterTitle: { fontSize: 10, fontWeight: '800', paddingHorizontal: 20, paddingTop: 5 },
   toggleText: { fontSize: 10, fontWeight: '700' },
   list: { paddingHorizontal: 20, paddingTop: 2 },
   empty: { alignItems: 'center', paddingVertical: 45, gap: 8 },
   emptyTitle: { fontSize: 16, fontWeight: '800' },
   emptyHint: { fontSize: 12 },
-  mapWrap: { paddingHorizontal: 20, paddingBottom: 20 },
-  map: { height: 330, borderRadius: 22, overflow: 'hidden', position: 'relative' },
-  mapLabel: { position: 'absolute', top: 17, left: 17, backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 7, paddingHorizontal: 8, paddingVertical: 5 },
-  mapLabelText: { color: '#718076', fontSize: 9, fontWeight: '900', letterSpacing: 1.5 },
-  mapPin: { position: 'absolute', width: 32, height: 32, marginLeft: -16, marginTop: -16, backgroundColor: '#214c3d', borderColor: '#ffffff', borderWidth: 3, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  mapList: { gap: 8, marginTop: 10 },
-  mapListItem: { padding: 9, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  mapThumb: { width: 46, height: 46, borderRadius: 12 },
-  mapFacilityName: { fontSize: 12, fontWeight: '800' },
-  mapFacilityMeta: { fontSize: 10, marginTop: 3 },
+  retryText: { fontSize: 12, fontWeight: '800' },
 });

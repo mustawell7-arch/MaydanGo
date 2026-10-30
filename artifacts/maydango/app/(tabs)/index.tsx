@@ -183,7 +183,7 @@ export default function HomeScreen() {
               key={facility.id}
               facility={facility}
               favorite={app.favorites.includes(facility.id)}
-              onPress={() => router.push({ pathname: '/facility/[id]', params: { id: facility.id } })}
+              onPress={() => router.push({ pathname: '/facility/[id]', params: { id: facility.id, sample: 'true' } })}
               onToggleFavorite={() => app.toggleFavorite(facility.id)}
               compact
             />

@@ -3,12 +3,14 @@ import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray, sql, asc, gt, isNull } from "drizzle-orm";
 import { z } from "zod";
-import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, learningCourses, learningLessons } from "@workspace/db";
+import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, learningCourses, learningLessons, facilityProfiles } from "@workspace/db";
 import { BookingError, processWaitlistQueue } from "../lib/reservations";
-import { offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
+import { createFacilityProfileInput, facilityProfileFields, offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
 import {
   AddLearningLessonBody, AddLearningLessonResponse, ChangeLiveOfferingBody,
   CreateLearningCourseBody, CreateLearningCourseResponse,
+  CreateFacilityProfileBody, CreateFacilityProfileResponse, GetOperationFacilitiesResponse,
+  UpdateFacilityProfileBody, UpdateFacilityProfileResponse,
   UpdateLearningCourseBody, UpdateLearningCourseResponse,
 } from "@workspace/api-zod";
 import { sendMemberNotification } from "../lib/notifications";
@@ -99,6 +101,67 @@ router.patch("/partners/:id", async (req, res) => {
     return p;
   });
   res.json(row);
+});
+router.get("/facilities", async (_req, res) => {
+  const op = res.locals.operator;
+  const rows = await db.select().from(facilityProfiles)
+    .where(op.role === "admin" ? undefined : eq(facilityProfiles.partnerId, op.partnerId ?? ""))
+    .orderBy(asc(facilityProfiles.city), asc(facilityProfiles.facility));
+  res.json(GetOperationFacilitiesResponse.parse(rows));
+});
+router.post("/facilities", async (req, res) => {
+  const data = createFacilityProfileInput.parse(req.body);
+  CreateFacilityProfileBody.parse(data);
+  own(res, data.partnerId);
+  const [partner] = await db.select({ id: partners.id }).from(partners).where(eq(partners.id, data.partnerId));
+  if (!partner) throw new BookingError(404, "Partner not found.");
+  const [duplicate] = await db.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
+    eq(facilityProfiles.partnerId, data.partnerId),
+    eq(facilityProfiles.city, data.city),
+    eq(facilityProfiles.facility, data.facility),
+  )).limit(1);
+  if (duplicate) throw new BookingError(409, "This partner already has a profile for that facility and city.");
+  const { partnerId, ...profile } = data;
+  const row = await db.transaction(async tx => {
+    const [created] = await tx.insert(facilityProfiles).values({
+      ...profile, id: randomUUID(), partnerId, updatedAt: new Date(),
+    }).returning();
+    await audit(tx, res.locals.operator.userId, "facility.create", created.id);
+    return created;
+  });
+  res.status(201).json(CreateFacilityProfileResponse.parse(row));
+});
+router.put("/facilities/:id", async (req, res) => {
+  const data = facilityProfileFields.parse(req.body);
+  UpdateFacilityProfileBody.parse(data);
+  const id = String(req.params.id);
+  const row = await db.transaction(async tx => {
+    const [existing] = await tx.select().from(facilityProfiles).where(eq(facilityProfiles.id, id)).for("update");
+    if (!existing) throw new BookingError(404, "Facility profile not found.");
+    own(res, existing.partnerId);
+    const [duplicate] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
+      eq(facilityProfiles.partnerId, existing.partnerId),
+      eq(facilityProfiles.city, data.city),
+      eq(facilityProfiles.facility, data.facility),
+    )).limit(1);
+    if (duplicate && duplicate.id !== id) throw new BookingError(409, "This partner already has a profile for that facility and city.");
+    const [updated] = await tx.update(facilityProfiles).set({ ...data, updatedAt: new Date() })
+      .where(eq(facilityProfiles.id, id)).returning();
+    await audit(tx, res.locals.operator.userId, "facility.update", id);
+    return updated;
+  });
+  res.json(UpdateFacilityProfileResponse.parse(row));
+});
+router.delete("/facilities/:id", async (req, res) => {
+  const id = String(req.params.id);
+  await db.transaction(async tx => {
+    const [existing] = await tx.select().from(facilityProfiles).where(eq(facilityProfiles.id, id)).for("update");
+    if (!existing) throw new BookingError(404, "Facility profile not found.");
+    own(res, existing.partnerId);
+    await tx.delete(facilityProfiles).where(eq(facilityProfiles.id, id));
+    await audit(tx, res.locals.operator.userId, "facility.delete", id);
+  });
+  res.sendStatus(204);
 });
 router.post("/offerings", async (req, res) => {
   const data = offeringInput.parse(req.body);

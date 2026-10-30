@@ -37,6 +37,9 @@ import type {
   CourseSummary,
   CreateMemberBookingBody,
   EnablePreviewMembershipBody,
+  FacilityProfile,
+  FacilityProfileInput,
+  FacilityProfileUpdate,
   GetAttendance200,
   GetBookingCatalog200Item,
   GetSupportStaffTicketsParams,
@@ -64,6 +67,7 @@ import type {
   PartnerApproval,
   PartnerInput,
   PlanInput,
+  PublicFacility,
   PublicOffering,
   PublicPlan,
   PushDeviceInput,
@@ -114,6 +118,524 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetPublicFacilitiesUrl = () => {
+
+
+
+
+  return `/api/public/facilities`
+}
+
+export const getPublicFacilities = async ( options?: Parameters<typeof customFetch>[1]): Promise<PublicFacility[]> => {
+
+  return customFetch<PublicFacility[]>(getGetPublicFacilitiesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicFacilitiesQueryKey = () => {
+    return [
+    `/api/public/facilities`
+    ] as const;
+    }
+
+
+export const getGetPublicFacilitiesQueryOptions = <TData = Awaited<ReturnType<typeof getPublicFacilities>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicFacilities>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicFacilitiesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicFacilities>>> = ({ signal }) => getPublicFacilities({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicFacilities>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPublicFacilitiesQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicFacilities>>>
+export type GetPublicFacilitiesQueryError = ErrorType<unknown>
+
+
+export function useGetPublicFacilities<TData = Awaited<ReturnType<typeof getPublicFacilities>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicFacilities>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicFacilities>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicFacilities>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicFacilities<TData = Awaited<ReturnType<typeof getPublicFacilities>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicFacilities>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicFacilities>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicFacilities>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicFacilities<TData = Awaited<ReturnType<typeof getPublicFacilities>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicFacilities>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPublicFacilities<TData = Awaited<ReturnType<typeof getPublicFacilities>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicFacilities>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPublicFacilitiesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicFacilityUrl = (id: string,) => {
+
+
+
+
+  return `/api/public/facilities/${id}`
+}
+
+export const getPublicFacility = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<PublicFacility> => {
+
+  return customFetch<PublicFacility>(getGetPublicFacilityUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicFacilityQueryKey = (id: string,) => {
+    return [
+    `/api/public/facilities/${id}`
+    ] as const;
+    }
+
+
+export const getGetPublicFacilityQueryOptions = <TData = Awaited<ReturnType<typeof getPublicFacility>>, TError = ErrorType<void>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicFacility>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicFacilityQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicFacility>>> = ({ signal }) => getPublicFacility(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicFacility>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPublicFacilityQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicFacility>>>
+export type GetPublicFacilityQueryError = ErrorType<void>
+
+
+export function useGetPublicFacility<TData = Awaited<ReturnType<typeof getPublicFacility>>, TError = ErrorType<void>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicFacility>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicFacility>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicFacility>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicFacility<TData = Awaited<ReturnType<typeof getPublicFacility>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicFacility>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicFacility>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicFacility>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicFacility<TData = Awaited<ReturnType<typeof getPublicFacility>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicFacility>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPublicFacility<TData = Awaited<ReturnType<typeof getPublicFacility>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicFacility>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPublicFacilityQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOperationFacilitiesUrl = () => {
+
+
+
+
+  return `/api/operations/facilities`
+}
+
+export const getOperationFacilities = async ( options?: Parameters<typeof customFetch>[1]): Promise<FacilityProfile[]> => {
+
+  return customFetch<FacilityProfile[]>(getGetOperationFacilitiesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationFacilitiesQueryKey = () => {
+    return [
+    `/api/operations/facilities`
+    ] as const;
+    }
+
+
+export const getGetOperationFacilitiesQueryOptions = <TData = Awaited<ReturnType<typeof getOperationFacilities>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationFacilities>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationFacilitiesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationFacilities>>> = ({ signal }) => getOperationFacilities({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationFacilities>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOperationFacilitiesQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationFacilities>>>
+export type GetOperationFacilitiesQueryError = ErrorType<unknown>
+
+
+export function useGetOperationFacilities<TData = Awaited<ReturnType<typeof getOperationFacilities>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationFacilities>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOperationFacilities>>,
+          TError,
+          Awaited<ReturnType<typeof getOperationFacilities>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOperationFacilities<TData = Awaited<ReturnType<typeof getOperationFacilities>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationFacilities>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOperationFacilities>>,
+          TError,
+          Awaited<ReturnType<typeof getOperationFacilities>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOperationFacilities<TData = Awaited<ReturnType<typeof getOperationFacilities>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationFacilities>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetOperationFacilities<TData = Awaited<ReturnType<typeof getOperationFacilities>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationFacilities>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOperationFacilitiesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateFacilityProfileUrl = () => {
+
+
+
+
+  return `/api/operations/facilities`
+}
+
+export const createFacilityProfile = async (facilityProfileInput: FacilityProfileInput, options?: Parameters<typeof customFetch>[1]): Promise<FacilityProfile> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FacilityProfile>(getCreateFacilityProfileUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(facilityProfileInput)
+  }
+);}
+
+
+
+
+
+export const getCreateFacilityProfileMutationKey = () => ['createFacilityProfile'] as const;
+
+export const getCreateFacilityProfileMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFacilityProfile>>, TError,CreateFacilityProfileMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createFacilityProfile>>, TError,CreateFacilityProfileMutationVariables, TContext> => {
+
+const mutationKey = getCreateFacilityProfileMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createFacilityProfile>>, CreateFacilityProfileMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createFacilityProfile(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateFacilityProfileMutationResult = NonNullable<Awaited<ReturnType<typeof createFacilityProfile>>>
+    export type CreateFacilityProfileMutationBody = BodyType<FacilityProfileInput>
+    export type CreateFacilityProfileMutationError = ErrorType<unknown>
+    export type CreateFacilityProfileMutationVariables = {data: BodyType<FacilityProfileInput>}
+
+    export const useCreateFacilityProfile = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFacilityProfile>>, TError,CreateFacilityProfileMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createFacilityProfile>>,
+        TError,
+        CreateFacilityProfileMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateFacilityProfileMutationOptions(options), queryClient);
+    }
+
+export const getUpdateFacilityProfileUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/facilities/${id}`
+}
+
+export const updateFacilityProfile = async (id: string,
+    facilityProfileUpdate: FacilityProfileUpdate, options?: Parameters<typeof customFetch>[1]): Promise<FacilityProfile> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FacilityProfile>(getUpdateFacilityProfileUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(facilityProfileUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateFacilityProfileMutationKey = () => ['updateFacilityProfile'] as const;
+
+export const getUpdateFacilityProfileMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFacilityProfile>>, TError,UpdateFacilityProfileMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateFacilityProfile>>, TError,UpdateFacilityProfileMutationVariables, TContext> => {
+
+const mutationKey = getUpdateFacilityProfileMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateFacilityProfile>>, UpdateFacilityProfileMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateFacilityProfile(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateFacilityProfileMutationResult = NonNullable<Awaited<ReturnType<typeof updateFacilityProfile>>>
+    export type UpdateFacilityProfileMutationBody = BodyType<FacilityProfileUpdate>
+    export type UpdateFacilityProfileMutationError = ErrorType<void>
+    export type UpdateFacilityProfileMutationVariables = {id: string;data: BodyType<FacilityProfileUpdate>}
+
+    export const useUpdateFacilityProfile = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFacilityProfile>>, TError,UpdateFacilityProfileMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateFacilityProfile>>,
+        TError,
+        UpdateFacilityProfileMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateFacilityProfileMutationOptions(options), queryClient);
+    }
+
+export const getDeleteFacilityProfileUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/facilities/${id}`
+}
+
+export const deleteFacilityProfile = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteFacilityProfileUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteFacilityProfileMutationKey = () => ['deleteFacilityProfile'] as const;
+
+export const getDeleteFacilityProfileMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFacilityProfile>>, TError,DeleteFacilityProfileMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteFacilityProfile>>, TError,DeleteFacilityProfileMutationVariables, TContext> => {
+
+const mutationKey = getDeleteFacilityProfileMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteFacilityProfile>>, DeleteFacilityProfileMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteFacilityProfile(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteFacilityProfileMutationResult = NonNullable<Awaited<ReturnType<typeof deleteFacilityProfile>>>
+
+    export type DeleteFacilityProfileMutationError = ErrorType<void>
+    export type DeleteFacilityProfileMutationVariables = {id: string}
+
+    export const useDeleteFacilityProfile = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFacilityProfile>>, TError,DeleteFacilityProfileMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteFacilityProfile>>,
+        TError,
+        DeleteFacilityProfileMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteFacilityProfileMutationOptions(options), queryClient);
+    }
 
 export const getGetPublicCatalogUrl = () => {
 

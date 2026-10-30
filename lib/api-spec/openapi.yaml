@@ -11,6 +11,84 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /public/facilities:
+    get:
+      operationId: getPublicFacilities
+      responses:
+        "200":
+          description: Facility details published by approved partners
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PublicFacility"
+  /public/facilities/{id}:
+    get:
+      operationId: getPublicFacility
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: A published facility profile and future live sessions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicFacility"
+        "404": { description: Facility not found }
+  /operations/facilities:
+    get:
+      operationId: getOperationFacilities
+      responses:
+        "200":
+          description: Facility profiles visible to the signed-in operator
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FacilityProfile"
+    post:
+      operationId: createFacilityProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FacilityProfileInput"
+      responses:
+        "201":
+          description: Facility profile created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacilityProfile"
+  /operations/facilities/{id}:
+    put:
+      operationId: updateFacilityProfile
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FacilityProfileUpdate"
+      responses:
+        "200":
+          description: Facility profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacilityProfile"
+        "404": { description: Facility not found }
+    delete:
+      operationId: deleteFacilityProfile
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Facility profile removed }
+        "404": { description: Facility not found }
   /public/catalog:
     get:
       operationId: getPublicCatalog
@@ -413,6 +491,108 @@ paths:
                 $ref: "#/components/schemas/HealthStatus"
 components:
   schemas:
+    LocalizedFacilityText:
+      type: object
+      required: [en, ar, ku]
+      properties:
+        en: { type: string, minLength: 1, maxLength: 500 }
+        ar: { type: string, minLength: 1, maxLength: 500 }
+        ku: { type: string, minLength: 1, maxLength: 500 }
+    FacilityOpeningDay:
+      type: object
+      required: [day, closed, opensAt, closesAt]
+      properties:
+        day: { type: integer, minimum: 0, maximum: 6, description: Sunday is 0 and Saturday is 6 }
+        closed: { type: boolean }
+        opensAt: { type: ["string", "null"], pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$" }
+        closesAt: { type: ["string", "null"], pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$" }
+    FacilityProfileInput:
+      type: object
+      required: [partnerId, city, facility, localizedName, localizedDistrict, localizedAddress, localizedDescription, activities, amenities, accessibility, openingHours, contactPhone, websiteUrl, latitude, longitude]
+      properties:
+        partnerId: { type: string, minLength: 1, maxLength: 160 }
+        city: { type: string, minLength: 1, maxLength: 160 }
+        facility: { type: string, minLength: 1, maxLength: 160 }
+        localizedName: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        localizedDistrict: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        localizedAddress: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        localizedDescription: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        activities: { type: array, maxItems: 30, items: { $ref: "#/components/schemas/LocalizedFacilityText" } }
+        amenities: { type: array, maxItems: 30, items: { $ref: "#/components/schemas/LocalizedFacilityText" } }
+        accessibility: { type: array, maxItems: 30, items: { $ref: "#/components/schemas/LocalizedFacilityText" } }
+        openingHours: { type: array, maxItems: 7, items: { $ref: "#/components/schemas/FacilityOpeningDay" } }
+        contactPhone: { type: ["string", "null"], maxLength: 40 }
+        websiteUrl: { type: ["string", "null"], format: uri, maxLength: 2048 }
+        latitude: { type: ["number", "null"], minimum: -90, maximum: 90 }
+        longitude: { type: ["number", "null"], minimum: -180, maximum: 180 }
+    FacilityProfileUpdate:
+      type: object
+      required: [city, facility, localizedName, localizedDistrict, localizedAddress, localizedDescription, activities, amenities, accessibility, openingHours, contactPhone, websiteUrl, latitude, longitude]
+      properties:
+        city: { type: string, minLength: 1, maxLength: 160 }
+        facility: { type: string, minLength: 1, maxLength: 160 }
+        localizedName: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        localizedDistrict: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        localizedAddress: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        localizedDescription: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        activities: { type: array, maxItems: 30, items: { $ref: "#/components/schemas/LocalizedFacilityText" } }
+        amenities: { type: array, maxItems: 30, items: { $ref: "#/components/schemas/LocalizedFacilityText" } }
+        accessibility: { type: array, maxItems: 30, items: { $ref: "#/components/schemas/LocalizedFacilityText" } }
+        openingHours: { type: array, maxItems: 7, items: { $ref: "#/components/schemas/FacilityOpeningDay" } }
+        contactPhone: { type: ["string", "null"], maxLength: 40 }
+        websiteUrl: { type: ["string", "null"], format: uri, maxLength: 2048 }
+        latitude: { type: ["number", "null"], minimum: -90, maximum: 90 }
+        longitude: { type: ["number", "null"], minimum: -180, maximum: 180 }
+    FacilityProfile:
+      type: object
+      required: [id, partnerId, city, facility, localizedName, localizedDistrict, localizedAddress, localizedDescription, activities, amenities, accessibility, openingHours, contactPhone, websiteUrl, latitude, longitude, updatedAt]
+      properties:
+        id: { type: string }
+        partnerId: { type: string }
+        city: { type: string }
+        facility: { type: string }
+        localizedName: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        localizedDistrict: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        localizedAddress: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        localizedDescription: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        activities: { type: array, items: { $ref: "#/components/schemas/LocalizedFacilityText" } }
+        amenities: { type: array, items: { $ref: "#/components/schemas/LocalizedFacilityText" } }
+        accessibility: { type: array, items: { $ref: "#/components/schemas/LocalizedFacilityText" } }
+        openingHours: { type: array, items: { $ref: "#/components/schemas/FacilityOpeningDay" } }
+        contactPhone: { type: ["string", "null"] }
+        websiteUrl: { type: ["string", "null"], format: uri }
+        latitude: { type: ["number", "null"] }
+        longitude: { type: ["number", "null"] }
+        updatedAt: { type: string, format: date-time }
+    PublicFacilitySession:
+      type: object
+      required: [id, title, localizedTitle, category, startsAt, endsAt, accessType, gender, minAge, maxAge]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        localizedTitle:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedFacilityText" }
+            - { type: "null" }
+        category: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        accessType: { type: string, enum: [physical, premium, live] }
+        gender: { type: string, enum: [all, female, male] }
+        minAge: { type: integer, minimum: 0 }
+        maxAge: { type: ["integer", "null"], minimum: 0 }
+    PublicFacility:
+      allOf:
+        - { $ref: "#/components/schemas/FacilityProfile" }
+        - type: object
+          required: [partnerName, openingStatus, closesAt, upcomingSessions]
+          properties:
+            partnerName: { type: string }
+            openingStatus: { type: string, enum: [open, closed, unavailable] }
+            closesAt: { type: ["string", "null"] }
+            upcomingSessions:
+              type: array
+              items: { $ref: "#/components/schemas/PublicFacilitySession" }
     PublicOffering:
       type: object
       required: [id, kind, title, city, facility, category, accessType, startsAt, endsAt, remaining, partnerName]

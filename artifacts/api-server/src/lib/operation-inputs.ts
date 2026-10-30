@@ -36,6 +36,62 @@ export const planInput = z.object({
     ctx.addIssue({ code: "custom", message: "Only paid plans can have a payment price." });
 });
 export const partnerInput = z.object({ name: label, groupId: label, ownerUserId: label }).strict();
+const facilityHoursInput = z.array(z.object({
+  day: z.number().int().min(0).max(6),
+  closed: z.boolean(),
+  opensAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+  closesAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+}).strict()).max(7).superRefine((hours, ctx) => {
+  if (hours.length !== 0 && hours.length !== 7) {
+    ctx.addIssue({ code: "custom", message: "Publish all seven days or leave hours unpublished." });
+  }
+  const days = new Set<number>();
+  hours.forEach((hoursForDay, index) => {
+    if (days.has(hoursForDay.day)) ctx.addIssue({ code: "custom", path: [index, "day"], message: "Each weekday must appear once." });
+    days.add(hoursForDay.day);
+    if (hoursForDay.closed ? hoursForDay.opensAt !== null || hoursForDay.closesAt !== null
+      : hoursForDay.opensAt === null || hoursForDay.closesAt === null || hoursForDay.opensAt === hoursForDay.closesAt) {
+      ctx.addIssue({ code: "custom", path: [index], message: "Closed days have no times; open days need different opening and closing times." });
+    }
+  });
+});
+const facilityLocalizedText = z.object({
+  en: z.string().trim().min(1).max(500),
+  ar: z.string().trim().min(1).max(500),
+  ku: z.string().trim().min(1).max(500),
+}).strict();
+const facilityTextList = z.array(facilityLocalizedText).max(30);
+const facilityWebsite = z.string().trim().url().max(2048).refine(value => {
+  try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; }
+  catch { return false; }
+}, "Use an HTTPS website link.");
+const facilityProfileFieldsObject = z.object({
+  city: label,
+  facility: label,
+  localizedName: facilityLocalizedText,
+  localizedDistrict: facilityLocalizedText,
+  localizedAddress: facilityLocalizedText,
+  localizedDescription: facilityLocalizedText,
+  activities: facilityTextList,
+  amenities: facilityTextList,
+  accessibility: facilityTextList,
+  openingHours: facilityHoursInput,
+  contactPhone: z.string().trim().max(40).nullable(),
+  websiteUrl: facilityWebsite.nullable(),
+  latitude: z.number().min(-90).max(90).nullable(),
+  longitude: z.number().min(-180).max(180).nullable(),
+}).strict();
+const validateFacilityCoordinates = (
+  profile: { latitude: number | null; longitude: number | null },
+  ctx: z.RefinementCtx,
+) => {
+  if ((profile.latitude === null) !== (profile.longitude === null)) {
+    ctx.addIssue({ code: "custom", message: "Latitude and longitude must be provided together." });
+  }
+};
+export const facilityProfileFields = facilityProfileFieldsObject.superRefine(validateFacilityCoordinates);
+export const createFacilityProfileInput = facilityProfileFieldsObject.extend({ partnerId: label })
+  .strict().superRefine(validateFacilityCoordinates);
 export const offeringInput = z.object({
   partnerId: label, title: label, kind: z.enum(["session", "event", "coach"]),
   localizedTitle: localizedText.nullable().optional(),
