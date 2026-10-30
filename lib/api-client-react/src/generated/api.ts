@@ -70,6 +70,7 @@ import type {
   NotificationSettings,
   NotificationSettingsInput,
   OfferingInput,
+  OfferingReviewInput,
   OfferingUpdate,
   OfferingWaitlistEntry,
   OperationSuccess,
@@ -1991,6 +1992,157 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getChangeLiveOfferingMutationOptions(options), queryClient);
+    }
+
+export const getSubmitOfferingUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/offerings/${id}/submit`
+}
+
+export const submitOffering = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<LiveOffering> => {
+
+  return customFetch<LiveOffering>(getSubmitOfferingUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSubmitOfferingMutationKey = () => ['submitOffering'] as const;
+
+export const getSubmitOfferingMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitOffering>>, TError,SubmitOfferingMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitOffering>>, TError,SubmitOfferingMutationVariables, TContext> => {
+
+const mutationKey = getSubmitOfferingMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitOffering>>, SubmitOfferingMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  submitOffering(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitOfferingMutationResult = NonNullable<Awaited<ReturnType<typeof submitOffering>>>
+
+    export type SubmitOfferingMutationError = ErrorType<unknown>
+    export type SubmitOfferingMutationVariables = {id: string}
+
+    export const useSubmitOffering = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitOffering>>, TError,SubmitOfferingMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof submitOffering>>,
+        TError,
+        SubmitOfferingMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSubmitOfferingMutationOptions(options), queryClient);
+    }
+
+export const getReviewOfferingUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/offerings/${id}/review`
+}
+
+export const reviewOffering = async (id: string,
+    offeringReviewInput: OfferingReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<LiveOffering> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LiveOffering>(getReviewOfferingUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(offeringReviewInput)
+  }
+);}
+
+
+
+
+
+export const getReviewOfferingMutationKey = () => ['reviewOffering'] as const;
+
+export const getReviewOfferingMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewOffering>>, TError,ReviewOfferingMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewOffering>>, TError,ReviewOfferingMutationVariables, TContext> => {
+
+const mutationKey = getReviewOfferingMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewOffering>>, ReviewOfferingMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reviewOffering(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewOfferingMutationResult = NonNullable<Awaited<ReturnType<typeof reviewOffering>>>
+    export type ReviewOfferingMutationBody = BodyType<OfferingReviewInput>
+    export type ReviewOfferingMutationError = ErrorType<unknown>
+    export type ReviewOfferingMutationVariables = {id: string;data: BodyType<OfferingReviewInput>}
+
+    export const useReviewOffering = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewOffering>>, TError,ReviewOfferingMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reviewOffering>>,
+        TError,
+        ReviewOfferingMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReviewOfferingMutationOptions(options), queryClient);
     }
 
 export const getGetOfferingWaitlistUrl = (id: string,) => {

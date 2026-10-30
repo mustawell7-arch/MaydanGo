@@ -14,6 +14,9 @@ export type AccessRules = {
   facilityLimits?: Record<string, number>;
   categoryLimits?: Record<string, number>;
 };
+export type OfferingActivityStatus =
+  | "draft" | "submitted" | "under_review" | "changes_requested" | "approved"
+  | "published" | "suspended" | "rejected" | "archived";
 export const memberProfiles = pgTable("member_profiles", {
   userId: text("user_id").primaryKey(),
   gender: text("gender").notNull(),
@@ -50,6 +53,8 @@ export const offerings = pgTable("booking_offerings", {
   partnerGroup: text("partner_group"),
   accessType: text("access_type").notNull().default("physical"),
   active: boolean("active").notNull().default(false),
+  activityStatus: text("activity_status").$type<OfferingActivityStatus>().notNull().default("draft"),
+  reviewNote: text("review_note"),
   cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
   city: text("city").notNull(),
   facility: text("facility").notNull(),

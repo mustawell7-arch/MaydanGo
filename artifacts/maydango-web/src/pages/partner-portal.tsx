@@ -1,7 +1,7 @@
 import { Children, cloneElement, isValidElement, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetOperationFacilitiesQueryKey, getGetOperationsQueryKey, useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useChangeLiveOffering, useCreateRecurringOfferings, useGetAttendance, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReviewAttendance } from '@workspace/api-client-react';
-import type { OfferingInput, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody, RecurringOfferingsInput } from '@workspace/api-client-react';
+import { getGetOperationFacilitiesQueryKey, getGetOperationsQueryKey, useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useChangeLiveOffering, useCreateRecurringOfferings, useGetAttendance, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReviewAttendance, useReviewOffering, useSubmitOffering } from '@workspace/api-client-react';
+import type { OfferingInput, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody, RecurringOfferingsInput, OfferingReviewAction } from '@workspace/api-client-react';
 import { useAuth, useClerk } from '@clerk/react';
 import { Link, Redirect } from 'wouter';
 import { Activity, ArrowLeft, ArrowUpRight, CalendarDays, Check, CircleAlert, Clock3, Dumbbell, FileText, LogOut, MapPin, Plus, RefreshCw, ShieldCheck, Users, Wallet, X } from 'lucide-react';
@@ -18,6 +18,22 @@ const portalLabels: Record<PortalLanguage, Record<string, string>> = {
   ku: { overview: 'پوختە', offerings: 'پێشکەشکراوەکان', attendance: 'ئامادەبوون', waitlist: 'لیستی چاوەڕوانی', partners: 'هاوبەشەکان', facilities: 'شوێنەکان', bookings: 'وانە و حجزەکان', settlements: 'یەکلاکردنەوە', invoices: 'پسووڵەکان', greeting: 'بەخێربێیتەوە.', attendanceTitle: 'پێداچوونەوەی ئامادەبوون', approvals: 'پەسەندکردنی هاوبەش', workspace: 'بەڕێوەبردنی هاوبەش', language: 'زمان' },
 };
 const portalLabel = (lang: PortalLanguage, key: string) => portalLabels[lang][key] ?? key;
+const reviewActionLabels: Record<OfferingReviewAction, string> = {
+  start_review: 'Start review', request_changes: 'Request changes', approve: 'Approve',
+  reject: 'Reject', publish: 'Publish', suspend: 'Suspend', archive: 'Archive',
+};
+const reviewActionsByStatus: Record<string, OfferingReviewAction[]> = {
+  draft: ['archive'],
+  submitted: ['start_review', 'archive'],
+  under_review: ['request_changes', 'approve', 'reject', 'archive'],
+  changes_requested: ['archive'],
+  approved: ['publish', 'archive'],
+  published: ['suspend', 'archive'],
+  suspended: ['publish', 'archive'],
+  rejected: ['archive'],
+  archived: [],
+};
+const readableStatus = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase());
 const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, string>> = {
   ar: {
     'Partner access': 'صلاحية الشريك', 'Administrator access': 'صلاحية المدير', 'Workspace': 'مساحة العمل', 'Server-scoped access': 'الوصول محدد من الخادم',
@@ -43,7 +59,7 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Choose a shared facility': 'اختر مرفقاً مشتركاً', 'Create a shared facility record before adding sessions.': 'أنشئ سجل مرفق مشترك قبل إضافة الجلسات.',
     'New activities are saved as drafts and must be approved by an administrator before publishing.': 'تُحفظ الأنشطة الجديدة كمسودات، ويجب أن يعتمدها المدير قبل نشرها.',
     'Draft · awaiting administrator review': 'مسودة · بانتظار مراجعة المدير',
-    'Saved as draft. An administrator must approve and publish the activity.': 'تم حفظ المسودة. يجب أن يعتمد المدير النشاط وينشره.',
+    'Saved as draft. Submit it for administrator review to continue.': 'تم حفظ المسودة. أرسلها إلى المدير للمراجعة للمتابعة.',
     'Confirm': 'تأكيد', 'Mark no-show': 'تسجيل عدم الحضور', 'Dispute': 'اعتراض', 'Resolve: confirm': 'حل الاعتراض: تأكيد',
     'Resolve: void': 'حل الاعتراض: إلغاء', 'Accept request': 'قبول الطلب',
     'Manual check-in recorded by the server.': 'تم تسجيل الحضور اليدوي بواسطة الخادم.', 'Offering created.': 'تم إنشاء العرض.',
@@ -88,7 +104,7 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Choose a shared facility': 'شوێنێکی هاوبەش هەڵبژێرە', 'Create a shared facility record before adding sessions.': 'پێش زیادکردنی وانەکان، تۆماری شوێنی هاوبەش دروست بکە.',
     'New activities are saved as drafts and must be approved by an administrator before publishing.': 'چالاکییە نوێیەکان وەک ڕەشنووس پاشەکەوت دەکرێن و پێش بڵاوکردنەوە دەبێت لەلایەن بەڕێوەبەرەوە پەسەند بکرێن.',
     'Draft · awaiting administrator review': 'ڕەشنووس · چاوەڕێی پێداچوونەوەی بەڕێوەبەر',
-    'Saved as draft. An administrator must approve and publish the activity.': 'ڕەشنووس پاشەکەوت کرا. بەڕێوەبەر دەبێت چالاکییەکە پەسەند و بڵاوی بکاتەوە.',
+    'Saved as draft. Submit it for administrator review to continue.': 'ڕەشنووس پاشەکەوت کرا. بۆ بەردەوامبوون بینێرە بۆ پێداچوونەوەی بەڕێوەبەر.',
     'Confirm': 'پشتڕاستکردنەوە', 'Mark no-show': 'تۆمارکردنی ئامادەنەبوون', 'Dispute': 'ناڕەزایی', 'Resolve: confirm': 'چارەسەری ناڕەزایی: پشتڕاستکردنەوە',
     'Resolve: void': 'چارەسەری ناڕەزایی: هەڵوەشاندنەوە', 'Accept request': 'داواکاری قبوڵ بکە',
     'Manual check-in recorded by the server.': 'تۆماری دەستیی ئامادەبوون لەلایەن سێرڤەرەوە کرایەوە.', 'Offering created.': 'پێشکەشکراو دروستکرا.',
@@ -126,9 +142,9 @@ function fieldClass() {
 function LabelField({ label, children }: { label: string; children: ReactNode }) {
   return <label className="block text-xs font-semibold text-[#51665e]">{label}{children}</label>;
 }
-function Button({ children, onClick, kind = 'primary', disabled = false, type = 'button' }: { children: ReactNode; onClick?: () => void; kind?: 'primary' | 'quiet' | 'danger'; disabled?: boolean; type?: 'button' | 'submit' }) {
+function Button({ children, onClick, kind = 'primary', disabled = false, type = 'button', testId }: { children: ReactNode; onClick?: () => void; kind?: 'primary' | 'quiet' | 'danger'; disabled?: boolean; type?: 'button' | 'submit'; testId?: string }) {
   const style = kind === 'primary' ? 'bg-[#174d43] text-[#fff9e9] hover:bg-[#226556]' : kind === 'danger' ? 'border border-[#d9a89a] bg-[#fff5f1] text-[#9a4435] hover:bg-[#ffe8e0]' : 'border border-[#d8d2c4] bg-transparent text-[#36564b] hover:bg-[#f1eddf]';
-  return <button type={type} onClick={onClick} disabled={disabled} className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${style}`}>{children}</button>;
+  return <button data-testid={testId} type={type} onClick={onClick} disabled={disabled} className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${style}`}>{children}</button>;
 }
 
 const weekdayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -360,6 +376,8 @@ export default function PartnerPortal() {
   const addPartner = useAddPartner();
   const approvePartner = useApprovePartner();
   const updateOffering = useChangeLiveOffering();
+  const submitOffering = useSubmitOffering();
+  const reviewOffering = useReviewOffering();
   const cancelOffering = useCancelLiveOffering();
   const review = useReviewAttendance();
   const [language, setLanguage] = useState<PortalLanguage>(() => {
@@ -379,7 +397,9 @@ export default function PartnerPortal() {
   const waitlist = operations.data?.waitlist ?? [];
   const rows = attendance.data?.rows ?? [];
   const activeOfferings = useMemo(() => offerings.filter(item => item.active && !item.cancelledAt).length, [offerings]);
-  const awaitingOfferings = useMemo(() => offerings.filter(item => !item.active && !item.cancelledAt).length, [offerings]);
+  const awaitingOfferings = useMemo(() => offerings.filter(item => ['submitted', 'under_review'].includes(item.activityStatus)).length, [offerings]);
+  const changesRequestedOfferings = useMemo(() => offerings.filter(item => item.activityStatus === 'changes_requested').length, [offerings]);
+  const approvedOfferings = useMemo(() => offerings.filter(item => item.activityStatus === 'approved').length, [offerings]);
   const cancelledOfferings = useMemo(() => offerings.filter(item => !!item.cancelledAt).length, [offerings]);
   const invalidate = () => {
     void client.invalidateQueries({ queryKey: getGetOperationsQueryKey() });
@@ -403,9 +423,31 @@ export default function PartnerPortal() {
   const title = isAdmin ? 'Operations desk' : partner?.name ?? 'Partner workspace';
   const mutationError = (label: string) => setNotice(`${label} could not be completed. The server did not accept the change.`);
   const handleApproval = (id: string, approved: boolean) => approvePartner.mutate({ id, data: { approved } }, { onSuccess: invalidate, onError: () => mutationError('Partner review') });
-  const handleStatus = (id: string, active: boolean | undefined, capacity: number, waitlistOfferMinutes?: number) => {
-    const data: OfferingUpdate = { ...(active === undefined ? {} : { active }), capacity, ...(waitlistOfferMinutes === undefined ? {} : { waitlistOfferMinutes }) };
+  const handleStatus = (id: string, capacity: number, waitlistOfferMinutes?: number) => {
+    const data: OfferingUpdate = { capacity, ...(waitlistOfferMinutes === undefined ? {} : { waitlistOfferMinutes }) };
     updateOffering.mutate({ id, data }, { onSuccess: invalidate, onError: () => mutationError('Offering update') });
+  };
+  const submitActivityForReview = (id: string) => submitOffering.mutate({ id }, {
+    onSuccess: () => { invalidate(); setNotice('Activity submitted for administrator review.'); },
+    onError: () => mutationError('Activity submission'),
+  });
+  const runActivityReview = (id: string, action: OfferingReviewAction) => {
+    const needsReason = ['request_changes', 'reject', 'suspend', 'archive'].includes(action);
+    const enteredReason = needsReason ? window.prompt(`Reason for ${action.replaceAll('_', ' ')} (at least 5 characters):`) : null;
+    if (needsReason && (!enteredReason || enteredReason.trim().length < 5)) {
+      setNotice('Enter a reason of at least 5 characters to continue.');
+      return;
+    }
+    reviewOffering.mutate({
+      id,
+      data: { action, ...(enteredReason ? { reason: enteredReason.trim() } : {}) },
+    }, {
+      onSuccess: result => {
+        invalidate();
+        setNotice(`Activity status updated to ${result.activityStatus.replaceAll('_', ' ')}.`);
+      },
+      onError: () => mutationError('Activity review'),
+    });
   };
   const runReview = (event: FormEvent) => {
     event.preventDefault();
@@ -440,10 +482,12 @@ export default function PartnerPortal() {
                  <div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a76445]">Partner activity</p><h2 className="mt-1 font-display text-xl font-bold">{portalLabel(language, 'offerings')}</h2></div>
                  <button data-testid="button-view-activity-status" type="button" onClick={() => setTab('offerings')} className="inline-flex items-center gap-1 text-xs font-bold text-[#28695a]">Manage offerings<ArrowUpRight size={13} /></button>
                </div>
-               <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="mt-4 grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
                  {[
-                   { id: 'awaiting-review', label: 'Draft · awaiting administrator review', count: awaitingOfferings, tone: 'bg-[#f5f1e6] text-[#756e5b]' },
-                   { id: 'published', label: 'Active', count: activeOfferings, tone: 'bg-[#e1efdf] text-[#2d6d4a]' },
+                    { id: 'awaiting-review', label: 'Submitted / under review', count: awaitingOfferings, tone: 'bg-[#f5f1e6] text-[#756e5b]' },
+                    { id: 'changes-requested', label: 'Changes requested', count: changesRequestedOfferings, tone: 'bg-[#fff1e5] text-[#a76445]' },
+                    { id: 'approved', label: 'Approved', count: approvedOfferings, tone: 'bg-[#e8f0f3] text-[#426879]' },
+                    { id: 'published', label: 'Published', count: activeOfferings, tone: 'bg-[#e1efdf] text-[#2d6d4a]' },
                    { id: 'cancelled', label: 'Cancelled', count: cancelledOfferings, tone: 'bg-[#f2dfd5] text-[#9a4435]' },
                  ].map(status => <article data-testid={`status-offering-approval-${status.id}`} key={status.id} className="rounded-2xl border border-[#ece7d9] p-4">
                    <p className="text-xs font-semibold text-[#687a71]">{status.label}</p>
@@ -454,14 +498,77 @@ export default function PartnerPortal() {
             <div className="mt-5 grid gap-4 md:grid-cols-[1.2fr_.8fr]"><article className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6"><div className="flex items-center justify-between"><div><h2 className="font-display text-xl font-bold">Next on the roster</h2><p className="mt-1 text-xs text-[#75847c]">Attendance records in your server scope</p></div><button onClick={() => setTab('attendance')} className="text-xs font-bold text-[#28695a]">View all</button></div>{attendance.isLoading ? <div className="mt-5 h-16 animate-pulse rounded-xl bg-[#eeeadc]" /> : attendance.isError ? <button className="mt-5 text-sm font-semibold text-[#9a4435]" onClick={() => void attendance.refetch()}>Roster unavailable · Retry</button> : rows.length ? <div className="mt-4 divide-y divide-[#ece7d9]">{rows.slice(0, 4).map(row => <div key={row.reservationId} className="flex items-center justify-between gap-4 py-3"><div className="min-w-0"><p className="truncate text-sm font-semibold">{row.title}</p><p className="mt-1 text-xs text-[#75847c]">{row.facility} · {formatDate(row.startsAt)}</p></div><span className="rounded-full bg-[#eeeadc] px-2.5 py-1 text-[10px] font-bold text-[#536b61]">{row.status.replaceAll('_', ' ')}</span></div>)}</div> : <p className="mt-5 rounded-xl bg-[#f5f1e6] p-4 text-sm text-[#75847c]">No attendance records were returned for this scope.</p>}</article>
               <article className="rounded-3xl border border-[#ddd7c6] bg-[#f0ead9] p-5 sm:p-6"><div className="flex items-center gap-2"><ShieldCheck size={17} className="text-[#28695a]" /><h2 className="font-display text-xl font-bold">Scoped by the server</h2></div><p className="mt-3 text-sm leading-6 text-[#62756b]">Your account role and partner boundary come from the operations service. Actions are checked again by MaydanGo when saved.</p><p className="mt-5 text-[10px] font-bold uppercase tracking-[.16em] text-[#a76445]">{isAdmin ? 'Administrator' : 'Partner operator'} · {rows.length} roster records</p></article></div>
           </div>}
-            {tab === 'offerings' && <section><div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm text-[#75847c]">Create and maintain opportunities from the authorized operations record.</p></div><Button onClick={() => setShowCreate(true)}><Plus size={16} />New offering</Button></div>{offerings.length ? <div className="grid gap-4">{offerings.map(item => <article key={item.id} className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${item.active && !item.cancelledAt ? 'bg-[#e1efdf] text-[#2d6d4a]' : 'bg-[#eeeadc] text-[#756e5b]'}`}>{item.cancelledAt ? 'Cancelled' : item.active ? 'Active' : isAdmin ? 'Draft' : 'Draft · awaiting administrator review'}</span><span className="text-[10px] font-bold uppercase tracking-wide text-[#a76445]">{item.kind}</span></div><h2 className="mt-3 font-display text-xl font-bold">{item.localizedTitle?.[language] || item.title}</h2><p className="mt-1 text-sm text-[#687a71]">{item.facility}, {item.city} · {item.category}</p><p className="mt-3 text-xs text-[#75847c]">{formatDate(item.startsAt)} – {formatDate(item.endsAt)}{item.remaining !== undefined ? ` · ${item.remaining} remaining` : ''}</p><p className="mt-2 text-xs text-[#75847c]">Waitlist offers expire after {item.waitlistOfferMinutes ?? 30} minutes.</p>{isAdmin && item.partnerName && <p className="mt-2 text-xs text-[#75847c]">Partner: {item.partnerName}</p>}</div><div className="flex shrink-0 flex-wrap gap-2">{!item.cancelledAt && <><Button kind="quiet" onClick={() => setEditing(item.id)}>Capacity / state</Button>{(isAdmin || item.active) && <Button kind="quiet" onClick={() => handleStatus(item.id, !item.active, item.capacity)}>{item.active ? 'Make draft' : 'Activate'}</Button>}<Button kind="danger" onClick={() => { if (window.confirm(`Cancel “${item.title}”? Cancelling releases existing reservations and notifies members. This cannot be undone.`)) cancelOffering.mutate({ id: item.id }, { onSuccess: invalidate, onError: () => mutationError('Cancellation') }); }}>Cancel</Button></>}</div></div>
-              {editing === item.id && <form className="mt-5 grid gap-3 rounded-2xl bg-[#f2efe4] p-4 sm:grid-cols-[1fr_auto_auto]" onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); handleStatus(item.id, isAdmin ? data.get('active') === 'on' : undefined, Number(data.get('capacity'))); setEditing(null); }}><LabelField label="Capacity"><input required min="1" name="capacity" defaultValue={item.capacity} type="number" className={fieldClass()} /></LabelField>{isAdmin && <label className="flex items-center gap-2 self-end pb-3 text-sm font-medium"><input name="active" type="checkbox" defaultChecked={item.active} className="accent-[#174d43]" />Active</label>}<div className="flex items-end gap-2"><Button type="submit" disabled={updateOffering.isPending}>Save</Button><Button kind="quiet" onClick={() => setEditing(null)}>Close</Button></div></form>}
-              {!item.cancelledAt && <form className="mt-4 flex flex-wrap items-end gap-3 rounded-2xl bg-[#f2efe4] p-4" onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); handleStatus(item.id, item.active, item.capacity, Number(data.get('waitlistOfferMinutes'))); }}>
+            {tab === 'offerings' && <section><div className="mb-5 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm text-[#75847c]">Create and maintain opportunities from the authorized operations record.</p></div><Button onClick={() => setShowCreate(true)}><Plus size={16} />New offering</Button></div>{offerings.length ? <div className="grid gap-4">{offerings.map(item => {
+              const actions = reviewActionsByStatus[item.activityStatus] ?? [];
+              const canSubmit = !isAdmin && ['draft', 'changes_requested'].includes(item.activityStatus) && !item.cancelledAt;
+              const activityTone = item.activityStatus === 'published' ? 'bg-[#e1efdf] text-[#2d6d4a]' : item.activityStatus === 'approved' ? 'bg-[#e8f0f3] text-[#426879]' : ['rejected', 'suspended'].includes(item.activityStatus) ? 'bg-[#f2dfd5] text-[#9a4435]' : item.activityStatus === 'changes_requested' ? 'bg-[#fff1e5] text-[#a76445]' : 'bg-[#eeeadc] text-[#756e5b]';
+              return <article key={item.id} className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6">
+                <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span data-testid={`offering-activity-status-${item.id}`} className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${item.cancelledAt ? 'bg-[#f2dfd5] text-[#9a4435]' : activityTone}`}>{item.cancelledAt ? 'Cancelled' : readableStatus(item.activityStatus)}</span>
+                      <span data-testid={`offering-session-status-${item.id}`} className="rounded-full bg-[#f2efe4] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#536b61]">{readableStatus(item.sessionStatus)}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-[#a76445]">{item.kind}</span>
+                    </div>
+                    <h2 className="mt-3 font-display text-xl font-bold">{item.localizedTitle?.[language] || item.title}</h2>
+                    <p className="mt-1 text-sm text-[#687a71]">{item.facility}, {item.city} · {item.category}</p>
+                    <p className="mt-3 text-xs text-[#75847c]">{formatDate(item.startsAt)} – {formatDate(item.endsAt)}{item.remaining !== undefined ? ` · ${item.remaining} remaining` : ''}</p>
+                    <p className="mt-2 text-xs text-[#75847c]">Waitlist offers expire after {item.waitlistOfferMinutes ?? 30} minutes.</p>
+                    {item.reviewNote && <p data-testid={`offering-review-note-${item.id}`} className="mt-3 rounded-xl border border-[#e4cdb5] bg-[#fff7eb] px-3 py-2 text-xs leading-5 text-[#715533]"><strong>Administrator note:</strong> {item.reviewNote}</p>}
+                    {isAdmin && item.partnerName && <p className="mt-2 text-xs text-[#75847c]">Partner: {item.partnerName}</p>}
+                  </div>
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    {!item.cancelledAt && <Button kind="quiet" onClick={() => setEditing(item.id)}>Edit details</Button>}
+                    {canSubmit && <Button testId={`submit-offering-${item.id}`} onClick={() => submitActivityForReview(item.id)} disabled={submitOffering.isPending}><Check size={15} />Submit for review</Button>}
+                    {isAdmin && !item.cancelledAt && actions.map(action => <Button key={action} testId={`review-offering-${action}-${item.id}`} kind={action === 'reject' || action === 'suspend' || action === 'archive' ? 'danger' : 'quiet'} onClick={() => runActivityReview(item.id, action)} disabled={reviewOffering.isPending}>{reviewActionLabels[action]}</Button>)}
+                    {!item.cancelledAt && <Button kind="danger" onClick={() => { if (window.confirm(`Cancel “${item.title}”? Cancelling releases existing reservations and notifies members. This cannot be undone.`)) cancelOffering.mutate({ id: item.id }, { onSuccess: invalidate, onError: () => mutationError('Cancellation') }); }}>Cancel</Button>}
+                  </div>
+                </div>
+                {editing === item.id && <form className="mt-5 grid gap-3 rounded-2xl bg-[#f2efe4] p-4 sm:grid-cols-2" onSubmit={event => {
+                  event.preventDefault();
+                  const fields = new FormData(event.currentTarget);
+                  const title = { en: String(fields.get('titleEn') ?? '').trim(), ar: String(fields.get('titleAr') ?? '').trim(), ku: String(fields.get('titleKu') ?? '').trim() };
+                  const description = { en: String(fields.get('descriptionEn') ?? '').trim(), ar: String(fields.get('descriptionAr') ?? '').trim(), ku: String(fields.get('descriptionKu') ?? '').trim() };
+                  const hasTitle = Object.values(title).some(Boolean);
+                  const hasDescription = Object.values(description).some(Boolean);
+                  const titleChanged = hasTitle && (!item.localizedTitle || title.en !== item.localizedTitle.en || title.ar !== item.localizedTitle.ar || title.ku !== item.localizedTitle.ku);
+                  const descriptionChanged = hasDescription && (!item.localizedDescription || description.en !== item.localizedDescription.en || description.ar !== item.localizedDescription.ar || description.ku !== item.localizedDescription.ku);
+                  const joinUrl = String(fields.get('joinUrl') ?? '').trim();
+                  const joinUrlChanged = joinUrl !== (item.joinUrl ?? '');
+                  if ((hasTitle && Object.values(title).some(value => !value)) || (hasDescription && Object.values(description).some(value => !value))) {
+                    setNotice('When editing localized content, provide English, Iraqi Arabic, and Sorani Kurdish together.');
+                    return;
+                  }
+                  const update: OfferingUpdate = {
+                    capacity: Number(fields.get('capacity')),
+                    waitlistOfferMinutes: Number(fields.get('waitlistOfferMinutes')),
+                    ...(titleChanged ? { localizedTitle: title } : {}),
+                    ...(descriptionChanged ? { localizedDescription: description } : {}),
+                    ...(joinUrlChanged ? { joinUrl: joinUrl || null } : {}),
+                  };
+                  updateOffering.mutate({ id: item.id, data: update }, {
+                    onSuccess: () => { invalidate(); setEditing(null); setNotice('Offering details saved.'); },
+                    onError: () => mutationError('Offering update'),
+                  });
+                }}>
+                  <LabelField label="Capacity"><input required min="1" name="capacity" defaultValue={item.capacity} type="number" className={fieldClass()} /></LabelField>
+                  <LabelField label="Waitlist offer window (minutes)"><input required min="5" max="1440" name="waitlistOfferMinutes" defaultValue={item.waitlistOfferMinutes ?? 30} type="number" className={fieldClass()} /></LabelField>
+                  <LabelField label="Title · English"><input maxLength={240} name="titleEn" defaultValue={item.localizedTitle?.en ?? ''} placeholder={item.title} className={fieldClass()} /></LabelField>
+                  <LabelField label="Title · Iraqi Arabic"><input maxLength={240} name="titleAr" defaultValue={item.localizedTitle?.ar ?? ''} dir="rtl" className={fieldClass()} /></LabelField>
+                  <LabelField label="Title · Sorani Kurdish"><input maxLength={240} name="titleKu" defaultValue={item.localizedTitle?.ku ?? ''} dir="rtl" className={fieldClass()} /></LabelField>
+                  <LabelField label="Join URL (optional)"><input type="url" name="joinUrl" defaultValue={item.joinUrl ?? ''} className={fieldClass()} /></LabelField>
+                  <LabelField label="Description · English"><textarea maxLength={240} rows={3} name="descriptionEn" defaultValue={item.localizedDescription?.en ?? ''} className={fieldClass()} /></LabelField>
+                  <LabelField label="Description · Iraqi Arabic"><textarea maxLength={240} rows={3} name="descriptionAr" defaultValue={item.localizedDescription?.ar ?? ''} dir="rtl" className={fieldClass()} /></LabelField>
+                  <LabelField label="Description · Sorani Kurdish"><textarea maxLength={240} rows={3} name="descriptionKu" defaultValue={item.localizedDescription?.ku ?? ''} dir="rtl" className={fieldClass()} /></LabelField>
+                  <div className="flex items-end gap-2"><Button type="submit" disabled={updateOffering.isPending}>Save changes</Button><Button kind="quiet" onClick={() => setEditing(null)}>Close</Button></div>
+                </form>}
+                {!item.cancelledAt && <form className="mt-4 flex flex-wrap items-end gap-3 rounded-2xl bg-[#f2efe4] p-4" onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); handleStatus(item.id, item.capacity, Number(data.get('waitlistOfferMinutes'))); }}>
                 <LabelField label="Waitlist offer window (minutes)"><input required min="5" max="1440" name="waitlistOfferMinutes" defaultValue={item.waitlistOfferMinutes ?? 30} type="number" className={fieldClass()} /></LabelField>
                 <Button type="submit" disabled={updateOffering.isPending}>Save offer window</Button>
               </form>}
               <WaitlistPanel offeringId={item.id} lang={language} />
-            </article>)}</div> : <div className="rounded-3xl border border-dashed border-[#d5cfbf] bg-[#fffdf7]/60 p-10 text-center"><Dumbbell className="mx-auto text-[#a76445]" /><h2 className="mt-4 font-display text-xl font-bold">No offerings returned</h2><p className="mt-2 text-sm text-[#75847c]">Create an offering to start managing your available sessions and events.</p></div>}</section>}
+            </article>;
+            })}</div> : <div className="rounded-3xl border border-dashed border-[#d5cfbf] bg-[#fffdf7]/60 p-10 text-center"><Dumbbell className="mx-auto text-[#a76445]" /><h2 className="mt-4 font-display text-xl font-bold">No offerings returned</h2><p className="mt-2 text-sm text-[#75847c]">Create an offering to start managing your available sessions and events.</p></div>}</section>}
           {tab === 'waitlist' && <section>
             <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
               <p className="max-w-2xl text-sm leading-6 text-[#687a71]">View the live queue for your upcoming offerings. The server shares queue order and timing only; member identities stay private in this view.</p>
@@ -499,6 +606,6 @@ export default function PartnerPortal() {
          </LocalizedContent>
       </section>
     </div>
-     {showCreate && <OfferingForm partnerId={isAdmin ? '' : operations.data.partnerId ?? ''} partners={operations.data.partners.filter(item => item.approved)} isAdmin={isAdmin} lang={language} onClose={() => setShowCreate(false)} onSaved={() => { invalidate(); setNotice(isAdmin ? 'Offering created.' : 'Saved as draft. An administrator must approve and publish the activity.'); }} />}
+     {showCreate && <OfferingForm partnerId={isAdmin ? '' : operations.data.partnerId ?? ''} partners={operations.data.partners.filter(item => item.approved)} isAdmin={isAdmin} lang={language} onClose={() => setShowCreate(false)} onSaved={() => { invalidate(); setNotice(isAdmin ? 'Offering created.' : 'Saved as draft. Submit it for administrator review to continue.'); }} />}
   </main>;
 }

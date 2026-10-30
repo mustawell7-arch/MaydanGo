@@ -258,6 +258,31 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/LiveOffering" }
+  /operations/offerings/{id}/submit:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: submitOffering
+      responses:
+        "200":
+          description: Partner offering submitted for administrator review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveOffering" }
+  /operations/offerings/{id}/review:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: reviewOffering
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OfferingReviewInput" }
+      responses:
+        "200":
+          description: Audited administrator review transition
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveOffering" }
   /operations/offerings/{id}/waitlist:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     get:
@@ -960,16 +985,35 @@ components:
       type: array
       minItems: 1
       items: { $ref: "#/components/schemas/LiveOffering" }
+    OfferingActivityStatus:
+      type: string
+      enum: [draft, submitted, under_review, changes_requested, approved, published, suspended, rejected, archived]
+    OfferingSessionStatus:
+      type: string
+      enum: [draft, scheduled, open_for_booking, fully_booked, in_progress, completed, cancelled, suspended]
+    OfferingReviewAction:
+      type: string
+      enum: [start_review, request_changes, approve, reject, publish, suspend, archive]
+    OfferingReviewInput:
+      type: object
+      additionalProperties: false
+      required: [action]
+      properties:
+        action: { $ref: "#/components/schemas/OfferingReviewAction" }
+        reason: { type: string, minLength: 5, maxLength: 500 }
     LiveOffering:
       allOf:
         - $ref: "#/components/schemas/OfferingInput"
         - type: object
-          required: [id, targetId, slot, scope]
+          required: [id, targetId, slot, scope, activityStatus, reviewNote, sessionStatus]
           properties:
             id: { type: string }
             targetId: { type: string }
             slot: { type: string }
             scope: { type: string }
+            activityStatus: { $ref: "#/components/schemas/OfferingActivityStatus" }
+            reviewNote: { type: ["string", "null"], maxLength: 500 }
+            sessionStatus: { $ref: "#/components/schemas/OfferingSessionStatus" }
             cancelledAt: { type: [string, "null"] }
             partnerName: { type: string }
             remaining: { type: integer }

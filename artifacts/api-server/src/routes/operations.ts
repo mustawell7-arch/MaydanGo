@@ -8,15 +8,20 @@ import { db, operators, partners, offerings, reservations, waitlistEntries, memb
 import { BookingError, processWaitlistQueue } from "../lib/reservations";
 import { createFacilityProfileInput, facilityProfileFields, offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
 import {
-  AddLearningLessonBody, AddLearningLessonResponse, ChangeLiveOfferingBody,
+  AddLearningLessonBody, AddLearningLessonResponse, AddLiveOfferingResponse, ChangeLiveOfferingBody,
+  ChangeLiveOfferingResponse,
   CreateLearningCourseBody, CreateLearningCourseResponse,
   CreateFacilityProfileBody, CreateFacilityProfileResponse, CreateRecurringOfferingsBody,
-  CreateRecurringOfferingsResponse, GetOperationFacilitiesResponse,
+  CreateRecurringOfferingsResponse, GetOperationFacilitiesResponse, ReviewOfferingBody,
+  ReviewOfferingResponse, SubmitOfferingResponse,
   UpdateFacilityProfileBody, UpdateFacilityProfileResponse,
   UpdateLearningCourseBody, UpdateLearningCourseResponse,
 } from "@workspace/api-zod";
 import { sendMemberNotification } from "../lib/notifications";
 import { expandWeeklyOffering } from "../lib/recurring-offerings";
+import {
+  deriveOfferingSessionStatus, effectiveOfferingActivityStatus, transitionOfferingActivity,
+} from "../lib/offering-status";
 
 import { PaymentError, paymentsEnabled, payTabsTestModeEnabled } from "../lib/payment-config";
 
@@ -75,6 +80,19 @@ const invoiceDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {
   const date = new Date(`${value}T00:00:00Z`);
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
 });
+function offeringWithStatuses<T extends typeof offerings.$inferSelect>(row: T, occupiedPlaces = 0) {
+  const activityStatus = effectiveOfferingActivityStatus(row);
+  const sessionStatus = deriveOfferingSessionStatus({ ...row, activityStatus }, occupiedPlaces);
+  return {
+    ...row,
+    startsAt: row.startsAt.toISOString(),
+    endsAt: row.endsAt.toISOString(),
+    cancellationDeadline: row.cancellationDeadline.toISOString(),
+    cancelledAt: row.cancelledAt?.toISOString() ?? null,
+    activityStatus,
+    sessionStatus,
+  };
+}
 router.get("/", async (_req, res) => {
   const op = res.locals.operator;
   const isStaff = op.role !== "partner";
@@ -94,7 +112,26 @@ router.get("/", async (_req, res) => {
   ]);
   const policyRows = offeringRows.length ? await db.select().from(checkinPolicies)
     .where(inArray(checkinPolicies.offeringId, offeringRows.map(row => row.id))) : [];
+  const reservationCounts = offeringRows.length ? await db.select({
+    offeringId: reservations.offeringId,
+    count: sql<number>`count(*)::int`,
+  }).from(reservations).where(and(
+    inArray(reservations.offeringId, offeringRows.map(row => row.id)),
+    inArray(reservations.status, ["reserved", "requested"]),
+  )).groupBy(reservations.offeringId) : [];
+  const activeOfferCounts = offeringRows.length ? await db.select({
+    offeringId: waitlistEntries.offeringId,
+    count: sql<number>`count(*)::int`,
+  }).from(waitlistEntries).where(and(
+    inArray(waitlistEntries.offeringId, offeringRows.map(row => row.id)),
+    eq(waitlistEntries.status, "offered"),
+    gt(waitlistEntries.offerExpiresAt, new Date()),
+  )).groupBy(waitlistEntries.offeringId) : [];
   const policyByOffering = new Map(policyRows.map(policy => [policy.offeringId, policy]));
+  const occupiedByOffering = new Map<string, number>();
+  for (const row of reservationCounts) occupiedByOffering.set(row.offeringId, Number(row.count));
+  for (const row of activeOfferCounts) occupiedByOffering.set(row.offeringId,
+    (occupiedByOffering.get(row.offeringId) ?? 0) + Number(row.count));
   const queueCounts = new Map<string, number>();
   const waitlist = queueRows.map(row => {
     const position = (queueCounts.get(row.offeringId) ?? 0) + 1;
@@ -103,7 +140,7 @@ router.get("/", async (_req, res) => {
   });
   res.json({ role: op.role, partnerId: op.partnerId,
     partners: partnerRows, offerings: offeringRows.map(row => ({
-      ...row,
+      ...offeringWithStatuses(row, occupiedByOffering.get(row.id) ?? 0),
       checkinPolicy: policyByOffering.get(row.id) ?? null,
     })), waitlist,
     plans: plans.map(({ whopPlanId: _legacyProviderId, ...plan }) => plan),
@@ -229,13 +266,14 @@ router.post("/offerings", async (req, res) => {
     if (data.accessType === "live" && data.active) ensureHttps(data.joinUrl, "Live class join link");
     if (data.joinUrl) ensureHttps(data.joinUrl, "Live class join link");
     const [o] = await tx.insert(offerings).values({ ...data, id, targetId: id, slot: "", scope: "live",
+      activityStatus: data.active ? "published" : "draft", reviewNote: null,
       localizedTitle: data.localizedTitle ?? null, localizedDescription: data.localizedDescription ?? null, joinUrl: data.joinUrl ?? null,
       partnerGroup: p.groupId, startsAt: new Date(data.startsAt), endsAt: new Date(data.endsAt),
       cancellationDeadline: new Date(data.cancellationDeadline) }).returning();
     await audit(tx, res.locals.operator.userId, "offering.create", id);
     return o;
   });
-  res.status(201).json(row);
+  res.status(201).json(AddLiveOfferingResponse.parse(offeringWithStatuses(row)));
 });
 router.post("/offerings/recurring", async (req, res) => {
   const body = CreateRecurringOfferingsBody.parse(req.body);
@@ -285,6 +323,7 @@ router.post("/offerings/recurring", async (req, res) => {
       const id = randomUUID();
       const [row] = await tx.insert(offerings).values({
         ...data, id, targetId: id, slot: "", scope: "live", partnerGroup: partner.groupId,
+        activityStatus: data.active ? "published" : "draft", reviewNote: null,
         localizedTitle: data.localizedTitle ?? null, localizedDescription: data.localizedDescription ?? null,
         joinUrl: data.joinUrl ?? null, startsAt: new Date(data.startsAt), endsAt: new Date(data.endsAt),
         cancellationDeadline: new Date(data.cancellationDeadline),
@@ -297,7 +336,7 @@ router.post("/offerings/recurring", async (req, res) => {
   });
 
   const response = created.map(row => ({
-    ...row,
+    ...offeringWithStatuses(row),
     startsAt: row.startsAt.toISOString(),
     endsAt: row.endsAt.toISOString(),
     cancellationDeadline: row.cancellationDeadline.toISOString(),
@@ -312,11 +351,11 @@ router.patch("/offerings/:id", async (req, res) => {
     own(res, o.partnerId);
     if (o.cancelledAt) throw new BookingError(409, "Cancelled offerings cannot be edited or republished. Create a replacement.");
     if (o.startsAt <= new Date()) throw new BookingError(409, "Past offerings cannot be edited.");
-    if (res.locals.operator.role === "partner" && data.active === true)
-      throw new BookingError(403, "Only an administrator can approve and publish a partner activity.");
+    if (data.active !== undefined)
+      throw new BookingError(400, "Use the activity submission and review actions to change publishing status.");
     const needsReview = res.locals.operator.role === "partner" && o.active &&
       (data.localizedTitle !== undefined || data.localizedDescription !== undefined || data.joinUrl !== undefined);
-    const nextActive = needsReview ? false : data.active ?? o.active;
+    const nextActive = needsReview ? false : o.active;
     const nextTitle = data.localizedTitle ?? o.localizedTitle;
     const nextDescription = data.localizedDescription ?? o.localizedDescription;
     const nextJoinUrl = data.joinUrl !== undefined ? data.joinUrl : o.joinUrl;
@@ -342,17 +381,92 @@ router.patch("/offerings/:id", async (req, res) => {
     const [result] = await tx.update(offerings).set({
       capacity: data.capacity,
       ...(data.waitlistOfferMinutes !== undefined ? { waitlistOfferMinutes: data.waitlistOfferMinutes } : {}),
-      ...(data.active !== undefined ? { active: data.active } : {}),
       ...(needsReview ? { active: false } : {}),
+      ...(needsReview ? { activityStatus: "submitted", reviewNote: null } : {}),
       ...(data.localizedTitle !== undefined ? { localizedTitle: data.localizedTitle } : {}),
       ...(data.localizedDescription !== undefined ? { localizedDescription: data.localizedDescription } : {}),
       ...(data.joinUrl !== undefined ? { joinUrl: data.joinUrl } : {}),
     }).where(eq(offerings.id, o.id)).returning();
     await audit(tx, res.locals.operator.userId, "offering.update", o.id);
-    return result;
+    return { offering: result, occupiedPlaces: held.length + Number(offers?.count ?? 0) };
   });
   await processWaitlistQueue();
-  res.json(row);
+  res.json(ChangeLiveOfferingResponse.parse(offeringWithStatuses(row.offering, row.occupiedPlaces)));
+});
+router.post("/offerings/:id/submit", async (req, res) => {
+  if (res.locals.operator.role !== "partner") throw new BookingError(403, "Only a partner can submit an activity for review.");
+  const id = String(req.params.id);
+  const row = await db.transaction(async tx => {
+    const [offering] = await tx.select().from(offerings).where(and(
+      eq(offerings.id, id), eq(offerings.scope, "live"),
+    )).for("update");
+    if (!offering) throw new BookingError(404, "Offering not found.");
+    own(res, offering.partnerId);
+    if (offering.cancelledAt) throw new BookingError(409, "Cancelled offerings cannot be submitted.");
+    if (offering.startsAt <= new Date()) throw new BookingError(409, "Past offerings cannot be submitted for review.");
+    const current = effectiveOfferingActivityStatus(offering);
+    if (current !== "draft" && current !== "changes_requested")
+      throw new BookingError(409, "Only drafts or activities with requested changes can be submitted.");
+    const [updated] = await tx.update(offerings).set({
+      active: false, activityStatus: "submitted", reviewNote: null,
+    }).where(eq(offerings.id, id)).returning();
+    await audit(tx, res.locals.operator.userId, "offering.submit", id);
+    return updated;
+  });
+  res.json(SubmitOfferingResponse.parse(offeringWithStatuses(row)));
+});
+router.post("/offerings/:id/review", async (req, res) => {
+  admin(res);
+  const data = ReviewOfferingBody.parse(req.body);
+  const id = String(req.params.id);
+  const result = await db.transaction(async tx => {
+    const [offering] = await tx.select().from(offerings).where(and(
+      eq(offerings.id, id), eq(offerings.scope, "live"),
+    )).for("update");
+    if (!offering) throw new BookingError(404, "Offering not found.");
+    if (offering.cancelledAt) throw new BookingError(409, "Cancelled offerings cannot change activity status.");
+    const current = effectiveOfferingActivityStatus(offering);
+    const transition = transitionOfferingActivity(current, data.action, data.reason);
+    if (!transition) throw new BookingError(409, "That review transition is not allowed from the current activity status, or a reason is missing.");
+
+    if (data.action === "publish") {
+      if (offering.startsAt <= new Date()) throw new BookingError(409, "Past activities cannot be published.");
+      const [partner] = await tx.select().from(partners).where(eq(partners.id, offering.partnerId ?? "")).for("share");
+      if (!partner?.approved) throw new BookingError(403, "Partner approval is required before publishing.");
+      const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
+        eq(facilityProfiles.partnerId, offering.partnerId ?? ""),
+        eq(facilityProfiles.city, offering.city),
+        eq(facilityProfiles.facility, offering.facility),
+      )).limit(1);
+      if (!facility) throw new BookingError(409, "This activity is not linked to an approved facility profile.");
+      if (offering.accessType === "live") {
+        if (!offering.localizedTitle || !offering.localizedDescription)
+          throw new BookingError(400, "Live classes need English, Arabic and Sorani details.");
+        ensureHttps(offering.joinUrl, "Live class join link");
+      }
+      if (offering.joinUrl) ensureHttps(offering.joinUrl, "Live class join link");
+    }
+
+    const [updated] = await tx.update(offerings).set({
+      activityStatus: transition.activityStatus,
+      reviewNote: transition.reviewNote,
+      active: transition.activityStatus === "published",
+    }).where(eq(offerings.id, id)).returning();
+    await audit(tx, res.locals.operator.userId, "offering.review",
+      id, `${current} -> ${transition.activityStatus}; action=${data.action}${data.reason ? `; reason=${data.reason.trim()}` : ""}`);
+    const [held] = await tx.select({ count: sql<number>`count(*)::int` }).from(reservations).where(and(
+      eq(reservations.offeringId, id), inArray(reservations.status, ["reserved", "requested"]),
+    ));
+    const [offers] = await tx.select({ count: sql<number>`count(*)::int` }).from(waitlistEntries).where(and(
+      eq(waitlistEntries.offeringId, id), eq(waitlistEntries.status, "offered"), gt(waitlistEntries.offerExpiresAt, new Date()),
+    ));
+    return {
+      offering: updated,
+      occupiedPlaces: Number(held?.count ?? 0) + Number(offers?.count ?? 0),
+    };
+  });
+  if (data.action === "publish") await processWaitlistQueue();
+  res.json(ReviewOfferingResponse.parse(offeringWithStatuses(result.offering, result.occupiedPlaces)));
 });
 router.get("/offerings/:id/waitlist", async (req, res) => {
   const [offering] = await db.select().from(offerings)

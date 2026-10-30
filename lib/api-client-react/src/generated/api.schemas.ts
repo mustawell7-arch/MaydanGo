@@ -783,6 +783,35 @@ export interface RecurringOfferingsInput {
   schedule: RecurringSchedule;
 }
 
+export type OfferingActivityStatus = typeof OfferingActivityStatus[keyof typeof OfferingActivityStatus];
+
+
+export const OfferingActivityStatus = {
+  draft: 'draft',
+  submitted: 'submitted',
+  under_review: 'under_review',
+  changes_requested: 'changes_requested',
+  approved: 'approved',
+  published: 'published',
+  suspended: 'suspended',
+  rejected: 'rejected',
+  archived: 'archived',
+} as const;
+
+export type OfferingSessionStatus = typeof OfferingSessionStatus[keyof typeof OfferingSessionStatus];
+
+
+export const OfferingSessionStatus = {
+  draft: 'draft',
+  scheduled: 'scheduled',
+  open_for_booking: 'open_for_booking',
+  fully_booked: 'fully_booked',
+  in_progress: 'in_progress',
+  completed: 'completed',
+  cancelled: 'cancelled',
+  suspended: 'suspended',
+} as const;
+
 export interface SessionCheckinPolicy {
   latitude: number;
   longitude: number;
@@ -797,6 +826,13 @@ export type LiveOffering = OfferingInput & ({
   targetId: string;
   slot: string;
   scope: string;
+  activityStatus: OfferingActivityStatus;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  reviewNote: string | null;
+  sessionStatus: OfferingSessionStatus;
   /** @nullable */
   cancelledAt?: string | null;
   partnerName?: string;
@@ -814,6 +850,28 @@ export type LiveOffering = OfferingInput & ({
  * @minItems 1
  */
 export type RecurringOfferingsResponse = LiveOffering[];
+
+export type OfferingReviewAction = typeof OfferingReviewAction[keyof typeof OfferingReviewAction];
+
+
+export const OfferingReviewAction = {
+  start_review: 'start_review',
+  request_changes: 'request_changes',
+  approve: 'approve',
+  reject: 'reject',
+  publish: 'publish',
+  suspend: 'suspend',
+  archive: 'archive',
+} as const;
+
+export interface OfferingReviewInput {
+  action: OfferingReviewAction;
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason?: string;
+}
 
 export type OfferingWaitlistEntryStatus = typeof OfferingWaitlistEntryStatus[keyof typeof OfferingWaitlistEntryStatus];
 

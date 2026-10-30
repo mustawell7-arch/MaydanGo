@@ -295,6 +295,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1recurring"
   /operations/offerings/{id}:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}"
+  /operations/offerings/{id}/submit:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1submit"
+  /operations/offerings/{id}/review:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1review"
   /operations/offerings/{id}/waitlist:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1waitlist"
   /operations/offerings/{id}/cancel:
