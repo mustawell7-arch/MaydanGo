@@ -1,7 +1,7 @@
 import { Children, cloneElement, isValidElement, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useChangeLiveOffering, useGetAttendance, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReviewAttendance } from '@workspace/api-client-react';
-import type { OfferingInput, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody } from '@workspace/api-client-react';
+import { getGetOperationFacilitiesQueryKey, getGetOperationsQueryKey, useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useChangeLiveOffering, useCreateRecurringOfferings, useGetAttendance, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReviewAttendance } from '@workspace/api-client-react';
+import type { OfferingInput, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody, RecurringOfferingsInput } from '@workspace/api-client-react';
 import { useAuth, useClerk } from '@clerk/react';
 import { Link, Redirect } from 'wouter';
 import { Activity, ArrowLeft, ArrowUpRight, CalendarDays, Check, CircleAlert, Clock3, Dumbbell, FileText, LogOut, MapPin, Plus, RefreshCw, ShieldCheck, Users, Wallet, X } from 'lucide-react';
@@ -131,10 +131,27 @@ function Button({ children, onClick, kind = 'primary', disabled = false, type = 
   return <button type={type} onClick={onClick} disabled={disabled} className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${style}`}>{children}</button>;
 }
 
+const weekdayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const dateOnlyFromLocalInput = (value: string) => value.slice(0, 10);
+const shiftCalendarDate = (date: string, amount: number) => {
+  const [year, month, day] = date.split('-').map(Number);
+  const shifted = new Date(Date.UTC(year, month - 1, day + amount, 12));
+  return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, '0')}-${String(shifted.getUTCDate()).padStart(2, '0')}`;
+};
+const calendarDay = (date: string) => {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day, 12)).getUTCDay();
+};
+const dateLabelBaghdad = (date: string) => new Intl.DateTimeFormat('en-IQ', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'Asia/Baghdad' }).format(new Date(`${date}T12:00:00+03:00`));
+
 function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: { partnerId: string; partners: { id: string; name: string }[]; isAdmin: boolean; lang: PortalLanguage; onClose: () => void; onSaved: () => void }) {
   const add = useAddLiveOffering();
-  const facilitiesQuery = useGetOperationFacilities({ query: { enabled: true } });
+  const addRecurring = useCreateRecurringOfferings();
+  const facilitiesQuery = useGetOperationFacilities({ query: { enabled: true, queryKey: getGetOperationFacilitiesQueryKey() } });
   const [message, setMessage] = useState('');
+  const [recurring, setRecurring] = useState(false);
+  const [weekdays, setWeekdays] = useState<number[]>([]);
+  const [repeatUntil, setRepeatUntil] = useState('');
   const [selectedPartnerId, setSelectedPartnerId] = useState(partnerId);
   const [form, setForm] = useState({
     title: '', kind: 'session' as OfferingInput['kind'], facilityProfileId: '', city: '', facility: '', category: '', accessType: 'physical' as OfferingInput['accessType'],
@@ -145,8 +162,35 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
   const facilityRecords = (facilitiesQuery.data ?? []).filter(item => item.partnerId === selectedPartnerId);
   const selectedFacility = facilityRecords.find(item => item.id === form.facilityProfileId);
   const update = (key: keyof typeof form, value: string | boolean) => setForm(current => ({ ...current, [key]: value }));
+  const firstDate = dateOnlyFromLocalInput(form.startsAt);
+  const maxRepeatDate = firstDate ? shiftCalendarDate(firstDate, 90) : '';
+  const previewDates = useMemo(() => {
+    if (!firstDate || !repeatUntil || !weekdays.length || repeatUntil < firstDate) return [];
+    const dates: string[] = [];
+    for (let current = firstDate; current <= repeatUntil && dates.length <= 90; current = shiftCalendarDate(current, 1)) {
+      if (weekdays.includes(calendarDay(current))) dates.push(current);
+    }
+    return dates;
+  }, [firstDate, repeatUntil, weekdays]);
+  const repeatDaySpan = firstDate && repeatUntil ? Math.round((Date.parse(`${repeatUntil}T12:00:00Z`) - Date.parse(`${firstDate}T12:00:00Z`)) / 86400000) : 0;
+  const recurrenceIssue = recurring
+    ? !weekdays.length ? 'Choose at least one weekday for the recurring sessions.'
+      : !repeatUntil ? 'Choose an inclusive repeat-until date.'
+        : repeatUntil < firstDate ? 'The repeat-until date must be on or after the first session date.'
+          : repeatDaySpan > 90 ? 'The repeat-until date must be within 90 calendar days of the first session.'
+            : previewDates.length > 90 ? 'This schedule creates more than 90 occurrences. Choose fewer weekdays or an earlier end date.'
+              : previewDates.length === 0 ? 'No sessions match the selected weekdays and date range.'
+                : '' : '';
+  const pending = add.isPending || addRecurring.isPending;
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    setMessage('');
+    if (pending) return;
+    if (!form.startsAt || !form.endsAt || !form.cancellationDeadline || Date.parse(`${form.endsAt}:00+03:00`) <= Date.parse(`${form.startsAt}:00+03:00`)) {
+      setMessage('Add valid session start, end, and cancellation times. The end must be after the start.');
+      return;
+    }
+    if (recurring && recurrenceIssue) { setMessage(recurrenceIssue); return; }
     if (!selectedPartnerId) { setMessage('Select a partner before creating this offering.'); return; }
     if (!selectedFacility) { setMessage('Choose a shared facility record before creating this offering.'); return; }
     const isLive = form.accessType === 'live';
@@ -170,7 +214,20 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
         localizedDescription: { en: form.localizedDescriptionEn.trim(), ar: form.localizedDescriptionAr.trim(), ku: form.localizedDescriptionKu.trim() },
       } : {}),
     };
-    add.mutate({ data }, { onSuccess: () => { onSaved(); onClose(); }, onError: () => setMessage('The offering could not be saved. Check the details and try again.') });
+    const onSuccess = () => { onSaved(); onClose(); };
+    const onError = (error: unknown) => {
+      const candidate = error as { status?: number; response?: { status?: number }; message?: string };
+      const status = candidate?.status ?? candidate?.response?.status;
+      setMessage(status === 409
+        ? 'This schedule conflicts with an existing offering. Adjust the dates or weekdays and try again.'
+        : candidate?.message || 'The offering could not be saved. Check the details and try again.');
+    };
+    if (recurring) {
+      const recurringData: RecurringOfferingsInput = { template: { ...data }, schedule: { repeatUntil, weekdays: [...weekdays].sort((a, b) => a - b) } };
+      addRecurring.mutate({ data: recurringData }, { onSuccess, onError });
+    } else {
+      add.mutate({ data }, { onSuccess, onError });
+    }
   };
   const dateInput = (key: 'startsAt' | 'endsAt' | 'cancellationDeadline', label: string) => <LabelField label={label}><input required type="datetime-local" className={fieldClass()} value={form[key]} onChange={e => update(key, e.target.value)} /></LabelField>;
   return <LocalizedContent lang={lang}><div className="fixed inset-0 z-50 flex items-end justify-center bg-[#102e27]/45 p-0 backdrop-blur-sm sm:items-center sm:p-5" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -179,7 +236,7 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
       <form onSubmit={submit} className="mt-6 grid gap-4 sm:grid-cols-2">
         {isAdmin && <LabelField label="Partner"><select required className={fieldClass()} value={selectedPartnerId} onChange={e => { setSelectedPartnerId(e.target.value); setForm(current => ({ ...current, facilityProfileId: '', city: '', facility: '' })); }}><option value="">Choose a partner</option>{partners.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></LabelField>}
         <LabelField label="Offering title"><input required maxLength={160} className={fieldClass()} value={form.title} onChange={e => update('title', e.target.value)} /></LabelField>
-        <LabelField label="Format"><select className={fieldClass()} value={form.kind} onChange={e => update('kind', e.target.value)}><option value="session">Session</option><option value="event">Event</option><option value="coach">Coaching</option></select></LabelField>
+        <LabelField label="Format"><select data-testid="select-offering-kind" className={fieldClass()} value={form.kind} onChange={e => { update('kind', e.target.value); if (e.target.value !== 'session') { setRecurring(false); setWeekdays([]); setRepeatUntil(''); } }}><option value="session">Session</option><option value="event">Event</option><option value="coach">Coaching</option></select></LabelField>
         <LabelField label="Shared facility"><select required className={fieldClass()} value={form.facilityProfileId} disabled={facilitiesQuery.isLoading || !facilityRecords.length} onChange={e => {
           const next = facilityRecords.find(item => item.id === e.target.value);
           setForm(current => ({ ...current, facilityProfileId: e.target.value, city: next?.city ?? '', facility: next?.facility ?? '' }));
@@ -199,6 +256,29 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
           </div>
         </div>}
         {dateInput('startsAt', 'Starts at')}{dateInput('endsAt', 'Ends at')}{dateInput('cancellationDeadline', 'Cancellation deadline')}
+        {form.kind === 'session' && <div className="rounded-2xl border border-[#d8d2c4] bg-[#f2efe4] p-4 sm:col-span-2" data-testid="panel-recurring-schedule">
+          <label className="flex cursor-pointer items-start gap-3 text-sm font-semibold text-[#36564b]">
+            <input data-testid="toggle-recurring-session" type="checkbox" checked={recurring} onChange={event => { setRecurring(event.target.checked); setMessage(''); }} className="mt-0.5 accent-[#174d43]" />
+            <span><span className="block">Repeat this session weekly</span><span className="mt-1 block text-xs font-normal leading-5 text-[#75847c]">Each date becomes a separate offering. Dates and times are interpreted in Asia/Baghdad.</span></span>
+          </label>
+          {recurring && <div className="mt-4 space-y-4">
+            <fieldset>
+              <legend className="text-xs font-semibold text-[#51665e]">Repeat on</legend>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {weekdayNames.map((day, index) => <label key={day} className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${weekdays.includes(index) ? 'border-[#28695a] bg-[#e1ece5] text-[#174d43]' : 'border-[#d8d2c4] bg-[#fffdf7] text-[#687a71]'}`}>
+                  <input data-testid={`weekday-${index}`} type="checkbox" checked={weekdays.includes(index)} onChange={event => { setWeekdays(current => event.target.checked ? [...current, index].sort((a, b) => a - b) : current.filter(value => value !== index)); setMessage(''); }} className="accent-[#174d43]" />
+                  {day}
+                </label>)}
+              </div>
+            </fieldset>
+            <LabelField label="Repeat until · inclusive"><input data-testid="input-repeat-until" required={recurring} type="date" min={firstDate || undefined} max={maxRepeatDate || undefined} className={fieldClass()} value={repeatUntil} onChange={event => { setRepeatUntil(event.target.value); setMessage(''); }} /><span className="mt-1 block text-[11px] font-normal text-[#75847c]">Up to 90 calendar days after the first date, and no more than 90 occurrences.</span></LabelField>
+            {recurrenceIssue ? <p data-testid="status-recurring-validation" role="status" className="rounded-xl border border-[#e0c4b9] bg-[#fff7f3] px-3 py-2 text-xs leading-5 text-[#9a4435]">{recurrenceIssue}</p> : <div data-testid="status-recurring-preview" className="rounded-xl border border-[#cfddcf] bg-[#f8fbf4] p-3">
+              <div className="flex items-baseline justify-between gap-3"><p className="text-xs font-bold text-[#36564b]">Baghdad-time preview</p><p className="font-mono text-xs font-bold text-[#174d43]">{previewDates.length} {previewDates.length === 1 ? 'occurrence' : 'occurrences'}</p></div>
+              <p className="mt-1 text-[11px] text-[#75847c]">At {form.startsAt.slice(11) || '—'} local time · inclusive through {repeatUntil ? dateLabelBaghdad(repeatUntil) : '—'}</p>
+              {previewDates.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{previewDates.map(date => <span key={date} data-testid={`preview-date-${date}`} className="rounded-lg bg-[#e7eee4] px-2 py-1 text-[10px] font-semibold text-[#36564b]">{dateLabelBaghdad(date)}</span>)}</div>}
+            </div>}
+          </div>}
+        </div>}
         <LabelField label="Capacity"><input required min="1" type="number" className={fieldClass()} value={form.capacity} onChange={e => update('capacity', e.target.value)} /></LabelField>
         <LabelField label="Waitlist offer window (minutes)"><input required min="5" max="1440" type="number" className={fieldClass()} value={form.waitlistOfferMinutes} onChange={e => update('waitlistOfferMinutes', e.target.value)} /></LabelField>
         <LabelField label="Gender access"><select className={fieldClass()} value={form.gender} onChange={e => update('gender', e.target.value)}><option value="all">All</option><option value="female">Female</option><option value="male">Male</option></select></LabelField>
@@ -207,8 +287,8 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
         <LabelField label="Membership tiers (comma separated)"><input required placeholder="Use tiers configured for your offering" className={fieldClass()} value={form.tiers} onChange={e => update('tiers', e.target.value)} /></LabelField>
         <LabelField label="Join URL (optional)"><input type="url" className={fieldClass()} value={form.joinUrl} onChange={e => update('joinUrl', e.target.value)} /></LabelField>
         {isAdmin ? <label className="flex items-center gap-3 rounded-xl bg-[#eeeadc] px-4 py-3 text-sm font-medium text-[#36564b] sm:col-span-2"><input type="checkbox" checked={form.active} onChange={e => update('active', e.target.checked)} className="accent-[#174d43]" />Publish as active</label> : <p className="rounded-xl bg-[#eeeadc] px-4 py-3 text-sm text-[#36564b] sm:col-span-2">New activities are saved as drafts and must be approved by an administrator before publishing.</p>}
-        {message && <p role="alert" className="text-sm text-[#a33d2e] sm:col-span-2">{message}</p>}
-        <div className="flex justify-end gap-3 pt-2 sm:col-span-2"><Button kind="quiet" onClick={onClose}>Cancel</Button><Button type="submit" disabled={add.isPending}><Plus size={16} />{add.isPending ? 'Saving…' : 'Create offering'}</Button></div>
+         {message && <p data-testid="status-offering-error" role="alert" className="text-sm text-[#a33d2e] sm:col-span-2">{message}</p>}
+         <div className="flex justify-end gap-3 pt-2 sm:col-span-2"><Button kind="quiet" onClick={onClose}>Cancel</Button><Button type="submit" disabled={pending || Boolean(recurrenceIssue)}><Plus size={16} />{pending ? 'Saving…' : recurring ? 'Create recurring sessions' : 'Create offering'}</Button></div>
       </form>
     </section>
   </div></LocalizedContent>;
@@ -300,7 +380,7 @@ export default function PartnerPortal() {
   const rows = attendance.data?.rows ?? [];
   const activeOfferings = useMemo(() => offerings.filter(item => item.active && !item.cancelledAt).length, [offerings]);
   const invalidate = () => {
-    void client.invalidateQueries({ queryKey: ['/api/operations'] });
+    void client.invalidateQueries({ queryKey: getGetOperationsQueryKey() });
     void client.invalidateQueries({ queryKey: ['/api/attendance'] });
   };
   const changeLanguage = (next: PortalLanguage) => {

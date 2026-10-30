@@ -246,7 +246,15 @@ router.post("/offerings/recurring", async (req, res) => {
 
     const [partner] = await tx.select().from(partners).where(eq(partners.id, template.partnerId)).for("share");
     if (!partner) throw new BookingError(404, "Partner not found.");
+    if (res.locals.operator.role === "partner" && template.active)
+      throw new BookingError(403, "Only an administrator can approve and publish a partner activity.");
     if (template.active && !partner.approved) throw new BookingError(403, "Partner approval is required before publishing.");
+    const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
+      eq(facilityProfiles.partnerId, template.partnerId),
+      eq(facilityProfiles.city, template.city),
+      eq(facilityProfiles.facility, template.facility),
+    )).limit(1);
+    if (!facility) throw new BookingError(400, "Choose a facility from your approved facility profiles.");
     if (template.accessType === "live" && template.active) ensureHttps(template.joinUrl, "Live class join link");
     if (template.joinUrl) ensureHttps(template.joinUrl, "Live class join link");
 
