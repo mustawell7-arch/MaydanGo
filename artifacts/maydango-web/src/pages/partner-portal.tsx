@@ -379,6 +379,8 @@ export default function PartnerPortal() {
   const waitlist = operations.data?.waitlist ?? [];
   const rows = attendance.data?.rows ?? [];
   const activeOfferings = useMemo(() => offerings.filter(item => item.active && !item.cancelledAt).length, [offerings]);
+  const awaitingOfferings = useMemo(() => offerings.filter(item => !item.active && !item.cancelledAt).length, [offerings]);
+  const cancelledOfferings = useMemo(() => offerings.filter(item => !!item.cancelledAt).length, [offerings]);
   const invalidate = () => {
     void client.invalidateQueries({ queryKey: getGetOperationsQueryKey() });
     void client.invalidateQueries({ queryKey: ['/api/attendance'] });
@@ -432,6 +434,22 @@ export default function PartnerPortal() {
           {tab === 'overview' && <div>
             <div className="grid gap-4 sm:grid-cols-3"><article className="rounded-3xl bg-[#174d43] p-5 text-[#fff9e9] sm:col-span-2 sm:p-7"><div className="flex items-start justify-between"><span className="text-xs font-semibold uppercase tracking-[.16em] text-[#d4dfcf]">Your MaydanGo space</span><Activity size={19} className="text-[#e1a17e]" /></div><p className="mt-9 max-w-lg font-display text-2xl font-semibold leading-tight sm:text-3xl">{isAdmin ? 'A clear view of partner activity and attendance.' : 'Bring your sessions and community into view.'}</p><p className="mt-3 max-w-lg text-sm leading-6 text-[#d1dfd6]">{isAdmin ? 'Review the partner and offering records returned for your administrator account.' : 'Manage the live opportunities and attendance roster assigned to your partner account.'}</p></article>
               <article className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6"><p className="text-xs font-semibold uppercase tracking-[.13em] text-[#6e8077]">Active offerings</p><p className="mt-4 font-display text-4xl font-bold">{activeOfferings}</p><p className="mt-2 text-xs text-[#75847c]">Of {offerings.length} server-listed offerings</p><button onClick={() => setTab('offerings')} className="mt-5 inline-flex items-center gap-1 text-xs font-bold text-[#28695a]">Manage offerings<ArrowUpRight size={13} /></button></article></div>
+             {!isAdmin && <section data-testid="activity-approval-summary" aria-label={portalLabel(language, 'offerings')} className="mt-5 rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6">
+               <div className="flex flex-wrap items-center justify-between gap-3">
+                 <div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a76445]">Partner activity</p><h2 className="mt-1 font-display text-xl font-bold">{portalLabel(language, 'offerings')}</h2></div>
+                 <button data-testid="button-view-activity-status" type="button" onClick={() => setTab('offerings')} className="inline-flex items-center gap-1 text-xs font-bold text-[#28695a]">Manage offerings<ArrowUpRight size={13} /></button>
+               </div>
+               <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                 {[
+                   { id: 'awaiting-review', label: 'Draft · awaiting administrator review', count: awaitingOfferings, tone: 'bg-[#f5f1e6] text-[#756e5b]' },
+                   { id: 'published', label: 'Active', count: activeOfferings, tone: 'bg-[#e1efdf] text-[#2d6d4a]' },
+                   { id: 'cancelled', label: 'Cancelled', count: cancelledOfferings, tone: 'bg-[#f2dfd5] text-[#9a4435]' },
+                 ].map(status => <article data-testid={`status-offering-approval-${status.id}`} key={status.id} className="rounded-2xl border border-[#ece7d9] p-4">
+                   <p className="text-xs font-semibold text-[#687a71]">{status.label}</p>
+                   <p className={`mt-3 inline-flex min-w-10 justify-center rounded-full px-3 py-1 font-display text-2xl font-bold ${status.tone}`}>{status.count.toLocaleString(language === 'en' ? 'en-IQ' : language === 'ar' ? 'ar-IQ' : 'ckb-IQ')}</p>
+                 </article>)}
+               </div>
+             </section>}
             <div className="mt-5 grid gap-4 md:grid-cols-[1.2fr_.8fr]"><article className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6"><div className="flex items-center justify-between"><div><h2 className="font-display text-xl font-bold">Next on the roster</h2><p className="mt-1 text-xs text-[#75847c]">Attendance records in your server scope</p></div><button onClick={() => setTab('attendance')} className="text-xs font-bold text-[#28695a]">View all</button></div>{attendance.isLoading ? <div className="mt-5 h-16 animate-pulse rounded-xl bg-[#eeeadc]" /> : attendance.isError ? <button className="mt-5 text-sm font-semibold text-[#9a4435]" onClick={() => void attendance.refetch()}>Roster unavailable · Retry</button> : rows.length ? <div className="mt-4 divide-y divide-[#ece7d9]">{rows.slice(0, 4).map(row => <div key={row.reservationId} className="flex items-center justify-between gap-4 py-3"><div className="min-w-0"><p className="truncate text-sm font-semibold">{row.title}</p><p className="mt-1 text-xs text-[#75847c]">{row.facility} · {formatDate(row.startsAt)}</p></div><span className="rounded-full bg-[#eeeadc] px-2.5 py-1 text-[10px] font-bold text-[#536b61]">{row.status.replaceAll('_', ' ')}</span></div>)}</div> : <p className="mt-5 rounded-xl bg-[#f5f1e6] p-4 text-sm text-[#75847c]">No attendance records were returned for this scope.</p>}</article>
               <article className="rounded-3xl border border-[#ddd7c6] bg-[#f0ead9] p-5 sm:p-6"><div className="flex items-center gap-2"><ShieldCheck size={17} className="text-[#28695a]" /><h2 className="font-display text-xl font-bold">Scoped by the server</h2></div><p className="mt-3 text-sm leading-6 text-[#62756b]">Your account role and partner boundary come from the operations service. Actions are checked again by MaydanGo when saved.</p><p className="mt-5 text-[10px] font-bold uppercase tracking-[.16em] text-[#a76445]">{isAdmin ? 'Administrator' : 'Partner operator'} · {rows.length} roster records</p></article></div>
           </div>}
