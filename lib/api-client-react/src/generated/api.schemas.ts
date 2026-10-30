@@ -665,6 +665,14 @@ export interface OperationSuccess {
   ok: boolean;
 }
 
+export interface BookingCancellationRequest {
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason: string;
+}
+
 export interface PartnerInput {
   name: string;
   groupId: string;
@@ -1081,6 +1089,7 @@ export interface RefundRequest {
      * @maxLength 500
      */
   reason: string;
+  idempotencyKey?: string;
 }
 
 export type RefundResultStatus = typeof RefundResultStatus[keyof typeof RefundResultStatus];
@@ -1111,6 +1120,7 @@ export type OperationsStateRole = typeof OperationsStateRole[keyof typeof Operat
 
 export const OperationsStateRole = {
   admin: 'admin',
+  finance: 'finance',
   partner: 'partner',
 } as const;
 
@@ -1135,6 +1145,201 @@ export interface OperationsState {
   offerings: LiveOffering[];
   waitlist: PartnerWaitlistEntry[];
   plans: LivePlan[];
+}
+
+export interface FinanceRefundRequest {
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason: string;
+  idempotencyKey: string;
+}
+
+export interface FinancePayoutRequest {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  partnerId: string;
+  periodStart: string;
+  periodEnd: string;
+  /**
+     * @minimum 1
+     * @maximum 1000000000
+     */
+  amountIqd: number;
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason: string;
+  idempotencyKey: string;
+}
+
+export type FinanceDecisionDecision = typeof FinanceDecisionDecision[keyof typeof FinanceDecisionDecision];
+
+
+export const FinanceDecisionDecision = {
+  approve: 'approve',
+  reject: 'reject',
+} as const;
+
+export interface FinanceDecision {
+  decision: FinanceDecisionDecision;
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason: string;
+}
+
+export type FinanceInvoiceReviewStatus = typeof FinanceInvoiceReviewStatus[keyof typeof FinanceInvoiceReviewStatus];
+
+
+export const FinanceInvoiceReviewStatus = {
+  under_review: 'under_review',
+  accepted: 'accepted',
+  rejected: 'rejected',
+} as const;
+
+export interface FinanceInvoiceReview {
+  status: FinanceInvoiceReviewStatus;
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason: string;
+}
+
+export type FinanceReviewItemKind = typeof FinanceReviewItemKind[keyof typeof FinanceReviewItemKind];
+
+
+export const FinanceReviewItemKind = {
+  refund: 'refund',
+  payout: 'payout',
+} as const;
+
+export type FinanceReviewItemStatus = typeof FinanceReviewItemStatus[keyof typeof FinanceReviewItemStatus];
+
+
+export const FinanceReviewItemStatus = {
+  pending: 'pending',
+  processing: 'processing',
+  approved_manual: 'approved_manual',
+  rejected: 'rejected',
+  failed: 'failed',
+  provider_pending: 'provider_pending',
+  completed: 'completed',
+} as const;
+
+export interface FinanceReviewItem {
+  id: string;
+  kind: FinanceReviewItemKind;
+  status: FinanceReviewItemStatus;
+  /** @nullable */
+  billingId: string | null;
+  /** @nullable */
+  partnerId: string | null;
+  /** @nullable */
+  periodStart: string | null;
+  /** @nullable */
+  periodEnd: string | null;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  amountIqd: number | null;
+  reason: string;
+  requestedBy: string;
+  /** @nullable */
+  reviewedBy: string | null;
+  idempotencyKey: string;
+  createdAt: string;
+  /** @nullable */
+  reviewedAt: string | null;
+}
+
+export type FinanceOverviewRole = typeof FinanceOverviewRole[keyof typeof FinanceOverviewRole];
+
+
+export const FinanceOverviewRole = {
+  admin: 'admin',
+  finance: 'finance',
+} as const;
+
+export type FinanceOverviewFacilitiesItem = { [key: string]: unknown };
+
+export type FinanceOverviewCustomersItem = { [key: string]: unknown };
+
+export type FinanceOverviewBookingsItem = { [key: string]: unknown };
+
+export type FinanceOverviewCustomerInvoicesItem = { [key: string]: unknown };
+
+export type FinanceOverviewPartnerInvoicesItem = { [key: string]: unknown };
+
+export type FinanceOverviewReconciliationItem = { [key: string]: unknown };
+
+export type FinanceOverviewReviewEventsItem = { [key: string]: unknown };
+
+export type FinanceOverviewAuditItem = { [key: string]: unknown };
+
+export interface FinanceOverview {
+  role: FinanceOverviewRole;
+  paymentGateEnabled: boolean;
+  livePayoutGateEnabled: boolean;
+  partners: Partner[];
+  facilities: FinanceOverviewFacilitiesItem[];
+  customers: FinanceOverviewCustomersItem[];
+  bookings: FinanceOverviewBookingsItem[];
+  customerInvoices: FinanceOverviewCustomerInvoicesItem[];
+  partnerInvoices: FinanceOverviewPartnerInvoicesItem[];
+  reconciliation: FinanceOverviewReconciliationItem[];
+  reviewItems: FinanceReviewItem[];
+  reviewEvents: FinanceOverviewReviewEventsItem[];
+  audit: FinanceOverviewAuditItem[];
+}
+
+export type FinanceSettlementSummaryGroupsItem = {
+  partnerId: string;
+  partnerName: string;
+  facility: string;
+  city: string;
+  category: string;
+  accessType: string;
+  /** @minimum 0 */
+  verifiedVisits: number;
+  /** @minimum 0 */
+  rejectedVisits: number;
+  /** @minimum 0 */
+  disputedVisits: number;
+  /** @minimum 0 */
+  onHoldVisits: number;
+};
+
+export interface FinanceSettlementSummary {
+  from: string;
+  to: string;
+  groups: FinanceSettlementSummaryGroupsItem[];
+  /** @minimum 0 */
+  verifiedVisits: number;
+  /** @minimum 0 */
+  rejectedVisits: number;
+  /** @minimum 0 */
+  disputedVisits: number;
+  /** @minimum 0 */
+  onHoldVisits: number;
+  payoutApprovalEnabled: boolean;
+  amountCalculationAvailable: boolean;
+}
+
+export type FinanceAuditOperationsItem = { [key: string]: unknown };
+
+export type FinanceAuditFinanceReviewsItem = { [key: string]: unknown };
+
+export interface FinanceAudit {
+  operations: FinanceAuditOperationsItem[];
+  financeReviews: FinanceAuditFinanceReviewsItem[];
 }
 
 export type GetAttendance200RowsItemEventsItem = {
@@ -1238,6 +1443,11 @@ export type ReviewAttendanceBody = {
 };
 
 export type GetPartnerSettlementSummaryParams = {
+from: string;
+to: string;
+};
+
+export type GetFinanceSettlementsParams = {
 from: string;
 to: string;
 };

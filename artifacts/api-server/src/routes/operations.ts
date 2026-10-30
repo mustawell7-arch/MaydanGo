@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lt } from "drizzle-orm";
 import { z } from "zod";
-import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, facilityProfiles, partnerInvoiceSubmissions } from "@workspace/db";
+import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, facilityProfiles, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents } from "@workspace/db";
 import { BookingError, processWaitlistQueue } from "../lib/reservations";
 import { createFacilityProfileInput, facilityProfileFields, offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
 import {
@@ -18,7 +18,7 @@ import {
 import { sendMemberNotification } from "../lib/notifications";
 import { expandWeeklyOffering } from "../lib/recurring-offerings";
 
-import { PaymentError } from "../lib/payment-config";
+import { PaymentError, paymentsEnabled, payTabsTestModeEnabled } from "../lib/payment-config";
 
 import { cancelPaidSubscriptionImmediately, requestFullRefund, validatePaidPlan } from "../lib/payments-paytabs";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
@@ -33,7 +33,7 @@ router.use(async (req, res, next) => {
   const userId = getAuth(req).userId;
   if (!userId) { res.status(401).json({ message: "Sign in first." }); return; }
   const [operator] = await db.select().from(operators).where(eq(operators.userId, userId));
-  if (!operator || !["admin", "partner"].includes(operator.role)) {
+  if (!operator || !["admin", "finance", "partner"].includes(operator.role)) {
     res.status(403).json({ message: "Authorized staff access is required." }); return;
   }
   if (operator.role === "partner") {
@@ -45,6 +45,10 @@ router.use(async (req, res, next) => {
 });
 const admin = (res: import("express").Response) => {
   if (res.locals.operator.role !== "admin") throw new BookingError(403, "Administrator access is required.");
+};
+const financeStaff = (res: import("express").Response) => {
+  if (!["admin", "finance"].includes(res.locals.operator.role))
+    throw new BookingError(403, "Finance staff access is required.");
 };
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const secureHttps = (value: string | null | undefined) => {
@@ -73,11 +77,11 @@ const invoiceDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {
 });
 router.get("/", async (_req, res) => {
   const op = res.locals.operator;
-  const isAdmin = op.role === "admin";
+  const isStaff = op.role !== "partner";
   const [partnerRows, offeringRows, plans, queueRows] = await Promise.all([
-    db.select().from(partners).where(isAdmin ? undefined : eq(partners.id, op.partnerId ?? "")),
-    db.select().from(offerings).where(and(eq(offerings.scope, "live"), isAdmin ? undefined : eq(offerings.partnerId, op.partnerId ?? ""))),
-    isAdmin ? db.select().from(membershipPlans) : Promise.resolve([]),
+    db.select().from(partners).where(isStaff ? undefined : eq(partners.id, op.partnerId ?? "")),
+    db.select().from(offerings).where(and(eq(offerings.scope, "live"), isStaff ? undefined : eq(offerings.partnerId, op.partnerId ?? ""))),
+    isStaff ? db.select().from(membershipPlans) : Promise.resolve([]),
     db.select({
       id: waitlistEntries.id, offeringId: waitlistEntries.offeringId, joinedAt: waitlistEntries.createdAt,
       title: offerings.title, localizedTitle: offerings.localizedTitle, city: offerings.city, facility: offerings.facility,
@@ -85,7 +89,7 @@ router.get("/", async (_req, res) => {
     }).from(waitlistEntries).innerJoin(offerings, eq(waitlistEntries.offeringId, offerings.id))
       .where(and(eq(waitlistEntries.status, "waiting"), eq(offerings.scope, "live"), eq(offerings.active, true),
         isNull(offerings.cancelledAt), gt(offerings.startsAt, new Date()),
-        isAdmin ? undefined : eq(offerings.partnerId, op.partnerId ?? "")))
+         isStaff ? undefined : eq(offerings.partnerId, op.partnerId ?? "")))
       .orderBy(asc(offerings.startsAt), asc(waitlistEntries.createdAt), asc(waitlistEntries.id)),
   ]);
   const policyRows = offeringRows.length ? await db.select().from(checkinPolicies)
@@ -524,6 +528,401 @@ router.get("/invoices/:id/document", async (req, res) => {
     res.end();
   }).pipe(res);
 });
+
+function financePeriod(fromValue: string, toValue: string) {
+  const from = new Date(`${fromValue}T00:00:00+03:00`);
+  const toExclusive = new Date(new Date(`${toValue}T00:00:00+03:00`).getTime() + 86400000);
+  if (from >= toExclusive || toExclusive.getTime() - from.getTime() > 367 * 86400000)
+    throw new BookingError(400, "Choose a valid finance period of no more than one year.");
+  return { from, toExclusive };
+}
+const payoutApprovalEnabled = () => paymentsEnabled() && !payTabsTestModeEnabled();
+async function financeEvent(tx: Tx, reviewItemId: string, actorId: string, action: string, detail: string) {
+  await tx.insert(financeReviewEvents).values({
+    id: randomUUID(), reviewItemId, actorId, action, detail,
+  });
+}
+
+router.get("/finance", async (_req, res) => {
+  financeStaff(res);
+  const [partnersRows, facilityRows, membershipRows, bookingRows, billingRows, partnerInvoices,
+    reconciliationRows, reviewRows, reviewEvents, operationEvents] = await Promise.all([
+    db.select().from(partners).orderBy(asc(partners.name)),
+    db.select({
+      id: facilityProfiles.id, partnerId: facilityProfiles.partnerId, city: facilityProfiles.city,
+      facility: facilityProfiles.facility, updatedAt: facilityProfiles.updatedAt,
+    }).from(facilityProfiles).orderBy(asc(facilityProfiles.city), asc(facilityProfiles.facility)),
+    db.select({
+      userId: memberships.userId, status: memberships.status, paymentStatus: memberships.paymentStatus,
+      tier: memberships.tier, source: memberships.source, startsAt: memberships.startsAt, endsAt: memberships.endsAt,
+    }).from(memberships).where(eq(memberships.scope, "live")).orderBy(desc(memberships.endsAt)).limit(500),
+    db.select({
+      id: reservations.id, userId: reservations.userId, offeringId: offerings.id, title: offerings.title,
+      partnerId: offerings.partnerId, partnerName: partners.name, facility: offerings.facility, city: offerings.city,
+      startsAt: offerings.startsAt, status: reservations.status, createdAt: reservations.createdAt,
+    }).from(reservations).innerJoin(offerings, eq(reservations.offeringId, offerings.id))
+      .leftJoin(partners, eq(offerings.partnerId, partners.id)).where(eq(offerings.scope, "live"))
+      .orderBy(desc(reservations.createdAt)).limit(500),
+    db.select({
+      id: membershipBilling.id, userId: membershipBilling.userId, planId: membershipBilling.planId,
+      planName: membershipPlans.name, status: membershipBilling.status, paymentStatus: membershipBilling.paymentStatus,
+      amountIqd: membershipBilling.amountIqd, refundStatus: membershipBilling.refundStatus,
+      periodStartsAt: membershipBilling.periodStartsAt, periodEndsAt: membershipBilling.periodEndsAt,
+      createdAt: membershipBilling.createdAt, updatedAt: membershipBilling.updatedAt,
+    }).from(membershipBilling).leftJoin(membershipPlans, eq(membershipBilling.planId, membershipPlans.id))
+      .orderBy(desc(membershipBilling.createdAt)).limit(500),
+    db.select({
+      id: partnerInvoiceSubmissions.id, partnerId: partnerInvoiceSubmissions.partnerId,
+      invoiceNumber: partnerInvoiceSubmissions.invoiceNumber, amountIqd: partnerInvoiceSubmissions.amountIqd,
+      issuedAt: partnerInvoiceSubmissions.issuedAt, periodStart: partnerInvoiceSubmissions.periodStart,
+      periodEnd: partnerInvoiceSubmissions.periodEnd, documentName: partnerInvoiceSubmissions.documentName,
+      status: partnerInvoiceSubmissions.status, submittedBy: partnerInvoiceSubmissions.submittedBy,
+      createdAt: partnerInvoiceSubmissions.createdAt,
+    }).from(partnerInvoiceSubmissions).orderBy(desc(partnerInvoiceSubmissions.createdAt)).limit(500),
+    db.select({
+      id: paymentWebhookEvents.id, eventType: paymentWebhookEvents.eventType,
+      status: paymentWebhookEvents.status, receivedAt: paymentWebhookEvents.receivedAt,
+      processedAt: paymentWebhookEvents.processedAt,
+    }).from(paymentWebhookEvents).orderBy(desc(paymentWebhookEvents.receivedAt)).limit(250),
+    db.select().from(financeReviewItems).orderBy(desc(financeReviewItems.createdAt)).limit(500),
+    db.select().from(financeReviewEvents).orderBy(desc(financeReviewEvents.createdAt)).limit(500),
+    db.select().from(operationAudit).orderBy(desc(operationAudit.createdAt)).limit(500),
+  ]);
+  res.json({
+    role: res.locals.operator.role,
+    paymentGateEnabled: paymentsEnabled(),
+    livePayoutGateEnabled: payoutApprovalEnabled(),
+    partners: partnersRows,
+    facilities: facilityRows,
+    customers: membershipRows,
+    bookings: bookingRows,
+    customerInvoices: billingRows,
+    partnerInvoices,
+    reconciliation: reconciliationRows,
+    reviewItems: reviewRows,
+    reviewEvents,
+    audit: operationEvents,
+  });
+});
+
+router.post("/bookings/:id/cancel", async (req, res) => {
+  admin(res);
+  const input = z.object({ reason: z.string().trim().min(5).max(500) }).strict().parse(req.body);
+  const id = String(req.params.id);
+  const now = new Date();
+  const cancelledBooking = await db.transaction(async tx => {
+    const [booking] = await tx.select({
+      id: reservations.id, offeringId: reservations.offeringId, userId: reservations.userId,
+      status: reservations.status, startsAt: offerings.startsAt,
+    }).from(reservations).innerJoin(offerings, eq(reservations.offeringId, offerings.id))
+      .where(and(eq(reservations.id, id), eq(offerings.scope, "live"))).for("update");
+    if (!booking) throw new BookingError(404, "Live booking not found.");
+    if (!["reserved", "requested"].includes(booking.status) || booking.startsAt <= now)
+      throw new BookingError(409, "Only future active bookings can be cancelled.");
+    const [attendanceRecord] = await tx.select({ id: attendance.id }).from(attendance)
+      .where(eq(attendance.reservationId, id)).limit(1);
+    if (attendanceRecord)
+      throw new BookingError(409, "A booking with attendance evidence cannot be cancelled here.");
+    const [cancelled] = await tx.update(reservations).set({
+      status: "admin_cancelled", cancelledAt: now,
+    }).where(and(
+      eq(reservations.id, id), inArray(reservations.status, ["reserved", "requested"]),
+    )).returning({ id: reservations.id });
+    if (!cancelled) throw new BookingError(409, "This booking has already changed.");
+    await audit(tx, res.locals.operator.userId, "booking.admin_cancel", id, input.reason);
+    return { offeringId: booking.offeringId, userId: booking.userId };
+  });
+  await processWaitlistQueue(new Date(), [cancelledBooking.offeringId]);
+  res.json({ ok: true });
+  void sendMemberNotification(cancelledBooking.userId, "booking_cancelled");
+});
+
+router.get("/finance/settlements", async (req, res) => {
+  financeStaff(res);
+  const query = z.object({ from: invoiceDate, to: invoiceDate }).strict().parse(req.query);
+  const { from, toExclusive } = financePeriod(query.from, query.to);
+  const rows = await db.select({
+    partnerId: offerings.partnerId,
+    partnerName: partners.name,
+    status: attendance.status,
+    settlementEligible: attendance.settlementEligible,
+    facility: offerings.facility, city: offerings.city, category: offerings.category,
+    accessType: offerings.accessType,
+  }).from(attendance).innerJoin(offerings, eq(attendance.offeringId, offerings.id))
+    .leftJoin(partners, eq(offerings.partnerId, partners.id))
+    .where(and(eq(offerings.scope, "live"), gte(attendance.checkedInAt, from), lt(attendance.checkedInAt, toExclusive)));
+  const grouped = new Map<string, {
+    partnerId: string; partnerName: string; facility: string; city: string; category: string;
+    accessType: string; verifiedVisits: number; rejectedVisits: number; disputedVisits: number; onHoldVisits: number;
+  }>();
+  for (const row of rows) {
+    if (!row.partnerId) continue;
+    const key = [row.partnerId, row.facility, row.city, row.category, row.accessType].join("\u0000");
+    const group = grouped.get(key) ?? {
+      partnerId: row.partnerId, partnerName: row.partnerName ?? row.partnerId,
+      facility: row.facility, city: row.city, category: row.category, accessType: row.accessType,
+      verifiedVisits: 0, rejectedVisits: 0, disputedVisits: 0, onHoldVisits: 0,
+    };
+    if (row.status === "confirmed" && row.settlementEligible) group.verifiedVisits++;
+    else if (["void", "no_show"].includes(row.status)) group.rejectedVisits++;
+    else if (row.status === "disputed") { group.disputedVisits++; group.onHoldVisits++; }
+    else group.onHoldVisits++;
+    grouped.set(key, group);
+  }
+  const groups = [...grouped.values()].sort((a, b) =>
+    a.partnerName.localeCompare(b.partnerName) || a.city.localeCompare(b.city) || a.facility.localeCompare(b.facility));
+  res.json({
+    from: query.from, to: query.to, groups,
+    verifiedVisits: groups.reduce((sum, row) => sum + row.verifiedVisits, 0),
+    rejectedVisits: groups.reduce((sum, row) => sum + row.rejectedVisits, 0),
+    disputedVisits: groups.reduce((sum, row) => sum + row.disputedVisits, 0),
+    onHoldVisits: groups.reduce((sum, row) => sum + row.onHoldVisits, 0),
+    payoutApprovalEnabled: payoutApprovalEnabled(),
+    amountCalculationAvailable: false,
+  });
+});
+
+router.post("/finance/refunds/:billingId", async (req, res) => {
+  financeStaff(res);
+  const input = z.object({
+    reason: z.string().trim().min(5).max(500),
+    idempotencyKey: z.string().uuid(),
+  }).strict().parse(req.body);
+  const billingId = String(req.params.billingId);
+  const [billing] = await db.select({
+    id: membershipBilling.id, userId: membershipBilling.userId,
+    status: membershipBilling.status, paymentStatus: membershipBilling.paymentStatus,
+  })
+    .from(membershipBilling).where(eq(membershipBilling.id, billingId));
+  if (!billing) throw new BookingError(404, "Customer invoice not found.");
+  if (!["active", "past_due", "conflict"].includes(billing.status) || billing.paymentStatus !== "paid")
+    throw new BookingError(409, "Only a verified paid customer invoice can enter refund review.");
+  const data = {
+    id: randomUUID(), kind: "refund", status: "pending", billingId, partnerId: null,
+    periodStart: null, periodEnd: null, amountIqd: null, reason: input.reason,
+    requestedBy: res.locals.operator.userId, reviewedBy: null, idempotencyKey: input.idempotencyKey,
+  };
+  const created = await db.transaction(async tx => {
+    const [sameKey] = await tx.select().from(financeReviewItems)
+      .where(eq(financeReviewItems.idempotencyKey, input.idempotencyKey));
+    if (sameKey) {
+      if (sameKey.kind !== "refund" || sameKey.billingId !== billingId ||
+          sameKey.reason !== input.reason || sameKey.requestedBy !== res.locals.operator.userId)
+        throw new BookingError(409, "This request key was already used for a different finance action.");
+      return sameKey;
+    }
+    const [open] = await tx.select().from(financeReviewItems).where(and(
+      eq(financeReviewItems.kind, "refund"), eq(financeReviewItems.billingId, billingId),
+      inArray(financeReviewItems.status, ["pending", "processing", "provider_pending", "completed"]),
+    )).limit(1);
+    if (open) throw new BookingError(409, "A refund request already exists for this customer invoice.");
+    const [row] = await tx.insert(financeReviewItems).values(data)
+      .onConflictDoNothing({ target: financeReviewItems.idempotencyKey }).returning();
+    if (!row) throw new BookingError(409, "This request key has already been used.");
+    await financeEvent(tx, row.id, res.locals.operator.userId, "requested", input.reason);
+    await audit(tx, res.locals.operator.userId, "finance.refund.request", row.id, `billing=${billingId}`);
+    return row;
+  });
+  res.status(201).json(created);
+});
+
+router.post("/finance/payouts", async (req, res) => {
+  financeStaff(res);
+  const input = z.object({
+    partnerId: z.string().min(1).max(160), periodStart: invoiceDate, periodEnd: invoiceDate,
+    amountIqd: z.number().int().min(1).max(1_000_000_000),
+    reason: z.string().trim().min(5).max(500), idempotencyKey: z.string().uuid(),
+  }).strict().parse(req.body);
+  const { from, toExclusive } = financePeriod(input.periodStart, input.periodEnd);
+  const [partner] = await db.select({ id: partners.id }).from(partners).where(eq(partners.id, input.partnerId));
+  if (!partner) throw new BookingError(404, "Partner not found.");
+  const data = {
+    id: randomUUID(), kind: "payout", status: "pending", billingId: null,
+    partnerId: input.partnerId, periodStart: input.periodStart, periodEnd: input.periodEnd,
+    amountIqd: input.amountIqd, reason: input.reason, requestedBy: res.locals.operator.userId,
+    reviewedBy: null, idempotencyKey: input.idempotencyKey,
+  };
+  const row = await db.transaction(async tx => {
+    const [sameKey] = await tx.select().from(financeReviewItems)
+      .where(eq(financeReviewItems.idempotencyKey, input.idempotencyKey));
+    if (sameKey) {
+      if (sameKey.kind !== "payout" || sameKey.partnerId !== input.partnerId ||
+          sameKey.periodStart !== input.periodStart || sameKey.periodEnd !== input.periodEnd ||
+          sameKey.amountIqd !== input.amountIqd || sameKey.reason !== input.reason ||
+          sameKey.requestedBy !== res.locals.operator.userId)
+        throw new BookingError(409, "This request key was already used for a different finance action.");
+      return sameKey;
+    }
+    const [duplicate] = await tx.select().from(financeReviewItems).where(and(
+      eq(financeReviewItems.kind, "payout"), eq(financeReviewItems.partnerId, input.partnerId),
+      eq(financeReviewItems.periodStart, input.periodStart), eq(financeReviewItems.periodEnd, input.periodEnd),
+      inArray(financeReviewItems.status, ["pending", "approved_manual"]),
+    )).limit(1);
+    if (duplicate) throw new BookingError(409, "A payout tracking item already exists for this partner and period.");
+    const [created] = await tx.insert(financeReviewItems).values(data)
+      .onConflictDoNothing({ target: financeReviewItems.idempotencyKey }).returning();
+    if (!created) throw new BookingError(409, "This request key has already been used.");
+    await financeEvent(tx, created.id, res.locals.operator.userId, "requested", input.reason);
+    await audit(tx, res.locals.operator.userId, "finance.payout.request", created.id,
+      `partner=${input.partnerId};period=${input.periodStart}..${input.periodEnd};amountIqd=${input.amountIqd}`);
+    return created;
+  });
+  res.status(201).json(row);
+});
+
+router.post("/finance/reviews/:id/decision", async (req, res) => {
+  financeStaff(res);
+  const input = z.object({
+    decision: z.enum(["approve", "reject"]), reason: z.string().trim().min(5).max(500),
+  }).strict().parse(req.body);
+  const id = String(req.params.id);
+  const [current] = await db.select().from(financeReviewItems).where(eq(financeReviewItems.id, id));
+  if (!current) throw new BookingError(404, "Finance review item not found.");
+  if (current.requestedBy === res.locals.operator.userId)
+    throw new BookingError(403, "A different authorized staff member must review this request.");
+  if (current.status !== "pending") throw new BookingError(409, "This finance request has already been decided.");
+  if (input.decision === "approve" && current.kind === "refund" && !paymentsEnabled())
+    throw new PaymentError(503, "Refunds are disabled until the live payment gates are verified.");
+  if (input.decision === "approve" && current.kind === "payout" && !payoutApprovalEnabled())
+    throw new PaymentError(503, "Payout approval is disabled until live payout and recurring-payment gates are verified.");
+
+  const next = await db.transaction(async tx => {
+    const [locked] = await tx.select().from(financeReviewItems).where(eq(financeReviewItems.id, id)).for("update");
+    if (!locked || locked.status !== "pending") throw new BookingError(409, "This finance request has already been decided.");
+    if (locked.requestedBy === res.locals.operator.userId)
+      throw new BookingError(403, "A different authorized staff member must review this request.");
+    if (input.decision === "reject") {
+      const [rejected] = await tx.update(financeReviewItems).set({
+        status: "rejected", reviewedBy: res.locals.operator.userId, reviewedAt: new Date(),
+      }).where(and(eq(financeReviewItems.id, id), eq(financeReviewItems.status, "pending"))).returning();
+      if (!rejected) throw new BookingError(409, "This finance request has already been decided.");
+      await financeEvent(tx, id, res.locals.operator.userId, "rejected", input.reason);
+      await audit(tx, res.locals.operator.userId, `finance.${locked.kind}.reject`, id, input.reason);
+      return rejected;
+    }
+    if (locked.kind === "payout") {
+      if (!locked.partnerId || !locked.periodStart || !locked.periodEnd)
+        throw new BookingError(409, "The payout tracking record is incomplete.");
+      const range = financePeriod(locked.periodStart, locked.periodEnd);
+      const heldRows = await tx.select({ status: attendance.status, eligible: attendance.settlementEligible })
+        .from(attendance).innerJoin(offerings, eq(attendance.offeringId, offerings.id))
+        .where(and(eq(offerings.partnerId, locked.partnerId), eq(offerings.scope, "live"),
+          gte(attendance.checkedInAt, range.from), lt(attendance.checkedInAt, range.toExclusive)));
+      if (heldRows.some(row => !(row.status === "confirmed" && row.eligible) &&
+          !["void", "no_show"].includes(row.status)))
+        throw new BookingError(409, "This settlement period has disputed or unreviewed attendance holds.");
+      const [approved] = await tx.update(financeReviewItems).set({
+        status: "approved_manual", reviewedBy: res.locals.operator.userId, reviewedAt: new Date(),
+      }).where(and(eq(financeReviewItems.id, id), eq(financeReviewItems.status, "pending"))).returning();
+      if (!approved) throw new BookingError(409, "This finance request has already been decided.");
+      await financeEvent(tx, id, res.locals.operator.userId, "approved_manual",
+        `${input.reason}; no transfer was sent by MaydanGo.`);
+      await audit(tx, res.locals.operator.userId, "finance.payout.approve_manual", id,
+        `partner=${locked.partnerId}; no transfer was sent`);
+      return approved;
+    }
+    if (locked.kind !== "refund" || !locked.billingId)
+      throw new BookingError(409, "This finance review type cannot be approved.");
+    const [billing] = await tx.select().from(membershipBilling).where(eq(membershipBilling.id, locked.billingId)).for("update");
+    if (!billing || !["active", "past_due", "conflict"].includes(billing.status) ||
+        billing.paymentStatus !== "paid" || !billing.lastPaymentId || !billing.amountIqd ||
+        !["none", "failed"].includes(billing.refundStatus))
+      throw new BookingError(409, "The paid customer invoice is no longer eligible for a refund.");
+    const [latest] = await tx.select({ id: membershipBilling.id }).from(membershipBilling).where(and(
+      eq(membershipBilling.userId, billing.userId), inArray(membershipBilling.status, ["active", "past_due", "conflict"]),
+      eq(membershipBilling.paymentStatus, "paid"),
+    )).orderBy(desc(membershipBilling.createdAt)).limit(1);
+    if (latest?.id !== billing.id)
+      throw new BookingError(409, "Only the customer's latest verified paid invoice can be refunded.");
+    const [processing] = await tx.update(financeReviewItems).set({
+      status: "processing", reviewedBy: res.locals.operator.userId, reviewedAt: new Date(),
+    }).where(and(eq(financeReviewItems.id, id), eq(financeReviewItems.status, "pending"))).returning();
+    if (!processing) throw new BookingError(409, "This finance request has already been decided.");
+    await financeEvent(tx, id, res.locals.operator.userId, "approved_processing", input.reason);
+    await audit(tx, res.locals.operator.userId, "finance.refund.approve", id, input.reason);
+    return processing;
+  });
+
+  if (next.kind === "refund" && next.status === "processing" && next.billingId) {
+    try {
+      const [billing] = await db.select({ userId: membershipBilling.userId }).from(membershipBilling)
+        .where(eq(membershipBilling.id, next.billingId));
+      if (!billing) throw new BookingError(404, "Customer invoice not found.");
+      const result = await requestFullRefund(billing.userId, input.reason);
+      const status = result.status === "completed" ? "completed" : "provider_pending";
+      const [updated] = await db.update(financeReviewItems).set({ status }).where(and(
+        eq(financeReviewItems.id, id), eq(financeReviewItems.status, "processing"),
+      )).returning();
+      await db.transaction(async tx => {
+        await financeEvent(tx, id, res.locals.operator.userId, status, `Provider result: ${result.status}`);
+        await audit(tx, res.locals.operator.userId, `finance.refund.${status}`, id, `provider=${result.status}`);
+      });
+      res.json(updated);
+      return;
+    } catch (error) {
+      await db.update(financeReviewItems).set({ status: "failed" }).where(and(
+        eq(financeReviewItems.id, id), eq(financeReviewItems.status, "processing"),
+      ));
+      await db.transaction(async tx => {
+        await financeEvent(tx, id, res.locals.operator.userId, "failed",
+          error instanceof Error ? error.message.slice(0, 500) : "Provider refund failed.");
+        await audit(tx, res.locals.operator.userId, "finance.refund.failed", id,
+          error instanceof Error ? error.message.slice(0, 500) : "Provider refund failed.");
+      });
+      throw error;
+    }
+  }
+  res.json(next);
+});
+
+router.patch("/finance/invoices/:id", async (req, res) => {
+  financeStaff(res);
+  const input = z.object({
+    status: z.enum(["under_review", "accepted", "rejected"]),
+    reason: z.string().trim().min(5).max(500),
+  }).strict().parse(req.body);
+  const id = String(req.params.id);
+  const updated = await db.transaction(async tx => {
+    const [existing] = await tx.select().from(partnerInvoiceSubmissions).where(eq(partnerInvoiceSubmissions.id, id)).for("update");
+    if (!existing) throw new BookingError(404, "Partner invoice not found.");
+    if (existing.status === "accepted" || existing.status === "rejected")
+      throw new BookingError(409, "A completed invoice review cannot be changed.");
+    const [row] = await tx.update(partnerInvoiceSubmissions).set({ status: input.status })
+      .where(eq(partnerInvoiceSubmissions.id, id)).returning();
+    await audit(tx, res.locals.operator.userId, "finance.partner_invoice.review", id,
+      `${existing.status}->${input.status}; ${input.reason}`);
+    return row;
+  });
+  res.json(updated);
+});
+
+router.get("/finance/invoices/:id/document", async (req, res) => {
+  financeStaff(res);
+  const [invoice] = await db.select().from(partnerInvoiceSubmissions)
+    .where(eq(partnerInvoiceSubmissions.id, String(req.params.id))).limit(1);
+  if (!invoice) throw new BookingError(404, "Invoice not found.");
+  const file = await objectStorage.getPrivateFile(invoice.documentPath);
+  const [metadata] = await file.getMetadata();
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${invoice.documentName.replace(/["\\]/g, "_")}"`);
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Content-Length", String(metadata.size ?? 0));
+  Readable.from(file.createReadStream()).on("error", () => {
+    if (!res.headersSent) res.status(500);
+    res.end();
+  }).pipe(res);
+});
+
+router.get("/finance/audit", async (_req, res) => {
+  financeStaff(res);
+  const [operationEvents, reviewEvents] = await Promise.all([
+    db.select().from(operationAudit).orderBy(desc(operationAudit.createdAt)).limit(500),
+    db.select().from(financeReviewEvents).orderBy(desc(financeReviewEvents.createdAt)).limit(500),
+  ]);
+  res.json({ operations: operationEvents, financeReviews: reviewEvents });
+});
+
 router.post("/courses", async (req, res) => {
   admin(res);
   const parsed = CreateLearningCourseBody.safeParse(req.body);
@@ -710,13 +1109,37 @@ router.post("/refunds", async (req, res) => {
   const input = z.object({
     userId: z.string().trim().min(1).max(160),
     reason: z.string().trim().min(5).max(500),
+    idempotencyKey: z.string().uuid().optional(),
   }).strict().parse(req.body);
-  const result = await requestFullRefund(input.userId, input.reason);
-  await db.transaction(async tx => {
-    await audit(tx, res.locals.operator.userId, "membership.refund", input.userId,
-      `${result.status}: ${input.reason}`);
+  const [billing] = await db.select({ id: membershipBilling.id }).from(membershipBilling).where(and(
+    eq(membershipBilling.userId, input.userId), inArray(membershipBilling.status, ["active", "past_due", "conflict"]),
+    eq(membershipBilling.paymentStatus, "paid"),
+  )).orderBy(desc(membershipBilling.createdAt)).limit(1);
+  if (!billing) throw new BookingError(404, "No refundable paid membership was found.");
+  const key = input.idempotencyKey ?? randomUUID();
+  const row = await db.transaction(async tx => {
+    const [existing] = await tx.select().from(financeReviewItems).where(and(
+      eq(financeReviewItems.kind, "refund"), eq(financeReviewItems.billingId, billing.id),
+      inArray(financeReviewItems.status, ["pending", "processing", "provider_pending", "completed"]),
+    )).limit(1);
+    if (existing) return existing;
+    const [created] = await tx.insert(financeReviewItems).values({
+      id: randomUUID(), kind: "refund", status: "pending", billingId: billing.id, partnerId: null,
+      periodStart: null, periodEnd: null, amountIqd: null, reason: input.reason,
+      requestedBy: res.locals.operator.userId, reviewedBy: null, idempotencyKey: key,
+    }).onConflictDoNothing({ target: financeReviewItems.idempotencyKey }).returning();
+    if (!created) {
+      const [sameKey] = await tx.select().from(financeReviewItems).where(eq(financeReviewItems.idempotencyKey, key));
+      if (!sameKey || sameKey.billingId !== billing.id || sameKey.reason !== input.reason ||
+          sameKey.requestedBy !== res.locals.operator.userId)
+        throw new BookingError(409, "This request key was already used for a different finance action.");
+      return sameKey;
+    }
+    await financeEvent(tx, created.id, res.locals.operator.userId, "requested", input.reason);
+    await audit(tx, res.locals.operator.userId, "finance.refund.request", created.id, `billing=${billing.id}`);
+    return created;
   });
-  res.json(result);
+  res.status(202).json(row);
 });
 router.use((error: unknown, _req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => {
   if (error instanceof z.ZodError) { res.status(400).json({ message: error.issues.map(i => i.message).join(" ") }); return; }

@@ -1067,7 +1067,7 @@ export const getOperationsResponsePlansItemOnePriceIqdMax = 1000000000;
 
 
 export const GetOperationsResponse = zod.object({
-  "role": zod.enum(['admin', 'partner']),
+  "role": zod.enum(['admin', 'finance', 'partner']),
   "partnerId": zod.string().nullable(),
   "partners": zod.array(zod.object({
   "name": zod.string(),
@@ -1466,7 +1466,15 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "partnerName": zod.string().optional(),
   "remaining": zod.number().int().optional(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.number().int().min(createRecurringOfferingsResponseTwoWaitlistOfferMinutesMin).max(createRecurringOfferingsResponseTwoWaitlistOfferMinutesMax).optional()
+  "waitlistOfferMinutes": zod.number().int().min(createRecurringOfferingsResponseTwoWaitlistOfferMinutesMin).max(createRecurringOfferingsResponseTwoWaitlistOfferMinutesMax).optional(),
+  "checkinPolicy": zod.union([zod.object({
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.number().int(),
+  "opensAt": zod.coerce.date(),
+  "closesAt": zod.coerce.date(),
+  "correctionEndsAt": zod.coerce.date()
+}),zod.null()]).optional()
 }))
 export const CreateRecurringOfferingsResponse = zod.array(CreateRecurringOfferingsResponseItem).min(1)
 
@@ -1609,6 +1617,24 @@ export const CancelLiveOfferingParams = zod.object({
 })
 
 export const CancelLiveOfferingResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const CancelAdminBookingParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const cancelAdminBookingBodyReasonMin = 5;
+export const cancelAdminBookingBodyReasonMax = 500;
+
+
+
+export const CancelAdminBookingBody = zod.object({
+  "reason": zod.string().min(cancelAdminBookingBodyReasonMin).max(cancelAdminBookingBodyReasonMax)
+})
+
+export const CancelAdminBookingResponse = zod.object({
   "ok": zod.boolean()
 })
 
@@ -2285,11 +2311,270 @@ export const requestMembershipRefundBodyReasonMax = 500;
 
 export const RequestMembershipRefundBody = zod.object({
   "userId": zod.string().min(1).max(requestMembershipRefundBodyUserIdMax),
-  "reason": zod.string().min(requestMembershipRefundBodyReasonMin).max(requestMembershipRefundBodyReasonMax)
+  "reason": zod.string().min(requestMembershipRefundBodyReasonMin).max(requestMembershipRefundBodyReasonMax),
+  "idempotencyKey": zod.string().uuid().optional()
 })
 
+
+
+
 export const RequestMembershipRefundResponse = zod.object({
-  "status": zod.enum(['completed', 'pending'])
+  "id": zod.string(),
+  "kind": zod.enum(['refund', 'payout']),
+  "status": zod.enum(['pending', 'processing', 'approved_manual', 'rejected', 'failed', 'provider_pending', 'completed']),
+  "billingId": zod.string().nullable(),
+  "partnerId": zod.string().nullable(),
+  "periodStart": zod.coerce.date().nullable(),
+  "periodEnd": zod.coerce.date().nullable(),
+  "amountIqd": zod.number().int().min(1).nullable(),
+  "reason": zod.string(),
+  "requestedBy": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "idempotencyKey": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "reviewedAt": zod.coerce.date().nullable()
+})
+
+
+
+
+
+export const GetFinanceOverviewResponse = zod.object({
+  "role": zod.enum(['admin', 'finance']),
+  "paymentGateEnabled": zod.boolean(),
+  "livePayoutGateEnabled": zod.boolean(),
+  "partners": zod.array(zod.object({
+  "name": zod.string(),
+  "groupId": zod.string(),
+  "ownerUserId": zod.string()
+}).and(zod.object({
+  "id": zod.string(),
+  "approved": zod.boolean()
+}))),
+  "facilities": zod.array(zod.record(zod.string(), zod.unknown())),
+  "customers": zod.array(zod.record(zod.string(), zod.unknown())),
+  "bookings": zod.array(zod.record(zod.string(), zod.unknown())),
+  "customerInvoices": zod.array(zod.record(zod.string(), zod.unknown())),
+  "partnerInvoices": zod.array(zod.record(zod.string(), zod.unknown())),
+  "reconciliation": zod.array(zod.record(zod.string(), zod.unknown())),
+  "reviewItems": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['refund', 'payout']),
+  "status": zod.enum(['pending', 'processing', 'approved_manual', 'rejected', 'failed', 'provider_pending', 'completed']),
+  "billingId": zod.string().nullable(),
+  "partnerId": zod.string().nullable(),
+  "periodStart": zod.coerce.date().nullable(),
+  "periodEnd": zod.coerce.date().nullable(),
+  "amountIqd": zod.number().int().min(1).nullable(),
+  "reason": zod.string(),
+  "requestedBy": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "idempotencyKey": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "reviewedAt": zod.coerce.date().nullable()
+})),
+  "reviewEvents": zod.array(zod.record(zod.string(), zod.unknown())),
+  "audit": zod.array(zod.record(zod.string(), zod.unknown()))
+})
+
+
+export const GetFinanceSettlementsQueryParams = zod.object({
+  "from": zod.date(),
+  "to": zod.date()
+})
+
+export const getFinanceSettlementsResponseGroupsItemVerifiedVisitsMin = 0;
+
+export const getFinanceSettlementsResponseGroupsItemRejectedVisitsMin = 0;
+
+export const getFinanceSettlementsResponseGroupsItemDisputedVisitsMin = 0;
+
+export const getFinanceSettlementsResponseGroupsItemOnHoldVisitsMin = 0;
+
+export const getFinanceSettlementsResponseVerifiedVisitsMin = 0;
+
+export const getFinanceSettlementsResponseRejectedVisitsMin = 0;
+
+export const getFinanceSettlementsResponseDisputedVisitsMin = 0;
+
+export const getFinanceSettlementsResponseOnHoldVisitsMin = 0;
+
+
+
+export const GetFinanceSettlementsResponse = zod.object({
+  "from": zod.coerce.date(),
+  "to": zod.coerce.date(),
+  "groups": zod.array(zod.object({
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "category": zod.string(),
+  "accessType": zod.string(),
+  "verifiedVisits": zod.number().int().min(getFinanceSettlementsResponseGroupsItemVerifiedVisitsMin),
+  "rejectedVisits": zod.number().int().min(getFinanceSettlementsResponseGroupsItemRejectedVisitsMin),
+  "disputedVisits": zod.number().int().min(getFinanceSettlementsResponseGroupsItemDisputedVisitsMin),
+  "onHoldVisits": zod.number().int().min(getFinanceSettlementsResponseGroupsItemOnHoldVisitsMin)
+})),
+  "verifiedVisits": zod.number().int().min(getFinanceSettlementsResponseVerifiedVisitsMin),
+  "rejectedVisits": zod.number().int().min(getFinanceSettlementsResponseRejectedVisitsMin),
+  "disputedVisits": zod.number().int().min(getFinanceSettlementsResponseDisputedVisitsMin),
+  "onHoldVisits": zod.number().int().min(getFinanceSettlementsResponseOnHoldVisitsMin),
+  "payoutApprovalEnabled": zod.boolean(),
+  "amountCalculationAvailable": zod.boolean()
+})
+
+
+export const RequestFinanceRefundParams = zod.object({
+  "billingId": zod.coerce.string()
+})
+
+export const requestFinanceRefundBodyReasonMin = 5;
+export const requestFinanceRefundBodyReasonMax = 500;
+
+
+
+export const RequestFinanceRefundBody = zod.object({
+  "reason": zod.string().min(requestFinanceRefundBodyReasonMin).max(requestFinanceRefundBodyReasonMax),
+  "idempotencyKey": zod.string().uuid()
+})
+
+
+
+
+export const RequestFinanceRefundResponse = zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['refund', 'payout']),
+  "status": zod.enum(['pending', 'processing', 'approved_manual', 'rejected', 'failed', 'provider_pending', 'completed']),
+  "billingId": zod.string().nullable(),
+  "partnerId": zod.string().nullable(),
+  "periodStart": zod.coerce.date().nullable(),
+  "periodEnd": zod.coerce.date().nullable(),
+  "amountIqd": zod.number().int().min(1).nullable(),
+  "reason": zod.string(),
+  "requestedBy": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "idempotencyKey": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "reviewedAt": zod.coerce.date().nullable()
+})
+
+
+export const requestFinancePayoutTrackingBodyPartnerIdMax = 160;
+
+export const requestFinancePayoutTrackingBodyAmountIqdMax = 1000000000;
+
+export const requestFinancePayoutTrackingBodyReasonMin = 5;
+export const requestFinancePayoutTrackingBodyReasonMax = 500;
+
+
+
+export const RequestFinancePayoutTrackingBody = zod.object({
+  "partnerId": zod.string().min(1).max(requestFinancePayoutTrackingBodyPartnerIdMax),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date(),
+  "amountIqd": zod.number().int().min(1).max(requestFinancePayoutTrackingBodyAmountIqdMax),
+  "reason": zod.string().min(requestFinancePayoutTrackingBodyReasonMin).max(requestFinancePayoutTrackingBodyReasonMax),
+  "idempotencyKey": zod.string().uuid()
+})
+
+
+
+
+export const RequestFinancePayoutTrackingResponse = zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['refund', 'payout']),
+  "status": zod.enum(['pending', 'processing', 'approved_manual', 'rejected', 'failed', 'provider_pending', 'completed']),
+  "billingId": zod.string().nullable(),
+  "partnerId": zod.string().nullable(),
+  "periodStart": zod.coerce.date().nullable(),
+  "periodEnd": zod.coerce.date().nullable(),
+  "amountIqd": zod.number().int().min(1).nullable(),
+  "reason": zod.string(),
+  "requestedBy": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "idempotencyKey": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "reviewedAt": zod.coerce.date().nullable()
+})
+
+
+export const DecideFinanceReviewParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const decideFinanceReviewBodyReasonMin = 5;
+export const decideFinanceReviewBodyReasonMax = 500;
+
+
+
+export const DecideFinanceReviewBody = zod.object({
+  "decision": zod.enum(['approve', 'reject']),
+  "reason": zod.string().min(decideFinanceReviewBodyReasonMin).max(decideFinanceReviewBodyReasonMax)
+})
+
+
+
+
+export const DecideFinanceReviewResponse = zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['refund', 'payout']),
+  "status": zod.enum(['pending', 'processing', 'approved_manual', 'rejected', 'failed', 'provider_pending', 'completed']),
+  "billingId": zod.string().nullable(),
+  "partnerId": zod.string().nullable(),
+  "periodStart": zod.coerce.date().nullable(),
+  "periodEnd": zod.coerce.date().nullable(),
+  "amountIqd": zod.number().int().min(1).nullable(),
+  "reason": zod.string(),
+  "requestedBy": zod.string(),
+  "reviewedBy": zod.string().nullable(),
+  "idempotencyKey": zod.string().uuid(),
+  "createdAt": zod.coerce.date(),
+  "reviewedAt": zod.coerce.date().nullable()
+})
+
+
+export const ReviewPartnerFinanceInvoiceParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const reviewPartnerFinanceInvoiceBodyReasonMin = 5;
+export const reviewPartnerFinanceInvoiceBodyReasonMax = 500;
+
+
+
+export const ReviewPartnerFinanceInvoiceBody = zod.object({
+  "status": zod.enum(['under_review', 'accepted', 'rejected']),
+  "reason": zod.string().min(reviewPartnerFinanceInvoiceBodyReasonMin).max(reviewPartnerFinanceInvoiceBodyReasonMax)
+})
+
+
+
+
+export const ReviewPartnerFinanceInvoiceResponse = zod.object({
+  "id": zod.string(),
+  "invoiceNumber": zod.string(),
+  "amountIqd": zod.number().int().min(1),
+  "issuedAt": zod.coerce.date(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date(),
+  "taxNumber": zod.string().nullable(),
+  "documentName": zod.string(),
+  "status": zod.enum(['submitted', 'under_review', 'accepted', 'rejected']),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const DownloadFinancePartnerInvoiceParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DownloadFinancePartnerInvoiceResponse = zod.unknown()
+
+
+export const GetFinanceAuditResponse = zod.object({
+  "operations": zod.array(zod.record(zod.string(), zod.unknown())),
+  "financeReviews": zod.array(zod.record(zod.string(), zod.unknown()))
 })
 
 

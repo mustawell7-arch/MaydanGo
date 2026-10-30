@@ -100,6 +100,48 @@ Plan changes apply to future grants; existing grants retain their server-owned
 rule snapshot. Revoke an existing live membership before replacing it.
 Revocation also cancels its active reservations. Sample memberships are untouched.
 
+## Finance and administration
+
+Finance access is assigned only from a trusted workspace shell after verifying
+the staff member's Clerk user ID. From `artifacts/api-server`, run
+`pnpm exec tsx scripts/provision-finance.ts user_<verified-id>`. This operation
+does not replace an existing role. Administrators continue to use
+`scripts/provision-admin.ts`; partners remain assigned to one approved partner.
+
+Authorized staff can use the web finance desk at `/finance`. It lists live
+memberships, bookings, customer invoices, partner/facility records, partner
+invoice documents, webhook reconciliation states, attendance totals, finance
+review items and audit history. Administrator-only membership grant/revoke
+actions remain behind the existing live-access checks; finance staff can review
+the same records but cannot perform administrator operations. Partner and
+facility management remains in `/partner-portal`.
+
+Administrators can cancel an individual future live booking with a required
+reason. The API refuses cancellation after the session starts or when attendance
+evidence already exists, records the action in the operations audit trail, then
+rechecks the offering's waitlist. This does not issue a refund or change paid
+membership access.
+
+Refund requests are queued against a verified paid customer invoice. The person
+who requested a refund cannot approve or reject it. A different authorized
+reviewer must approve it, and the live payment gates must be enabled before the
+existing PayTabs refund call can run. The mobile administrator refund action also
+creates a review request; it no longer sends a refund directly. Failed or
+pending provider results remain visible in the finance review history.
+
+Partner invoice review is audited. Settlement views count only partner-confirmed,
+eligible attendance as verified; disputed, pending and otherwise unreviewed
+attendance remain on hold. Attendance counts are evidence only and do not
+calculate a partner settlement amount. Payout tracking items are manual records:
+they do not create a bank account or send a transfer. Approval requires live
+payout eligibility and a clear attendance period for that partner. Test-mode
+credentials never enable payout approval.
+
+Finance request keys are unique and replays return the original request only to
+the same requester when the action details match. Reusing a key for a different
+action or actor is rejected. Finance decision events and operation audit records
+are append-only through the API; no update or delete route is exposed.
+
 ## Verification and schema setup
 
 `pnpm --filter @workspace/db run push` applies the additive development schema.
@@ -112,6 +154,9 @@ and replay protections, and `pnpm --filter @workspace/api-server run test:paymen
 for checkout, paid-access lifecycle, signed webhook rejection, and idempotency
 coverage. Real provider checkout and payout eligibility still require the final
 PayTabs merchant connection and account verification.
+Run `pnpm --filter @workspace/api-server run test:finance` for finance role
+boundaries, refund and payout replay protection, independent review, disabled
+payment/payout gates, and append-only review events.
 
 ## Check-in evidence and device validation
 

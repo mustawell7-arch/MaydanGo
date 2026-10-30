@@ -19,6 +19,7 @@ import NotFound from '@/pages/not-found';
 import approvedCopy from '@/approved-copy.json';
 import { Route, Switch, useLocation, Router as WouterRouter, Link, Redirect } from 'wouter';
 import PartnerPortal from '@/pages/partner-portal';
+import FinanceConsole from '@/pages/finance-console';
 import './index.css';
 
 const queryClient = new QueryClient();
@@ -813,6 +814,7 @@ function ContentRouter() {
 function Router() {
   return <Switch>
     <Route path="/partner-portal" component={PartnerPortal} />
+    <Route path="/finance" component={FinanceConsole} />
     <Route path="/sign-in/*?" component={SignInPage} />
     <Route path="/sign-up/*?" component={SignUpPage} />
     <Route path="/" component={HomeRedirect} />

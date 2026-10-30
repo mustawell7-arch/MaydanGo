@@ -299,6 +299,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1waitlist"
   /operations/offerings/{id}/cancel:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1cancel"
+  /operations/bookings/{id}/cancel:
+    $ref: "./operations.yaml#/paths/~1operations~1bookings~1{id}~1cancel"
   /operations/settlements:
     $ref: "./operations.yaml#/paths/~1operations~1settlements"
   /operations/invoices:
@@ -323,6 +325,22 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1revoke"
   /operations/refunds:
     $ref: "./operations.yaml#/paths/~1operations~1refunds"
+  /operations/finance:
+    $ref: "./operations.yaml#/paths/~1operations~1finance"
+  /operations/finance/settlements:
+    $ref: "./operations.yaml#/paths/~1operations~1finance~1settlements"
+  /operations/finance/refunds/{billingId}:
+    $ref: "./operations.yaml#/paths/~1operations~1finance~1refunds~1{billingId}"
+  /operations/finance/payouts:
+    $ref: "./operations.yaml#/paths/~1operations~1finance~1payouts"
+  /operations/finance/reviews/{id}/decision:
+    $ref: "./operations.yaml#/paths/~1operations~1finance~1reviews~1{id}~1decision"
+  /operations/finance/invoices/{id}:
+    $ref: "./operations.yaml#/paths/~1operations~1finance~1invoices~1{id}"
+  /operations/finance/invoices/{id}/document:
+    $ref: "./operations.yaml#/paths/~1operations~1finance~1invoices~1{id}~1document"
+  /operations/finance/audit:
+    $ref: "./operations.yaml#/paths/~1operations~1finance~1audit"
   /member/live-catalog:
     $ref: "./operations.yaml#/paths/~1member~1live-catalog"
   /member/courses:

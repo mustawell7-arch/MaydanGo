@@ -22,7 +22,7 @@ export type Offering = {
 };
 export type Plan = { id: string; name: string; tier: string; kind: 'paid' | 'trial' | 'corporate'; durationDays: number; active: boolean; rules: Rules; priceIqd?: number | null; purchasable?: boolean; priceLabel?: string | null; availabilityMessage?: string | null };
 export type Subscription = { status: string; paymentStatus: string; cancelAtPeriodEnd: boolean; periodEndsAt: string | null; recoveryUrl: string | null };
-export type Operations = { role: 'admin' | 'partner'; partnerId: string | null; partners: Partner[]; offerings: Offering[]; plans: Plan[] };
+export type Operations = { role: 'admin' | 'finance' | 'partner'; partnerId: string | null; partners: Partner[]; offerings: Offering[]; plans: Plan[] };
 
 export class HttpError extends Error { constructor(public status: number, message: string) { super(message); } }
 

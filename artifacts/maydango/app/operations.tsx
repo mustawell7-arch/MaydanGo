@@ -52,6 +52,7 @@ function Msg({ c, m }: { c: Colors; m: { ok: boolean; text: string } | null }) {
 
 export default function OperationsScreen() {
   const c = useColors();
+  const app = useApp();
   const ops = useAuthedResource<Operations>('/operations');
   const [tab, setTab] = useState<Tab>('offerings');
   const refresh = ops.refresh;
@@ -67,6 +68,10 @@ export default function OperationsScreen() {
   if (!ops.data) return <ScreenShell>{header}<View style={s.pad}>{[0, 1, 2].map(i => <View key={i} style={[s.skeleton, { backgroundColor: c.muted }]} />)}</View></ScreenShell>;
 
   const d = ops.data, admin = d.role === 'admin';
+  if (d.role === 'finance') return <ScreenShell>{header}<View style={s.pad}>{back}
+    <View style={[s.empty, { borderColor: c.border }]}><Ionicons name="lock-closed-outline" size={26} color={c.mutedForeground} />
+      <Text style={{ color: c.foreground, fontWeight: '700', textAlign: 'center' }}>{localize('Finance review is available in the MaydanGo web desk.', app.language)}</Text>
+      <Text style={{ color: c.mutedForeground, textAlign: 'center' }}>{localize('This mobile operations area is for administrators and approved partners.', app.language)}</Text></View></View></ScreenShell>;
   const tabs: Tab[] = admin ? ['offerings', 'plans', 'partners', 'access'] : ['offerings'];
   const names: Record<Tab, string> = { offerings: 'Offerings', plans: 'Plans', partners: 'Partners', access: 'Access grants' };
   return <ScreenShell>{header}
@@ -308,15 +313,15 @@ function AccessTab({ c, d, api }: Omit<TabProps, 'refresh'>) {
     if (!refund.userId.trim() || refund.reason.trim().length < 5) {
       setMsg({ ok: false, text: 'Member user ID and a reason of at least 5 characters are required.' }); return;
     }
-    Alert.alert(localize('Issue full refund?', app.language),
-      localize('This refunds the latest paid charge and cancels the paid membership if PayTabs confirms the refund.', app.language), [
+    Alert.alert(localize('Request refund review?', app.language),
+      localize('This queues the latest paid charge for independent administrator review. No refund is sent and paid access does not change.', app.language), [
       { text: localize('Keep payment', app.language), style: 'cancel' },
-      { text: localize('Refund latest charge', app.language), style: 'destructive', onPress: () => {
+      { text: localize('Request review', app.language), onPress: () => {
         setBusy('refund'); setMsg(null);
         void requestMembershipRefund({ userId: refund.userId.trim(), reason: refund.reason.trim() })
-          .then(result => {
+          .then(() => {
             setRefund({ userId: '', reason: '' });
-            setMsg({ ok: true, text: result.status === 'completed' ? 'Refund completed and paid access ended.' : 'Refund is being verified. Access remains unchanged until PayTabs confirms it.' });
+            setMsg({ ok: true, text: 'Refund review requested. No refund has been sent.' });
           })
           .catch(() => setMsg({ ok: false, text: 'Refund request could not be completed. Check details and try again.' }))
           .finally(() => setBusy(null));
@@ -342,7 +347,7 @@ function AccessTab({ c, d, api }: Omit<TabProps, 'refresh'>) {
       <Btn c={c} title="Revoke access" tone="danger" onPress={() => void revoke()} busy={busy === 'r'} id="ops-revoke" />
     </View>
     <View style={[s.card, { backgroundColor: c.card, borderColor: c.destructive }]}>
-      <Text style={[s.h, { color: c.foreground }]}>Refund latest paid charge</Text>
+      <Text style={[s.h, { color: c.foreground }]}>Request refund review</Text>
       <Text style={{ color: c.mutedForeground, fontSize: 12 }}>A confirmed full refund also cancels the paid subscription and future live reservations. Trial and corporate access are not changed.</Text>
       <Field c={c} label="MEMBER USER ID" value={refund.userId} onChange={v => setRefund(x => ({ ...x, userId: v }))} placeholder="user_..." />
       <Field c={c} label="REASON" value={refund.reason} onChange={v => setRefund(x => ({ ...x, reason: v }))} multiline />

@@ -278,6 +278,21 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/OperationSuccess" }
+  /operations/bookings/{id}/cancel:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: cancelAdminBooking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BookingCancellationRequest" }
+      responses:
+        "200":
+          description: Future active booking cancelled, waitlist queue processed, and action audited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OperationSuccess" }
   /operations/courses:
     post:
       operationId: createLearningCourse
@@ -388,11 +403,114 @@ paths:
           application/json:
             schema: { $ref: "#/components/schemas/RefundRequest" }
       responses:
-        "200":
-          description: Full latest-charge refund result; pending refunds keep access unchanged
+        "202":
+          description: Refund queued for independent finance approval; no provider request has been made
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/RefundResult" }
+              schema: { $ref: "#/components/schemas/FinanceReviewItem" }
+  /operations/finance:
+    get:
+      operationId: getFinanceOverview
+      responses:
+        "200":
+          description: Finance and administrator records without provider credentials or bank details
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinanceOverview" }
+  /operations/finance/settlements:
+    get:
+      operationId: getFinanceSettlements
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+      responses:
+        "200":
+          description: Partner settlement eligibility from confirmed attendance, with disputes and holds
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinanceSettlementSummary" }
+  /operations/finance/refunds/{billingId}:
+    parameters:
+      - name: billingId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: requestFinanceRefund
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinanceRefundRequest" }
+      responses:
+        "201":
+          description: Refund queued for a different authorized reviewer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinanceReviewItem" }
+  /operations/finance/payouts:
+    post:
+      operationId: requestFinancePayoutTracking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinancePayoutRequest" }
+      responses:
+        "201":
+          description: Manual payout tracking request; this endpoint never transfers funds
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinanceReviewItem" }
+  /operations/finance/reviews/{id}/decision:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: decideFinanceReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinanceDecision" }
+      responses:
+        "200":
+          description: Independent finance decision recorded with an append-only audit event
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinanceReviewItem" }
+  /operations/finance/invoices/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: reviewPartnerFinanceInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinanceInvoiceReview" }
+      responses:
+        "200":
+          description: Invoice review status saved and audited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerInvoice" }
+  /operations/finance/invoices/{id}/document:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: downloadFinancePartnerInvoice
+      responses:
+        "200":
+          description: Private partner invoice PDF for authorized finance staff
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+  /operations/finance/audit:
+    get:
+      operationId: getFinanceAudit
+      responses:
+        "200":
+          description: Append-only finance and operations audit history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinanceAudit" }
   /operations/settlements:
     get:
       operationId: getPartnerSettlementSummary
@@ -763,6 +881,12 @@ components:
       type: object
       required: [ok]
       properties: { ok: { type: boolean } }
+    BookingCancellationRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 5, maxLength: 500 }
     PartnerInput:
       type: object
       additionalProperties: false
@@ -1079,6 +1203,7 @@ components:
       properties:
         userId: { type: string, minLength: 1, maxLength: 160 }
         reason: { type: string, minLength: 5, maxLength: 500 }
+        idempotencyKey: { type: string, format: uuid }
     RefundResult:
       type: object
       required: [status]
@@ -1097,7 +1222,7 @@ components:
       type: object
       required: [role, partnerId, partners, offerings, waitlist, plans]
       properties:
-        role: { type: string, enum: [admin, partner] }
+        role: { type: string, enum: [admin, finance, partner] }
         partnerId: { type: [string, "null"] }
         partners: { type: array, items: { $ref: "#/components/schemas/Partner" } }
         offerings: { type: array, items: { $ref: "#/components/schemas/LiveOffering" } }
@@ -1119,3 +1244,105 @@ components:
         startsAt: { type: string, format: date-time }
         joinedAt: { type: string, format: date-time }
         position: { type: integer, minimum: 1 }
+    FinanceRefundRequest:
+      type: object
+      additionalProperties: false
+      required: [reason, idempotencyKey]
+      properties:
+        reason: { type: string, minLength: 5, maxLength: 500 }
+        idempotencyKey: { type: string, format: uuid }
+    FinancePayoutRequest:
+      type: object
+      additionalProperties: false
+      required: [partnerId, periodStart, periodEnd, amountIqd, reason, idempotencyKey]
+      properties:
+        partnerId: { type: string, minLength: 1, maxLength: 160 }
+        periodStart: { type: string, format: date }
+        periodEnd: { type: string, format: date }
+        amountIqd: { type: integer, minimum: 1, maximum: 1000000000 }
+        reason: { type: string, minLength: 5, maxLength: 500 }
+        idempotencyKey: { type: string, format: uuid }
+    FinanceDecision:
+      type: object
+      additionalProperties: false
+      required: [decision, reason]
+      properties:
+        decision: { type: string, enum: [approve, reject] }
+        reason: { type: string, minLength: 5, maxLength: 500 }
+    FinanceInvoiceReview:
+      type: object
+      additionalProperties: false
+      required: [status, reason]
+      properties:
+        status: { type: string, enum: [under_review, accepted, rejected] }
+        reason: { type: string, minLength: 5, maxLength: 500 }
+    FinanceReviewItem:
+      type: object
+      additionalProperties: false
+      required: [id, kind, status, billingId, partnerId, periodStart, periodEnd, amountIqd, reason, requestedBy, reviewedBy, idempotencyKey, createdAt, reviewedAt]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [refund, payout] }
+        status: { type: string, enum: [pending, processing, approved_manual, rejected, failed, provider_pending, completed] }
+        billingId: { type: [string, "null"] }
+        partnerId: { type: [string, "null"] }
+        periodStart: { type: [string, "null"], format: date }
+        periodEnd: { type: [string, "null"], format: date }
+        amountIqd: { type: [integer, "null"], minimum: 1 }
+        reason: { type: string }
+        requestedBy: { type: string }
+        reviewedBy: { type: [string, "null"] }
+        idempotencyKey: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+        reviewedAt: { type: [string, "null"], format: date-time }
+    FinanceOverview:
+      type: object
+      required: [role, paymentGateEnabled, livePayoutGateEnabled, partners, facilities, customers, bookings, customerInvoices, partnerInvoices, reconciliation, reviewItems, reviewEvents, audit]
+      properties:
+        role: { type: string, enum: [admin, finance] }
+        paymentGateEnabled: { type: boolean }
+        livePayoutGateEnabled: { type: boolean }
+        partners: { type: array, items: { $ref: "#/components/schemas/Partner" } }
+        facilities: { type: array, items: { type: object, additionalProperties: true } }
+        customers: { type: array, items: { type: object, additionalProperties: true } }
+        bookings: { type: array, items: { type: object, additionalProperties: true } }
+        customerInvoices: { type: array, items: { type: object, additionalProperties: true } }
+        partnerInvoices: { type: array, items: { type: object, additionalProperties: true } }
+        reconciliation: { type: array, items: { type: object, additionalProperties: true } }
+        reviewItems: { type: array, items: { $ref: "#/components/schemas/FinanceReviewItem" } }
+        reviewEvents: { type: array, items: { type: object, additionalProperties: true } }
+        audit: { type: array, items: { type: object, additionalProperties: true } }
+    FinanceSettlementSummary:
+      type: object
+      required: [from, to, groups, verifiedVisits, rejectedVisits, disputedVisits, onHoldVisits, payoutApprovalEnabled, amountCalculationAvailable]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        groups:
+          type: array
+          items:
+            type: object
+            required: [partnerId, partnerName, facility, city, category, accessType, verifiedVisits, rejectedVisits, disputedVisits, onHoldVisits]
+            properties:
+              partnerId: { type: string }
+              partnerName: { type: string }
+              facility: { type: string }
+              city: { type: string }
+              category: { type: string }
+              accessType: { type: string }
+              verifiedVisits: { type: integer, minimum: 0 }
+              rejectedVisits: { type: integer, minimum: 0 }
+              disputedVisits: { type: integer, minimum: 0 }
+              onHoldVisits: { type: integer, minimum: 0 }
+        verifiedVisits: { type: integer, minimum: 0 }
+        rejectedVisits: { type: integer, minimum: 0 }
+        disputedVisits: { type: integer, minimum: 0 }
+        onHoldVisits: { type: integer, minimum: 0 }
+        payoutApprovalEnabled: { type: boolean }
+        amountCalculationAvailable: { type: boolean }
+    FinanceAudit:
+      type: object
+      required: [operations, financeReviews]
+      properties:
+        operations: { type: array, items: { type: object, additionalProperties: true } }
+        financeReviews: { type: array, items: { type: object, additionalProperties: true } }
