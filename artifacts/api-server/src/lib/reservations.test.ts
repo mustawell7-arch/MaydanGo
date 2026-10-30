@@ -162,12 +162,14 @@ test("live session waitlists preserve order, offer cancelled places, and hand of
   const original = await createReservation(owner, input(firstOffering));
   const firstEntry = await joinWaitlist(first, firstOffering);
   const secondEntry = await joinWaitlist(second, firstOffering);
+  const thirdEntry = await joinWaitlist(third, firstOffering);
   assert.equal(firstEntry.queuePosition, 1);
   assert.equal(secondEntry.queuePosition, 2);
-  await rejects(() => joinWaitlist(third, firstOffering), 409);
+  assert.equal(thirdEntry.queuePosition, 3);
   await cancelReservation(owner, original.id);
   assert.equal((await memberState(first)).waitlists.find(row => row.id === firstEntry.id)?.status, "offered");
   assert.equal((await memberState(second)).waitlists.find(row => row.id === secondEntry.id)?.status, "waiting");
+  assert.equal((await memberState(third)).waitlists.find(row => row.id === thirdEntry.id)?.status, "waiting");
   await rejects(() => createReservation(third, input(firstOffering)), 409);
   assert.equal(await acceptWaitlistOffer(first, firstEntry.id), true);
   assert.equal((await memberState(first)).waitlists.find(row => row.id === firstEntry.id)?.status, "booked");

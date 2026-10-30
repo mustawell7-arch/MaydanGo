@@ -83,8 +83,8 @@ test("full live classes promote the first eligible member after a cancellation",
     cancellationDeadline: new Date(startsAt.getTime() - 3600000), capacity: 1,
   });
   await db.insert(waitlistEntries).values({
-    id: otherWaitlistId, userId: otherMember, offeringId: otherOfferingId, status: "waiting",
-    joinedAt: new Date(Date.now() - 60000), updatedAt: new Date(),
+    id: otherWaitlistId, userId: otherMember, offeringId: otherOfferingId, queuePosition: 1, status: "waiting",
+    createdAt: new Date(Date.now() - 60000),
   });
   waitlistIds.push(otherWaitlistId);
   await db.insert(memberships).values(users.map(userId => ({
@@ -98,46 +98,54 @@ test("full live classes promote the first eligible member after a cancellation",
   server = app.listen(0);
   await new Promise<void>(resolve => server!.once("listening", resolve));
 
-  const firstJoin = await call("/member/waitlist", first, "POST", { offeringId });
-  const secondJoin = await call("/member/waitlist", second, "POST", { offeringId });
-  const thirdJoin = await call("/member/waitlist", third, "POST", { offeringId });
-  assert.equal(firstJoin.status, 201);
-  assert.equal(secondJoin.status, 201);
-  assert.equal(thirdJoin.status, 201);
-  waitlistIds.push(firstJoin.data.id, secondJoin.data.id, thirdJoin.data.id);
-  assert.equal(firstJoin.data.position, 1);
-  assert.equal(secondJoin.data.position, 2);
-  assert.equal(thirdJoin.data.position, 3);
+  const joinPath = `/member/offerings/${offeringId}/waitlist`;
+  const firstJoin = await call(joinPath, first, "POST");
+  const secondJoin = await call(joinPath, second, "POST");
+  const thirdJoin = await call(joinPath, third, "POST");
+  assert.equal(firstJoin.status, 200);
+  assert.equal(secondJoin.status, 200);
+  assert.equal(thirdJoin.status, 200);
+  const memberEntry = (state: any) => state.waitlists.find((entry: { offeringId: string }) => entry.offeringId === offeringId);
+  const firstEntry = memberEntry(firstJoin.data);
+  const secondEntry = memberEntry(secondJoin.data);
+  const thirdEntry = memberEntry(thirdJoin.data);
+  assert.ok(firstEntry && secondEntry && thirdEntry);
+  waitlistIds.push(firstEntry.id, secondEntry.id, thirdEntry.id);
+  assert.equal(firstEntry.queuePosition, 1);
+  assert.equal(secondEntry.queuePosition, 2);
+  assert.equal(thirdEntry.queuePosition, 3);
   const partnerQueue = await call("/operations", owner);
   assert.equal(partnerQueue.status, 200);
   assert.deepEqual(partnerQueue.data.waitlist.map((entry: { id: string; position: number }) => entry.id), [
-    firstJoin.data.id, secondJoin.data.id, thirdJoin.data.id,
+    firstEntry.id, secondEntry.id, thirdEntry.id,
   ]);
   assert.deepEqual(partnerQueue.data.waitlist.map((entry: { position: number }) => entry.position), [1, 2, 3]);
   assert.ok(partnerQueue.data.waitlist.every((entry: Record<string, unknown>) => !("userId" in entry)));
   assert.ok(partnerQueue.data.waitlist.every((entry: { offeringId: string }) => entry.offeringId === offeringId));
+  assert.ok(partnerQueue.data.waitlist.every((entry: { joinedAt: string }) => typeof entry.joinedAt === "string"));
 
-  const repeated = await call("/member/waitlist", second, "POST", { offeringId });
-  assert.equal(repeated.data.id, secondJoin.data.id);
-  assert.equal(repeated.data.position, 2);
-  assert.equal((await call(`/member/waitlist/${thirdJoin.data.id}`, second, "DELETE")).status, 404);
-  assert.equal((await call(`/member/waitlist/${thirdJoin.data.id}`, third, "DELETE")).status, 200);
-  const afterLeave = await call("/member/waitlist", second);
-  assert.equal(afterLeave.data[0].position, 2);
+  const repeated = await call(joinPath, second, "POST");
+  assert.equal(memberEntry(repeated.data).id, secondEntry.id);
+  assert.equal(memberEntry(repeated.data).queuePosition, 2);
+  assert.equal((await call(`/member/waitlist/${thirdEntry.id}`, second, "DELETE")).status, 404);
+  assert.equal((await call(`/member/waitlist/${thirdEntry.id}`, third, "DELETE")).status, 200);
+  const afterLeave = await call("/member", second);
+  assert.equal(memberEntry(afterLeave.data).queuePosition, 2);
 
   await db.update(memberships).set({ status: "expired" })
     .where(and(eq(memberships.userId, first), eq(memberships.scope, "live")));
   const canceled = await call(`/member/bookings/${booking.id}`, owner, "DELETE");
   assert.equal(canceled.status, 200);
 
-  const promoted = await call("/member/waitlist", second);
-  assert.equal(promoted.status, 200);
-  assert.equal(promoted.data[0].status, "promoted");
-  assert.equal(promoted.data[0].position, null);
-  const skipped = await db.select().from(waitlistEntries).where(eq(waitlistEntries.id, firstJoin.data.id));
-  assert.equal(skipped[0]?.status, "skipped");
-  const secondState = await call("/member", second);
-  assert.ok(secondState.data.bookings.some((item: { targetId: string; status: string }) =>
+  const firstState = await call("/member", first);
+  assert.equal(memberEntry(firstState.data).status, "ineligible");
+  const offeredState = await call("/member", second);
+  assert.equal(memberEntry(offeredState.data).status, "offered");
+  assert.ok(memberEntry(offeredState.data).offerExpiresAt);
+  const accepted = await call(`/member/waitlist/${secondEntry.id}/accept`, second, "POST");
+  assert.equal(accepted.status, 200);
+  assert.equal(memberEntry(accepted.data).status, "booked");
+  assert.ok(accepted.data.bookings.some((item: { targetId: string; status: string }) =>
     item.targetId === offeringId && item.status === "reserved"));
 
   const activePlaces = await db.select().from(reservations).where(and(

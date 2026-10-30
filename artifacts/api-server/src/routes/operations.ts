@@ -54,14 +54,14 @@ router.get("/", async (_req, res) => {
     db.select().from(offerings).where(and(eq(offerings.scope, "live"), isAdmin ? undefined : eq(offerings.partnerId, op.partnerId ?? ""))),
     isAdmin ? db.select().from(membershipPlans) : Promise.resolve([]),
     db.select({
-      id: waitlistEntries.id, offeringId: waitlistEntries.offeringId, joinedAt: waitlistEntries.joinedAt,
+      id: waitlistEntries.id, offeringId: waitlistEntries.offeringId, joinedAt: waitlistEntries.createdAt,
       title: offerings.title, localizedTitle: offerings.localizedTitle, city: offerings.city, facility: offerings.facility,
       startsAt: offerings.startsAt,
     }).from(waitlistEntries).innerJoin(offerings, eq(waitlistEntries.offeringId, offerings.id))
       .where(and(eq(waitlistEntries.status, "waiting"), eq(offerings.scope, "live"), eq(offerings.active, true),
         isNull(offerings.cancelledAt), gt(offerings.startsAt, new Date()),
         isAdmin ? undefined : eq(offerings.partnerId, op.partnerId ?? "")))
-      .orderBy(asc(offerings.startsAt), asc(waitlistEntries.joinedAt), asc(waitlistEntries.id)),
+      .orderBy(asc(offerings.startsAt), asc(waitlistEntries.createdAt), asc(waitlistEntries.id)),
   ]);
   const queueCounts = new Map<string, number>();
   const waitlist = queueRows.map(row => {

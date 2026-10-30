@@ -7,3 +7,5 @@
 - [Expo tunnel subdomains](expo-tunnel-subdomains.md) — Fixed ngrok subdomains can remain occupied after a local workflow stops; app-specific suffixes avoid prior endpoints.
 - [Expo phone launch routing](expo-phone-launch.md) — A Replit-branded phone 404 can be separate from a healthy Expo tunnel; verify the Expo manifest and bundles before changing app code.
 - [Partner operations platform](partner-operations-platform.md) — MaydanGo partner tools belong in the web portal.
+- [Guardian verification](guardian-verification.md) — Partners verify guardian requirements at the venue; MaydanGo must not collect guardian information.
+- [Waitlist schema sync](waitlist-schema-sync.md) — Drizzle push-force can still hit non-interactive rename prompts; preserve legacy fields or migrate explicitly.

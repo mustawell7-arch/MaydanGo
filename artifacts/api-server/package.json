@@ -9,7 +9,7 @@
     "test:checkin": "tsx --test src/lib/checkin.test.ts",
     "test:payments": "tsx --test src/lib/payments.test.ts src/routes/payment-webhook.test.ts",
     "test:support": "tsx --test src/lib/support.test.ts",
-    "test:waitlist": "tsx --test src/lib/reservations.test.ts",
+    "test:waitlist": "tsx --test src/lib/waitlist.test.ts && tsx --test src/lib/reservations.test.ts",
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
