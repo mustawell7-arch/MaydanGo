@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, inArray, sql, asc, gt, isNull, lt } from "drizzle-orm";
+import { Readable } from "node:stream";
+import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lt } from "drizzle-orm";
 import { z } from "zod";
-import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, learningCourses, learningLessons, facilityProfiles } from "@workspace/db";
+import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, facilityProfiles, partnerInvoiceSubmissions } from "@workspace/db";
 import { BookingError, processWaitlistQueue } from "../lib/reservations";
 import { createFacilityProfileInput, facilityProfileFields, offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
 import {
@@ -20,14 +21,25 @@ import { expandWeeklyOffering } from "../lib/recurring-offerings";
 import { PaymentError } from "../lib/payment-config";
 
 import { cancelPaidSubscriptionImmediately, requestFullRefund, validatePaidPlan } from "../lib/payments-paytabs";
+import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
+import {
+  GetPartnerInvoicesResponse, GetPartnerSettlementSummaryResponse, RequestPartnerInvoiceUploadUrlBody,
+  RequestPartnerInvoiceUploadUrlResponse, SubmitPartnerInvoiceBody, SubmitPartnerInvoiceResponse,
+} from "@workspace/api-zod";
 
 const router = Router();
+const objectStorage = new ObjectStorageService();
 router.use(async (req, res, next) => {
   const userId = getAuth(req).userId;
   if (!userId) { res.status(401).json({ message: "Sign in first." }); return; }
   const [operator] = await db.select().from(operators).where(eq(operators.userId, userId));
   if (!operator || !["admin", "partner"].includes(operator.role)) {
     res.status(403).json({ message: "Authorized staff access is required." }); return;
+  }
+  if (operator.role === "partner") {
+    if (!operator.partnerId) { res.status(403).json({ message: "This partner account is not assigned to an approved partner." }); return; }
+    const [partner] = await db.select({ approved: partners.approved }).from(partners).where(eq(partners.id, operator.partnerId));
+    if (!partner?.approved) { res.status(403).json({ message: "Partner approval is required for portal access." }); return; }
   }
   res.locals.operator = operator; next();
 });
@@ -50,6 +62,15 @@ function own(res: import("express").Response, partnerId: string | null) {
   if (res.locals.operator.role !== "admin" && res.locals.operator.partnerId !== partnerId)
     throw new BookingError(403, "This partner is not assigned to your account.");
 }
+function partnerOnly(res: import("express").Response) {
+  if (res.locals.operator.role !== "partner" || !res.locals.operator.partnerId)
+    throw new BookingError(403, "This partner-only view is not available to administrators.");
+  return res.locals.operator.partnerId as string;
+}
+const invoiceDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+});
 router.get("/", async (_req, res) => {
   const op = res.locals.operator;
   const isAdmin = op.role === "admin";
@@ -67,6 +88,9 @@ router.get("/", async (_req, res) => {
         isAdmin ? undefined : eq(offerings.partnerId, op.partnerId ?? "")))
       .orderBy(asc(offerings.startsAt), asc(waitlistEntries.createdAt), asc(waitlistEntries.id)),
   ]);
+  const policyRows = offeringRows.length ? await db.select().from(checkinPolicies)
+    .where(inArray(checkinPolicies.offeringId, offeringRows.map(row => row.id))) : [];
+  const policyByOffering = new Map(policyRows.map(policy => [policy.offeringId, policy]));
   const queueCounts = new Map<string, number>();
   const waitlist = queueRows.map(row => {
     const position = (queueCounts.get(row.offeringId) ?? 0) + 1;
@@ -74,7 +98,10 @@ router.get("/", async (_req, res) => {
     return { ...row, position };
   });
   res.json({ role: op.role, partnerId: op.partnerId,
-    partners: partnerRows, offerings: offeringRows, waitlist,
+    partners: partnerRows, offerings: offeringRows.map(row => ({
+      ...row,
+      checkinPolicy: policyByOffering.get(row.id) ?? null,
+    })), waitlist,
     plans: plans.map(({ whopPlanId: _legacyProviderId, ...plan }) => plan),
   });
 });
@@ -141,6 +168,14 @@ router.put("/facilities/:id", async (req, res) => {
     const [existing] = await tx.select().from(facilityProfiles).where(eq(facilityProfiles.id, id)).for("update");
     if (!existing) throw new BookingError(404, "Facility profile not found.");
     own(res, existing.partnerId);
+    if (existing.city !== data.city || existing.facility !== data.facility) {
+      const [linked] = await tx.select({ id: offerings.id }).from(offerings).where(and(
+        eq(offerings.partnerId, existing.partnerId),
+        eq(offerings.city, existing.city),
+        eq(offerings.facility, existing.facility),
+      )).limit(1);
+      if (linked) throw new BookingError(409, "This facility is used by existing sessions. Keep its city and facility name unchanged.");
+    }
     const [duplicate] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
       eq(facilityProfiles.partnerId, existing.partnerId),
       eq(facilityProfiles.city, data.city),
@@ -160,6 +195,12 @@ router.delete("/facilities/:id", async (req, res) => {
     const [existing] = await tx.select().from(facilityProfiles).where(eq(facilityProfiles.id, id)).for("update");
     if (!existing) throw new BookingError(404, "Facility profile not found.");
     own(res, existing.partnerId);
+    const [linked] = await tx.select({ id: offerings.id }).from(offerings).where(and(
+      eq(offerings.partnerId, existing.partnerId),
+      eq(offerings.city, existing.city),
+      eq(offerings.facility, existing.facility),
+    )).limit(1);
+    if (linked) throw new BookingError(409, "This facility is used by existing sessions and cannot be deleted.");
     await tx.delete(facilityProfiles).where(eq(facilityProfiles.id, id));
     await audit(tx, res.locals.operator.userId, "facility.delete", id);
   });
@@ -171,7 +212,15 @@ router.post("/offerings", async (req, res) => {
   const row = await db.transaction(async tx => {
     const [p] = await tx.select().from(partners).where(eq(partners.id, data.partnerId)).for("share");
     if (!p) throw new BookingError(404, "Partner not found.");
+    if (res.locals.operator.role === "partner" && data.active)
+      throw new BookingError(403, "Partner activities must be reviewed and published by an administrator.");
     if (data.active && !p.approved) throw new BookingError(403, "Partner approval is required before publishing.");
+    const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
+      eq(facilityProfiles.partnerId, data.partnerId),
+      eq(facilityProfiles.city, data.city),
+      eq(facilityProfiles.facility, data.facility),
+    )).limit(1);
+    if (!facility) throw new BookingError(400, "Choose a facility from your approved facility profiles.");
     const id = randomUUID();
     if (data.accessType === "live" && data.active) ensureHttps(data.joinUrl, "Live class join link");
     if (data.joinUrl) ensureHttps(data.joinUrl, "Live class join link");
@@ -251,7 +300,11 @@ router.patch("/offerings/:id", async (req, res) => {
     own(res, o.partnerId);
     if (o.cancelledAt) throw new BookingError(409, "Cancelled offerings cannot be edited or republished. Create a replacement.");
     if (o.startsAt <= new Date()) throw new BookingError(409, "Past offerings cannot be edited.");
-    const nextActive = data.active ?? o.active;
+    if (res.locals.operator.role === "partner" && data.active === true)
+      throw new BookingError(403, "Only an administrator can approve and publish a partner activity.");
+    const needsReview = res.locals.operator.role === "partner" && o.active &&
+      (data.localizedTitle !== undefined || data.localizedDescription !== undefined || data.joinUrl !== undefined);
+    const nextActive = needsReview ? false : data.active ?? o.active;
     const nextTitle = data.localizedTitle ?? o.localizedTitle;
     const nextDescription = data.localizedDescription ?? o.localizedDescription;
     const nextJoinUrl = data.joinUrl !== undefined ? data.joinUrl : o.joinUrl;
@@ -260,9 +313,15 @@ router.patch("/offerings/:id", async (req, res) => {
       ensureHttps(nextJoinUrl, "Live class join link");
     }
     if (data.joinUrl) ensureHttps(data.joinUrl, "Live class join link");
-    if (data.active) {
+    if (nextActive) {
       const [p] = await tx.select().from(partners).where(eq(partners.id, o.partnerId!)).for("share");
       if (!p?.approved) throw new BookingError(403, "Partner approval is required.");
+      const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
+        eq(facilityProfiles.partnerId, o.partnerId!),
+        eq(facilityProfiles.city, o.city),
+        eq(facilityProfiles.facility, o.facility),
+      )).limit(1);
+      if (!facility) throw new BookingError(409, "This session is not linked to an existing shared facility profile.");
     }
     const held = await tx.select().from(reservations).where(and(eq(reservations.offeringId, o.id), inArray(reservations.status, ["reserved", "requested"])));
     const [offers] = await tx.select({ count: sql<number>`count(*)::int` }).from(waitlistEntries)
@@ -272,6 +331,7 @@ router.patch("/offerings/:id", async (req, res) => {
       capacity: data.capacity,
       ...(data.waitlistOfferMinutes !== undefined ? { waitlistOfferMinutes: data.waitlistOfferMinutes } : {}),
       ...(data.active !== undefined ? { active: data.active } : {}),
+      ...(needsReview ? { active: false } : {}),
       ...(data.localizedTitle !== undefined ? { localizedTitle: data.localizedTitle } : {}),
       ...(data.localizedDescription !== undefined ? { localizedDescription: data.localizedDescription } : {}),
       ...(data.joinUrl !== undefined ? { joinUrl: data.joinUrl } : {}),
@@ -327,6 +387,134 @@ router.post("/offerings/:id/cancel", async (req, res) => {
   for (const userId of new Set(affected.bookingUsers)) void sendMemberNotification(userId, "booking_cancelled");
   for (const userId of new Set(affected.waitlistUsers)) void sendMemberNotification(userId, "waitlist_closed");
   res.json({ ok: true });
+});
+
+router.get("/settlements", async (req, res) => {
+  const partnerId = partnerOnly(res);
+  const query = z.object({ from: invoiceDate, to: invoiceDate }).strict().parse(req.query);
+  const from = new Date(`${query.from}T00:00:00+03:00`);
+  const toExclusive = new Date(new Date(`${query.to}T00:00:00+03:00`).getTime() + 86400000);
+  if (from >= toExclusive || toExclusive.getTime() - from.getTime() > 367 * 86400000)
+    throw new BookingError(400, "Choose a valid settlement period of no more than one year.");
+  const rows = await db.select({
+    status: attendance.status,
+    settlementEligible: attendance.settlementEligible,
+    facility: offerings.facility,
+    city: offerings.city,
+    category: offerings.category,
+    accessType: offerings.accessType,
+  }).from(attendance).innerJoin(offerings, eq(attendance.offeringId, offerings.id))
+    .where(and(eq(offerings.partnerId, partnerId), eq(offerings.scope, "live"),
+      gte(attendance.checkedInAt, from), lt(attendance.checkedInAt, toExclusive)));
+  const groups = new Map<string, {
+    facility: string; city: string; category: string; accessType: "physical" | "premium" | "live";
+    verifiedVisits: number; rejectedVisits: number; onHoldVisits: number;
+  }>();
+  for (const row of rows) {
+    const key = [row.facility, row.city, row.category, row.accessType].join("\u0000");
+    const group = groups.get(key) ?? {
+      facility: row.facility, city: row.city, category: row.category,
+      accessType: row.accessType as "physical" | "premium" | "live",
+      verifiedVisits: 0, rejectedVisits: 0, onHoldVisits: 0,
+    };
+    if (row.status === "confirmed" && row.settlementEligible) group.verifiedVisits++;
+    else if (["void", "no_show"].includes(row.status)) group.rejectedVisits++;
+    else group.onHoldVisits++;
+    groups.set(key, group);
+  }
+  const result = [...groups.values()].sort((a, b) =>
+    a.city.localeCompare(b.city) || a.facility.localeCompare(b.facility) || a.category.localeCompare(b.category));
+  const summary = {
+    partnerId, from: query.from, to: query.to,
+    verifiedVisits: result.reduce((sum, row) => sum + row.verifiedVisits, 0),
+    rejectedVisits: result.reduce((sum, row) => sum + row.rejectedVisits, 0),
+    onHoldVisits: result.reduce((sum, row) => sum + row.onHoldVisits, 0),
+    groups: result,
+  };
+  GetPartnerSettlementSummaryResponse.parse(summary);
+  res.json(summary);
+});
+
+router.get("/invoices", async (_req, res) => {
+  const partnerId = partnerOnly(res);
+  const rows = await db.select({
+    id: partnerInvoiceSubmissions.id,
+    invoiceNumber: partnerInvoiceSubmissions.invoiceNumber,
+    amountIqd: partnerInvoiceSubmissions.amountIqd,
+    issuedAt: partnerInvoiceSubmissions.issuedAt,
+    periodStart: partnerInvoiceSubmissions.periodStart,
+    periodEnd: partnerInvoiceSubmissions.periodEnd,
+    taxNumber: partnerInvoiceSubmissions.taxNumber,
+    documentName: partnerInvoiceSubmissions.documentName,
+    status: partnerInvoiceSubmissions.status,
+    createdAt: partnerInvoiceSubmissions.createdAt,
+  }).from(partnerInvoiceSubmissions).where(eq(partnerInvoiceSubmissions.partnerId, partnerId))
+    .orderBy(desc(partnerInvoiceSubmissions.createdAt));
+  GetPartnerInvoicesResponse.parse(rows);
+  res.json(rows);
+});
+
+router.post("/invoices/upload-url", async (req, res) => {
+  const partnerId = partnerOnly(res);
+  const data = RequestPartnerInvoiceUploadUrlBody.parse(req.body);
+  if (!data.fileName.toLowerCase().endsWith(".pdf"))
+    throw new BookingError(400, "Upload an invoice as a PDF file.");
+  const result = await objectStorage.createPartnerInvoiceUpload(partnerId);
+  RequestPartnerInvoiceUploadUrlResponse.parse(result);
+  res.json(result);
+});
+
+router.post("/invoices", async (req, res) => {
+  const partnerId = partnerOnly(res);
+  const data = SubmitPartnerInvoiceBody.parse(req.body);
+  if (data.periodStart > data.periodEnd || data.issuedAt > new Date())
+    throw new BookingError(400, "Check the invoice date and covered period.");
+  const prefix = `/objects/partner-invoices/${partnerId}/`;
+  if (!data.documentPath.startsWith(prefix) || !/^[0-9a-f-]{36}\.pdf$/i.test(data.documentPath.slice(prefix.length)))
+    throw new BookingError(403, "This invoice file was not uploaded to your partner's private folder.");
+  const duplicate = await db.select({ id: partnerInvoiceSubmissions.id }).from(partnerInvoiceSubmissions)
+    .where(and(eq(partnerInvoiceSubmissions.partnerId, partnerId), eq(partnerInvoiceSubmissions.documentPath, data.documentPath))).limit(1);
+  if (duplicate.length) throw new BookingError(409, "This uploaded invoice has already been submitted.");
+  const [file] = [await objectStorage.getPrivateFile(data.documentPath)];
+  const [metadata] = await file.getMetadata();
+  if (metadata.contentType !== "application/pdf" || Number(metadata.size) < 1 || Number(metadata.size) > 10 * 1024 * 1024)
+    throw new BookingError(400, "The invoice file must be a PDF no larger than 10 MB.");
+  const name = data.documentName.split(/[\\/]/).pop()?.replace(/[\u0000-\u001f\u007f]/g, "").slice(0, 180);
+  if (!name || !name.toLowerCase().endsWith(".pdf")) throw new BookingError(400, "The invoice file name must end in .pdf.");
+  const result = await db.transaction(async tx => {
+    const [row] = await tx.insert(partnerInvoiceSubmissions).values({
+      id: randomUUID(), partnerId, invoiceNumber: data.invoiceNumber.trim(), amountIqd: data.amountIqd,
+      issuedAt: data.issuedAt.toISOString().slice(0, 10),
+      periodStart: data.periodStart.toISOString().slice(0, 10),
+      periodEnd: data.periodEnd.toISOString().slice(0, 10),
+      taxNumber: data.taxNumber?.trim() || null, documentPath: data.documentPath, documentName: name,
+      status: "submitted", submittedBy: res.locals.operator.userId,
+    }).returning();
+    await audit(tx, res.locals.operator.userId, "partner.invoice.submit", row.id, `partner=${partnerId}; invoice=${row.invoiceNumber}`);
+    return row;
+  });
+  SubmitPartnerInvoiceResponse.parse(result);
+  res.status(201).json(result);
+});
+
+router.get("/invoices/:id/document", async (req, res) => {
+  const partnerId = partnerOnly(res);
+  const [invoice] = await db.select().from(partnerInvoiceSubmissions).where(and(
+    eq(partnerInvoiceSubmissions.id, String(req.params.id)),
+    eq(partnerInvoiceSubmissions.partnerId, partnerId),
+  )).limit(1);
+  if (!invoice) throw new BookingError(404, "Invoice not found.");
+  const file = await objectStorage.getPrivateFile(invoice.documentPath);
+  const [metadata] = await file.getMetadata();
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${invoice.documentName.replace(/["\\]/g, "_")}"`);
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Content-Length", String(metadata.size ?? 0));
+  Readable.from(file.createReadStream()).on("error", error => {
+    if (!res.headersSent) res.status(500);
+    res.end();
+  }).pipe(res);
 });
 router.post("/courses", async (req, res) => {
   admin(res);
@@ -526,6 +714,7 @@ router.use((error: unknown, _req: import("express").Request, res: import("expres
   if (error instanceof z.ZodError) { res.status(400).json({ message: error.issues.map(i => i.message).join(" ") }); return; }
   if (error instanceof BookingError) { res.status(error.status).json({ message: error.message }); return; }
   if (error instanceof PaymentError) { res.status(error.status).json({ message: error.message }); return; }
+  if (error instanceof ObjectNotFoundError) { res.status(404).json({ message: "Invoice document not found." }); return; }
   next(error);
 });
 export default router;

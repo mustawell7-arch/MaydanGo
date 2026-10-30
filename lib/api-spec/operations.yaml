@@ -393,6 +393,71 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/RefundResult" }
+  /operations/settlements:
+    get:
+      operationId: getPartnerSettlementSummary
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Partner-scoped attendance summary for a date range; no payout approval or amount calculation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerSettlementSummary" }
+  /operations/invoices:
+    get:
+      operationId: getPartnerInvoices
+      responses:
+        "200":
+          description: Invoice submissions belonging to the authenticated partner
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/PartnerInvoice" } }
+    post:
+      operationId: submitPartnerInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerInvoiceInput" }
+      responses:
+        "201":
+          description: Invoice received for separate review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerInvoice" }
+  /operations/invoices/upload-url:
+    post:
+      operationId: requestPartnerInvoiceUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerInvoiceUploadInput" }
+      responses:
+        "200":
+          description: Short-lived URL for direct upload of a private PDF invoice
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerInvoiceUploadUrl" }
+  /operations/invoices/{id}/document:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: downloadPartnerInvoiceDocument
+      responses:
+        "200":
+          description: Private invoice PDF for the authenticated partner
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "404": { description: Invoice not found }
   /member/live-catalog:
     get:
       operationId: getLiveCatalog
@@ -786,6 +851,20 @@ components:
             remaining: { type: integer }
             canJoin: { type: boolean }
             waitlistOfferMinutes: { type: integer, minimum: 5, maximum: 1440 }
+            checkinPolicy:
+              oneOf:
+                - $ref: "#/components/schemas/SessionCheckinPolicy"
+                - type: "null"
+    SessionCheckinPolicy:
+      type: object
+      required: [latitude, longitude, radius, opensAt, closesAt, correctionEndsAt]
+      properties:
+        latitude: { type: number }
+        longitude: { type: number }
+        radius: { type: integer }
+        opensAt: { type: string, format: date-time }
+        closesAt: { type: string, format: date-time }
+        correctionEndsAt: { type: string, format: date-time }
     OfferingWaitlistEntry:
       type: object
       required: [id, queuePosition, status, createdAt]

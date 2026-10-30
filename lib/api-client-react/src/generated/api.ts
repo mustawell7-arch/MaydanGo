@@ -42,6 +42,7 @@ import type {
   FacilityProfileUpdate,
   GetAttendance200,
   GetBookingCatalog200Item,
+  GetPartnerSettlementSummaryParams,
   GetSupportStaffTicketsParams,
   HealthStatus,
   IssueCheckinQr200,
@@ -66,6 +67,11 @@ import type {
   Partner,
   PartnerApproval,
   PartnerInput,
+  PartnerInvoice,
+  PartnerInvoiceInput,
+  PartnerInvoiceUploadInput,
+  PartnerInvoiceUploadUrl,
+  PartnerSettlementSummary,
   PlanInput,
   PublicFacility,
   PublicOffering,
@@ -2140,6 +2146,462 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getCancelLiveOfferingMutationOptions(options), queryClient);
     }
+
+export const getGetPartnerSettlementSummaryUrl = (params: GetPartnerSettlementSummaryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/operations/settlements?${stringifiedParams}` : `/api/operations/settlements`
+}
+
+export const getPartnerSettlementSummary = async (params: GetPartnerSettlementSummaryParams, options?: Parameters<typeof customFetch>[1]): Promise<PartnerSettlementSummary> => {
+
+  return customFetch<PartnerSettlementSummary>(getGetPartnerSettlementSummaryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPartnerSettlementSummaryQueryKey = (params?: GetPartnerSettlementSummaryParams,) => {
+    return [
+    `/api/operations/settlements`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPartnerSettlementSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getPartnerSettlementSummary>>, TError = ErrorType<unknown>>(params: GetPartnerSettlementSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerSettlementSummary>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPartnerSettlementSummaryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPartnerSettlementSummary>>> = ({ signal }) => getPartnerSettlementSummary(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPartnerSettlementSummary>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPartnerSettlementSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getPartnerSettlementSummary>>>
+export type GetPartnerSettlementSummaryQueryError = ErrorType<unknown>
+
+
+export function useGetPartnerSettlementSummary<TData = Awaited<ReturnType<typeof getPartnerSettlementSummary>>, TError = ErrorType<unknown>>(
+ params: GetPartnerSettlementSummaryParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerSettlementSummary>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPartnerSettlementSummary>>,
+          TError,
+          Awaited<ReturnType<typeof getPartnerSettlementSummary>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPartnerSettlementSummary<TData = Awaited<ReturnType<typeof getPartnerSettlementSummary>>, TError = ErrorType<unknown>>(
+ params: GetPartnerSettlementSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerSettlementSummary>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPartnerSettlementSummary>>,
+          TError,
+          Awaited<ReturnType<typeof getPartnerSettlementSummary>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPartnerSettlementSummary<TData = Awaited<ReturnType<typeof getPartnerSettlementSummary>>, TError = ErrorType<unknown>>(
+ params: GetPartnerSettlementSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerSettlementSummary>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPartnerSettlementSummary<TData = Awaited<ReturnType<typeof getPartnerSettlementSummary>>, TError = ErrorType<unknown>>(
+ params: GetPartnerSettlementSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerSettlementSummary>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPartnerSettlementSummaryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPartnerInvoicesUrl = () => {
+
+
+
+
+  return `/api/operations/invoices`
+}
+
+export const getPartnerInvoices = async ( options?: Parameters<typeof customFetch>[1]): Promise<PartnerInvoice[]> => {
+
+  return customFetch<PartnerInvoice[]>(getGetPartnerInvoicesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPartnerInvoicesQueryKey = () => {
+    return [
+    `/api/operations/invoices`
+    ] as const;
+    }
+
+
+export const getGetPartnerInvoicesQueryOptions = <TData = Awaited<ReturnType<typeof getPartnerInvoices>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerInvoices>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPartnerInvoicesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPartnerInvoices>>> = ({ signal }) => getPartnerInvoices({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPartnerInvoices>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPartnerInvoicesQueryResult = NonNullable<Awaited<ReturnType<typeof getPartnerInvoices>>>
+export type GetPartnerInvoicesQueryError = ErrorType<unknown>
+
+
+export function useGetPartnerInvoices<TData = Awaited<ReturnType<typeof getPartnerInvoices>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerInvoices>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPartnerInvoices>>,
+          TError,
+          Awaited<ReturnType<typeof getPartnerInvoices>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPartnerInvoices<TData = Awaited<ReturnType<typeof getPartnerInvoices>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerInvoices>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPartnerInvoices>>,
+          TError,
+          Awaited<ReturnType<typeof getPartnerInvoices>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPartnerInvoices<TData = Awaited<ReturnType<typeof getPartnerInvoices>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerInvoices>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPartnerInvoices<TData = Awaited<ReturnType<typeof getPartnerInvoices>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerInvoices>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPartnerInvoicesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSubmitPartnerInvoiceUrl = () => {
+
+
+
+
+  return `/api/operations/invoices`
+}
+
+export const submitPartnerInvoice = async (partnerInvoiceInput: PartnerInvoiceInput, options?: Parameters<typeof customFetch>[1]): Promise<PartnerInvoice> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PartnerInvoice>(getSubmitPartnerInvoiceUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(partnerInvoiceInput)
+  }
+);}
+
+
+
+
+
+export const getSubmitPartnerInvoiceMutationKey = () => ['submitPartnerInvoice'] as const;
+
+export const getSubmitPartnerInvoiceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitPartnerInvoice>>, TError,SubmitPartnerInvoiceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitPartnerInvoice>>, TError,SubmitPartnerInvoiceMutationVariables, TContext> => {
+
+const mutationKey = getSubmitPartnerInvoiceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitPartnerInvoice>>, SubmitPartnerInvoiceMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  submitPartnerInvoice(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitPartnerInvoiceMutationResult = NonNullable<Awaited<ReturnType<typeof submitPartnerInvoice>>>
+    export type SubmitPartnerInvoiceMutationBody = BodyType<PartnerInvoiceInput>
+    export type SubmitPartnerInvoiceMutationError = ErrorType<unknown>
+    export type SubmitPartnerInvoiceMutationVariables = {data: BodyType<PartnerInvoiceInput>}
+
+    export const useSubmitPartnerInvoice = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitPartnerInvoice>>, TError,SubmitPartnerInvoiceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof submitPartnerInvoice>>,
+        TError,
+        SubmitPartnerInvoiceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSubmitPartnerInvoiceMutationOptions(options), queryClient);
+    }
+
+export const getRequestPartnerInvoiceUploadUrlUrl = () => {
+
+
+
+
+  return `/api/operations/invoices/upload-url`
+}
+
+export const requestPartnerInvoiceUploadUrl = async (partnerInvoiceUploadInput: PartnerInvoiceUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<PartnerInvoiceUploadUrl> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PartnerInvoiceUploadUrl>(getRequestPartnerInvoiceUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(partnerInvoiceUploadInput)
+  }
+);}
+
+
+
+
+
+export const getRequestPartnerInvoiceUploadUrlMutationKey = () => ['requestPartnerInvoiceUploadUrl'] as const;
+
+export const getRequestPartnerInvoiceUploadUrlMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestPartnerInvoiceUploadUrl>>, TError,RequestPartnerInvoiceUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestPartnerInvoiceUploadUrl>>, TError,RequestPartnerInvoiceUploadUrlMutationVariables, TContext> => {
+
+const mutationKey = getRequestPartnerInvoiceUploadUrlMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestPartnerInvoiceUploadUrl>>, RequestPartnerInvoiceUploadUrlMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestPartnerInvoiceUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestPartnerInvoiceUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestPartnerInvoiceUploadUrl>>>
+    export type RequestPartnerInvoiceUploadUrlMutationBody = BodyType<PartnerInvoiceUploadInput>
+    export type RequestPartnerInvoiceUploadUrlMutationError = ErrorType<unknown>
+    export type RequestPartnerInvoiceUploadUrlMutationVariables = {data: BodyType<PartnerInvoiceUploadInput>}
+
+    export const useRequestPartnerInvoiceUploadUrl = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestPartnerInvoiceUploadUrl>>, TError,RequestPartnerInvoiceUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof requestPartnerInvoiceUploadUrl>>,
+        TError,
+        RequestPartnerInvoiceUploadUrlMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestPartnerInvoiceUploadUrlMutationOptions(options), queryClient);
+    }
+
+export const getDownloadPartnerInvoiceDocumentUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/invoices/${id}/document`
+}
+
+export const downloadPartnerInvoiceDocument = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadPartnerInvoiceDocumentUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadPartnerInvoiceDocumentQueryKey = (id: string,) => {
+    return [
+    `/api/operations/invoices/${id}/document`
+    ] as const;
+    }
+
+
+export const getDownloadPartnerInvoiceDocumentQueryOptions = <TData = Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>, TError = ErrorType<void>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadPartnerInvoiceDocumentQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>> = ({ signal }) => downloadPartnerInvoiceDocument(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DownloadPartnerInvoiceDocumentQueryResult = NonNullable<Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>>
+export type DownloadPartnerInvoiceDocumentQueryError = ErrorType<void>
+
+
+export function useDownloadPartnerInvoiceDocument<TData = Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>, TError = ErrorType<void>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>,
+          TError,
+          Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadPartnerInvoiceDocument<TData = Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>,
+          TError,
+          Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadPartnerInvoiceDocument<TData = Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useDownloadPartnerInvoiceDocument<TData = Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadPartnerInvoiceDocument>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDownloadPartnerInvoiceDocumentQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getCreateLearningCourseUrl = () => {
 

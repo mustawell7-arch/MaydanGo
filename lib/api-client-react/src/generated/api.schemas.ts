@@ -5,6 +5,115 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type PartnerSettlementSummaryGroupsItemAccessType = typeof PartnerSettlementSummaryGroupsItemAccessType[keyof typeof PartnerSettlementSummaryGroupsItemAccessType];
+
+
+export const PartnerSettlementSummaryGroupsItemAccessType = {
+  physical: 'physical',
+  premium: 'premium',
+  live: 'live',
+} as const;
+
+export type PartnerSettlementSummaryGroupsItem = {
+  facility: string;
+  city: string;
+  category: string;
+  accessType: PartnerSettlementSummaryGroupsItemAccessType;
+  /** @minimum 0 */
+  verifiedVisits: number;
+  /** @minimum 0 */
+  rejectedVisits: number;
+  /** @minimum 0 */
+  onHoldVisits: number;
+};
+
+export interface PartnerSettlementSummary {
+  partnerId: string;
+  from: string;
+  to: string;
+  /** @minimum 0 */
+  verifiedVisits: number;
+  /** @minimum 0 */
+  rejectedVisits: number;
+  /** @minimum 0 */
+  onHoldVisits: number;
+  groups: PartnerSettlementSummaryGroupsItem[];
+}
+
+export interface PartnerInvoiceUploadInput {
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  fileName: string;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+}
+
+export interface PartnerInvoiceUploadUrl {
+  uploadURL: string;
+  documentPath: string;
+}
+
+export interface PartnerInvoiceInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  invoiceNumber: string;
+  /**
+     * @minimum 1
+     * @maximum 1000000000
+     */
+  amountIqd: number;
+  issuedAt: string;
+  periodStart: string;
+  periodEnd: string;
+  /**
+     * @maxLength 80
+     * @nullable
+     */
+  taxNumber?: string | null;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  documentPath: string;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  documentName: string;
+}
+
+export type PartnerInvoiceStatus = typeof PartnerInvoiceStatus[keyof typeof PartnerInvoiceStatus];
+
+
+export const PartnerInvoiceStatus = {
+  submitted: 'submitted',
+  under_review: 'under_review',
+  accepted: 'accepted',
+  rejected: 'rejected',
+} as const;
+
+export interface PartnerInvoice {
+  id: string;
+  invoiceNumber: string;
+  /** @minimum 1 */
+  amountIqd: number;
+  issuedAt: string;
+  periodStart: string;
+  periodEnd: string;
+  /** @nullable */
+  taxNumber: string | null;
+  documentName: string;
+  status: PartnerInvoiceStatus;
+  createdAt: string;
+}
+
 export interface LocalizedFacilityText {
   /**
      * @minLength 1
@@ -666,6 +775,15 @@ export interface RecurringOfferingsInput {
   schedule: RecurringSchedule;
 }
 
+export interface SessionCheckinPolicy {
+  latitude: number;
+  longitude: number;
+  radius: number;
+  opensAt: string;
+  closesAt: string;
+  correctionEndsAt: string;
+}
+
 export type LiveOffering = OfferingInput & ({
   id: string;
   targetId: string;
@@ -681,6 +799,7 @@ export type LiveOffering = OfferingInput & ({
      * @maximum 1440
      */
   waitlistOfferMinutes?: number;
+  checkinPolicy?: SessionCheckinPolicy | null;
 });
 
 /**
@@ -1116,6 +1235,11 @@ export const ReviewAttendanceBodyAction = {
 export type ReviewAttendanceBody = {
   action: ReviewAttendanceBodyAction;
   reason: string;
+};
+
+export type GetPartnerSettlementSummaryParams = {
+from: string;
+to: string;
 };
 
 export type GetSupportStaffTicketsParams = {

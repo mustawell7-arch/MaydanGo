@@ -5,6 +5,7 @@ export * from "./checkin";
 export * from "./learning";
 export * from "./support";
 export * from "./payments";
+export * from "./partner-invoices";
 // Export your models here. Add one export per file
 // export * from "./posts";
 //

@@ -299,6 +299,14 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1waitlist"
   /operations/offerings/{id}/cancel:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1cancel"
+  /operations/settlements:
+    $ref: "./operations.yaml#/paths/~1operations~1settlements"
+  /operations/invoices:
+    $ref: "./operations.yaml#/paths/~1operations~1invoices"
+  /operations/invoices/upload-url:
+    $ref: "./operations.yaml#/paths/~1operations~1invoices~1upload-url"
+  /operations/invoices/{id}/document:
+    $ref: "./operations.yaml#/paths/~1operations~1invoices~1{id}~1document"
   /operations/courses:
     $ref: "./operations.yaml#/paths/~1operations~1courses"
   /operations/courses/{id}:
@@ -493,6 +501,73 @@ paths:
                 $ref: "#/components/schemas/HealthStatus"
 components:
   schemas:
+    PartnerSettlementSummary:
+      type: object
+      additionalProperties: false
+      required: [partnerId, from, to, verifiedVisits, rejectedVisits, onHoldVisits, groups]
+      properties:
+        partnerId: { type: string }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        verifiedVisits: { type: integer, minimum: 0 }
+        rejectedVisits: { type: integer, minimum: 0 }
+        onHoldVisits: { type: integer, minimum: 0 }
+        groups:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [facility, city, category, accessType, verifiedVisits, rejectedVisits, onHoldVisits]
+            properties:
+              facility: { type: string }
+              city: { type: string }
+              category: { type: string }
+              accessType: { type: string, enum: [physical, premium, live] }
+              verifiedVisits: { type: integer, minimum: 0 }
+              rejectedVisits: { type: integer, minimum: 0 }
+              onHoldVisits: { type: integer, minimum: 0 }
+    PartnerInvoiceUploadInput:
+      type: object
+      additionalProperties: false
+      required: [fileName, size]
+      properties:
+        fileName: { type: string, minLength: 1, maxLength: 180 }
+        size: { type: integer, minimum: 1, maximum: 10485760 }
+    PartnerInvoiceUploadUrl:
+      type: object
+      additionalProperties: false
+      required: [uploadURL, documentPath]
+      properties:
+        uploadURL: { type: string, format: uri }
+        documentPath: { type: string }
+    PartnerInvoiceInput:
+      type: object
+      additionalProperties: false
+      required: [invoiceNumber, amountIqd, issuedAt, periodStart, periodEnd, documentPath, documentName]
+      properties:
+        invoiceNumber: { type: string, minLength: 1, maxLength: 100 }
+        amountIqd: { type: integer, minimum: 1, maximum: 1000000000 }
+        issuedAt: { type: string, format: date }
+        periodStart: { type: string, format: date }
+        periodEnd: { type: string, format: date }
+        taxNumber: { type: ["string", "null"], maxLength: 80 }
+        documentPath: { type: string, minLength: 1, maxLength: 500 }
+        documentName: { type: string, minLength: 1, maxLength: 180 }
+    PartnerInvoice:
+      type: object
+      additionalProperties: false
+      required: [id, invoiceNumber, amountIqd, issuedAt, periodStart, periodEnd, taxNumber, documentName, status, createdAt]
+      properties:
+        id: { type: string }
+        invoiceNumber: { type: string }
+        amountIqd: { type: integer, minimum: 1 }
+        issuedAt: { type: string, format: date }
+        periodStart: { type: string, format: date }
+        periodEnd: { type: string, format: date }
+        taxNumber: { type: ["string", "null"] }
+        documentName: { type: string }
+        status: { type: string, enum: [submitted, under_review, accepted, rejected] }
+        createdAt: { type: string, format: date-time }
     LocalizedFacilityText:
       type: object
       required: [en, ar, ku]

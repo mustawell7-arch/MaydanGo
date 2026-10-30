@@ -1116,7 +1116,15 @@ export const GetOperationsResponse = zod.object({
   "partnerName": zod.string().optional(),
   "remaining": zod.number().int().optional(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.number().int().min(getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMin).max(getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMax).optional()
+  "waitlistOfferMinutes": zod.number().int().min(getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMin).max(getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMax).optional(),
+  "checkinPolicy": zod.union([zod.object({
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.number().int(),
+  "opensAt": zod.coerce.date(),
+  "closesAt": zod.coerce.date(),
+  "correctionEndsAt": zod.coerce.date()
+}),zod.null()]).optional()
 }))),
   "waitlist": zod.array(zod.object({
   "id": zod.string(),
@@ -1317,7 +1325,15 @@ export const AddLiveOfferingResponse = zod.object({
   "partnerName": zod.string().optional(),
   "remaining": zod.number().int().optional(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.number().int().min(addLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(addLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional()
+  "waitlistOfferMinutes": zod.number().int().min(addLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(addLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
+  "checkinPolicy": zod.union([zod.object({
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.number().int(),
+  "opensAt": zod.coerce.date(),
+  "closesAt": zod.coerce.date(),
+  "correctionEndsAt": zod.coerce.date()
+}),zod.null()]).optional()
 }))
 
 
@@ -1558,7 +1574,15 @@ export const ChangeLiveOfferingResponse = zod.object({
   "partnerName": zod.string().optional(),
   "remaining": zod.number().int().optional(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.number().int().min(changeLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(changeLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional()
+  "waitlistOfferMinutes": zod.number().int().min(changeLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(changeLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
+  "checkinPolicy": zod.union([zod.object({
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.number().int(),
+  "opensAt": zod.coerce.date(),
+  "closesAt": zod.coerce.date(),
+  "correctionEndsAt": zod.coerce.date()
+}),zod.null()]).optional()
 }))
 
 
@@ -1587,6 +1611,126 @@ export const CancelLiveOfferingParams = zod.object({
 export const CancelLiveOfferingResponse = zod.object({
   "ok": zod.boolean()
 })
+
+
+export const GetPartnerSettlementSummaryQueryParams = zod.object({
+  "from": zod.date(),
+  "to": zod.date()
+})
+
+export const getPartnerSettlementSummaryResponseVerifiedVisitsMin = 0;
+
+export const getPartnerSettlementSummaryResponseRejectedVisitsMin = 0;
+
+export const getPartnerSettlementSummaryResponseOnHoldVisitsMin = 0;
+
+export const getPartnerSettlementSummaryResponseGroupsItemVerifiedVisitsMin = 0;
+
+export const getPartnerSettlementSummaryResponseGroupsItemRejectedVisitsMin = 0;
+
+export const getPartnerSettlementSummaryResponseGroupsItemOnHoldVisitsMin = 0;
+
+
+
+export const GetPartnerSettlementSummaryResponse = zod.object({
+  "partnerId": zod.string(),
+  "from": zod.coerce.date(),
+  "to": zod.coerce.date(),
+  "verifiedVisits": zod.number().int().min(getPartnerSettlementSummaryResponseVerifiedVisitsMin),
+  "rejectedVisits": zod.number().int().min(getPartnerSettlementSummaryResponseRejectedVisitsMin),
+  "onHoldVisits": zod.number().int().min(getPartnerSettlementSummaryResponseOnHoldVisitsMin),
+  "groups": zod.array(zod.object({
+  "facility": zod.string(),
+  "city": zod.string(),
+  "category": zod.string(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "verifiedVisits": zod.number().int().min(getPartnerSettlementSummaryResponseGroupsItemVerifiedVisitsMin),
+  "rejectedVisits": zod.number().int().min(getPartnerSettlementSummaryResponseGroupsItemRejectedVisitsMin),
+  "onHoldVisits": zod.number().int().min(getPartnerSettlementSummaryResponseGroupsItemOnHoldVisitsMin)
+}))
+})
+
+
+
+
+
+export const GetPartnerInvoicesResponseItem = zod.object({
+  "id": zod.string(),
+  "invoiceNumber": zod.string(),
+  "amountIqd": zod.number().int().min(1),
+  "issuedAt": zod.coerce.date(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date(),
+  "taxNumber": zod.string().nullable(),
+  "documentName": zod.string(),
+  "status": zod.enum(['submitted', 'under_review', 'accepted', 'rejected']),
+  "createdAt": zod.coerce.date()
+})
+export const GetPartnerInvoicesResponse = zod.array(GetPartnerInvoicesResponseItem)
+
+
+export const submitPartnerInvoiceBodyInvoiceNumberMax = 100;
+
+export const submitPartnerInvoiceBodyAmountIqdMax = 1000000000;
+
+export const submitPartnerInvoiceBodyTaxNumberMax = 80;
+
+export const submitPartnerInvoiceBodyDocumentPathMax = 500;
+
+export const submitPartnerInvoiceBodyDocumentNameMax = 180;
+
+
+
+export const SubmitPartnerInvoiceBody = zod.object({
+  "invoiceNumber": zod.string().min(1).max(submitPartnerInvoiceBodyInvoiceNumberMax),
+  "amountIqd": zod.number().int().min(1).max(submitPartnerInvoiceBodyAmountIqdMax),
+  "issuedAt": zod.coerce.date(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date(),
+  "taxNumber": zod.string().max(submitPartnerInvoiceBodyTaxNumberMax).nullish(),
+  "documentPath": zod.string().min(1).max(submitPartnerInvoiceBodyDocumentPathMax),
+  "documentName": zod.string().min(1).max(submitPartnerInvoiceBodyDocumentNameMax)
+})
+
+
+
+
+export const SubmitPartnerInvoiceResponse = zod.object({
+  "id": zod.string(),
+  "invoiceNumber": zod.string(),
+  "amountIqd": zod.number().int().min(1),
+  "issuedAt": zod.coerce.date(),
+  "periodStart": zod.coerce.date(),
+  "periodEnd": zod.coerce.date(),
+  "taxNumber": zod.string().nullable(),
+  "documentName": zod.string(),
+  "status": zod.enum(['submitted', 'under_review', 'accepted', 'rejected']),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const requestPartnerInvoiceUploadUrlBodyFileNameMax = 180;
+
+export const requestPartnerInvoiceUploadUrlBodySizeMax = 10485760;
+
+
+
+export const RequestPartnerInvoiceUploadUrlBody = zod.object({
+  "fileName": zod.string().min(1).max(requestPartnerInvoiceUploadUrlBodyFileNameMax),
+  "size": zod.number().int().min(1).max(requestPartnerInvoiceUploadUrlBodySizeMax)
+})
+
+export const RequestPartnerInvoiceUploadUrlResponse = zod.object({
+  "uploadURL": zod.string().url(),
+  "documentPath": zod.string()
+})
+
+
+export const DownloadPartnerInvoiceDocumentParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DownloadPartnerInvoiceDocumentResponse = zod.unknown()
 
 
 export const createLearningCourseBodyOneLocalizedTitleEnMax = 240;
@@ -2213,7 +2357,15 @@ export const GetLiveCatalogResponseItem = zod.object({
   "partnerName": zod.string().optional(),
   "remaining": zod.number().int().optional(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.number().int().min(getLiveCatalogResponseTwoWaitlistOfferMinutesMin).max(getLiveCatalogResponseTwoWaitlistOfferMinutesMax).optional()
+  "waitlistOfferMinutes": zod.number().int().min(getLiveCatalogResponseTwoWaitlistOfferMinutesMin).max(getLiveCatalogResponseTwoWaitlistOfferMinutesMax).optional(),
+  "checkinPolicy": zod.union([zod.object({
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.number().int(),
+  "opensAt": zod.coerce.date(),
+  "closesAt": zod.coerce.date(),
+  "correctionEndsAt": zod.coerce.date()
+}),zod.null()]).optional()
 }))
 export const GetLiveCatalogResponse = zod.array(GetLiveCatalogResponseItem)
 
