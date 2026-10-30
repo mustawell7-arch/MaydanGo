@@ -81,10 +81,15 @@ export const waitlistEntries = pgTable("waitlist_entries", {
   userId: text("user_id").notNull(),
   offeringId: text("offering_id").notNull().references(() => offerings.id),
   queuePosition: integer("queue_position").notNull(),
-  status: text("status").notNull(),
+  status: text("status").notNull().default("waiting"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   offerExpiresAt: timestamp("offer_expires_at", { withTimezone: true }),
   respondedAt: timestamp("responded_at", { withTimezone: true }),
+  // Retained for non-destructive upgrades from the earlier waitlist schema.
+  legacyReservationId: text("reservation_id").references(() => reservations.id),
+  legacyReason: text("reason"),
+  legacyJoinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
+  legacyUpdatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [
   uniqueIndex("waitlist_position_per_offering").on(t.offeringId, t.queuePosition),
   uniqueIndex("one_active_waitlist_entry").on(t.userId, t.offeringId)
