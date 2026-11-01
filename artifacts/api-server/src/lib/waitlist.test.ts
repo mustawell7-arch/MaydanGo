@@ -4,10 +4,14 @@ import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
 import { and, eq, inArray } from "drizzle-orm";
 import express from "express";
-import { db, pool, memberships, offerings, operators, partners, reservations, waitlistEntries } from "@workspace/db";
+import {
+  db, pool, memberNotificationPreferences, memberships, offerings, operators, partners,
+  memberUpdates, pushDeliveries, pushDevices, reservations, waitlistEntries,
+} from "@workspace/db";
 import memberRouter from "../routes/member";
 import operationsRouter from "../routes/operations";
-import { createReservation } from "./reservations";
+import { createReservation, processWaitlistQueue } from "./reservations";
+import { retryPendingPushDeliveries } from "./notifications";
 
 const prefix = `waitlist-test-${randomUUID()}`;
 const owner = `${prefix}-owner`;
@@ -24,6 +28,7 @@ const otherWaitlistId = `${prefix}-other-entry`;
 const reservationIds: string[] = [];
 const waitlistIds: string[] = [];
 let server: Server | null = null;
+let restoreFetch: (() => void) | null = null;
 
 const app = express();
 app.use(express.json());
@@ -47,7 +52,12 @@ const call = async (path: string, user: string, method = "GET", body?: unknown) 
 };
 
 after(async () => {
+  restoreFetch?.();
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
+  await db.delete(pushDeliveries).where(inArray(pushDeliveries.userId, [second, third]));
+  await db.delete(pushDevices).where(inArray(pushDevices.userId, [second, third]));
+  await db.delete(memberNotificationPreferences).where(inArray(memberNotificationPreferences.userId, [second, third]));
+  await db.delete(memberUpdates).where(inArray(memberUpdates.userId, [second, third]));
   if (waitlistIds.length) await db.delete(waitlistEntries).where(inArray(waitlistEntries.id, waitlistIds));
   await db.delete(reservations).where(eq(reservations.offeringId, offeringId));
   await db.delete(operators).where(eq(operators.userId, owner));
@@ -134,6 +144,10 @@ test("full live classes promote the first eligible member after a cancellation",
 
   await db.update(memberships).set({ status: "expired" })
     .where(and(eq(memberships.userId, first), eq(memberships.scope, "live")));
+  await db.insert(memberNotificationPreferences).values([
+    { userId: second, pushEnabled: false, language: "ku" },
+    { userId: third, pushEnabled: false, language: "en" },
+  ]);
   const canceled = await call(`/member/bookings/${booking.id}`, owner, "DELETE");
   assert.equal(canceled.status, 200);
 
@@ -142,11 +156,96 @@ test("full live classes promote the first eligible member after a cancellation",
   const offeredState = await call("/member", second);
   assert.equal(memberEntry(offeredState.data).status, "offered");
   assert.ok(memberEntry(offeredState.data).offerExpiresAt);
+  assert.equal(offeredState.data.waitlistUpdates.filter((update: { kind: string }) => update.kind === "waitlist_offer").length, 1);
+  const [initialOffer] = await db.select().from(waitlistEntries).where(eq(waitlistEntries.id, secondEntry.id));
+  assert.ok(initialOffer?.offerExpiresAt && initialOffer.reminderAt);
+  assert.equal(initialOffer.reminderAt.getTime(), initialOffer.offerExpiresAt.getTime() - 10 * 60_000);
+
+  await db.update(memberNotificationPreferences).set({ pushEnabled: true, language: "ku" })
+    .where(eq(memberNotificationPreferences.userId, second));
+  const secondDeviceId = randomUUID();
+  await db.insert(pushDevices).values({
+    id: secondDeviceId, userId: second, token: `ExpoPushToken[${randomUUID().replaceAll("-", "")}]`, platform: "ios",
+  });
+  const originalFetch = globalThis.fetch;
+  const sentKinds: string[] = [];
+  const sentBodies: string[] = [];
+  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = input instanceof Request ? input.url : String(input);
+    if (url.startsWith("https://exp.host/")) {
+      const payload = JSON.parse(String(init?.body)) as Array<{ body: string; data?: { kind?: string } }>;
+      sentKinds.push(...payload.map(message => message.data?.kind ?? ""));
+      sentBodies.push(...payload.map(message => message.body));
+      return new Response(JSON.stringify({ data: payload.map((_, index) => ({ status: "ok", id: `waitlist-${index}` })) }), {
+        status: 200, headers: { "Content-Type": "application/json" },
+      });
+    }
+    return originalFetch(input, init);
+  }) as typeof fetch;
+  restoreFetch = () => { globalThis.fetch = originalFetch; };
+  const enqueueReminderRetry = async (userId: string, entryId: string, deviceId: string) => {
+    const id = randomUUID();
+    await db.insert(pushDeliveries).values({
+      id, userId, deviceId, kind: "waitlist_reminder", title: "Reminder retry", body: "Reminder retry",
+      status: "retry_pending", dedupeKey: `waitlist-reminder:${entryId}:${deviceId}`,
+      attemptCount: 1, nextAttemptAt: new Date(Date.now() - 1000),
+    });
+    return id;
+  };
+  await db.update(waitlistEntries).set({ reminderAt: new Date(Date.now() - 1000) })
+    .where(eq(waitlistEntries.id, secondEntry.id));
+  await processWaitlistQueue(new Date(), [offeringId]);
+  for (let attempt = 0; attempt < 50 && !sentKinds.includes("waitlist_reminder"); attempt++)
+    await new Promise(resolve => setTimeout(resolve, 20));
+  assert.equal(sentKinds.filter(kind => kind === "waitlist_reminder").length, 1);
+  assert.match(sentBodies.find((_, index) => sentKinds[index] === "waitlist_reminder") ?? "", /خولەک/);
+  const [remindedOffer] = await db.select().from(waitlistEntries).where(eq(waitlistEntries.id, secondEntry.id));
+  assert.ok(remindedOffer?.reminderAttemptedAt);
+  const afterReminder = await call("/member", second);
+  assert.equal(afterReminder.data.waitlistUpdates.filter((update: { kind: string }) => update.kind === "waitlist_offer").length, 1);
+
   const accepted = await call(`/member/waitlist/${secondEntry.id}/accept`, second, "POST");
   assert.equal(accepted.status, 200);
   assert.equal(memberEntry(accepted.data).status, "booked");
   assert.ok(accepted.data.bookings.some((item: { targetId: string; status: string }) =>
     item.targetId === offeringId && item.status === "reserved"));
+  await processWaitlistQueue(new Date(), [offeringId]);
+  await new Promise(resolve => setTimeout(resolve, 40));
+  assert.equal(sentKinds.filter(kind => kind === "waitlist_reminder").length, 1);
+  const bookedState = await call("/member", second);
+  assert.equal(bookedState.data.waitlistUpdates.filter((update: { kind: string }) => update.kind === "waitlist_booked").length, 1);
+  const bookedRetryDeviceId = randomUUID();
+  await db.insert(pushDevices).values({
+    id: bookedRetryDeviceId, userId: second, token: `ExpoPushToken[${randomUUID().replaceAll("-", "")}]`, platform: "android",
+  });
+  const bookedRetryId = await enqueueReminderRetry(second, secondEntry.id, bookedRetryDeviceId);
+  const remindersBeforeBookedRetry = sentKinds.filter(kind => kind === "waitlist_reminder").length;
+  await retryPendingPushDeliveries(new Date());
+  assert.equal(sentKinds.filter(kind => kind === "waitlist_reminder").length, remindersBeforeBookedRetry);
+  const [bookedRetry] = await db.select().from(pushDeliveries).where(eq(pushDeliveries.id, bookedRetryId));
+  assert.equal(bookedRetry?.status, "cancelled");
+
+  await db.update(waitlistEntries).set({
+    status: "offered",
+    offerExpiresAt: new Date(Date.now() - 1000),
+    reminderAt: new Date(Date.now() - 2000),
+    reminderAttemptedAt: null,
+  }).where(eq(waitlistEntries.id, thirdEntry.id));
+  await processWaitlistQueue(new Date(), [offeringId]);
+  const expiredState = await call("/member", third);
+  assert.equal(expiredState.data.waitlistUpdates.filter((update: { kind: string }) => update.kind === "waitlist_expired").length, 1);
+  assert.equal(sentKinds.filter(kind => kind === "waitlist_reminder").length, 1);
+  await db.update(memberNotificationPreferences).set({ pushEnabled: true })
+    .where(eq(memberNotificationPreferences.userId, third));
+  const thirdDeviceId = randomUUID();
+  await db.insert(pushDevices).values({
+    id: thirdDeviceId, userId: third, token: `ExpoPushToken[${randomUUID().replaceAll("-", "")}]`, platform: "ios",
+  });
+  const expiredRetryId = await enqueueReminderRetry(third, thirdEntry.id, thirdDeviceId);
+  await retryPendingPushDeliveries(new Date());
+  assert.equal(sentKinds.filter(kind => kind === "waitlist_reminder").length, 1);
+  const [expiredRetry] = await db.select().from(pushDeliveries).where(eq(pushDeliveries.id, expiredRetryId));
+  assert.equal(expiredRetry?.status, "cancelled");
 
   const activePlaces = await db.select().from(reservations).where(and(
     eq(reservations.offeringId, offeringId), inArray(reservations.status, ["reserved", "requested"]),

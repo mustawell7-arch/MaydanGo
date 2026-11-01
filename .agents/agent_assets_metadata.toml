@@ -56,3 +56,17 @@ mtime_ms = 1793194116486
 storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/a7c21912-5228-455c-8861-1e471d269ee2/cec4b207-bee2-439d-ac92-626d63d07d99"
 storage_version_token = "1793194144457290"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "boSOuZZxlLN06eW6HtrwM"
+uri = "file://.agents/outputs/MaydanGo-Partner-Portal-Copy-Review.pdf"
+type = "pdf"
+title = "MaydanGo Partner Portal Copy Review"
+description = "A 17-page review PDF with 14 portal navigation labels and 280 partner-portal phrases in English, draft Iraqi Arabic, and draft Sorani. It clearly notes that translations need local-speaker review and are not native-app copy."
+logical_id = "50f3283e-bdc6-4af6-bbfa-5dbda055aa1f"
+content_hash = "sha256:89308928cef58ae161eaf66867ee1cf32b8ffd30d453bcede8eb9a45c883cdd5"
+size = 472278
+mtime_ms = 1793550064074
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/50f3283e-bdc6-4af6-bbfa-5dbda055aa1f/9f08d129-b86e-46cf-9250-b523f2881d66"
+storage_version_token = "1793550119194570"
+content_type = "application/pdf"

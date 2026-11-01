@@ -60,6 +60,31 @@ const facilityLocalizedText = z.object({
   ar: z.string().trim().min(1).max(500),
   ku: z.string().trim().min(1).max(500),
 }).strict();
+const facilityCalendarDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}, "Use a valid calendar date.");
+export const facilityHoursOverrideInput = z.object({
+  startDate: facilityCalendarDate,
+  endDate: facilityCalendarDate,
+  closed: z.boolean(),
+  opensAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+  closesAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+  localizedReason: facilityLocalizedText,
+}).strict().superRefine((value, ctx) => {
+  const start = Date.parse(`${value.startDate}T00:00:00Z`);
+  const end = Date.parse(`${value.endDate}T00:00:00Z`);
+  if (end < start) {
+    ctx.addIssue({ code: "custom", path: ["endDate"], message: "The end date must not precede the start date." });
+  } else if ((end - start) / 86_400_000 > 365) {
+    ctx.addIssue({ code: "custom", path: ["endDate"], message: "An hours override cannot exceed 366 calendar days." });
+  }
+  if (value.closed
+    ? value.opensAt !== null || value.closesAt !== null
+    : value.opensAt === null || value.closesAt === null || value.opensAt === value.closesAt) {
+    ctx.addIssue({ code: "custom", message: "Closures have no times; special hours need different opening and closing times." });
+  }
+});
 const facilityTextList = z.array(facilityLocalizedText).max(30);
 const facilityWebsite = z.string().trim().url().max(2048).refine(value => {
   try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; }

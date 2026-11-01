@@ -2,10 +2,12 @@
 - [Account booking boundary](account-booking-boundary.md) — Explicit sample-only access; never convert local plan choices or old preview reservations into live entitlements.
 - [Workspace type compatibility](workspace-type-generation.md) — Avoid duplicate React declaration versions and conflicting Orval validator/model barrels.
 - [Localization boundaries](localization-boundaries.md) — Sorani Kurdish, Iraq-time schedules, and native-speaker review remain explicit release constraints.
-- [Live access rollout](live-access-rollout.md) — Payments deferred until after testing; preserve the terms of existing reservations and grants.
+- [Live access rollout](live-access-rollout.md) — Gate live payments, preserve reservation terms, and count free event RSVPs as standard membership visits.
+- [Private course playback](private-course-playback.md) — App Storage has no temporary signed GET links; stream private recordings through access-checked API routes.
 - [Attendance trust](attendance-trust.md) — GPS supports arrival evidence; partner confirmation is mandatory, and closed-record overrides need separate approval.
 - [Expo tunnel subdomains](expo-tunnel-subdomains.md) — Fixed ngrok subdomains can remain occupied after a local workflow stops; app-specific suffixes avoid prior endpoints.
 - [Expo phone launch routing](expo-phone-launch.md) — A Replit-branded phone 404 can be separate from a healthy Expo tunnel; verify the Expo manifest and bundles before changing app code.
+- [Expo web font loading](expo-web-font-loading.md) — Keep web routes visible while fonts load; waiting on font readiness can leave the preview blank.
 - [Partner operations platform](partner-operations-platform.md) — MaydanGo partner tools belong in the web portal.
 - [Guardian verification](guardian-verification.md) — Partners verify guardian requirements at the venue; MaydanGo must not collect guardian information.
 - [Waitlist schema sync](waitlist-schema-sync.md) — Drizzle push-force can still hit non-interactive rename prompts; preserve legacy fields or migrate explicitly.

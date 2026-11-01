@@ -2,7 +2,7 @@ import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { z } from "zod";
 import { db, memberships, memberProfiles, offerings, reservations, partners, waitlistEntries } from "@workspace/db";
-import { eq, and, inArray, sql, gt, asc, isNull } from "drizzle-orm";
+import { eq, and, inArray, sql, gt, asc, isNull, ne, or } from "drizzle-orm";
 import {
   BookingError, memberState, createReservation, cancelReservation,
   acceptWaitlistOffer, joinWaitlist, leaveWaitlist,
@@ -12,12 +12,34 @@ import { memberSupportRouter } from "./support";
 import { sendMemberNotification } from "../lib/notifications";
 import { PaymentError } from "../lib/payment-config";
 import { cancelMemberSubscription, createMemberCheckout, listMemberPlans, memberSubscription } from "../lib/payments-paytabs";
+import {
+  cancelMemberDeviceChange, DeviceSecurityError, getMemberDeviceStatus,
+  readMemberDeviceToken, requirePrimaryMemberDevice,
+} from "../lib/member-device-security";
 
 const router = Router();
 router.use((req, res, next) => {
   if (!getAuth(req).userId) { res.status(401).json({ message: "Sign in to manage your bookings." }); return; }
   next();
 });
+router.get("/device", async (req, res) => {
+  const token = readMemberDeviceToken(req);
+  if (!token) { res.status(403).json({ code: "DEVICE_REGISTRATION_REQUIRED", message: "Secure device registration is required." }); return; }
+  res.json(await getMemberDeviceStatus(getAuth(req).userId!, token));
+});
+router.post("/device", async (req, res) => {
+  const parsed = z.object({ platform: z.enum(["ios", "android"]) }).strict().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ message: "Choose a supported device platform." }); return; }
+  const token = readMemberDeviceToken(req);
+  if (!token) { res.status(403).json({ code: "DEVICE_REGISTRATION_REQUIRED", message: "Secure device registration is required." }); return; }
+  res.json(await getMemberDeviceStatus(getAuth(req).userId!, token, parsed.data.platform));
+});
+router.delete("/device/change", async (req, res) => {
+  const token = readMemberDeviceToken(req);
+  if (!token) { res.status(403).json({ code: "DEVICE_REGISTRATION_REQUIRED", message: "Secure device registration is required." }); return; }
+  res.json(await cancelMemberDeviceChange(getAuth(req).userId!, token));
+});
+router.use(requirePrimaryMemberDevice);
 router.use(learningRouter);
 router.use(memberSupportRouter);
 router.get("/", async (req, res) => { res.json(await memberState(getAuth(req).userId!)); });
@@ -40,7 +62,11 @@ router.get("/live-catalog", async (_req, res) => {
     reserved: sql<number>`count(${reservations.id})::int`,
   }).from(offerings).innerJoin(partners, eq(offerings.partnerId, partners.id))
     .leftJoin(reservations, and(eq(reservations.offeringId, offerings.id), inArray(reservations.status, ["reserved", "requested"])))
-    .where(and(eq(offerings.scope, "live"), eq(offerings.active, true), isNull(offerings.cancelledAt), eq(partners.approved, true), gt(offerings.startsAt, now)))
+    .where(and(
+      eq(offerings.scope, "live"), eq(offerings.active, true), isNull(offerings.cancelledAt),
+      eq(partners.approved, true), gt(offerings.startsAt, now),
+      or(ne(offerings.kind, "event"), eq(offerings.additionalPayment, false)),
+    ))
     .groupBy(offerings.id, partners.id).orderBy(asc(offerings.startsAt));
   const activeOffers = await db.select({
     offeringId: waitlistEntries.offeringId,
@@ -128,6 +154,7 @@ router.post("/waitlist/:id/accept", async (req, res) => {
 router.use((error: unknown, _req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => {
   if (error instanceof BookingError) { res.status(error.status).json({ message: error.message }); return; }
   if (error instanceof PaymentError) { res.status(error.status).json({ message: error.message }); return; }
+  if (error instanceof DeviceSecurityError) { res.status(error.status).json({ code: error.code, message: error.message }); return; }
   next(error);
 });
 export default router;

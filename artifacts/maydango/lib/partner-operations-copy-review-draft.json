@@ -1,0 +1,2060 @@
+[
+  {
+    "id": "001",
+    "source_en": "Overview",
+    "en": "Overview",
+    "ar": "نظرة عامة",
+    "ckb": "پوختە"
+  },
+  {
+    "id": "002",
+    "source_en": "Offerings",
+    "en": "Listings",
+    "ar": "الأنشطة",
+    "ckb": "چالاکییەکان"
+  },
+  {
+    "id": "003",
+    "source_en": "Attendance",
+    "en": "Attendance",
+    "ar": "الحضور",
+    "ckb": "ئامادەبوون"
+  },
+  {
+    "id": "004",
+    "source_en": "Waiting list",
+    "en": "Waitlist",
+    "ar": "قائمة الانتظار",
+    "ckb": "لیستی چاوەڕوانی"
+  },
+  {
+    "id": "005",
+    "source_en": "Partners",
+    "en": "Partners",
+    "ar": "الشركاء",
+    "ckb": "هاوبەشەکان"
+  },
+  {
+    "id": "006",
+    "source_en": "Facilities",
+    "en": "Facilities",
+    "ar": "الأماكن",
+    "ckb": "شوێنەکان"
+  },
+  {
+    "id": "007",
+    "source_en": "Sessions & bookings",
+    "en": "Sessions & bookings",
+    "ar": "الجلسات والحجوزات",
+    "ckb": "کلاس و نۆرەکان"
+  },
+  {
+    "id": "008",
+    "source_en": "Settlements",
+    "en": "Payouts",
+    "ar": "المستحقات",
+    "ckb": "پارەدانەوەکان"
+  },
+  {
+    "id": "009",
+    "source_en": "Invoices",
+    "en": "Invoices",
+    "ar": "الفواتير",
+    "ckb": "پسووڵەکان"
+  },
+  {
+    "id": "010",
+    "source_en": "Good to see you.",
+    "en": "Welcome back.",
+    "ar": "هلا بيك من جديد.",
+    "ckb": "بەخێربێیتەوە."
+  },
+  {
+    "id": "011",
+    "source_en": "Attendance review",
+    "en": "Attendance review",
+    "ar": "مراجعة الحضور",
+    "ckb": "پێداچوونەوەی ئامادەبوون"
+  },
+  {
+    "id": "012",
+    "source_en": "Partner approvals",
+    "en": "Partner approvals",
+    "ar": "موافقات الشركاء",
+    "ckb": "پەسەندکردنی هاوبەشان"
+  },
+  {
+    "id": "013",
+    "source_en": "Partner operations",
+    "en": "Partner portal",
+    "ar": "بوابة الشركاء",
+    "ckb": "پۆرتاڵی هاوبەشان"
+  },
+  {
+    "id": "014",
+    "source_en": "Language",
+    "en": "Language",
+    "ar": "اللغة",
+    "ckb": "زمان"
+  },
+  {
+    "id": "015",
+    "source_en": "English",
+    "en": "English",
+    "ar": "الإنجليزية",
+    "ckb": "ئینگلیزی"
+  },
+  {
+    "id": "016",
+    "source_en": "MAYDANGO · IRAQ",
+    "en": "MAYDANGO · IRAQ",
+    "ar": "MaydanGo · العراق",
+    "ckb": "MaydanGo · عێراق"
+  },
+  {
+    "id": "017",
+    "source_en": "session",
+    "en": "Class",
+    "ar": "كلاس",
+    "ckb": "کلاس"
+  },
+  {
+    "id": "018",
+    "source_en": "event",
+    "en": "Event",
+    "ar": "فعالية",
+    "ckb": "بۆنە"
+  },
+  {
+    "id": "019",
+    "source_en": "coach",
+    "en": "Coaching",
+    "ar": "تدريب شخصي",
+    "ckb": "ڕاهێنانی تایبەت"
+  },
+  {
+    "id": "020",
+    "source_en": "confirm",
+    "en": "Confirm",
+    "ar": "تأكيد",
+    "ckb": "پشتڕاستکردنەوە"
+  },
+  {
+    "id": "021",
+    "source_en": "dispute",
+    "en": "Dispute",
+    "ar": "اعتراض",
+    "ckb": "ناڕەزایی"
+  },
+  {
+    "id": "022",
+    "source_en": "accept request",
+    "en": "Accept request",
+    "ar": "قبول الطلب",
+    "ckb": "قبوڵکردنی داواکاری"
+  },
+  {
+    "id": "023",
+    "source_en": "resolve confirm",
+    "en": "Resolve: confirm",
+    "ar": "حل الاعتراض: تأكيد",
+    "ckb": "چارەسەری ناڕەزایی: پشتڕاستکردنەوە"
+  },
+  {
+    "id": "024",
+    "source_en": "resolve void",
+    "en": "Resolve: void",
+    "ar": "حل الاعتراض: إلغاء التسجيل",
+    "ckb": "چارەسەری ناڕەزایی: هەڵوەشاندنەوە"
+  },
+  {
+    "id": "025",
+    "source_en": "void",
+    "en": "Void",
+    "ar": "إلغاء التسجيل",
+    "ckb": "هەڵوەشاندنەوە"
+  },
+  {
+    "id": "026",
+    "source_en": "lock",
+    "en": "Lock",
+    "ar": "قفل",
+    "ckb": "قوفڵکردن"
+  },
+  {
+    "id": "027",
+    "source_en": "locked",
+    "en": "Locked",
+    "ar": "مقفول",
+    "ckb": "قوفڵکراوە"
+  },
+  {
+    "id": "028",
+    "source_en": "manual.checkin",
+    "en": "Manual check-in",
+    "ar": "تسجيل حضور يدوي",
+    "ckb": "تۆمارکردنی ئامادەبوونی دەستی"
+  },
+  {
+    "id": "029",
+    "source_en": "partner cancelled",
+    "en": "Canceled by partner",
+    "ar": "ألغاه الشريك",
+    "ckb": "هاوبەش هەڵیوەشاندەوە"
+  },
+  {
+    "id": "030",
+    "source_en": "offer accepted",
+    "en": "Spot offer accepted",
+    "ar": "تم قبول المكان المعروض",
+    "ckb": "پێشنیاری شوێن قبوڵکرا"
+  },
+  {
+    "id": "031",
+    "source_en": "offer declined",
+    "en": "Spot offer declined",
+    "ar": "تم رفض المكان المعروض",
+    "ckb": "پێشنیاری شوێن ڕەتکرایەوە"
+  },
+  {
+    "id": "032",
+    "source_en": "Audit history ·",
+    "en": "Activity log ·",
+    "ar": "سجل التغييرات ·",
+    "ckb": "مێژووی گۆڕانکارییەکان ·"
+  },
+  {
+    "id": "033",
+    "source_en": "— audit reason (at least 5 characters)",
+    "en": "— reason (at least 5 characters)",
+    "ar": "— السبب (5 أحرف على الأقل)",
+    "ckb": "— هۆکار (لانیکەم 5 پیت)"
+  },
+  {
+    "id": "034",
+    "source_en": "· Group",
+    "en": "· Group",
+    "ar": "· المجموعة",
+    "ckb": "· گرووپ"
+  },
+  {
+    "id": "035",
+    "source_en": "Close form",
+    "en": "Close form",
+    "ar": "إغلاق النموذج",
+    "ckb": "داخستنی فۆرم"
+  },
+  {
+    "id": "036",
+    "source_en": "Partner",
+    "en": "Partner",
+    "ar": "الشريك",
+    "ckb": "هاوبەش"
+  },
+  {
+    "id": "037",
+    "source_en": "Choose a partner",
+    "en": "Choose a partner",
+    "ar": "اختار شريك",
+    "ckb": "هاوبەشێک هەڵبژێرە"
+  },
+  {
+    "id": "038",
+    "source_en": "Session",
+    "en": "Class",
+    "ar": "كلاس",
+    "ckb": "کلاس"
+  },
+  {
+    "id": "039",
+    "source_en": "Event",
+    "en": "Event",
+    "ar": "فعالية",
+    "ckb": "بۆنە"
+  },
+  {
+    "id": "040",
+    "source_en": "Coaching",
+    "en": "Coaching",
+    "ar": "تدريب شخصي",
+    "ckb": "ڕاهێنانی تایبەت"
+  },
+  {
+    "id": "041",
+    "source_en": "Additional dates · YYYY-MM-DD, one per line",
+    "en": "Additional dates · YYYY-MM-DD, one per line",
+    "ar": "تواريخ إضافية · YYYY-MM-DD، تاريخ واحد بكل سطر",
+    "ckb": "بەرواری زیادە · YYYY-MM-DD، هەر دێڕێک یەک بەروار"
+  },
+  {
+    "id": "042",
+    "source_en": "Skip dates or holidays · YYYY-MM-DD, one per line",
+    "en": "Dates to skip (e.g., holidays) · YYYY-MM-DD, one per line",
+    "ar": "تواريخ تنستثنى (مثل العطل) · YYYY-MM-DD، تاريخ واحد بكل سطر",
+    "ckb": "ئەو بەروارانەی دەخرێنە دەرەوە (وەک پشووەکان) · YYYY-MM-DD، هەر دێڕێک یەک بەروار"
+  },
+  {
+    "id": "043",
+    "source_en": "Repeat until · inclusive",
+    "en": "Repeat until (including this date)",
+    "ar": "يتكرر لغاية (ويشمل هذا اليوم)",
+    "ckb": "دووبارە بێتەوە تا (ئەم ڕۆژەش دەگرێتەوە)"
+  },
+  {
+    "id": "044",
+    "source_en": "At",
+    "en": "At",
+    "ar": "الساعة",
+    "ckb": "کاتژمێر"
+  },
+  {
+    "id": "045",
+    "source_en": "local time · inclusive through",
+    "en": "Iraq time · through and including",
+    "ar": "بتوقيت العراق · لغاية ويشمل",
+    "ckb": "بە کاتی عێراق · تا و لەگەڵ"
+  },
+  {
+    "id": "046",
+    "source_en": "Conflict date:",
+    "en": "Conflicting date:",
+    "ar": "تاريخ متعارض:",
+    "ckb": "بەرواری ناکۆک:"
+  },
+  {
+    "id": "047",
+    "source_en": "Use tiers configured for your offering",
+    "en": "Use the membership tiers set up for this listing",
+    "ar": "استخدم فئات الاشتراك المحددة لهذا النشاط",
+    "ckb": "ئاستەکانی ئەندامێتیی ئەم چالاکییە بەکاربهێنە"
+  },
+  {
+    "id": "048",
+    "source_en": "Join URL (optional)",
+    "en": "Join link (optional)",
+    "ar": "رابط الانضمام (اختياري)",
+    "ckb": "لینکی بەشداریکردن (ئارەزوومەندانە)"
+  },
+  {
+    "id": "049",
+    "source_en": "Portal access is not enabled",
+    "en": "Portal access isn't turned on",
+    "ar": "ما عندك صلاحية دخول للبوابة",
+    "ckb": "دەستگەیشتنت بە پۆرتاڵ نییە"
+  },
+  {
+    "id": "050",
+    "source_en": "Your MaydanGo account is signed in, but it does not have an approved partner or administrator role. No partner or attendance information is available for this account.",
+    "en": "You're signed in to MaydanGo, but your account isn't approved as a partner or admin yet, so there's no partner or attendance information to show.",
+    "ar": "سجّلت دخول لـ MaydanGo، بس حسابك بعده مو معتمد كشريك أو كإدارة، فماكو معلومات شركاء أو حضور تنعرض.",
+    "ckb": "چوویتە ژوورەوەی MaydanGo، بەڵام هەژمارەکەت هێشتا وەک هاوبەش یان بەڕێوەبەر پەسەند نەکراوە، بۆیە هیچ زانیارییەکی هاوبەش یان ئامادەبوون نییە بۆ پیشاندان."
+  },
+  {
+    "id": "051",
+    "source_en": "Public website",
+    "en": "Public website",
+    "ar": "الموقع العام",
+    "ckb": "ماڵپەڕی گشتی"
+  },
+  {
+    "id": "052",
+    "source_en": "Public MaydanGo site",
+    "en": "MaydanGo website",
+    "ar": "موقع MaydanGo",
+    "ckb": "ماڵپەڕی MaydanGo"
+  },
+  {
+    "id": "053",
+    "source_en": "Could not load operations",
+    "en": "Couldn't load the portal",
+    "ar": "ما كدرنا نحمّل البوابة",
+    "ckb": "نەمانتوانی پۆرتاڵەکە باربکەین"
+  },
+  {
+    "id": "054",
+    "source_en": "The MaydanGo operations service did not respond. Your partner scope has not been loaded.",
+    "en": "MaydanGo didn't respond, so your partner information hasn't loaded yet.",
+    "ar": "MaydanGo ما استجاب، فمعلومات الشريك مالتك ما تحمّلت.",
+    "ckb": "MaydanGo وەڵامی نەدایەوە، بۆیە زانیارییەکانی هاوبەشیەکەت بار نەبوون."
+  },
+  {
+    "id": "055",
+    "source_en": "Try again",
+    "en": "Try again",
+    "ar": "حاول مرة ثانية",
+    "ckb": "دووبارە هەوڵبدەرەوە"
+  },
+  {
+    "id": "056",
+    "source_en": "Portal navigation",
+    "en": "Portal navigation",
+    "ar": "قائمة البوابة",
+    "ckb": "لیستی پۆرتاڵ"
+  },
+  {
+    "id": "057",
+    "source_en": "Sign out",
+    "en": "Sign out",
+    "ar": "تسجيل الخروج",
+    "ckb": "چوونەدەرەوە"
+  },
+  {
+    "id": "058",
+    "source_en": "Finance desk",
+    "en": "Finance",
+    "ar": "الحسابات",
+    "ckb": "دارایی"
+  },
+  {
+    "id": "059",
+    "source_en": "Exit",
+    "en": "Exit",
+    "ar": "خروج",
+    "ckb": "دەرچوون"
+  },
+  {
+    "id": "060",
+    "source_en": "Dismiss notice",
+    "en": "Dismiss notice",
+    "ar": "إخفاء التنبيه",
+    "ckb": "شاردنەوەی ئاگاداری"
+  },
+  {
+    "id": "061",
+    "source_en": "Of",
+    "en": "of",
+    "ar": "من",
+    "ckb": "لە کۆی"
+  },
+  {
+    "id": "062",
+    "source_en": "server-listed offerings",
+    "en": "listings",
+    "ar": "نشاط",
+    "ckb": "چالاکی"
+  },
+  {
+    "id": "063",
+    "source_en": "Partner activity",
+    "en": "Partner activity",
+    "ar": "نشاط الشريك",
+    "ckb": "چالاکیی هاوبەش"
+  },
+  {
+    "id": "064",
+    "source_en": "roster records",
+    "en": "attendance records",
+    "ar": "سجلات حضور",
+    "ckb": "تۆماری ئامادەبوون"
+  },
+  {
+    "id": "065",
+    "source_en": "Partner:",
+    "en": "Partner:",
+    "ar": "الشريك:",
+    "ckb": "هاوبەش:"
+  },
+  {
+    "id": "066",
+    "source_en": "Review reason",
+    "en": "Review reason",
+    "ar": "سبب المراجعة",
+    "ckb": "هۆکاری پێداچوونەوە"
+  },
+  {
+    "id": "067",
+    "source_en": "Describe the correction or provide the requested details.",
+    "en": "Explain what needs fixing, or add the details we asked for.",
+    "ar": "وضّح شنو لازم يتصلّح، أو ضيف التفاصيل المطلوبة.",
+    "ckb": "ڕوونی بکەرەوە چی پێویستە چاک بکرێت، یان ئەو وردەکارییانە زیاد بکە کە داوا کراون."
+  },
+  {
+    "id": "068",
+    "source_en": "Required for corrections, rejection, or archiving.",
+    "en": "Required when requesting changes, rejecting, or archiving.",
+    "ar": "مطلوب عند طلب تعديل أو الرفض أو الأرشفة.",
+    "ckb": "پێویستە بۆ داوای گۆڕانکاری، ڕەتکردنەوە یان ئەرشیفکردن."
+  },
+  {
+    "id": "069",
+    "source_en": "Close",
+    "en": "Close",
+    "ar": "إغلاق",
+    "ckb": "داخستن"
+  },
+  {
+    "id": "070",
+    "source_en": "No offerings returned",
+    "en": "No listings yet",
+    "ar": "ماكو أنشطة بعد",
+    "ckb": "هێشتا هیچ چالاکییەک نییە"
+  },
+  {
+    "id": "071",
+    "source_en": "Create an offering to start managing your available sessions and events.",
+    "en": "Create a listing to start managing your sessions and events.",
+    "ar": "سوّي نشاط حتى تبدي تدير جلساتك وفعالياتك.",
+    "ckb": "چالاکییەک دروست بکە بۆ ئەوەی کلاس و بۆنەکانت بەڕێوەببەیت."
+  },
+  {
+    "id": "072",
+    "source_en": "Retry",
+    "en": "Retry",
+    "ar": "إعادة المحاولة",
+    "ckb": "دووبارە هەوڵبدەرەوە"
+  },
+  {
+    "id": "073",
+    "source_en": "Refresh",
+    "en": "Refresh",
+    "ar": "تحديث",
+    "ckb": "نوێکردنەوە"
+  },
+  {
+    "id": "074",
+    "source_en": "MaydanGo partner operations",
+    "en": "MaydanGo Partner Portal",
+    "ar": "بوابة شركاء MaydanGo",
+    "ckb": "پۆرتاڵی هاوبەشانی MaydanGo"
+  },
+  {
+    "id": "075",
+    "source_en": "Iraq local time",
+    "en": "Iraq time",
+    "ar": "بتوقيت العراق",
+    "ckb": "کاتی عێراق"
+  },
+  {
+    "id": "076",
+    "source_en": "Sunday",
+    "en": "Sunday",
+    "ar": "الأحد",
+    "ckb": "یەکشەممە"
+  },
+  {
+    "id": "077",
+    "source_en": "Monday",
+    "en": "Monday",
+    "ar": "الاثنين",
+    "ckb": "دووشەممە"
+  },
+  {
+    "id": "078",
+    "source_en": "Tuesday",
+    "en": "Tuesday",
+    "ar": "الثلاثاء",
+    "ckb": "سێشەممە"
+  },
+  {
+    "id": "079",
+    "source_en": "Wednesday",
+    "en": "Wednesday",
+    "ar": "الأربعاء",
+    "ckb": "چوارشەممە"
+  },
+  {
+    "id": "080",
+    "source_en": "Thursday",
+    "en": "Thursday",
+    "ar": "الخميس",
+    "ckb": "پێنجشەممە"
+  },
+  {
+    "id": "081",
+    "source_en": "Friday",
+    "en": "Friday",
+    "ar": "الجمعة",
+    "ckb": "هەینی"
+  },
+  {
+    "id": "082",
+    "source_en": "Saturday",
+    "en": "Saturday",
+    "ar": "السبت",
+    "ckb": "شەممە"
+  },
+  {
+    "id": "083",
+    "source_en": "could not be completed. The server did not accept the change.",
+    "en": "couldn't be completed. The change wasn't saved.",
+    "ar": "— ما اكتملت العملية والتغيير ما انحفظ.",
+    "ckb": "— تەواو نەبوو. گۆڕانکارییەکە پاشەکەوت نەکرا."
+  },
+  {
+    "id": "084",
+    "source_en": "Partner review",
+    "en": "Partner review",
+    "ar": "مراجعة الشريك",
+    "ckb": "پێداچوونەوەی هاوبەش"
+  },
+  {
+    "id": "085",
+    "source_en": "Offering update",
+    "en": "Listing update",
+    "ar": "تحديث النشاط",
+    "ckb": "نوێکردنەوەی چالاکی"
+  },
+  {
+    "id": "086",
+    "source_en": "Activity submission",
+    "en": "Listing submission",
+    "ar": "إرسال النشاط",
+    "ckb": "ناردنی چالاکی"
+  },
+  {
+    "id": "087",
+    "source_en": "Correction response",
+    "en": "Response to requested changes",
+    "ar": "الرد على التعديلات المطلوبة",
+    "ckb": "وەڵامی گۆڕانکارییە داواکراوەکان"
+  },
+  {
+    "id": "088",
+    "source_en": "Cancellation",
+    "en": "Cancellation",
+    "ar": "الإلغاء",
+    "ckb": "هەڵوەشاندنەوە"
+  },
+  {
+    "id": "089",
+    "source_en": "Attendance review",
+    "en": "Attendance review",
+    "ar": "مراجعة الحضور",
+    "ckb": "پێداچوونەوەی ئامادەبوون"
+  },
+  {
+    "id": "090",
+    "source_en": "Add valid session start, end, and cancellation times. The end must be after the start.",
+    "en": "Enter a valid start time, end time, and cancellation deadline. The end time must be after the start time.",
+    "ar": "دخّل وقت البداية والنهاية وآخر موعد للإلغاء بشكل صحيح. وقت النهاية لازم يكون بعد وقت البداية.",
+    "ckb": "کاتی دەستپێک، کۆتایی و دوا کاتی هەڵوەشاندنەوە بە دروستی بنووسە. کاتی کۆتایی دەبێت دوای کاتی دەستپێک بێت."
+  },
+  {
+    "id": "091",
+    "source_en": "Choose a shared facility record before creating this offering.",
+    "en": "Choose a shared facility before creating this listing.",
+    "ar": "اختار مكان مشترك قبل ما تسوّي هذا النشاط.",
+    "ckb": "پێش دروستکردنی ئەم چالاکییە شوێنێکی هاوبەش هەڵبژێرە."
+  },
+  {
+    "id": "092",
+    "source_en": "Live online offerings need a title and description in English, Iraqi Arabic, and Sorani.",
+    "en": "Live online listings need a title and description in English, Iraqi Arabic, and Sorani Kurdish.",
+    "ar": "الأنشطة الأونلاين المباشرة لازم يكون إلها عنوان ووصف بالإنجليزي والعربي العراقي والكردي السوراني.",
+    "ckb": "چالاکییە ئۆنلاینە ڕاستەوخۆکان پێویستیان بە ناونیشان و وەسف هەیە بە ئینگلیزی، عەرەبیی عێراقی و کوردیی سۆرانی."
+  },
+  {
+    "id": "093",
+    "source_en": "Live online offerings require a secure HTTPS join URL.",
+    "en": "Live online listings need a secure join link that starts with https://.",
+    "ar": "الأنشطة الأونلاين المباشرة لازم إلها رابط انضمام آمن يبدي بـ https://.",
+    "ckb": "چالاکییە ئۆنلاینە ڕاستەوخۆکان پێویستیان بە لینکێکی پارێزراو هەیە کە بە https:// دەستپێبکات."
+  },
+  {
+    "id": "094",
+    "source_en": "Enter a response of at least five characters.",
+    "en": "Your response must be at least 5 characters.",
+    "ar": "الرد لازم يكون 5 أحرف على الأقل.",
+    "ckb": "وەڵامەکەت دەبێت لانیکەم 5 پیت بێت."
+  },
+  {
+    "id": "095",
+    "source_en": "Choose a different administrator decision.",
+    "en": "Choose a different admin decision.",
+    "ar": "اختار قرار ثاني.",
+    "ckb": "بڕیارێکی تر هەڵبژێرە."
+  },
+  {
+    "id": "096",
+    "source_en": "Enter a start, end, and cancellation deadline.",
+    "en": "Enter a start time, end time, and cancellation deadline.",
+    "ar": "دخّل وقت البداية والنهاية وآخر موعد للإلغاء.",
+    "ckb": "کاتی دەستپێک، کۆتایی و دوا کاتی هەڵوەشاندنەوە بنووسە."
+  },
+  {
+    "id": "097",
+    "source_en": "Offering schedule saved.",
+    "en": "Listing schedule saved.",
+    "ar": "انحفظ جدول النشاط.",
+    "ckb": "خشتەی چالاکی پاشەکەوت کرا."
+  },
+  {
+    "id": "098",
+    "source_en": "Attendance review recorded.",
+    "en": "Attendance review saved.",
+    "ar": "انحفظت مراجعة الحضور.",
+    "ckb": "پێداچوونەوەی ئامادەبوون پاشەکەوت کرا."
+  },
+  {
+    "id": "099",
+    "source_en": "Select a partner before creating this offering.",
+    "en": "Choose a partner before creating this listing.",
+    "ar": "اختار شريك قبل ما تسوّي هذا النشاط.",
+    "ckb": "پێش دروستکردنی ئەم چالاکییە هاوبەشێک هەڵبژێرە."
+  },
+  {
+    "id": "100",
+    "source_en": "Choose a valid first session date.",
+    "en": "Choose a valid first session date.",
+    "ar": "اختار تاريخ صحيح لأول جلسة.",
+    "ckb": "بەروارێکی دروست بۆ یەکەم کلاس هەڵبژێرە."
+  },
+  {
+    "id": "101",
+    "source_en": "Choose an inclusive repeat-until date.",
+    "en": "Choose the last date for the schedule to repeat.",
+    "ar": "اختار آخر تاريخ يتكرر لغايته الجدول.",
+    "ckb": "دوا بەرواری دووبارەبوونەوەی خشتەکە هەڵبژێرە."
+  },
+  {
+    "id": "102",
+    "source_en": "The repeat-until date must be on or after the first session date.",
+    "en": "The end date must be on or after the first session date.",
+    "ar": "تاريخ النهاية لازم يكون بنفس يوم أول جلسة أو بعده.",
+    "ckb": "بەرواری کۆتایی دەبێت لە ڕۆژی یەکەم کلاس یان دوای ئەو بێت."
+  },
+  {
+    "id": "103",
+    "source_en": "The repeat-until date must be within 90 calendar days of the first session.",
+    "en": "The end date must be within 90 days of the first session.",
+    "ar": "تاريخ النهاية لازم يكون خلال 90 يوم من أول جلسة.",
+    "ckb": "بەرواری کۆتایی دەبێت لە ماوەی 90 ڕۆژ لە یەکەم کلاسەوە بێت."
+  },
+  {
+    "id": "104",
+    "source_en": "Use valid dates within the schedule range.",
+    "en": "Use valid dates within the schedule's date range.",
+    "ar": "استخدم تواريخ صحيحة ضمن فترة الجدول.",
+    "ckb": "بەرواری دروست لەناو ماوەی خشتەکەدا بەکاربهێنە."
+  },
+  {
+    "id": "105",
+    "source_en": "Choose a daily interval from 1 to 30 days.",
+    "en": "Choose a repeat interval between 1 and 30 days.",
+    "ar": "اختار تكرار من كل يوم لغاية كل 30 يوم.",
+    "ckb": "ماوەی دووبارەبوونەوە لە نێوان 1 تا 30 ڕۆژ هەڵبژێرە."
+  },
+  {
+    "id": "106",
+    "source_en": "Choose at least one weekday for the recurring sessions.",
+    "en": "Choose at least one day of the week for repeating sessions.",
+    "ar": "اختار يوم واحد من الأسبوع على الأقل للجلسات المتكررة.",
+    "ckb": "لانیکەم یەک ڕۆژی هەفتە بۆ کلاسە دووبارەکان هەڵبژێرە."
+  },
+  {
+    "id": "107",
+    "source_en": "Choose a custom interval from 1 to 12 weeks.",
+    "en": "Choose a custom interval between 1 and 12 weeks.",
+    "ar": "اختار تكرار من كل أسبوع لغاية كل 12 أسبوع.",
+    "ckb": "ماوەیەکی تایبەت لە نێوان 1 تا 12 هەفتە هەڵبژێرە."
+  },
+  {
+    "id": "108",
+    "source_en": "Add no more than 89 dates; the first date is included automatically.",
+    "en": "Add up to 89 dates. The first date is included automatically.",
+    "ar": "تكدر تضيف لغاية 89 تاريخ. أول تاريخ ينضاف تلقائياً.",
+    "ckb": "دەتوانیت تا 89 بەروار زیاد بکەیت. یەکەم بەروار خۆکارانە زیاد دەکرێت."
+  },
+  {
+    "id": "109",
+    "source_en": "This schedule creates more than 90 occurrences. Choose fewer dates or an earlier end date.",
+    "en": "This schedule creates more than 90 sessions. Choose fewer dates or an earlier end date.",
+    "ar": "هذا الجدول يسوّي أكثر من 90 جلسة. قلّل التواريخ أو اختار تاريخ نهاية أبكر.",
+    "ckb": "ئەم خشتەیە زیاتر لە 90 کلاس دروست دەکات. بەرواری کەمتر یان بەرواری کۆتایی زووتر هەڵبژێرە."
+  },
+  {
+    "id": "110",
+    "source_en": "No sessions match the selected weekdays and date range.",
+    "en": "No sessions match the days and dates you selected.",
+    "ar": "ماكو جلسات تطابق الأيام والتواريخ اللي اخترتها.",
+    "ckb": "هیچ کلاسێک لەگەڵ ئەو ڕۆژ و بەروارانەی هەڵتبژاردوون ناگونجێت."
+  },
+  {
+    "id": "111",
+    "source_en": "This schedule conflicts with an existing offering. Adjust the dates or weekdays and try again.",
+    "en": "This schedule overlaps an existing listing. Change the dates or days and try again.",
+    "ar": "هذا الجدول يتعارض ويّا نشاط موجود. غيّر التواريخ أو الأيام وحاول مرة ثانية.",
+    "ckb": "ئەم خشتەیە لەگەڵ چالاکییەکی هەبوو یەکدەگرێتەوە. بەروار یان ڕۆژەکان بگۆڕە و دووبارە هەوڵبدەرەوە."
+  },
+  {
+    "id": "112",
+    "source_en": "The offering could not be saved. Check the details and try again.",
+    "en": "The listing couldn't be saved. Check the details and try again.",
+    "ar": "ما كدرنا نحفظ النشاط. راجع التفاصيل وحاول مرة ثانية.",
+    "ckb": "نەتوانرا چالاکییەکە پاشەکەوت بکرێت. وردەکارییەکان بپشکنە و دووبارە هەوڵبدەرەوە."
+  },
+  {
+    "id": "113",
+    "source_en": "reserved",
+    "en": "Reserved",
+    "ar": "محجوز",
+    "ckb": "نۆرە گیراوە"
+  },
+  {
+    "id": "114",
+    "source_en": "requested",
+    "en": "Requested",
+    "ar": "طلب حجز",
+    "ckb": "داواکراوە"
+  },
+  {
+    "id": "115",
+    "source_en": "admin cancelled",
+    "en": "Canceled by admin",
+    "ar": "ألغته الإدارة",
+    "ckb": "بەڕێوەبەر هەڵیوەشاندەوە"
+  },
+  {
+    "id": "116",
+    "source_en": "not checked in",
+    "en": "Not checked in",
+    "ar": "ما مسجّل حضور",
+    "ckb": "ئامادەبوونی تۆمار نەکراوە"
+  },
+  {
+    "id": "117",
+    "source_en": "confirmed",
+    "en": "Confirmed",
+    "ar": "مؤكد",
+    "ckb": "پشتڕاستکراوە"
+  },
+  {
+    "id": "118",
+    "source_en": "pending",
+    "en": "Pending",
+    "ar": "بالانتظار",
+    "ckb": "چاوەڕوانە"
+  },
+  {
+    "id": "119",
+    "source_en": "disputed",
+    "en": "Disputed",
+    "ar": "عليه اعتراض",
+    "ckb": "ناڕەزایی لەسەرە"
+  },
+  {
+    "id": "120",
+    "source_en": "no show",
+    "en": "No-show",
+    "ar": "ما حضر",
+    "ckb": "نەهات"
+  },
+  {
+    "id": "121",
+    "source_en": "waiting",
+    "en": "Waiting",
+    "ar": "ينتظر دوره",
+    "ckb": "چاوەڕێی نۆرەیە"
+  },
+  {
+    "id": "122",
+    "source_en": "offered",
+    "en": "Spot offered",
+    "ar": "انعرض عليه مكان",
+    "ckb": "شوێنی پێشنیار کرا"
+  },
+  {
+    "id": "123",
+    "source_en": "accepted",
+    "en": "Accepted",
+    "ar": "مقبول",
+    "ckb": "قبوڵکرا"
+  },
+  {
+    "id": "124",
+    "source_en": "expired",
+    "en": "Expired",
+    "ar": "منتهي",
+    "ckb": "بەسەرچوو"
+  },
+  {
+    "id": "125",
+    "source_en": "Waiting-list position",
+    "en": "Waitlist position",
+    "ar": "الترتيب بقائمة الانتظار",
+    "ckb": "ڕیزبەندی لە لیستی چاوەڕوانی"
+  },
+  {
+    "id": "126",
+    "source_en": "remaining",
+    "en": "left",
+    "ar": "باقي",
+    "ckb": "ماوە"
+  },
+  {
+    "id": "127",
+    "source_en": "Operations desk",
+    "en": "Admin dashboard",
+    "ar": "لوحة الإدارة",
+    "ckb": "داشبۆردی بەڕێوەبەر"
+  },
+  {
+    "id": "128",
+    "source_en": "Partner workspace",
+    "en": "Partner workspace",
+    "ar": "مساحة الشريك",
+    "ckb": "شوێنی کاری هاوبەش"
+  },
+  {
+    "id": "129",
+    "source_en": "Review the partner and offering records returned for your administrator account.",
+    "en": "Review the partners and listings available to your admin account.",
+    "ar": "راجع الشركاء والأنشطة المتاحة لحساب الإدارة مالتك.",
+    "ckb": "پێداچوونەوە بە هاوبەش و چالاکییەکاندا بکە کە بۆ هەژماری بەڕێوەبەرەکەت بەردەستن."
+  },
+  {
+    "id": "130",
+    "source_en": "Partner access",
+    "en": "Partner access",
+    "ar": "صلاحية شريك",
+    "ckb": "دەستگەیشتنی هاوبەش"
+  },
+  {
+    "id": "131",
+    "source_en": "Administrator access",
+    "en": "Admin access",
+    "ar": "صلاحية إدارة",
+    "ckb": "دەستگەیشتنی بەڕێوەبەر"
+  },
+  {
+    "id": "132",
+    "source_en": "Workspace",
+    "en": "Workspace",
+    "ar": "مساحة العمل",
+    "ckb": "شوێنی کار"
+  },
+  {
+    "id": "133",
+    "source_en": "Server-scoped access",
+    "en": "Access set by MaydanGo",
+    "ar": "الصلاحيات تحددها MaydanGo",
+    "ckb": "دەستگەیشتن لەلایەن MaydanGo دیاری دەکرێت"
+  },
+  {
+    "id": "134",
+    "source_en": "Your MaydanGo space",
+    "en": "Your MaydanGo space",
+    "ar": "مساحتك بـ MaydanGo",
+    "ckb": "شوێنی تۆ لە MaydanGo"
+  },
+  {
+    "id": "135",
+    "source_en": "A clear view of partner activity and attendance.",
+    "en": "A clear view of partner activity and attendance.",
+    "ar": "صورة واضحة عن نشاط الشركاء والحضور.",
+    "ckb": "وێنەیەکی ڕوون لە چالاکیی هاوبەشان و ئامادەبوون."
+  },
+  {
+    "id": "136",
+    "source_en": "Bring your sessions and community into view.",
+    "en": "All your sessions and members in one place.",
+    "ar": "كل جلساتك وناسك بمكان واحد.",
+    "ckb": "هەموو کلاس و ئەندامەکانت لە یەک شوێندا."
+  },
+  {
+    "id": "137",
+    "source_en": "Manage the live opportunities and attendance roster assigned to your partner account.",
+    "en": "Manage the listings and attendance list linked to your partner account.",
+    "ar": "أدِر الأنشطة وقائمة الحضور المرتبطة بحساب الشريك مالتك.",
+    "ckb": "ئەو چالاکی و لیستی ئامادەبوونە بەڕێوەببە کە بە هەژماری هاوبەشیەکەتەوە بەستراون."
+  },
+  {
+    "id": "138",
+    "source_en": "Active offerings",
+    "en": "Active listings",
+    "ar": "الأنشطة الفعّالة",
+    "ckb": "چالاکییە کاراکان"
+  },
+  {
+    "id": "139",
+    "source_en": "Manage offerings",
+    "en": "Manage listings",
+    "ar": "إدارة الأنشطة",
+    "ckb": "بەڕێوەبردنی چالاکییەکان"
+  },
+  {
+    "id": "140",
+    "source_en": "Next on the roster",
+    "en": "Up next",
+    "ar": "الجلسات الجاية",
+    "ckb": "داهاتوو"
+  },
+  {
+    "id": "141",
+    "source_en": "Attendance records in your server scope",
+    "en": "Attendance records for your account",
+    "ar": "سجلات الحضور لحسابك",
+    "ckb": "تۆماری ئامادەبوون بۆ هەژمارەکەت"
+  },
+  {
+    "id": "142",
+    "source_en": "View all",
+    "en": "View all",
+    "ar": "شوف الكل",
+    "ckb": "هەمووی ببینە"
+  },
+  {
+    "id": "143",
+    "source_en": "Roster unavailable · Retry",
+    "en": "Attendance list unavailable · Try again",
+    "ar": "ما كدرنا نحمّل قائمة الحضور · حاول مرة ثانية",
+    "ckb": "لیستی ئامادەبوون بەردەست نییە · دووبارە هەوڵبدەرەوە"
+  },
+  {
+    "id": "144",
+    "source_en": "No attendance records were returned for this scope.",
+    "en": "No attendance records to show yet.",
+    "ar": "ماكو سجلات حضور هسه.",
+    "ckb": "هێشتا هیچ تۆمارێکی ئامادەبوون نییە."
+  },
+  {
+    "id": "145",
+    "source_en": "Scoped by the server",
+    "en": "Access managed by MaydanGo",
+    "ar": "الصلاحيات تديرها MaydanGo",
+    "ckb": "دەستگەیشتن لەلایەن MaydanGo بەڕێوە دەبرێت"
+  },
+  {
+    "id": "146",
+    "source_en": "Your account role and partner boundary come from the operations service. Actions are checked again by MaydanGo when saved.",
+    "en": "Your role and partner access are set by MaydanGo. Every change is checked again when you save.",
+    "ar": "دورك وصلاحياتك كشريك تحددها MaydanGo، وكل تغيير ينفحص مرة ثانية من تحفظ.",
+    "ckb": "ڕۆڵ و دەستگەیشتنی هاوبەشیت لەلایەن MaydanGo دیاری دەکرێت. هەر گۆڕانکارییەک لە کاتی پاشەکەوتکردندا دووبارە دەپشکنرێتەوە."
+  },
+  {
+    "id": "147",
+    "source_en": "Administrator",
+    "en": "Admin",
+    "ar": "الإدارة",
+    "ckb": "بەڕێوەبەر"
+  },
+  {
+    "id": "148",
+    "source_en": "Partner operator",
+    "en": "Partner staff",
+    "ar": "موظف الشريك",
+    "ckb": "کارمەندی هاوبەش"
+  },
+  {
+    "id": "149",
+    "source_en": "Create and maintain opportunities from the authorized operations record.",
+    "en": "Create and manage your listings.",
+    "ar": "سوّي أنشطتك وأدِرها من هنا.",
+    "ckb": "چالاکییەکانت دروست بکە و بەڕێوەیان ببە."
+  },
+  {
+    "id": "150",
+    "source_en": "New offering",
+    "en": "New listing",
+    "ar": "نشاط جديد",
+    "ckb": "چالاکیی نوێ"
+  },
+  {
+    "id": "151",
+    "source_en": "Cancelled",
+    "en": "Canceled",
+    "ar": "ملغي",
+    "ckb": "هەڵوەشێنراوە"
+  },
+  {
+    "id": "152",
+    "source_en": "Active",
+    "en": "Active",
+    "ar": "فعّال",
+    "ckb": "کارا"
+  },
+  {
+    "id": "153",
+    "source_en": "Draft",
+    "en": "Draft",
+    "ar": "مسودة",
+    "ckb": "ڕەشنووس"
+  },
+  {
+    "id": "154",
+    "source_en": "Submitted",
+    "en": "Submitted",
+    "ar": "انرسل للمراجعة",
+    "ckb": "نێردرا بۆ پێداچوونەوە"
+  },
+  {
+    "id": "155",
+    "source_en": "Under review",
+    "en": "Under review",
+    "ar": "قيد المراجعة",
+    "ckb": "لە پێداچوونەوەدایە"
+  },
+  {
+    "id": "156",
+    "source_en": "Changes requested",
+    "en": "Changes requested",
+    "ar": "مطلوب تعديلات",
+    "ckb": "داوای گۆڕانکاری کراوە"
+  },
+  {
+    "id": "157",
+    "source_en": "Published",
+    "en": "Published",
+    "ar": "منشور",
+    "ckb": "بڵاوکراوە"
+  },
+  {
+    "id": "158",
+    "source_en": "Rejected",
+    "en": "Rejected",
+    "ar": "مرفوض",
+    "ckb": "ڕەتکراوە"
+  },
+  {
+    "id": "159",
+    "source_en": "Archived",
+    "en": "Archived",
+    "ar": "مؤرشف",
+    "ckb": "ئەرشیفکراوە"
+  },
+  {
+    "id": "160",
+    "source_en": "Pending activity review",
+    "en": "Listing review pending",
+    "ar": "النشاط بانتظار المراجعة",
+    "ckb": "چالاکی چاوەڕێی پێداچوونەوەیە"
+  },
+  {
+    "id": "161",
+    "source_en": "Submit for review",
+    "en": "Submit for review",
+    "ar": "ارسل للمراجعة",
+    "ckb": "بینێرە بۆ پێداچوونەوە"
+  },
+  {
+    "id": "162",
+    "source_en": "Awaiting review",
+    "en": "Awaiting review",
+    "ar": "بانتظار المراجعة",
+    "ckb": "چاوەڕێی پێداچوونەوەیە"
+  },
+  {
+    "id": "163",
+    "source_en": "Administrator decision",
+    "en": "Admin decision",
+    "ar": "قرار الإدارة",
+    "ckb": "بڕیاری بەڕێوەبەر"
+  },
+  {
+    "id": "164",
+    "source_en": "Decision reason",
+    "en": "Reason for decision",
+    "ar": "سبب القرار",
+    "ckb": "هۆکاری بڕیار"
+  },
+  {
+    "id": "165",
+    "source_en": "Save decision",
+    "en": "Save decision",
+    "ar": "احفظ القرار",
+    "ckb": "بڕیارەکە پاشەکەوت بکە"
+  },
+  {
+    "id": "166",
+    "source_en": "Partner response",
+    "en": "Partner response",
+    "ar": "رد الشريك",
+    "ckb": "وەڵامی هاوبەش"
+  },
+  {
+    "id": "167",
+    "source_en": "Respond and resubmit",
+    "en": "Respond and resubmit",
+    "ar": "رد وارسل مرة ثانية",
+    "ckb": "وەڵام بدەرەوە و دووبارە بینێرە"
+  },
+  {
+    "id": "168",
+    "source_en": "Latest partner response",
+    "en": "Latest partner response",
+    "ar": "آخر رد من الشريك",
+    "ckb": "دوایین وەڵامی هاوبەش"
+  },
+  {
+    "id": "169",
+    "source_en": "Choose a decision",
+    "en": "Choose a decision",
+    "ar": "اختار قرار",
+    "ckb": "بڕیارێک هەڵبژێرە"
+  },
+  {
+    "id": "170",
+    "source_en": "A reason is required for this decision.",
+    "en": "Add a reason for this decision.",
+    "ar": "لازم تكتب سبب لهذا القرار.",
+    "ckb": "دەبێت هۆکارێک بۆ ئەم بڕیارە بنووسیت."
+  },
+  {
+    "id": "171",
+    "source_en": "Create a recurring schedule",
+    "en": "Create a repeating schedule",
+    "ar": "سوّي جدول متكرر",
+    "ckb": "خشتەیەکی دووبارەبوو دروست بکە"
+  },
+  {
+    "id": "172",
+    "source_en": "Each occurrence becomes a separate bookable session. Dates and times use Iraq time.",
+    "en": "Each date becomes its own bookable session. All dates and times are in Iraq time.",
+    "ar": "كل موعد يصير جلسة مستقلة تنحجز. كل التواريخ والأوقات بتوقيت العراق.",
+    "ckb": "هەر بەروارێک دەبێتە کلاسێکی سەربەخۆ کە نۆرەی بۆ دەگیرێت. هەموو بەروار و کاتەکان بە کاتی عێراقن."
+  },
+  {
+    "id": "173",
+    "source_en": "Repeat pattern",
+    "en": "Repeats",
+    "ar": "نوع التكرار",
+    "ckb": "شێوەی دووبارەبوونەوە"
+  },
+  {
+    "id": "174",
+    "source_en": "Daily",
+    "en": "Daily",
+    "ar": "يومي",
+    "ckb": "ڕۆژانە"
+  },
+  {
+    "id": "175",
+    "source_en": "Weekly",
+    "en": "Weekly",
+    "ar": "أسبوعي",
+    "ckb": "هەفتانە"
+  },
+  {
+    "id": "176",
+    "source_en": "Custom interval",
+    "en": "Custom",
+    "ar": "مخصص",
+    "ckb": "تایبەت"
+  },
+  {
+    "id": "177",
+    "source_en": "Selected dates",
+    "en": "Specific dates",
+    "ar": "تواريخ محددة",
+    "ckb": "بەرواری دیاریکراو"
+  },
+  {
+    "id": "178",
+    "source_en": "Repeat on",
+    "en": "Repeat on",
+    "ar": "يتكرر أيام",
+    "ckb": "دووبارە بێتەوە لە"
+  },
+  {
+    "id": "179",
+    "source_en": "Selected-date preview",
+    "en": "Preview of selected dates",
+    "ar": "معاينة التواريخ المختارة",
+    "ckb": "پێشبینینی بەروارە هەڵبژێردراوەکان"
+  },
+  {
+    "id": "180",
+    "source_en": "Baghdad-time preview",
+    "en": "Preview (Baghdad time)",
+    "ar": "معاينة (بتوقيت بغداد)",
+    "ckb": "پێشبینین (کاتی بەغدا)"
+  },
+  {
+    "id": "181",
+    "source_en": "The first session date is included automatically.",
+    "en": "The first session date is included automatically.",
+    "ar": "تاريخ أول جلسة ينضاف تلقائياً.",
+    "ckb": "بەرواری یەکەم کلاس خۆکارانە زیاد دەکرێت."
+  },
+  {
+    "id": "182",
+    "source_en": "Up to 90 calendar days and no more than 90 occurrences.",
+    "en": "Up to 90 days and 90 sessions maximum.",
+    "ar": "لغاية 90 يوم و90 جلسة كحد أقصى.",
+    "ckb": "تا 90 ڕۆژ و زۆرترین 90 کلاس."
+  },
+  {
+    "id": "183",
+    "source_en": "Some session dates overlap existing offerings. Review the highlighted dates and try again.",
+    "en": "Some dates overlap existing listings. Check the highlighted dates and try again.",
+    "ar": "بعض التواريخ تتعارض ويّا أنشطة موجودة. راجع التواريخ المعلّمة وحاول مرة ثانية.",
+    "ckb": "هەندێک بەروار لەگەڵ چالاکییە هەبووەکان یەکدەگرنەوە. بەروارە دیاریکراوەکان بپشکنە و دووبارە هەوڵبدەرەوە."
+  },
+  {
+    "id": "184",
+    "source_en": "Future series cancellation results.",
+    "en": "Results of canceling future sessions",
+    "ar": "نتيجة إلغاء الجلسات الجاية",
+    "ckb": "ئەنجامی هەڵوەشاندنەوەی کلاسە داهاتووەکان"
+  },
+  {
+    "id": "185",
+    "source_en": "Cancelled dates:",
+    "en": "Canceled dates:",
+    "ar": "التواريخ الملغية:",
+    "ckb": "بەروارە هەڵوەشێنراوەکان:"
+  },
+  {
+    "id": "186",
+    "source_en": "No future sessions were cancelled.",
+    "en": "No future sessions were canceled.",
+    "ar": "ما انلغت أي جلسة جاية.",
+    "ckb": "هیچ کلاسێکی داهاتوو هەڵنەوەشێنرایەوە."
+  },
+  {
+    "id": "187",
+    "source_en": "Left unchanged because of bookings or attendance:",
+    "en": "Not changed because they have bookings or attendance:",
+    "ar": "ما تغيّرت لأن عليها حجوزات أو حضور:",
+    "ckb": "نەگۆڕدران چونکە نۆرە یان ئامادەبوونیان لەسەرە:"
+  },
+  {
+    "id": "188",
+    "source_en": "Edit session",
+    "en": "Edit session",
+    "ar": "تعديل الجلسة",
+    "ckb": "دەستکاریکردنی کلاس"
+  },
+  {
+    "id": "189",
+    "source_en": "Edit future series",
+    "en": "Edit future sessions",
+    "ar": "تعديل الجلسات الجاية",
+    "ckb": "دەستکاریکردنی کلاسە داهاتووەکان"
+  },
+  {
+    "id": "190",
+    "source_en": "Recurring series",
+    "en": "Repeating series",
+    "ar": "سلسلة متكررة",
+    "ckb": "زنجیرەی دووبارەبوو"
+  },
+  {
+    "id": "191",
+    "source_en": "Cancel session",
+    "en": "Cancel session",
+    "ar": "إلغاء الجلسة",
+    "ckb": "هەڵوەشاندنەوەی کلاس"
+  },
+  {
+    "id": "192",
+    "source_en": "Cancel future series",
+    "en": "Cancel future sessions",
+    "ar": "إلغاء الجلسات الجاية",
+    "ckb": "هەڵوەشاندنەوەی کلاسە داهاتووەکان"
+  },
+  {
+    "id": "193",
+    "source_en": "Changes apply to this and all remaining future sessions. Reservations stay attached to their sessions. A session with an attendance record cannot have its date changed. Moving the selected date shifts the remaining dates by the same amount.",
+    "en": "Changes apply to this session and all future sessions in the series. Bookings stay with their sessions. You can't change the date of a session that already has attendance recorded. Moving the selected date shifts the remaining dates by the same amount.",
+    "ar": "التغييرات تشمل هاي الجلسة وكل الجلسات الجاية بالسلسلة. الحجوزات تبقى ويّا جلساتها. ما تكدر تغيّر تاريخ جلسة مسجّل عليها حضور. إذا حرّكت التاريخ المختار، باقي التواريخ تتحرك بنفس المدة.",
+    "ckb": "گۆڕانکارییەکان ئەم کلاسە و هەموو کلاسە داهاتووەکانی زنجیرەکە دەگرنەوە. نۆرەکان لەگەڵ کلاسەکانیان دەمێننەوە. ناتوانیت بەرواری ئەو کلاسە بگۆڕیت کە ئامادەبوونی تێدا تۆمار کراوە. گواستنەوەی بەرواری هەڵبژێردراو، بەروارەکانی تریش بە هەمان ماوە دەگوازێتەوە."
+  },
+  {
+    "id": "194",
+    "source_en": "Make draft",
+    "en": "Move to drafts",
+    "ar": "رجّعه مسودة",
+    "ckb": "بیکە بە ڕەشنووس"
+  },
+  {
+    "id": "195",
+    "source_en": "Activate",
+    "en": "Activate",
+    "ar": "تفعيل",
+    "ckb": "کاراکردن"
+  },
+  {
+    "id": "196",
+    "source_en": "Cancel",
+    "en": "Cancel",
+    "ar": "إلغاء",
+    "ckb": "هەڵوەشاندنەوە"
+  },
+  {
+    "id": "197",
+    "source_en": "Capacity",
+    "en": "Capacity",
+    "ar": "عدد الأماكن",
+    "ckb": "ژمارەی شوێن"
+  },
+  {
+    "id": "198",
+    "source_en": "Save",
+    "en": "Save",
+    "ar": "حفظ",
+    "ckb": "پاشەکەوتکردن"
+  },
+  {
+    "id": "199",
+    "source_en": "Waitlist offer window (minutes)",
+    "en": "Time to accept a waitlist spot (minutes)",
+    "ar": "مدة قبول المكان من قائمة الانتظار (بالدقائق)",
+    "ckb": "ماوەی قبوڵکردنی شوێن لە لیستی چاوەڕوانی (خولەک)"
+  },
+  {
+    "id": "200",
+    "source_en": "Save offer window",
+    "en": "Save time limit",
+    "ar": "احفظ المدة",
+    "ckb": "ماوەکە پاشەکەوت بکە"
+  },
+  {
+    "id": "201",
+    "source_en": "Waitlist and offers",
+    "en": "Waitlist and spot offers",
+    "ar": "قائمة الانتظار والأماكن المعروضة",
+    "ckb": "لیستی چاوەڕوانی و شوێنە پێشنیارکراوەکان"
+  },
+  {
+    "id": "202",
+    "source_en": "Loading waitlist…",
+    "en": "Loading waitlist…",
+    "ar": "جاري تحميل قائمة الانتظار…",
+    "ckb": "لیستی چاوەڕوانی بار دەکرێت…"
+  },
+  {
+    "id": "203",
+    "source_en": "Waitlist unavailable. No member account details are shown.",
+    "en": "Waitlist unavailable. No member details are shown.",
+    "ar": "ما كدرنا نحمّل قائمة الانتظار. ما تنعرض معلومات الأعضاء.",
+    "ckb": "لیستی چاوەڕوانی بەردەست نییە. هیچ زانیارییەکی ئەندامان پیشان نادرێت."
+  },
+  {
+    "id": "204",
+    "source_en": "No waitlist entries have been recorded.",
+    "en": "No one has joined the waitlist yet.",
+    "ar": "ماكو أحد بقائمة الانتظار بعد.",
+    "ckb": "هێشتا کەس نەچووەتە لیستی چاوەڕوانی."
+  },
+  {
+    "id": "205",
+    "source_en": "View the live queue for your upcoming offerings. The server shares queue order and timing only; member identities stay private in this view.",
+    "en": "See the live waitlist for your upcoming listings. Only order and timing are shown here; member identities stay private.",
+    "ar": "شوف قائمة الانتظار المباشرة لأنشطتك الجاية. هنا يبيّن الترتيب والوقت بس، وأسماء الأعضاء تبقى سرية.",
+    "ckb": "لیستی چاوەڕوانیی ڕاستەوخۆ بۆ چالاکییە داهاتووەکانت ببینە. تەنها ڕیزبەندی و کات پیشان دەدرێت؛ ناسنامەی ئەندامان شاراوە دەمێنێتەوە."
+  },
+  {
+    "id": "206",
+    "source_en": "Joined",
+    "en": "Joined",
+    "ar": "وقت الانضمام",
+    "ckb": "کاتی بەشداریکردن"
+  },
+  {
+    "id": "207",
+    "source_en": "Position",
+    "en": "Position",
+    "ar": "الترتيب",
+    "ckb": "ڕیزبەندی"
+  },
+  {
+    "id": "208",
+    "source_en": "No one is waiting",
+    "en": "No one is waiting",
+    "ar": "ماكو أحد بالانتظار",
+    "ckb": "کەس چاوەڕێ ناکات"
+  },
+  {
+    "id": "209",
+    "source_en": "Active queues for your upcoming offerings will appear here.",
+    "en": "Waitlists for your upcoming listings will appear here.",
+    "ar": "قوائم الانتظار لأنشطتك الجاية راح تطلع هنا.",
+    "ckb": "لیستی چاوەڕوانیی چالاکییە داهاتووەکانت لێرە دەردەکەون."
+  },
+  {
+    "id": "210",
+    "source_en": "Review reservations in the server-scoped roster. Member names are not returned or displayed; each decision requires a reason and is recorded by the service.",
+    "en": "Review bookings on your attendance list. Member names aren't shown. Each decision needs a reason and is saved to the activity log.",
+    "ar": "راجع الحجوزات بقائمة الحضور. أسماء الأعضاء ما تنعرض، وكل قرار يحتاج سبب وينحفظ بسجل التغييرات.",
+    "ckb": "پێداچوونەوە بە نۆرەکانی لیستی ئامادەبووندا بکە. ناوی ئەندامان پیشان نادرێت. هەر بڕیارێک هۆکاری پێویستە و لە مێژووی گۆڕانکارییەکاندا تۆمار دەکرێت."
+  },
+  {
+    "id": "211",
+    "source_en": "Attendance roster unavailable",
+    "en": "Attendance list unavailable",
+    "ar": "ما كدرنا نحمّل قائمة الحضور",
+    "ckb": "لیستی ئامادەبوون بەردەست نییە"
+  },
+  {
+    "id": "212",
+    "source_en": "Roster is clear",
+    "en": "All caught up",
+    "ar": "ماكو شي معلّق",
+    "ckb": "هیچ شتێک نەماوە"
+  },
+  {
+    "id": "213",
+    "source_en": "No attendance rows were returned for this account.",
+    "en": "There are no attendance records for this account.",
+    "ar": "ماكو سجلات حضور لهذا الحساب.",
+    "ckb": "هیچ تۆمارێکی ئامادەبوون بۆ ئەم هەژمارە نییە."
+  },
+  {
+    "id": "214",
+    "source_en": "Locked",
+    "en": "Locked",
+    "ar": "مقفول",
+    "ckb": "قوفڵکراوە"
+  },
+  {
+    "id": "215",
+    "source_en": "Settlement eligible",
+    "en": "Eligible for payout",
+    "ar": "يدخل بالمستحقات",
+    "ckb": "شایەنی پارەدانەوەیە"
+  },
+  {
+    "id": "216",
+    "source_en": "Reservation",
+    "en": "Booking",
+    "ar": "الحجز",
+    "ckb": "نۆرە"
+  },
+  {
+    "id": "217",
+    "source_en": "Checked in",
+    "en": "Checked in",
+    "ar": "مسجّل حضور",
+    "ckb": "ئامادەبوونی تۆمارکرا"
+  },
+  {
+    "id": "218",
+    "source_en": "staff-assisted audit",
+    "en": "Checked in by staff",
+    "ar": "سجّله الموظف",
+    "ckb": "لەلایەن کارمەندەوە تۆمارکرا"
+  },
+  {
+    "id": "219",
+    "source_en": "repeat use noted",
+    "en": "Repeat use flagged",
+    "ar": "مستخدم أكثر من مرة",
+    "ckb": "بەکارهێنانی دووبارە دیاری کرا"
+  },
+  {
+    "id": "220",
+    "source_en": "Verify member code",
+    "en": "Check member code",
+    "ar": "تحقق من رمز العضو",
+    "ckb": "کۆدی ئەندام بپشکنە"
+  },
+  {
+    "id": "221",
+    "source_en": "Shared facility",
+    "en": "Shared facility",
+    "ar": "مكان مشترك",
+    "ckb": "شوێنی هاوبەش"
+  },
+  {
+    "id": "222",
+    "source_en": "Loading shared facilities…",
+    "en": "Loading shared facilities…",
+    "ar": "جاري تحميل الأماكن المشتركة…",
+    "ckb": "شوێنە هاوبەشەکان بار دەکرێن…"
+  },
+  {
+    "id": "223",
+    "source_en": "Choose a shared facility",
+    "en": "Choose a shared facility",
+    "ar": "اختار مكان مشترك",
+    "ckb": "شوێنێکی هاوبەش هەڵبژێرە"
+  },
+  {
+    "id": "224",
+    "source_en": "Create a shared facility record before adding sessions.",
+    "en": "Add a shared facility before adding sessions.",
+    "ar": "ضيف مكان مشترك قبل ما تضيف جلسات.",
+    "ckb": "پێش زیادکردنی کلاس، شوێنێکی هاوبەش زیاد بکە."
+  },
+  {
+    "id": "225",
+    "source_en": "New activities are saved as drafts and must be approved by an administrator before publishing.",
+    "en": "New listings are saved as drafts. An admin must approve them before they're published.",
+    "ar": "الأنشطة الجديدة تنحفظ كمسودة، ولازم توافق عليها الإدارة قبل ما تنشر.",
+    "ckb": "چالاکییە نوێیەکان وەک ڕەشنووس پاشەکەوت دەکرێن. بەڕێوەبەر دەبێت پێش بڵاوکردنەوە پەسەندیان بکات."
+  },
+  {
+    "id": "226",
+    "source_en": "Draft · awaiting administrator review",
+    "en": "Draft · waiting for admin review",
+    "ar": "مسودة · بانتظار مراجعة الإدارة",
+    "ckb": "ڕەشنووس · چاوەڕێی پێداچوونەوەی بەڕێوەبەر"
+  },
+  {
+    "id": "227",
+    "source_en": "Saved as draft. An administrator must approve and publish the activity.",
+    "en": "Saved as a draft. An admin needs to approve and publish it.",
+    "ar": "انحفظت كمسودة. الإدارة لازم توافق عليها وتنشرها.",
+    "ckb": "وەک ڕەشنووس پاشەکەوت کرا. بەڕێوەبەر دەبێت پەسەندی بکات و بڵاوی بکاتەوە."
+  },
+  {
+    "id": "228",
+    "source_en": "Confirm",
+    "en": "Confirm",
+    "ar": "تأكيد",
+    "ckb": "پشتڕاستکردنەوە"
+  },
+  {
+    "id": "229",
+    "source_en": "Mark no-show",
+    "en": "Mark as no-show",
+    "ar": "سجّل غياب",
+    "ckb": "وەک نەهاتوو دیاری بکە"
+  },
+  {
+    "id": "230",
+    "source_en": "Dispute",
+    "en": "Dispute",
+    "ar": "اعتراض",
+    "ckb": "ناڕەزایی"
+  },
+  {
+    "id": "231",
+    "source_en": "Resolve: confirm",
+    "en": "Resolve: confirm",
+    "ar": "حل الاعتراض: تأكيد",
+    "ckb": "چارەسەری ناڕەزایی: پشتڕاستکردنەوە"
+  },
+  {
+    "id": "232",
+    "source_en": "Resolve: void",
+    "en": "Resolve: void",
+    "ar": "حل الاعتراض: إلغاء التسجيل",
+    "ckb": "چارەسەری ناڕەزایی: هەڵوەشاندنەوە"
+  },
+  {
+    "id": "233",
+    "source_en": "Accept request",
+    "en": "Accept request",
+    "ar": "قبول الطلب",
+    "ckb": "قبوڵکردنی داواکاری"
+  },
+  {
+    "id": "234",
+    "source_en": "Manual check-in recorded by the server.",
+    "en": "Manual check-in saved.",
+    "ar": "انحفظ تسجيل الحضور اليدوي.",
+    "ckb": "تۆمارکردنی دەستیی ئامادەبوون پاشەکەوت کرا."
+  },
+  {
+    "id": "235",
+    "source_en": "Offering created.",
+    "en": "Listing created.",
+    "ar": "تم إنشاء النشاط.",
+    "ckb": "چالاکییەکە دروستکرا."
+  },
+  {
+    "id": "236",
+    "source_en": "Audit history",
+    "en": "Activity log",
+    "ar": "سجل التغييرات",
+    "ckb": "مێژووی گۆڕانکارییەکان"
+  },
+  {
+    "id": "237",
+    "source_en": "Record the reason for this decision",
+    "en": "Enter the reason for this decision",
+    "ar": "اكتب سبب هذا القرار",
+    "ckb": "هۆکاری ئەم بڕیارە بنووسە"
+  },
+  {
+    "id": "238",
+    "source_en": "Dismiss",
+    "en": "Dismiss",
+    "ar": "إخفاء",
+    "ckb": "شاردنەوە"
+  },
+  {
+    "id": "239",
+    "source_en": "Recording…",
+    "en": "Saving…",
+    "ar": "جاري الحفظ…",
+    "ckb": "پاشەکەوت دەکرێت…"
+  },
+  {
+    "id": "240",
+    "source_en": "Record review",
+    "en": "Save review",
+    "ar": "احفظ المراجعة",
+    "ckb": "پێداچوونەوەکە پاشەکەوت بکە"
+  },
+  {
+    "id": "241",
+    "source_en": "Administrator action",
+    "en": "Admin action",
+    "ar": "إجراء الإدارة",
+    "ckb": "کرداری بەڕێوەبەر"
+  },
+  {
+    "id": "242",
+    "source_en": "Add partner record",
+    "en": "Add partner",
+    "ar": "إضافة شريك",
+    "ckb": "زیادکردنی هاوبەش"
+  },
+  {
+    "id": "243",
+    "source_en": "Provide all three identifiers directly. No partner owner or group is inferred.",
+    "en": "Enter all three IDs below. The partner's owner and group won't be filled in automatically.",
+    "ar": "دخّل الأرقام التعريفية (ID) الثلاثة. مالك الشريك ومجموعته ما ينضافون تلقائياً.",
+    "ckb": "هەر سێ ناسنامەکە (ID) بنووسە. خاوەن و گرووپی هاوبەش خۆکارانە پڕ ناکرێنەوە."
+  },
+  {
+    "id": "244",
+    "source_en": "Partner name",
+    "en": "Partner name",
+    "ar": "اسم الشريك",
+    "ckb": "ناوی هاوبەش"
+  },
+  {
+    "id": "245",
+    "source_en": "Group ID",
+    "en": "Group ID",
+    "ar": "رقم المجموعة (ID)",
+    "ckb": "ID ی گرووپ"
+  },
+  {
+    "id": "246",
+    "source_en": "Owner user ID",
+    "en": "Owner user ID",
+    "ar": "رقم المستخدم المالك (ID)",
+    "ckb": "ID ی بەکارهێنەری خاوەن"
+  },
+  {
+    "id": "247",
+    "source_en": "Create partner",
+    "en": "Create partner",
+    "ar": "إضافة الشريك",
+    "ckb": "دروستکردنی هاوبەش"
+  },
+  {
+    "id": "248",
+    "source_en": "Partner ID",
+    "en": "Partner ID",
+    "ar": "رقم الشريك (ID)",
+    "ckb": "ID ی هاوبەش"
+  },
+  {
+    "id": "249",
+    "source_en": "Group",
+    "en": "Group",
+    "ar": "المجموعة",
+    "ckb": "گرووپ"
+  },
+  {
+    "id": "250",
+    "source_en": "Approved",
+    "en": "Approved",
+    "ar": "معتمد",
+    "ckb": "پەسەندکراوە"
+  },
+  {
+    "id": "251",
+    "source_en": "Pending",
+    "en": "Pending",
+    "ar": "بالانتظار",
+    "ckb": "چاوەڕوانە"
+  },
+  {
+    "id": "252",
+    "source_en": "Revoke approval",
+    "en": "Remove approval",
+    "ar": "سحب الموافقة",
+    "ckb": "لابردنی پەسەندکردن"
+  },
+  {
+    "id": "253",
+    "source_en": "Approve partner",
+    "en": "Approve partner",
+    "ar": "اعتماد الشريك",
+    "ckb": "پەسەندکردنی هاوبەش"
+  },
+  {
+    "id": "254",
+    "source_en": "Partner record created.",
+    "en": "Partner added.",
+    "ar": "تمت إضافة الشريك.",
+    "ckb": "هاوبەش زیادکرا."
+  },
+  {
+    "id": "255",
+    "source_en": "Partner operations",
+    "en": "Partner portal",
+    "ar": "بوابة الشركاء",
+    "ckb": "پۆرتاڵی هاوبەشان"
+  },
+  {
+    "id": "256",
+    "source_en": "Create an offering",
+    "en": "Create a listing",
+    "ar": "سوّي نشاط جديد",
+    "ckb": "چالاکییەک دروست بکە"
+  },
+  {
+    "id": "257",
+    "source_en": "Offering title",
+    "en": "Listing title",
+    "ar": "عنوان النشاط",
+    "ckb": "ناونیشانی چالاکی"
+  },
+  {
+    "id": "258",
+    "source_en": "Format",
+    "en": "Format",
+    "ar": "النوع",
+    "ckb": "جۆر"
+  },
+  {
+    "id": "259",
+    "source_en": "City",
+    "en": "City",
+    "ar": "المدينة",
+    "ckb": "شار"
+  },
+  {
+    "id": "260",
+    "source_en": "Facility",
+    "en": "Facility",
+    "ar": "المكان",
+    "ckb": "شوێن"
+  },
+  {
+    "id": "261",
+    "source_en": "Category",
+    "en": "Category",
+    "ar": "التصنيف",
+    "ckb": "پۆل"
+  },
+  {
+    "id": "262",
+    "source_en": "Access",
+    "en": "Access type",
+    "ar": "نوع الدخول",
+    "ckb": "جۆری دەستگەیشتن"
+  },
+  {
+    "id": "263",
+    "source_en": "In person",
+    "en": "In person",
+    "ar": "حضوري",
+    "ckb": "ڕووبەڕوو"
+  },
+  {
+    "id": "264",
+    "source_en": "Premium",
+    "en": "Premium",
+    "ar": "مميّز",
+    "ckb": "پریمیەم"
+  },
+  {
+    "id": "265",
+    "source_en": "Live online",
+    "en": "Live online",
+    "ar": "أونلاين مباشر",
+    "ckb": "ئۆنلاینی ڕاستەوخۆ"
+  },
+  {
+    "id": "266",
+    "source_en": "Online class details",
+    "en": "Online class details",
+    "ar": "تفاصيل الكلاس الأونلاين",
+    "ckb": "وردەکاریی کلاسی ئۆنلاین"
+  },
+  {
+    "id": "267",
+    "source_en": "Provide translations for all three supported languages and a secure HTTPS access link.",
+    "en": "Add the title and description in all three languages, plus a secure join link (https://).",
+    "ar": "ضيف العنوان والوصف باللغات الثلاث، ويّا رابط انضمام آمن (https://).",
+    "ckb": "ناونیشان و وەسف بە هەر سێ زمانەکە زیاد بکە، لەگەڵ لینکێکی پارێزراو بۆ بەشداریکردن (https://)."
+  },
+  {
+    "id": "268",
+    "source_en": "Title · English",
+    "en": "Title · English",
+    "ar": "العنوان · إنجليزي",
+    "ckb": "ناونیشان · ئینگلیزی"
+  },
+  {
+    "id": "269",
+    "source_en": "Title · Iraqi Arabic",
+    "en": "Title · Iraqi Arabic",
+    "ar": "العنوان · عربي عراقي",
+    "ckb": "ناونیشان · عەرەبیی عێراقی"
+  },
+  {
+    "id": "270",
+    "source_en": "Title · Sorani Kurdish",
+    "en": "Title · Sorani Kurdish",
+    "ar": "العنوان · كردي سوراني",
+    "ckb": "ناونیشان · کوردیی سۆرانی"
+  },
+  {
+    "id": "271",
+    "source_en": "Description · English",
+    "en": "Description · English",
+    "ar": "الوصف · إنجليزي",
+    "ckb": "وەسف · ئینگلیزی"
+  },
+  {
+    "id": "272",
+    "source_en": "Description · Iraqi Arabic",
+    "en": "Description · Iraqi Arabic",
+    "ar": "الوصف · عربي عراقي",
+    "ckb": "وەسف · عەرەبیی عێراقی"
+  },
+  {
+    "id": "273",
+    "source_en": "Description · Sorani Kurdish",
+    "en": "Description · Sorani Kurdish",
+    "ar": "الوصف · كردي سوراني",
+    "ckb": "وەسف · کوردیی سۆرانی"
+  },
+  {
+    "id": "274",
+    "source_en": "Starts at",
+    "en": "Starts at",
+    "ar": "يبدي الساعة",
+    "ckb": "دەستپێدەکات لە"
+  },
+  {
+    "id": "275",
+    "source_en": "Ends at",
+    "en": "Ends at",
+    "ar": "يخلص الساعة",
+    "ckb": "کۆتایی دێت لە"
+  },
+  {
+    "id": "276",
+    "source_en": "Cancellation deadline",
+    "en": "Cancellation deadline",
+    "ar": "آخر موعد للإلغاء",
+    "ckb": "دوا کاتی هەڵوەشاندنەوە"
+  },
+  {
+    "id": "277",
+    "source_en": "Waitlist offers expire after",
+    "en": "Waitlist spot offers expire after",
+    "ar": "المكان المعروض من قائمة الانتظار ينتهي بعد",
+    "ckb": "پێشنیاری شوێن لە لیستی چاوەڕوانی بەسەردەچێت دوای"
+  },
+  {
+    "id": "278",
+    "source_en": "minutes.",
+    "en": "minutes",
+    "ar": "دقيقة",
+    "ckb": "خولەک"
+  },
+  {
+    "id": "279",
+    "source_en": "Gender access",
+    "en": "Who can join",
+    "ar": "مخصص لـ",
+    "ckb": "بۆ کێیە"
+  },
+  {
+    "id": "280",
+    "source_en": "All",
+    "en": "Everyone",
+    "ar": "الكل",
+    "ckb": "هەمووان"
+  },
+  {
+    "id": "281",
+    "source_en": "Female",
+    "en": "Women only",
+    "ar": "نساء فقط",
+    "ckb": "تەنها ئافرەتان"
+  },
+  {
+    "id": "282",
+    "source_en": "Male",
+    "en": "Men only",
+    "ar": "رجال فقط",
+    "ckb": "تەنها پیاوان"
+  },
+  {
+    "id": "283",
+    "source_en": "Minimum age",
+    "en": "Minimum age",
+    "ar": "أقل عمر",
+    "ckb": "کەمترین تەمەن"
+  },
+  {
+    "id": "284",
+    "source_en": "Maximum age (optional)",
+    "en": "Maximum age (optional)",
+    "ar": "أكبر عمر (اختياري)",
+    "ckb": "زۆرترین تەمەن (ئارەزوومەندانە)"
+  },
+  {
+    "id": "285",
+    "source_en": "Membership tiers (comma separated)",
+    "en": "Membership tiers (separate with commas)",
+    "ar": "فئات الاشتراك (افصل بينها بفاصلة)",
+    "ckb": "ئاستەکانی ئەندامێتی (بە فاریزە جیایان بکەرەوە)"
+  },
+  {
+    "id": "286",
+    "source_en": "Publish as active",
+    "en": "Publish now",
+    "ar": "انشره هسه",
+    "ckb": "ئێستا بڵاوی بکەرەوە"
+  },
+  {
+    "id": "287",
+    "source_en": "Create offering",
+    "en": "Create listing",
+    "ar": "إنشاء النشاط",
+    "ckb": "دروستکردنی چالاکی"
+  },
+  {
+    "id": "288",
+    "source_en": "Verify member check-in code",
+    "en": "Check member check-in code",
+    "ar": "تحقق من رمز حضور العضو",
+    "ckb": "کۆدی ئامادەبوونی ئەندام بپشکنە"
+  },
+  {
+    "id": "289",
+    "source_en": "The member must request this short-lived code from their own reservation. This verifies the code only; the server still enforces the attendance policy.",
+    "en": "The member gets this short-lived code from their own booking. This only checks the code; MaydanGo still applies the attendance rules.",
+    "ar": "العضو ياخذ هذا الرمز المؤقت من حجزه. هنا بس ينفحص الرمز، وقواعد الحضور تطبّقها MaydanGo.",
+    "ckb": "ئەندام ئەم کۆدە کورتخایەنە لە نۆرەکەی خۆی وەردەگرێت. ئەمە تەنها کۆدەکە دەپشکنێت؛ یاساکانی ئامادەبوون هەر لەلایەن MaydanGo جێبەجێ دەکرێن."
+  },
+  {
+    "id": "290",
+    "source_en": "8-digit member code",
+    "en": "8-digit member code",
+    "ar": "رمز العضو (8 أرقام)",
+    "ckb": "کۆدی ئەندام (8 ژمارە)"
+  },
+  {
+    "id": "291",
+    "source_en": "Audit reason (at least 5 characters)",
+    "en": "Reason (at least 5 characters)",
+    "ar": "السبب (5 أحرف على الأقل)",
+    "ckb": "هۆکار (لانیکەم 5 پیت)"
+  },
+  {
+    "id": "292",
+    "source_en": "Verifying…",
+    "en": "Checking…",
+    "ar": "جاري التحقق…",
+    "ckb": "دەپشکنرێت…"
+  },
+  {
+    "id": "293",
+    "source_en": "Verify and record arrival",
+    "en": "Check code and check in",
+    "ar": "تحقق وسجّل الحضور",
+    "ckb": "بپشکنە و ئامادەبوون تۆمار بکە"
+  },
+  {
+    "id": "294",
+    "source_en": "The server did not accept this code. It may be invalid, expired, or the attempt limit may have been reached. Ask the member to request a fresh code from their own reservation; staff cannot issue codes.",
+    "en": "This code wasn't accepted. It may be wrong or expired, or there have been too many attempts. Ask the member to get a new code from their booking. Staff can't create codes.",
+    "ar": "الرمز ما انقبل. يمكن غلط أو منتهي، أو صارت محاولات هواية. خلّي العضو ياخذ رمز جديد من حجزه. الموظفين ما يكدرون يطلعون رموز.",
+    "ckb": "ئەم کۆدە قبوڵ نەکرا. لەوانەیە هەڵە یان بەسەرچوو بێت، یان هەوڵدان زۆر بووبێت. داوا لە ئەندام بکە کۆدێکی نوێ لە نۆرەکەی وەربگرێت. کارمەندان ناتوانن کۆد دروست بکەن."
+  }
+]

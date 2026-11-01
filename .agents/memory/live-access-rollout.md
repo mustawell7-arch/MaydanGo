@@ -19,3 +19,9 @@ Finance controls are review and status tracking only: they must not initiate ban
 **Why:** The Phase 1 finance scope excludes payment-account creation, live checkout, and automatic transfers; payments and payout eligibility remain gated.
 
 **How to apply:** Keep money movement outside finance approval endpoints. Require verified gates and separate approval before any provider refund, and preserve a manual-only payout status.
+
+Free event RSVPs consume one standard membership visit; there is no separate event-ticket payment.
+
+**Why:** The user explicitly chose to treat each event RSVP like a normal class reservation rather than add an event fee.
+
+**How to apply:** Use standard membership eligibility, quota, capacity, and cancellation rules for free events. Keep separately paid events out of the free RSVP flow.

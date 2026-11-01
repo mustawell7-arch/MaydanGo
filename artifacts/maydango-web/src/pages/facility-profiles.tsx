@@ -10,6 +10,7 @@ import {
 } from '@workspace/api-client-react';
 import type { FacilityOpeningDay, FacilityProfile, FacilityProfileInput, FacilityProfileUpdate, LocalizedFacilityText, Partner } from '@workspace/api-client-react';
 import { AlertTriangle, Clock3, MapPin, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react';
+import { trackEvent } from '@/lib/analytics';
 
 type Language = keyof LocalizedFacilityText;
 type ProfileForm = Omit<FacilityProfileInput, 'partnerId'>;
@@ -99,7 +100,11 @@ function ProfileEditor({ profile, partners, partnerId, isAdmin, onClose, onSaved
       websiteUrl: form.websiteUrl?.trim() || null,
       openingHours: form.openingHours.map(row => row.closed ? { day: row.day, closed: true, opensAt: null, closesAt: null } : row),
     };
-    const saved = () => { onSaved(); onClose(); };
+    const saved = () => {
+      trackEvent('facility_profile_saved', { change_type: profile ? 'updated' : 'created', surface: 'admin_facilities' });
+      onSaved();
+      onClose();
+    };
     if (profile) update.mutate({ id: profile.id, data: data as FacilityProfileUpdate }, { onSuccess: saved, onError: () => setMessage('The facility could not be updated. Check the details and retry.') });
     else create.mutate({ data: { ...data, partnerId: selectedPartner } as FacilityProfileInput }, { onSuccess: saved, onError: () => setMessage('The facility could not be created. Check the details and retry.') });
   };

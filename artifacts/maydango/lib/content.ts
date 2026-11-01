@@ -85,6 +85,9 @@ export const dateTime = (value: string, language: Language, dateOnly = false) =>
   timeZone: 'Asia/Baghdad', year: 'numeric', month: 'short', day: 'numeric',
   ...(dateOnly ? {} : { hour: 'numeric' as const, minute: '2-digit' as const }),
 }).format(new Date(value));
+export const timeOnly = (value: string, language: Language) => new Intl.DateTimeFormat(locale(language), {
+  timeZone: 'Asia/Baghdad', hour: 'numeric', minute: '2-digit',
+}).format(new Date(value));
 
 /** Only display registered errors, never arbitrary provider diagnostics or URLs. */
 export function errorCopy(error: unknown): string {

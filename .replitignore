@@ -4,3 +4,5 @@
 # No need to store the pnpm store twice.
 .local
 generated-artifacts/
+artifacts/maydango/static-build/
+.agents/outputs/

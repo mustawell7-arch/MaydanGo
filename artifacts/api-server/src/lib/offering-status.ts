@@ -1,4 +1,6 @@
-import type { OfferingActivityStatus } from "@workspace/db";
+type OfferingActivityStatus =
+  | "draft" | "submitted" | "under_review" | "changes_requested" | "approved"
+  | "published" | "suspended" | "rejected" | "archived";
 
 export type OfferingSessionStatus =
   | "draft" | "scheduled" | "open_for_booking" | "fully_booked"

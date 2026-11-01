@@ -42,6 +42,8 @@ On physical iOS and Android devices, review all three languages at large text si
 - Preferences script: passed language persistence, cold hydration, rapid changes, and invalid-data recovery using mocked hooks and storage; this remains a mock, not a device restart.
 - Mobile typecheck: failed with 12 existing errors in `app/live.tsx`, `app/operations.tsx`, and `components/AttendanceCard.tsx`; none are in the localization changes.
 - Shared copy from the revised approved PDF was applied to the native home headline, Iraq-region label, nearby/home section, online-training heading, and membership labels in English, Iraqi Arabic, and Sorani. Web-only copy was not added to app-only routes.
+- New device-security text is drafted in English, Iraqi Arabic, and Sorani; native-speaker review is still required before release.
+- Facility map, directions, location permission, privacy, and distance-filter text is drafted in all three app languages; native-speaker review is still required before release.
 - In the phone-sized web preview, Arabic and Sorani rendered on home, facility details, empty bookings, membership, and account sign-in screens. RTL content and localized facility-save, email, and password labels were present; the email field rendered LTR. The unauthenticated course route returned 401 and showed the localized unavailable state, so signed-in lesson content was not reviewed.
 - The signed-out browser preview did not expose the date-of-birth input; its source uses explicit LTR direction and an accessibility label. Native large-text behavior, VoiceOver/TalkBack, native tab ordering, and physical cold restart remain unverified. These browser checks do not replace device results.
 - Device matrix below remains pending. No device models, OS versions, or physical outcomes were available to record.
@@ -66,3 +68,7 @@ Record device model, OS version, app build or source revision, runtime (Expo Go 
 8. Record pass/fail for each step with sanitized screenshots or recordings. For a failure, record route, exact reproduction steps, expected and actual behavior, and affected device/language. Fix confirmed defects and repeat the affected checks on both platforms before approving release.
 
 This checklist is preparation for device verification, not evidence that the checks have run. Physical results and any resulting fixes are still required.
+
+## Partner operations wording review
+
+The revised English, Iraqi Arabic, and Sorani copy file supplied for partner operations is wired into the Expo app's staff/partner operations screen. Its uploaded filename mentions the partner portal, but the user clarified the target is the mobile app. The wording remains a review draft pending qualified native-speaker review. Automated localization checks and TypeScript checks do not establish translation quality or physical-device behavior.

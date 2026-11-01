@@ -1,21 +1,31 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { MemberNotice } from '@/components/MemberNotice';
 import {
-  Image,
+  Linking,
+  Platform,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
+import * as Location from 'expo-location';
 import { Text, Pressable, TextInput, Ionicons } from '@/components/Localized';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
 import { FacilityCard } from '@/components/FacilityCard';
-import { communityEvents, cities, getCityLabel } from '@/data/demo';
+import { FacilityMap, type FacilityMapPoint } from '@/components/FacilityMap';
+import { cities, getCityLabel } from '@/data/demo';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { translate } from '@/lib/i18n';
-import { facilityText, cityIdForFacility, eligibilityKey } from '@/lib/facility-content';
-import { getGetPublicFacilitiesQueryKey, useGetPublicFacilities } from '@workspace/api-client-react';
+import { facilityText, cityIdForFacility, eligibilityKey, eligibilityLabel } from '@/lib/facility-content';
+import { directionsUrl, distanceKm, formatDistance, type Coordinates } from '@/lib/location';
+import { dateTime, timeOnly } from '@/lib/content';
+import {
+  getGetPublicCatalogQueryKey,
+  getGetPublicFacilitiesQueryKey,
+  useGetPublicCatalog,
+  useGetPublicFacilities,
+} from '@workspace/api-client-react';
 
 function FilterRow({
   title,
@@ -77,8 +87,17 @@ export default function ExploreScreen() {
   const [selectedAmenity, setSelectedAmenity] = useState<string | null>(null);
   const [selectedAccessibility, setSelectedAccessibility] = useState<string | null>(null);
   const [selectedEligibility, setSelectedEligibility] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [location, setLocation] = useState<Coordinates | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationMessage, setLocationMessage] = useState<string | null>(null);
+  const [distanceLimit, setDistanceLimit] = useState<number | null>(null);
+  const [mapSelectedId, setMapSelectedId] = useState<string | null>(null);
   const facilitiesQuery = useGetPublicFacilities({
     query: { queryKey: getGetPublicFacilitiesQueryKey(), refetchInterval: 60_000 },
+  });
+  const eventsQuery = useGetPublicCatalog({
+    query: { queryKey: getGetPublicCatalogQueryKey(), enabled: kind === 'events', refetchInterval: 60_000 },
   });
   const facilities = facilitiesQuery.data ?? [];
   const t = (key: Parameters<typeof translate>[1]) => translate(app.language, key);
@@ -138,30 +157,119 @@ export default function ExploreScreen() {
     }),
     [facilities, app.selectedCityId, app.language, query, category, selectedAmenity, selectedAccessibility, selectedEligibility, openNowOnly],
   );
+  const facilitiesWithDistance = useMemo(
+    () => visibleFacilities.map(facility => ({
+      facility,
+      distance: location && facility.latitude !== null && facility.longitude !== null
+        ? distanceKm(location, { latitude: facility.latitude, longitude: facility.longitude })
+        : null,
+    })),
+    [visibleFacilities, location],
+  );
+  const resultFacilities = useMemo(() => {
+    const withinDistance = facilitiesWithDistance.filter(item =>
+      distanceLimit === null || location === null ||
+      (item.distance !== null && item.distance <= distanceLimit),
+    );
+    return location
+      ? withinDistance.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity)).map(item => item.facility)
+      : withinDistance.map(item => item.facility);
+  }, [facilitiesWithDistance, distanceLimit, location]);
+  const mappedFacilities: FacilityMapPoint[] = useMemo(
+    () => resultFacilities.flatMap(facility =>
+      facility.latitude !== null && facility.longitude !== null
+        ? [{ id: facility.id, latitude: facility.latitude, longitude: facility.longitude }]
+        : [],
+    ),
+    [resultFacilities],
+  );
+  const selectedMapFacility = resultFacilities.find(facility => facility.id === mapSelectedId) ?? null;
+  useEffect(() => {
+    if (!mapSelectedId || !mappedFacilities.some(point => point.id === mapSelectedId)) {
+      setMapSelectedId(mappedFacilities[0]?.id ?? null);
+    }
+  }, [mappedFacilities, mapSelectedId]);
 
   const visibleEvents = useMemo(
-    () =>
-      communityEvents.filter((event) => {
-        const matchesCity = app.selectedCityId === 'all' || event.cityId === app.selectedCityId;
-        const source = `${event.title} ${event.venue} ${event.city} ${event.description} ${event.access}`;
-        const matchesText = `${source}`
-          .toLowerCase()
-          .includes(query.toLowerCase());
-        return matchesCity && matchesText;
-      }),
-    [app.selectedCityId, query],
+    () => (eventsQuery.data ?? []).filter(event => {
+      if (event.kind !== 'event' || event.additionalPayment) return false;
+      const matchesCity = app.selectedCityId === 'all' || cityIdForFacility(event.city) === app.selectedCityId;
+      const searchValues = [
+        event.title,
+        event.localizedTitle?.en,
+        event.localizedTitle?.ar,
+        event.localizedTitle?.ku,
+        event.localizedDescription?.en,
+        event.localizedDescription?.ar,
+        event.localizedDescription?.ku,
+        event.city,
+        event.facility,
+        event.category,
+        event.partnerName,
+      ];
+      const matchesText = searchValues.join(' ').toLocaleLowerCase().includes(query.toLocaleLowerCase());
+      return matchesCity && matchesText;
+    }),
+    [eventsQuery.data, app.selectedCityId, query],
   );
   const align = app.language === 'en' ? 'left' : 'right';
+  const distanceOptions = location ? [5, 10, 25].map(value => ({
+    key: String(value),
+    label: `${value} ${t('kilometers')}`,
+  })) : [];
+
+  const requestLocation = async () => {
+    setLocationLoading(true);
+    setLocationMessage(null);
+    try {
+      const current = await Location.getForegroundPermissionsAsync();
+      const permission = current.granted ? current : await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) {
+        setLocationMessage(t('locationDenied'));
+        return;
+      }
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      if (!Number.isFinite(position.coords.latitude) || !Number.isFinite(position.coords.longitude)) {
+        setLocationMessage(t('locationUnavailable'));
+        return;
+      }
+      setLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+    } catch {
+      setLocationMessage(t('locationUnavailable'));
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
+  const openDirections = (facility: (typeof facilities)[number]) => {
+    const destination = facility.latitude !== null && facility.longitude !== null
+      ? { latitude: facility.latitude, longitude: facility.longitude }
+      : null;
+    const url = directionsUrl(
+      Platform.OS,
+      destination,
+      facilityText(facility.localizedAddress, app.language),
+      facilityText(facility.localizedName, app.language),
+    );
+    if (!url) {
+      setLocationMessage(t('directionsUnavailable'));
+      return;
+    }
+    void Linking.openURL(url).catch(() => setLocationMessage(t('directionsUnavailable')));
+  };
 
   const toggleEvent = async (eventId: string) => {
     const wasReserved = app.isEventReserved(eventId);
     const result = await (wasReserved ? app.cancelEvent(eventId) : app.bookEvent(eventId));
-    if (result.ok) setNotice(wasReserved ? t('cancelled') : t('eventSaved'));
+    if (result.ok) {
+      setNotice(wasReserved ? t('cancelled') : t('eventSaved'));
+      void eventsQuery.refetch();
+    }
     else setNotice(result.reason === 'duplicate' ? t('alreadySaved') : t('notSaved'));
   };
 
   return (
-    <ScreenShell sample={kind === 'events'}>
+    <ScreenShell>
       <ScreenHeader eyebrow={currentCity} title={t('explore')} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -222,41 +330,102 @@ export default function ExploreScreen() {
                 <Text style={[styles.toastText, { color: colors.primaryForeground }]}>{notice}</Text>
               </View>
             ) : null}
-            {visibleEvents.map((event) => {
-              const reserved = app.isEventReserved(event.id);
+            {eventsQuery.isLoading ? (
+              <Text style={[styles.emptyHint, { color: colors.mutedForeground }]}>{t('loadingEvents')}</Text>
+            ) : eventsQuery.isError ? (
+              <View style={styles.empty}>
+                <Text style={[styles.emptyHint, { color: colors.destructive }]}>{t('eventLoadError')}</Text>
+                <Pressable accessibilityRole="button" onPress={() => void eventsQuery.refetch()}>
+                  <Text style={[styles.retryText, { color: colors.primary }]}>{t('tryAgain')}</Text>
+                </Pressable>
+              </View>
+            ) : visibleEvents.map(event => {
+              const reserved = app.isEventReserved(event.targetId);
+              const full = event.remaining <= 0 && !reserved;
+              const cancellationClosed = reserved && Date.parse(event.cancellationDeadline) <= Date.now();
+              const cityId = cityIdForFacility(event.city);
+              const eventCity = cities.find(city => city.id === cityId);
+              const cityLabel = eventCity ? getCityLabel(eventCity.id, app.language) : event.city;
+              const title = event.localizedTitle ? facilityText(event.localizedTitle, app.language) : event.title;
+              const description = event.localizedDescription ? facilityText(event.localizedDescription, app.language) : '';
+              const eligibleTiers = event.tiers?.join(', ') ?? '';
               return (
                 <View key={event.id} style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <Image source={event.image} style={styles.eventImage} />
                   <View style={styles.eventBody}>
-                    <Text style={[styles.eventDate, { color: colors.primary, textAlign: align }]}>{app.offeringTime('event', event.id)} · {getCityLabel(event.cityId, app.language)}</Text>
-                    <Text style={[styles.eventTitle, { color: colors.foreground, textAlign: align }]}>{event.title}</Text>
-                    <Text style={[styles.eventMeta, { color: colors.mutedForeground, textAlign: align }]}>{event.venue} · {event.access}</Text>
-                    <Text style={[styles.eventDesc, { color: colors.foreground, textAlign: align }]}>{event.description}</Text>
-                    <View style={styles.eventFooter}>
-                      {reserved ? (
-                        <View style={[styles.statusPill, { backgroundColor: colors.secondary }]}>
-                          <Text style={[styles.statusText, { color: colors.primary }]}>{t('statusReserved')}</Text>
-                        </View>
-                      ) : <View />}
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`${reserved ? t('cancelReservation') : t('reserveEvent')}: ${event.title}`}
-                        onPress={() => toggleEvent(event.id)}
-                        style={({ pressed }) => [
-                          styles.eventButton,
-                          { backgroundColor: reserved ? colors.card : colors.accent, borderColor: reserved ? colors.destructive : colors.accent, opacity: pressed ? 0.85 : 1 },
-                        ]}
-                      >
-                        <Text style={[styles.eventButtonText, { color: reserved ? colors.destructive : colors.accentForeground }]}>
-                          {reserved ? t('cancelReservation') : t('reserveEvent')}
+                    <View style={styles.eventHeader}>
+                      <View style={[styles.eventIcon, { backgroundColor: colors.secondary }]}>
+                        <Ionicons name="calendar-outline" size={21} color={colors.primary} />
+                      </View>
+                      <View style={styles.eventHeading}>
+                        <Text style={[styles.eventDate, { color: colors.primary, textAlign: align }]}>{dateTime(event.startsAt, app.language)} · {cityLabel}</Text>
+                        <Text style={[styles.eventTitle, { color: colors.foreground, textAlign: align }]}>{title}</Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.eventMeta, { color: colors.mutedForeground, textAlign: align }]}>{event.facility} · {event.partnerName}</Text>
+                    <Text style={[styles.eventMeta, { color: colors.mutedForeground, textAlign: align }]}>{event.category}</Text>
+                    {description ? <Text style={[styles.eventDesc, { color: colors.foreground, textAlign: align }]}>{description}</Text> : null}
+                    <View style={[styles.eventDetails, { backgroundColor: colors.secondary }]}>
+                      <Text style={[styles.eventDetailText, { color: colors.foreground, textAlign: align }]}>
+                        {t('eventEndsAt').replace('{time}', timeOnly(event.endsAt, app.language))}
+                      </Text>
+                      <Text style={[styles.eventDetailText, { color: colors.foreground, textAlign: align }]}>
+                        {t('eventEligibility')}: {eligibilityLabel(event, app.language)}
+                      </Text>
+                      {eligibleTiers ? (
+                        <Text style={[styles.eventDetailText, { color: colors.foreground, textAlign: align }]}>
+                          {t('eventEligiblePlans').replace('{tiers}', eligibleTiers)}
                         </Text>
-                      </Pressable>
+                      ) : null}
+                      <Text style={[styles.eventDetailText, { color: colors.foreground, textAlign: align }]}>
+                        {t('eventCancelBy').replace('{date}', dateTime(event.cancellationDeadline, app.language))}
+                      </Text>
+                    </View>
+                    <View style={styles.eventFooter}>
+                      <View style={styles.eventAvailability}>
+                        <View style={[styles.statusPill, { backgroundColor: colors.secondary }]}>
+                          <Text style={[styles.statusText, { color: colors.primary }]}>{t('eventNoExtraPayment')}</Text>
+                        </View>
+                        <Text style={[styles.eventMeta, { color: full ? colors.destructive : colors.mutedForeground, textAlign: align }]}>
+                          {event.remaining > 0
+                            ? t('eventPlacesRemaining').replace('{n}', String(event.remaining))
+                            : t('eventFull')}
+                        </Text>
+                        {cancellationClosed ? (
+                          <Text style={[styles.eventMeta, { color: colors.mutedForeground, textAlign: align }]}>{t('eventCancelDeadlinePassed')}</Text>
+                        ) : null}
+                      </View>
+                      {cancellationClosed ? (
+                        <View style={[styles.statusPill, { backgroundColor: colors.secondary }]}>
+                          <Text style={[styles.statusText, { color: colors.mutedForeground }]}>{t('statusReserved')}</Text>
+                        </View>
+                      ) : (
+                        <Pressable
+                          testID={`event-rsvp-${event.id}`}
+                          accessibilityRole="button"
+                          accessibilityState={{ disabled: app.memberLoading || full }}
+                          accessibilityLabel={`${reserved ? t('cancelReservation') : t('reserveEvent')}: ${title}`}
+                          disabled={app.memberLoading || full}
+                          onPress={() => void toggleEvent(event.targetId)}
+                          style={({ pressed }) => [
+                            styles.eventButton,
+                            {
+                              backgroundColor: reserved ? colors.card : colors.accent,
+                              borderColor: reserved ? colors.destructive : colors.accent,
+                              opacity: app.memberLoading || full ? 0.55 : pressed ? 0.85 : 1,
+                            },
+                          ]}
+                        >
+                          <Text style={[styles.eventButtonText, { color: reserved ? colors.destructive : colors.accentForeground }]}>
+                            {reserved ? t('cancelReservation') : full ? t('eventFull') : t('reserveEvent')}
+                          </Text>
+                        </Pressable>
+                      )}
                     </View>
                   </View>
                 </View>
               );
             })}
-            {visibleEvents.length === 0 ? (
+            {!eventsQuery.isLoading && !eventsQuery.isError && visibleEvents.length === 0 ? (
               <View style={styles.empty}>
                 <Ionicons name="calendar-clear-outline" size={28} color={colors.mutedForeground} />
                 <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t('noEvents')}</Text>
@@ -302,6 +471,45 @@ export default function ExploreScreen() {
           selected={selectedAccessibility} onSelect={setSelectedAccessibility} colors={colors} />
         <FilterRow title={t('sessionSuitability')} anyLabel={t('anySessionSuitability')} options={eligibilityOptions}
           selected={selectedEligibility} onSelect={setSelectedEligibility} colors={colors} />
+        <View style={styles.discoveryControls}>
+          <View accessibilityRole="tablist" style={[styles.viewSwitch, { backgroundColor: colors.secondary }]}>
+            {(['list', 'map'] as const).map(value => (
+              <Pressable
+                key={value}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: viewMode === value }}
+                onPress={() => setViewMode(value)}
+                style={[styles.viewOption, viewMode === value && { backgroundColor: colors.card }]}
+              >
+                <Ionicons name={value === 'map' ? 'map-outline' : 'list-outline'} size={15} color={viewMode === value ? colors.primary : colors.mutedForeground} />
+                <Text style={[styles.toggleText, { color: viewMode === value ? colors.primary : colors.mutedForeground }]}>{t(value)}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            disabled={locationLoading}
+            onPress={() => void requestLocation()}
+            style={[styles.locationButton, { backgroundColor: colors.primary }]}
+          >
+            <Ionicons name="locate-outline" size={16} color={colors.primaryForeground} />
+            <Text style={[styles.locationButtonText, { color: colors.primaryForeground }]}>
+              {locationLoading ? t('gettingLocation') : location ? t('refreshMyLocation') : t('useMyLocation')}
+            </Text>
+          </Pressable>
+        </View>
+        {locationMessage ? <Text accessibilityRole="alert" style={[styles.locationMessage, { color: colors.destructive }]}>{locationMessage}</Text> : null}
+        {location ? <Text style={[styles.locationPrivacyHint, { color: colors.mutedForeground }]}>{t('locationPrivacyHint')}</Text> : null}
+        {location ? (
+          <FilterRow
+            title={t('distance')}
+            anyLabel={t('anyDistance')}
+            options={distanceOptions}
+            selected={distanceLimit === null ? null : String(distanceLimit)}
+            onSelect={value => setDistanceLimit(value === null ? null : Number(value))}
+            colors={colors}
+          />
+        ) : null}
         <View style={styles.list}>
           {facilitiesQuery.isLoading ? (
             <Text style={[styles.emptyHint, { color: colors.mutedForeground }]}>{t('loadingFacilities')}</Text>
@@ -318,19 +526,62 @@ export default function ExploreScreen() {
               <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t('noPlaces')}</Text>
               <Text style={[styles.emptyHint, { color: colors.mutedForeground }]}>{t('noPublishedFacilities')}</Text>
             </View>
-          ) : visibleFacilities.length === 0 ? (
+          ) : resultFacilities.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="search-outline" size={28} color={colors.mutedForeground} />
               <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t('noPlaces')}</Text>
-              <Text style={[styles.emptyHint, { color: colors.mutedForeground }]}>{t('trySearch')}</Text>
+              <Text style={[styles.emptyHint, { color: colors.mutedForeground }]}>{distanceLimit !== null && location ? t('noPlacesWithinDistance') : t('trySearch')}</Text>
+            </View>
+          ) : viewMode === 'map' ? (
+            <View style={styles.mapResults}>
+              {mappedFacilities.length ? (
+                <FacilityMap
+                  points={mappedFacilities}
+                  userLocation={location}
+                  title={t('facilityMap')}
+                  onSelect={setMapSelectedId}
+                />
+              ) : (
+                <View style={[styles.noMap, { backgroundColor: colors.secondary }]}>
+                  <Ionicons name="map-outline" size={28} color={colors.mutedForeground} />
+                  <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t('noMappedFacilities')}</Text>
+                </View>
+              )}
+              {mappedFacilities.length < resultFacilities.length ? (
+                <Text style={[styles.locationPrivacyHint, { color: colors.mutedForeground }]}>{t('someLocationsMissing')}</Text>
+              ) : null}
+              {selectedMapFacility ? (
+                <>
+                  <FacilityCard
+                    facility={selectedMapFacility}
+                    favorite={app.favorites.includes(selectedMapFacility.id)}
+                    distanceLabel={location && selectedMapFacility.latitude !== null && selectedMapFacility.longitude !== null
+                      ? formatDistance(distanceKm(location, { latitude: selectedMapFacility.latitude, longitude: selectedMapFacility.longitude }), app.language)
+                      : undefined}
+                    onPress={() => router.push({ pathname: '/facility/[id]', params: { id: selectedMapFacility.id } })}
+                    onToggleFavorite={() => app.toggleFavorite(selectedMapFacility.id)}
+                  />
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => openDirections(selectedMapFacility)}
+                    style={[styles.directionsButton, { backgroundColor: colors.primary }]}
+                  >
+                    <Ionicons name="navigate-outline" size={17} color={colors.primaryForeground} />
+                    <Text style={[styles.locationButtonText, { color: colors.primaryForeground }]}>{t('directions')}</Text>
+                  </Pressable>
+                </>
+              ) : null}
             </View>
           ) : (
             <>
-              {visibleFacilities.map((facility) => (
+              {resultFacilities.map((facility) => (
               <FacilityCard
                 key={facility.id}
                 facility={facility}
                 favorite={app.favorites.includes(facility.id)}
+                distanceLabel={location && facility.latitude !== null && facility.longitude !== null
+                  ? formatDistance(distanceKm(location, { latitude: facility.latitude, longitude: facility.longitude }), app.language)
+                  : undefined}
                 onPress={() => router.push({ pathname: '/facility/[id]', params: { id: facility.id } })}
                 onToggleFavorite={() => app.toggleFavorite(facility.id)}
               />
@@ -352,13 +603,18 @@ const styles = StyleSheet.create({
   toast: { borderRadius: 12, padding: 10, marginBottom: 10 },
   toastText: { fontSize: 11, fontWeight: '800' },
   eventCard: { borderWidth: 1, borderRadius: 20, overflow: 'hidden', marginBottom: 12 },
-  eventImage: { width: '100%', height: 120 },
   eventBody: { padding: 14 },
+  eventHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  eventIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  eventHeading: { flex: 1 },
   eventDate: { fontSize: 10, fontWeight: '800' },
   eventTitle: { fontSize: 16, fontWeight: '800', marginTop: 4 },
   eventMeta: { fontSize: 10, marginTop: 4 },
   eventDesc: { fontSize: 12, lineHeight: 18, marginTop: 8 },
+  eventDetails: { borderRadius: 12, gap: 4, marginTop: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  eventDetailText: { fontSize: 11, lineHeight: 16 },
   eventFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, gap: 8 },
+  eventAvailability: { flex: 1, gap: 4 },
   statusPill: { paddingHorizontal: 9, paddingVertical: 6, borderRadius: 10, flexShrink: 1 },
   statusText: { fontSize: 9, fontWeight: '900' },
   eventButton: { minHeight: 40, paddingHorizontal: 13, justifyContent: 'center', borderRadius: 12, borderWidth: 1 },
@@ -381,6 +637,16 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 13, paddingVertical: 9, borderRadius: 14, borderWidth: 1 },
   chipText: { fontSize: 11, fontWeight: '700' },
   filterBar: { paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  discoveryControls: { marginHorizontal: 20, marginTop: 14, marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  viewSwitch: { flex: 1, flexDirection: 'row', padding: 3, borderRadius: 13, gap: 2 },
+  viewOption: { flex: 1, minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: 11 },
+  locationButton: { minHeight: 40, borderRadius: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 },
+  locationButtonText: { fontSize: 11, fontWeight: '800' },
+  locationMessage: { marginHorizontal: 20, marginBottom: 8, fontSize: 12, textAlign: 'center' },
+  locationPrivacyHint: { marginHorizontal: 20, marginTop: 2, marginBottom: 8, fontSize: 10, lineHeight: 15 },
+  mapResults: { marginHorizontal: 20, gap: 10 },
+  noMap: { minHeight: 220, borderRadius: 18, alignItems: 'center', justifyContent: 'center', padding: 20, gap: 9 },
+  directionsButton: { minHeight: 44, borderRadius: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 14 },
   openPill: { flexDirection: 'row', gap: 6, alignItems: 'center', backgroundColor: '#e9eddf', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 14 },
   openDot: { width: 6, height: 6, borderRadius: 4, backgroundColor: '#4c875d' },
   openPillText: { fontSize: 10, fontWeight: '800' },

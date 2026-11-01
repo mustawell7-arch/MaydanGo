@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, isNull } from "drizzle-orm";
 import {
   db,
+  facilityHoursOverrides,
   facilityProfiles,
   offerings,
   partners,
@@ -11,7 +12,7 @@ import {
   GetPublicFacilityParams,
   GetPublicFacilityResponse,
 } from "@workspace/api-zod";
-import { openingState } from "../lib/facility-hours";
+import { iraqCalendarDate, openingState } from "../lib/facility-hours";
 
 const router = Router();
 
@@ -25,6 +26,18 @@ async function publishedFacilities(id?: string) {
 
   const partnerIds = [...new Set(profiles.map(row => row.profile.partnerId))];
   const now = new Date();
+  const hoursOverrideRows = await db.select().from(facilityHoursOverrides)
+    .where(and(
+      inArray(facilityHoursOverrides.facilityId, profiles.map(row => row.profile.id)),
+      gte(facilityHoursOverrides.endDate, iraqCalendarDate(now)),
+    ))
+    .orderBy(asc(facilityHoursOverrides.startDate), asc(facilityHoursOverrides.createdAt));
+  const hoursOverridesByFacility = new Map<string, typeof hoursOverrideRows>();
+  for (const override of hoursOverrideRows) {
+    const current = hoursOverridesByFacility.get(override.facilityId) ?? [];
+    current.push(override);
+    hoursOverridesByFacility.set(override.facilityId, current);
+  }
   const liveSessions = await db.select({
     id: offerings.id,
     partnerId: offerings.partnerId,
@@ -52,16 +65,20 @@ async function publishedFacilities(id?: string) {
     .orderBy(asc(offerings.startsAt));
   const normalized = (value: string) => value.trim().toLocaleLowerCase("en");
 
-  return profiles.map(({ profile, partnerName }) => ({
-    ...profile,
-    partnerName,
-    ...openingState(profile.openingHours, now),
-    upcomingSessions: liveSessions.filter(session =>
-      session.partnerId === profile.partnerId &&
-      normalized(session.city) === normalized(profile.city) &&
-      normalized(session.facility) === normalized(profile.facility),
-    ).map(({ partnerId: _partnerId, city: _city, facility: _facility, ...session }) => session),
-  }));
+  return profiles.map(({ profile, partnerName }) => {
+    const specialHours = hoursOverridesByFacility.get(profile.id) ?? [];
+    return {
+      ...profile,
+      partnerName,
+      specialHours,
+      ...openingState(profile.openingHours, now, specialHours),
+      upcomingSessions: liveSessions.filter(session =>
+        session.partnerId === profile.partnerId &&
+        normalized(session.city) === normalized(profile.city) &&
+        normalized(session.facility) === normalized(profile.facility),
+      ).map(({ partnerId: _partnerId, city: _city, facility: _facility, ...session }) => session),
+    };
+  });
 }
 
 router.get("/facilities", async (_req, res) => {

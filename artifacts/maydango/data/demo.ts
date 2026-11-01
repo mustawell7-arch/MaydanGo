@@ -78,18 +78,6 @@ export type Course = {
   sampleLessons: SampleLesson[];
 };
 
-export type CommunityEvent = {
-  id: string;
-  title: string;
-  cityId: string;
-  city: string;
-  venue: string;
-  date: string;
-  access: string;
-  description: string;
-  image: ImageSourcePropType;
-};
-
 export type Coach = {
   id: string;
   name: string;
@@ -432,42 +420,6 @@ export const sessions: TrainingSession[] = [
     level: 'Beginner friendly',
     gender: 'Open to all',
     image: require('../assets/images/maydango-strength.jpg'),
-  },
-];
-
-export const communityEvents: CommunityEvent[] = [
-  {
-    id: 'move-together-erbil',
-    title: 'Move Together Weekend',
-    cityId: 'erbil',
-    city: 'Erbil',
-    venue: 'Erbil community sports park',
-    date: 'Saturday · 10:00 AM',
-    access: 'All ages · all levels',
-    description: 'A relaxed day of beginner-friendly movement, games and time together.',
-    image: require('../assets/images/maydango-strength.jpg'),
-  },
-  {
-    id: 'riverfront-basra',
-    title: 'Basra Wellness by the River',
-    cityId: 'basra',
-    city: 'Basra',
-    venue: 'Ashar riverside event area',
-    date: 'Friday · 4:30 PM',
-    access: 'Families welcome',
-    description: 'Easy outdoor movement, community activities and a welcoming space to take part at your own pace.',
-    image: require('../assets/images/maydango-yoga.jpg'),
-  },
-  {
-    id: 'community-games-baghdad',
-    title: 'Baghdad Community Games',
-    cityId: 'baghdad',
-    city: 'Baghdad',
-    venue: 'Al-Mansour sports grounds',
-    date: 'Thursday · 5:00 PM',
-    access: 'All levels',
-    description: 'Try short, friendly games and meet local clubs in a no-pressure community setting.',
-    image: require('../assets/images/maydango-padel.jpg'),
   },
 ];
 

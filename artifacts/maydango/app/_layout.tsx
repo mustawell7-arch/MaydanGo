@@ -1,35 +1,51 @@
 import React, { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
+  DMSans_400Regular,
+  DMSans_500Medium,
+  DMSans_600SemiBold,
+  DMSans_700Bold,
   useFonts,
-} from '@expo-google-fonts/inter';
-import { Stack } from 'expo-router';
+} from '@expo-google-fonts/dm-sans';
+import { Stack, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import { translate } from '@/lib/i18n';
 import { ClerkProvider, ClerkLoaded, useAuth } from '@clerk/expo';
-import { setBaseUrl, setAuthTokenGetter } from '@workspace/api-client-react';
+import { setBaseUrl, setAuthTokenGetter, setDeviceTokenGetter } from '@workspace/api-client-react';
 import { tokenCache } from '@clerk/expo/token-cache';
+import { getDeviceInstallationToken } from '@/lib/device-identity';
+import { DeviceSecurityProvider, useDeviceSecurity } from '@/contexts/DeviceSecurityContext';
+import { DeviceSecurityGate } from '@/components/DeviceSecurityGate';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
-setBaseUrl(process.env.EXPO_PUBLIC_DOMAIN ? `https://${process.env.EXPO_PUBLIC_DOMAIN}` : '');
+const domain = process.env.EXPO_PUBLIC_DOMAIN;
+if (domain) setBaseUrl(`https://${domain}`);
+setDeviceTokenGetter(getDeviceInstallationToken);
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+const proxyUrl = process.env.EXPO_PUBLIC_CLERK_PROXY_URL || undefined;
 
 function RootLayoutNav() {
-  const { getToken, userId } = useAuth();
-  setAuthTokenGetter(() => getToken());
+  const { getToken, userId, isSignedIn } = useAuth();
+  const device = useDeviceSecurity();
+  const segments = useSegments();
+  const isSupportRoute = segments[0] === 'support';
   useEffect(() => { queryClient.clear(); }, [userId]);
+  useEffect(() => { setAuthTokenGetter(() => getToken()); }, [getToken]);
   const { language } = useApp();
+  if (Platform.OS !== 'web' && isSignedIn && !isSupportRoute && (
+    !device.status || device.loading || device.status.status === 'pending'
+  )) {
+    return <DeviceSecurityGate />;
+  }
   return (
     <Stack screenOptions={{ headerBackTitle: translate(language, 'back') }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -42,6 +58,7 @@ function RootLayoutNav() {
       <Stack.Screen name="checkin" options={{ headerShown: false, presentation: 'modal' }} />
       <Stack.Screen name="membership" options={{ headerShown: false }} />
       <Stack.Screen name="account" options={{ headerShown: false }} />
+      <Stack.Screen name="device-security" options={{ headerShown: false }} />
       <Stack.Screen name="support/index" options={{ headerShown: false }} />
       <Stack.Screen name="support/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="support/staff" options={{ headerShown: false }} />
@@ -51,37 +68,47 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_600SemiBold,
+    DMSans_700Bold,
   });
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if (Platform.OS === 'web' || fontsLoaded || fontError) {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) return null;
+  // Native keeps the splash screen up while local font assets load. On web,
+  // render immediately with system-font fallback instead of a blank preview.
+  if (Platform.OS !== 'web' && !fontsLoaded && !fontError) return null;
 
-  return (
-    <ClerkProvider publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!} tokenCache={tokenCache} proxyUrl={process.env.EXPO_PUBLIC_CLERK_PROXY_URL || undefined}>
-    <ClerkLoaded>
+  const appTree = (
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView>
             <KeyboardProvider>
-              <AppProvider>
-                <RootLayoutNav />
-              </AppProvider>
+              <DeviceSecurityProvider>
+                <AppProvider>
+                  <RootLayoutNav />
+                </AppProvider>
+              </DeviceSecurityProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
-    </ClerkLoaded>
+  );
+
+  return (
+    <ClerkProvider
+      publishableKey={publishableKey}
+      tokenCache={tokenCache}
+      proxyUrl={proxyUrl}
+    >
+      <ClerkLoaded>{appTree}</ClerkLoaded>
     </ClerkProvider>
   );
 }

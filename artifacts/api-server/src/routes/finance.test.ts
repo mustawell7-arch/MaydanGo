@@ -6,7 +6,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import express from "express";
 import {
   attendance, db, financeReviewEvents, financeReviewItems, membershipBilling,
-  membershipPlans, offerings, operationAudit, operators, partners, pool, reservations,
+  membershipPlans, offerings, operationAudit, operators, partners, pool, reservations, waitlistEntries,
 } from "@workspace/db";
 import operationsRouter from "./operations";
 
@@ -21,6 +21,15 @@ const planId = randomUUID();
 const offeringId = randomUUID();
 const reservationId = randomUUID();
 const attendanceId = randomUUID();
+const attendedReservationId = randomUUID();
+const attendedBookingAttendanceId = randomUUID();
+const startedOfferingId = randomUUID();
+const startedReservationId = randomUUID();
+const pastOfferingId = randomUUID();
+const pastReservationId = randomUUID();
+const startedWaitlistId = randomUUID();
+const pastWaitlistId = randomUUID();
+const attendedWaitlistId = randomUUID();
 const reviewIds: string[] = [];
 const paymentEnvKeys = [
   "MAYDANGO_PAYMENTS_ENABLED", "MAYDANGO_PAYTABS_TEST_MODE", "MAYDANGO_PAYOUTS_VERIFIED",
@@ -58,18 +67,16 @@ const call = async (path: string, userId: string, method = "GET", body?: unknown
 
 after(async () => {
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
-  if (reviewIds.length) {
-    await db.delete(financeReviewEvents).where(inArray(financeReviewEvents.reviewItemId, reviewIds));
-    await db.delete(financeReviewItems).where(inArray(financeReviewItems.id, reviewIds));
-  }
-  await db.delete(operationAudit).where(inArray(operationAudit.actorId, [requesterId, reviewerId, adminId]));
-  await db.delete(attendance).where(eq(attendance.id, attendanceId));
+  // Finance events and operation audit rows are append-only; randomized test records are retained.
+  await db.delete(waitlistEntries).where(inArray(waitlistEntries.id, [attendedWaitlistId, startedWaitlistId, pastWaitlistId]));
+  await db.delete(attendance).where(inArray(attendance.id, [attendanceId, attendedBookingAttendanceId]));
   await db.delete(membershipBilling).where(eq(membershipBilling.id, billingId));
   await db.delete(membershipPlans).where(eq(membershipPlans.id, planId));
-  await db.delete(reservations).where(eq(reservations.id, reservationId));
-  await db.delete(offerings).where(eq(offerings.id, offeringId));
+  await db.delete(reservations).where(inArray(reservations.id, [
+    reservationId, attendedReservationId, startedReservationId, pastReservationId,
+  ]));
+  await db.delete(offerings).where(inArray(offerings.id, [offeringId, startedOfferingId, pastOfferingId]));
   await db.delete(operators).where(inArray(operators.userId, [requesterId, reviewerId, adminId, partnerUserId]));
-  await db.delete(partners).where(eq(partners.id, partnerId));
   for (const key of paymentEnvKeys) {
     if (paymentEnv[key] === undefined) delete process.env[key];
     else process.env[key] = paymentEnv[key];
@@ -124,7 +131,71 @@ test("finance access is role-restricted and refund reviews enforce replay, separ
   assert.equal(cancelledBooking.status, "admin_cancelled");
   const bookingAudit = await db.select().from(operationAudit)
     .where(and(eq(operationAudit.actorId, adminId), eq(operationAudit.targetId, reservationId)));
-  assert.ok(bookingAudit.some(row => row.action === "booking.admin_cancel"));
+  const insertedBookingAudit = bookingAudit.find(row => row.action === "booking.admin_cancel");
+  assert.ok(insertedBookingAudit, "new operation audit records remain insertable");
+  await assert.rejects(db.update(operationAudit).set({ detail: "tampered" })
+    .where(eq(operationAudit.id, insertedBookingAudit.id)));
+  await assert.rejects(db.delete(operationAudit).where(eq(operationAudit.id, insertedBookingAudit.id)));
+
+  const attendedReservationUserId = `${prefix}-attended-customer`;
+  const startedStart = new Date(Date.now() - 60 * 60 * 1000);
+  const pastStart = new Date(Date.now() - 2 * 60 * 60 * 1000);
+  await db.insert(offerings).values([
+    {
+      id: startedOfferingId, targetId: startedOfferingId, kind: "session", slot: "", title: "Started test booking",
+      scope: "live", partnerId, partnerGroup: prefix, accessType: "physical", active: true,
+      city: "baghdad", facility: "Finance test facility", category: "fitness", tiers: ["M"],
+      startsAt: startedStart, endsAt: new Date(startedStart.getTime() + 60 * 60 * 1000),
+      cancellationDeadline: new Date(startedStart.getTime() - 60 * 60 * 1000), capacity: 2,
+    },
+    {
+      id: pastOfferingId, targetId: pastOfferingId, kind: "session", slot: "", title: "Past test booking",
+      scope: "live", partnerId, partnerGroup: prefix, accessType: "physical", active: true,
+      city: "baghdad", facility: "Finance test facility", category: "fitness", tiers: ["M"],
+      startsAt: pastStart, endsAt: new Date(pastStart.getTime() + 60 * 60 * 1000),
+      cancellationDeadline: new Date(pastStart.getTime() - 60 * 60 * 1000), capacity: 2,
+    },
+  ]);
+  await db.insert(reservations).values([
+    { id: attendedReservationId, userId: attendedReservationUserId, offeringId, status: "reserved" },
+    { id: startedReservationId, userId: `${prefix}-started-customer`, offeringId: startedOfferingId, status: "reserved" },
+    { id: pastReservationId, userId: `${prefix}-past-customer`, offeringId: pastOfferingId, status: "reserved" },
+  ]);
+  await db.insert(attendance).values({
+    id: attendedBookingAttendanceId, userId: attendedReservationUserId, offeringId,
+    checkedInAt: startsAt, verifiedBy: adminId, reservationId: attendedReservationId,
+    status: "confirmed", settlementEligible: false,
+  });
+  await db.insert(waitlistEntries).values([
+    { id: attendedWaitlistId, userId: `${prefix}-attended-waitlist`, offeringId, queuePosition: 1 },
+    { id: startedWaitlistId, userId: `${prefix}-started-waitlist`, offeringId: startedOfferingId, queuePosition: 1 },
+    { id: pastWaitlistId, userId: `${prefix}-past-waitlist`, offeringId: pastOfferingId, queuePosition: 1 },
+  ]);
+  const rejectedTargets = [attendedReservationId, startedReservationId, pastReservationId];
+  const attendanceConflict = await call(`/operations/bookings/${attendedReservationId}/cancel`, adminId, "POST", {
+    reason: "Attendance was already recorded",
+  });
+  assert.equal(attendanceConflict.status, 409);
+  const startedConflict = await call(`/operations/bookings/${startedReservationId}/cancel`, adminId, "POST", {
+    reason: "Session has already started",
+  });
+  assert.equal(startedConflict.status, 409);
+  const pastConflict = await call(`/operations/bookings/${pastReservationId}/cancel`, adminId, "POST", {
+    reason: "Session has already ended",
+  });
+  assert.equal(pastConflict.status, 409);
+  const rejectedBookings = await db.select().from(reservations).where(inArray(reservations.id, rejectedTargets));
+  assert.ok(rejectedBookings.every(row => row.status === "reserved" && row.cancelledAt === null));
+  const unchangedWaitlist = await db.select().from(waitlistEntries)
+    .where(inArray(waitlistEntries.id, [attendedWaitlistId, startedWaitlistId, pastWaitlistId]));
+  assert.ok(unchangedWaitlist.every(row => row.status === "waiting" && row.respondedAt === null));
+  const unchangedAttendance = await db.select().from(attendance)
+    .where(eq(attendance.id, attendedBookingAttendanceId));
+  assert.equal(unchangedAttendance[0].status, "confirmed");
+  const rejectedAudit = await db.select().from(operationAudit)
+    .where(and(eq(operationAudit.actorId, adminId), eq(operationAudit.action, "booking.admin_cancel")));
+  assert.equal(rejectedAudit.filter(row => rejectedTargets.some(targetId => targetId === row.targetId)).length, 0);
+  assert.equal(rejectedAudit.length, 1, "rejected cancellation attempts create no additional cancellation audit");
 
   const idempotencyKey = randomUUID();
   const refundBody = { reason: "Customer refund request", idempotencyKey };
@@ -183,7 +254,8 @@ test("finance access is role-restricted and refund reviews enforce replay, separ
   process.env.PAYTABS_CALLBACK_URL = "https://finance-test.invalid/callback";
   process.env.PAYTABS_RETURN_URL = "https://finance-test.invalid/return";
   await db.insert(attendance).values({
-    id: attendanceId, userId: `${prefix}-attendee`, offeringId, checkedInAt: startsAt,
+    id: attendanceId, userId: `${prefix}-attendee`, offeringId,
+    checkedInAt: new Date("2026-10-15T12:00:00+03:00"),
     verifiedBy: adminId, reservationId: null, status: "disputed", settlementEligible: false,
   });
   assert.equal((await call(`/operations/finance/reviews/${payoutId}/decision`, reviewerId, "POST", {
@@ -212,4 +284,9 @@ test("finance access is role-restricted and refund reviews enforce replay, separ
   assert.ok(events.some(event => event.reviewItemId === refundId && event.action === "rejected"));
   assert.ok(events.some(event => event.reviewItemId === payoutId && event.action === "requested"));
   assert.ok(events.some(event => event.reviewItemId === manualPayoutId && event.action === "approved_manual"));
+  const insertedFinanceEvent = events.find(event => event.reviewItemId === refundId && event.action === "requested");
+  assert.ok(insertedFinanceEvent, "new finance review events remain insertable");
+  await assert.rejects(db.update(financeReviewEvents).set({ detail: "tampered" })
+    .where(eq(financeReviewEvents.id, insertedFinanceEvent.id)));
+  await assert.rejects(db.delete(financeReviewEvents).where(eq(financeReviewEvents.id, insertedFinanceEvent.id)));
 });

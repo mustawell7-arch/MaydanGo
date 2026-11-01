@@ -19,12 +19,14 @@ export function FacilityCard({
   favorite,
   onPress,
   onToggleFavorite,
+  distanceLabel,
   compact = false,
 }: {
   facility: PublicFacility | SampleFacility;
   favorite: boolean;
   onPress: () => void;
   onToggleFavorite: () => void;
+  distanceLabel?: string;
   compact?: boolean;
 }) {
   const colors = useColors();
@@ -86,7 +88,7 @@ export function FacilityCard({
           <View style={styles.meta}>
             <Ionicons name="location-outline" size={13} color={colors.mutedForeground} />
             <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
-              {district} · {city}
+              {district} · {city}{distanceLabel ? ` · ${distanceLabel}` : ''}
             </Text>
           </View>
           <View style={styles.bottomRow}>

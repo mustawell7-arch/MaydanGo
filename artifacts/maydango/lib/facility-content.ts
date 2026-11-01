@@ -29,6 +29,15 @@ export function facilityWeekday(day: number, language: Language) {
   }).format(new Date(Date.UTC(2026, 0, 4 + day, 12)));
 }
 
+export function facilityDateRange(startDate: string, endDate: string, language: Language) {
+  const locale = language === "ku" ? "ckb-IQ" : language === "ar" ? "ar-IQ" : "en-IQ";
+  const format = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" });
+  const start = new Date(`${startDate}T00:00:00Z`);
+  const end = new Date(`${endDate}T00:00:00Z`);
+  const formattedStart = format.format(start);
+  return startDate === endDate ? formattedStart : `${formattedStart} – ${format.format(end)}`;
+}
+
 export const eligibilityKey = (session: Pick<PublicFacilitySession, "gender" | "minAge" | "maxAge">) =>
   `${session.gender}:${session.minAge}:${session.maxAge ?? ""}`;
 

@@ -2,7 +2,7 @@ import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
-import { db, pool, partners, operators, offerings, memberships, reservations, attendance, checkinPolicies, checkinChallenges, manualCheckinChallenges, attendanceEvents } from "@workspace/db";
+import { db, pool, partners, operators, offerings, facilityProfiles, memberships, reservations, attendance, checkinPolicies, checkinChallenges, manualCheckinChallenges, attendanceEvents } from "@workspace/db";
 import { savePolicy, issueQr, scanQr, review, roster, scanInput, issueManualCheckinCode, recordManualCheckin, manualCheckinInput } from "./checkin";
 import { BookingError, createReservation } from "./reservations";
 import app from "../app";
@@ -12,16 +12,54 @@ const member = `${prefix}-member`, staff = `${prefix}-staff`, secondStaff = `${p
 const p = `${prefix}-partner`, o = `${prefix}-offering`, r = `${prefix}-reservation`;
 const nextOffering = `${prefix}-next`;
 const manualReservation = `${prefix}-manual-reservation`;
+const fraudOffering = `${prefix}-fraud-offering`, fraudReservation = `${prefix}-fraud-reservation`;
+const mainFacilityProfile = `${prefix}-facility-profile`, otherFacilityProfile = `${prefix}-other-facility-profile`;
 const users = [member, staff, secondStaff, admin, stranger];
 const now = Date.now();
 const reject = (f: () => Promise<unknown>, status: number) => assert.rejects(f, e => e instanceof BookingError && e.status === status);
 const location = () => ({ latitude: 33.3, longitude: 44.4, accuracy: 5, capturedAt: new Date().toISOString() });
+const openHoursAroundNow = () => {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Baghdad", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(new Date()).map(part => [part.type, part.value]));
+  const minute = Number(parts.hour) * 60 + Number(parts.minute);
+  const time = (value: number) => {
+    const normalized = (value + 1440) % 1440;
+    return `${String(Math.floor(normalized / 60)).padStart(2, "0")}:${String(normalized % 60).padStart(2, "0")}`;
+  };
+  return Array.from({ length: 7 }, (_, day) => ({
+    day, closed: false, opensAt: time(minute - 10), closesAt: time(minute + 10),
+  }));
+};
+const closedHours = () => Array.from({ length: 7 }, (_, day) => ({
+  day, closed: true, opensAt: null, closesAt: null,
+}));
 test("secure attendance: authentication, partner scope, eligibility, atomic replay protection and audited reconciliation", async t => {
   await db.insert(partners).values({ id: p, name: prefix, groupId: prefix, ownerUserId: staff, approved: true });
   await db.insert(operators).values([
     { userId: staff, role: "partner", partnerId: p },
     { userId: secondStaff, role: "partner", partnerId: p },
     { userId: admin, role: "admin" },
+  ]);
+  await db.insert(facilityProfiles).values([
+    {
+      id: mainFacilityProfile, partnerId: p, city: "baghdad", facility: prefix,
+      localizedName: { en: prefix, ar: "منشأة اختبارية", ku: "شوێنی تاقیکردنەوە" },
+      localizedDistrict: { en: "Test district", ar: "منطقة اختبارية", ku: "ناوچەی تاقیکردنەوە" },
+      localizedAddress: { en: "Test address", ar: "عنوان اختباري", ku: "ناونیشانی تاقیکردنەوە" },
+      localizedDescription: { en: "Test facility", ar: "منشأة اختبارية", ku: "شوێنی تاقیکردنەوە" },
+      activities: [], amenities: [], accessibility: [], openingHours: openHoursAroundNow(),
+      contactPhone: null, websiteUrl: null, latitude: 33.3, longitude: 44.4,
+    },
+    {
+      id: otherFacilityProfile, partnerId: p, city: "baghdad", facility: `${prefix}-other`,
+      localizedName: { en: `${prefix} other`, ar: "منشأة اختبارية أخرى", ku: "شوێنێکی تاقیکردنەوەی تر" },
+      localizedDistrict: { en: "Test district", ar: "منطقة اختبارية", ku: "ناوچەی تاقیکردنەوە" },
+      localizedAddress: { en: "Test address", ar: "عنوان اختباري", ku: "ناونیشانی تاقیکردنەوە" },
+      localizedDescription: { en: "Test facility", ar: "منشأة اختبارية", ku: "شوێنی تاقیکردنەوە" },
+      activities: [], amenities: [], accessibility: [], openingHours: openHoursAroundNow(),
+      contactPhone: null, websiteUrl: null, latitude: 33.5, longitude: 44.4,
+    },
   ]);
   await db.insert(offerings).values({ id: o, targetId: o, kind: "session", title: prefix, scope: "live", partnerId: p,
     active: true, city: "baghdad", facility: prefix, category: "gym", tiers: ["M"], capacity: 3,
@@ -77,9 +115,11 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
   });
   await t.test("owner, forged/old QR, geofence, accuracy, stale and mocked location enforced", async () => {
     assert.equal(scanInput.safeParse({ token, ...location(), latitude: 500 }).success, false);
+    assert.equal(scanInput.safeParse({ token, ...location(), accuracy: 101 }).success, false);
     await reject(() => scanQr(stranger, { token, ...location() }), 403);
     await reject(() => scanQr(member, { token: `MDG1:${"0".repeat(64)}`, ...location() }), 400);
     await reject(() => scanQr(member, { token, ...location(), latitude: 32 }), 403);
+    await reject(() => scanQr(member, { token, ...location(), latitude: 33.301, accuracy: 100 }), 403);
     await reject(() => scanQr(member, { token, ...location(), mocked: true }), 403);
     await reject(() => scanQr(member, { token, ...location(), capturedAt: new Date(now - 120000).toISOString() }), 403);
     const previous = token; token = (await issueQr(staff, r))!.token;
@@ -95,9 +135,25 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     await db.update(checkinPolicies).set({ opensAt: new Date(now + 600000) }).where(eq(checkinPolicies.offeringId, o));
     await reject(() => scanQr(member, { token, ...location() }), 409);
     await db.update(checkinPolicies).set({ opensAt: new Date(now - 120000) }).where(eq(checkinPolicies.offeringId, o));
+    await db.update(checkinPolicies).set({ closesAt: new Date(Date.now() - 1000) }).where(eq(checkinPolicies.offeringId, o));
+    await reject(() => scanQr(member, { token, ...location() }), 409);
+    await db.update(checkinPolicies).set({ closesAt: new Date(now + 3600000) }).where(eq(checkinPolicies.offeringId, o));
     await db.update(memberships).set({ rules: { quota: 0, dailyLimit: 2, trialAllowedTypes: ["physical"] } }).where(eq(memberships.userId, member));
     await reject(() => scanQr(member, { token, ...location() }), 403);
     await db.update(memberships).set({ rules: { quota: 2, dailyLimit: 2, trialAllowedTypes: ["physical"] } }).where(eq(memberships.userId, member));
+  });
+  await t.test("QR and manual arrival are blocked while facility hours are closed", async () => {
+    await db.update(facilityProfiles).set({ openingHours: closedHours() }).where(eq(facilityProfiles.id, mainFacilityProfile));
+    try {
+      await reject(() => issueQr(staff, r), 409);
+      await reject(() => scanQr(member, { token, ...location() }), 409);
+      await reject(() => issueManualCheckinCode(member, r), 409);
+      await db.update(facilityProfiles).set({ openingHours: [] }).where(eq(facilityProfiles.id, mainFacilityProfile));
+      await reject(() => issueQr(staff, r), 409);
+    } finally {
+      await db.update(facilityProfiles).set({ openingHours: openHoursAroundNow() })
+        .where(eq(facilityProfiles.id, mainFacilityProfile));
+    }
   });
   await t.test("simultaneous replay creates exactly one pending arrival, no automatic attendance", async () => {
     const results = await Promise.allSettled([scanQr(member, { token, ...location() }), scanQr(member, { token, ...location() })]);
@@ -105,6 +161,38 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     const rows = await db.select().from(attendance).where(eq(attendance.reservationId, r));
     assert.equal(rows.length, 1); assert.equal(rows[0].status, "pending"); assert.equal(rows[0].settlementEligible, false);
     assert.equal((await db.select().from(reservations).where(eq(reservations.id, r)))[0].status, "reserved");
+  });
+  await t.test("rapid check-in and impossible travel are rejected", async () => {
+    const at = Date.now();
+    await db.insert(offerings).values({ id: fraudOffering, targetId: fraudOffering, kind: "session", title: prefix,
+      scope: "live", partnerId: p, active: true, city: "baghdad", facility: `${prefix}-other`,
+      category: "gym", tiers: ["M"], capacity: 3,
+      startsAt: new Date(at - 60000), endsAt: new Date(at + 3600000),
+      cancellationDeadline: new Date(at - 120000) });
+    await db.insert(reservations).values({ id: fraudReservation, userId: member, offeringId: fraudOffering, status: "reserved" });
+
+    try {
+      await savePolicy(staff, fraudReservation, { latitude: 33.3, longitude: 44.4, radius: 150,
+        opensAt: new Date(at - 120000).toISOString(), closesAt: new Date(at + 3600000).toISOString(),
+        correctionEndsAt: new Date(at + 86400000).toISOString() });
+      const fraudToken = (await issueQr(staff, fraudReservation))!.token;
+
+      await reject(() => scanQr(member, { token: fraudToken, ...location() }), 409);
+
+      await db.update(attendance).set({ checkedInAt: new Date(Date.now() - 120000) })
+        .where(eq(attendance.reservationId, r));
+      await db.update(checkinPolicies).set({ latitude: 33.5 }).where(eq(checkinPolicies.offeringId, fraudOffering));
+      await reject(() => scanQr(member, {
+        token: fraudToken, ...location(), latitude: 33.5,
+      }), 409);
+    } finally {
+      await db.delete(attendanceEvents).where(eq(attendanceEvents.reservationId, fraudReservation));
+      await db.delete(checkinChallenges).where(eq(checkinChallenges.reservationId, fraudReservation));
+      await db.delete(attendance).where(eq(attendance.reservationId, fraudReservation));
+      await db.delete(checkinPolicies).where(eq(checkinPolicies.offeringId, fraudOffering));
+      await db.delete(reservations).where(eq(reservations.id, fraudReservation));
+      await db.delete(offerings).where(eq(offerings.id, fraudOffering));
+    }
   });
   await t.test("partner confirmation, member dispute, admin correction and locking are auditable", async () => {
     await reject(() => review(stranger, r, { action: "confirm", reason: "Not authorized" }), 403);
@@ -188,6 +276,13 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     await db.update(manualCheckinChallenges).set({ createdAt: new Date(Date.now() - 31000) })
       .where(eq(manualCheckinChallenges.id, exhausted.id));
     const second = await issueManualCheckinCode(member, manualReservation);
+    await db.update(facilityProfiles).set({ openingHours: closedHours() })
+      .where(eq(facilityProfiles.id, mainFacilityProfile));
+    await reject(() => recordManualCheckin(staff, manualReservation, {
+      code: second.code, reason: "Member is present at the desk",
+    }), 409);
+    await db.update(facilityProfiles).set({ openingHours: openHoursAroundNow() })
+      .where(eq(facilityProfiles.id, mainFacilityProfile));
     const result = await recordManualCheckin(staff, manualReservation, {
       code: second.code, reason: "Member is present at the desk",
     });
@@ -230,6 +325,7 @@ after(async () => {
   await db.delete(checkinPolicies).where(eq(checkinPolicies.offeringId, o));
   await db.delete(reservations).where(inArray(reservations.offeringId, [o, nextOffering]));
   await db.delete(offerings).where(inArray(offerings.id, [o, nextOffering]));
+  await db.delete(facilityProfiles).where(inArray(facilityProfiles.id, [mainFacilityProfile, otherFacilityProfile]));
   await db.delete(memberships).where(inArray(memberships.userId, users));
   await db.delete(operators).where(inArray(operators.userId, users));
   await db.delete(partners).where(eq(partners.id, p));

@@ -7,7 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ScreenShell } from '@/components/ScreenShell';
 import {
   getGetMemberCourseQueryKey, getGetMemberCoursesQueryKey,
-  useEnrollMemberCourse, useGetMemberCourse, useUpdateCourseProgress,
+  useCreateMemberCoursePlaybackLink, useEnrollMemberCourse, useGetMemberCourse, useUpdateCourseProgress,
 } from '@workspace/api-client-react';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
@@ -23,6 +23,7 @@ export default function CourseDetailScreen() {
   const course = courseQuery.data;
   const enrollMutation = useEnrollMemberCourse();
   const progressMutation = useUpdateCourseProgress();
+  const playbackLinkMutation = useCreateMemberCoursePlaybackLink();
   const [openLesson, setOpenLesson] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const t = (key: MessageKey) => translate(app.language, key);
@@ -57,6 +58,15 @@ export default function CourseDetailScreen() {
         queryClient.invalidateQueries({ queryKey: getGetMemberCourseQueryKey(course.id) }),
         queryClient.invalidateQueries({ queryKey: getGetMemberCoursesQueryKey() }),
       ]);
+    } catch (error) { setMessage(errorCopy(error)); }
+  };
+  const openRecording = async (lessonId: string) => {
+    try {
+      const playback = await playbackLinkMutation.mutateAsync({ id: course.id, lessonId });
+      const domain = process.env.EXPO_PUBLIC_DOMAIN;
+      if (!domain) throw new Error('Course playback is unavailable. Try again later.');
+      const baseUrl = domain.startsWith('http') ? domain : `https://${domain}`;
+      await Linking.openURL(new URL(playback.url, baseUrl).toString());
     } catch (error) { setMessage(errorCopy(error)); }
   };
   const enroll = async () => {
@@ -139,9 +149,10 @@ export default function CourseDetailScreen() {
                   <View style={styles.lessonBody}>
                     {ready && lesson.localizedContent ? <Text style={[styles.lessonText, { color: colors.foreground, textAlign: align }]}>{lesson.localizedContent[app.language] || lesson.localizedContent.en}</Text>
                       : <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align }]}>{t(course.accessState === 'membership_required' ? 'membershipRequired' : 'enrollmentRequired')}</Text>}
-                    {ready && lesson.mediaUrl ? (
-                      <Pressable accessibilityRole="button" onPress={() => void Linking.openURL(lesson.mediaUrl!).catch(error => setMessage(errorCopy(error)))}
-                        style={[styles.doneButton, { backgroundColor: colors.accent }]}>
+                    {ready && lesson.hasRecording ? (
+                      <Pressable accessibilityRole="button" disabled={playbackLinkMutation.isPending}
+                        onPress={() => void openRecording(lesson.id)}
+                        style={[styles.doneButton, { backgroundColor: colors.accent }, playbackLinkMutation.isPending && { opacity: 0.6 }]}>
                         <Ionicons name="play-circle-outline" size={17} color={colors.accentForeground} />
                         <Text style={[styles.doneText, { color: colors.accentForeground }]}>{t('viewCourse')}</Text>
                       </Pressable>

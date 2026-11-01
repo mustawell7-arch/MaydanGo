@@ -1,12 +1,14 @@
-import { and, eq } from "drizzle-orm";
-import { db, memberNotificationPreferences, pushDeliveries, pushDevices } from "@workspace/db";
+import { and, asc, eq, isNull, lte, or } from "drizzle-orm";
+import { db, memberNotificationPreferences, pushDeliveries, pushDevices, waitlistEntries } from "@workspace/db";
 import { randomUUID } from "node:crypto";
 
 export type AppLanguage = "en" | "ar" | "ku";
 export type NotificationKind =
   | "booking_created"
   | "booking_cancelled"
+  | "schedule_changed"
   | "waitlist_offer"
+  | "waitlist_reminder"
   | "waitlist_expired"
   | "waitlist_booked"
   | "waitlist_closed"
@@ -21,7 +23,9 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
   en: {
     booking_created: { title: "Booking confirmed", body: "Your MaydanGO booking is confirmed." },
     booking_cancelled: { title: "Booking update", body: "Your MaydanGO booking was cancelled." },
+    schedule_changed: { title: "Class schedule changed", body: "A class time changed. Check the updated schedule in MaydanGO." },
     waitlist_offer: { title: "A class place opened", body: "A place opened in your class. Accept by {deadline} Iraq time in MaydanGO; it is not booked until you accept." },
+    waitlist_reminder: { title: "Your class offer is still open", body: "Your class place is still available. Accept within {remaining} in MaydanGO before the offer expires." },
     waitlist_expired: { title: "Waitlist offer expired", body: "Your offer expired, so the place moved to the next person. You are no longer holding it." },
     waitlist_booked: { title: "Class booking confirmed", body: "You accepted the waitlist offer. Your MaydanGO class booking is confirmed." },
     waitlist_closed: { title: "Waitlist closed", body: "This class was cancelled. Your waitlist entry is closed and no booking was made." },
@@ -35,7 +39,9 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
   ar: {
     booking_created: { title: "تم تأكيد الحجز", body: "تم تأكيد حجزك في MaydanGO." },
     booking_cancelled: { title: "تحديث الحجز", body: "تم إلغاء حجزك في MaydanGO." },
+    schedule_changed: { title: "تغيّر موعد الحصة", body: "تغيّر موعد حصة. راجع الجدول المحدّث في MaydanGO." },
     waitlist_offer: { title: "توفر مكان في الحصة", body: "توفر مكان في حصتك. أكّد الحجز في MaydanGO قبل {deadline} بتوقيت العراق؛ ما يتأكد الحجز إلا بعد موافقتك." },
+    waitlist_reminder: { title: "ما زال عرض الحصة متاحاً", body: "ما زال المكان متاحاً. أكّد الحجز خلال {remaining} في MaydanGO قبل انتهاء المهلة." },
     waitlist_expired: { title: "انتهت مهلة العرض", body: "انتهت مهلة عرض المكان، وانتقل للشخص التالي. ما عاد المكان محجوزاً لك." },
     waitlist_booked: { title: "تم تأكيد حجز الحصة", body: "قبلت عرض قائمة الانتظار، وتم تأكيد حجزك للحصة في MaydanGO." },
     waitlist_closed: { title: "أُغلقت قائمة الانتظار", body: "أُلغيت هذه الحصة. أُغلق طلبك في قائمة الانتظار ولم يتم إنشاء حجز." },
@@ -49,7 +55,9 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
   ku: {
     booking_created: { title: "حجز پشتڕاست کرایەوە", body: "حجزەکەت لە MaydanGO پشتڕاست کرایەوە." },
     booking_cancelled: { title: "نوێکاریی حجز", body: "حجزەکەت لە MaydanGO هەڵوەشێندرایەوە." },
+    schedule_changed: { title: "کاتی وانە گۆڕا", body: "کاتی وانەیەک گۆڕا. خشتەی نوێ لە MaydanGO ببینە." },
     waitlist_offer: { title: "شوێنێک لە وانە بەردەستە", body: "شوێنێک لە وانەکەت بەردەست بووە. تا {deadline} بە کاتی عێراق لە MaydanGO پێشنیارەکە قبووڵ بکە؛ حجزەکە تا ئەو کاتە پشتڕاست نییە." },
+    waitlist_reminder: { title: "پێشنیاری وانەکەت هێشتا بەردەستە", body: "شوێنەکە هێشتا بەردەستە. لە ماوەی {remaining}دا لە MaydanGO پێشنیارەکە قبووڵ بکە پێش ئەوەی کاتەکەی تەواو ببێت." },
     waitlist_expired: { title: "ماوەی پێشنیاری چاوەڕوانی تەواو بوو", body: "ماوەی پێشنیاری شوێنەکە تەواو بوو و شوێنەکە درا بە کەسی دواتر. چیتر شوێنەکە بۆ تۆ نەپارێزراوە." },
     waitlist_booked: { title: "حجزکردنی وانە پشتڕاست کرایەوە", body: "پێشنیاری لیستی چاوەڕوانیت قبووڵ کرد و حجزکردنی وانەکەت لە MaydanGO پشتڕاست کرایەوە." },
     waitlist_closed: { title: "لیستی چاوەڕوانی داخرا", body: "ئەم وانەیە هەڵوەشێندرایەوە. تۆماری چاوەڕوانییەکەت داخرا و هیچ حجزێک دروست نەکرا." },
@@ -67,11 +75,140 @@ function messageOf(value: unknown) {
   return message.replace(/(?:Expo|Exponent)PushToken\[[^\]]+\]/g, "[redacted]").slice(0, 400);
 }
 
+function remainingTime(minutes: number, language: AppLanguage) {
+  const count = Math.max(1, Math.ceil(minutes));
+  const number = new Intl.NumberFormat(language === "en" ? "en-IQ" : language === "ar" ? "ar-IQ" : "ku-IQ").format(count);
+  if (language === "en") return `${number} ${count === 1 ? "minute" : "minutes"}`;
+  if (language === "ar") {
+    const unit = count === 1 ? "دقيقة" : count === 2 ? "دقيقتان" : count % 100 >= 3 && count % 100 <= 10 ? "دقائق" : "دقيقة";
+    return `${number} ${unit}`;
+  }
+  return `${number} خولەک`;
+}
+
+const MAX_SEND_ATTEMPTS = 3;
+const SEND_RETRY_DELAYS_MS = [30_000, 120_000];
+const RECEIPT_READY_AFTER_MS = 15 * 60_000;
+const RECEIPT_RECHECK_AFTER_MS = 15 * 60_000;
+const MAX_RECEIPT_CHECKS = 3;
+const RECOVERY_BATCH_SIZE = 100;
+
+type PushDeliveryRow = typeof pushDeliveries.$inferSelect;
+type PushDeviceRow = typeof pushDevices.$inferSelect;
+type PushAttempt = { delivery: PushDeliveryRow; device: PushDeviceRow };
+type ExpoPushTicket = { status?: string; id?: string; message?: string; details?: { error?: string } };
+type ExpoPushReceipt = { status?: string; message?: string; details?: { error?: string } };
+
+function retryAt(attemptCount: number, now: Date) {
+  const delay = SEND_RETRY_DELAYS_MS[Math.min(Math.max(attemptCount - 1, 0), SEND_RETRY_DELAYS_MS.length - 1)];
+  return new Date(now.getTime() + delay);
+}
+
+async function recordAttemptFailure(
+  attempt: PushAttempt,
+  error: string,
+  now: Date,
+  retryable: boolean,
+  receipt?: { status: string; error: string; checkedAt: Date; attemptCount: number },
+) {
+  const shouldRetry = retryable && attempt.delivery.attemptCount < MAX_SEND_ATTEMPTS;
+  await db.update(pushDeliveries).set({
+    status: shouldRetry ? "retry_pending" : "failed",
+    error,
+    nextAttemptAt: shouldRetry ? retryAt(attempt.delivery.attemptCount, now) : null,
+    ...(receipt ? {
+      receiptStatus: receipt.status,
+      receiptError: receipt.error,
+      receiptCheckedAt: receipt.checkedAt,
+      receiptAttemptCount: receipt.attemptCount,
+    } : {}),
+  }).where(eq(pushDeliveries.id, attempt.delivery.id));
+  return shouldRetry;
+}
+
+async function disableUnregisteredDevice(deviceId: string, userId: string, now: Date) {
+  await db.update(pushDevices).set({ enabled: false, updatedAt: now }).where(eq(pushDevices.id, deviceId));
+  const [remaining] = await db.select({ id: pushDevices.id }).from(pushDevices)
+    .where(and(eq(pushDevices.userId, userId), eq(pushDevices.enabled, true))).limit(1);
+  if (!remaining) {
+    await db.update(memberNotificationPreferences).set({ pushEnabled: false, updatedAt: now })
+      .where(eq(memberNotificationPreferences.userId, userId));
+  }
+}
+
+async function sendPushAttempts(attempts: PushAttempt[], now: Date) {
+  if (!attempts.length) return true;
+  try {
+    const response = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify(attempts.map(({ delivery, device }) => ({
+        to: device.token,
+        title: delivery.title,
+        body: delivery.body,
+        sound: "default",
+        data: { kind: delivery.kind },
+      }))),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) {
+      const failure = `Expo push service returned HTTP ${response.status}.`;
+      // A 429 is an explicit rejection. Do not blindly retry ambiguous transport
+      // or server failures because Expo may have accepted those messages.
+      await Promise.all(attempts.map(attempt => recordAttemptFailure(
+        attempt, failure, now, response.status === 429,
+      )));
+      return false;
+    }
+
+    const responseData = await response.json() as { data?: ExpoPushTicket | ExpoPushTicket[] };
+    const tickets = Array.isArray(responseData.data)
+      ? responseData.data
+      : responseData.data ? [responseData.data] : [];
+    await Promise.all(attempts.map(async (attempt, index) => {
+      const ticket = tickets[index];
+      if (ticket?.status === "ok") {
+        const receiptStatus = ticket.id ? "pending" : "unavailable";
+        await db.update(pushDeliveries).set({
+          status: "sent",
+          error: null,
+          providerTicketId: ticket.id ?? null,
+          acceptedAt: now,
+          nextAttemptAt: null,
+          receiptStatus,
+          receiptError: ticket.id ? null : "Expo accepted this notification without a receipt ID.",
+          receiptCheckedAt: ticket.id ? null : now,
+          receiptAttemptCount: 0,
+        }).where(eq(pushDeliveries.id, attempt.delivery.id));
+        return;
+      }
+
+      const errorCode = ticket?.details?.error;
+      const failure = messageOf(errorCode ?? ticket?.message ?? "Expo did not accept this notification.");
+      if (errorCode === "DeviceNotRegistered") {
+        await disableUnregisteredDevice(attempt.device.id, attempt.delivery.userId, now);
+      }
+      await recordAttemptFailure(attempt, failure, now, errorCode === "MessageRateExceeded");
+    }));
+    return attempts.every((_, index) => tickets[index]?.status === "ok");
+  } catch (error) {
+    const failure = messageOf(error);
+    // A timeout or broken connection has an unknown provider outcome. Keep it
+    // visible for staff rather than risk sending a duplicate on automatic retry.
+    await Promise.all(attempts.map(attempt => recordAttemptFailure(attempt, failure, now, false)));
+    return false;
+  }
+}
+
 /**
  * Sends operational notifications only after the underlying state change has
  * committed. Delivery errors are stored for staff review and never rethrown.
  */
-export async function sendMemberNotification(userId: string, kind: NotificationKind, context: { offerExpiresAt?: Date } = {}) {
+export async function sendMemberNotification(userId: string, kind: NotificationKind, context: {
+  offerExpiresAt?: Date;
+  remainingMinutes?: number;
+  dedupeKey?: string;
+} = {}) {
   try {
     const [preference] = await db.select().from(memberNotificationPreferences)
       .where(eq(memberNotificationPreferences.userId, userId)).limit(1);
@@ -89,7 +226,9 @@ export async function sendMemberNotification(userId: string, kind: NotificationK
           dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Baghdad",
         }).format(context.offerExpiresAt)
       : "";
-    const body = localized.body.replace("{deadline}", deadline);
+    const remaining = context.remainingMinutes === undefined ? "" : remainingTime(context.remainingMinutes, language);
+    const body = localized.body.replace("{deadline}", deadline).replace("{remaining}", remaining);
+    const now = new Date();
     const rows = devices.map(device => ({
       id: randomUUID(),
       userId,
@@ -98,61 +237,188 @@ export async function sendMemberNotification(userId: string, kind: NotificationK
       title: localized.title,
       body,
       status: "pending",
+      dedupeKey: context.dedupeKey ? `${context.dedupeKey}:${device.id}` : null,
+      attemptCount: 1,
     }));
-    await db.insert(pushDeliveries).values(rows);
+    const inserted = await db.insert(pushDeliveries).values(rows).onConflictDoNothing()
+      .returning({ id: pushDeliveries.id, deviceId: pushDeliveries.deviceId });
+    if (!inserted.length) return { status: "skipped" as const, reason: "already_recorded" };
 
-    try {
-      const response = await fetch("https://exp.host/--/api/v2/push/send", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify(devices.map(device => ({
-          to: device.token,
-          title: localized.title,
-          body,
-          sound: "default",
-          data: { kind },
-        }))),
-        signal: AbortSignal.timeout(8000),
-      });
-      if (!response.ok) throw new Error(`Expo push service returned HTTP ${response.status}.`);
-
-      const responseData = await response.json() as { data?: Array<{ status?: string; id?: string; message?: string; details?: { error?: string } }> };
-      const tickets = Array.isArray(responseData.data) ? responseData.data : [];
-      await Promise.all(rows.map(async (row, index) => {
-        const ticket = tickets[index];
-        if (ticket?.status === "ok") {
-          await db.update(pushDeliveries).set({
-            status: "sent", providerTicketId: ticket.id ?? null, acceptedAt: new Date(),
-          }).where(eq(pushDeliveries.id, row.id));
-          return;
-        }
-        const failure = messageOf(ticket?.details?.error ?? ticket?.message ?? "Expo did not accept this notification.");
-        await db.update(pushDeliveries).set({ status: "failed", error: failure })
-          .where(eq(pushDeliveries.id, row.id));
-        if (ticket?.details?.error === "DeviceNotRegistered") {
-          await db.update(pushDevices).set({ enabled: false, updatedAt: new Date() })
-            .where(eq(pushDevices.id, devices[index].id));
-        }
-      }));
-      if (tickets.some(ticket => ticket?.details?.error === "DeviceNotRegistered")) {
-        const [remaining] = await db.select({ id: pushDevices.id }).from(pushDevices)
-          .where(and(eq(pushDevices.userId, userId), eq(pushDevices.enabled, true))).limit(1);
-        if (!remaining) {
-          await db.update(memberNotificationPreferences).set({ pushEnabled: false, updatedAt: new Date() })
-            .where(eq(memberNotificationPreferences.userId, userId));
-        }
-      }
-      return { status: rows.every((row, index) => tickets[index]?.status === "ok") ? "sent" as const : "failed" as const };
-    } catch (error) {
-      const failure = messageOf(error);
-      await Promise.all(rows.map(row => db.update(pushDeliveries)
-        .set({ status: "failed", error: failure }).where(eq(pushDeliveries.id, row.id))));
-      return { status: "failed" as const };
-    }
+    const insertedIds = new Set(inserted.map(row => row.id));
+    const attempts = rows.filter(row => insertedIds.has(row.id)).flatMap(row => {
+      const device = devices.find(candidate => candidate.id === row.deviceId);
+      return device ? [{ delivery: row as PushDeliveryRow, device }] : [];
+    });
+    return await sendPushAttempts(attempts, now)
+      ? { status: "sent" as const }
+      : { status: "failed" as const };
   } catch (error) {
     // Do not let notification persistence or provider outages affect bookings,
     // attendance, support replies, or any other primary transaction.
     console.error("Operational push notification failed outside delivery tracking.", messageOf(error));
     return { status: "failed" as const };
   }
+}
+
+export async function retryPendingPushDeliveries(now = new Date()) {
+  try {
+    const attempts = await db.transaction(async tx => {
+      const due = await tx.select().from(pushDeliveries)
+        .where(and(
+          eq(pushDeliveries.status, "retry_pending"),
+          lte(pushDeliveries.nextAttemptAt, now),
+        ))
+        .orderBy(asc(pushDeliveries.nextAttemptAt))
+        .limit(RECOVERY_BATCH_SIZE)
+        .for("update", { skipLocked: true });
+      const claimed: PushAttempt[] = [];
+      for (const delivery of due) {
+        const [preference] = await tx.select().from(memberNotificationPreferences)
+          .where(eq(memberNotificationPreferences.userId, delivery.userId)).limit(1);
+        const [device] = await tx.select().from(pushDevices)
+          .where(and(eq(pushDevices.id, delivery.deviceId), eq(pushDevices.enabled, true))).limit(1);
+        if (!preference?.pushEnabled || !device) {
+          await tx.update(pushDeliveries).set({
+            status: "failed",
+            error: "Push notifications were disabled before the retry.",
+            nextAttemptAt: null,
+          }).where(eq(pushDeliveries.id, delivery.id));
+          continue;
+        }
+        if (delivery.kind === "waitlist_reminder") {
+          const prefix = "waitlist-reminder:";
+          const remainder = delivery.dedupeKey?.startsWith(prefix) ? delivery.dedupeKey.slice(prefix.length) : "";
+          const lastSeparator = remainder.lastIndexOf(":");
+          const entryId = lastSeparator > 0 ? remainder.slice(0, lastSeparator) : "";
+          const [offer] = entryId ? await tx.select({
+            status: waitlistEntries.status,
+            offerExpiresAt: waitlistEntries.offerExpiresAt,
+          }).from(waitlistEntries).where(eq(waitlistEntries.id, entryId)).limit(1).for("update") : [];
+          if (offer?.status !== "offered" || !offer.offerExpiresAt || offer.offerExpiresAt <= now) {
+            await tx.update(pushDeliveries).set({
+              status: "cancelled",
+              error: "Waitlist offer is no longer active; reminder retry was cancelled.",
+              nextAttemptAt: null,
+              receiptStatus: null,
+              receiptError: null,
+            }).where(eq(pushDeliveries.id, delivery.id));
+            continue;
+          }
+        }
+        const [claimedDelivery] = await tx.update(pushDeliveries).set({
+          status: "pending",
+          attemptCount: delivery.attemptCount + 1,
+          nextAttemptAt: null,
+          providerTicketId: null,
+          acceptedAt: null,
+          receiptStatus: null,
+          receiptError: null,
+          receiptCheckedAt: null,
+          receiptAttemptCount: 0,
+        }).where(eq(pushDeliveries.id, delivery.id)).returning();
+        if (claimedDelivery) claimed.push({ delivery: claimedDelivery, device });
+      }
+      return claimed;
+    });
+    if (!attempts.length) return 0;
+    await sendPushAttempts(attempts, now);
+    return attempts.length;
+  } catch (error) {
+    console.error("Push delivery retry sweep failed.", messageOf(error));
+    return 0;
+  }
+}
+
+export async function checkPendingPushReceipts(now = new Date()) {
+  const receiptCutoff = new Date(now.getTime() - RECEIPT_READY_AFTER_MS);
+  const recheckCutoff = new Date(now.getTime() - RECEIPT_RECHECK_AFTER_MS);
+  const claimed = await db.transaction(async tx => {
+    const due = await tx.select().from(pushDeliveries)
+      .where(and(
+        eq(pushDeliveries.status, "sent"),
+        eq(pushDeliveries.receiptStatus, "pending"),
+        lte(pushDeliveries.acceptedAt, receiptCutoff),
+        or(isNull(pushDeliveries.receiptCheckedAt), lte(pushDeliveries.receiptCheckedAt, recheckCutoff)),
+      ))
+      .orderBy(asc(pushDeliveries.acceptedAt))
+      .limit(RECOVERY_BATCH_SIZE)
+      .for("update", { skipLocked: true });
+    const rows: PushDeliveryRow[] = [];
+    for (const delivery of due) {
+      const [claimedDelivery] = await tx.update(pushDeliveries).set({
+        receiptCheckedAt: now,
+        receiptAttemptCount: delivery.receiptAttemptCount + 1,
+      }).where(eq(pushDeliveries.id, delivery.id)).returning();
+      if (claimedDelivery) rows.push(claimedDelivery);
+    }
+    return rows;
+  });
+  if (!claimed.length) return 0;
+
+  const ids = [...new Set(claimed.map(row => row.providerTicketId).filter((id): id is string => Boolean(id)))];
+  if (!ids.length) return 0;
+  let receipts: Record<string, ExpoPushReceipt> = {};
+  let requestFailure: string | null = null;
+  try {
+    const response = await fetch("https://exp.host/--/api/v2/push/getReceipts", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) throw new Error(`Expo receipt service returned HTTP ${response.status}.`);
+    const responseData = await response.json() as { data?: Record<string, ExpoPushReceipt> };
+    receipts = responseData.data ?? {};
+  } catch (error) {
+    requestFailure = messageOf(error);
+  }
+
+  await Promise.all(claimed.map(async delivery => {
+    const ticketId = delivery.providerTicketId;
+    if (!ticketId) return;
+    const receipt = receipts[ticketId];
+    if (!receipt) {
+      if (delivery.receiptAttemptCount >= MAX_RECEIPT_CHECKS) {
+        await db.update(pushDeliveries).set({
+          receiptStatus: "unavailable",
+          receiptError: requestFailure ?? "Expo did not return a receipt after three checks.",
+        }).where(eq(pushDeliveries.id, delivery.id));
+      }
+      return;
+    }
+    const checkedAt = delivery.receiptCheckedAt ?? now;
+    const errorCode = receipt.details?.error;
+    if (receipt.status === "ok") {
+      await db.update(pushDeliveries).set({
+        receiptStatus: "ok",
+        receiptError: null,
+        receiptCheckedAt: checkedAt,
+        error: null,
+      }).where(eq(pushDeliveries.id, delivery.id));
+      return;
+    }
+    const failure = messageOf(errorCode ?? receipt.message ?? "Expo receipt reported a delivery error.");
+    if (errorCode === "DeviceNotRegistered") {
+      await disableUnregisteredDevice(delivery.deviceId, delivery.userId, now);
+    }
+    await recordAttemptFailure(
+      { delivery, device: { id: delivery.deviceId } as PushDeviceRow },
+      failure,
+      now,
+      errorCode === "MessageRateExceeded",
+      {
+        status: "error",
+        error: failure,
+        checkedAt,
+        attemptCount: delivery.receiptAttemptCount,
+      },
+    );
+  }));
+  return claimed.length;
+}
+
+export async function recoverPushDeliveries(now = new Date()) {
+  const receiptsChecked = await checkPendingPushReceipts(now);
+  const deliveriesRetried = await retryPendingPushDeliveries(now);
+  return { receiptsChecked, deliveriesRetried };
 }

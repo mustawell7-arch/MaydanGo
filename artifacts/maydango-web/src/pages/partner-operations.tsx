@@ -1,26 +1,35 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { trackEvent } from '@/lib/analytics';
+import { getPartnerPortalCopy, type PortalCopyLanguage } from '@/lib/partner-portal-copy';
 import { CalendarClock, Download, FileText, MapPin, Plus, RefreshCw, Save, ShieldCheck, Upload, Wallet } from 'lucide-react';
 import {
   downloadPartnerInvoiceDocument, getGetAttendanceQueryKey, getGetOperationFacilitiesQueryKey, getGetPartnerInvoicesQueryKey,
   getGetOperationsQueryKey, getGetPartnerSettlementSummaryQueryKey, useCreateFacilityProfile,
+  useCreateFacilityHoursOverride, useDeleteFacilityHoursOverride,
   useGetOperationFacilities, useGetPartnerInvoices, useGetPartnerSettlementSummary,
   useRequestPartnerInvoiceUploadUrl, useSetCheckinPolicy, useSubmitPartnerInvoice,
   useDeleteFacilityProfile, useUpdateFacilityProfile,
 } from '@workspace/api-client-react';
 import type {
-  CheckinPolicy, FacilityOpeningDay, FacilityProfile, FacilityProfileInput, FacilityProfileUpdate,
+  CheckinPolicy, FacilityHoursOverrideInput, FacilityOpeningDay, FacilityProfile, FacilityProfileInput, FacilityProfileUpdate,
   GetAttendance200RowsItem, LiveOffering, PartnerInvoiceInput, PartnerSettlementSummary,
 } from '@workspace/api-client-react';
 
-export type PortalLanguage = 'en' | 'ar' | 'ku';
+export type PortalLanguage = PortalCopyLanguage;
 export type OperationsTab = 'facilities' | 'bookings' | 'settlements' | 'invoices';
 type CopyKey = keyof typeof copy.en;
 const copy = {
   en: {
     facilities: 'Facilities', addFacility: 'Add facility', edit: 'Edit details', save: 'Save changes', city: 'City', name: 'Facility name',
     district: 'District', address: 'Address', description: 'About this place', phone: 'Contact phone', website: 'Website', latitude: 'Latitude', longitude: 'Longitude',
-    hours: 'Weekly opening hours', closed: 'Closed', activities: 'Activities', amenities: 'Amenities', accessibility: 'Accessibility',
+    hours: 'Weekly opening hours', specialHours: 'Temporary closures and special hours', addSpecialHours: 'Add date override',
+    overrideType: 'Override type', closedAllDay: 'Closed all day', specialSchedule: 'Special hours', reason: 'Reason shown to visitors',
+    opens: 'Opens', closes: 'Closes', publishSpecialHours: 'Publish override', cancel: 'Cancel',
+    specialHoursSaved: 'Special hours published.', specialHoursFailed: 'Could not publish this override. Check the dates and existing entries.',
+    specialHoursRemoved: 'Special hours removed.', specialHoursRemoveFailed: 'Could not remove this override.',
+    removeSpecialHoursConfirm: 'Remove this date override?', noSpecialHours: 'No temporary changes are scheduled.',
+    closed: 'Closed', activities: 'Activities', amenities: 'Amenities', accessibility: 'Accessibility',
     saved: 'Facility details saved.', failed: 'Could not save these details. Please try again.', noFacilities: 'No facility records are available for this partner yet.',
     remove: 'Remove', removeConfirm: 'Remove this facility profile?', removed: 'Facility profile removed.', removeFailed: 'This facility cannot be removed while sessions use it.',
     bookings: 'Sessions & bookings', bookingIntro: 'Scheduled sessions and booking attendance, limited to your server-authorized partner scope.',
@@ -45,7 +54,13 @@ const copy = {
   ar: {
     facilities: 'المرافق', addFacility: 'إضافة مرفق', edit: 'تعديل التفاصيل', save: 'حفظ التغييرات', city: 'المدينة', name: 'اسم المرفق',
     district: 'المنطقة', address: 'العنوان', description: 'عن المكان', phone: 'هاتف التواصل', website: 'الموقع الإلكتروني', latitude: 'خط العرض', longitude: 'خط الطول',
-    hours: 'ساعات العمل الأسبوعية', closed: 'مغلق', activities: 'الأنشطة', amenities: 'الخدمات', accessibility: 'إمكانية الوصول',
+    hours: 'ساعات العمل الأسبوعية', specialHours: 'الإغلاقات المؤقتة وساعات العمل الخاصة', addSpecialHours: 'إضافة تعديل مؤقت',
+    overrideType: 'نوع التعديل', closedAllDay: 'مغلق طوال اليوم', specialSchedule: 'ساعات خاصة', reason: 'السبب الذي سيظهر للزوار',
+    opens: 'يفتح', closes: 'يغلق', publishSpecialHours: 'نشر التعديل', cancel: 'إلغاء',
+    specialHoursSaved: 'تم نشر ساعات العمل الخاصة.', specialHoursFailed: 'تعذر نشر التعديل. تحقق من التواريخ والتعديلات الموجودة.',
+    specialHoursRemoved: 'تمت إزالة ساعات العمل الخاصة.', specialHoursRemoveFailed: 'تعذرت إزالة هذا التعديل.',
+    removeSpecialHoursConfirm: 'هل تريد إزالة تعديل التواريخ هذا؟', noSpecialHours: 'لا توجد تغييرات مؤقتة مجدولة.',
+    closed: 'مغلق', activities: 'الأنشطة', amenities: 'الخدمات', accessibility: 'إمكانية الوصول',
     saved: 'تم حفظ تفاصيل المرفق.', failed: 'تعذر حفظ التفاصيل. حاول مرة أخرى.', noFacilities: 'لا توجد مرافق مسجلة لهذا الشريك بعد.',
     remove: 'إزالة', removeConfirm: 'هل تريد إزالة ملف هذا المرفق؟', removed: 'تمت إزالة ملف المرفق.', removeFailed: 'لا يمكن إزالة هذا المرفق ما دامت هناك جلسات مرتبطة به.',
     bookings: 'الجلسات والحجوزات', bookingIntro: 'الجلسات المجدولة وحضور الحجوزات ضمن نطاق الشريك المصرح به من الخادم.',
@@ -70,7 +85,13 @@ const copy = {
   ku: {
     facilities: 'شوێنەکان', addFacility: 'شوێنێک زیاد بکە', edit: 'دەستکاری وردەکارییەکان', save: 'گۆڕانکارییەکان پاشەکەوت بکە', city: 'شار', name: 'ناوی شوێن',
     district: 'گەڕەک', address: 'ناونیشان', description: 'دەربارەی شوێنەکە', phone: 'تەلەفۆنی پەیوەندی', website: 'ماڵپەڕ', latitude: 'پانی', longitude: 'درێژی',
-    hours: 'کاتژمێری کارکردنی هەفتانە', closed: 'داخراوە', activities: 'چالاکییەکان', amenities: 'خزمەتگوزارییەکان', accessibility: 'دەستگەیشتن',
+    hours: 'کاتژمێری کارکردنی هەفتانە', specialHours: 'داخستنە کاتییەکان و کاتژمێری تایبەت', addSpecialHours: 'زیادکردنی گۆڕانکاری کاتی',
+    overrideType: 'جۆری گۆڕانکاری', closedAllDay: 'تەواوی ڕۆژ داخراوە', specialSchedule: 'کاتژمێری تایبەت', reason: 'هۆکارەکەی بۆ سەردانکەران پیشان دەدرێت',
+    opens: 'دەکرێتەوە', closes: 'دادەخرێت', publishSpecialHours: 'بڵاوکردنەوەی گۆڕانکاری', cancel: 'پاشگەزبوونەوە',
+    specialHoursSaved: 'کاتژمێری تایبەت بڵاوکرایەوە.', specialHoursFailed: 'بڵاوکردنەوەی ئەم گۆڕانکارییە سەرکەوتوو نەبوو. بەروارەکان و گۆڕانکارییەکانی پێشوو بپشکنە.',
+    specialHoursRemoved: 'کاتژمێری تایبەت لابرا.', specialHoursRemoveFailed: 'لابردنی ئەم گۆڕانکارییە سەرکەوتوو نەبوو.',
+    removeSpecialHoursConfirm: 'ئەم گۆڕانکارییەی بەروار لاببە؟', noSpecialHours: 'هیچ گۆڕانکارییەکی کاتی پلاندانەنراوە.',
+    closed: 'داخراوە', activities: 'چالاکییەکان', amenities: 'خزمەتگوزارییەکان', accessibility: 'دەستگەیشتن',
     saved: 'وردەکارییەکانی شوێن پاشەکەوت کران.', failed: 'پاشەکەوتکردنی وردەکارییەکان سەرکەوتوو نەبوو. دووبارە هەوڵ بدە.', noFacilities: 'هێشتا هیچ شوێنێک بۆ ئەم هاوبەشە تۆمار نەکراوە.',
     remove: 'لابردن', removeConfirm: 'ئەم پڕۆفایلەی شوێن لاببە؟', removed: 'پڕۆفایلی شوێن لابرا.', removeFailed: 'تا کاتێک وانەکان ئەم شوێنە بەکاردەهێنن ناتوانرێت لاببرێت.',
     bookings: 'وانە و حجزەکان', bookingIntro: 'وانە پلاندانراوەکان و ئامادەبوونی حجزەکان لە سنووری هاوبەشی پشتڕاستکراو لەلایەن سێرڤەرەوە.',
@@ -80,7 +101,7 @@ const copy = {
     invoices: 'پسووڵەکان', invoiceIntro: 'پسووڵەی PDF بنێرە بۆ پێداچوونەوە. بەڵگەنامەکان تایبەت بە هەژماری هاوبەش دەمێننەوە.',
     invoiceNumber: 'ژمارەی پسووڵە', amount: 'بڕ (دیناری عێراقی)', issueDate: 'بەرواری دەرچوون', periodStart: 'دەستپێکی ماوە', periodEnd: 'کۆتایی ماوە', taxNumber: 'ژمارەی باج (ئارەزوومەندانە)',
     pdf: 'پسووڵەی PDF', submitInvoice: 'بارکردن و ناردنی پسووڵە', submitting: 'بە پارێزراوی بار دەکرێت…', status: 'دۆخ', document: 'بەڵگەنامەی تایبەت',
-    noInvoices: 'هێشتا هیچ پسووڵەیەک نەنێردراوە.', uploadError: 'بارکردنی پسووڵە سەرکەوتوو نەبوو. PDF ـەکە بپشکنە و دووبارە هەوڵ بدە.', fileType: 'فایلی PDF تا ١٠ مێگابایت هەڵبژێرە.',
+    noInvoices: 'هێشتا هیچ پسووڵەیەک نەنێردراوە.', uploadError: 'بارکردنی پسووڵە سەرکەوتوو نەبوو. PDF ـەکە بپشکنە و دووبارە هەوڵ بدە.', fileType: 'فایلی PDF تا 10 مێگابایت هەڵبژێرە.',
     loading: 'تۆمارەکان بار دەکرێن…', retry: 'دووبارە هەوڵ بدە', policy: 'ڕێسای ئامادەبوون', radius: 'مەودا (مەتر)', opensAt: 'دەستپێکی تۆمارکردن', closesAt: 'کۆتایی تۆمارکردن',
     correction: 'کۆتایی چاککردنەوە', updatePolicy: 'ڕێسای ئامادەبوون پاشەکەوت بکە', selectFacility: 'شوێنێک هەڵبژێرە', review: 'لە پێداچوونەوەدایە', submitted: 'نێردراوە',
     accepted: 'پەسەندکراوە', declined: 'ڕەتکراوەتەوە', settlementNote: 'تەنها کۆی سەردانەکان. ڕێژەی یەکلاکردنەوە یان کۆنترۆڵی پارەدان لێرە نییە.',
@@ -93,15 +114,15 @@ const copy = {
     noShow: 'ئامادە نەبوو', notCheckedIn: 'ئامادەبوون تۆمار نەکراوە', cancelledStatus: 'هەڵوەشێنراوەتەوە',
   },
 } as const;
-const t = (lang: PortalLanguage, key: CopyKey) => copy[lang][key];
+const t = (lang: PortalLanguage, key: CopyKey) => getPartnerPortalCopy(lang, copy.en[key]) ?? copy[lang][key];
 const inputClass = 'mt-1 w-full rounded-xl border border-[#d8d2c4] bg-[#fffdf7] px-3 py-2.5 text-sm text-[#173d35] focus:border-[#28695a] focus:outline-none focus:ring-2 focus:ring-[#28695a]/15';
 const buttonClass = 'inline-flex items-center justify-center gap-2 rounded-xl bg-[#174d43] px-4 py-2.5 text-sm font-semibold text-[#fff9e9] transition hover:bg-[#226556] disabled:opacity-50';
 const quietClass = 'inline-flex items-center justify-center gap-2 rounded-xl border border-[#d8d2c4] px-3 py-2 text-sm font-semibold text-[#36564b] hover:bg-[#f1eddf]';
 const week = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const localizedWeek: Record<PortalLanguage, string[]> = {
-  en: week,
-  ar: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'],
-  ku: ['یەکشەممە', 'دووشەممە', 'سێشەممە', 'چوارشەممە', 'پێنجشەممە', 'هەینی', 'شەممە'],
+  en: week.map(day => getPartnerPortalCopy('en', day) ?? day),
+  ar: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'].map((day, index) => getPartnerPortalCopy('ar', week[index]) ?? day),
+  ku: ['یەکشەممە', 'دووشەممە', 'سێشەممە', 'چوارشەممە', 'پێنجشەممە', 'هەینی', 'شەممە'].map((day, index) => getPartnerPortalCopy('ku', week[index]) ?? day),
 };
 const localizedBlank = () => ({ en: '', ar: '', ku: '' });
 const defaultHours = (): FacilityOpeningDay[] => week.map((_, day) => ({ day, closed: false, opensAt: '08:00', closesAt: '20:00' }));
@@ -132,7 +153,23 @@ function FacilityEditor({ partnerId, facility, lang, onClose, onSaved }: { partn
   const client = useQueryClient();
   const create = useCreateFacilityProfile();
   const update = useUpdateFacilityProfile();
-  const [form, setForm] = useState<FacilityProfileInput>(() => facility ? { ...facility, partnerId } : emptyFacility(partnerId));
+  const [form, setForm] = useState<FacilityProfileInput>(() => facility ? {
+    partnerId,
+    city: facility.city,
+    facility: facility.facility,
+    localizedName: facility.localizedName,
+    localizedDistrict: facility.localizedDistrict,
+    localizedAddress: facility.localizedAddress,
+    localizedDescription: facility.localizedDescription,
+    activities: facility.activities,
+    amenities: facility.amenities,
+    accessibility: facility.accessibility,
+    openingHours: facility.openingHours.map(hour => ({ ...hour })),
+    contactPhone: facility.contactPhone,
+    websiteUrl: facility.websiteUrl,
+    latitude: facility.latitude,
+    longitude: facility.longitude,
+  } : emptyFacility(partnerId));
   const [error, setError] = useState('');
   const pending = create.isPending || update.isPending;
   const set = <K extends keyof FacilityProfileInput>(key: K, value: FacilityProfileInput[K]) => setForm(prev => ({ ...prev, [key]: value }));
@@ -149,7 +186,11 @@ function FacilityEditor({ partnerId, facility, lang, onClose, onSaved }: { partn
     }
     const { partnerId: _serverScopedPartnerId, ...profileUpdate } = form;
     const body: FacilityProfileUpdate = { ...profileUpdate, city: form.city.trim(), facility: form.facility.trim() };
-    const done = () => { void client.invalidateQueries({ queryKey: getGetOperationFacilitiesQueryKey() }); onSaved(); };
+    const done = () => {
+      trackEvent('facility_profile_saved', { change_type: facility ? 'updated' : 'created', surface: 'partner_portal' });
+      void client.invalidateQueries({ queryKey: getGetOperationFacilitiesQueryKey() });
+      onSaved();
+    };
     if (facility) update.mutate({ id: facility.id, data: body }, { onSuccess: done, onError: () => setError(t(lang, 'failed')) });
     else create.mutate({ data: form }, { onSuccess: done, onError: () => setError(t(lang, 'failed')) });
   };
@@ -178,11 +219,80 @@ function FacilityEditor({ partnerId, facility, lang, onClose, onSaved }: { partn
   </div>;
 }
 
+function baghdadCalendarDate() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Baghdad', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date());
+  const value = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
+function formatOverrideDateRange(startDate: string, endDate: string, lang: PortalLanguage) {
+  const locale = lang === 'ku' ? 'ckb-IQ' : lang === 'ar' ? 'ar-IQ' : 'en-IQ';
+  const format = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone: 'UTC', numberingSystem: 'latn' });
+  const start = format.format(new Date(`${startDate}T00:00:00Z`));
+  const end = format.format(new Date(`${endDate}T00:00:00Z`));
+  return startDate === endDate ? start : `${start} – ${end}`;
+}
+function HoursOverrideEditor({ facilityId, lang, onClose, onSaved }: {
+  facilityId: string; lang: PortalLanguage; onClose: () => void; onSaved: () => void;
+}) {
+  const client = useQueryClient();
+  const create = useCreateFacilityHoursOverride();
+  const today = baghdadCalendarDate();
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
+  const [mode, setMode] = useState<'closed' | 'special'>('closed');
+  const [opensAt, setOpensAt] = useState('09:00');
+  const [closesAt, setClosesAt] = useState('17:00');
+  const [localizedReason, setLocalizedReason] = useState({ en: '', ar: '', ku: '' });
+  const [error, setError] = useState('');
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    setError('');
+    if (endDate < startDate || Object.values(localizedReason).some(value => !value.trim())) {
+      setError(t(lang, 'specialHoursFailed'));
+      return;
+    }
+    const data: FacilityHoursOverrideInput = {
+      startDate,
+      endDate,
+      closed: mode === 'closed',
+      opensAt: mode === 'closed' ? null : opensAt,
+      closesAt: mode === 'closed' ? null : closesAt,
+      localizedReason,
+    };
+    create.mutate({ id: facilityId, data }, {
+      onSuccess: () => {
+        void client.invalidateQueries({ queryKey: getGetOperationFacilitiesQueryKey() });
+        void client.invalidateQueries({ queryKey: getGetOperationsQueryKey() });
+        onSaved();
+      },
+      onError: () => setError(t(lang, 'specialHoursFailed')),
+    });
+  };
+  return <form onSubmit={submit} dir={lang === 'en' ? 'ltr' : 'rtl'} className="mt-4 grid gap-3 rounded-2xl border border-[#d8d2c4] bg-[#f8f5eb] p-4">
+    <div className="grid gap-3 sm:grid-cols-2">
+      <label className="text-xs font-semibold">{t(lang, 'dateFrom')}<input required type="date" min={today} className={inputClass} value={startDate} onChange={event => { setStartDate(event.target.value); if (event.target.value > endDate) setEndDate(event.target.value); }} /></label>
+      <label className="text-xs font-semibold">{t(lang, 'dateTo')}<input required type="date" min={startDate || today} className={inputClass} value={endDate} onChange={event => setEndDate(event.target.value)} /></label>
+      <label className="text-xs font-semibold sm:col-span-2">{t(lang, 'overrideType')}<select className={inputClass} value={mode} onChange={event => setMode(event.target.value as 'closed' | 'special')}><option value="closed">{t(lang, 'closedAllDay')}</option><option value="special">{t(lang, 'specialSchedule')}</option></select></label>
+      {mode === 'special' && <>
+        <label className="text-xs font-semibold">{t(lang, 'opens')}<input required type="time" className={inputClass} value={opensAt} onChange={event => setOpensAt(event.target.value)} /></label>
+        <label className="text-xs font-semibold">{t(lang, 'closes')}<input required type="time" className={inputClass} value={closesAt} onChange={event => setClosesAt(event.target.value)} /></label>
+      </>}
+      <fieldset className="grid gap-2 sm:col-span-2"><legend className="text-xs font-semibold">{t(lang, 'reason')} · EN / AR / KU</legend><div className="grid gap-2 sm:grid-cols-3">{(['en', 'ar', 'ku'] as const).map(language => <label key={language}><span className="sr-only">{t(lang, 'reason')} {language}</span><textarea required maxLength={500} rows={2} dir={language === 'en' ? 'ltr' : 'rtl'} className={inputClass} value={localizedReason[language]} onChange={event => setLocalizedReason(previous => ({ ...previous, [language]: event.target.value }))} /></label>)}</div></fieldset>
+    </div>
+    {error && <p role="alert" className="text-sm text-[#9a4435]">{error}</p>}
+    <div className="flex justify-end gap-2"><button type="button" className={quietClass} onClick={onClose}>{t(lang, 'cancel')}</button><button type="submit" disabled={create.isPending} className={buttonClass}><Save size={15} />{create.isPending ? t(lang, 'loading') : t(lang, 'publishSpecialHours')}</button></div>
+  </form>;
+}
+
 function Facilities({ lang, partnerId, isAdmin, onNotice }: { lang: PortalLanguage; partnerId: string; isAdmin: boolean; onNotice: (message: string) => void }) {
   const facilities = useGetOperationFacilities({ query: { enabled: !!partnerId, queryKey: getGetOperationFacilitiesQueryKey() } });
   const client = useQueryClient();
   const remove = useDeleteFacilityProfile();
+  const removeHours = useDeleteFacilityHoursOverride();
   const [editing, setEditing] = useState<FacilityProfile | 'new' | null>(null);
+  const [hoursEditorFor, setHoursEditorFor] = useState<string | null>(null);
   const records = (facilities.data ?? []).filter(facility => isAdmin || facility.partnerId === partnerId);
   const removeFacility = (facility: FacilityProfile) => {
     if (!window.confirm(`${t(lang, 'removeConfirm')} ${facility.localizedName[lang] || facility.facility}?`)) return;
@@ -195,11 +305,30 @@ function Facilities({ lang, partnerId, isAdmin, onNotice }: { lang: PortalLangua
       onError: () => onNotice(t(lang, 'removeFailed')),
     });
   };
+  const removeHoursOverride = (facilityId: string, overrideId: string) => {
+    if (!window.confirm(t(lang, 'removeSpecialHoursConfirm'))) return;
+    removeHours.mutate({ id: facilityId, overrideId }, {
+      onSuccess: () => {
+        void client.invalidateQueries({ queryKey: getGetOperationFacilitiesQueryKey() });
+        void client.invalidateQueries({ queryKey: getGetOperationsQueryKey() });
+        onNotice(t(lang, 'specialHoursRemoved'));
+      },
+      onError: () => onNotice(t(lang, 'specialHoursRemoveFailed')),
+    });
+  };
   return <section dir={lang === 'en' ? 'ltr' : 'rtl'}>
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm text-[#687a71]">{t(lang, 'facilities')} · {records.length}</p></div>{!isAdmin && <button className={buttonClass} onClick={() => setEditing('new')}><Plus size={15} />{t(lang, 'addFacility')}</button>}</div>
     {facilities.isLoading ? <div className="h-36 animate-pulse rounded-3xl bg-[#e5e0d1]" /> : facilities.isError ? <button className={quietClass} onClick={() => void facilities.refetch()}><RefreshCw size={14} />{t(lang, 'retry')}</button> : records.length ? <div className="grid gap-4">{records.map(item => <article key={item.id} className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5">
       <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a76445]">{item.city} · {item.localizedDistrict[lang] || item.facility}</p><h2 className="mt-2 font-display text-2xl font-bold">{item.localizedName[lang] || item.facility}</h2><p className="mt-2 flex items-center gap-1 text-sm text-[#687a71]"><MapPin size={14} />{item.localizedAddress[lang] || item.city}</p><p className="mt-2 max-w-2xl text-sm leading-6 text-[#687a71]">{item.localizedDescription[lang]}</p></div>{!isAdmin && <div className="flex gap-2"><button type="button" className={quietClass} onClick={() => setEditing(item)}>{t(lang, 'edit')}</button><button type="button" className={quietClass} disabled={remove.isPending} onClick={() => removeFacility(item)}>{t(lang, 'remove')}</button></div>}</div>
       <div className="mt-4 grid gap-3 border-t border-[#ece7d9] pt-4 md:grid-cols-2"><div><p className="mb-2 text-xs font-bold">{t(lang, 'hours')}</p><div className="grid grid-cols-2 gap-1 text-xs text-[#687a71]">{item.openingHours.map(hour => <span key={hour.day}>{localizedWeek[lang][hour.day]} · {hour.closed ? t(lang, 'closed') : `${hour.opensAt}–${hour.closesAt}`}</span>)}</div></div><div className="grid content-start gap-1 text-xs text-[#687a71]"><span>{t(lang, 'phone')}: {item.contactPhone || '—'}</span><span>{t(lang, 'website')}: {item.websiteUrl || '—'}</span>{item.latitude !== null && item.longitude !== null && <span>{item.latitude}, {item.longitude}</span>}</div></div>
+      <section className="mt-4 border-t border-[#ece7d9] pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-bold">{t(lang, 'specialHours')}</h3>{!isAdmin && <button type="button" className={quietClass} onClick={() => setHoursEditorFor(hoursEditorFor === item.id ? null : item.id)}><CalendarClock size={14} />{t(lang, 'addSpecialHours')}</button>}</div>
+        {item.specialHours.length ? <div className="mt-3 grid gap-2">{item.specialHours.map(override => <div key={override.id} className="flex flex-wrap items-start justify-between gap-3 rounded-xl bg-[#eeeadc] p-3">
+          <div className="min-w-0"><p className="text-xs font-bold">{formatOverrideDateRange(override.startDate, override.endDate, lang)} · {override.closed ? t(lang, 'closedAllDay') : `${override.opensAt}–${override.closesAt}`}</p><p className="mt-1 text-xs leading-5 text-[#687a71]">{override.localizedReason[lang]}</p></div>
+          {!isAdmin && <button type="button" className={quietClass} disabled={removeHours.isPending} onClick={() => removeHoursOverride(item.id, override.id)}>{t(lang, 'remove')}</button>}
+        </div>)}</div> : <p className="mt-2 text-xs text-[#687a71]">{t(lang, 'noSpecialHours')}</p>}
+        {hoursEditorFor === item.id && !isAdmin && <HoursOverrideEditor facilityId={item.id} lang={lang} onClose={() => setHoursEditorFor(null)} onSaved={() => { setHoursEditorFor(null); onNotice(t(lang, 'specialHoursSaved')); }} />}
+      </section>
       {item.activities.length > 0 && <div className="mt-4"><p className="mb-2 text-xs font-bold">{t(lang, 'activities')}</p><div className="flex flex-wrap gap-2">{item.activities.map((x, i) => <span key={i} className="rounded-full bg-[#eeeadc] px-3 py-1 text-xs">{x[lang]}</span>)}</div></div>}
       {item.amenities.length > 0 && <div className="mt-3"><p className="mb-2 text-xs font-bold">{t(lang, 'amenities')}</p><div className="flex flex-wrap gap-2">{item.amenities.map((x, i) => <span key={i} className="rounded-full bg-[#eeeadc] px-3 py-1 text-xs">{x[lang]}</span>)}</div></div>}
       {item.accessibility.length > 0 && <div className="mt-3"><p className="mb-2 text-xs font-bold">{t(lang, 'accessibility')}</p><div className="flex flex-wrap gap-2">{item.accessibility.map((x, i) => <span key={i} className="rounded-full bg-[#eeeadc] px-3 py-1 text-xs">{x[lang]}</span>)}</div></div>}
@@ -259,7 +388,7 @@ function Bookings({ lang, attendance, offerings, partnerId, onNotice }: { lang: 
         correctionEndsAt: new Date(end + 24 * 60 * 60 * 1000).toISOString(),
       });
     };
-    return <article key={session.id} className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5"><span className="rounded-full bg-[#e1efdf] px-2.5 py-1 text-[10px] font-bold text-[#2d6d4a]">{session.active ? t(lang, 'active') : t(lang, 'draft')}</span><h3 className="mt-3 font-display text-xl font-bold">{session.localizedTitle?.[lang] || session.title}</h3><p className="mt-1 text-sm text-[#687a71]">{session.facility} · {session.city} · {session.category}</p><p className="mt-3 text-xs text-[#75847c]">{t(lang, 'starts')}: {new Intl.DateTimeFormat(lang === 'en' ? 'en-IQ' : lang === 'ar' ? 'ar-IQ' : 'ckb-IQ', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Baghdad' }).format(new Date(session.startsAt))}</p><p className="mt-3 border-t border-[#ece7d9] pt-3 text-xs font-semibold">{t(lang, 'bookingCount')}: {related.length}</p>
+    return <article key={session.id} className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5"><span className="rounded-full bg-[#e1efdf] px-2.5 py-1 text-[10px] font-bold text-[#2d6d4a]">{session.active ? t(lang, 'active') : t(lang, 'draft')}</span><h3 className="mt-3 font-display text-xl font-bold">{session.localizedTitle?.[lang] || session.title}</h3><p className="mt-1 text-sm text-[#687a71]">{session.facility} · {session.city} · {session.category}</p><p className="mt-3 text-xs text-[#75847c]">{t(lang, 'starts')}: {new Intl.DateTimeFormat(lang === 'en' ? 'en-IQ' : lang === 'ar' ? 'ar-IQ' : 'ckb-IQ', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Baghdad', numberingSystem: 'latn' }).format(new Date(session.startsAt))}</p><p className="mt-3 border-t border-[#ece7d9] pt-3 text-xs font-semibold">{t(lang, 'bookingCount')}: {related.length}</p>
       {related.length > 0 && <ul className="mt-2 divide-y divide-[#ece7d9] rounded-xl bg-[#f7f4e9] px-3">{related.slice(0, 12).map(row => <li key={row.reservationId} className="flex flex-wrap justify-between gap-x-4 gap-y-1 py-2 text-xs"><span>{t(lang, 'booking')} · {statusLabel(row.bookingStatus)}</span><span>{t(lang, 'attendance')} · {statusLabel(row.status)}</span></li>)}</ul>}
       {session.accessType !== 'live' && !ended && !session.cancelledAt && <div className="mt-4 border-t border-[#ece7d9] pt-3">{existingPolicy ? <p className="text-xs font-semibold text-[#2d6d4a]">{t(lang, 'policyReady')}</p> : <button type="button" className={quietClass} onClick={configure}>{t(lang, 'configurePolicy')}</button>}
         {policySession === session.id && policyForm && <form onSubmit={submitPolicy} className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -309,6 +438,7 @@ function Invoices({ lang, isAdmin, onNotice }: { lang: PortalLanguage; isAdmin: 
         taxNumber: String(form.get('taxNumber') || '').trim() || null, documentPath: signed.documentPath, documentName: file.name,
       };
       await submit.mutateAsync({ data: payload });
+      trackEvent('partner_invoice_submitted', { document_type: 'pdf', surface: 'partner_portal' });
       await client.invalidateQueries({ queryKey: getGetPartnerInvoicesQueryKey() });
       formElement.reset(); setFile(null); onNotice(t(lang, 'submitted'));
     } catch { setError(t(lang, 'uploadError')); }

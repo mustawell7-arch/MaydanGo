@@ -47,7 +47,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/FacilityProfile"
+                  $ref: "#/components/schemas/OperationsFacility"
     post:
       operationId: createFacilityProfile
       requestBody:
@@ -89,6 +89,36 @@ paths:
       responses:
         "204": { description: Facility profile removed }
         "404": { description: Facility not found }
+  /operations/facilities/{id}/hours-overrides:
+    post:
+      operationId: createFacilityHoursOverride
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FacilityHoursOverrideInput"
+      responses:
+        "201":
+          description: Date-bounded facility hours override created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacilityHoursOverride"
+        "404": { description: Facility not found }
+        "400": { description: "Invalid dates, times, or localized reason" }
+        "409": { description: The dates overlap another hours override }
+  /operations/facilities/{id}/hours-overrides/{overrideId}:
+    delete:
+      operationId: deleteFacilityHoursOverride
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: overrideId, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Facility hours override removed }
+        "404": { description: Facility or override not found }
   /public/catalog:
     get:
       operationId: getPublicCatalog
@@ -295,14 +325,20 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1recurring"
   /operations/offerings/{id}:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}"
-  /operations/offerings/{id}/submit:
-    $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1submit"
-  /operations/offerings/{id}/review:
-    $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1review"
   /operations/offerings/{id}/waitlist:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1waitlist"
   /operations/offerings/{id}/cancel:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1cancel"
+  /operations/offerings/{id}/series:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1series"
+  /operations/offerings/{id}/series/cancel:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1series~1cancel"
+  /operations/offerings/{id}/submit:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1submit"
+  /operations/offerings/{id}/respond:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1respond"
+  /operations/offerings/{id}/review:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1review"
   /operations/bookings/{id}/cancel:
     $ref: "./operations.yaml#/paths/~1operations~1bookings~1{id}~1cancel"
   /operations/settlements:
@@ -347,6 +383,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1finance~1audit"
   /member/live-catalog:
     $ref: "./operations.yaml#/paths/~1member~1live-catalog"
+  /member/device:
+    $ref: "./operations.yaml#/paths/~1member~1device"
+  /member/device/change:
+    $ref: "./operations.yaml#/paths/~1member~1device~1change"
   /member/courses:
     $ref: "./operations.yaml#/paths/~1member~1courses"
   /member/courses/{id}:
@@ -355,6 +395,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1enroll"
   /member/courses/{id}/progress:
     $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1progress"
+  /member/courses/{id}/lessons/{lessonId}/playback-link:
+    $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1lessons~1{lessonId}~1playback-link"
+  /member/course-playback:
+    $ref: "./operations.yaml#/paths/~1member~1course-playback"
   /member/live-classes:
     $ref: "./operations.yaml#/paths/~1member~1live-classes"
   /member/live-classes/{id}/join:
@@ -383,6 +427,12 @@ paths:
     $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1replies"
   /support/staff/agents:
     $ref: "./operations.yaml#/paths/~1support~1staff~1agents"
+  /support/staff/agents/{userId}:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1agents~1{userId}"
+  /support/staff/device-changes:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1device-changes"
+  /support/staff/device-changes/{id}/approve:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1device-changes~1{id}~1approve"
   /support/staff/notification-failures:
     $ref: "./operations.yaml#/paths/~1support~1staff~1notification-failures"
   /member/plans:
@@ -663,6 +713,38 @@ components:
         latitude: { type: ["number", "null"] }
         longitude: { type: ["number", "null"] }
         updatedAt: { type: string, format: date-time }
+    FacilityHoursOverrideInput:
+      type: object
+      required: [startDate, endDate, closed, opensAt, closesAt, localizedReason]
+      properties:
+        startDate: { type: string, format: date, description: Inclusive calendar date in Asia/Baghdad }
+        endDate: { type: string, format: date, description: Inclusive calendar date in Asia/Baghdad }
+        closed: { type: boolean }
+        opensAt: { type: ["string", "null"], pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$", description: 24-hour local facility time }
+        closesAt: { type: ["string", "null"], pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$", description: 24-hour local facility time }
+        localizedReason: { $ref: "#/components/schemas/LocalizedFacilityText" }
+    FacilityHoursOverride:
+      type: object
+      required: [id, facilityId, startDate, endDate, closed, opensAt, closesAt, localizedReason, createdAt]
+      properties:
+        id: { type: string }
+        facilityId: { type: string }
+        startDate: { type: string, format: date, description: Inclusive calendar date in Asia/Baghdad }
+        endDate: { type: string, format: date, description: Inclusive calendar date in Asia/Baghdad }
+        closed: { type: boolean }
+        opensAt: { type: ["string", "null"] }
+        closesAt: { type: ["string", "null"] }
+        localizedReason: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        createdAt: { type: string, format: date-time }
+    OperationsFacility:
+      allOf:
+        - { $ref: "#/components/schemas/FacilityProfile" }
+        - type: object
+          required: [specialHours]
+          properties:
+            specialHours:
+              type: array
+              items: { $ref: "#/components/schemas/FacilityHoursOverride" }
     PublicFacilitySession:
       type: object
       required: [id, title, localizedTitle, category, startsAt, endsAt, accessType, gender, minAge, maxAge]
@@ -684,27 +766,48 @@ components:
       allOf:
         - { $ref: "#/components/schemas/FacilityProfile" }
         - type: object
-          required: [partnerName, openingStatus, closesAt, upcomingSessions]
+          required: [partnerName, openingStatus, closesAt, upcomingSessions, specialHours]
           properties:
             partnerName: { type: string }
             openingStatus: { type: string, enum: [open, closed, unavailable] }
             closesAt: { type: ["string", "null"] }
+            specialHours:
+              type: array
+              items: { $ref: "#/components/schemas/FacilityHoursOverride" }
             upcomingSessions:
               type: array
               items: { $ref: "#/components/schemas/PublicFacilitySession" }
     PublicOffering:
       type: object
-      required: [id, kind, title, city, facility, category, accessType, startsAt, endsAt, remaining, partnerName]
+      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, city, facility, category, accessType, tiers, startsAt, endsAt, cancellationDeadline, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
       properties:
         id: { type: string }
         kind: { type: string, enum: [session, event, coach] }
+        targetId: { type: string }
+        slot: { type: string }
         title: { type: string }
+        localizedTitle:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedFacilityText" }
+            - { type: "null" }
+        localizedDescription:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedFacilityText" }
+            - { type: "null" }
         city: { type: string }
         facility: { type: string }
         category: { type: string }
         accessType: { type: string, enum: [physical, premium, live] }
+        tiers:
+          type: array
+          items: { type: string }
         startsAt: { type: string, format: date-time }
         endsAt: { type: string, format: date-time }
+        cancellationDeadline: { type: string, format: date-time }
+        gender: { type: string, enum: [all, female, male] }
+        minAge: { type: integer, minimum: 0 }
+        maxAge: { type: ["integer", "null"], minimum: 0 }
+        additionalPayment: { type: boolean, description: Whether this offering requires payment outside membership access }
         remaining: { type: integer, minimum: 0 }
         partnerName: { type: string }
     PublicPlan:
@@ -728,7 +831,7 @@ components:
         correctionEndsAt: { type: string }
     MemberState:
       type: object
-      required: [memberships, bookings, waitlists]
+      required: [memberships, bookings, waitlists, waitlistUpdates]
       properties:
         profile:
           type: [object, "null"]
@@ -755,6 +858,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MemberWaitlistEntry"
+        waitlistUpdates:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemberWaitlistUpdate"
     MemberWaitlistEntry:
       type: object
       required: [id, offeringId, title, startsAt, queuePosition, status, createdAt]
@@ -768,15 +875,31 @@ components:
         createdAt: { type: string, format: date-time }
         offerExpiresAt: { type: ["string", "null"], format: date-time }
         respondedAt: { type: ["string", "null"], format: date-time }
+    MemberWaitlistUpdate:
+      type: object
+      required: [id, kind, title, startsAt, createdAt]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [waitlist_offer, waitlist_expired, waitlist_booked] }
+        title: { type: string }
+        startsAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
     MemberBooking:
       type: object
-      required: [id, kind, targetId, slot, title, scope, startsAt, status, createdAt]
+      required: [id, kind, targetId, slot, title, localizedTitle, city, facility, cancellationDeadline, scope, startsAt, status, createdAt]
       properties:
         id: { type: string }
         kind: { type: string }
         targetId: { type: string }
         slot: { type: string }
         title: { type: string }
+        localizedTitle:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedFacilityText" }
+            - { type: "null" }
+        city: { type: string }
+        facility: { type: string }
+        cancellationDeadline: { type: string, format: date-time }
         scope: { type: string }
         startsAt: { type: string }
         status: { type: string }

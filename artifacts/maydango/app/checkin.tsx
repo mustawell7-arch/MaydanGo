@@ -1,11 +1,12 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Platform, StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import { useAuth, useUser } from '@clerk/expo';
 import { router, useFocusEffect } from 'expo-router';
 import { useGetAttendance, scanCheckinQr, ApiError } from '@workspace/api-client-react';
-import { Text, Pressable } from '@/components/Localized';
+import { Ionicons, Text, Pressable } from '@/components/Localized';
 import { ScreenShell, ScreenHeader } from '@/components/ScreenShell';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { AttendanceCard } from '@/components/AttendanceCard';
@@ -66,7 +67,14 @@ export default function CheckInScreen() {
         {success ? <View style={[s.section, { backgroundColor: c.secondary }]}>
           {user?.imageUrl ? <Image source={{ uri: user.imageUrl }} style={s.photo} /> : null}
           <Text raw style={{ color: c.foreground, fontWeight: '800' }}>{user?.fullName ?? user?.username ?? 'Member'}</Text>
-          <Text style={{ color: c.primary }}>{success.status === 'confirmed' ? 'Attendance confirmed' : 'Arrival recorded — awaiting partner confirmation'}</Text>
+          <View style={s.statusRow}>
+            <StatusSeal confirmed={success.status === 'confirmed'}
+              tint={success.status === 'confirmed' ? c.primary : c.accent}
+              ink={success.status === 'confirmed' ? c.primaryForeground : c.accentForeground} />
+            <Text style={{ color: success.status === 'confirmed' ? c.primary : c.foreground }}>
+              {success.status === 'confirmed' ? 'Attendance confirmed' : 'Arrival recorded — awaiting partner confirmation'}
+            </Text>
+          </View>
           <Text raw style={{ color: c.foreground }}>{success.facility} · {success.title}</Text>
           <Text raw style={{ color: c.mutedForeground }}>{dateTime(success.checkedInAt!, language)}</Text>
           <Text raw selectable style={{ color: c.mutedForeground }}>{success.reference}</Text>
@@ -92,9 +100,36 @@ export default function CheckInScreen() {
     </KeyboardAwareScrollViewCompat>
   </ScreenShell>;
 }
+
+function StatusSeal({ confirmed, tint, ink }: { confirmed: boolean; tint: string; ink: string }) {
+  const pulse = useSharedValue(0);
+  useEffect(() => {
+    if (confirmed) {
+      pulse.value = 0;
+      return;
+    }
+    pulse.value = 0;
+    pulse.value = withRepeat(withTiming(1, { duration: 1200 }), -1, true);
+  }, [confirmed, pulse]);
+  const haloStyle = useAnimatedStyle(() => ({
+    opacity: confirmed ? 0 : 0.38 * (1 - pulse.value),
+    transform: [{ scale: 1 + pulse.value * 0.62 }],
+  }));
+  return <View style={s.seal} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    {!confirmed ? <Animated.View style={[s.sealHalo, { borderColor: tint }, haloStyle]} /> : null}
+    <View style={[s.sealCore, { backgroundColor: tint }]}>
+      <Ionicons name={confirmed ? 'shield-checkmark' : 'shield-outline'} size={15} color={ink} />
+    </View>
+  </View>;
+}
+
 const s = StyleSheet.create({
   content: { padding: 20, gap: 16, paddingBottom: 60 },
   section: { padding: 16, borderRadius: 16, gap: 10 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  seal: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  sealHalo: { position: 'absolute', width: 26, height: 26, borderRadius: 13, borderWidth: 1.5 },
+  sealCore: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   button: { padding: 14, borderRadius: 12, alignItems: 'center' },
   camera: { height: 300, borderRadius: 16 },
   heading: { fontSize: 20, fontWeight: '800' },

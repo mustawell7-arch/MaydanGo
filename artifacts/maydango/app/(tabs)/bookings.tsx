@@ -6,21 +6,24 @@ import { router } from 'expo-router';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
 import { LocalNotice } from '@/components/LocalNotice';
 import { MemberNotice } from '@/components/MemberNotice';
-import { coaches, communityEvents, facilities, getCityLabel, pick, sessions } from '@/data/demo';
+import { coaches, cities, facilities, getCityLabel, pick, sessions } from '@/data/demo';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { translate, type MessageKey } from '@/lib/i18n';
 import { dateTime } from '@/lib/content';
+import { cityIdForFacility, facilityText } from '@/lib/facility-content';
 
 type Row = {
   key: string;
-  image: ImageSourcePropType;
+  image?: ImageSourcePropType;
   when: string;
   title: string;
   meta: string;
   status: 'reserved' | 'requested' | 'cancelled';
   onCancel: () => void;
   cancelLabel: string;
+  canCancel?: boolean;
+  cancelHint?: string;
 };
 
 export default function BookingsScreen() {
@@ -39,12 +42,20 @@ export default function BookingsScreen() {
       status: b.status, onCancel: () => app.cancelBooking(b.sessionId), cancelLabel: t('cancelBooking'),
     }];
   });
-  const eventRows: Row[] = app.eventBookings.flatMap((e) => {
-    const ev = communityEvents.find((x) => x.id === e.eventId);
-    if (!ev) return [];
+  const eventRows: Row[] = app.serverBookings.flatMap(booking => {
+    if (booking.kind !== 'event' || booking.scope !== 'live') return [];
+    const cityId = cityIdForFacility(booking.city);
+    const city = cities.find(item => item.id === cityId);
     return [{
-      key: `e-${e.eventId}`, image: ev.image, when: dateTime(app.serverBookings.find(r => r.kind === 'event' && r.targetId === e.eventId)!.startsAt, app.language), title: ev.title,
-      meta: ev.venue, status: e.status, onCancel: () => app.cancelEvent(e.eventId), cancelLabel: t('cancelReservation'),
+      key: `e-${booking.targetId}`,
+      when: dateTime(booking.startsAt, app.language),
+      title: booking.localizedTitle ? facilityText(booking.localizedTitle, app.language) : booking.title,
+      meta: `${booking.facility} · ${city ? getCityLabel(city.id, app.language) : booking.city}`,
+      status: booking.status === 'cancelled' || String(booking.status) === 'partner_cancelled' ? 'cancelled' as const : 'reserved' as const,
+      onCancel: () => app.cancelEvent(booking.targetId),
+      cancelLabel: t('cancelReservation'),
+      canCancel: Date.parse(booking.cancellationDeadline) > Date.now(),
+      cancelHint: Date.parse(booking.cancellationDeadline) <= Date.now() ? t('eventCancelDeadlinePassed') : undefined,
     }];
   });
   const coachRows: Row[] = app.coachRequests.flatMap((r) => {
@@ -59,14 +70,20 @@ export default function BookingsScreen() {
   const waitlistRows = [...app.waitlists]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 12);
+  const waitlistUpdateRows = app.waitlistUpdates.slice(0, 20);
   const activeCount = [...sessionRows, ...eventRows, ...coachRows].filter((r) => r.status !== 'cancelled').length;
-  const hasAny = sessionRows.length + eventRows.length + coachRows.length + waitlistRows.length > 0;
+  const hasAny = sessionRows.length + eventRows.length + coachRows.length + waitlistRows.length + waitlistUpdateRows.length > 0;
 
   const statusLabel = (s: Row['status']) => (s === 'reserved' ? t('statusReserved') : s === 'requested' ? t('statusRequested') : t('statusCancelled'));
   const waitlistStatusLabel = (status: string) => t(({
     waiting: 'waitlistWaiting', offered: 'waitlistOffered', booked: 'waitlistBooked',
     expired: 'waitlistExpired', left: 'waitlistLeft', ineligible: 'waitlistIneligible', closed: 'waitlistClosed',
   } as Record<string, MessageKey>)[status] ?? 'waitlistClosed');
+  const waitlistUpdateLabel = (kind: string) => t(({
+    waitlist_offer: 'waitlistUpdateOffered',
+    waitlist_expired: 'waitlistUpdateExpired',
+    waitlist_booked: 'waitlistUpdateBooked',
+  } as Record<string, MessageKey>)[kind] ?? 'waitlistUpdateOffered');
 
   const section = (title: MessageKey, rows: Row[]) => {
     if (!rows.length) return null;
@@ -79,17 +96,22 @@ export default function BookingsScreen() {
           const dot = cancelled ? colors.mutedForeground : row.status === 'requested' ? '#c9962f' : '#4e9664';
           return (
             <View key={row.key} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, opacity: cancelled ? 0.62 : 1 }]}>
-              <Image source={row.image} style={styles.thumb} />
+              {row.image ? <Image source={row.image} style={styles.thumb} /> : (
+                <View style={[styles.thumb, styles.eventThumb, { backgroundColor: colors.secondary }]}>
+                  <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+                </View>
+              )}
               <View style={{ flex: 1 }}>
                 <Text style={[styles.when, { color: colors.primary, textAlign: align }]}>{row.when}</Text>
                 <Text style={[styles.title, { color: colors.foreground, textAlign: align }]}>{row.title}</Text>
                 <Text style={[styles.meta, { color: colors.mutedForeground, textAlign: align }]} numberOfLines={1}>{row.meta}</Text>
+                {row.cancelHint ? <Text style={[styles.meta, { color: colors.mutedForeground, textAlign: align }]}>{row.cancelHint}</Text> : null}
                 <View style={styles.footer}>
                   <View style={styles.statusPill}>
                     <View style={[styles.dot, { backgroundColor: dot }]} />
                     <Text style={[styles.statusText, { color: colors.mutedForeground }]}>{statusLabel(row.status)}</Text>
                   </View>
-                  {!cancelled ? (
+                  {!cancelled && row.canCancel !== false ? (
                     <Pressable disabled={app.memberLoading} accessibilityRole="button" accessibilityLabel={`${row.cancelLabel}: ${row.title}`} onPress={row.onCancel} hitSlop={6} style={styles.cancelButton}>
                       <Text style={[styles.cancelText, { color: colors.destructive }]}>{t('cancel')}</Text>
                     </Pressable>
@@ -151,6 +173,20 @@ export default function BookingsScreen() {
                 </View>;
               })}
             </View> : null}
+            {waitlistUpdateRows.length ? <View style={{ marginBottom: 8 }}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: align }]}>{t('waitlistUpdateSection')}</Text>
+              {waitlistUpdateRows.map((update) => <View key={update.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.thumb, styles.eventThumb, { backgroundColor: colors.secondary }]}>
+                  <Ionicons name="notifications-outline" size={20} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.when, { color: colors.primary, textAlign: align }]}>{dateTime(update.createdAt, app.language)}</Text>
+                  <Text style={[styles.title, { color: colors.foreground, textAlign: align }]}>{waitlistUpdateLabel(update.kind)}</Text>
+                  <Text style={[styles.meta, { color: colors.mutedForeground, textAlign: align }]}>{update.title}</Text>
+                  <Text style={[styles.meta, { color: colors.mutedForeground, textAlign: align }]}>{dateTime(update.startsAt, app.language)}</Text>
+                </View>
+              </View>)}
+            </View> : null}
             {section('classesSection', sessionRows)}
             {section('eventsSection', eventRows)}
             {section('coachingSection', coachRows)}
@@ -188,6 +224,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 15, fontWeight: '800', marginBottom: 9, marginTop: 4 },
   card: { borderWidth: 1, borderRadius: 19, padding: 10, flexDirection: 'row', gap: 11, marginBottom: 10 },
   thumb: { width: 66, height: 66, borderRadius: 14 },
+  eventThumb: { alignItems: 'center', justifyContent: 'center' },
   when: { fontSize: 10, fontWeight: '800' },
   title: { fontSize: 14, fontWeight: '800', marginTop: 3 },
   meta: { fontSize: 10, marginTop: 3 },

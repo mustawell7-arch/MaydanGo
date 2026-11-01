@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, boolean, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, boolean, jsonb, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import type { LocalizedText } from "./learning";
 import { membershipBilling } from "./payments";
@@ -14,9 +14,15 @@ export type AccessRules = {
   facilityLimits?: Record<string, number>;
   categoryLimits?: Record<string, number>;
 };
-export type OfferingActivityStatus =
-  | "draft" | "submitted" | "under_review" | "changes_requested" | "approved"
-  | "published" | "suspended" | "rejected" | "archived";
+export type OfferingApprovalStatus =
+  | "draft"
+  | "submitted"
+  | "under_review"
+  | "changes_requested"
+  | "approved"
+  | "published"
+  | "rejected"
+  | "archived";
 export const memberProfiles = pgTable("member_profiles", {
   userId: text("user_id").primaryKey(),
   gender: text("gender").notNull(),
@@ -51,10 +57,15 @@ export const offerings = pgTable("booking_offerings", {
   scope: text("scope").notNull(),
   partnerId: text("partner_id"),
   partnerGroup: text("partner_group"),
+  recurrenceGroupId: text("recurrence_group_id"),
+  approvalStatus: text("approval_status").$type<OfferingApprovalStatus>().notNull().default("draft"),
+  approvalReason: text("approval_reason"),
+  partnerResponse: text("partner_response"),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  reviewedBy: text("reviewed_by"),
   accessType: text("access_type").notNull().default("physical"),
   active: boolean("active").notNull().default(false),
-  activityStatus: text("activity_status").$type<OfferingActivityStatus>().notNull().default("draft"),
-  reviewNote: text("review_note"),
   cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
   city: text("city").notNull(),
   facility: text("facility").notNull(),
@@ -69,7 +80,12 @@ export const offerings = pgTable("booking_offerings", {
   gender: text("gender").notNull().default("all"),
   minAge: integer("min_age").notNull().default(0),
   maxAge: integer("max_age"),
-}, t => [uniqueIndex("offering_target_slot").on(t.kind, t.targetId, t.slot)]);
+}, t => [
+  uniqueIndex("offering_target_slot").on(t.kind, t.targetId, t.slot),
+  index("offering_recurrence_group").on(t.recurrenceGroupId, t.startsAt)
+    .where(sql`${t.recurrenceGroupId} is not null`),
+  index("offering_review_status").on(t.partnerId, t.approvalStatus, t.startsAt),
+]);
 
 export const reservations = pgTable("reservations", {
   id: text("id").primaryKey(),
@@ -89,17 +105,25 @@ export const waitlistEntries = pgTable("waitlist_entries", {
   status: text("status").notNull().default("waiting"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   offerExpiresAt: timestamp("offer_expires_at", { withTimezone: true }),
+  reminderAt: timestamp("reminder_at", { withTimezone: true }),
+  reminderAttemptedAt: timestamp("reminder_attempted_at", { withTimezone: true }),
   respondedAt: timestamp("responded_at", { withTimezone: true }),
-  // Retained for non-destructive upgrades from the earlier waitlist schema.
-  legacyReservationId: text("reservation_id").references(() => reservations.id),
-  legacyReason: text("reason"),
-  legacyJoinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
-  legacyUpdatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [
   uniqueIndex("waitlist_position_per_offering").on(t.offeringId, t.queuePosition),
   uniqueIndex("one_active_waitlist_entry").on(t.userId, t.offeringId)
     .where(sql`${t.status} in ('waiting', 'offered')`),
 ]);
+
+export const waitlistLegacyHistory = pgTable("waitlist_legacy_history", {
+  waitlistEntryId: text("waitlist_entry_id").primaryKey(),
+  userId: text("user_id").notNull(),
+  offeringId: text("offering_id").notNull(),
+  reservationId: text("reservation_id"),
+  reason: text("reason"),
+  joinedAt: timestamp("joined_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
+  archivedAt: timestamp("archived_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 // Attendance is intentionally separate. Customer booking endpoints never insert here.
 export const attendance = pgTable("attendance", {

@@ -1,6 +1,63 @@
 openapi: 3.1.0
 info: { title: Operations, version: 1.0.0 }
 paths:
+  /member/device:
+    get:
+      operationId: getMemberDeviceStatus
+      responses:
+        "200":
+          description: Current installation status and any active 24-hour change request
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberDeviceStatus" }
+    post:
+      operationId: registerMemberDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemberDeviceRegistration" }
+      responses:
+        "200":
+          description: Current installation status after registration or change request
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberDeviceStatus" }
+  /member/device/change:
+    delete:
+      operationId: cancelMemberDeviceChange
+      responses:
+        "200":
+          description: Pending device change cancelled by the active primary installation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberDeviceStatus" }
+  /support/staff/device-changes:
+    get:
+      operationId: getSupportPendingDeviceChanges
+      responses:
+        "200":
+          description: Pending device changes for authorized support staff
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SupportDeviceChange" }
+  /support/staff/device-changes/{id}/approve:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: approveSupportDeviceChange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeviceChangeApprovalInput" }
+      responses:
+        "200":
+          description: Pending change approved early and recorded for audit
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportDeviceChangeReview" }
   /member/support/tickets:
     get:
       operationId: getMemberSupportTickets
@@ -168,12 +225,26 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SupportAgent" }
+  /support/staff/agents/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema: { type: string, minLength: 1, maxLength: 160, pattern: "^[A-Za-z0-9_-]{1,160}$" }
+    delete:
+      operationId: removeSupportStaffAgent
+      responses:
+        "200":
+          description: Support access revoked immediately; existing tickets remain intact
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportAgent" }
   /support/staff/notification-failures:
     get:
       operationId: getSupportNotificationFailures
       responses:
         "200":
-          description: Recent failed operational push attempts without exposing device tokens
+          description: Recent failed, retrying, and unresolved-receipt push attempts without exposing device tokens
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/NotificationFailure" } }
@@ -243,6 +314,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/RecurringOfferingsResponse" }
+        "409":
+          description: The entire batch was rejected because one or more Baghdad dates overlap
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecurringOfferingConflict" }
   /operations/offerings/{id}:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     patch:
@@ -255,31 +331,6 @@ paths:
       responses:
         "200":
           description: Capacity or publishing state updated
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/LiveOffering" }
-  /operations/offerings/{id}/submit:
-    parameters: [{ $ref: "#/components/parameters/Id" }]
-    post:
-      operationId: submitOffering
-      responses:
-        "200":
-          description: Partner offering submitted for administrator review
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/LiveOffering" }
-  /operations/offerings/{id}/review:
-    parameters: [{ $ref: "#/components/parameters/Id" }]
-    post:
-      operationId: reviewOffering
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/OfferingReviewInput" }
-      responses:
-        "200":
-          description: Audited administrator review transition
           content:
             application/json:
               schema: { $ref: "#/components/schemas/LiveOffering" }
@@ -303,6 +354,71 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/OperationSuccess" }
+  /operations/offerings/{id}/series:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: changeRecurringOfferingSeries
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OfferingUpdate" }
+      responses:
+        "200":
+          description: Future sessions in the recurring series updated atomically
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecurringOfferingsResponse" }
+  /operations/offerings/{id}/series/cancel:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: cancelRecurringOfferingSeries
+      responses:
+        "200":
+          description: Unbooked future sessions cancelled and sessions with bookings or attendance preserved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CancelRecurringOfferingSeriesResponse" }
+  /operations/offerings/{id}/submit:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: submitLiveOffering
+      responses:
+        "200":
+          description: Partner submitted its own draft activity for administrator review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveOffering" }
+  /operations/offerings/{id}/respond:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: respondToOfferingCorrection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OfferingPartnerResponse" }
+      responses:
+        "200":
+          description: Partner response saved and activity resubmitted for review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveOffering" }
+  /operations/offerings/{id}/review:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: reviewOfferingApproval
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OfferingReviewInput" }
+      responses:
+        "200":
+          description: Administrator decision saved and audited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveOffering" }
   /operations/bookings/{id}/cancel:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     post:
@@ -319,6 +435,14 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/OperationSuccess" }
   /operations/courses:
+    get:
+      operationId: getOperationCourses
+      responses:
+        "200":
+          description: All courses and lesson counts available to administrators
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetOperationCoursesResponse" }
     post:
       operationId: createLearningCourse
       requestBody:
@@ -654,6 +778,44 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CourseDetail" }
+  /member/courses/{id}/lessons/{lessonId}/playback-link:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: lessonId
+        in: path
+        required: true
+        schema: { type: string, minLength: 1 }
+    post:
+      operationId: createMemberCoursePlaybackLink
+      responses:
+        "200":
+          description: Short-lived recording link after membership and enrollment checks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CoursePlaybackLinkResponse" }
+  /member/course-playback:
+    get:
+      operationId: streamMemberCoursePlayback
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 2048 }
+        - name: Range
+          in: header
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Private course recording stream
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "206":
+          description: Partial private course recording stream
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
   /member/live-classes:
     get:
       operationId: getMemberLiveClasses
@@ -748,6 +910,51 @@ components:
   parameters:
     Id: { name: id, in: path, required: true, schema: { type: string } }
   schemas:
+    MemberDevicePlatform:
+      type: string
+      enum: [ios, android, unknown]
+    MemberDeviceStatus:
+      type: object
+      additionalProperties: false
+      required: [status, currentPlatform, pendingActivationAt, pendingPlatform, pendingRiskFlag, waitHours]
+      properties:
+        status: { type: string, enum: [primary, pending, revoked] }
+        currentPlatform: { anyOf: [{ $ref: "#/components/schemas/MemberDevicePlatform" }, { type: "null" }] }
+        pendingActivationAt: { type: ["string", "null"], format: date-time }
+        pendingPlatform: { anyOf: [{ $ref: "#/components/schemas/MemberDevicePlatform" }, { type: "null" }] }
+        pendingRiskFlag: { type: boolean }
+        waitHours: { type: integer, const: 24 }
+    MemberDeviceRegistration:
+      type: object
+      additionalProperties: false
+      required: [platform]
+      properties:
+        platform: { type: string, enum: [ios, android] }
+    SupportDeviceChange:
+      type: object
+      additionalProperties: false
+      required: [id, userId, requestedAt, activateAt, fromPlatform, toPlatform, riskFlag]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        requestedAt: { type: string, format: date-time }
+        activateAt: { type: string, format: date-time }
+        fromPlatform: { $ref: "#/components/schemas/MemberDevicePlatform" }
+        toPlatform: { $ref: "#/components/schemas/MemberDevicePlatform" }
+        riskFlag: { type: boolean }
+    DeviceChangeApprovalInput:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 10, maxLength: 500 }
+    SupportDeviceChangeReview:
+      type: object
+      additionalProperties: false
+      required: [id, status]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [support_approved] }
     SupportTicketStatus:
       type: string
       enum: [open, in_progress, waiting_member, resolved, closed]
@@ -862,7 +1069,7 @@ components:
       type: object
       additionalProperties: false
       required: [userId]
-      properties: { userId: { type: string, minLength: 1, maxLength: 160 } }
+      properties: { userId: { type: string, minLength: 1, maxLength: 160, pattern: "^[A-Za-z0-9_-]{1,160}$" } }
     NotificationSettings:
       type: object
       required: [pushEnabled, language, registeredDevices]
@@ -893,19 +1100,36 @@ components:
         token: { type: string, minLength: 20, maxLength: 512 }
     NotificationFailure:
       type: object
-      required: [id, userId, kind, title, status, error, createdAt]
+      required: [id, userId, kind, title, status, error, attemptCount, nextAttemptAt, receiptStatus, createdAt]
       properties:
         id: { type: string }
         userId: { type: string }
         kind: { type: string }
         title: { type: string }
-        status: { type: string, enum: [failed] }
+        status: { type: string, enum: [failed, retry_pending, sent] }
         error: { type: string }
+        attemptCount: { type: integer, minimum: 0 }
+        nextAttemptAt: { type: string, format: date-time, nullable: true }
+        receiptStatus: { type: string, enum: [pending, ok, error, unavailable], nullable: true }
         createdAt: { type: string, format: date-time }
     OperationSuccess:
       type: object
       required: [ok]
       properties: { ok: { type: boolean } }
+    CancelRecurringOfferingSeriesResponse:
+      type: object
+      additionalProperties: false
+      required: [ok, cancelledDates, preservedDates]
+      properties:
+        ok: { type: boolean }
+        cancelledDates:
+          type: array
+          uniqueItems: true
+          items: { type: string, format: date, description: "Baghdad dates cancelled in this batch." }
+        preservedDates:
+          type: array
+          uniqueItems: true
+          items: { type: string, format: date, description: "Baghdad dates left unchanged because they have reservations or attendance." }
     BookingCancellationRequest:
       type: object
       additionalProperties: false
@@ -965,15 +1189,27 @@ components:
     RecurringSchedule:
       type: object
       additionalProperties: false
-      required: [repeatUntil, weekdays]
+      required: [repeatUntil]
       properties:
+        mode: { type: string, enum: [daily, weekly, custom, dates], default: weekly }
         repeatUntil: { type: string, format: date, description: "Last local date to include, no more than 90 days after the first date." }
+        interval: { type: integer, minimum: 1, maximum: 30, default: 1, description: "Days for daily schedules; weeks for custom schedules." }
         weekdays:
           type: array
           minItems: 1
           maxItems: 7
           uniqueItems: true
           items: { type: integer, minimum: 0, maximum: 6, description: "Sunday is 0 and Saturday is 6." }
+        dates:
+          type: array
+          maxItems: 89
+          uniqueItems: true
+          items: { type: string, format: date, description: "Additional local session date; the template's first date is included automatically." }
+        excludedDates:
+          type: array
+          maxItems: 90
+          uniqueItems: true
+          items: { type: string, format: date, description: "Date to skip, such as a local holiday." }
     RecurringOfferingsInput:
       type: object
       additionalProperties: false
@@ -985,36 +1221,35 @@ components:
       type: array
       minItems: 1
       items: { $ref: "#/components/schemas/LiveOffering" }
-    OfferingActivityStatus:
-      type: string
-      enum: [draft, submitted, under_review, changes_requested, approved, published, suspended, rejected, archived]
-    OfferingSessionStatus:
-      type: string
-      enum: [draft, scheduled, open_for_booking, fully_booked, in_progress, completed, cancelled, suspended]
-    OfferingReviewAction:
-      type: string
-      enum: [start_review, request_changes, approve, reject, publish, suspend, archive]
-    OfferingReviewInput:
+    RecurringOfferingConflict:
       type: object
       additionalProperties: false
-      required: [action]
+      required: [conflictingDates]
       properties:
-        action: { $ref: "#/components/schemas/OfferingReviewAction" }
-        reason: { type: string, minLength: 5, maxLength: 500 }
+        conflictingDates:
+          type: array
+          minItems: 1
+          maxItems: 90
+          uniqueItems: true
+          items: { type: string, format: date, description: "A conflicting session date in Asia/Baghdad." }
     LiveOffering:
       allOf:
         - $ref: "#/components/schemas/OfferingInput"
         - type: object
-          required: [id, targetId, slot, scope, activityStatus, reviewNote, sessionStatus]
+          required: [id, targetId, slot, scope, approvalStatus]
           properties:
             id: { type: string }
             targetId: { type: string }
             slot: { type: string }
             scope: { type: string }
-            activityStatus: { $ref: "#/components/schemas/OfferingActivityStatus" }
-            reviewNote: { type: ["string", "null"], maxLength: 500 }
-            sessionStatus: { $ref: "#/components/schemas/OfferingSessionStatus" }
             cancelledAt: { type: [string, "null"] }
+            recurrenceGroupId: { type: [string, "null"], description: "Shared identifier for sessions created as one recurring series." }
+            approvalStatus: { $ref: "#/components/schemas/OfferingApprovalStatus" }
+            approvalReason: { type: ["string", "null"], maxLength: 1000 }
+            partnerResponse: { type: ["string", "null"], maxLength: 1000 }
+            submittedAt: { type: ["string", "null"], format: date-time }
+            reviewedAt: { type: ["string", "null"], format: date-time }
+            reviewedBy: { type: ["string", "null"] }
             partnerName: { type: string }
             remaining: { type: integer }
             canJoin: { type: boolean }
@@ -1023,6 +1258,22 @@ components:
               oneOf:
                 - $ref: "#/components/schemas/SessionCheckinPolicy"
                 - type: "null"
+    OfferingApprovalStatus:
+      type: string
+      enum: [draft, submitted, under_review, changes_requested, approved, published, rejected, archived]
+    OfferingReviewInput:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: { $ref: "#/components/schemas/OfferingApprovalStatus" }
+        reason: { type: string, minLength: 5, maxLength: 1000 }
+    OfferingPartnerResponse:
+      type: object
+      additionalProperties: false
+      required: [response]
+      properties:
+        response: { type: string, minLength: 5, maxLength: 1000 }
     SessionCheckinPolicy:
       type: object
       required: [latitude, longitude, radius, opensAt, closesAt, correctionEndsAt]
@@ -1050,10 +1301,12 @@ components:
       properties:
         capacity: { type: integer, minimum: 1 }
         waitlistOfferMinutes: { type: integer, minimum: 5, maximum: 1440 }
-        active: { type: boolean }
         localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
         localizedDescription: { $ref: "#/components/schemas/LocalizedText" }
         joinUrl: { type: ["string", "null"], format: uri }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        cancellationDeadline: { type: string, format: date-time }
     LocalizedText:
       type: object
       additionalProperties: false
@@ -1084,7 +1337,9 @@ components:
         localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
         localizedContent: { $ref: "#/components/schemas/LocalizedText" }
         durationMinutes: { type: integer, minimum: 1, maximum: 1000 }
-        mediaUrl: { type: string, format: uri }
+        mediaUrl:
+          type: string
+          pattern: "^/objects/course-recordings/[A-Za-z0-9_-]{1,180}\\.(mp4|webm|m4v|mov|m4a|mp3|aac|ogg)$"
     CourseInput:
       allOf:
         - $ref: "#/components/schemas/CourseMetadataInput"
@@ -1103,6 +1358,13 @@ components:
             lessonCount: { type: integer }
             createdAt: { type: string, format: date-time }
             updatedAt: { type: string, format: date-time }
+    GetOperationCoursesResponse:
+      type: object
+      required: [courses]
+      properties:
+        courses:
+          type: array
+          items: { $ref: "#/components/schemas/CourseAdminRecord" }
     CourseSummary:
       allOf:
         - $ref: "#/components/schemas/CourseMetadataInput"
@@ -1116,7 +1378,7 @@ components:
             completedLessons: { type: integer }
     CourseLesson:
       type: object
-      required: [id, position, localizedTitle, localizedContent, durationMinutes, mediaUrl, completed]
+      required: [id, position, localizedTitle, localizedContent, durationMinutes, mediaUrl, hasRecording, completed]
       properties:
         id: { type: string }
         position: { type: integer }
@@ -1127,6 +1389,7 @@ components:
             - type: "null"
         durationMinutes: { type: integer }
         mediaUrl: { type: ["string", "null"] }
+        hasRecording: { type: boolean }
         completed: { type: boolean }
     CourseDetail:
       allOf:
@@ -1136,6 +1399,13 @@ components:
           properties:
             accessState: { type: string, enum: [membership_required, enrollment_required, ready] }
             lessons: { type: array, items: { $ref: "#/components/schemas/CourseLesson" } }
+    CoursePlaybackLinkResponse:
+      type: object
+      additionalProperties: false
+      required: [url, validUntil]
+      properties:
+        url: { type: string }
+        validUntil: { type: string, format: date-time }
     CourseProgressInput:
       type: object
       additionalProperties: false

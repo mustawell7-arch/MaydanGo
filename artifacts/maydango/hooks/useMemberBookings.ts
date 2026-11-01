@@ -13,7 +13,7 @@ import {
 
 const domain = process.env.EXPO_PUBLIC_DOMAIN;
 if (domain) setBaseUrl(`https://${domain}`);
-const empty: MemberState = { memberships: [], bookings: [], waitlists: [] };
+const empty: MemberState = { memberships: [], bookings: [], waitlists: [], waitlistUpdates: [] };
 
 export function useMemberBookings(language: Language) {
   const { userId, isSignedIn, getToken } = useAuth();
@@ -79,7 +79,7 @@ export function useMemberBookings(language: Language) {
   const bookings = deduped.filter(b => b.kind === 'session').map(b => ({
     sessionId: b.targetId, bookedAt: b.createdAt, status: b.status === 'cancelled' || String(b.status) === 'partner_cancelled' ? 'cancelled' as const : 'reserved' as const, cancelledAt: cancelledAt(b),
   }));
-  const eventBookings = deduped.filter(b => b.kind === 'event').map(b => ({
+  const eventBookings = deduped.filter(b => b.kind === 'event' && b.scope === 'live').map(b => ({
     eventId: b.targetId, reservedAt: b.createdAt, status: b.status === 'cancelled' || String(b.status) === 'partner_cancelled' ? 'cancelled' as const : 'reserved' as const, cancelledAt: cancelledAt(b),
   }));
   const coachRequests = deduped.filter(b => b.kind === 'coach').map(b => ({
@@ -102,6 +102,7 @@ export function useMemberBookings(language: Language) {
     leaveWaitlist: (entryId: string) => mutate(() => leaveMemberWaitlist(entryId)),
     acceptWaitlistOffer: (entryId: string) => mutate(() => acceptMemberWaitlistOffer(entryId)),
     waitlists: current.waitlists,
+    waitlistUpdates: current.waitlistUpdates,
     cancelBooking: (id: string) => cancel('session', id),
     cancelEvent: (id: string) => cancel('event', id),
     cancelCoachRequest: (id: string, slot: string) => cancel('coach', id, slot),

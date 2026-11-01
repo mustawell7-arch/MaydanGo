@@ -16,9 +16,11 @@ import {
   cityIdForFacility,
   eligibilityLabel,
   facilityClockTime,
+  facilityDateRange,
   facilityText,
   facilityWeekday,
 } from '@/lib/facility-content';
+import { directionsUrl } from '@/lib/location';
 import { cities, facilities as sampleFacilities, getCityLabel, type Facility as SampleFacility } from '@/data/demo';
 import { localize } from '@/lib/content';
 
@@ -64,11 +66,13 @@ function SampleFacilityDetails({ facility }: { facility: SampleFacility }) {
   const t = (key: Parameters<typeof translate>[1]) => translate(app.language, key);
   const city = getCityLabel(facility.cityId, app.language);
   const openDirections = () => {
-    const point = `${facility.latitude},${facility.longitude}`;
-    const url = Platform.OS === 'ios'
-      ? `maps://?q=${encodeURIComponent(facility.name)}&ll=${point}`
-      : `https://www.google.com/maps/search/?api=1&query=${point}`;
-    void Linking.openURL(url).catch(() => undefined);
+    const url = directionsUrl(
+      Platform.OS,
+      { latitude: facility.latitude, longitude: facility.longitude },
+      `${localize(facility.district, app.language)}, ${city}`,
+      localize(facility.name, app.language),
+    );
+    if (url) void Linking.openURL(url).catch(() => undefined);
   };
   return (
     <ScreenShell>
@@ -137,12 +141,15 @@ function FacilityDetails({ facility }: { facility: PublicFacility }) {
 
   const openDirections = () => {
     const destination = facility.latitude !== null && facility.longitude !== null
-      ? `${facility.latitude},${facility.longitude}`
-      : facilityText(facility.localizedAddress, app.language);
-    const url = Platform.OS === 'ios'
-      ? `maps://?daddr=${encodeURIComponent(destination)}`
-      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${name}, ${destination}`)}`;
-    void Linking.openURL(url).catch(() => undefined);
+      ? { latitude: facility.latitude, longitude: facility.longitude }
+      : null;
+    const url = directionsUrl(
+      Platform.OS,
+      destination,
+      facilityText(facility.localizedAddress, app.language),
+      name,
+    );
+    if (url) void Linking.openURL(url).catch(() => undefined);
   };
   const openPhone = () => {
     if (facility.contactPhone) void Linking.openURL(`tel:${encodeURIComponent(facility.contactPhone)}`).catch(() => undefined);
@@ -201,6 +208,26 @@ function FacilityDetails({ facility }: { facility: PublicFacility }) {
               </View>
             )) : <Text style={[styles.bodyCopy, { color: colors.mutedForeground }]}>{t('hoursNotPublished')}</Text>}
           </Section>
+
+          {facility.specialHours.length > 0 && (
+            <Section title={t('specialHours')} color={colors.foreground}>
+              {facility.specialHours.map(item => (
+                <View key={item.id} style={[styles.specialHoursCard, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+                  <Text style={[styles.specialHoursDate, { color: colors.foreground, textAlign }]}>
+                    {facilityDateRange(item.startDate, item.endDate, app.language)}
+                  </Text>
+                  <Text style={[styles.bodyCopy, { color: colors.mutedForeground, textAlign }]}>
+                    {facilityText(item.localizedReason, app.language)}
+                  </Text>
+                  <Text style={[styles.hoursValue, { color: colors.primary, textAlign }]}>
+                    {item.closed
+                      ? t('closedDay')
+                      : `${facilityClockTime(item.opensAt ?? '', app.language)} – ${facilityClockTime(item.closesAt ?? '', app.language)}`}
+                  </Text>
+                </View>
+              ))}
+            </Section>
+          )}
 
           <Section title={t('contact')} color={colors.foreground}>
             {facility.contactPhone ? (
@@ -328,6 +355,8 @@ const styles = StyleSheet.create({
   actionButton: { minHeight: 42, borderRadius: 13, borderWidth: 1, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
   actionText: { fontSize: 11, fontWeight: '800' },
   hoursRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, paddingVertical: 7, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#d9dfd5' },
+  specialHoursCard: { gap: 5, padding: 12, borderRadius: 14, borderWidth: 1 },
+  specialHoursDate: { fontSize: 11, fontWeight: '800' },
   hoursDay: { fontSize: 11, fontWeight: '700', flex: 1 },
   hoursValue: { fontSize: 11, textAlign: 'right' },
   listItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },

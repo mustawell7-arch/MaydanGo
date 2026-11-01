@@ -18,7 +18,7 @@ export const financeReviewItems = pgTable("finance_review_items", {
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
 }, t => [uniqueIndex("finance_review_idempotency_key").on(t.idempotencyKey)]);
 
-// Decision records are append-only in the application: no update or delete routes exist.
+// Database triggers in migration 0004 enforce append-only decision history.
 export const financeReviewEvents = pgTable("finance_review_events", {
   id: text("id").primaryKey(),
   reviewItemId: text("review_item_id").notNull().references(() => financeReviewItems.id),

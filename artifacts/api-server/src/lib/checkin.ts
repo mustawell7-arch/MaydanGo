@@ -1,8 +1,9 @@
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
-import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, manualCheckinChallenges, memberships, offerings, operators, partners, reservations, memberProfiles } from "@workspace/db";
+import { and, desc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
+import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, manualCheckinChallenges, memberships, offerings, operators, partners, reservations, memberProfiles } from "@workspace/db";
 import { z } from "zod";
 import { BookingError } from "./reservations";
+import { iraqCalendarDate, openingState, previousIraqCalendarDate } from "./facility-hours";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const digest = (token: string) => createHash("sha256").update(token).digest("hex");
@@ -100,6 +101,32 @@ async function eligible(tx: Tx, c: Awaited<ReturnType<typeof context>>) {
       (o.partnerGroup && rules.partnerGroupLimits?.[o.partnerGroup] !== undefined && uses.filter(x => x.partnerGroup === o.partnerGroup).length > rules.partnerGroupLimits[o.partnerGroup]))
     throw new BookingError(403, "Your visit allowance is exhausted.");
 }
+async function requireFacilityOpen(tx: Tx, c: Awaited<ReturnType<typeof context>>, now: Date) {
+  const [facility] = await tx.select({ id: facilityProfiles.id, openingHours: facilityProfiles.openingHours }).from(facilityProfiles)
+    .where(and(
+      eq(facilityProfiles.partnerId, c.o.partnerId ?? ""),
+      eq(facilityProfiles.city, c.o.city),
+      eq(facilityProfiles.facility, c.o.facility),
+    )).limit(1);
+  const today = iraqCalendarDate(now);
+  const previousDate = previousIraqCalendarDate(now);
+  const overrides = facility ? await tx.select({
+    startDate: facilityHoursOverrides.startDate,
+    endDate: facilityHoursOverrides.endDate,
+    closed: facilityHoursOverrides.closed,
+    opensAt: facilityHoursOverrides.opensAt,
+    closesAt: facilityHoursOverrides.closesAt,
+  }).from(facilityHoursOverrides).where(and(
+    eq(facilityHoursOverrides.facilityId, facility.id),
+    lte(facilityHoursOverrides.startDate, today),
+    gte(facilityHoursOverrides.endDate, previousDate),
+  )) : [];
+  const state = facility ? openingState(facility.openingHours, now, overrides) : { openingStatus: "unavailable" as const };
+  if (state.openingStatus !== "open")
+    throw new BookingError(409, state.openingStatus === "closed"
+      ? "The facility is closed."
+      : "Facility opening hours are not published.");
+}
 export async function savePolicy(actor: string, id: string, input: z.infer<typeof policyInput>) {
   return db.transaction(async tx => {
     const c = await context(tx, id); await staff(tx, actor, c.o.partnerId);
@@ -116,6 +143,7 @@ export async function issueQr(actor: string, id: string, revoke = false) {
   return db.transaction(async tx => {
     const c = await context(tx, id); await staff(tx, actor, c.o.partnerId);
     const now = new Date();
+    if (!revoke) await requireFacilityOpen(tx, c, now);
     await tx.update(checkinChallenges).set({ consumedAt: now }).where(eq(checkinChallenges.reservationId, id));
     await tx.update(manualCheckinChallenges).set({ consumedAt: now })
       .where(and(eq(manualCheckinChallenges.reservationId, id), isNull(manualCheckinChallenges.consumedAt)));
@@ -137,6 +165,7 @@ export async function issueManualCheckinCode(actor: string, id: string) {
     const now = new Date();
     if (!c.p || now < c.p.opensAt || now >= c.p.closesAt)
       throw new BookingError(409, "Manual check-in is available only during the check-in window.");
+    await requireFacilityOpen(tx, c, now);
     if (c.a) throw new BookingError(409, "Arrival is already recorded for this reservation.");
     const [latest] = await tx.select().from(manualCheckinChallenges)
       .where(eq(manualCheckinChallenges.reservationId, id))
@@ -163,6 +192,7 @@ export async function recordManualCheckin(actor: string, id: string, input: z.in
     const now = new Date();
     if (!c.p || now < c.p.opensAt || now >= c.p.closesAt)
       throw new BookingError(409, "Manual check-in is available only during the check-in window.");
+    await requireFacilityOpen(tx, c, now);
     if (c.a) throw new BookingError(409, "Arrival is already recorded for this reservation.");
     const [challenge] = await tx.select().from(manualCheckinChallenges)
       .where(and(eq(manualCheckinChallenges.reservationId, id), isNull(manualCheckinChallenges.consumedAt)))
@@ -198,6 +228,7 @@ export async function scanQr(actor: string, input: z.infer<typeof scanInput>) {
     if (fresh.consumedAt || fresh.expiresAt <= now || c.a) throw new BookingError(409, "QR expired, deactivated, or already used.");
     await eligible(tx, c);
     if (!c.p || now < c.p.opensAt || now >= c.p.closesAt) throw new BookingError(409, "Outside the check-in window.");
+    await requireFacilityOpen(tx, c, now);
     if (input.mocked || Math.abs(now.getTime() - new Date(input.capturedAt).getTime()) > 60000 ||
         distance(input.latitude, input.longitude, c.p.latitude, c.p.longitude) + input.accuracy > c.p.radius)
       throw new BookingError(403, "A fresh, accurate location inside the facility radius is required.");

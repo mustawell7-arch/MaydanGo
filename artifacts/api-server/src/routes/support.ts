@@ -1,7 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   db,
@@ -16,6 +16,11 @@ import {
 } from "@workspace/db";
 import { BookingError } from "../lib/reservations";
 import { sendMemberNotification } from "../lib/notifications";
+import {
+  approveMemberDeviceChange,
+  DeviceSecurityError,
+  listPendingMemberDeviceChanges,
+} from "../lib/member-device-security";
 
 export const memberSupportRouter = Router();
 const staffRouter = Router();
@@ -249,6 +254,17 @@ staffRouter.get("/tickets", async (req, res) => {
   })));
 });
 
+staffRouter.get("/device-changes", async (_req, res) => {
+  res.json(await listPendingMemberDeviceChanges());
+});
+
+staffRouter.post("/device-changes/:id/approve", async (req, res) => {
+  const parsed = z.object({ reason: z.string().trim().min(10).max(500) }).strict().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ message: "Add a clear reason for approving the device change." }); return; }
+  const operator = res.locals.supportOperator as typeof operators.$inferSelect;
+  res.json(await approveMemberDeviceChange(String(req.params.id), operator.userId, parsed.data.reason));
+});
+
 staffRouter.get("/tickets/:id", async (req, res) => {
   res.json(await staffTicketDetail(String(req.params.id)));
 });
@@ -341,14 +357,18 @@ staffRouter.get("/agents", async (_req, res) => {
 });
 
 staffRouter.post("/agents", async (req, res) => {
-  const parsed = z.object({ userId: z.string().trim().min(1).max(160) }).strict().safeParse(req.body);
+  const parsed = z.object({
+    userId: z.string().trim().min(1).max(160).regex(/^[A-Za-z0-9_-]+$/),
+  }).strict().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ message: "Enter a valid account ID." }); return; }
   const operator = res.locals.supportOperator as typeof operators.$inferSelect;
   if (operator.role !== "admin") throw new BookingError(403, "Administrator access is required to grant support access.");
-  const [existing] = await db.select().from(operators).where(eq(operators.userId, parsed.data.userId)).limit(1);
-  if (existing) throw new BookingError(409, "This account already has a staff role.");
   const [agent] = await db.transaction(async tx => {
-    const [created] = await tx.insert(operators).values({ userId: parsed.data.userId, role: "support", partnerId: null }).returning();
+    const [created] = await tx.insert(operators)
+      .values({ userId: parsed.data.userId, role: "support", partnerId: null })
+      .onConflictDoNothing()
+      .returning();
+    if (!created) throw new BookingError(409, "This account already has a staff role.");
     await tx.insert(operationAudit).values({
       id: randomUUID(), actorId: operator.userId, action: "support.agent.add", targetId: created.userId,
       detail: "Support staff role granted.",
@@ -358,19 +378,56 @@ staffRouter.post("/agents", async (req, res) => {
   res.status(201).json({ userId: agent.userId, role: agent.role });
 });
 
+staffRouter.delete("/agents/:userId", async (req, res) => {
+  const operator = res.locals.supportOperator as typeof operators.$inferSelect;
+  if (operator.role !== "admin") {
+    throw new BookingError(403, "Administrator access is required to remove support access.");
+  }
+  const targetId = String(req.params.userId);
+  if (!/^[A-Za-z0-9_-]{1,160}$/.test(targetId)) {
+    throw new BookingError(400, "Choose a valid support account.");
+  }
+
+  await db.transaction(async tx => {
+    const [agent] = await tx.select().from(operators)
+      .where(eq(operators.userId, targetId))
+      .for("update");
+    if (!agent) throw new BookingError(404, "Support agent not found.");
+    if (agent.role !== "support") {
+      throw new BookingError(409, "Only support roles can be removed here.");
+    }
+    await tx.delete(operators).where(eq(operators.userId, targetId));
+    await tx.insert(operationAudit).values({
+      id: randomUUID(), actorId: operator.userId, action: "support.agent.remove", targetId,
+      detail: "Support staff role revoked.",
+    });
+  });
+
+  res.json({ userId: targetId, role: "support" });
+});
+
 staffRouter.get("/notification-failures", async (_req, res) => {
   const rows = await db.select({
     id: pushDeliveries.id, userId: pushDeliveries.userId, kind: pushDeliveries.kind,
     title: pushDeliveries.title, status: pushDeliveries.status, error: pushDeliveries.error,
+    receiptError: pushDeliveries.receiptError, attemptCount: pushDeliveries.attemptCount,
+    nextAttemptAt: pushDeliveries.nextAttemptAt, receiptStatus: pushDeliveries.receiptStatus,
     createdAt: pushDeliveries.createdAt,
-  }).from(pushDeliveries).where(eq(pushDeliveries.status, "failed"))
+  }).from(pushDeliveries).where(or(
+    inArray(pushDeliveries.status, ["failed", "retry_pending"]),
+    inArray(pushDeliveries.receiptStatus, ["error", "unavailable"]),
+  ))
     .orderBy(desc(pushDeliveries.createdAt)).limit(100);
-  res.json(rows.map(row => ({ ...row, error: row.error ?? "Delivery failed without a provider message." })));
+  res.json(rows.map(({ receiptError, ...row }) => ({
+    ...row,
+    error: receiptError ?? row.error ?? "Delivery issue without a provider message.",
+  })));
 });
 
 function handleError(error: unknown, _req: Request, res: Response, next: NextFunction) {
   if (error instanceof z.ZodError) { res.status(400).json({ message: error.issues.map(issue => issue.message).join(" ") }); return; }
   if (error instanceof BookingError) { res.status(error.status).json({ message: error.message }); return; }
+  if (error instanceof DeviceSecurityError) { res.status(error.status).json({ code: error.code, message: error.message }); return; }
   next(error);
 }
 memberSupportRouter.use(handleError);

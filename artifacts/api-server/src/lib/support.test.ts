@@ -5,12 +5,12 @@ import type { Server } from "node:http";
 import { and, eq, inArray } from "drizzle-orm";
 import express from "express";
 import {
-  db, pool, memberNotificationPreferences, memberships, offerings, operationAudit, operators, partners,
-  pushDeliveries, pushDevices, reservations, supportTickets,
+  attendance, attendanceEvents, db, pool, memberNotificationPreferences, memberships, offerings,
+  operationAudit, operators, partners, pushDeliveries, pushDevices, reservations, supportTickets,
 } from "@workspace/db";
 import memberRouter from "../routes/member";
 import staffSupportRouter from "../routes/support";
-import { sendMemberNotification } from "./notifications";
+import { checkPendingPushReceipts, retryPendingPushDeliveries, sendMemberNotification } from "./notifications";
 
 const prefix = `support-test-${randomUUID()}`;
 const alice = `${prefix}-member`;
@@ -19,6 +19,7 @@ const adminId = `${prefix}-admin`;
 const supportId = `${prefix}-support`;
 const partnerId = `${prefix}-partner`;
 const newAgentId = `${prefix}-new-agent`;
+const removableAgentId = `${prefix}-removable-agent`;
 const livePartnerId = `${prefix}-live-partner`;
 const ticketIds: string[] = [];
 const offeringIds: string[] = [];
@@ -57,8 +58,8 @@ after(async () => {
   await db.delete(memberships).where(eq(memberships.userId, alice));
   if (offeringIds.length) await db.delete(offerings).where(inArray(offerings.id, offeringIds));
   await db.delete(partners).where(eq(partners.id, livePartnerId));
-  await db.delete(operators).where(inArray(operators.userId, [adminId, supportId, partnerId, newAgentId]));
-  await db.delete(operationAudit).where(inArray(operationAudit.actorId, [adminId, supportId]));
+  await db.delete(operators).where(inArray(operators.userId, [adminId, supportId, partnerId, newAgentId, removableAgentId]));
+  // operation_audit is append-only; randomized test records are intentionally retained.
   await pool.end();
 });
 
@@ -120,7 +121,38 @@ test("support conversations are private, triaged, audited, and replyable", async
   assert.equal((await call("/support/staff/agents", supportId)).status, 200);
   const newAgent = await call("/support/staff/agents", adminId, "POST", { userId: newAgentId });
   assert.equal(newAgent.status, 201);
+  assert.equal((await call("/support/staff/agents", adminId, "POST", { userId: newAgentId })).status, 409);
+  const grantAudit = await db.select().from(operationAudit)
+    .where(and(eq(operationAudit.actorId, adminId), eq(operationAudit.targetId, newAgentId)));
+  assert.ok(grantAudit.some(row => row.action === "support.agent.add"));
   assert.equal((await call("/support/staff/agents", supportId, "POST", { userId: `${prefix}-forbidden-agent` })).status, 403);
+  assert.equal((await call("/support/staff/agents", adminId, "POST", { userId: "invalid/agent-id" })).status, 400);
+
+  const removableAgent = await call("/support/staff/agents", adminId, "POST", { userId: removableAgentId });
+  assert.equal(removableAgent.status, 201);
+  const assignedToRemovable = await call(`/support/staff/tickets/${created.data.id}`, adminId, "PATCH", {
+    assignedTo: removableAgentId,
+  });
+  assert.equal(assignedToRemovable.status, 200);
+  assert.equal(assignedToRemovable.data.assignedTo, removableAgentId);
+  assert.equal((await call(`/support/staff/agents/${encodeURIComponent(adminId)}`, adminId, "DELETE")).status, 409);
+  assert.equal((await call(`/support/staff/agents/${encodeURIComponent(removableAgentId)}`, supportId, "DELETE")).status, 403);
+
+  const removed = await call(`/support/staff/agents/${encodeURIComponent(removableAgentId)}`, adminId, "DELETE");
+  assert.equal(removed.status, 200);
+  assert.equal(removed.data.userId, removableAgentId);
+  assert.equal((await call("/support/staff/tickets", removableAgentId)).status, 403);
+  const rosterAfterRemoval = await call("/support/staff/agents", adminId);
+  assert.equal(rosterAfterRemoval.data.some((agent: { userId: string }) => agent.userId === removableAgentId), false);
+  const retainedTicket = await call(`/support/staff/tickets/${created.data.id}`, adminId);
+  assert.equal(retainedTicket.status, 200);
+  assert.equal(retainedTicket.data.assignedTo, removableAgentId);
+  assert.equal((await call(`/support/staff/tickets/${created.data.id}`, adminId, "PATCH", {
+    assignedTo: removableAgentId,
+  })).status, 400);
+  const revokeAudit = await db.select().from(operationAudit)
+    .where(and(eq(operationAudit.actorId, adminId), eq(operationAudit.targetId, removableAgentId)));
+  assert.ok(revokeAudit.some(row => row.action === "support.agent.remove"));
 });
 
 test("push opt-out is respected, and provider failure stays visible without changing live booking state", async () => {
@@ -146,15 +178,23 @@ test("push opt-out is respected, and provider failure stays visible without chan
   const originalFetch = globalThis.fetch;
   let expoCalls = 0;
   let simulateFailure = false;
+  let receiptResponses: Record<string, { status: string; message?: string; details?: { error?: string } }> = {};
   const payloads: Array<Array<{ title: string; body: string }>> = [];
   globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
     const url = input instanceof Request ? input.url : String(input);
-    if (url.startsWith("https://exp.host/")) {
+    if (url.endsWith("/push/getReceipts")) {
+      return new Response(JSON.stringify({ data: receiptResponses }), {
+        status: 200, headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (url.endsWith("/push/send")) {
       expoCalls++;
       const messages = JSON.parse(String(init?.body)) as Array<{ title: string; body: string }>;
       payloads.push(messages);
       if (simulateFailure) throw new Error("Simulated Expo transport failure.");
-      return new Response(JSON.stringify({ data: messages.map((_, index) => ({ status: "ok", id: `accepted-${index}` })) }), {
+      return new Response(JSON.stringify({ data: messages.map((_, index) => ({
+        status: "ok", id: `accepted-${expoCalls}-${index}`,
+      })) }), {
         status: 200, headers: { "Content-Type": "application/json" },
       });
     }
@@ -174,6 +214,23 @@ test("push opt-out is respected, and provider failure stays visible without chan
   assert.equal(languageChanged.status, 200);
   assert.equal((await sendMemberNotification(alice, "attendance_updated")).status, "sent");
   assert.match(payloads[1][0].body, /تۆماری ئامادەبوونت/);
+  const reminderContext = { remainingMinutes: 7, dedupeKey: `waitlist-reminder:${randomUUID()}` };
+  assert.equal((await sendMemberNotification(alice, "waitlist_reminder", reminderContext)).status, "sent");
+  assert.match(payloads[2][0].body, /خولەک/);
+  const callsAfterReminder = expoCalls;
+  const duplicateReminder = await sendMemberNotification(alice, "waitlist_reminder", reminderContext);
+  assert.deepEqual(duplicateReminder, { status: "skipped", reason: "already_recorded" });
+  assert.equal(expoCalls, callsAfterReminder);
+  await call("/member/notifications/settings", alice, "PUT", { pushEnabled: true, language: "en" });
+  assert.equal((await sendMemberNotification(alice, "waitlist_reminder", {
+    remainingMinutes: 7, dedupeKey: `waitlist-reminder:${randomUUID()}`,
+  })).status, "sent");
+  assert.match(payloads[3][0].body, /7 minutes/);
+  await call("/member/notifications/settings", alice, "PUT", { pushEnabled: true, language: "ar" });
+  assert.equal((await sendMemberNotification(alice, "waitlist_reminder", {
+    remainingMinutes: 7, dedupeKey: `waitlist-reminder:${randomUUID()}`,
+  })).status, "sent");
+  assert.match(payloads[4][0].body, /دقائق/);
 
   simulateFailure = true;
   const booking = await call("/member/bookings", alice, "POST", { kind: "session", targetId: offeringId, slot: "" });
@@ -195,8 +252,112 @@ test("push opt-out is respected, and provider failure stays visible without chan
   assert.match(visibleFailure.error, /Simulated Expo transport failure/);
   assert.doesNotMatch(JSON.stringify(visibleFailure), /ExpoPushToken/);
 
+  simulateFailure = false;
+  const retryDedupeKey = `notification-retry:${randomUUID()}`;
+  assert.equal((await sendMemberNotification(alice, "support_status", { dedupeKey: retryDedupeKey })).status, "sent");
+  const [retryDelivery] = await db.select().from(pushDeliveries)
+    .where(and(eq(pushDeliveries.userId, alice), eq(pushDeliveries.kind, "support_status")));
+  assert.ok(retryDelivery?.providerTicketId);
+  receiptResponses = {
+    [retryDelivery.providerTicketId!]: {
+      status: "error", message: "Rate limited.", details: { error: "MessageRateExceeded" },
+    },
+  };
+  await checkPendingPushReceipts(new Date(Date.now() + 16 * 60_000));
+  const [scheduledRetry] = await db.select().from(pushDeliveries)
+    .where(eq(pushDeliveries.id, retryDelivery.id));
+  assert.equal(scheduledRetry?.status, "retry_pending");
+  assert.equal(scheduledRetry?.attemptCount, 1);
+  assert.equal(scheduledRetry?.receiptStatus, "error");
+  const visibleRetry = await call("/support/staff/notification-failures", supportId);
+  const visibleScheduledRetry = visibleRetry.data.find((row: { id: string }) => row.id === retryDelivery.id);
+  assert.equal(visibleScheduledRetry?.status, "retry_pending");
+  assert.ok(visibleScheduledRetry?.nextAttemptAt);
+
+  const [reservedBeforeRetry] = await db.select().from(reservations)
+    .where(and(eq(reservations.userId, alice), eq(reservations.offeringId, offeringId)));
+  assert.equal(reservedBeforeRetry?.status, "reserved");
+  const [membershipBeforeRetry] = await db.select().from(memberships)
+    .where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
+  assert.equal(membershipBeforeRetry?.paymentStatus, "not_required");
+  const attendanceBeforeRetry = await db.select().from(attendance)
+    .where(eq(attendance.reservationId, reservedBeforeRetry!.id));
+  const attendanceEventsBeforeRetry = await db.select().from(attendanceEvents)
+    .where(eq(attendanceEvents.reservationId, reservedBeforeRetry!.id));
+  const retryCount = await retryPendingPushDeliveries(new Date(Date.now() + 20 * 60_000));
+  assert.equal(retryCount, 1);
+  const [retriedDelivery] = await db.select().from(pushDeliveries)
+    .where(eq(pushDeliveries.id, retryDelivery.id));
+  assert.equal(retriedDelivery?.status, "sent");
+  assert.equal(retriedDelivery?.attemptCount, 2);
+  assert.notEqual(retriedDelivery?.providerTicketId, retryDelivery.providerTicketId);
+  const duplicateRetry = await sendMemberNotification(alice, "support_status", { dedupeKey: retryDedupeKey });
+  assert.deepEqual(duplicateRetry, { status: "skipped", reason: "already_recorded" });
+  const rowsForRetry = await db.select().from(pushDeliveries)
+    .where(eq(pushDeliveries.dedupeKey, `${retryDedupeKey}:${retryDelivery.deviceId}`));
+  assert.equal(rowsForRetry.length, 1);
+
+  receiptResponses = {
+    [retriedDelivery!.providerTicketId!]: { status: "ok" },
+  };
+  await checkPendingPushReceipts(new Date(Date.now() + 37 * 60_000));
+  const [receiptVerifiedDelivery] = await db.select().from(pushDeliveries)
+    .where(eq(pushDeliveries.id, retryDelivery.id));
+  assert.equal(receiptVerifiedDelivery?.receiptStatus, "ok");
+
+  const unresolvedDedupeKey = `notification-unresolved:${randomUUID()}`;
+  assert.equal((await sendMemberNotification(alice, "support_reply", {
+    dedupeKey: unresolvedDedupeKey,
+  })).status, "sent");
+  const [unresolvedDelivery] = await db.select().from(pushDeliveries)
+    .where(eq(pushDeliveries.dedupeKey, `${unresolvedDedupeKey}:${retryDelivery.deviceId}`));
+  receiptResponses = {};
+  for (const minutesAhead of [16, 32, 48]) {
+    await checkPendingPushReceipts(new Date(Date.now() + minutesAhead * 60_000));
+  }
+  const [unresolvedReceipt] = await db.select().from(pushDeliveries)
+    .where(eq(pushDeliveries.id, unresolvedDelivery!.id));
+  assert.equal(unresolvedReceipt?.receiptStatus, "unavailable");
+  const visibleUnresolved = await call("/support/staff/notification-failures", supportId);
+  assert.ok(visibleUnresolved.data.some((row: { id: string; receiptStatus: string }) =>
+    row.id === unresolvedDelivery?.id && row.receiptStatus === "unavailable"));
+
+  const permanentDedupeKey = `notification-permanent:${randomUUID()}`;
+  assert.equal((await sendMemberNotification(alice, "attendance_updated", {
+    dedupeKey: permanentDedupeKey,
+  })).status, "sent");
+  const [permanentDelivery] = await db.select().from(pushDeliveries)
+    .where(eq(pushDeliveries.dedupeKey, `${permanentDedupeKey}:${retryDelivery.deviceId}`));
+  assert.ok(permanentDelivery?.providerTicketId);
+  receiptResponses = {
+    [permanentDelivery.providerTicketId!]: {
+      status: "error", message: "Device is no longer registered.", details: { error: "DeviceNotRegistered" },
+    },
+  };
+  await checkPendingPushReceipts(new Date(Date.now() + 20 * 60_000));
+  const [disabledDevice] = await db.select().from(pushDevices).where(eq(pushDevices.id, retryDelivery.deviceId));
+  assert.equal(disabledDevice?.enabled, false);
+  const [disabledPreferences] = await db.select().from(memberNotificationPreferences)
+    .where(eq(memberNotificationPreferences.userId, alice));
+  assert.equal(disabledPreferences?.pushEnabled, false);
+  const visiblePermanentFailure = await call("/support/staff/notification-failures", supportId);
+  const permanentFailure = visiblePermanentFailure.data.find((row: { id: string }) => row.id === permanentDelivery?.id);
+  assert.equal(permanentFailure?.status, "failed");
+  assert.equal(permanentFailure?.receiptStatus, "error");
+  assert.match(permanentFailure?.error ?? "", /DeviceNotRegistered/);
+
+  const [reservedAfterRetry] = await db.select().from(reservations)
+    .where(eq(reservations.id, reservedBeforeRetry!.id));
+  assert.equal(reservedAfterRetry?.status, reservedBeforeRetry?.status);
+  const attendanceAfterRetry = await db.select().from(attendance)
+    .where(eq(attendance.reservationId, reservedBeforeRetry!.id));
+  const attendanceEventsAfterRetry = await db.select().from(attendanceEvents)
+    .where(eq(attendanceEvents.reservationId, reservedBeforeRetry!.id));
+  assert.deepEqual(attendanceAfterRetry, attendanceBeforeRetry);
+  assert.deepEqual(attendanceEventsAfterRetry, attendanceEventsBeforeRetry);
+
   const membership = await db.select().from(memberships).where(and(eq(memberships.userId, alice), eq(memberships.scope, "live"))).limit(1);
-  assert.equal(membership[0]?.paymentStatus, "not_required");
+  assert.equal(membership[0]?.paymentStatus, membershipBeforeRetry?.paymentStatus);
   const beforeOptOutCalls = expoCalls;
   const disabled = await call("/member/notifications/settings", alice, "PUT", { pushEnabled: false, language: "ku" });
   assert.equal(disabled.status, 200);

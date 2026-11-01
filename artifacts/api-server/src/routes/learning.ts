@@ -7,13 +7,18 @@ import {
   memberships, offerings, partners, reservations,
 } from "@workspace/db";
 import {
+  CreateMemberCoursePlaybackLinkResponse,
   CreateLiveClassJoinResponse, EnrollMemberCourseResponse, GetMemberCourseResponse,
   GetMemberCoursesResponse, GetMemberLiveClassesResponse, UpdateCourseProgressBody,
   UpdateCourseProgressResponse,
 } from "@workspace/api-zod";
 import { BookingError } from "../lib/reservations";
+import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
+import { courseRecordingContentType, isPrivateCourseRecordingPath } from "../lib/course-recordings";
+import { createCoursePlaybackToken, verifyCoursePlaybackToken } from "../lib/course-playback-token";
 
 const router = Router();
+export const learningObjectStorage = new ObjectStorageService();
 const joinLeadMs = 15 * 60 * 1000;
 
 async function currentLiveMembership(userId: string) {
@@ -80,7 +85,8 @@ async function getCourseDetail(userId: string, id: string) {
       localizedTitle: lesson.localizedTitle,
       localizedContent: accessState === "ready" ? lesson.localizedContent : null,
       durationMinutes: lesson.durationMinutes,
-      mediaUrl: accessState === "ready" ? lesson.mediaUrl : null,
+      mediaUrl: null,
+      hasRecording: accessState === "ready" && isPrivateCourseRecordingPath(lesson.mediaUrl),
       completed: completed.has(lesson.id),
     })),
   };
@@ -160,6 +166,124 @@ router.put("/courses/:id/progress", async (req, res): Promise<void> => {
     ));
   }
   res.json(UpdateCourseProgressResponse.parse(await getCourseDetail(userId, courseId)));
+});
+
+router.post("/courses/:id/lessons/:lessonId/playback-link", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) { res.status(401).json({ message: "Sign in to play this recording." }); return; }
+  const courseId = String(req.params.id);
+  const lessonId = String(req.params.lessonId);
+  const [course] = await db.select({ id: learningCourses.id }).from(learningCourses).where(and(
+    eq(learningCourses.id, courseId), eq(learningCourses.published, true),
+  ));
+  if (!course) throw new BookingError(404, "This course is not available.");
+  if (!await currentLiveMembership(userId)) {
+    throw new BookingError(403, "An eligible live membership is required to play course recordings.");
+  }
+  const [enrollment] = await db.select({ id: courseEnrollments.id }).from(courseEnrollments).where(and(
+    eq(courseEnrollments.userId, userId), eq(courseEnrollments.courseId, courseId),
+  ));
+  if (!enrollment) throw new BookingError(403, "Enroll in this course before playing recordings.");
+  const [lesson] = await db.select().from(learningLessons).where(and(
+    eq(learningLessons.id, lessonId), eq(learningLessons.courseId, courseId),
+  ));
+  if (!lesson || !isPrivateCourseRecordingPath(lesson.mediaUrl)) {
+    throw new BookingError(404, "This course recording is unavailable.");
+  }
+  try {
+    const file = await learningObjectStorage.getPrivateFile(lesson.mediaUrl);
+    const [metadata] = await file.getMetadata();
+    if (!Number.isSafeInteger(Number(metadata.size)) || Number(metadata.size) < 1) {
+      throw new BookingError(404, "This course recording is unavailable.");
+    }
+  } catch (error) {
+    if (error instanceof ObjectNotFoundError) throw new BookingError(404, "This course recording is unavailable.");
+    throw error;
+  }
+  const { token, expiresAt } = createCoursePlaybackToken({ userId, courseId, lessonId });
+  res.setHeader("Cache-Control", "no-store");
+  res.json(CreateMemberCoursePlaybackLinkResponse.parse({
+    url: `/api/member/course-playback?token=${encodeURIComponent(token)}`,
+    validUntil: new Date(expiresAt),
+  }));
+});
+
+router.get("/course-playback", async (req, res): Promise<void> => {
+  const token = typeof req.query.token === "string" ? req.query.token : "";
+  const claims = verifyCoursePlaybackToken(token);
+  if (!claims) { res.status(403).json({ message: "This playback link is invalid or expired." }); return; }
+
+  const [course] = await db.select({ id: learningCourses.id }).from(learningCourses).where(and(
+    eq(learningCourses.id, claims.courseId), eq(learningCourses.published, true),
+  ));
+  const [enrollment] = await db.select({ id: courseEnrollments.id }).from(courseEnrollments).where(and(
+    eq(courseEnrollments.userId, claims.userId), eq(courseEnrollments.courseId, claims.courseId),
+  ));
+  const [lesson] = await db.select().from(learningLessons).where(and(
+    eq(learningLessons.id, claims.lessonId), eq(learningLessons.courseId, claims.courseId),
+  ));
+  if (!course || !enrollment || !lesson || !isPrivateCourseRecordingPath(lesson.mediaUrl)
+      || !await currentLiveMembership(claims.userId)) {
+    res.status(403).json({ message: "Course recording access is no longer available." }); return;
+  }
+
+  const contentType = courseRecordingContentType(lesson.mediaUrl);
+  if (!contentType) { res.status(404).end(); return; }
+  let file: Awaited<ReturnType<typeof learningObjectStorage.getPrivateFile>>;
+  try {
+    file = await learningObjectStorage.getPrivateFile(lesson.mediaUrl);
+  } catch (error) {
+    if (error instanceof ObjectNotFoundError) { res.status(404).end(); return; }
+    throw error;
+  }
+  const [metadata] = await file.getMetadata();
+  const size = Number(metadata.size);
+  if (!Number.isSafeInteger(size) || size < 1) { res.status(404).end(); return; }
+
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Accept-Ranges", "bytes");
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Content-Disposition", "inline");
+  let start = 0;
+  let end = size - 1;
+  const rangeHeader = req.headers.range;
+  if (rangeHeader) {
+    const match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader);
+    if (!match || (!match[1] && !match[2])) {
+      res.setHeader("Content-Range", `bytes */${size}`);
+      res.status(416).end();
+      return;
+    }
+    if (!match[1]) {
+      const suffixLength = Number(match[2]);
+      if (!Number.isSafeInteger(suffixLength) || suffixLength < 1) {
+        res.setHeader("Content-Range", `bytes */${size}`);
+        res.status(416).end();
+        return;
+      }
+      start = Math.max(0, size - suffixLength);
+    } else {
+      start = Number(match[1]);
+      end = match[2] ? Number(match[2]) : size - 1;
+    }
+    if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end < start || start >= size) {
+      res.setHeader("Content-Range", `bytes */${size}`);
+      res.status(416).end();
+      return;
+    }
+    end = Math.min(end, size - 1);
+    res.status(206);
+    res.setHeader("Content-Range", `bytes ${start}-${end}/${size}`);
+  }
+  res.setHeader("Content-Length", String(end - start + 1));
+  const stream = file.createReadStream({ start, end });
+  stream.on("error", error => {
+    req.log.error({ err: error }, "Course recording stream failed");
+    if (!res.headersSent) res.status(502).end();
+    else res.destroy(error);
+  });
+  stream.pipe(res);
 });
 
 router.get("/live-classes", async (req, res): Promise<void> => {

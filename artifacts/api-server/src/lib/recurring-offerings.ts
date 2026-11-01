@@ -14,17 +14,26 @@ export type WeeklyOfferingSchedule = {
   repeatUntil: string;
   weekdays: number[];
 };
+export type RecurrenceMode = "daily" | "weekly" | "custom" | "dates";
+export type RecurringOfferingSchedule = {
+  repeatUntil: string;
+  mode?: RecurrenceMode;
+  interval?: number;
+  weekdays?: number[];
+  dates?: string[];
+  excludedDates?: string[];
+};
 
 function calendarDateFromString(value: string): CalendarDate {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) throw new BookingError(400, "Choose a valid final date for this weekly schedule.");
+  if (!match) throw new BookingError(400, "Choose a valid calendar date for this schedule.");
 
   const date = { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
   const roundTrip = new Date(Date.UTC(date.year, date.month - 1, date.day));
   if (roundTrip.getUTCFullYear() !== date.year
     || roundTrip.getUTCMonth() + 1 !== date.month
     || roundTrip.getUTCDate() !== date.day) {
-    throw new BookingError(400, "Choose a valid final date for this weekly schedule.");
+    throw new BookingError(400, "Choose a valid calendar date for this schedule.");
   }
   return date;
 }
@@ -86,9 +95,9 @@ function localBaghdadTime(date: CalendarDate, time: LocalTime): Date {
   return candidate;
 }
 
-export function expandWeeklyOffering(
+export function expandRecurringOffering(
   template: OfferingData,
-  schedule: WeeklyOfferingSchedule,
+  schedule: RecurringOfferingSchedule,
 ): OfferingData[] {
   const startTemplate = baghdadParts(new Date(template.startsAt));
   const endTemplate = baghdadParts(new Date(template.endsAt));
@@ -98,23 +107,74 @@ export function expandWeeklyOffering(
   const dayRange = (dateOrdinal(until) - dateOrdinal(startDate)) / 86_400_000;
 
   if (dayRange < 0 || dayRange >= MAX_SCHEDULE_DAYS) {
-    throw new BookingError(400, "The final date must be within 90 days of the first date.");
+    throw new BookingError(400, "The final date must be within 90 days of the first session.");
   }
-  if (schedule.weekdays.length < 1 || schedule.weekdays.length > 7
-    || schedule.weekdays.some(day => !Number.isInteger(day) || day < 0 || day > 6)
-    || new Set(schedule.weekdays).size !== schedule.weekdays.length) {
-    throw new BookingError(400, "Choose one or more different weekdays for this schedule.");
+
+  const mode = schedule.mode ?? "weekly";
+  const interval = schedule.interval ?? 1;
+  const dateRange = Array.from({ length: dayRange + 1 }, (_, offset) => addCalendarDays(startDate, offset));
+  const validateWeekdays = () => {
+    const weekdays = schedule.weekdays ?? [];
+    if (weekdays.length < 1 || weekdays.length > 7
+      || weekdays.some(day => !Number.isInteger(day) || day < 0 || day > 6)
+      || new Set(weekdays).size !== weekdays.length) {
+      throw new BookingError(400, "Choose one or more different weekdays for this schedule.");
+    }
+    return new Set(weekdays);
+  };
+
+  let scheduledDates: CalendarDate[];
+  if (mode === "daily") {
+    if (!Number.isInteger(interval) || interval < 1 || interval > 30) {
+      throw new BookingError(400, "Daily schedules must repeat every 1 to 30 days.");
+    }
+    scheduledDates = dateRange.filter((_, offset) => offset % interval === 0);
+  } else if (mode === "weekly" || mode === "custom") {
+    if (!Number.isInteger(interval) || interval < 1 || interval > (mode === "weekly" ? 1 : 12)) {
+      throw new BookingError(400, mode === "weekly"
+        ? "Weekly schedules repeat every week."
+        : "Custom schedules must repeat every 1 to 12 weeks.");
+    }
+    const weekdays = validateWeekdays();
+    const firstSunday = addCalendarDays(startDate, -new Date(dateOrdinal(startDate)).getUTCDay());
+    scheduledDates = dateRange.filter(date => {
+      if (!weekdays.has(new Date(dateOrdinal(date)).getUTCDay())) return false;
+      const weekIndex = Math.floor((dateOrdinal(date) - dateOrdinal(firstSunday)) / (7 * 86_400_000));
+      return weekIndex % interval === 0;
+    });
+  } else if (mode === "dates") {
+    const additionalDates = (schedule.dates ?? []).map(calendarDateFromString);
+    if (additionalDates.length > MAX_OCCURRENCES - 1
+      || new Set(additionalDates.map(dateString)).size !== additionalDates.length) {
+      throw new BookingError(400, "Bulk schedule dates must be unique and contain no more than 90 sessions.");
+    }
+    if (additionalDates.some(date => dateOrdinal(date) < dateOrdinal(startDate) || dateOrdinal(date) > dateOrdinal(until))) {
+      throw new BookingError(400, "Bulk session dates must fall between the first and final dates.");
+    }
+    scheduledDates = [startDate, ...additionalDates]
+      .sort((left, right) => dateOrdinal(left) - dateOrdinal(right))
+      .filter((date, index, dates) => index === 0 || dateString(date) !== dateString(dates[index - 1]));
+  } else {
+    throw new BookingError(400, "Choose a supported recurrence mode.");
   }
 
   const endDayOffset = (dateOrdinal(endTemplate) - dateOrdinal(startTemplate)) / 86_400_000;
   const cancellationDayOffset = (dateOrdinal(cancellationTemplate) - dateOrdinal(startTemplate)) / 86_400_000;
-  const weekdays = new Set(schedule.weekdays);
+  const excludedValues = schedule.excludedDates ?? [];
+  if (excludedValues.length > MAX_OCCURRENCES || new Set(excludedValues).size !== excludedValues.length) {
+    throw new BookingError(400, "Excluded dates must be unique and no more than 90 dates.");
+  }
+  const excluded = new Set(excludedValues.map(value => dateString(calendarDateFromString(value))));
+  if ([...excluded].some(value => {
+    const date = calendarDateFromString(value);
+    return dateOrdinal(date) < dateOrdinal(startDate) || dateOrdinal(date) > dateOrdinal(until);
+  })) {
+    throw new BookingError(400, "Excluded dates must fall between the first and final dates.");
+  }
   const occurrences: OfferingData[] = [];
 
-  for (let offset = 0; offset <= dayRange; offset += 1) {
-    const date = addCalendarDays(startDate, offset);
-    if (!weekdays.has(new Date(dateOrdinal(date)).getUTCDay())) continue;
-
+  for (const date of scheduledDates) {
+    if (excluded.has(dateString(date))) continue;
     const startsAt = localBaghdadTime(date, startTemplate);
     const endsAt = localBaghdadTime(addCalendarDays(date, endDayOffset), endTemplate);
     const cancellationDeadline = localBaghdadTime(addCalendarDays(date, cancellationDayOffset), cancellationTemplate);
@@ -127,10 +187,10 @@ export function expandWeeklyOffering(
   }
 
   if (!occurrences.length) {
-    throw new BookingError(400, "No sessions fall on the selected weekdays in this date range.");
+    throw new BookingError(400, "No sessions remain after applying the recurrence pattern and excluded dates.");
   }
   if (occurrences.length > MAX_OCCURRENCES) {
-    throw new BookingError(400, "A weekly schedule can contain no more than 90 sessions.");
+    throw new BookingError(400, "A recurring schedule can contain no more than 90 sessions.");
   }
   for (let index = 1; index < occurrences.length; index += 1) {
     if (new Date(occurrences[index].startsAt) < new Date(occurrences[index - 1].endsAt)) {
@@ -139,4 +199,8 @@ export function expandWeeklyOffering(
   }
 
   return occurrences;
+}
+
+export function expandWeeklyOffering(template: OfferingData, schedule: WeeklyOfferingSchedule): OfferingData[] {
+  return expandRecurringOffering(template, { ...schedule, mode: "weekly", interval: 1 });
 }

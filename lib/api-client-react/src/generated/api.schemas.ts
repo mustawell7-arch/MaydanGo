@@ -275,6 +275,47 @@ export interface FacilityProfile {
   updatedAt: string;
 }
 
+export interface FacilityHoursOverrideInput {
+  /** Inclusive calendar date in Asia/Baghdad */
+  startDate: string;
+  /** Inclusive calendar date in Asia/Baghdad */
+  endDate: string;
+  closed: boolean;
+  /**
+     * 24-hour local facility time
+     * @nullable
+     * @pattern ^([01][0-9]|2[0-3]):[0-5][0-9]$
+     */
+  opensAt: string | null;
+  /**
+     * 24-hour local facility time
+     * @nullable
+     * @pattern ^([01][0-9]|2[0-3]):[0-5][0-9]$
+     */
+  closesAt: string | null;
+  localizedReason: LocalizedFacilityText;
+}
+
+export interface FacilityHoursOverride {
+  id: string;
+  facilityId: string;
+  /** Inclusive calendar date in Asia/Baghdad */
+  startDate: string;
+  /** Inclusive calendar date in Asia/Baghdad */
+  endDate: string;
+  closed: boolean;
+  /** @nullable */
+  opensAt: string | null;
+  /** @nullable */
+  closesAt: string | null;
+  localizedReason: LocalizedFacilityText;
+  createdAt: string;
+}
+
+export type OperationsFacility = FacilityProfile & {
+  specialHours: FacilityHoursOverride[];
+};
+
 export type PublicFacilitySessionAccessType = typeof PublicFacilitySessionAccessType[keyof typeof PublicFacilitySessionAccessType];
 
 
@@ -325,6 +366,7 @@ export type PublicFacility = FacilityProfile & ({
   openingStatus: PublicFacilityOpeningStatus;
   /** @nullable */
   closesAt: string | null;
+  specialHours: FacilityHoursOverride[];
   upcomingSessions: PublicFacilitySession[];
 });
 
@@ -346,16 +388,41 @@ export const PublicOfferingAccessType = {
   live: 'live',
 } as const;
 
+export type PublicOfferingGender = typeof PublicOfferingGender[keyof typeof PublicOfferingGender];
+
+
+export const PublicOfferingGender = {
+  all: 'all',
+  female: 'female',
+  male: 'male',
+} as const;
+
 export interface PublicOffering {
   id: string;
   kind: PublicOfferingKind;
+  targetId: string;
+  slot: string;
   title: string;
+  localizedTitle: LocalizedFacilityText | null;
+  localizedDescription: LocalizedFacilityText | null;
   city: string;
   facility: string;
   category: string;
   accessType: PublicOfferingAccessType;
+  tiers: string[];
   startsAt: string;
   endsAt: string;
+  cancellationDeadline: string;
+  gender: PublicOfferingGender;
+  /** @minimum 0 */
+  minAge: number;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  maxAge: number | null;
+  /** Whether this offering requires payment outside membership access */
+  additionalPayment: boolean;
   /** @minimum 0 */
   remaining: number;
   partnerName: string;
@@ -410,6 +477,10 @@ export interface MemberBooking {
   targetId: string;
   slot: string;
   title: string;
+  localizedTitle: LocalizedFacilityText | null;
+  city: string;
+  facility: string;
+  cancellationDeadline: string;
   scope: string;
   startsAt: string;
   status: string;
@@ -446,16 +517,104 @@ export interface MemberWaitlistEntry {
   respondedAt?: string | null;
 }
 
+export type MemberWaitlistUpdateKind = typeof MemberWaitlistUpdateKind[keyof typeof MemberWaitlistUpdateKind];
+
+
+export const MemberWaitlistUpdateKind = {
+  waitlist_offer: 'waitlist_offer',
+  waitlist_expired: 'waitlist_expired',
+  waitlist_booked: 'waitlist_booked',
+} as const;
+
+export interface MemberWaitlistUpdate {
+  id: string;
+  kind: MemberWaitlistUpdateKind;
+  title: string;
+  startsAt: string;
+  createdAt: string;
+}
+
 export interface MemberState {
   /** @nullable */
   profile?: MemberStateProfile;
   memberships: MemberStateMembershipsItem[];
   bookings: MemberBooking[];
   waitlists: MemberWaitlistEntry[];
+  waitlistUpdates: MemberWaitlistUpdate[];
 }
 
 export interface HealthStatus {
   status: string;
+}
+
+export type MemberDevicePlatform = typeof MemberDevicePlatform[keyof typeof MemberDevicePlatform];
+
+
+export const MemberDevicePlatform = {
+  ios: 'ios',
+  android: 'android',
+  unknown: 'unknown',
+} as const;
+
+export type MemberDeviceStatusStatus = typeof MemberDeviceStatusStatus[keyof typeof MemberDeviceStatusStatus];
+
+
+export const MemberDeviceStatusStatus = {
+  primary: 'primary',
+  pending: 'pending',
+  revoked: 'revoked',
+} as const;
+
+export interface MemberDeviceStatus {
+  status: MemberDeviceStatusStatus;
+  currentPlatform: MemberDevicePlatform | null;
+  /** @nullable */
+  pendingActivationAt: string | null;
+  pendingPlatform: MemberDevicePlatform | null;
+  pendingRiskFlag: boolean;
+  waitHours: 24;
+}
+
+export type MemberDeviceRegistrationPlatform = typeof MemberDeviceRegistrationPlatform[keyof typeof MemberDeviceRegistrationPlatform];
+
+
+export const MemberDeviceRegistrationPlatform = {
+  ios: 'ios',
+  android: 'android',
+} as const;
+
+export interface MemberDeviceRegistration {
+  platform: MemberDeviceRegistrationPlatform;
+}
+
+export interface SupportDeviceChange {
+  id: string;
+  userId: string;
+  requestedAt: string;
+  activateAt: string;
+  fromPlatform: MemberDevicePlatform;
+  toPlatform: MemberDevicePlatform;
+  riskFlag: boolean;
+}
+
+export interface DeviceChangeApprovalInput {
+  /**
+     * @minLength 10
+     * @maxLength 500
+     */
+  reason: string;
+}
+
+export type SupportDeviceChangeReviewStatus = typeof SupportDeviceChangeReviewStatus[keyof typeof SupportDeviceChangeReviewStatus];
+
+
+export const SupportDeviceChangeReviewStatus = {
+  support_approved: 'support_approved',
+} as const;
+
+export interface SupportDeviceChangeReview {
+  id: string;
+  status: SupportDeviceChangeReviewStatus;
 }
 
 export type SupportTicketStatus = typeof SupportTicketStatus[keyof typeof SupportTicketStatus];
@@ -601,6 +760,7 @@ export interface SupportAgentInput {
   /**
      * @minLength 1
      * @maxLength 160
+     * @pattern ^[A-Za-z0-9_-]{1,160}$
      */
   userId: string;
 }
@@ -649,6 +809,21 @@ export type NotificationFailureStatus = typeof NotificationFailureStatus[keyof t
 
 export const NotificationFailureStatus = {
   failed: 'failed',
+  retry_pending: 'retry_pending',
+  sent: 'sent',
+} as const;
+
+/**
+ * @nullable
+ */
+export type NotificationFailureReceiptStatus = typeof NotificationFailureReceiptStatus[keyof typeof NotificationFailureReceiptStatus] | null;
+
+
+export const NotificationFailureReceiptStatus = {
+  pending: 'pending',
+  ok: 'ok',
+  error: 'error',
+  unavailable: 'unavailable',
 } as const;
 
 export interface NotificationFailure {
@@ -658,11 +833,23 @@ export interface NotificationFailure {
   title: string;
   status: NotificationFailureStatus;
   error: string;
+  /** @minimum 0 */
+  attemptCount: number;
+  /** @nullable */
+  nextAttemptAt: string | null;
+  /** @nullable */
+  receiptStatus: NotificationFailureReceiptStatus;
   createdAt: string;
 }
 
 export interface OperationSuccess {
   ok: boolean;
+}
+
+export interface CancelRecurringOfferingSeriesResponse {
+  ok: boolean;
+  cancelledDates: string[];
+  preservedDates: string[];
 }
 
 export interface BookingCancellationRequest {
@@ -766,16 +953,37 @@ export interface OfferingInput {
   active: boolean;
 }
 
+export type RecurringScheduleMode = typeof RecurringScheduleMode[keyof typeof RecurringScheduleMode];
+
+
+export const RecurringScheduleMode = {
+  daily: 'daily',
+  weekly: 'weekly',
+  custom: 'custom',
+  dates: 'dates',
+} as const;
+
 export interface RecurringSchedule {
+  mode?: RecurringScheduleMode;
   /** Last local date to include, no more than 90 days after the first date. */
   repeatUntil: string;
+  /**
+     * Days for daily schedules; weeks for custom schedules.
+     * @minimum 1
+     * @maximum 30
+     */
+  interval?: number;
   /**
      * @minItems 1
      * @maxItems 7
      * @items.minimum 0
      * @items.maximum 6
      */
-  weekdays: number[];
+  weekdays?: number[];
+  /** @maxItems 89 */
+  dates?: string[];
+  /** @maxItems 90 */
+  excludedDates?: string[];
 }
 
 export interface RecurringOfferingsInput {
@@ -783,33 +991,18 @@ export interface RecurringOfferingsInput {
   schedule: RecurringSchedule;
 }
 
-export type OfferingActivityStatus = typeof OfferingActivityStatus[keyof typeof OfferingActivityStatus];
+export type OfferingApprovalStatus = typeof OfferingApprovalStatus[keyof typeof OfferingApprovalStatus];
 
 
-export const OfferingActivityStatus = {
+export const OfferingApprovalStatus = {
   draft: 'draft',
   submitted: 'submitted',
   under_review: 'under_review',
   changes_requested: 'changes_requested',
   approved: 'approved',
   published: 'published',
-  suspended: 'suspended',
   rejected: 'rejected',
   archived: 'archived',
-} as const;
-
-export type OfferingSessionStatus = typeof OfferingSessionStatus[keyof typeof OfferingSessionStatus];
-
-
-export const OfferingSessionStatus = {
-  draft: 'draft',
-  scheduled: 'scheduled',
-  open_for_booking: 'open_for_booking',
-  fully_booked: 'fully_booked',
-  in_progress: 'in_progress',
-  completed: 'completed',
-  cancelled: 'cancelled',
-  suspended: 'suspended',
 } as const;
 
 export interface SessionCheckinPolicy {
@@ -826,15 +1019,30 @@ export type LiveOffering = OfferingInput & ({
   targetId: string;
   slot: string;
   scope: string;
-  activityStatus: OfferingActivityStatus;
-  /**
-     * @maxLength 500
-     * @nullable
-     */
-  reviewNote: string | null;
-  sessionStatus: OfferingSessionStatus;
   /** @nullable */
   cancelledAt?: string | null;
+  /**
+     * Shared identifier for sessions created as one recurring series.
+     * @nullable
+     */
+  recurrenceGroupId?: string | null;
+  approvalStatus: OfferingApprovalStatus;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  approvalReason?: string | null;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  partnerResponse?: string | null;
+  /** @nullable */
+  submittedAt?: string | null;
+  /** @nullable */
+  reviewedAt?: string | null;
+  /** @nullable */
+  reviewedBy?: string | null;
   partnerName?: string;
   remaining?: number;
   canJoin?: boolean;
@@ -851,26 +1059,29 @@ export type LiveOffering = OfferingInput & ({
  */
 export type RecurringOfferingsResponse = LiveOffering[];
 
-export type OfferingReviewAction = typeof OfferingReviewAction[keyof typeof OfferingReviewAction];
-
-
-export const OfferingReviewAction = {
-  start_review: 'start_review',
-  request_changes: 'request_changes',
-  approve: 'approve',
-  reject: 'reject',
-  publish: 'publish',
-  suspend: 'suspend',
-  archive: 'archive',
-} as const;
+export interface RecurringOfferingConflict {
+  /**
+     * @minItems 1
+     * @maxItems 90
+     */
+  conflictingDates: string[];
+}
 
 export interface OfferingReviewInput {
-  action: OfferingReviewAction;
+  status: OfferingApprovalStatus;
   /**
      * @minLength 5
-     * @maxLength 500
+     * @maxLength 1000
      */
   reason?: string;
+}
+
+export interface OfferingPartnerResponse {
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  response: string;
 }
 
 export type OfferingWaitlistEntryStatus = typeof OfferingWaitlistEntryStatus[keyof typeof OfferingWaitlistEntryStatus];
@@ -906,11 +1117,13 @@ export interface OfferingUpdate {
      * @maximum 1440
      */
   waitlistOfferMinutes?: number;
-  active?: boolean;
   localizedTitle?: LocalizedText;
   localizedDescription?: LocalizedText;
   /** @nullable */
   joinUrl?: string | null;
+  startsAt?: string;
+  endsAt?: string;
+  cancellationDeadline?: string;
 }
 
 export type CourseMetadataInputLevel = typeof CourseMetadataInputLevel[keyof typeof CourseMetadataInputLevel];
@@ -953,6 +1166,7 @@ export interface LessonInput {
      * @maximum 1000
      */
   durationMinutes: number;
+  /** @pattern ^/objects/course-recordings/[A-Za-z0-9_-]{1,180}\.(mp4|webm|m4v|mov|m4a|mp3|aac|ogg)$ */
   mediaUrl: string;
 }
 
@@ -968,6 +1182,10 @@ export type CourseAdminRecord = CourseMetadataInput & {
   createdAt: string;
   updatedAt: string;
 };
+
+export interface GetOperationCoursesResponse {
+  courses: CourseAdminRecord[];
+}
 
 export type CourseSummary = CourseMetadataInput & {
   id: string;
@@ -985,6 +1203,7 @@ export interface CourseLesson {
   durationMinutes: number;
   /** @nullable */
   mediaUrl: string | null;
+  hasRecording: boolean;
   completed: boolean;
 }
 
@@ -1001,6 +1220,11 @@ export type CourseDetail = CourseSummary & {
   accessState: CourseDetailAccessState;
   lessons: CourseLesson[];
 };
+
+export interface CoursePlaybackLinkResponse {
+  url: string;
+  validUntil: string;
+}
 
 export interface CourseProgressInput {
   /** @minLength 1 */
@@ -1508,6 +1732,14 @@ to: string;
 export type GetFinanceSettlementsParams = {
 from: string;
 to: string;
+};
+
+export type StreamMemberCoursePlaybackParams = {
+/**
+ * @minLength 1
+ * @maxLength 2048
+ */
+token: string;
 };
 
 export type GetSupportStaffTicketsParams = {

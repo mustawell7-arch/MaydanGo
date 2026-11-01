@@ -344,7 +344,7 @@ function countUnit(count: number, kind: 'days' | 'places', language: Language, t
 }
 
 const routes = [
-  ['/', 'home'], ['/how-it-works', 'how'], ['/membership-plans', 'plans'], ['/facilities', 'facilities'],
+  ['/', 'home'], ['/how-it-works', 'how'], ['/membership-plans', 'plans'], ['/facilities', 'facilities'], ['/events', 'events'],
   ['/online-training', 'online'], ['/partner', 'partner'], ['/corporate', 'corporate'], ['/help', 'help'],
   ['/contact', 'contact'], ['/legal', 'legal'],
 ] as const;
@@ -647,6 +647,95 @@ function FacilitiesPage({ t, language }: { t: Copy; language: Language }) {
   </>;
 }
 
+function EventsPage({ t, language }: { t: Copy; language: Language }) {
+  const catalog = useGetPublicCatalog({ query: { queryKey: getGetPublicCatalogQueryKey() } });
+  const events = useMemo(
+    () => (catalog.data || [])
+      .filter(event => event.kind === 'event' && !event.additionalPayment && Date.parse(event.startsAt) > Date.now())
+      .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)),
+    [catalog.data],
+  );
+  const locale = language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ';
+  const eventAppHref = 'maydango://explore?kind=events';
+  const field = (value: { en: string; ar: string; ku: string } | null, fallback: string) =>
+    value?.[language]?.trim() || fallback;
+  const numberLabel = (value: number) => new Intl.NumberFormat(locale).format(value);
+  const dateLabel = (value: string, options: Intl.DateTimeFormatOptions) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(locale, options).format(date);
+  };
+  return <>
+    <PageHero kicker={t.events} title={t.eventsTitle} description={t.eventsIntro} />
+    <PageWrap className="py-12 md:py-20">
+      <section aria-labelledby="upcoming-events-heading">
+        <div className="mb-8 grid gap-5 md:grid-cols-[1fr_auto] md:items-end">
+          <div><SectionKicker>{t.eventsUpcoming}</SectionKicker><h2 id="upcoming-events-heading" className="font-display text-4xl font-bold tracking-[-.05em] md:text-5xl">{t.eventsHeading}</h2></div>
+          <p className="max-w-md text-sm leading-6 text-foreground/60">{t.eventsMemberRsvp}</p>
+        </div>
+        {catalog.isLoading ? <div className="grid gap-4 md:grid-cols-2" aria-label={t.loading} data-testid="status-events-loading">{[1, 2, 3, 4].map(index => <div key={index} className="h-60 animate-pulse rounded-[1.5rem] bg-muted" />)}</div>
+          : catalog.isError ? <ErrorState text={t.eventsError} retry={() => { void catalog.refetch(); }} t={t} />
+            : events.length ? <div className="grid gap-4 lg:grid-cols-2">
+              {events.map(event => {
+                const title = field(event.localizedTitle, event.title);
+                const description = field(event.localizedDescription, '');
+                const full = event.remaining <= 0;
+                return <article key={event.id} className="offering-card overflow-hidden rounded-[1.5rem] border border-border bg-card" data-testid={`card-event-${event.id}`}>
+                  <div className="flex min-h-40 items-start justify-between gap-4 bg-[#174e43] p-6 text-[#f4ead6] md:p-7">
+                    <div className="max-w-[78%]">
+                      <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#f0a17c]"><CalendarDays size={14} />{t.eventType}</p>
+                      <h3 className="mt-4 font-display text-2xl font-bold leading-tight tracking-[-.04em] md:text-3xl" data-testid={`text-event-title-${event.id}`}>{title}</h3>
+                    </div>
+                    <div className="min-w-[76px] rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-center">
+                      <span className="block font-mono text-2xl font-bold leading-none">{dateLabel(event.startsAt, { day: '2-digit' })}</span>
+                      <span className="mt-1 block text-[10px] font-bold uppercase tracking-[.12em] text-[#f4ead6]/70">{dateLabel(event.startsAt, { month: 'short' })}</span>
+                    </div>
+                  </div>
+                  <div className="p-6 md:p-7">
+                    <div className="grid gap-3 text-sm sm:grid-cols-2">
+                      <p className="flex items-start gap-2 text-foreground/75"><Clock3 size={15} className="mt-0.5 shrink-0 text-primary" /><span>{dateLabel(event.startsAt, { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}<span className="block text-xs text-muted-foreground">{t.eventsUntil} {dateLabel(event.endsAt, { hour: 'numeric', minute: '2-digit' })}</span></span></p>
+                      <p className="flex items-start gap-2 text-foreground/75"><MapPin size={15} className="mt-0.5 shrink-0 text-primary" /><span>{event.facility}<span className="block text-xs text-muted-foreground">{event.city}</span></span></p>
+                      <p className="flex items-start gap-2 text-foreground/75"><Users size={15} className="mt-0.5 shrink-0 text-primary" /><span>{t.eventsHostedBy}<span className="block text-xs text-muted-foreground">{event.partnerName}</span></span></p>
+                      <p className="flex items-start gap-2 text-foreground/75"><Dumbbell size={15} className="mt-0.5 shrink-0 text-primary" /><span>{t.eventsCategory}<span className="block text-xs text-muted-foreground">{event.category}</span></span></p>
+                    </div>
+                    {description ? <p className="mt-5 border-t border-border pt-4 text-sm leading-6 text-foreground/70">{description}</p> : null}
+                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+                      <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ${full ? 'bg-[#f3e4dc] text-[#9a4435]' : 'bg-[#e7efe8] text-primary'}`} data-testid={`status-event-availability-${event.id}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${full ? 'bg-[#9a4435]' : 'bg-primary'}`} />
+                        {full ? t.eventsFull : t.eventsSpaces.replace('{count}', numberLabel(event.remaining))}
+                      </span>
+                      {!full ? <a href={eventAppHref} className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition hover:-translate-y-0.5" data-testid={`link-event-rsvp-${event.id}`}>
+                        {t.eventsRsvp}<ArrowUpRight size={15} />
+                      </a> : <span className="text-xs font-semibold text-foreground/50">{t.eventsUnavailable}</span>}
+                    </div>
+                  </div>
+                </article>;
+              })}
+            </div>
+            : <div className="rounded-[1.5rem] border border-dashed border-border bg-card px-6 py-12 text-center" data-testid="status-events-empty">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted text-primary"><CalendarDays size={20} /></div>
+              <h3 className="mt-4 font-display text-2xl font-bold">{t.eventsEmpty}</h3>
+              <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">{t.eventsEmptyText}</p>
+            </div>}
+      </section>
+      <section className="mt-12 grid gap-5 md:grid-cols-[1.1fr_.9fr]">
+        <article className="rounded-[1.75rem] bg-[#eadfcd] p-7 md:p-9">
+          <SectionKicker>{t.eventsMemberBenefits}</SectionKicker>
+          <h2 className="font-display text-3xl font-bold tracking-[-.05em]">{t.eventsBenefitTitle}</h2>
+          <p className="mt-4 max-w-xl text-sm leading-6 text-foreground/70">{t.eventsBenefitText}</p>
+          <Link href="/membership-plans" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-events-membership">{t.eventsLearnMembership}<ArrowRight size={15} /></Link>
+        </article>
+        <aside className="rounded-[1.75rem] border border-border bg-card p-7 md:p-9">
+          <SectionKicker>{t.eventsHowRsvp}</SectionKicker>
+          <h2 className="font-display text-2xl font-bold tracking-[-.04em]">{t.eventsAccessTitle}</h2>
+          <p className="mt-3 text-sm leading-6 text-foreground/65">{t.eventsAccessText}</p>
+          <p className="mt-4 rounded-xl bg-muted px-4 py-3 text-xs leading-5 text-foreground/65">{t.eventsRules}</p>
+        </aside>
+      </section>
+      <p className="mt-7 text-xs leading-5 text-muted-foreground">{t.eventsNoReservation}</p>
+    </PageWrap>
+  </>;
+}
+
 function OnlinePage({ t, language }: { t: Copy; language: Language }) {
   const catalog = useGetPublicCatalog({ query: { queryKey: getGetPublicCatalogQueryKey() } });
   const live = useMemo(() => (catalog.data || []).filter(o => o.accessType === 'live'), [catalog.data]);
@@ -799,6 +888,7 @@ function ContentRouter() {
         <Route path="/how-it-works" component={() => <HowPage t={t} />} />
         <Route path="/membership-plans" component={() => <PlansPage t={t} language={language} />} />
         <Route path="/facilities" component={() => <FacilitiesPage t={t} language={language} />} />
+        <Route path="/events" component={() => <EventsPage t={t} language={language} />} />
         <Route path="/online-training" component={() => <OnlinePage t={t} language={language} />} />
         <Route path="/partner" component={() => <EnquiryPage type="partner" t={t} />} />
         <Route path="/corporate" component={() => <EnquiryPage type="corporate" t={t} />} />

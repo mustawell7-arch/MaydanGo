@@ -55,6 +55,12 @@ export const getPublicFacilitiesResponseOneOpeningHoursItemDayMax = 6;
 
 export const getPublicFacilitiesResponseOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
 export const getPublicFacilitiesResponseOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getPublicFacilitiesResponseTwoSpecialHoursItemLocalizedReasonEnMax = 500;
+
+export const getPublicFacilitiesResponseTwoSpecialHoursItemLocalizedReasonArMax = 500;
+
+export const getPublicFacilitiesResponseTwoSpecialHoursItemLocalizedReasonKuMax = 500;
+
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOneEnMax = 500;
 
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOneArMax = 500;
@@ -122,6 +128,21 @@ export const GetPublicFacilitiesResponseItem = zod.object({
   "partnerName": zod.string(),
   "openingStatus": zod.enum(['open', 'closed', 'unavailable']),
   "closesAt": zod.string().nullable(),
+  "specialHours": zod.array(zod.object({
+  "id": zod.string(),
+  "facilityId": zod.string(),
+  "startDate": zod.coerce.date().describe('Inclusive calendar date in Asia/Baghdad'),
+  "endDate": zod.coerce.date().describe('Inclusive calendar date in Asia/Baghdad'),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().nullable(),
+  "closesAt": zod.string().nullable(),
+  "localizedReason": zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseTwoSpecialHoursItemLocalizedReasonEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseTwoSpecialHoursItemLocalizedReasonArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseTwoSpecialHoursItemLocalizedReasonKuMax)
+}),
+  "createdAt": zod.coerce.date()
+})),
   "upcomingSessions": zod.array(zod.object({
   "id": zod.string(),
   "title": zod.string(),
@@ -193,6 +214,12 @@ export const getPublicFacilityResponseOneOpeningHoursItemDayMax = 6;
 
 export const getPublicFacilityResponseOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
 export const getPublicFacilityResponseOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getPublicFacilityResponseTwoSpecialHoursItemLocalizedReasonEnMax = 500;
+
+export const getPublicFacilityResponseTwoSpecialHoursItemLocalizedReasonArMax = 500;
+
+export const getPublicFacilityResponseTwoSpecialHoursItemLocalizedReasonKuMax = 500;
+
 export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneEnMax = 500;
 
 export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneArMax = 500;
@@ -260,6 +287,21 @@ export const GetPublicFacilityResponse = zod.object({
   "partnerName": zod.string(),
   "openingStatus": zod.enum(['open', 'closed', 'unavailable']),
   "closesAt": zod.string().nullable(),
+  "specialHours": zod.array(zod.object({
+  "id": zod.string(),
+  "facilityId": zod.string(),
+  "startDate": zod.coerce.date().describe('Inclusive calendar date in Asia/Baghdad'),
+  "endDate": zod.coerce.date().describe('Inclusive calendar date in Asia/Baghdad'),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().nullable(),
+  "closesAt": zod.string().nullable(),
+  "localizedReason": zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseTwoSpecialHoursItemLocalizedReasonEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseTwoSpecialHoursItemLocalizedReasonArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseTwoSpecialHoursItemLocalizedReasonKuMax)
+}),
+  "createdAt": zod.coerce.date()
+})),
   "upcomingSessions": zod.array(zod.object({
   "id": zod.string(),
   "title": zod.string(),
@@ -279,53 +321,59 @@ export const GetPublicFacilityResponse = zod.object({
 }))
 
 
-export const getOperationFacilitiesResponseLocalizedNameEnMax = 500;
+export const getOperationFacilitiesResponseOneLocalizedNameEnMax = 500;
 
-export const getOperationFacilitiesResponseLocalizedNameArMax = 500;
+export const getOperationFacilitiesResponseOneLocalizedNameArMax = 500;
 
-export const getOperationFacilitiesResponseLocalizedNameKuMax = 500;
+export const getOperationFacilitiesResponseOneLocalizedNameKuMax = 500;
 
-export const getOperationFacilitiesResponseLocalizedDistrictEnMax = 500;
+export const getOperationFacilitiesResponseOneLocalizedDistrictEnMax = 500;
 
-export const getOperationFacilitiesResponseLocalizedDistrictArMax = 500;
+export const getOperationFacilitiesResponseOneLocalizedDistrictArMax = 500;
 
-export const getOperationFacilitiesResponseLocalizedDistrictKuMax = 500;
+export const getOperationFacilitiesResponseOneLocalizedDistrictKuMax = 500;
 
-export const getOperationFacilitiesResponseLocalizedAddressEnMax = 500;
+export const getOperationFacilitiesResponseOneLocalizedAddressEnMax = 500;
 
-export const getOperationFacilitiesResponseLocalizedAddressArMax = 500;
+export const getOperationFacilitiesResponseOneLocalizedAddressArMax = 500;
 
-export const getOperationFacilitiesResponseLocalizedAddressKuMax = 500;
+export const getOperationFacilitiesResponseOneLocalizedAddressKuMax = 500;
 
-export const getOperationFacilitiesResponseLocalizedDescriptionEnMax = 500;
+export const getOperationFacilitiesResponseOneLocalizedDescriptionEnMax = 500;
 
-export const getOperationFacilitiesResponseLocalizedDescriptionArMax = 500;
+export const getOperationFacilitiesResponseOneLocalizedDescriptionArMax = 500;
 
-export const getOperationFacilitiesResponseLocalizedDescriptionKuMax = 500;
+export const getOperationFacilitiesResponseOneLocalizedDescriptionKuMax = 500;
 
-export const getOperationFacilitiesResponseActivitiesItemEnMax = 500;
+export const getOperationFacilitiesResponseOneActivitiesItemEnMax = 500;
 
-export const getOperationFacilitiesResponseActivitiesItemArMax = 500;
+export const getOperationFacilitiesResponseOneActivitiesItemArMax = 500;
 
-export const getOperationFacilitiesResponseActivitiesItemKuMax = 500;
+export const getOperationFacilitiesResponseOneActivitiesItemKuMax = 500;
 
-export const getOperationFacilitiesResponseAmenitiesItemEnMax = 500;
+export const getOperationFacilitiesResponseOneAmenitiesItemEnMax = 500;
 
-export const getOperationFacilitiesResponseAmenitiesItemArMax = 500;
+export const getOperationFacilitiesResponseOneAmenitiesItemArMax = 500;
 
-export const getOperationFacilitiesResponseAmenitiesItemKuMax = 500;
+export const getOperationFacilitiesResponseOneAmenitiesItemKuMax = 500;
 
-export const getOperationFacilitiesResponseAccessibilityItemEnMax = 500;
+export const getOperationFacilitiesResponseOneAccessibilityItemEnMax = 500;
 
-export const getOperationFacilitiesResponseAccessibilityItemArMax = 500;
+export const getOperationFacilitiesResponseOneAccessibilityItemArMax = 500;
 
-export const getOperationFacilitiesResponseAccessibilityItemKuMax = 500;
+export const getOperationFacilitiesResponseOneAccessibilityItemKuMax = 500;
 
-export const getOperationFacilitiesResponseOpeningHoursItemDayMin = 0;
-export const getOperationFacilitiesResponseOpeningHoursItemDayMax = 6;
+export const getOperationFacilitiesResponseOneOpeningHoursItemDayMin = 0;
+export const getOperationFacilitiesResponseOneOpeningHoursItemDayMax = 6;
 
-export const getOperationFacilitiesResponseOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
-export const getOperationFacilitiesResponseOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getOperationFacilitiesResponseOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getOperationFacilitiesResponseOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getOperationFacilitiesResponseTwoSpecialHoursItemLocalizedReasonEnMax = 500;
+
+export const getOperationFacilitiesResponseTwoSpecialHoursItemLocalizedReasonArMax = 500;
+
+export const getOperationFacilitiesResponseTwoSpecialHoursItemLocalizedReasonKuMax = 500;
+
 
 
 export const GetOperationFacilitiesResponseItem = zod.object({
@@ -334,52 +382,68 @@ export const GetOperationFacilitiesResponseItem = zod.object({
   "city": zod.string(),
   "facility": zod.string(),
   "localizedName": zod.object({
-  "en": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedNameEnMax),
-  "ar": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedNameArMax),
-  "ku": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedNameKuMax)
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseOneLocalizedNameEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseOneLocalizedNameArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseOneLocalizedNameKuMax)
 }),
   "localizedDistrict": zod.object({
-  "en": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedDistrictEnMax),
-  "ar": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedDistrictArMax),
-  "ku": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedDistrictKuMax)
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseOneLocalizedDistrictEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseOneLocalizedDistrictArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseOneLocalizedDistrictKuMax)
 }),
   "localizedAddress": zod.object({
-  "en": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedAddressEnMax),
-  "ar": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedAddressArMax),
-  "ku": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedAddressKuMax)
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseOneLocalizedAddressEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseOneLocalizedAddressArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseOneLocalizedAddressKuMax)
 }),
   "localizedDescription": zod.object({
-  "en": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedDescriptionEnMax),
-  "ar": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedDescriptionArMax),
-  "ku": zod.string().min(1).max(getOperationFacilitiesResponseLocalizedDescriptionKuMax)
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseOneLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseOneLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseOneLocalizedDescriptionKuMax)
 }),
   "activities": zod.array(zod.object({
-  "en": zod.string().min(1).max(getOperationFacilitiesResponseActivitiesItemEnMax),
-  "ar": zod.string().min(1).max(getOperationFacilitiesResponseActivitiesItemArMax),
-  "ku": zod.string().min(1).max(getOperationFacilitiesResponseActivitiesItemKuMax)
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseOneActivitiesItemEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseOneActivitiesItemArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseOneActivitiesItemKuMax)
 })),
   "amenities": zod.array(zod.object({
-  "en": zod.string().min(1).max(getOperationFacilitiesResponseAmenitiesItemEnMax),
-  "ar": zod.string().min(1).max(getOperationFacilitiesResponseAmenitiesItemArMax),
-  "ku": zod.string().min(1).max(getOperationFacilitiesResponseAmenitiesItemKuMax)
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseOneAmenitiesItemEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseOneAmenitiesItemArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseOneAmenitiesItemKuMax)
 })),
   "accessibility": zod.array(zod.object({
-  "en": zod.string().min(1).max(getOperationFacilitiesResponseAccessibilityItemEnMax),
-  "ar": zod.string().min(1).max(getOperationFacilitiesResponseAccessibilityItemArMax),
-  "ku": zod.string().min(1).max(getOperationFacilitiesResponseAccessibilityItemKuMax)
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseOneAccessibilityItemEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseOneAccessibilityItemArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseOneAccessibilityItemKuMax)
 })),
   "openingHours": zod.array(zod.object({
-  "day": zod.number().int().min(getOperationFacilitiesResponseOpeningHoursItemDayMin).max(getOperationFacilitiesResponseOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "day": zod.number().int().min(getOperationFacilitiesResponseOneOpeningHoursItemDayMin).max(getOperationFacilitiesResponseOneOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
   "closed": zod.boolean(),
-  "opensAt": zod.string().regex(getOperationFacilitiesResponseOpeningHoursItemOpensAtRegExp).nullable(),
-  "closesAt": zod.string().regex(getOperationFacilitiesResponseOpeningHoursItemClosesAtRegExp).nullable()
+  "opensAt": zod.string().regex(getOperationFacilitiesResponseOneOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(getOperationFacilitiesResponseOneOpeningHoursItemClosesAtRegExp).nullable()
 })),
   "contactPhone": zod.string().nullable(),
   "websiteUrl": zod.string().url().nullable(),
   "latitude": zod.number().nullable(),
   "longitude": zod.number().nullable(),
   "updatedAt": zod.coerce.date()
-})
+}).and(zod.object({
+  "specialHours": zod.array(zod.object({
+  "id": zod.string(),
+  "facilityId": zod.string(),
+  "startDate": zod.coerce.date().describe('Inclusive calendar date in Asia/Baghdad'),
+  "endDate": zod.coerce.date().describe('Inclusive calendar date in Asia/Baghdad'),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().nullable(),
+  "closesAt": zod.string().nullable(),
+  "localizedReason": zod.object({
+  "en": zod.string().min(1).max(getOperationFacilitiesResponseTwoSpecialHoursItemLocalizedReasonEnMax),
+  "ar": zod.string().min(1).max(getOperationFacilitiesResponseTwoSpecialHoursItemLocalizedReasonArMax),
+  "ku": zod.string().min(1).max(getOperationFacilitiesResponseTwoSpecialHoursItemLocalizedReasonKuMax)
+}),
+  "createdAt": zod.coerce.date()
+}))
+}))
 export const GetOperationFacilitiesResponse = zod.array(GetOperationFacilitiesResponseItem)
 
 
@@ -845,6 +909,82 @@ export const DeleteFacilityProfileParams = zod.object({
 export const DeleteFacilityProfileResponse = zod.void()
 
 
+export const CreateFacilityHoursOverrideParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const createFacilityHoursOverrideBodyOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const createFacilityHoursOverrideBodyClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const createFacilityHoursOverrideBodyLocalizedReasonEnMax = 500;
+
+export const createFacilityHoursOverrideBodyLocalizedReasonArMax = 500;
+
+export const createFacilityHoursOverrideBodyLocalizedReasonKuMax = 500;
+
+
+
+export const CreateFacilityHoursOverrideBody = zod.object({
+  "startDate": zod.coerce.date().describe('Inclusive calendar date in Asia/Baghdad'),
+  "endDate": zod.coerce.date().describe('Inclusive calendar date in Asia/Baghdad'),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(createFacilityHoursOverrideBodyOpensAtRegExp).nullable().describe('24-hour local facility time'),
+  "closesAt": zod.string().regex(createFacilityHoursOverrideBodyClosesAtRegExp).nullable().describe('24-hour local facility time'),
+  "localizedReason": zod.object({
+  "en": zod.string().min(1).max(createFacilityHoursOverrideBodyLocalizedReasonEnMax),
+  "ar": zod.string().min(1).max(createFacilityHoursOverrideBodyLocalizedReasonArMax),
+  "ku": zod.string().min(1).max(createFacilityHoursOverrideBodyLocalizedReasonKuMax)
+})
+})
+
+export const createFacilityHoursOverrideResponseLocalizedReasonEnMax = 500;
+
+export const createFacilityHoursOverrideResponseLocalizedReasonArMax = 500;
+
+export const createFacilityHoursOverrideResponseLocalizedReasonKuMax = 500;
+
+
+
+export const CreateFacilityHoursOverrideResponse = zod.object({
+  "id": zod.string(),
+  "facilityId": zod.string(),
+  "startDate": zod.coerce.date().describe('Inclusive calendar date in Asia/Baghdad'),
+  "endDate": zod.coerce.date().describe('Inclusive calendar date in Asia/Baghdad'),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().nullable(),
+  "closesAt": zod.string().nullable(),
+  "localizedReason": zod.object({
+  "en": zod.string().min(1).max(createFacilityHoursOverrideResponseLocalizedReasonEnMax),
+  "ar": zod.string().min(1).max(createFacilityHoursOverrideResponseLocalizedReasonArMax),
+  "ku": zod.string().min(1).max(createFacilityHoursOverrideResponseLocalizedReasonKuMax)
+}),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const DeleteFacilityHoursOverrideParams = zod.object({
+  "id": zod.coerce.string(),
+  "overrideId": zod.coerce.string()
+})
+
+export const DeleteFacilityHoursOverrideResponse = zod.void()
+
+
+export const getPublicCatalogResponseLocalizedTitleOneEnMax = 500;
+
+export const getPublicCatalogResponseLocalizedTitleOneArMax = 500;
+
+export const getPublicCatalogResponseLocalizedTitleOneKuMax = 500;
+
+export const getPublicCatalogResponseLocalizedDescriptionOneEnMax = 500;
+
+export const getPublicCatalogResponseLocalizedDescriptionOneArMax = 500;
+
+export const getPublicCatalogResponseLocalizedDescriptionOneKuMax = 500;
+
+export const getPublicCatalogResponseMinAgeMin = 0;
+
+export const getPublicCatalogResponseMaxAgeMin = 0;
+
 export const getPublicCatalogResponseRemainingMin = 0;
 
 
@@ -852,13 +992,31 @@ export const getPublicCatalogResponseRemainingMin = 0;
 export const GetPublicCatalogResponseItem = zod.object({
   "id": zod.string(),
   "kind": zod.enum(['session', 'event', 'coach']),
+  "targetId": zod.string(),
+  "slot": zod.string(),
   "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicCatalogResponseLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(getPublicCatalogResponseLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(getPublicCatalogResponseLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "localizedDescription": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicCatalogResponseLocalizedDescriptionOneEnMax),
+  "ar": zod.string().min(1).max(getPublicCatalogResponseLocalizedDescriptionOneArMax),
+  "ku": zod.string().min(1).max(getPublicCatalogResponseLocalizedDescriptionOneKuMax)
+}),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
+  "tiers": zod.array(zod.string()),
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
+  "cancellationDeadline": zod.coerce.date(),
+  "gender": zod.enum(['all', 'female', 'male']),
+  "minAge": zod.number().int().min(getPublicCatalogResponseMinAgeMin),
+  "maxAge": zod.number().int().min(getPublicCatalogResponseMaxAgeMin).nullable(),
+  "additionalPayment": zod.boolean().describe('Whether this offering requires payment outside membership access'),
   "remaining": zod.number().int().min(getPublicCatalogResponseRemainingMin),
   "partnerName": zod.string()
 })
@@ -1034,6 +1192,10 @@ export const getOperationsResponseOfferingsItemOneWaitlistOfferMinutesMax = 1440
 
 export const getOperationsResponseOfferingsItemOneMinAgeMin = 0;
 
+export const getOperationsResponseOfferingsItemTwoApprovalReasonMax = 1000;
+
+export const getOperationsResponseOfferingsItemTwoPartnerResponseMax = 1000;
+
 export const getOperationsResponseOfferingsItemTwoReviewNoteMax = 500;
 
 export const getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMin = 5;
@@ -1118,6 +1280,13 @@ export const GetOperationsResponse = zod.object({
   "reviewNote": zod.string().max(getOperationsResponseOfferingsItemTwoReviewNoteMax).nullable(),
   "sessionStatus": zod.enum(['draft', 'scheduled', 'open_for_booking', 'fully_booked', 'in_progress', 'completed', 'cancelled', 'suspended']),
   "cancelledAt": zod.string().nullish(),
+  "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
+  "approvalReason": zod.string().max(getOperationsResponseOfferingsItemTwoApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(getOperationsResponseOfferingsItemTwoPartnerResponseMax).nullish(),
+  "submittedAt": zod.coerce.date().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.number().int().optional(),
   "canJoin": zod.boolean().optional(),
@@ -1286,6 +1455,10 @@ export const addLiveOfferingResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const addLiveOfferingResponseOneMinAgeMin = 0;
 
+export const addLiveOfferingResponseTwoApprovalReasonMax = 1000;
+
+export const addLiveOfferingResponseTwoPartnerResponseMax = 1000;
+
 export const addLiveOfferingResponseTwoReviewNoteMax = 500;
 
 export const addLiveOfferingResponseTwoWaitlistOfferMinutesMin = 5;
@@ -1332,6 +1505,13 @@ export const AddLiveOfferingResponse = zod.object({
   "reviewNote": zod.string().max(addLiveOfferingResponseTwoReviewNoteMax).nullable(),
   "sessionStatus": zod.enum(['draft', 'scheduled', 'open_for_booking', 'fully_booked', 'in_progress', 'completed', 'cancelled', 'suspended']),
   "cancelledAt": zod.string().nullish(),
+  "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
+  "approvalReason": zod.string().max(addLiveOfferingResponseTwoApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(addLiveOfferingResponseTwoPartnerResponseMax).nullish(),
+  "submittedAt": zod.coerce.date().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.number().int().optional(),
   "canJoin": zod.boolean().optional(),
@@ -1367,10 +1547,18 @@ export const createRecurringOfferingsBodyTemplateWaitlistOfferMinutesMax = 1440;
 
 export const createRecurringOfferingsBodyTemplateMinAgeMin = 0;
 
+export const createRecurringOfferingsBodyScheduleModeDefault = `weekly`;
+export const createRecurringOfferingsBodyScheduleIntervalDefault = 1;
+export const createRecurringOfferingsBodyScheduleIntervalMax = 30;
+
 export const createRecurringOfferingsBodyScheduleWeekdaysItemMin = 0;
 export const createRecurringOfferingsBodyScheduleWeekdaysItemMax = 6;
 
 export const createRecurringOfferingsBodyScheduleWeekdaysMax = 7;
+
+export const createRecurringOfferingsBodyScheduleDatesMax = 89;
+
+export const createRecurringOfferingsBodyScheduleExcludedDatesMax = 90;
 
 
 
@@ -1407,8 +1595,12 @@ export const CreateRecurringOfferingsBody = zod.object({
   "active": zod.boolean()
 }),
   "schedule": zod.object({
+  "mode": zod.enum(['daily', 'weekly', 'custom', 'dates']).default(createRecurringOfferingsBodyScheduleModeDefault),
   "repeatUntil": zod.coerce.date().describe('Last local date to include, no more than 90 days after the first date.'),
-  "weekdays": zod.array(zod.number().int().min(createRecurringOfferingsBodyScheduleWeekdaysItemMin).max(createRecurringOfferingsBodyScheduleWeekdaysItemMax).describe('Sunday is 0 and Saturday is 6.')).min(1).max(createRecurringOfferingsBodyScheduleWeekdaysMax)
+  "interval": zod.number().int().min(1).max(createRecurringOfferingsBodyScheduleIntervalMax).default(createRecurringOfferingsBodyScheduleIntervalDefault).describe('Days for daily schedules; weeks for custom schedules.'),
+  "weekdays": zod.array(zod.number().int().min(createRecurringOfferingsBodyScheduleWeekdaysItemMin).max(createRecurringOfferingsBodyScheduleWeekdaysItemMax).describe('Sunday is 0 and Saturday is 6.')).min(1).max(createRecurringOfferingsBodyScheduleWeekdaysMax).optional(),
+  "dates": zod.array(zod.coerce.date().describe('Additional local session date; the template\'s first date is included automatically.')).max(createRecurringOfferingsBodyScheduleDatesMax).optional(),
+  "excludedDates": zod.array(zod.coerce.date().describe('Date to skip, such as a local holiday.')).max(createRecurringOfferingsBodyScheduleExcludedDatesMax).optional()
 })
 })
 
@@ -1431,6 +1623,10 @@ export const createRecurringOfferingsResponseOneWaitlistOfferMinutesMin = 5;
 export const createRecurringOfferingsResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const createRecurringOfferingsResponseOneMinAgeMin = 0;
+
+export const createRecurringOfferingsResponseTwoApprovalReasonMax = 1000;
+
+export const createRecurringOfferingsResponseTwoPartnerResponseMax = 1000;
 
 export const createRecurringOfferingsResponseTwoReviewNoteMax = 500;
 
@@ -1478,6 +1674,13 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "reviewNote": zod.string().max(createRecurringOfferingsResponseTwoReviewNoteMax).nullable(),
   "sessionStatus": zod.enum(['draft', 'scheduled', 'open_for_booking', 'fully_booked', 'in_progress', 'completed', 'cancelled', 'suspended']),
   "cancelledAt": zod.string().nullish(),
+  "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
+  "approvalReason": zod.string().max(createRecurringOfferingsResponseTwoApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(createRecurringOfferingsResponseTwoPartnerResponseMax).nullish(),
+  "submittedAt": zod.coerce.date().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.number().int().optional(),
   "canJoin": zod.boolean().optional(),
@@ -1519,7 +1722,6 @@ export const changeLiveOfferingBodyLocalizedDescriptionKuMax = 240;
 export const ChangeLiveOfferingBody = zod.object({
   "capacity": zod.number().int().min(1),
   "waitlistOfferMinutes": zod.number().int().min(changeLiveOfferingBodyWaitlistOfferMinutesMin).max(changeLiveOfferingBodyWaitlistOfferMinutesMax).optional(),
-  "active": zod.boolean().optional(),
   "localizedTitle": zod.object({
   "en": zod.string().min(1).max(changeLiveOfferingBodyLocalizedTitleEnMax),
   "ar": zod.string().min(1).max(changeLiveOfferingBodyLocalizedTitleArMax),
@@ -1530,7 +1732,10 @@ export const ChangeLiveOfferingBody = zod.object({
   "ar": zod.string().min(1).max(changeLiveOfferingBodyLocalizedDescriptionArMax),
   "ku": zod.string().min(1).max(changeLiveOfferingBodyLocalizedDescriptionKuMax)
 }).optional(),
-  "joinUrl": zod.string().url().nullish()
+  "joinUrl": zod.string().url().nullish(),
+  "startsAt": zod.coerce.date().optional(),
+  "endsAt": zod.coerce.date().optional(),
+  "cancellationDeadline": zod.coerce.date().optional()
 })
 
 export const changeLiveOfferingResponseOneLocalizedTitleOneEnMax = 240;
@@ -1552,6 +1757,10 @@ export const changeLiveOfferingResponseOneWaitlistOfferMinutesMin = 5;
 export const changeLiveOfferingResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const changeLiveOfferingResponseOneMinAgeMin = 0;
+
+export const changeLiveOfferingResponseTwoApprovalReasonMax = 1000;
+
+export const changeLiveOfferingResponseTwoPartnerResponseMax = 1000;
 
 export const changeLiveOfferingResponseTwoReviewNoteMax = 500;
 
@@ -1599,6 +1808,13 @@ export const ChangeLiveOfferingResponse = zod.object({
   "reviewNote": zod.string().max(changeLiveOfferingResponseTwoReviewNoteMax).nullable(),
   "sessionStatus": zod.enum(['draft', 'scheduled', 'open_for_booking', 'fully_booked', 'in_progress', 'completed', 'cancelled', 'suspended']),
   "cancelledAt": zod.string().nullish(),
+  "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
+  "approvalReason": zod.string().max(changeLiveOfferingResponseTwoApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(changeLiveOfferingResponseTwoPartnerResponseMax).nullish(),
+  "submittedAt": zod.coerce.date().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.number().int().optional(),
   "canJoin": zod.boolean().optional(),
@@ -1821,6 +2037,438 @@ export const CancelLiveOfferingResponse = zod.object({
 })
 
 
+export const ChangeRecurringOfferingSeriesParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+export const changeRecurringOfferingSeriesBodyWaitlistOfferMinutesMin = 5;
+export const changeRecurringOfferingSeriesBodyWaitlistOfferMinutesMax = 1440;
+
+export const changeRecurringOfferingSeriesBodyLocalizedTitleEnMax = 240;
+
+export const changeRecurringOfferingSeriesBodyLocalizedTitleArMax = 240;
+
+export const changeRecurringOfferingSeriesBodyLocalizedTitleKuMax = 240;
+
+export const changeRecurringOfferingSeriesBodyLocalizedDescriptionEnMax = 240;
+
+export const changeRecurringOfferingSeriesBodyLocalizedDescriptionArMax = 240;
+
+export const changeRecurringOfferingSeriesBodyLocalizedDescriptionKuMax = 240;
+
+
+
+export const ChangeRecurringOfferingSeriesBody = zod.object({
+  "capacity": zod.number().int().min(1),
+  "waitlistOfferMinutes": zod.number().int().min(changeRecurringOfferingSeriesBodyWaitlistOfferMinutesMin).max(changeRecurringOfferingSeriesBodyWaitlistOfferMinutesMax).optional(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedTitleKuMax)
+}).optional(),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedDescriptionKuMax)
+}).optional(),
+  "joinUrl": zod.string().url().nullish(),
+  "startsAt": zod.coerce.date().optional(),
+  "endsAt": zod.coerce.date().optional(),
+  "cancellationDeadline": zod.coerce.date().optional()
+})
+
+export const changeRecurringOfferingSeriesResponseOneLocalizedTitleOneEnMax = 240;
+
+export const changeRecurringOfferingSeriesResponseOneLocalizedTitleOneArMax = 240;
+
+export const changeRecurringOfferingSeriesResponseOneLocalizedTitleOneKuMax = 240;
+
+export const changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneEnMax = 240;
+
+export const changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneArMax = 240;
+
+export const changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneKuMax = 240;
+
+
+
+export const changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesDefault = 30;
+export const changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesMin = 5;
+export const changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesMax = 1440;
+
+export const changeRecurringOfferingSeriesResponseOneMinAgeMin = 0;
+
+export const changeRecurringOfferingSeriesResponseTwoApprovalReasonMax = 1000;
+
+export const changeRecurringOfferingSeriesResponseTwoPartnerResponseMax = 1000;
+
+export const changeRecurringOfferingSeriesResponseTwoWaitlistOfferMinutesMin = 5;
+export const changeRecurringOfferingSeriesResponseTwoWaitlistOfferMinutesMax = 1440;
+
+
+
+export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
+  "partnerId": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedTitleOneKuMax)
+}),zod.null()]).optional(),
+  "localizedDescription": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "joinUrl": zod.string().url().nullish(),
+  "kind": zod.enum(['session', 'event', 'coach']),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "category": zod.string(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "tiers": zod.array(zod.string()).min(1),
+  "startsAt": zod.string(),
+  "endsAt": zod.string(),
+  "cancellationDeadline": zod.string(),
+  "capacity": zod.number().int().min(1),
+  "waitlistOfferMinutes": zod.number().int().min(changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesMin).max(changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesMax).default(changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesDefault),
+  "gender": zod.enum(['all', 'female', 'male']).optional(),
+  "minAge": zod.number().int().min(changeRecurringOfferingSeriesResponseOneMinAgeMin).optional(),
+  "maxAge": zod.number().int().nullish(),
+  "additionalPayment": zod.boolean().optional(),
+  "active": zod.boolean()
+}).and(zod.object({
+  "id": zod.string(),
+  "targetId": zod.string(),
+  "slot": zod.string(),
+  "scope": zod.string(),
+  "cancelledAt": zod.string().nullish(),
+  "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
+  "approvalReason": zod.string().max(changeRecurringOfferingSeriesResponseTwoApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(changeRecurringOfferingSeriesResponseTwoPartnerResponseMax).nullish(),
+  "submittedAt": zod.coerce.date().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "reviewedBy": zod.string().nullish(),
+  "partnerName": zod.string().optional(),
+  "remaining": zod.number().int().optional(),
+  "canJoin": zod.boolean().optional(),
+  "waitlistOfferMinutes": zod.number().int().min(changeRecurringOfferingSeriesResponseTwoWaitlistOfferMinutesMin).max(changeRecurringOfferingSeriesResponseTwoWaitlistOfferMinutesMax).optional(),
+  "checkinPolicy": zod.union([zod.object({
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.number().int(),
+  "opensAt": zod.coerce.date(),
+  "closesAt": zod.coerce.date(),
+  "correctionEndsAt": zod.coerce.date()
+}),zod.null()]).optional()
+}))
+export const ChangeRecurringOfferingSeriesResponse = zod.array(ChangeRecurringOfferingSeriesResponseItem).min(1)
+
+
+export const CancelRecurringOfferingSeriesParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const CancelRecurringOfferingSeriesResponse = zod.object({
+  "ok": zod.boolean(),
+  "cancelledDates": zod.array(zod.coerce.date().describe('Baghdad dates cancelled in this batch.')),
+  "preservedDates": zod.array(zod.coerce.date().describe('Baghdad dates left unchanged because they have reservations or attendance.'))
+})
+
+
+export const SubmitLiveOfferingParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const submitLiveOfferingResponseOneLocalizedTitleOneEnMax = 240;
+
+export const submitLiveOfferingResponseOneLocalizedTitleOneArMax = 240;
+
+export const submitLiveOfferingResponseOneLocalizedTitleOneKuMax = 240;
+
+export const submitLiveOfferingResponseOneLocalizedDescriptionOneEnMax = 240;
+
+export const submitLiveOfferingResponseOneLocalizedDescriptionOneArMax = 240;
+
+export const submitLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
+
+
+
+export const submitLiveOfferingResponseOneWaitlistOfferMinutesDefault = 30;
+export const submitLiveOfferingResponseOneWaitlistOfferMinutesMin = 5;
+export const submitLiveOfferingResponseOneWaitlistOfferMinutesMax = 1440;
+
+export const submitLiveOfferingResponseOneMinAgeMin = 0;
+
+export const submitLiveOfferingResponseTwoApprovalReasonMax = 1000;
+
+export const submitLiveOfferingResponseTwoPartnerResponseMax = 1000;
+
+export const submitLiveOfferingResponseTwoWaitlistOfferMinutesMin = 5;
+export const submitLiveOfferingResponseTwoWaitlistOfferMinutesMax = 1440;
+
+
+
+export const SubmitLiveOfferingResponse = zod.object({
+  "partnerId": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedTitleOneKuMax)
+}),zod.null()]).optional(),
+  "localizedDescription": zod.union([zod.object({
+  "en": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneEnMax),
+  "ar": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneArMax),
+  "ku": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "joinUrl": zod.string().url().nullish(),
+  "kind": zod.enum(['session', 'event', 'coach']),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "category": zod.string(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "tiers": zod.array(zod.string()).min(1),
+  "startsAt": zod.string(),
+  "endsAt": zod.string(),
+  "cancellationDeadline": zod.string(),
+  "capacity": zod.number().int().min(1),
+  "waitlistOfferMinutes": zod.number().int().min(submitLiveOfferingResponseOneWaitlistOfferMinutesMin).max(submitLiveOfferingResponseOneWaitlistOfferMinutesMax).default(submitLiveOfferingResponseOneWaitlistOfferMinutesDefault),
+  "gender": zod.enum(['all', 'female', 'male']).optional(),
+  "minAge": zod.number().int().min(submitLiveOfferingResponseOneMinAgeMin).optional(),
+  "maxAge": zod.number().int().nullish(),
+  "additionalPayment": zod.boolean().optional(),
+  "active": zod.boolean()
+}).and(zod.object({
+  "id": zod.string(),
+  "targetId": zod.string(),
+  "slot": zod.string(),
+  "scope": zod.string(),
+  "cancelledAt": zod.string().nullish(),
+  "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
+  "approvalReason": zod.string().max(submitLiveOfferingResponseTwoApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(submitLiveOfferingResponseTwoPartnerResponseMax).nullish(),
+  "submittedAt": zod.coerce.date().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "reviewedBy": zod.string().nullish(),
+  "partnerName": zod.string().optional(),
+  "remaining": zod.number().int().optional(),
+  "canJoin": zod.boolean().optional(),
+  "waitlistOfferMinutes": zod.number().int().min(submitLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(submitLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
+  "checkinPolicy": zod.union([zod.object({
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.number().int(),
+  "opensAt": zod.coerce.date(),
+  "closesAt": zod.coerce.date(),
+  "correctionEndsAt": zod.coerce.date()
+}),zod.null()]).optional()
+}))
+
+
+export const RespondToOfferingCorrectionParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const respondToOfferingCorrectionBodyResponseMin = 5;
+export const respondToOfferingCorrectionBodyResponseMax = 1000;
+
+
+
+export const RespondToOfferingCorrectionBody = zod.object({
+  "response": zod.string().min(respondToOfferingCorrectionBodyResponseMin).max(respondToOfferingCorrectionBodyResponseMax)
+})
+
+export const respondToOfferingCorrectionResponseOneLocalizedTitleOneEnMax = 240;
+
+export const respondToOfferingCorrectionResponseOneLocalizedTitleOneArMax = 240;
+
+export const respondToOfferingCorrectionResponseOneLocalizedTitleOneKuMax = 240;
+
+export const respondToOfferingCorrectionResponseOneLocalizedDescriptionOneEnMax = 240;
+
+export const respondToOfferingCorrectionResponseOneLocalizedDescriptionOneArMax = 240;
+
+export const respondToOfferingCorrectionResponseOneLocalizedDescriptionOneKuMax = 240;
+
+
+
+export const respondToOfferingCorrectionResponseOneWaitlistOfferMinutesDefault = 30;
+export const respondToOfferingCorrectionResponseOneWaitlistOfferMinutesMin = 5;
+export const respondToOfferingCorrectionResponseOneWaitlistOfferMinutesMax = 1440;
+
+export const respondToOfferingCorrectionResponseOneMinAgeMin = 0;
+
+export const respondToOfferingCorrectionResponseTwoApprovalReasonMax = 1000;
+
+export const respondToOfferingCorrectionResponseTwoPartnerResponseMax = 1000;
+
+export const respondToOfferingCorrectionResponseTwoWaitlistOfferMinutesMin = 5;
+export const respondToOfferingCorrectionResponseTwoWaitlistOfferMinutesMax = 1440;
+
+
+
+export const RespondToOfferingCorrectionResponse = zod.object({
+  "partnerId": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedTitleOneKuMax)
+}),zod.null()]).optional(),
+  "localizedDescription": zod.union([zod.object({
+  "en": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneEnMax),
+  "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneArMax),
+  "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "joinUrl": zod.string().url().nullish(),
+  "kind": zod.enum(['session', 'event', 'coach']),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "category": zod.string(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "tiers": zod.array(zod.string()).min(1),
+  "startsAt": zod.string(),
+  "endsAt": zod.string(),
+  "cancellationDeadline": zod.string(),
+  "capacity": zod.number().int().min(1),
+  "waitlistOfferMinutes": zod.number().int().min(respondToOfferingCorrectionResponseOneWaitlistOfferMinutesMin).max(respondToOfferingCorrectionResponseOneWaitlistOfferMinutesMax).default(respondToOfferingCorrectionResponseOneWaitlistOfferMinutesDefault),
+  "gender": zod.enum(['all', 'female', 'male']).optional(),
+  "minAge": zod.number().int().min(respondToOfferingCorrectionResponseOneMinAgeMin).optional(),
+  "maxAge": zod.number().int().nullish(),
+  "additionalPayment": zod.boolean().optional(),
+  "active": zod.boolean()
+}).and(zod.object({
+  "id": zod.string(),
+  "targetId": zod.string(),
+  "slot": zod.string(),
+  "scope": zod.string(),
+  "cancelledAt": zod.string().nullish(),
+  "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
+  "approvalReason": zod.string().max(respondToOfferingCorrectionResponseTwoApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(respondToOfferingCorrectionResponseTwoPartnerResponseMax).nullish(),
+  "submittedAt": zod.coerce.date().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "reviewedBy": zod.string().nullish(),
+  "partnerName": zod.string().optional(),
+  "remaining": zod.number().int().optional(),
+  "canJoin": zod.boolean().optional(),
+  "waitlistOfferMinutes": zod.number().int().min(respondToOfferingCorrectionResponseTwoWaitlistOfferMinutesMin).max(respondToOfferingCorrectionResponseTwoWaitlistOfferMinutesMax).optional(),
+  "checkinPolicy": zod.union([zod.object({
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.number().int(),
+  "opensAt": zod.coerce.date(),
+  "closesAt": zod.coerce.date(),
+  "correctionEndsAt": zod.coerce.date()
+}),zod.null()]).optional()
+}))
+
+
+export const ReviewOfferingApprovalParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const reviewOfferingApprovalBodyReasonMin = 5;
+export const reviewOfferingApprovalBodyReasonMax = 1000;
+
+
+
+export const ReviewOfferingApprovalBody = zod.object({
+  "status": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
+  "reason": zod.string().min(reviewOfferingApprovalBodyReasonMin).max(reviewOfferingApprovalBodyReasonMax).optional()
+})
+
+export const reviewOfferingApprovalResponseOneLocalizedTitleOneEnMax = 240;
+
+export const reviewOfferingApprovalResponseOneLocalizedTitleOneArMax = 240;
+
+export const reviewOfferingApprovalResponseOneLocalizedTitleOneKuMax = 240;
+
+export const reviewOfferingApprovalResponseOneLocalizedDescriptionOneEnMax = 240;
+
+export const reviewOfferingApprovalResponseOneLocalizedDescriptionOneArMax = 240;
+
+export const reviewOfferingApprovalResponseOneLocalizedDescriptionOneKuMax = 240;
+
+
+
+export const reviewOfferingApprovalResponseOneWaitlistOfferMinutesDefault = 30;
+export const reviewOfferingApprovalResponseOneWaitlistOfferMinutesMin = 5;
+export const reviewOfferingApprovalResponseOneWaitlistOfferMinutesMax = 1440;
+
+export const reviewOfferingApprovalResponseOneMinAgeMin = 0;
+
+export const reviewOfferingApprovalResponseTwoApprovalReasonMax = 1000;
+
+export const reviewOfferingApprovalResponseTwoPartnerResponseMax = 1000;
+
+export const reviewOfferingApprovalResponseTwoWaitlistOfferMinutesMin = 5;
+export const reviewOfferingApprovalResponseTwoWaitlistOfferMinutesMax = 1440;
+
+
+
+export const ReviewOfferingApprovalResponse = zod.object({
+  "partnerId": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedTitleOneKuMax)
+}),zod.null()]).optional(),
+  "localizedDescription": zod.union([zod.object({
+  "en": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneEnMax),
+  "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneArMax),
+  "ku": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "joinUrl": zod.string().url().nullish(),
+  "kind": zod.enum(['session', 'event', 'coach']),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "category": zod.string(),
+  "accessType": zod.enum(['physical', 'premium', 'live']),
+  "tiers": zod.array(zod.string()).min(1),
+  "startsAt": zod.string(),
+  "endsAt": zod.string(),
+  "cancellationDeadline": zod.string(),
+  "capacity": zod.number().int().min(1),
+  "waitlistOfferMinutes": zod.number().int().min(reviewOfferingApprovalResponseOneWaitlistOfferMinutesMin).max(reviewOfferingApprovalResponseOneWaitlistOfferMinutesMax).default(reviewOfferingApprovalResponseOneWaitlistOfferMinutesDefault),
+  "gender": zod.enum(['all', 'female', 'male']).optional(),
+  "minAge": zod.number().int().min(reviewOfferingApprovalResponseOneMinAgeMin).optional(),
+  "maxAge": zod.number().int().nullish(),
+  "additionalPayment": zod.boolean().optional(),
+  "active": zod.boolean()
+}).and(zod.object({
+  "id": zod.string(),
+  "targetId": zod.string(),
+  "slot": zod.string(),
+  "scope": zod.string(),
+  "cancelledAt": zod.string().nullish(),
+  "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
+  "approvalReason": zod.string().max(reviewOfferingApprovalResponseTwoApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(reviewOfferingApprovalResponseTwoPartnerResponseMax).nullish(),
+  "submittedAt": zod.coerce.date().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "reviewedBy": zod.string().nullish(),
+  "partnerName": zod.string().optional(),
+  "remaining": zod.number().int().optional(),
+  "canJoin": zod.boolean().optional(),
+  "waitlistOfferMinutes": zod.number().int().min(reviewOfferingApprovalResponseTwoWaitlistOfferMinutesMin).max(reviewOfferingApprovalResponseTwoWaitlistOfferMinutesMax).optional(),
+  "checkinPolicy": zod.union([zod.object({
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.number().int(),
+  "opensAt": zod.coerce.date(),
+  "closesAt": zod.coerce.date(),
+  "correctionEndsAt": zod.coerce.date()
+}),zod.null()]).optional()
+}))
+
+
 export const CancelAdminBookingParams = zod.object({
   "id": zod.coerce.string()
 })
@@ -1959,6 +2607,62 @@ export const DownloadPartnerInvoiceDocumentParams = zod.object({
 export const DownloadPartnerInvoiceDocumentResponse = zod.unknown()
 
 
+export const getOperationCoursesResponseCoursesItemOneLocalizedTitleEnMax = 240;
+
+export const getOperationCoursesResponseCoursesItemOneLocalizedTitleArMax = 240;
+
+export const getOperationCoursesResponseCoursesItemOneLocalizedTitleKuMax = 240;
+
+export const getOperationCoursesResponseCoursesItemOneLocalizedSummaryEnMax = 240;
+
+export const getOperationCoursesResponseCoursesItemOneLocalizedSummaryArMax = 240;
+
+export const getOperationCoursesResponseCoursesItemOneLocalizedSummaryKuMax = 240;
+
+export const getOperationCoursesResponseCoursesItemOneLocalizedInstructorEnMax = 240;
+
+export const getOperationCoursesResponseCoursesItemOneLocalizedInstructorArMax = 240;
+
+export const getOperationCoursesResponseCoursesItemOneLocalizedInstructorKuMax = 240;
+
+export const getOperationCoursesResponseCoursesItemOneCategoryMax = 120;
+
+export const getOperationCoursesResponseCoursesItemOneDurationMinutesMax = 10000;
+
+
+
+export const GetOperationCoursesResponse = zod.object({
+  "courses": zod.array(zod.object({
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneLocalizedTitleKuMax)
+}),
+  "localizedSummary": zod.object({
+  "en": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneLocalizedSummaryEnMax),
+  "ar": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneLocalizedSummaryArMax),
+  "ku": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneLocalizedSummaryKuMax)
+}),
+  "localizedInstructor": zod.object({
+  "en": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneLocalizedInstructorEnMax),
+  "ar": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneLocalizedInstructorArMax),
+  "ku": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneLocalizedInstructorKuMax)
+}),
+  "category": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneCategoryMax),
+  "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
+  "durationMinutes": zod.number().int().min(1).max(getOperationCoursesResponseCoursesItemOneDurationMinutesMax),
+  "thumbnailUrl": zod.string().url().nullable(),
+  "published": zod.boolean()
+}).and(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "lessonCount": zod.number().int(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})))
+})
+
+
 export const createLearningCourseBodyOneLocalizedTitleEnMax = 240;
 
 export const createLearningCourseBodyOneLocalizedTitleArMax = 240;
@@ -1996,6 +2700,7 @@ export const createLearningCourseBodyTwoLessonsItemLocalizedContentKuMax = 240;
 
 export const createLearningCourseBodyTwoLessonsItemDurationMinutesMax = 1000;
 
+export const createLearningCourseBodyTwoLessonsItemMediaUrlRegExp = new RegExp('^/objects/course-recordings/[A-Za-z0-9_-]{1,180}\\.(mp4|webm|m4v|mov|m4a|mp3|aac|ogg)$');
 
 
 
@@ -2034,7 +2739,7 @@ export const CreateLearningCourseBody = zod.object({
   "ku": zod.string().min(1).max(createLearningCourseBodyTwoLessonsItemLocalizedContentKuMax)
 }),
   "durationMinutes": zod.number().int().min(1).max(createLearningCourseBodyTwoLessonsItemDurationMinutesMax),
-  "mediaUrl": zod.string().url()
+  "mediaUrl": zod.string().regex(createLearningCourseBodyTwoLessonsItemMediaUrlRegExp)
 })).min(1)
 }))
 
@@ -2216,6 +2921,7 @@ export const addLearningLessonBodyLocalizedContentKuMax = 240;
 
 export const addLearningLessonBodyDurationMinutesMax = 1000;
 
+export const addLearningLessonBodyMediaUrlRegExp = new RegExp('^/objects/course-recordings/[A-Za-z0-9_-]{1,180}\\.(mp4|webm|m4v|mov|m4a|mp3|aac|ogg)$');
 
 
 export const AddLearningLessonBody = zod.object({
@@ -2231,7 +2937,7 @@ export const AddLearningLessonBody = zod.object({
   "ku": zod.string().min(1).max(addLearningLessonBodyLocalizedContentKuMax)
 }),
   "durationMinutes": zod.number().int().min(1).max(addLearningLessonBodyDurationMinutesMax),
-  "mediaUrl": zod.string().url()
+  "mediaUrl": zod.string().regex(addLearningLessonBodyMediaUrlRegExp)
 })
 
 export const addLearningLessonResponseLocalizedTitleEnMax = 240;
@@ -2263,6 +2969,7 @@ export const AddLearningLessonResponse = zod.object({
 }),zod.null()]),
   "durationMinutes": zod.number().int(),
   "mediaUrl": zod.string().nullable(),
+  "hasRecording": zod.boolean(),
   "completed": zod.boolean()
 })
 
@@ -2798,6 +3505,10 @@ export const getLiveCatalogResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const getLiveCatalogResponseOneMinAgeMin = 0;
 
+export const getLiveCatalogResponseTwoApprovalReasonMax = 1000;
+
+export const getLiveCatalogResponseTwoPartnerResponseMax = 1000;
+
 export const getLiveCatalogResponseTwoReviewNoteMax = 500;
 
 export const getLiveCatalogResponseTwoWaitlistOfferMinutesMin = 5;
@@ -2844,6 +3555,13 @@ export const GetLiveCatalogResponseItem = zod.object({
   "reviewNote": zod.string().max(getLiveCatalogResponseTwoReviewNoteMax).nullable(),
   "sessionStatus": zod.enum(['draft', 'scheduled', 'open_for_booking', 'fully_booked', 'in_progress', 'completed', 'cancelled', 'suspended']),
   "cancelledAt": zod.string().nullish(),
+  "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
+  "approvalReason": zod.string().max(getLiveCatalogResponseTwoApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(getLiveCatalogResponseTwoPartnerResponseMax).nullish(),
+  "submittedAt": zod.coerce.date().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.number().int().optional(),
   "canJoin": zod.boolean().optional(),
@@ -2858,6 +3576,40 @@ export const GetLiveCatalogResponseItem = zod.object({
 }),zod.null()]).optional()
 }))
 export const GetLiveCatalogResponse = zod.array(GetLiveCatalogResponseItem)
+
+
+export const GetMemberDeviceStatusResponse = zod.object({
+  "status": zod.enum(['primary', 'pending', 'revoked']),
+  "currentPlatform": zod.union([zod.enum(['ios', 'android', 'unknown']),zod.null()]),
+  "pendingActivationAt": zod.coerce.date().nullable(),
+  "pendingPlatform": zod.union([zod.enum(['ios', 'android', 'unknown']),zod.null()]),
+  "pendingRiskFlag": zod.boolean(),
+  "waitHours": zod.literal(24)
+})
+
+
+export const RegisterMemberDeviceBody = zod.object({
+  "platform": zod.enum(['ios', 'android'])
+})
+
+export const RegisterMemberDeviceResponse = zod.object({
+  "status": zod.enum(['primary', 'pending', 'revoked']),
+  "currentPlatform": zod.union([zod.enum(['ios', 'android', 'unknown']),zod.null()]),
+  "pendingActivationAt": zod.coerce.date().nullable(),
+  "pendingPlatform": zod.union([zod.enum(['ios', 'android', 'unknown']),zod.null()]),
+  "pendingRiskFlag": zod.boolean(),
+  "waitHours": zod.literal(24)
+})
+
+
+export const CancelMemberDeviceChangeResponse = zod.object({
+  "status": zod.enum(['primary', 'pending', 'revoked']),
+  "currentPlatform": zod.union([zod.enum(['ios', 'android', 'unknown']),zod.null()]),
+  "pendingActivationAt": zod.coerce.date().nullable(),
+  "pendingPlatform": zod.union([zod.enum(['ios', 'android', 'unknown']),zod.null()]),
+  "pendingRiskFlag": zod.boolean(),
+  "waitHours": zod.literal(24)
+})
 
 
 export const getMemberCoursesResponseOneLocalizedTitleEnMax = 240;
@@ -2999,6 +3751,7 @@ export const GetMemberCourseResponse = zod.object({
 }),zod.null()]),
   "durationMinutes": zod.number().int(),
   "mediaUrl": zod.string().nullable(),
+  "hasRecording": zod.boolean(),
   "completed": zod.boolean()
 }))
 }))
@@ -3088,6 +3841,7 @@ export const EnrollMemberCourseResponse = zod.object({
 }),zod.null()]),
   "durationMinutes": zod.number().int(),
   "mediaUrl": zod.string().nullable(),
+  "hasRecording": zod.boolean(),
   "completed": zod.boolean()
 }))
 }))
@@ -3185,9 +3939,39 @@ export const UpdateCourseProgressResponse = zod.object({
 }),zod.null()]),
   "durationMinutes": zod.number().int(),
   "mediaUrl": zod.string().nullable(),
+  "hasRecording": zod.boolean(),
   "completed": zod.boolean()
 }))
 }))
+
+
+
+
+
+export const CreateMemberCoursePlaybackLinkParams = zod.object({
+  "id": zod.coerce.string(),
+  "lessonId": zod.coerce.string().min(1)
+})
+
+export const CreateMemberCoursePlaybackLinkResponse = zod.object({
+  "url": zod.string(),
+  "validUntil": zod.coerce.date()
+})
+
+
+export const streamMemberCoursePlaybackQueryTokenMax = 2048;
+
+
+
+export const StreamMemberCoursePlaybackQueryParams = zod.object({
+  "token": zod.coerce.string().min(1).max(streamMemberCoursePlaybackQueryTokenMax)
+})
+
+export const StreamMemberCoursePlaybackHeader = zod.object({
+  "Range": zod.string().optional()
+})
+
+export const StreamMemberCoursePlaybackResponse = zod.unknown()
 
 
 export const getMemberLiveClassesResponseLocalizedTitleOneEnMax = 240;
@@ -3245,6 +4029,12 @@ export const JoinMemberWaitlistParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const joinMemberWaitlistResponseBookingsItemLocalizedTitleOneEnMax = 500;
+
+export const joinMemberWaitlistResponseBookingsItemLocalizedTitleOneArMax = 500;
+
+export const joinMemberWaitlistResponseBookingsItemLocalizedTitleOneKuMax = 500;
+
 
 
 
@@ -3266,6 +4056,14 @@ export const JoinMemberWaitlistResponse = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(joinMemberWaitlistResponseBookingsItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(joinMemberWaitlistResponseBookingsItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(joinMemberWaitlistResponseBookingsItemLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
   "status": zod.string(),
@@ -3282,6 +4080,13 @@ export const JoinMemberWaitlistResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
   "respondedAt": zod.coerce.date().nullish()
+})),
+  "waitlistUpdates": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['waitlist_offer', 'waitlist_expired', 'waitlist_booked']),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date()
 }))
 })
 
@@ -3289,6 +4094,12 @@ export const JoinMemberWaitlistResponse = zod.object({
 export const LeaveMemberWaitlistParams = zod.object({
   "id": zod.coerce.string()
 })
+
+export const leaveMemberWaitlistResponseBookingsItemLocalizedTitleOneEnMax = 500;
+
+export const leaveMemberWaitlistResponseBookingsItemLocalizedTitleOneArMax = 500;
+
+export const leaveMemberWaitlistResponseBookingsItemLocalizedTitleOneKuMax = 500;
 
 
 
@@ -3311,6 +4122,14 @@ export const LeaveMemberWaitlistResponse = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(leaveMemberWaitlistResponseBookingsItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(leaveMemberWaitlistResponseBookingsItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(leaveMemberWaitlistResponseBookingsItemLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
   "status": zod.string(),
@@ -3327,6 +4146,13 @@ export const LeaveMemberWaitlistResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
   "respondedAt": zod.coerce.date().nullish()
+})),
+  "waitlistUpdates": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['waitlist_offer', 'waitlist_expired', 'waitlist_booked']),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date()
 }))
 })
 
@@ -3334,6 +4160,12 @@ export const LeaveMemberWaitlistResponse = zod.object({
 export const AcceptMemberWaitlistOfferParams = zod.object({
   "id": zod.coerce.string()
 })
+
+export const acceptMemberWaitlistOfferResponseBookingsItemLocalizedTitleOneEnMax = 500;
+
+export const acceptMemberWaitlistOfferResponseBookingsItemLocalizedTitleOneArMax = 500;
+
+export const acceptMemberWaitlistOfferResponseBookingsItemLocalizedTitleOneKuMax = 500;
 
 
 
@@ -3356,6 +4188,14 @@ export const AcceptMemberWaitlistOfferResponse = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(acceptMemberWaitlistOfferResponseBookingsItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(acceptMemberWaitlistOfferResponseBookingsItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(acceptMemberWaitlistOfferResponseBookingsItemLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
   "status": zod.string(),
@@ -3372,6 +4212,13 @@ export const AcceptMemberWaitlistOfferResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
   "respondedAt": zod.coerce.date().nullish()
+})),
+  "waitlistUpdates": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['waitlist_offer', 'waitlist_expired', 'waitlist_booked']),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date()
 }))
 })
 
@@ -3734,9 +4581,11 @@ export const GetSupportStaffAgentsResponse = zod.array(GetSupportStaffAgentsResp
 export const addSupportStaffAgentBodyUserIdMax = 160;
 
 
+export const addSupportStaffAgentBodyUserIdRegExp = new RegExp('^[A-Za-z0-9_-]{1,160}$');
+
 
 export const AddSupportStaffAgentBody = zod.object({
-  "userId": zod.string().min(1).max(addSupportStaffAgentBodyUserIdMax)
+  "userId": zod.string().min(1).max(addSupportStaffAgentBodyUserIdMax).regex(addSupportStaffAgentBodyUserIdRegExp)
 })
 
 export const AddSupportStaffAgentResponse = zod.object({
@@ -3745,13 +4594,67 @@ export const AddSupportStaffAgentResponse = zod.object({
 })
 
 
+export const removeSupportStaffAgentPathUserIdMax = 160;
+
+
+export const removeSupportStaffAgentPathUserIdRegExp = new RegExp('^[A-Za-z0-9_-]{1,160}$');
+
+
+export const RemoveSupportStaffAgentParams = zod.object({
+  "userId": zod.coerce.string().min(1).max(removeSupportStaffAgentPathUserIdMax).regex(removeSupportStaffAgentPathUserIdRegExp)
+})
+
+export const RemoveSupportStaffAgentResponse = zod.object({
+  "userId": zod.string(),
+  "role": zod.enum(['admin', 'support'])
+})
+
+
+export const GetSupportPendingDeviceChangesResponseItem = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "requestedAt": zod.coerce.date(),
+  "activateAt": zod.coerce.date(),
+  "fromPlatform": zod.enum(['ios', 'android', 'unknown']),
+  "toPlatform": zod.enum(['ios', 'android', 'unknown']),
+  "riskFlag": zod.boolean()
+})
+export const GetSupportPendingDeviceChangesResponse = zod.array(GetSupportPendingDeviceChangesResponseItem)
+
+
+export const ApproveSupportDeviceChangeParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const approveSupportDeviceChangeBodyReasonMin = 10;
+export const approveSupportDeviceChangeBodyReasonMax = 500;
+
+
+
+export const ApproveSupportDeviceChangeBody = zod.object({
+  "reason": zod.string().min(approveSupportDeviceChangeBodyReasonMin).max(approveSupportDeviceChangeBodyReasonMax)
+})
+
+export const ApproveSupportDeviceChangeResponse = zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['support_approved'])
+})
+
+
+export const getSupportNotificationFailuresResponseAttemptCountMin = 0;
+
+
+
 export const GetSupportNotificationFailuresResponseItem = zod.object({
   "id": zod.string(),
   "userId": zod.string(),
   "kind": zod.string(),
   "title": zod.string(),
-  "status": zod.enum(['failed']),
+  "status": zod.enum(['failed', 'retry_pending', 'sent']),
   "error": zod.string(),
+  "attemptCount": zod.number().int().min(getSupportNotificationFailuresResponseAttemptCountMin),
+  "nextAttemptAt": zod.coerce.date().nullable(),
+  "receiptStatus": zod.union([zod.literal('pending'),zod.literal('ok'),zod.literal('error'),zod.literal('unavailable'),zod.literal(null)]).nullable(),
   "createdAt": zod.coerce.date()
 })
 export const GetSupportNotificationFailuresResponse = zod.array(GetSupportNotificationFailuresResponseItem)
@@ -3841,6 +4744,12 @@ export const SaveMemberProfileBody = zod.object({
   "birthDate": zod.string()
 })
 
+export const saveMemberProfileResponseBookingsItemLocalizedTitleOneEnMax = 500;
+
+export const saveMemberProfileResponseBookingsItemLocalizedTitleOneArMax = 500;
+
+export const saveMemberProfileResponseBookingsItemLocalizedTitleOneKuMax = 500;
+
 
 
 
@@ -3862,6 +4771,14 @@ export const SaveMemberProfileResponse = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(saveMemberProfileResponseBookingsItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(saveMemberProfileResponseBookingsItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(saveMemberProfileResponseBookingsItemLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
   "status": zod.string(),
@@ -3878,6 +4795,13 @@ export const SaveMemberProfileResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
   "respondedAt": zod.coerce.date().nullish()
+})),
+  "waitlistUpdates": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['waitlist_offer', 'waitlist_expired', 'waitlist_booked']),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date()
 }))
 })
 
@@ -3895,6 +4819,12 @@ export const GetBookingCatalogResponseItem = zod.object({
 })
 export const GetBookingCatalogResponse = zod.array(GetBookingCatalogResponseItem)
 
+
+export const getMemberStateResponseBookingsItemLocalizedTitleOneEnMax = 500;
+
+export const getMemberStateResponseBookingsItemLocalizedTitleOneArMax = 500;
+
+export const getMemberStateResponseBookingsItemLocalizedTitleOneKuMax = 500;
 
 
 
@@ -3917,6 +4847,14 @@ export const GetMemberStateResponse = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberStateResponseBookingsItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(getMemberStateResponseBookingsItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(getMemberStateResponseBookingsItemLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
   "status": zod.string(),
@@ -3933,6 +4871,13 @@ export const GetMemberStateResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
   "respondedAt": zod.coerce.date().nullish()
+})),
+  "waitlistUpdates": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['waitlist_offer', 'waitlist_expired', 'waitlist_booked']),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date()
 }))
 })
 
@@ -3940,6 +4885,12 @@ export const GetMemberStateResponse = zod.object({
 export const EnablePreviewMembershipBody = zod.object({
   "acknowledgeSampleData": zod.boolean()
 })
+
+export const enablePreviewMembershipResponseBookingsItemLocalizedTitleOneEnMax = 500;
+
+export const enablePreviewMembershipResponseBookingsItemLocalizedTitleOneArMax = 500;
+
+export const enablePreviewMembershipResponseBookingsItemLocalizedTitleOneKuMax = 500;
 
 
 
@@ -3962,6 +4913,14 @@ export const EnablePreviewMembershipResponse = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(enablePreviewMembershipResponseBookingsItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(enablePreviewMembershipResponseBookingsItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(enablePreviewMembershipResponseBookingsItemLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
   "status": zod.string(),
@@ -3978,6 +4937,13 @@ export const EnablePreviewMembershipResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
   "respondedAt": zod.coerce.date().nullish()
+})),
+  "waitlistUpdates": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['waitlist_offer', 'waitlist_expired', 'waitlist_booked']),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date()
 }))
 })
 
@@ -3987,6 +4953,12 @@ export const CreateMemberBookingBody = zod.object({
   "targetId": zod.string(),
   "slot": zod.string().optional()
 })
+
+export const createMemberBookingResponseBookingsItemLocalizedTitleOneEnMax = 500;
+
+export const createMemberBookingResponseBookingsItemLocalizedTitleOneArMax = 500;
+
+export const createMemberBookingResponseBookingsItemLocalizedTitleOneKuMax = 500;
 
 
 
@@ -4009,6 +4981,14 @@ export const CreateMemberBookingResponse = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(createMemberBookingResponseBookingsItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(createMemberBookingResponseBookingsItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(createMemberBookingResponseBookingsItemLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
   "status": zod.string(),
@@ -4025,6 +5005,13 @@ export const CreateMemberBookingResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
   "respondedAt": zod.coerce.date().nullish()
+})),
+  "waitlistUpdates": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['waitlist_offer', 'waitlist_expired', 'waitlist_booked']),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date()
 }))
 })
 
@@ -4032,6 +5019,12 @@ export const CreateMemberBookingResponse = zod.object({
 export const CancelMemberBookingParams = zod.object({
   "id": zod.coerce.string()
 })
+
+export const cancelMemberBookingResponseBookingsItemLocalizedTitleOneEnMax = 500;
+
+export const cancelMemberBookingResponseBookingsItemLocalizedTitleOneArMax = 500;
+
+export const cancelMemberBookingResponseBookingsItemLocalizedTitleOneKuMax = 500;
 
 
 
@@ -4054,6 +5047,14 @@ export const CancelMemberBookingResponse = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(cancelMemberBookingResponseBookingsItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(cancelMemberBookingResponseBookingsItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(cancelMemberBookingResponseBookingsItemLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
   "status": zod.string(),
@@ -4070,6 +5071,13 @@ export const CancelMemberBookingResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
   "respondedAt": zod.coerce.date().nullish()
+})),
+  "waitlistUpdates": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['waitlist_offer', 'waitlist_expired', 'waitlist_booked']),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date()
 }))
 })
 

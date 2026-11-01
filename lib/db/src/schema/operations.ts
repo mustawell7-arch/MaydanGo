@@ -36,6 +36,7 @@ export const accessGrants = pgTable("access_grants", {
   reason: text("reason").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+// Database triggers in migration 0004 enforce append-only operation history.
 export const operationAudit = pgTable("operation_audit", {
   id: text("id").primaryKey(),
   actorId: text("actor_id").notNull(),

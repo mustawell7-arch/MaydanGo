@@ -1,32 +1,31 @@
-import { Router } from "express";
+import { Router, type Response } from "express";
 import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
-import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lt } from "drizzle-orm";
+import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lte, lt } from "drizzle-orm";
 import { z } from "zod";
-import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, facilityProfiles, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents } from "@workspace/db";
+import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, facilityProfiles, facilityHoursOverrides, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents } from "@workspace/db";
 import { BookingError, processWaitlistQueue } from "../lib/reservations";
-import { createFacilityProfileInput, facilityProfileFields, offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
+import { createFacilityProfileInput, facilityHoursOverrideInput, facilityProfileFields, offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
 import {
-  AddLearningLessonBody, AddLearningLessonResponse, AddLiveOfferingResponse, ChangeLiveOfferingBody,
-  ChangeLiveOfferingResponse,
+  AddLearningLessonBody, AddLearningLessonResponse, ChangeLiveOfferingBody,
   CreateLearningCourseBody, CreateLearningCourseResponse,
-  CreateFacilityProfileBody, CreateFacilityProfileResponse, CreateRecurringOfferingsBody,
-  CreateRecurringOfferingsResponse, GetOperationFacilitiesResponse, ReviewOfferingBody,
-  ReviewOfferingResponse, SubmitOfferingResponse,
+  CreateFacilityProfileBody, CreateFacilityProfileResponse, CreateFacilityHoursOverrideBody,
+  CreateFacilityHoursOverrideParams, CreateFacilityHoursOverrideResponse, CreateRecurringOfferingsBody,
+  DeleteFacilityHoursOverrideParams, GetOperationCoursesResponse,
+  CreateRecurringOfferingsResponse, GetOperationFacilitiesResponse,
   UpdateFacilityProfileBody, UpdateFacilityProfileResponse,
   UpdateLearningCourseBody, UpdateLearningCourseResponse,
 } from "@workspace/api-zod";
 import { sendMemberNotification } from "../lib/notifications";
-import { expandWeeklyOffering } from "../lib/recurring-offerings";
-import {
-  deriveOfferingSessionStatus, effectiveOfferingActivityStatus, transitionOfferingActivity,
-} from "../lib/offering-status";
+import { expandRecurringOffering } from "../lib/recurring-offerings";
+import { iraqCalendarDate } from "../lib/facility-hours";
 
 import { PaymentError, paymentsEnabled, payTabsTestModeEnabled } from "../lib/payment-config";
 
 import { cancelPaidSubscriptionImmediately, requestFullRefund, validatePaidPlan } from "../lib/payments-paytabs";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
+import { isPrivateCourseRecordingPath } from "../lib/course-recordings";
 import {
   GetPartnerInvoicesResponse, GetPartnerSettlementSummaryResponse, RequestPartnerInvoiceUploadUrlBody,
   RequestPartnerInvoiceUploadUrlResponse, SubmitPartnerInvoiceBody, SubmitPartnerInvoiceResponse,
@@ -51,6 +50,21 @@ router.use(async (req, res, next) => {
 const admin = (res: import("express").Response) => {
   if (res.locals.operator.role !== "admin") throw new BookingError(403, "Administrator access is required.");
 };
+const offeringApprovalStatus = z.enum([
+  "draft", "submitted", "under_review", "changes_requested", "approved", "published", "rejected", "archived",
+]);
+const offeringReviewBody = z.object({
+  status: offeringApprovalStatus,
+  reason: z.string().trim().min(5).max(1000).optional(),
+}).strict().superRefine((value, context) => {
+  if (["changes_requested", "rejected", "archived"].includes(value.status) && !value.reason) {
+    context.addIssue({ code: "custom", path: ["reason"], message: "A clear reason is required for this decision." });
+  }
+});
+const offeringPartnerResponseBody = z.object({
+  response: z.string().trim().min(5).max(1000),
+}).strict();
+const strictOfferingUpdateBody = ChangeLiveOfferingBody.strict();
 const financeStaff = (res: import("express").Response) => {
   if (!["admin", "finance"].includes(res.locals.operator.role))
     throw new BookingError(403, "Finance staff access is required.");
@@ -80,19 +94,6 @@ const invoiceDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {
   const date = new Date(`${value}T00:00:00Z`);
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
 });
-function offeringWithStatuses<T extends typeof offerings.$inferSelect>(row: T, occupiedPlaces = 0) {
-  const activityStatus = effectiveOfferingActivityStatus(row);
-  const sessionStatus = deriveOfferingSessionStatus({ ...row, activityStatus }, occupiedPlaces);
-  return {
-    ...row,
-    startsAt: row.startsAt.toISOString(),
-    endsAt: row.endsAt.toISOString(),
-    cancellationDeadline: row.cancellationDeadline.toISOString(),
-    cancelledAt: row.cancelledAt?.toISOString() ?? null,
-    activityStatus,
-    sessionStatus,
-  };
-}
 router.get("/", async (_req, res) => {
   const op = res.locals.operator;
   const isStaff = op.role !== "partner";
@@ -112,26 +113,7 @@ router.get("/", async (_req, res) => {
   ]);
   const policyRows = offeringRows.length ? await db.select().from(checkinPolicies)
     .where(inArray(checkinPolicies.offeringId, offeringRows.map(row => row.id))) : [];
-  const reservationCounts = offeringRows.length ? await db.select({
-    offeringId: reservations.offeringId,
-    count: sql<number>`count(*)::int`,
-  }).from(reservations).where(and(
-    inArray(reservations.offeringId, offeringRows.map(row => row.id)),
-    inArray(reservations.status, ["reserved", "requested"]),
-  )).groupBy(reservations.offeringId) : [];
-  const activeOfferCounts = offeringRows.length ? await db.select({
-    offeringId: waitlistEntries.offeringId,
-    count: sql<number>`count(*)::int`,
-  }).from(waitlistEntries).where(and(
-    inArray(waitlistEntries.offeringId, offeringRows.map(row => row.id)),
-    eq(waitlistEntries.status, "offered"),
-    gt(waitlistEntries.offerExpiresAt, new Date()),
-  )).groupBy(waitlistEntries.offeringId) : [];
   const policyByOffering = new Map(policyRows.map(policy => [policy.offeringId, policy]));
-  const occupiedByOffering = new Map<string, number>();
-  for (const row of reservationCounts) occupiedByOffering.set(row.offeringId, Number(row.count));
-  for (const row of activeOfferCounts) occupiedByOffering.set(row.offeringId,
-    (occupiedByOffering.get(row.offeringId) ?? 0) + Number(row.count));
   const queueCounts = new Map<string, number>();
   const waitlist = queueRows.map(row => {
     const position = (queueCounts.get(row.offeringId) ?? 0) + 1;
@@ -140,7 +122,7 @@ router.get("/", async (_req, res) => {
   });
   res.json({ role: op.role, partnerId: op.partnerId,
     partners: partnerRows, offerings: offeringRows.map(row => ({
-      ...offeringWithStatuses(row, occupiedByOffering.get(row.id) ?? 0),
+      ...row,
       checkinPolicy: policyByOffering.get(row.id) ?? null,
     })), waitlist,
     plans: plans.map(({ whopPlanId: _legacyProviderId, ...plan }) => plan),
@@ -177,7 +159,22 @@ router.get("/facilities", async (_req, res) => {
   const rows = await db.select().from(facilityProfiles)
     .where(op.role === "admin" ? undefined : eq(facilityProfiles.partnerId, op.partnerId ?? ""))
     .orderBy(asc(facilityProfiles.city), asc(facilityProfiles.facility));
-  res.json(GetOperationFacilitiesResponse.parse(rows));
+  const hoursOverrides = rows.length ? await db.select().from(facilityHoursOverrides)
+    .where(and(
+      inArray(facilityHoursOverrides.facilityId, rows.map(row => row.id)),
+      gte(facilityHoursOverrides.endDate, iraqCalendarDate(new Date())),
+    ))
+    .orderBy(asc(facilityHoursOverrides.startDate), asc(facilityHoursOverrides.createdAt)) : [];
+  const byFacility = new Map<string, typeof hoursOverrides>();
+  for (const override of hoursOverrides) {
+    const current = byFacility.get(override.facilityId) ?? [];
+    current.push(override);
+    byFacility.set(override.facilityId, current);
+  }
+  res.json(GetOperationFacilitiesResponse.parse(rows.map(row => ({
+    ...row,
+    specialHours: byFacility.get(row.id) ?? [],
+  }))));
 });
 router.post("/facilities", async (req, res) => {
   const data = createFacilityProfileInput.parse(req.body);
@@ -247,6 +244,56 @@ router.delete("/facilities/:id", async (req, res) => {
   });
   res.sendStatus(204);
 });
+router.post("/facilities/:id/hours-overrides", async (req, res) => {
+  const params = CreateFacilityHoursOverrideParams.parse(req.params);
+  const data = facilityHoursOverrideInput.parse(CreateFacilityHoursOverrideBody.parse(req.body));
+  if (data.endDate < iraqCalendarDate(new Date())) {
+    throw new BookingError(400, "An override cannot end before today's date in Iraq.");
+  }
+  const created = await db.transaction(async tx => {
+    const [facility] = await tx.select().from(facilityProfiles)
+      .where(eq(facilityProfiles.id, params.id)).for("update");
+    if (!facility) throw new BookingError(404, "Facility profile not found.");
+    own(res, facility.partnerId);
+    const [conflict] = await tx.select({ id: facilityHoursOverrides.id })
+      .from(facilityHoursOverrides)
+      .where(and(
+        eq(facilityHoursOverrides.facilityId, params.id),
+        lte(facilityHoursOverrides.startDate, data.endDate),
+        gte(facilityHoursOverrides.endDate, data.startDate),
+      ))
+      .limit(1);
+    if (conflict) throw new BookingError(409, "These dates overlap an existing facility hours override.");
+    const [row] = await tx.insert(facilityHoursOverrides).values({
+      ...data,
+      id: randomUUID(),
+      facilityId: params.id,
+    }).returning();
+    await audit(tx, res.locals.operator.userId, "facility.hoursOverride.create", row.id, params.id);
+    return row;
+  });
+  res.status(201).json(CreateFacilityHoursOverrideResponse.parse(created));
+});
+router.delete("/facilities/:id/hours-overrides/:overrideId", async (req, res) => {
+  const params = DeleteFacilityHoursOverrideParams.parse(req.params);
+  await db.transaction(async tx => {
+    const [facility] = await tx.select().from(facilityProfiles)
+      .where(eq(facilityProfiles.id, params.id)).for("update");
+    if (!facility) throw new BookingError(404, "Facility profile not found.");
+    own(res, facility.partnerId);
+    const [override] = await tx.select({ id: facilityHoursOverrides.id })
+      .from(facilityHoursOverrides)
+      .where(and(
+        eq(facilityHoursOverrides.id, params.overrideId),
+        eq(facilityHoursOverrides.facilityId, params.id),
+      ))
+      .for("update");
+    if (!override) throw new BookingError(404, "Facility hours override not found.");
+    await tx.delete(facilityHoursOverrides).where(eq(facilityHoursOverrides.id, params.overrideId));
+    await audit(tx, res.locals.operator.userId, "facility.hoursOverride.delete", params.overrideId, params.id);
+  });
+  res.sendStatus(204);
+});
 router.post("/offerings", async (req, res) => {
   const data = offeringInput.parse(req.body);
   own(res, data.partnerId);
@@ -266,20 +313,30 @@ router.post("/offerings", async (req, res) => {
     if (data.accessType === "live" && data.active) ensureHttps(data.joinUrl, "Live class join link");
     if (data.joinUrl) ensureHttps(data.joinUrl, "Live class join link");
     const [o] = await tx.insert(offerings).values({ ...data, id, targetId: id, slot: "", scope: "live",
-      activityStatus: data.active ? "published" : "draft", reviewNote: null,
+      approvalStatus: data.active ? "published" : "draft",
+      reviewedAt: data.active ? new Date() : null,
+      reviewedBy: data.active ? res.locals.operator.userId : null,
       localizedTitle: data.localizedTitle ?? null, localizedDescription: data.localizedDescription ?? null, joinUrl: data.joinUrl ?? null,
       partnerGroup: p.groupId, startsAt: new Date(data.startsAt), endsAt: new Date(data.endsAt),
       cancellationDeadline: new Date(data.cancellationDeadline) }).returning();
     await audit(tx, res.locals.operator.userId, "offering.create", id);
+    if (data.active) await audit(tx, res.locals.operator.userId, "offering.approval.decision", id, "from=none;to=published");
     return o;
   });
-  res.status(201).json(AddLiveOfferingResponse.parse(offeringWithStatuses(row)));
+  res.status(201).json(row);
 });
 router.post("/offerings/recurring", async (req, res) => {
   const body = CreateRecurringOfferingsBody.parse(req.body);
   const template = offeringInput.parse(body.template);
-  const schedule = { ...body.schedule, repeatUntil: body.schedule.repeatUntil.toISOString().slice(0, 10) };
-  const occurrences = expandWeeklyOffering(template, schedule);
+  if (template.kind !== "session") throw new BookingError(400, "Only sessions can be added to a recurring schedule.");
+  const calendarDate = (value: Date | string) => value instanceof Date ? value.toISOString().slice(0, 10) : value;
+  const schedule = {
+    ...body.schedule,
+    repeatUntil: calendarDate(body.schedule.repeatUntil),
+    dates: body.schedule.dates?.map(calendarDate),
+    excludedDates: body.schedule.excludedDates?.map(calendarDate),
+  };
+  const occurrences = expandRecurringOffering(template, schedule);
   own(res, template.partnerId);
 
   const created = await db.transaction(async tx => {
@@ -313,160 +370,426 @@ router.post("/offerings/recurring", async (req, res) => {
       lt(offerings.startsAt, new Date(last.endsAt)),
       gt(offerings.endsAt, new Date(first.startsAt)),
     ));
-    const conflict = existing.find(row => occurrences.some(occurrence =>
-      new Date(occurrence.startsAt) < row.endsAt && new Date(occurrence.endsAt) > row.startsAt,
-    ));
-    if (conflict) throw new BookingError(409, "One or more sessions overlap an existing offering at this facility. No sessions were created.");
+    const conflictingDates = [...new Set(occurrences
+      .filter(occurrence => existing.some(row =>
+        new Date(occurrence.startsAt) < row.endsAt && new Date(occurrence.endsAt) > row.startsAt,
+      ))
+      .map(occurrence => iraqCalendarDate(new Date(occurrence.startsAt))))].sort();
+    if (conflictingDates.length) return { conflictingDates };
 
-    const rows = [];
+    const rows: (typeof offerings.$inferSelect)[] = [];
+    const recurrenceGroupId = randomUUID();
     for (const data of occurrences) {
       const id = randomUUID();
       const [row] = await tx.insert(offerings).values({
-        ...data, id, targetId: id, slot: "", scope: "live", partnerGroup: partner.groupId,
-        activityStatus: data.active ? "published" : "draft", reviewNote: null,
+        ...data, id, targetId: id, slot: "", scope: "live", partnerGroup: partner.groupId, recurrenceGroupId,
+        approvalStatus: template.active ? "published" : "draft",
+        reviewedAt: template.active ? new Date() : null,
+        reviewedBy: template.active ? res.locals.operator.userId : null,
         localizedTitle: data.localizedTitle ?? null, localizedDescription: data.localizedDescription ?? null,
         joinUrl: data.joinUrl ?? null, startsAt: new Date(data.startsAt), endsAt: new Date(data.endsAt),
         cancellationDeadline: new Date(data.cancellationDeadline),
       }).returning();
       await audit(tx, res.locals.operator.userId, "offering.create.recurring", id,
-        `weekdays=${schedule.weekdays.join(",")};repeatUntil=${schedule.repeatUntil}`);
+        `series=${recurrenceGroupId};mode=${schedule.mode ?? "weekly"};interval=${schedule.interval ?? 1};repeatUntil=${schedule.repeatUntil}`);
+      if (template.active) await audit(tx, res.locals.operator.userId, "offering.approval.decision", id, "from=none;to=published");
       rows.push(row);
     }
-    return rows;
+    return { rows };
   });
 
-  const response = created.map(row => ({
-    ...offeringWithStatuses(row),
+  if ("conflictingDates" in created) {
+    res.status(409).json({ conflictingDates: created.conflictingDates });
+    return;
+  }
+
+  const response = created.rows.map(row => ({
+    ...row,
     startsAt: row.startsAt.toISOString(),
     endsAt: row.endsAt.toISOString(),
     cancellationDeadline: row.cancellationDeadline.toISOString(),
   }));
   res.status(201).json(CreateRecurringOfferingsResponse.parse(response));
 });
-router.patch("/offerings/:id", async (req, res) => {
-  const data = ChangeLiveOfferingBody.parse(req.body);
+type OfferingChangeInput = z.infer<typeof ChangeLiveOfferingBody>;
+type OfferingRow = typeof offerings.$inferSelect;
+type ScheduleNotice = { offeringId: string; userId: string; startsAt: Date };
+type OfferingApprovalStatusValue = z.infer<typeof offeringApprovalStatus>;
+
+const approvalTransitions: Record<OfferingApprovalStatusValue, OfferingApprovalStatusValue[]> = {
+  draft: ["archived"],
+  submitted: ["under_review", "changes_requested", "approved", "rejected", "archived"],
+  under_review: ["changes_requested", "approved", "rejected", "archived"],
+  changes_requested: ["rejected", "archived"],
+  approved: ["published", "changes_requested", "rejected", "archived"],
+  published: ["archived"],
+  rejected: ["archived"],
+  archived: [],
+};
+
+async function assertOfferingReadyForReview(tx: Tx, row: OfferingRow) {
+  if (row.cancelledAt || row.startsAt <= new Date()) {
+    throw new BookingError(409, "Only a future, uncancelled activity can be submitted or published.");
+  }
+  if (!row.partnerId) throw new BookingError(409, "This activity is not assigned to a partner.");
+  const [partner] = await tx.select().from(partners).where(eq(partners.id, row.partnerId)).for("share");
+  if (!partner?.approved) throw new BookingError(403, "Partner approval is required before activity review.");
+  const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
+    eq(facilityProfiles.partnerId, row.partnerId),
+    eq(facilityProfiles.city, row.city),
+    eq(facilityProfiles.facility, row.facility),
+  )).limit(1);
+  if (!facility) throw new BookingError(409, "This activity must use an approved facility profile.");
+  if (row.accessType === "live") {
+    if (!row.localizedTitle || !row.localizedDescription) {
+      throw new BookingError(400, "Live classes need English, Arabic and Sorani details.");
+    }
+    ensureHttps(row.joinUrl, "Live class join link");
+  }
+}
+
+function serializeOffering(row: OfferingRow) {
+  return {
+    ...row,
+    startsAt: row.startsAt.toISOString(),
+    endsAt: row.endsAt.toISOString(),
+    cancellationDeadline: row.cancellationDeadline.toISOString(),
+    cancelledAt: row.cancelledAt?.toISOString() ?? null,
+  };
+}
+
+router.post("/offerings/:id/submit", async (req, res) => {
+  const partnerId = partnerOnly(res);
   const row = await db.transaction(async tx => {
-    const [o] = await tx.select().from(offerings).where(and(eq(offerings.id, String(req.params.id)), eq(offerings.scope, "live"))).for("update");
-    if (!o) throw new BookingError(404, "Offering not found.");
-    own(res, o.partnerId);
-    if (o.cancelledAt) throw new BookingError(409, "Cancelled offerings cannot be edited or republished. Create a replacement.");
-    if (o.startsAt <= new Date()) throw new BookingError(409, "Past offerings cannot be edited.");
-    if (data.active !== undefined)
-      throw new BookingError(400, "Use the activity submission and review actions to change publishing status.");
-    const needsReview = res.locals.operator.role === "partner" && o.active &&
-      (data.localizedTitle !== undefined || data.localizedDescription !== undefined || data.joinUrl !== undefined);
-    const nextActive = needsReview ? false : o.active;
-    const nextTitle = data.localizedTitle ?? o.localizedTitle;
-    const nextDescription = data.localizedDescription ?? o.localizedDescription;
-    const nextJoinUrl = data.joinUrl !== undefined ? data.joinUrl : o.joinUrl;
-    if (o.accessType === "live" && nextActive) {
+    const [current] = await tx.select().from(offerings).where(and(
+      eq(offerings.id, String(req.params.id)), eq(offerings.scope, "live"),
+    )).for("update");
+    if (!current) throw new BookingError(404, "Offering not found.");
+    own(res, current.partnerId);
+    if (current.partnerId !== partnerId) throw new BookingError(403, "You can submit only your own activities.");
+    if (current.approvalStatus !== "draft" || current.active) {
+      throw new BookingError(409, "Only an inactive draft can be submitted. Use the correction response for requested changes.");
+    }
+    await assertOfferingReadyForReview(tx, current);
+    const [updated] = await tx.update(offerings).set({
+      approvalStatus: "submitted",
+      submittedAt: new Date(),
+      approvalReason: null,
+      partnerResponse: null,
+    }).where(eq(offerings.id, current.id)).returning();
+    await audit(tx, res.locals.operator.userId, "offering.approval.submit", current.id, "from=draft;to=submitted");
+    return updated;
+  });
+  res.json(serializeOffering(row));
+});
+
+router.post("/offerings/:id/respond", async (req, res) => {
+  const partnerId = partnerOnly(res);
+  const { response } = offeringPartnerResponseBody.parse(req.body);
+  const row = await db.transaction(async tx => {
+    const [current] = await tx.select().from(offerings).where(and(
+      eq(offerings.id, String(req.params.id)), eq(offerings.scope, "live"),
+    )).for("update");
+    if (!current) throw new BookingError(404, "Offering not found.");
+    own(res, current.partnerId);
+    if (current.partnerId !== partnerId) throw new BookingError(403, "You can respond only to corrections on your own activities.");
+    if (current.approvalStatus !== "changes_requested" || current.active || current.cancelledAt) {
+      throw new BookingError(409, "This activity does not have an open correction request.");
+    }
+    await assertOfferingReadyForReview(tx, current);
+    const [updated] = await tx.update(offerings).set({
+      approvalStatus: "submitted",
+      submittedAt: new Date(),
+      partnerResponse: response,
+    }).where(eq(offerings.id, current.id)).returning();
+    await audit(tx, res.locals.operator.userId, "offering.approval.respond", current.id,
+      `from=changes_requested;to=submitted;responseLength=${response.length}`);
+    return updated;
+  });
+  res.json(serializeOffering(row));
+});
+
+router.patch("/offerings/:id/review", async (req, res) => {
+  admin(res);
+  const decision = offeringReviewBody.parse(req.body);
+  const row = await db.transaction(async tx => {
+    const [current] = await tx.select().from(offerings).where(and(
+      eq(offerings.id, String(req.params.id)), eq(offerings.scope, "live"),
+    )).for("update");
+    if (!current) throw new BookingError(404, "Offering not found.");
+    if (!approvalTransitions[current.approvalStatus].includes(decision.status)) {
+      throw new BookingError(409, `Cannot move an activity from ${current.approvalStatus} to ${decision.status}.`);
+    }
+    if (current.cancelledAt && decision.status !== "archived") {
+      throw new BookingError(409, "Cancelled activities cannot be reopened for review.");
+    }
+    if (decision.status === "approved" || decision.status === "published") {
+      await assertOfferingReadyForReview(tx, current);
+    }
+    const [booking] = await tx.select({ id: reservations.id }).from(reservations).where(and(
+      eq(reservations.offeringId, current.id),
+      inArray(reservations.status, ["reserved", "requested"]),
+    )).limit(1);
+    const [waitlist] = await tx.select({ id: waitlistEntries.id }).from(waitlistEntries).where(and(
+      eq(waitlistEntries.offeringId, current.id),
+      inArray(waitlistEntries.status, ["waiting", "offered"]),
+    )).limit(1);
+    if (decision.status !== "published" && (booking || waitlist)) {
+      throw new BookingError(409, "Resolve current reservations and waitlist entries before changing this activity's publication state.");
+    }
+    if (decision.status === "published" && current.approvalStatus !== "approved") {
+      throw new BookingError(409, "Approve the activity before publishing it.");
+    }
+    const [updated] = await tx.update(offerings).set({
+      approvalStatus: decision.status,
+      approvalReason: decision.reason ?? null,
+      ...(decision.status === "changes_requested" ? { partnerResponse: null } : {}),
+      active: decision.status === "published",
+      reviewedAt: new Date(),
+      reviewedBy: res.locals.operator.userId,
+    }).where(eq(offerings.id, current.id)).returning();
+    await audit(tx, res.locals.operator.userId, "offering.approval.decision", current.id,
+      `from=${current.approvalStatus};to=${decision.status};reason=${decision.reason ?? ""}`);
+    return updated;
+  });
+  res.json(serializeOffering(row));
+});
+
+async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Response, series: boolean) {
+  const timeValues = [data.startsAt, data.endsAt, data.cancellationDeadline];
+  const hasTimeChange = timeValues.some(value => value !== undefined);
+  if (hasTimeChange && timeValues.some(value => value === undefined)) {
+    throw new BookingError(400, "Set the start, end, and cancellation deadline together.");
+  }
+  const requestedStart = hasTimeChange ? new Date(data.startsAt!) : null;
+  const requestedEnd = hasTimeChange ? new Date(data.endsAt!) : null;
+  const requestedDeadline = hasTimeChange ? new Date(data.cancellationDeadline!) : null;
+  if (requestedStart && requestedEnd && requestedDeadline
+    && (!(requestedStart > new Date()) || !(requestedEnd > requestedStart) || requestedDeadline > requestedStart)) {
+    throw new BookingError(400, "Use a future start, later end, and a cancellation deadline no later than the start.");
+  }
+
+  const result = await db.transaction(async tx => {
+    const [selected] = await tx.select().from(offerings).where(and(
+      eq(offerings.id, id), eq(offerings.scope, "live"),
+    )).for("update");
+    if (!selected) throw new BookingError(404, "Offering not found.");
+    own(res, selected.partnerId);
+    if (selected.cancelledAt) throw new BookingError(409, "Cancelled offerings cannot be edited or republished. Create a replacement.");
+    if (selected.startsAt <= new Date()) throw new BookingError(409, "Past offerings cannot be edited.");
+    if (series && !selected.recurrenceGroupId) {
+      throw new BookingError(409, "This session is not part of a recurring series.");
+    }
+
+    const venueKey = `${selected.city.trim().toLowerCase()}|${selected.facility.trim().toLowerCase()}`;
+    if (selected.partnerId) {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${selected.partnerId}), hashtext(${venueKey}))`);
+    }
+    const rows = series
+      ? await tx.select().from(offerings).where(and(
+        eq(offerings.scope, "live"),
+        eq(offerings.partnerId, selected.partnerId ?? ""),
+        eq(offerings.recurrenceGroupId, selected.recurrenceGroupId!),
+        isNull(offerings.cancelledAt),
+        gt(offerings.startsAt, new Date()),
+      )).orderBy(asc(offerings.startsAt)).for("update")
+      : [selected];
+    if (!rows.length || !rows.some(row => row.id === selected.id)) {
+      throw new BookingError(409, "There are no remaining future sessions in this series.");
+    }
+    for (const row of rows) own(res, row.partnerId);
+
+    const contentChanged = data.localizedTitle !== undefined
+      || data.localizedDescription !== undefined || data.joinUrl !== undefined;
+    const partnerContentEdit = res.locals.operator.role === "partner" && contentChanged;
+    if (partnerContentEdit && rows.some(row =>
+      ["submitted", "under_review", "rejected", "archived"].includes(row.approvalStatus))) {
+      throw new BookingError(409, "Wait for the administrator decision before changing a submitted or closed activity.");
+    }
+    const needsReview = partnerContentEdit && rows.some(row =>
+      row.active || row.approvalStatus === "published" || row.approvalStatus === "approved");
+    if (needsReview) {
+      const [booking] = await tx.select({ id: reservations.id }).from(reservations).where(and(
+        inArray(reservations.offeringId, rows.map(row => row.id)),
+        inArray(reservations.status, ["reserved", "requested"]),
+      )).limit(1);
+      const [waitlist] = await tx.select({ id: waitlistEntries.id }).from(waitlistEntries).where(and(
+        inArray(waitlistEntries.offeringId, rows.map(row => row.id)),
+        inArray(waitlistEntries.status, ["waiting", "offered"]),
+      )).limit(1);
+      if (booking || waitlist) {
+        throw new BookingError(409, "Cancel remaining bookings and waitlist entries before submitting published content changes for review.");
+      }
+    }
+    const nextTitle = data.localizedTitle ?? selected.localizedTitle;
+    const nextDescription = data.localizedDescription ?? selected.localizedDescription;
+    const nextJoinUrl = data.joinUrl !== undefined ? data.joinUrl : selected.joinUrl;
+    if (data.joinUrl) ensureHttps(data.joinUrl, "Live class join link");
+
+    const nextActive = (row: OfferingRow) => needsReview ? false : row.active;
+    if (rows.some(row => row.accessType === "live" && nextActive(row))) {
       if (!nextTitle || !nextDescription) throw new BookingError(400, "Live classes need English, Arabic and Sorani details.");
       ensureHttps(nextJoinUrl, "Live class join link");
     }
-    if (data.joinUrl) ensureHttps(data.joinUrl, "Live class join link");
-    if (nextActive) {
-      const [p] = await tx.select().from(partners).where(eq(partners.id, o.partnerId!)).for("share");
-      if (!p?.approved) throw new BookingError(403, "Partner approval is required.");
+    for (const row of rows) {
+      if (!nextActive(row)) continue;
+      const [partner] = await tx.select().from(partners).where(eq(partners.id, row.partnerId!)).for("share");
+      if (!partner?.approved) throw new BookingError(403, "Partner approval is required.");
       const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
-        eq(facilityProfiles.partnerId, o.partnerId!),
-        eq(facilityProfiles.city, o.city),
-        eq(facilityProfiles.facility, o.facility),
+        eq(facilityProfiles.partnerId, row.partnerId!),
+        eq(facilityProfiles.city, row.city),
+        eq(facilityProfiles.facility, row.facility),
       )).limit(1);
       if (!facility) throw new BookingError(409, "This session is not linked to an existing shared facility profile.");
     }
-    const held = await tx.select().from(reservations).where(and(eq(reservations.offeringId, o.id), inArray(reservations.status, ["reserved", "requested"])));
-    const [offers] = await tx.select({ count: sql<number>`count(*)::int` }).from(waitlistEntries)
-      .where(and(eq(waitlistEntries.offeringId, o.id), eq(waitlistEntries.status, "offered"), gt(waitlistEntries.offerExpiresAt, new Date())));
-    if (held.length + Number(offers?.count ?? 0) > data.capacity) throw new BookingError(409, "Capacity cannot be below existing reservations and active waitlist offers.");
-    const [result] = await tx.update(offerings).set({
-      capacity: data.capacity,
-      ...(data.waitlistOfferMinutes !== undefined ? { waitlistOfferMinutes: data.waitlistOfferMinutes } : {}),
-      ...(needsReview ? { active: false } : {}),
-      ...(needsReview ? { activityStatus: "submitted", reviewNote: null } : {}),
-      ...(data.localizedTitle !== undefined ? { localizedTitle: data.localizedTitle } : {}),
-      ...(data.localizedDescription !== undefined ? { localizedDescription: data.localizedDescription } : {}),
-      ...(data.joinUrl !== undefined ? { joinUrl: data.joinUrl } : {}),
-    }).where(eq(offerings.id, o.id)).returning();
-    await audit(tx, res.locals.operator.userId, "offering.update", o.id);
-    return { offering: result, occupiedPlaces: held.length + Number(offers?.count ?? 0) };
-  });
-  await processWaitlistQueue();
-  res.json(ChangeLiveOfferingResponse.parse(offeringWithStatuses(row.offering, row.occupiedPlaces)));
-});
-router.post("/offerings/:id/submit", async (req, res) => {
-  if (res.locals.operator.role !== "partner") throw new BookingError(403, "Only a partner can submit an activity for review.");
-  const id = String(req.params.id);
-  const row = await db.transaction(async tx => {
-    const [offering] = await tx.select().from(offerings).where(and(
-      eq(offerings.id, id), eq(offerings.scope, "live"),
-    )).for("update");
-    if (!offering) throw new BookingError(404, "Offering not found.");
-    own(res, offering.partnerId);
-    if (offering.cancelledAt) throw new BookingError(409, "Cancelled offerings cannot be submitted.");
-    if (offering.startsAt <= new Date()) throw new BookingError(409, "Past offerings cannot be submitted for review.");
-    const current = effectiveOfferingActivityStatus(offering);
-    if (current !== "draft" && current !== "changes_requested")
-      throw new BookingError(409, "Only drafts or activities with requested changes can be submitted.");
-    const [updated] = await tx.update(offerings).set({
-      active: false, activityStatus: "submitted", reviewNote: null,
-    }).where(eq(offerings.id, id)).returning();
-    await audit(tx, res.locals.operator.userId, "offering.submit", id);
-    return updated;
-  });
-  res.json(SubmitOfferingResponse.parse(offeringWithStatuses(row)));
-});
-router.post("/offerings/:id/review", async (req, res) => {
-  admin(res);
-  const data = ReviewOfferingBody.parse(req.body);
-  const id = String(req.params.id);
-  const result = await db.transaction(async tx => {
-    const [offering] = await tx.select().from(offerings).where(and(
-      eq(offerings.id, id), eq(offerings.scope, "live"),
-    )).for("update");
-    if (!offering) throw new BookingError(404, "Offering not found.");
-    if (offering.cancelledAt) throw new BookingError(409, "Cancelled offerings cannot change activity status.");
-    const current = effectiveOfferingActivityStatus(offering);
-    const transition = transitionOfferingActivity(current, data.action, data.reason);
-    if (!transition) throw new BookingError(409, "That review transition is not allowed from the current activity status, or a reason is missing.");
 
-    if (data.action === "publish") {
-      if (offering.startsAt <= new Date()) throw new BookingError(409, "Past activities cannot be published.");
-      const [partner] = await tx.select().from(partners).where(eq(partners.id, offering.partnerId ?? "")).for("share");
-      if (!partner?.approved) throw new BookingError(403, "Partner approval is required before publishing.");
-      const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
-        eq(facilityProfiles.partnerId, offering.partnerId ?? ""),
-        eq(facilityProfiles.city, offering.city),
-        eq(facilityProfiles.facility, offering.facility),
-      )).limit(1);
-      if (!facility) throw new BookingError(409, "This activity is not linked to an approved facility profile.");
-      if (offering.accessType === "live") {
-        if (!offering.localizedTitle || !offering.localizedDescription)
-          throw new BookingError(400, "Live classes need English, Arabic and Sorani details.");
-        ensureHttps(offering.joinUrl, "Live class join link");
+    const resolvedTimes = rows.map(row => {
+      if (!requestedStart || !requestedEnd || !requestedDeadline) {
+        return { row, startsAt: row.startsAt, endsAt: row.endsAt, cancellationDeadline: row.cancellationDeadline };
       }
-      if (offering.joinUrl) ensureHttps(offering.joinUrl, "Live class join link");
+      if (series) {
+        const startDelta = requestedStart.getTime() - selected.startsAt.getTime();
+        const duration = requestedEnd.getTime() - requestedStart.getTime();
+        const cancellationOffset = requestedDeadline.getTime() - requestedStart.getTime();
+        const startsAt = new Date(row.startsAt.getTime() + startDelta);
+        return {
+          row,
+          startsAt,
+          endsAt: new Date(startsAt.getTime() + duration),
+          cancellationDeadline: new Date(startsAt.getTime() + cancellationOffset),
+        };
+      }
+      return { row, startsAt: requestedStart, endsAt: requestedEnd, cancellationDeadline: requestedDeadline };
+    });
+    for (const item of resolvedTimes) {
+      if (item.startsAt <= new Date() || item.endsAt <= item.startsAt || item.cancellationDeadline > item.startsAt) {
+        throw new BookingError(400, "Every changed session needs a future start, later end, and valid cancellation deadline.");
+      }
     }
 
-    const [updated] = await tx.update(offerings).set({
-      activityStatus: transition.activityStatus,
-      reviewNote: transition.reviewNote,
-      active: transition.activityStatus === "published",
-    }).where(eq(offerings.id, id)).returning();
-    await audit(tx, res.locals.operator.userId, "offering.review",
-      id, `${current} -> ${transition.activityStatus}; action=${data.action}${data.reason ? `; reason=${data.reason.trim()}` : ""}`);
-    const [held] = await tx.select({ count: sql<number>`count(*)::int` }).from(reservations).where(and(
-      eq(reservations.offeringId, id), inArray(reservations.status, ["reserved", "requested"]),
-    ));
-    const [offers] = await tx.select({ count: sql<number>`count(*)::int` }).from(waitlistEntries).where(and(
-      eq(waitlistEntries.offeringId, id), eq(waitlistEntries.status, "offered"), gt(waitlistEntries.offerExpiresAt, new Date()),
-    ));
-    return {
-      offering: updated,
-      occupiedPlaces: Number(held?.count ?? 0) + Number(offers?.count ?? 0),
-    };
+    const offeringIds = rows.map(row => row.id);
+    const [heldRows, offerRows] = await Promise.all([
+      tx.select({ offeringId: reservations.offeringId, count: sql<number>`count(*)::int` })
+        .from(reservations).where(and(
+          inArray(reservations.offeringId, offeringIds),
+          inArray(reservations.status, ["reserved", "requested"]),
+        )).groupBy(reservations.offeringId),
+      tx.select({ offeringId: waitlistEntries.offeringId, count: sql<number>`count(*)::int` })
+        .from(waitlistEntries).where(and(
+          inArray(waitlistEntries.offeringId, offeringIds),
+          eq(waitlistEntries.status, "offered"),
+          gt(waitlistEntries.offerExpiresAt, new Date()),
+        )).groupBy(waitlistEntries.offeringId),
+    ]);
+    const heldByOffering = new Map(heldRows.map(row => [row.offeringId, Number(row.count)]));
+    const offersByOffering = new Map(offerRows.map(row => [row.offeringId, Number(row.count)]));
+    for (const row of rows) {
+      if ((heldByOffering.get(row.id) ?? 0) + (offersByOffering.get(row.id) ?? 0) > data.capacity) {
+        throw new BookingError(409, "Capacity cannot be below existing reservations and active waitlist offers.");
+      }
+    }
+
+    const scheduleChanged = resolvedTimes.some(item =>
+      item.startsAt.getTime() !== item.row.startsAt.getTime()
+      || item.endsAt.getTime() !== item.row.endsAt.getTime()
+      || item.cancellationDeadline.getTime() !== item.row.cancellationDeadline.getTime());
+    let notices: ScheduleNotice[] = [];
+    if (scheduleChanged) {
+      const attendanceRows = await tx.select({ id: attendance.id }).from(attendance)
+        .where(inArray(attendance.offeringId, offeringIds));
+      if (attendanceRows.length) {
+        throw new BookingError(409, "A session with an arrival record cannot be rescheduled.");
+      }
+      const [bookingRows, waitlistRows] = await Promise.all([
+        tx.select({ offeringId: reservations.offeringId, userId: reservations.userId }).from(reservations)
+          .where(and(
+            inArray(reservations.offeringId, offeringIds),
+            inArray(reservations.status, ["reserved", "requested"]),
+          )),
+        tx.select({ offeringId: waitlistEntries.offeringId, userId: waitlistEntries.userId }).from(waitlistEntries)
+          .where(and(
+            inArray(waitlistEntries.offeringId, offeringIds),
+            inArray(waitlistEntries.status, ["waiting", "offered"]),
+          )),
+      ]);
+      const startByOffering = new Map(resolvedTimes.map(item => [item.row.id, item.startsAt]));
+      notices = [...bookingRows, ...waitlistRows].map(item => ({
+        ...item,
+        startsAt: startByOffering.get(item.offeringId)!,
+      }));
+
+      const ids = new Set(offeringIds);
+      const minStart = new Date(Math.min(...resolvedTimes.map(item => item.startsAt.getTime())));
+      const maxEnd = new Date(Math.max(...resolvedTimes.map(item => item.endsAt.getTime())));
+      const possibleConflicts = await tx.select({
+        id: offerings.id, startsAt: offerings.startsAt, endsAt: offerings.endsAt,
+      }).from(offerings).where(and(
+        eq(offerings.scope, "live"),
+        eq(offerings.partnerId, selected.partnerId ?? ""),
+        sql`lower(${offerings.city}) = lower(${selected.city})`,
+        sql`lower(${offerings.facility}) = lower(${selected.facility})`,
+        isNull(offerings.cancelledAt),
+        lt(offerings.startsAt, maxEnd),
+        gt(offerings.endsAt, minStart),
+      ));
+      if (possibleConflicts.some(conflict => !ids.has(conflict.id)
+        && resolvedTimes.some(item => item.startsAt < conflict.endsAt && item.endsAt > conflict.startsAt))) {
+        throw new BookingError(409, "The changed schedule overlaps another offering at this facility.");
+      }
+    }
+
+    const updatedRows: OfferingRow[] = [];
+    for (const item of resolvedTimes) {
+      const [updated] = await tx.update(offerings).set({
+        capacity: data.capacity,
+        ...(data.waitlistOfferMinutes !== undefined ? { waitlistOfferMinutes: data.waitlistOfferMinutes } : {}),
+        ...(needsReview ? {
+          active: false,
+          approvalStatus: "submitted" as const,
+          approvalReason: null,
+          partnerResponse: null,
+          submittedAt: new Date(),
+          reviewedAt: null,
+          reviewedBy: null,
+        } : {}),
+        ...(data.localizedTitle !== undefined ? { localizedTitle: data.localizedTitle } : {}),
+        ...(data.localizedDescription !== undefined ? { localizedDescription: data.localizedDescription } : {}),
+        ...(data.joinUrl !== undefined ? { joinUrl: data.joinUrl } : {}),
+        ...(scheduleChanged ? {
+          startsAt: item.startsAt, endsAt: item.endsAt, cancellationDeadline: item.cancellationDeadline,
+        } : {}),
+      }).where(eq(offerings.id, item.row.id)).returning();
+      await audit(tx, res.locals.operator.userId, series ? "offering.update.series" : "offering.update",
+        item.row.id, series ? `series=${selected.recurrenceGroupId}` : undefined);
+      if (needsReview) {
+        await audit(tx, res.locals.operator.userId, "offering.approval.resubmit", item.row.id,
+          `from=${item.row.approvalStatus};to=submitted;reason=published_content_edit`);
+      }
+      updatedRows.push(updated);
+    }
+    return { rows: updatedRows, notices, scheduleChanged };
   });
-  if (data.action === "publish") await processWaitlistQueue();
-  res.json(ReviewOfferingResponse.parse(offeringWithStatuses(result.offering, result.occupiedPlaces)));
+
+  await processWaitlistQueue();
+  if (result.scheduleChanged) {
+    await Promise.allSettled(result.notices.map(notice => sendMemberNotification(
+      notice.userId,
+      "schedule_changed",
+      { dedupeKey: `schedule-changed:${notice.offeringId}:${notice.startsAt.toISOString()}` },
+    )));
+  }
+  return result.rows;
+}
+
+router.patch("/offerings/:id", async (req, res) => {
+  const data = strictOfferingUpdateBody.parse(req.body);
+  const [row] = await changeOfferingSet(String(req.params.id), data, res, false);
+  res.json(row);
+});
+router.patch("/offerings/:id/series", async (req, res) => {
+  const data = strictOfferingUpdateBody.parse(req.body);
+  const rows = await changeOfferingSet(String(req.params.id), data, res, true);
+  res.json(CreateRecurringOfferingsResponse.parse(rows.map(serializeOffering)));
 });
 router.get("/offerings/:id/waitlist", async (req, res) => {
   const [offering] = await db.select().from(offerings)
@@ -484,35 +807,118 @@ router.get("/offerings/:id/waitlist", async (req, res) => {
     .orderBy(waitlistEntries.queuePosition);
   res.json(rows);
 });
-router.post("/offerings/:id/cancel", async (req, res) => {
+async function cancelOfferingSet(id: string, res: Response, series: boolean) {
   const affected = await db.transaction(async tx => {
-    const [o] = await tx.select().from(offerings).where(and(eq(offerings.id, String(req.params.id)), eq(offerings.scope, "live"))).for("update");
-    if (!o) throw new BookingError(404, "Offering not found.");
-    own(res, o.partnerId);
-    if (o.cancelledAt) return { bookingUsers: [], waitlistUsers: [] };
-    if (o.startsAt <= new Date()) throw new BookingError(409, "Past sessions require attendance review.");
-    const heldReservations = await tx.select({ userId: reservations.userId }).from(reservations)
-      .where(and(eq(reservations.offeringId, o.id), inArray(reservations.status, ["reserved", "requested"])));
-    await tx.update(offerings).set({ active: false, cancelledAt: new Date() }).where(eq(offerings.id, o.id));
-    const arrivals = await tx.select().from(attendance).where(eq(attendance.offeringId, o.id));
-    for (const a of arrivals) {
-      await tx.update(attendance).set({ status: "void", settlementEligible: false }).where(eq(attendance.id, a.id));
-      if (a.reservationId) await tx.insert(attendanceEvents).values({ id: randomUUID(), reservationId: a.reservationId,
-        actorId: res.locals.operator.userId, action: "partner_cancelled", before: a.status, after: "void",
-        reason: "Partner cancelled the offering; allowance restored." });
+    const [selected] = await tx.select().from(offerings).where(and(
+      eq(offerings.id, id), eq(offerings.scope, "live"),
+    )).for("update");
+    if (!selected) throw new BookingError(404, "Offering not found.");
+    own(res, selected.partnerId);
+    if (selected.cancelledAt) {
+      if (series) throw new BookingError(409, "Choose a remaining session in this series to cancel future sessions.");
+      return {
+        bookingUsers: [] as ScheduleNotice[],
+        waitlistUsers: [] as ScheduleNotice[],
+        cancelledDates: [] as string[],
+        preservedDates: [] as string[],
+      };
     }
-    await tx.update(reservations).set({ status: "partner_cancelled", cancelledAt: new Date() })
-      .where(and(eq(reservations.offeringId, o.id), inArray(reservations.status, ["reserved", "requested"])));
-    const activeWaitlist = await tx.select({ userId: waitlistEntries.userId }).from(waitlistEntries)
-      .where(and(eq(waitlistEntries.offeringId, o.id), inArray(waitlistEntries.status, ["waiting", "offered"])));
-    await tx.update(waitlistEntries).set({ status: "closed", respondedAt: new Date() })
-      .where(and(eq(waitlistEntries.offeringId, o.id), inArray(waitlistEntries.status, ["waiting", "offered"])));
-    await audit(tx, res.locals.operator.userId, "offering.cancel", o.id);
-    return { bookingUsers: heldReservations.map(r => r.userId), waitlistUsers: activeWaitlist.map(r => r.userId) };
+    if (selected.startsAt <= new Date()) throw new BookingError(409, "Past sessions require attendance review.");
+    if (series && !selected.recurrenceGroupId) {
+      throw new BookingError(409, "This session is not part of a recurring series.");
+    }
+    if (selected.partnerId) {
+      const venueKey = `${selected.city.trim().toLowerCase()}|${selected.facility.trim().toLowerCase()}`;
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${selected.partnerId}), hashtext(${venueKey}))`);
+    }
+    const rows = series
+      ? await tx.select().from(offerings).where(and(
+        eq(offerings.scope, "live"),
+        eq(offerings.partnerId, selected.partnerId ?? ""),
+        eq(offerings.recurrenceGroupId, selected.recurrenceGroupId!),
+        isNull(offerings.cancelledAt),
+        gt(offerings.startsAt, new Date()),
+      )).orderBy(asc(offerings.startsAt)).for("update")
+      : [selected];
+    if (!rows.length || !rows.some(row => row.id === selected.id)) {
+      throw new BookingError(409, "There are no remaining future sessions in this series.");
+    }
+
+    const protectedOfferingIds = new Set<string>();
+    if (series) {
+      const offeringIds = rows.map(row => row.id);
+      const [heldReservations, attendanceRows] = await Promise.all([
+        tx.select({ offeringId: reservations.offeringId }).from(reservations).where(and(
+          inArray(reservations.offeringId, offeringIds),
+          inArray(reservations.status, ["reserved", "requested"]),
+        )),
+        tx.select({ offeringId: attendance.offeringId }).from(attendance)
+          .where(inArray(attendance.offeringId, offeringIds)),
+      ]);
+      heldReservations.forEach(row => protectedOfferingIds.add(row.offeringId));
+      attendanceRows.forEach(row => protectedOfferingIds.add(row.offeringId));
+    }
+    const rowsToCancel = series ? rows.filter(row => !protectedOfferingIds.has(row.id)) : rows;
+    const preservedDates = series
+      ? [...new Set(rows.filter(row => protectedOfferingIds.has(row.id)).map(row => iraqCalendarDate(row.startsAt)))].sort()
+      : [];
+    const cancelledDates = [...new Set(rowsToCancel.map(row => iraqCalendarDate(row.startsAt)))].sort();
+
+    const bookingUsers: ScheduleNotice[] = [];
+    const waitlistUsers: ScheduleNotice[] = [];
+    const cancelledAt = new Date();
+    for (const row of rowsToCancel) {
+      own(res, row.partnerId);
+      const heldReservations = await tx.select({ userId: reservations.userId }).from(reservations)
+        .where(and(eq(reservations.offeringId, row.id), inArray(reservations.status, ["reserved", "requested"])));
+      bookingUsers.push(...heldReservations.map(reservation => ({
+        offeringId: row.id, userId: reservation.userId, startsAt: row.startsAt,
+      })));
+      await tx.update(offerings).set({
+        active: false, cancelledAt, approvalStatus: "archived",
+      }).where(eq(offerings.id, row.id));
+      const arrivals = await tx.select().from(attendance).where(eq(attendance.offeringId, row.id));
+      for (const arrival of arrivals) {
+        await tx.update(attendance).set({ status: "void", settlementEligible: false }).where(eq(attendance.id, arrival.id));
+        if (arrival.reservationId) await tx.insert(attendanceEvents).values({
+          id: randomUUID(), reservationId: arrival.reservationId,
+          actorId: res.locals.operator.userId, action: "partner_cancelled",
+          before: arrival.status, after: "void",
+          reason: "Partner cancelled the offering; allowance restored.",
+        });
+      }
+      await tx.update(reservations).set({ status: "partner_cancelled", cancelledAt })
+        .where(and(eq(reservations.offeringId, row.id), inArray(reservations.status, ["reserved", "requested"])));
+      const activeWaitlist = await tx.select({ userId: waitlistEntries.userId }).from(waitlistEntries)
+        .where(and(eq(waitlistEntries.offeringId, row.id), inArray(waitlistEntries.status, ["waiting", "offered"])));
+      waitlistUsers.push(...activeWaitlist.map(entry => ({
+        offeringId: row.id, userId: entry.userId, startsAt: row.startsAt,
+      })));
+      await tx.update(waitlistEntries).set({ status: "closed", respondedAt: cancelledAt })
+        .where(and(eq(waitlistEntries.offeringId, row.id), inArray(waitlistEntries.status, ["waiting", "offered"])));
+      await audit(tx, res.locals.operator.userId, series ? "offering.cancel.series" : "offering.cancel",
+        row.id, series ? `series=${selected.recurrenceGroupId}` : undefined);
+    }
+    return { bookingUsers, waitlistUsers, cancelledDates, preservedDates };
   });
-  for (const userId of new Set(affected.bookingUsers)) void sendMemberNotification(userId, "booking_cancelled");
-  for (const userId of new Set(affected.waitlistUsers)) void sendMemberNotification(userId, "waitlist_closed");
+  await Promise.allSettled([
+    ...affected.bookingUsers.map(notice => sendMemberNotification(
+      notice.userId, "booking_cancelled", { dedupeKey: `offering-cancelled:${notice.offeringId}` },
+    )),
+    ...affected.waitlistUsers.map(notice => sendMemberNotification(
+      notice.userId, "waitlist_closed", { dedupeKey: `offering-waitlist-closed:${notice.offeringId}` },
+    )),
+  ]);
+  return { cancelledDates: affected.cancelledDates, preservedDates: affected.preservedDates };
+}
+
+router.post("/offerings/:id/cancel", async (req, res) => {
+  await cancelOfferingSet(String(req.params.id), res, false);
   res.json({ ok: true });
+});
+router.post("/offerings/:id/series/cancel", async (req, res) => {
+  const result = await cancelOfferingSet(String(req.params.id), res, true);
+  res.json({ ok: true, ...result });
 });
 
 router.get("/settlements", async (req, res) => {
@@ -1037,6 +1443,26 @@ router.get("/finance/audit", async (_req, res) => {
   res.json({ operations: operationEvents, financeReviews: reviewEvents });
 });
 
+router.get("/courses", async (_req, res) => {
+  admin(res);
+  const courses = await db.select().from(learningCourses).orderBy(desc(learningCourses.updatedAt));
+  const lessonCounts = courses.length
+    ? await db.select({
+      courseId: learningLessons.courseId,
+      lessonCount: sql<number>`count(*)::int`,
+    }).from(learningLessons)
+      .where(inArray(learningLessons.courseId, courses.map(course => course.id)))
+      .groupBy(learningLessons.courseId)
+    : [];
+  const countByCourse = new Map(lessonCounts.map(row => [row.courseId, row.lessonCount]));
+  res.json(GetOperationCoursesResponse.parse({
+    courses: courses.map(course => ({
+      ...course,
+      lessonCount: countByCourse.get(course.id) ?? 0,
+    })),
+  }));
+});
+
 router.post("/courses", async (req, res) => {
   admin(res);
   const parsed = CreateLearningCourseBody.safeParse(req.body);
@@ -1046,8 +1472,8 @@ router.post("/courses", async (req, res) => {
   if (positions.some((position, index) => position !== index + 1)) {
     res.status(400).json({ message: "Lesson positions must start at 1 and have no gaps or duplicates." }); return;
   }
-  if (data.lessons.some(lesson => !secureHttps(lesson.mediaUrl))) {
-    res.status(400).json({ message: "Each course lesson needs a secure HTTPS recording link." }); return;
+  if (data.lessons.some(lesson => !isPrivateCourseRecordingPath(lesson.mediaUrl))) {
+    res.status(400).json({ message: "Each lesson recording must be in private course storage." }); return;
   }
   if (data.thumbnailUrl) ensureHttps(data.thumbnailUrl, "Course image");
   const id = randomUUID();
@@ -1115,7 +1541,9 @@ router.post("/courses/:id/lessons", async (req, res) => {
   const parsed = AddLearningLessonBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ message: "Check the lesson details." }); return; }
   const data = parsed.data;
-  ensureHttps(data.mediaUrl, "Lesson recording");
+  if (!isPrivateCourseRecordingPath(data.mediaUrl)) {
+    throw new BookingError(400, "Lesson recordings must be in private course storage.");
+  }
   const courseId = String(req.params.id);
   const lesson = await db.transaction(async tx => {
     const [course] = await tx.select({ id: learningCourses.id }).from(learningCourses)
@@ -1134,7 +1562,7 @@ router.post("/courses/:id/lessons", async (req, res) => {
       mediaUrl: data.mediaUrl,
     }).returning();
     await audit(tx, getAuth(req).userId!, "course.lesson.create", added.id, `course=${courseId}`);
-    return { ...added, completed: false };
+    return { ...added, hasRecording: true, completed: false };
   });
   res.status(201).json(AddLearningLessonResponse.parse(lesson));
 });

@@ -9,9 +9,10 @@ require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileMo
 }).outputText, filename);
 require.extensions['.jpg'] = (module) => { module.exports = 1; };
 const { content, localize, locale, number, currency, dateTime, errorCopy } = require('../lib/content.ts');
-const { facilities, sessions, communityEvents, coaches, courses } = require('../data/demo.ts');
+const { facilities, sessions, coaches, courses } = require('../data/demo.ts');
 const { translate, isRtl } = require('../lib/i18n.ts');
 const { inputTextDirection } = require('../lib/text-direction.ts');
+const { localizePartnerOperationsReview, toWesternDigits, formatPartnerOperationsNumber, splitPartnerOperationsList } = require('../lib/partner-operations-copy.ts');
 let checked = 0;
 for (const language of ['ar', 'ku']) {
   for (const [key, translations] of Object.entries(content)) {
@@ -22,7 +23,6 @@ for (const language of ['ar', 'ku']) {
   const groups = [
     [facilities, ['name', 'category', 'district', 'city', 'gender', 'openUntil', 'description']],
     [sessions, ['title', 'instructor', 'time', 'duration', 'level', 'gender']],
-    [communityEvents, ['title', 'city', 'venue', 'date', 'access', 'description']],
     [coaches, ['name', 'specialty', 'languages', 'availability']],
     [courses, ['instructor', 'duration', 'level']],
   ];
@@ -44,6 +44,13 @@ for (const language of ['ar', 'ku']) {
 }
 assert.equal(localize('MaydanGo', 'ar'), 'MaydanGo');
 assert.equal(localize('MaydanGo cancelled Enrol organiser Centre racket hire', 'en'), 'MaydanGO canceled Enroll organizer Center racket rental');
+assert.equal(localizePartnerOperationsReview('Offerings', 'en'), 'Listings');
+assert.equal(localizePartnerOperationsReview('Offerings', 'ar'), 'الأنشطة');
+assert.equal(localizePartnerOperationsReview('Offerings', 'ku'), 'چالاکییەکان');
+assert.equal(localizePartnerOperationsReview('Membership tiers (comma separated)', 'ar'), 'فئات الاشتراك (افصل بينها بفاصلة)');
+assert.deepEqual(splitPartnerOperationsList('M، L, XL'), ['M', 'L', 'XL']);
+assert.equal(toWesternDigits('رمز ١٢٣ ۱۲۳'), 'رمز 123 123');
+assert.equal(formatPartnerOperationsNumber(12345, 'ar'), '12,345');
 assert.equal(localize('Anything unchanged', 'en'), 'Anything unchanged');
 assert.equal(isRtl('en'), false);
 assert.equal(inputTextDirection('en'), 'ltr');

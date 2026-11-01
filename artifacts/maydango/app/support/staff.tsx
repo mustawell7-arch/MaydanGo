@@ -4,13 +4,19 @@ import { useAuth } from '@clerk/expo';
 import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  getGetSupportStaffAgentsQueryKey,
   getGetSupportNotificationFailuresQueryKey,
+  getGetSupportPendingDeviceChangesQueryKey,
   getGetSupportStaffTicketQueryKey,
   getGetSupportStaffTicketsQueryKey,
+  useAddSupportStaffAgent,
+  useApproveSupportDeviceChange,
   useGetSupportNotificationFailures,
+  useGetSupportPendingDeviceChanges,
   useGetSupportStaffAgents,
   useGetSupportStaffTicket,
   useGetSupportStaffTickets,
+  useRemoveSupportStaffAgent,
   useReplySupportStaffTicket,
   useUpdateSupportStaffTicket,
 } from '@workspace/api-client-react';
@@ -23,6 +29,13 @@ import { errorCopy } from '@/lib/content';
 import { translate, type MessageKey } from '@/lib/i18n';
 
 type Status = 'open' | 'in_progress' | 'waiting_member' | 'resolved' | 'closed';
+function formatBaghdadDate(value: string | Date, language: string) {
+  const date = value instanceof Date ? value : new Date(value);
+  const locale = language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ';
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Baghdad',
+  }).format(date);
+}
 const statuses: Status[] = ['open', 'in_progress', 'waiting_member', 'resolved', 'closed'];
 const statusKeys: Record<Status, MessageKey> = {
   open: 'supportStatusOpen', in_progress: 'supportStatusInProgress',
@@ -41,13 +54,21 @@ export default function SupportStaffScreen() {
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState('');
   const [message, setMessage] = useState('');
+  const [deviceReasons, setDeviceReasons] = useState<Record<string, string>>({});
+  const [newAgentId, setNewAgentId] = useState('');
+  const [pendingRemovalId, setPendingRemovalId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const tickets = useGetSupportStaffTickets(undefined, { query: { enabled: app.signedIn, refetchInterval: 30_000 } });
   const agents = useGetSupportStaffAgents({ query: { enabled: app.signedIn } });
   const failures = useGetSupportNotificationFailures({ query: { enabled: app.signedIn, refetchInterval: 60_000 } });
+  const deviceChanges = useGetSupportPendingDeviceChanges({ query: { enabled: app.signedIn, refetchInterval: 30_000 } });
   const detail = useGetSupportStaffTicket(selectedId, { query: { enabled: !!selectedId && app.signedIn } });
   const updateTicket = useUpdateSupportStaffTicket();
   const reply = useReplySupportStaffTicket();
+  const approveDeviceChange = useApproveSupportDeviceChange();
+  const addAgent = useAddSupportStaffAgent();
+  const removeAgent = useRemoveSupportStaffAgent();
+  const isAdmin = agents.data?.some(agent => agent.userId === userId && agent.role === 'admin') ?? false;
   const align = app.language === 'en' ? 'left' : 'right';
 
   useEffect(() => {
@@ -61,8 +82,62 @@ export default function SupportStaffScreen() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: getGetSupportStaffTicketsQueryKey() }),
       queryClient.invalidateQueries({ queryKey: getGetSupportNotificationFailuresQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: getGetSupportPendingDeviceChangesQueryKey() }),
       ...(selectedId ? [queryClient.invalidateQueries({ queryKey: getGetSupportStaffTicketQueryKey(selectedId) })] : []),
     ]);
+  };
+
+  const refreshTeam = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: getGetSupportStaffAgentsQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: getGetSupportStaffTicketsQueryKey() }),
+    ]);
+  };
+
+  const grantSupportAccess = async () => {
+    const targetUserId = newAgentId.trim();
+    if (!/^[A-Za-z0-9_-]{1,160}$/.test(targetUserId)) {
+      setNotice(t('supportAccountIdRequired'));
+      return;
+    }
+    setNotice(null);
+    try {
+      await addAgent.mutateAsync({ data: { userId: targetUserId } });
+      setNewAgentId('');
+      await refreshTeam();
+      setNotice(t('supportGrantDone'));
+    } catch (error) {
+      setNotice(errorCopy(error));
+    }
+  };
+
+  const revokeSupportAccess = async (targetUserId: string) => {
+    setNotice(null);
+    try {
+      await removeAgent.mutateAsync({ userId: targetUserId });
+      setPendingRemovalId(null);
+      await refreshTeam();
+      setNotice(t('supportRemoveDone'));
+    } catch (error) {
+      setNotice(errorCopy(error));
+    }
+  };
+
+  const approveDevice = async (id: string) => {
+    const reason = deviceReasons[id]?.trim() ?? '';
+    if (reason.length < 10) {
+      setNotice(t('deviceApprovalReasonRequired'));
+      return;
+    }
+    setNotice(null);
+    try {
+      await approveDeviceChange.mutateAsync({ id, data: { reason } });
+      setDeviceReasons(current => ({ ...current, [id]: '' }));
+      await refresh();
+      setNotice(t('deviceApprovalDone'));
+    } catch (error) {
+      setNotice(errorCopy(error));
+    }
   };
 
   const update = async (data: { status?: Status; assignedTo?: string | null }) => {
@@ -134,6 +209,86 @@ export default function SupportStaffScreen() {
           </ScrollView>
         </View>
 
+        {isAdmin ? (
+          <View style={[styles.ticketCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.heading, { color: colors.foreground }]}>{t('supportTeamTitle')}</Text>
+            <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('supportTeamHint')}</Text>
+            <TextInput
+              accessibilityLabel={t('supportAccountId')}
+              value={newAgentId}
+              onChangeText={setNewAgentId}
+              placeholder={t('supportAccountId')}
+              placeholderTextColor={colors.mutedForeground}
+              autoCapitalize="none"
+              autoCorrect={false}
+              maxLength={160}
+              style={[styles.accountInput, { color: colors.foreground, borderColor: colors.input, backgroundColor: colors.background }]}
+            />
+            <ActionButton
+              colors={colors}
+              title={t('supportGrantAccess')}
+              busy={addAgent.isPending}
+              onPress={() => void grantSupportAccess()}
+              icon="person-add-outline"
+            />
+            {agents.data?.filter(agent => agent.role === 'support').length ? (
+              agents.data.filter(agent => agent.role === 'support').map(agent => (
+                <View key={agent.userId} style={[styles.teamAgent, { borderColor: colors.border }]}>
+                  <View style={styles.teamAgentHeader}>
+                    <View style={styles.teamAgentIdentity}>
+                      <Text raw style={[styles.label, { color: colors.foreground }]}>{agent.userId}</Text>
+                      <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('supportRoleLabel')}</Text>
+                    </View>
+                    {pendingRemovalId === agent.userId ? null : (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`${t('supportRemoveAccess')} ${agent.userId}`}
+                        onPress={() => { setNotice(null); setPendingRemovalId(agent.userId); }}
+                        style={styles.removeButton}
+                      >
+                        <Ionicons name="person-remove-outline" size={17} color={colors.destructive} />
+                        <Text style={{ color: colors.destructive, fontWeight: '700', fontSize: 12 }}>
+                          {t('supportRemoveAccess')}
+                        </Text>
+                      </Pressable>
+                    )}
+                  </View>
+                  {pendingRemovalId === agent.userId ? (
+                    <View style={[styles.confirmBox, { backgroundColor: colors.secondary }]}>
+                      <Text style={{ color: colors.secondaryForeground, fontWeight: '800' }}>
+                        {t('supportRemoveTitle')}
+                      </Text>
+                      <Text style={{ color: colors.secondaryForeground, fontSize: 12, lineHeight: 18 }}>
+                        {t('supportRemoveBody')}
+                      </Text>
+                      <View style={styles.confirmActions}>
+                        <Pressable
+                          accessibilityRole="button"
+                          disabled={removeAgent.isPending}
+                          onPress={() => setPendingRemovalId(null)}
+                          style={styles.confirmCancel}
+                        >
+                          <Text style={{ color: colors.secondaryForeground, fontWeight: '700' }}>{t('cancel')}</Text>
+                        </Pressable>
+                        <ActionButton
+                          colors={colors}
+                          title={t('supportRemoveAccess')}
+                          busy={removeAgent.isPending}
+                          onPress={() => void revokeSupportAccess(agent.userId)}
+                          icon="person-remove-outline"
+                          destructive
+                        />
+                      </View>
+                    </View>
+                  ) : null}
+                </View>
+              ))
+            ) : (
+              <Text style={{ color: colors.mutedForeground }}>{t('supportNoAgents')}</Text>
+            )}
+          </View>
+        ) : null}
+
         {detail.data ? (
           <>
             <View style={[styles.ticketCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -189,18 +344,81 @@ export default function SupportStaffScreen() {
         ) : null}
 
         <View style={[styles.ticketCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.heading, { color: colors.foreground }]}>{t('deviceChangeQueue')}</Text>
+          <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('deviceChangeReviewHint')}</Text>
+          {deviceChanges.data?.length ? deviceChanges.data.map(change => (
+            <View key={change.id} style={[styles.failure, { borderColor: colors.border }]}>
+              <Text raw style={[styles.label, { color: colors.foreground }]}>{change.userId}</Text>
+              <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                {change.fromPlatform.toUpperCase()} → {change.toPlatform.toUpperCase()}
+              </Text>
+              <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                {formatBaghdadDate(change.requestedAt, app.language)} · {formatBaghdadDate(change.activateAt, app.language)} {t('iraqTime')}
+              </Text>
+              {change.riskFlag ? (
+                <Text style={[styles.label, { color: colors.destructive }]}>{t('deviceChangeRiskFlagged')}</Text>
+              ) : null}
+              <TextInput
+                accessibilityLabel={t('deviceApprovalReason')}
+                value={deviceReasons[change.id] ?? ''}
+                onChangeText={value => setDeviceReasons(current => ({ ...current, [change.id]: value }))}
+                placeholder={t('deviceApprovalReason')}
+                placeholderTextColor={colors.mutedForeground}
+                maxLength={500}
+                multiline
+                textAlignVertical="top"
+                style={[styles.input, { color: colors.foreground, borderColor: colors.input, backgroundColor: colors.background, textAlign: align }]}
+              />
+              <ActionButton
+                colors={colors}
+                title={t('deviceApproveEarly')}
+                busy={approveDeviceChange.isPending}
+                onPress={() => void approveDevice(change.id)}
+                icon="checkmark-circle-outline"
+              />
+            </View>
+          )) : (
+            <Text style={{ color: colors.mutedForeground }}>
+              {deviceChanges.isLoading ? t('supportLoading') : t('deviceNoChange')}
+            </Text>
+          )}
+          {deviceChanges.error ? (
+            <Text accessibilityRole="alert" style={{ color: colors.destructive }}>{errorCopy(deviceChanges.error)}</Text>
+          ) : null}
+        </View>
+
+        <View style={[styles.ticketCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.heading, { color: colors.foreground }]}>{t('pushDeliveryFailures')}</Text>
             <Ionicons name="alert-circle-outline" size={20} color={colors.destructive} />
           </View>
           <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('pushDeliveryFailureHint')}</Text>
-          {failures.data?.length ? failures.data.map(item => (
-            <View key={item.id} style={[styles.failure, { borderColor: colors.border }]}>
-              <Text style={[styles.label, { color: colors.foreground }]}>{item.title} · {item.userId}</Text>
-              <Text style={[styles.caption, { color: colors.destructive }]}>{item.error}</Text>
-              <Text style={[styles.caption, { color: colors.mutedForeground }]}>{new Date(item.createdAt).toLocaleString()}</Text>
-            </View>
-          )) : (
+          {failures.data?.length ? failures.data.map(item => {
+            const locale = app.language === 'ar' ? 'ar-IQ' : app.language === 'ku' ? 'ku-IQ' : 'en-IQ';
+            const formatDate = (value: string) => new Intl.DateTimeFormat(locale, {
+              dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Baghdad',
+            }).format(new Date(value));
+            const label = item.status === 'retry_pending'
+              ? t('pushRetryScheduled')
+              : item.receiptStatus === 'unavailable'
+                ? t('pushReceiptUnavailable')
+                : t('pushDeliveryFailed');
+            return (
+              <View key={item.id} style={[styles.failure, { borderColor: colors.border }]}>
+                <Text style={[styles.label, { color: colors.foreground }]}>{item.title} · {item.userId}</Text>
+                <Text style={[styles.caption, { color: item.status === 'failed' ? colors.destructive : colors.mutedForeground }]}>
+                  {label} · {t('pushAttempts')}: {item.attemptCount}/3
+                </Text>
+                <Text style={[styles.caption, { color: colors.destructive }]}>{item.error}</Text>
+                {item.nextAttemptAt ? (
+                  <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                    {t('pushNextRetry')}: {formatDate(item.nextAttemptAt)}
+                  </Text>
+                ) : null}
+                <Text style={[styles.caption, { color: colors.mutedForeground }]}>{formatDate(item.createdAt)}</Text>
+              </View>
+            );
+          }) : (
             <Text style={{ color: colors.mutedForeground }}>{failures.isLoading ? t('supportLoading') : t('pushNoFailures')}</Text>
           )}
         </View>
@@ -218,14 +436,15 @@ function Chip({ colors, selected, title, onPress }: { colors: ReturnType<typeof 
   );
 }
 
-function ActionButton({ colors, title, busy, onPress, icon }: {
-  colors: ReturnType<typeof useColors>; title: string; busy: boolean; onPress: () => void; icon: keyof typeof Ionicons.glyphMap;
+function ActionButton({ colors, title, busy, onPress, icon, destructive = false }: {
+  colors: ReturnType<typeof useColors>; title: string; busy: boolean; onPress: () => void;
+  icon: keyof typeof Ionicons.glyphMap; destructive?: boolean;
 }) {
   return (
     <Pressable accessibilityRole="button" disabled={busy} onPress={onPress}
-      style={[styles.button, { backgroundColor: colors.primary, opacity: busy ? 0.6 : 1 }]}>
-      <Ionicons name={icon} size={17} color={colors.primaryForeground} />
-      <Text style={{ color: colors.primaryForeground, fontWeight: '800' }}>{busy ? '…' : title}</Text>
+      style={[styles.button, { backgroundColor: destructive ? colors.destructive : colors.primary, opacity: busy ? 0.6 : 1 }]}>
+      <Ionicons name={icon} size={17} color={destructive ? colors.destructiveForeground : colors.primaryForeground} />
+      <Text style={{ color: destructive ? colors.destructiveForeground : colors.primaryForeground, fontWeight: '800' }}>{busy ? '…' : title}</Text>
     </Pressable>
   );
 }
@@ -249,6 +468,14 @@ const styles = StyleSheet.create({
   message: { borderWidth: 1, borderRadius: 14, padding: 11, gap: 5 },
   messageText: { fontSize: 13, lineHeight: 19 },
   input: { minHeight: 100, borderWidth: 1, borderRadius: 13, padding: 12, fontSize: 14 },
+  accountInput: { minHeight: 46, borderWidth: 1, borderRadius: 13, paddingHorizontal: 12, fontSize: 14, textAlign: 'left' },
+  teamAgent: { borderTopWidth: 1, paddingTop: 10, gap: 10 },
+  teamAgentHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  teamAgentIdentity: { flex: 1, gap: 3 },
+  removeButton: { minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8 },
+  confirmBox: { borderRadius: 12, padding: 11, gap: 10 },
+  confirmActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8 },
+  confirmCancel: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 10 },
   button: { minHeight: 44, borderRadius: 14, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   failure: { borderTopWidth: 1, paddingTop: 9, gap: 4 },
 });

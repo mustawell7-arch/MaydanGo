@@ -1,18 +1,35 @@
 import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { requestMembershipRefund } from '@workspace/api-client-react';
-import { Text, TextInput, Pressable, Ionicons } from '@/components/Localized';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  getGetMemberCoursesQueryKey,
+  getGetOperationCoursesQueryKey,
+  requestMembershipRefund,
+  useAddLearningLesson,
+  useCreateLearningCourse,
+  useGetOperationCourses,
+  useUpdateLearningCourse,
+  type CourseAdminRecord,
+  type CourseInput,
+  type CourseMetadataInput,
+  type LessonInput,
+} from '@workspace/api-client-react';
+import { Text as LocalizedText, TextInput as LocalizedTextInput, Pressable as LocalizedPressable, Ionicons } from '@/components/Localized';
 import { ScreenShell, ScreenHeader } from '@/components/ScreenShell';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { dateTime, errorCopy, localize } from '@/lib/content';
+import { localizePartnerOperationsReview, splitPartnerOperationsList } from '@/lib/partner-operations-copy';
 import { HttpError, useAuthedResource, type Operations, type Offering, type Plan, type Rules } from '@/lib/live-api';
 
-type Tab = 'offerings' | 'plans' | 'partners' | 'access';
+type Tab = 'offerings' | 'plans' | 'partners' | 'access' | 'courses';
 type Colors = ReturnType<typeof useColors>;
-const csv = (s: string) => s.split(',').map(x => x.trim()).filter(Boolean);
+const Text = (props: React.ComponentProps<typeof LocalizedText>) => <LocalizedText {...props} copyMode="partner-operations-review" />;
+const TextInput = (props: React.ComponentProps<typeof LocalizedTextInput>) => <LocalizedTextInput {...props} copyMode="partner-operations-review" />;
+const Pressable = (props: React.ComponentProps<typeof LocalizedPressable>) => <LocalizedPressable {...props} copyMode="partner-operations-review" />;
+const csv = splitPartnerOperationsList;
 const limits = (s: string): Record<string, number> | null => {
   const out: Record<string, number> = {};
   for (const part of csv(s)) { const [k, v] = part.split(':').map(x => x.trim()); const n = Number(v); if (!k || !Number.isInteger(n) || n < 0) return null; out[k] = n; }
@@ -72,8 +89,8 @@ export default function OperationsScreen() {
     <View style={[s.empty, { borderColor: c.border }]}><Ionicons name="lock-closed-outline" size={26} color={c.mutedForeground} />
       <Text style={{ color: c.foreground, fontWeight: '700', textAlign: 'center' }}>{localize('Finance review is available in the MaydanGo web desk.', app.language)}</Text>
       <Text style={{ color: c.mutedForeground, textAlign: 'center' }}>{localize('This mobile operations area is for administrators and approved partners.', app.language)}</Text></View></View></ScreenShell>;
-  const tabs: Tab[] = admin ? ['offerings', 'plans', 'partners', 'access'] : ['offerings'];
-  const names: Record<Tab, string> = { offerings: 'Offerings', plans: 'Plans', partners: 'Partners', access: 'Access grants' };
+   const tabs: Tab[] = admin ? ['offerings', 'plans', 'partners', 'access', 'courses'] : ['offerings'];
+   const names: Record<Tab, string> = { offerings: 'Offerings', plans: 'Plans', partners: 'Partners', access: 'Access grants', courses: 'Courses' };
   return <ScreenShell>{header}
     <KeyboardAwareScrollViewCompat contentContainerStyle={s.pad} keyboardShouldPersistTaps="handled">
       {back}
@@ -88,7 +105,8 @@ export default function OperationsScreen() {
       {tab === 'offerings' || !admin ? <OfferingsTab c={c} d={d} api={ops.api} refresh={ops.refresh} />
         : tab === 'plans' ? <PlansTab c={c} d={d} api={ops.api} refresh={ops.refresh} />
         : tab === 'partners' ? <PartnersTab c={c} d={d} api={ops.api} refresh={ops.refresh} />
-        : <AccessTab c={c} d={d} api={ops.api} />}
+        : tab === 'access' ? <AccessTab c={c} d={d} api={ops.api} />
+        : admin ? <CoursesTab c={c} /> : null}
     </KeyboardAwareScrollViewCompat>
   </ScreenShell>;
 }
@@ -226,7 +244,7 @@ function PlansTab({ c, d, api, refresh }: TabProps) {
       <Choice c={c} label="KIND" options={['paid', 'trial', 'corporate'] as const} value={f.kind} onChange={v => setF(x => ({ ...x, kind: v }))} names={{ paid: 'Paid plan', trial: 'Trial', corporate: 'Corporate' }} />
       {f.id ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Edits apply to new grants only. Existing memberships keep the rules they started with.</Text> : null}
        {f.kind === 'paid' ? <>
-         <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{localize('Set the membership price in IQD. Checkout stays closed until the PayTabs Iraq account, recurring billing, payout eligibility, and signed callback are verified.', language)}</Text>
+         <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{localizePartnerOperationsReview('Set the membership price in IQD. Checkout stays closed until the PayTabs Iraq account, recurring billing, payout eligibility, and signed callback are verified.', language)}</Text>
          <Field c={c} label="PRICE (IQD)" value={f.priceIqd} onChange={set('priceIqd')} numeric />
        </> : null}
       <View style={s.wrap}><Field c={c} label="DAYS" value={f.durationDays} onChange={set('durationDays')} numeric /><Field c={c} label="TOTAL QUOTA" value={f.quota} onChange={set('quota')} numeric /><Field c={c} label="DAILY LIMIT" value={f.dailyLimit} onChange={set('dailyLimit')} numeric /></View>
@@ -355,6 +373,280 @@ function AccessTab({ c, d, api }: Omit<TabProps, 'refresh'>) {
     </View>
   </View>;
 }
+
+type LocalizedDraft = { en: string; ar: string; ku: string };
+type CourseDraft = {
+  localizedTitle: LocalizedDraft;
+  localizedSummary: LocalizedDraft;
+  localizedInstructor: LocalizedDraft;
+  category: string;
+  level: CourseMetadataInput['level'];
+  durationMinutes: string;
+  thumbnailUrl: string;
+  published: boolean;
+};
+type LessonDraft = {
+  localizedTitle: LocalizedDraft;
+  localizedContent: LocalizedDraft;
+  durationMinutes: string;
+  mediaUrl: string;
+};
+const emptyLocalized = (): LocalizedDraft => ({ en: '', ar: '', ku: '' });
+const emptyCourseDraft = (): CourseDraft => ({
+  localizedTitle: emptyLocalized(), localizedSummary: emptyLocalized(), localizedInstructor: emptyLocalized(),
+  category: '', level: 'all-levels', durationMinutes: '', thumbnailUrl: '', published: false,
+});
+const emptyLessonDraft = (): LessonDraft => ({
+  localizedTitle: emptyLocalized(), localizedContent: emptyLocalized(), durationMinutes: '', mediaUrl: '',
+});
+const isHttpsUrl = (value: string) => {
+  try { const url = new URL(value.trim()); return url.protocol === 'https:' && !!url.hostname; }
+  catch { return false; }
+};
+const isPrivateRecordingPath = (value: string) =>
+  /^\/objects\/course-recordings\/[A-Za-z0-9_-]{1,180}\.(mp4|webm|m4v|mov|m4a|mp3|aac|ogg)$/.test(value.trim());
+const validLocalized = (values: LocalizedDraft) => !!values.en.trim() && !!values.ar.trim() && !!values.ku.trim();
+const toMetadata = (draft: CourseDraft): CourseMetadataInput => ({
+  localizedTitle: { en: draft.localizedTitle.en.trim(), ar: draft.localizedTitle.ar.trim(), ku: draft.localizedTitle.ku.trim() },
+  localizedSummary: { en: draft.localizedSummary.en.trim(), ar: draft.localizedSummary.ar.trim(), ku: draft.localizedSummary.ku.trim() },
+  localizedInstructor: { en: draft.localizedInstructor.en.trim(), ar: draft.localizedInstructor.ar.trim(), ku: draft.localizedInstructor.ku.trim() },
+  category: draft.category.trim(),
+  level: draft.level,
+  durationMinutes: Number(draft.durationMinutes),
+  thumbnailUrl: draft.thumbnailUrl.trim() || null,
+  published: draft.published,
+});
+const toCourseDraft = (course: CourseAdminRecord): CourseDraft => ({
+  localizedTitle: course.localizedTitle, localizedSummary: course.localizedSummary, localizedInstructor: course.localizedInstructor,
+  category: course.category, level: course.level, durationMinutes: String(course.durationMinutes),
+  thumbnailUrl: course.thumbnailUrl ?? '', published: course.published,
+});
+const toLessonInput = (draft: LessonDraft, position: number): LessonInput => ({
+  position,
+  localizedTitle: { en: draft.localizedTitle.en.trim(), ar: draft.localizedTitle.ar.trim(), ku: draft.localizedTitle.ku.trim() },
+  localizedContent: { en: draft.localizedContent.en.trim(), ar: draft.localizedContent.ar.trim(), ku: draft.localizedContent.ku.trim() },
+  durationMinutes: Number(draft.durationMinutes),
+  mediaUrl: draft.mediaUrl.trim(),
+});
+
+function LocalizedFields({ c, label, values, onChange, multiline = false }: {
+  c: Colors; label: string; values: LocalizedDraft; onChange: (language: keyof LocalizedDraft, value: string) => void; multiline?: boolean;
+}) {
+  const fields: { language: keyof LocalizedDraft; name: string; placeholder: string }[] = [
+    { language: 'en', name: 'ENGLISH', placeholder: 'English' },
+    { language: 'ar', name: 'IRAQI ARABIC', placeholder: 'العربية العراقية' },
+    { language: 'ku', name: 'SORANI KURDISH', placeholder: 'کوردی سۆرانی' },
+  ];
+  return <View style={{ gap: 8 }}>
+    <Text style={[s.label, { color: c.mutedForeground }]}>{label} · ALL LANGUAGES</Text>
+    {fields.map(field => <Field key={field.language} c={c} label={field.name} value={values[field.language]}
+      onChange={value => onChange(field.language, value)} placeholder={field.placeholder} multiline={multiline} />)}
+  </View>;
+}
+
+function CourseMetadataFields({ c, draft, setDraft }: {
+  c: Colors; draft: CourseDraft; setDraft: React.Dispatch<React.SetStateAction<CourseDraft>>;
+}) {
+  const setLocalized = (key: 'localizedTitle' | 'localizedSummary' | 'localizedInstructor') =>
+    (language: keyof LocalizedDraft, value: string) => setDraft(current => ({
+      ...current, [key]: { ...current[key], [language]: value },
+    }));
+  return <>
+    <LocalizedFields c={c} label="COURSE TITLE" values={draft.localizedTitle} onChange={setLocalized('localizedTitle')} />
+    <LocalizedFields c={c} label="COURSE SUMMARY" values={draft.localizedSummary} onChange={setLocalized('localizedSummary')} multiline />
+    <LocalizedFields c={c} label="INSTRUCTOR" values={draft.localizedInstructor} onChange={setLocalized('localizedInstructor')} />
+    <View style={s.wrap}>
+      <Field c={c} label="CATEGORY" value={draft.category} onChange={value => setDraft(current => ({ ...current, category: value }))} placeholder="mobility, strength…" />
+      <Field c={c} label="COURSE MINUTES" value={draft.durationMinutes} onChange={value => setDraft(current => ({ ...current, durationMinutes: value }))} numeric />
+    </View>
+    <Choice c={c} label="LEVEL" options={['beginner', 'intermediate', 'advanced', 'all-levels'] as const}
+      value={draft.level} onChange={level => setDraft(current => ({ ...current, level }))} names={{
+        beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced', 'all-levels': 'All levels',
+      }} />
+    <Field c={c} label="THUMBNAIL URL · HTTPS" value={draft.thumbnailUrl}
+      onChange={value => setDraft(current => ({ ...current, thumbnailUrl: value }))} placeholder="https://…" />
+    <Choice c={c} label="PUBLICATION" options={['draft', 'published'] as const} value={draft.published ? 'published' : 'draft'}
+      onChange={value => setDraft(current => ({ ...current, published: value === 'published' }))} names={{ draft: 'Draft', published: 'Published' }} />
+  </>;
+}
+
+function LessonFields({ c, draft, setDraft, heading }: {
+  c: Colors; draft: LessonDraft; setDraft: React.Dispatch<React.SetStateAction<LessonDraft>>; heading: string;
+}) {
+  const setLocalized = (key: 'localizedTitle' | 'localizedContent') =>
+    (language: keyof LocalizedDraft, value: string) => setDraft(current => ({
+      ...current, [key]: { ...current[key], [language]: value },
+    }));
+  return <View style={{ gap: 12, borderTopWidth: 1, borderTopColor: c.border, paddingTop: 14 }}>
+    <Text style={[s.h, { color: c.foreground, fontSize: 16 }]}>{heading}</Text>
+    <LocalizedFields c={c} label="LESSON TITLE" values={draft.localizedTitle} onChange={setLocalized('localizedTitle')} />
+    <LocalizedFields c={c} label="LESSON CONTENT" values={draft.localizedContent} onChange={setLocalized('localizedContent')} multiline />
+    <View style={s.wrap}>
+      <Field c={c} label="LESSON MINUTES" value={draft.durationMinutes}
+        onChange={value => setDraft(current => ({ ...current, durationMinutes: value }))} numeric />
+      <Field c={c} label="PRIVATE RECORDING PATH" value={draft.mediaUrl}
+        onChange={value => setDraft(current => ({ ...current, mediaUrl: value }))} placeholder="/objects/course-recordings/…" />
+    </View>
+  </View>;
+}
+
+function CoursesTab({ c }: { c: Colors }) {
+  const queryClient = useQueryClient();
+  const coursesQuery = useGetOperationCourses();
+  const createCourse = useCreateLearningCourse();
+  const updateCourse = useUpdateLearningCourse();
+  const addLesson = useAddLearningLesson();
+  const [draft, setDraft] = useState<CourseDraft>(emptyCourseDraft);
+  const [editDraft, setEditDraft] = useState<CourseDraft>(emptyCourseDraft);
+  const [lessonDraft, setLessonDraft] = useState<LessonDraft>(emptyLessonDraft);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [lessonCourseId, setLessonCourseId] = useState<string | null>(null);
+  const [appendDraft, setAppendDraft] = useState<LessonDraft>(emptyLessonDraft);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const courses = coursesQuery.data?.courses ?? [];
+  const invalidateCourses = async () => Promise.all([
+    queryClient.invalidateQueries({ queryKey: getGetOperationCoursesQueryKey() }),
+    queryClient.invalidateQueries({ queryKey: getGetMemberCoursesQueryKey() }),
+  ]);
+  const validateMetadata = (value: CourseDraft) => {
+    if (!validLocalized(value.localizedTitle) || !validLocalized(value.localizedSummary) || !validLocalized(value.localizedInstructor)) {
+      return 'Add the title, summary and instructor in English, Iraqi Arabic and Sorani Kurdish.';
+    }
+    if (!value.category.trim()) return 'Add a course category.';
+    if (!isInt(value.durationMinutes, 1)) return 'Course duration must be a whole number of at least 1 minute.';
+    if (value.thumbnailUrl.trim() && !isHttpsUrl(value.thumbnailUrl)) return 'Thumbnail links must use HTTPS.';
+    return null;
+  };
+  const validateLesson = (value: LessonDraft) => {
+    if (!validLocalized(value.localizedTitle) || !validLocalized(value.localizedContent)) {
+      return 'Add the lesson title and content in English, Iraqi Arabic and Sorani Kurdish.';
+    }
+    if (!isInt(value.durationMinutes, 1)) return 'Lesson duration must be a whole number of at least 1 minute.';
+    if (!isPrivateRecordingPath(value.mediaUrl)) return 'Use a private course-recording path, not a public link.';
+    return null;
+  };
+  const create = async () => {
+    const metadataError = validateMetadata(draft);
+    const lessonError = validateLesson(lessonDraft);
+    if (metadataError || lessonError) { setMsg({ ok: false, text: metadataError ?? lessonError! }); return; }
+    const data: CourseInput = { ...toMetadata(draft), lessons: [toLessonInput(lessonDraft, 1)] };
+    setBusy('create'); setMsg(null);
+    try {
+      await createCourse.mutateAsync({ data });
+      await invalidateCourses();
+      setDraft(emptyCourseDraft()); setLessonDraft(emptyLessonDraft());
+      setMsg({ ok: true, text: 'Course created. Publication controls are ready in the course list.' });
+    } catch (error) { setMsg(fail(error)); } finally { setBusy(null); }
+  };
+  const saveMetadata = async (course: CourseAdminRecord) => {
+    const validationError = validateMetadata(editDraft);
+    if (validationError) { setMsg({ ok: false, text: validationError }); return; }
+    setBusy(`edit-${course.id}`); setMsg(null);
+    try {
+      await updateCourse.mutateAsync({ id: course.id, data: toMetadata(editDraft) });
+      await invalidateCourses();
+      setEditingId(null); setMsg({ ok: true, text: 'Course details updated.' });
+    } catch (error) { setMsg(fail(error)); } finally { setBusy(null); }
+  };
+  const togglePublication = async (course: CourseAdminRecord) => {
+    setBusy(`publish-${course.id}`); setMsg(null);
+    try {
+      await updateCourse.mutateAsync({ id: course.id, data: { ...toMetadata(toCourseDraft(course)), published: !course.published } });
+      await invalidateCourses();
+      setMsg({ ok: true, text: course.published ? 'Course unpublished.' : 'Course published.' });
+    } catch (error) { setMsg(fail(error)); } finally { setBusy(null); }
+  };
+  const append = async (course: CourseAdminRecord) => {
+    const validationError = validateLesson(appendDraft);
+    if (validationError) { setMsg({ ok: false, text: validationError }); return; }
+    setBusy(`lesson-${course.id}`); setMsg(null);
+    try {
+      await addLesson.mutateAsync({ id: course.id, data: toLessonInput(appendDraft, course.lessonCount + 1) });
+      await invalidateCourses();
+      setLessonCourseId(null); setAppendDraft(emptyLessonDraft());
+      setMsg({ ok: true, text: `Lesson ${course.lessonCount + 1} added.` });
+    } catch (error) { setMsg(fail(error)); } finally { setBusy(null); }
+  };
+  if (coursesQuery.isPending) return <View style={{ gap: 10 }}>
+    {[0, 1, 2].map(index => <View key={index} style={[s.skeleton, { backgroundColor: c.muted }]} />)}
+  </View>;
+  if (coursesQuery.isError && !coursesQuery.data) return <View style={[s.card, { backgroundColor: c.card, borderColor: c.border }]}>
+    <Text style={[s.h, { color: c.foreground }]}>Course catalogue unavailable</Text>
+    <Text style={{ color: c.mutedForeground }}>The course list could not be loaded. Try again when the connection is steady.</Text>
+    <Btn c={c} title="Try again" onPress={() => void coursesQuery.refetch()} />
+  </View>;
+  return <View style={{ gap: 12 }}>
+    <View style={[s.courseBanner, { backgroundColor: c.primary }]}>
+      <View style={{ flex: 1, gap: 4 }}>
+        <Text style={{ color: c.primaryForeground, fontWeight: '800', fontSize: 17 }}>Learning library</Text>
+        <Text style={{ color: c.accent, fontSize: 12 }}>Admin controls · English · Iraqi Arabic · Sorani</Text>
+      </View>
+      <Ionicons name="library-outline" size={25} color={c.accent} />
+    </View>
+    <View style={[s.card, { backgroundColor: c.card, borderColor: c.border }]}>
+      <Text style={[s.h, { color: c.foreground }]}>Create a course</Text>
+      <Text style={{ color: c.mutedForeground, fontSize: 12, lineHeight: 18 }}>
+        Courses are saved with their first lesson. Every language field is required; media and thumbnail links must be secure HTTPS.
+      </Text>
+      <CourseMetadataFields c={c} draft={draft} setDraft={setDraft} />
+      <LessonFields c={c} draft={lessonDraft} setDraft={setLessonDraft} heading="Lesson 1 · first in sequence" />
+      <Btn c={c} title="Create course" onPress={() => void create()} busy={busy === 'create'} id="ops-create-course" />
+    </View>
+    <View style={s.courseListHeading}>
+      <Text style={[s.h, { color: c.foreground }]}>Course catalogue</Text>
+      <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{courses.length} {courses.length === 1 ? 'course' : 'courses'}</Text>
+    </View>
+    {coursesQuery.isError ? <Text style={{ color: c.destructive }}>Course list may be out of date. Pull to retry is not available here; use the refresh control below.</Text> : null}
+    {coursesQuery.isError ? <Btn c={c} title="Refresh course list" tone="quiet" onPress={() => void coursesQuery.refetch()} /> : null}
+    {msg ? <Msg c={c} m={msg} /> : null}
+    {!courses.length ? <View style={[s.empty, { borderColor: c.border }]}>
+      <Ionicons name="book-outline" size={26} color={c.mutedForeground} />
+      <Text style={{ color: c.foreground, fontWeight: '700', textAlign: 'center' }}>No courses yet</Text>
+      <Text style={{ color: c.mutedForeground, textAlign: 'center' }}>Create the first learning experience above. It will appear here once saved.</Text>
+    </View> : courses.map(course => <View key={course.id} style={[s.card, { backgroundColor: c.card, borderColor: course.published ? c.primary : c.border }]}>
+      <View style={s.between}>
+        <View style={{ flex: 1, gap: 5 }}>
+          <Text raw style={{ color: c.foreground, fontWeight: '800', fontSize: 16 }}>{course.title}</Text>
+          <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{course.category} · {course.level} · {course.durationMinutes} min</Text>
+        </View>
+        <View style={[s.statusPill, { backgroundColor: course.published ? c.accent : c.muted }]}>
+          <Text style={{ color: c.foreground, fontWeight: '700', fontSize: 11 }}>{course.published ? 'Published' : 'Draft'}</Text>
+        </View>
+      </View>
+      <View style={s.courseMetaLine}>
+        <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{course.lessonCount} {course.lessonCount === 1 ? 'lesson' : 'lessons'} · Updated {new Date(course.updatedAt).toLocaleDateString()}</Text>
+        <Text raw style={{ color: c.mutedForeground, fontSize: 10 }}>ID {course.id}</Text>
+      </View>
+      <View style={s.wrap}>
+        <Btn c={c} title="Edit details" tone="quiet" onPress={() => {
+          setEditingId(editingId === course.id ? null : course.id);
+          setEditDraft(toCourseDraft(course)); setMsg(null);
+        }} />
+        <Btn c={c} title={course.published ? 'Unpublish' : 'Publish'} tone={course.published ? 'quiet' : 'primary'}
+          onPress={() => void togglePublication(course)} busy={busy === `publish-${course.id}`} />
+        <Btn c={c} title={lessonCourseId === course.id ? 'Close lesson form' : 'Append lesson'} tone="quiet"
+          onPress={() => { setLessonCourseId(lessonCourseId === course.id ? null : course.id); setAppendDraft(emptyLessonDraft()); setMsg(null); }} />
+      </View>
+      {editingId === course.id ? <View style={[s.courseEditor, { borderTopColor: c.border }]}>
+        <Text style={[s.h, { color: c.foreground, fontSize: 16 }]}>Edit course metadata</Text>
+        <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Existing lessons stay in their original order. Only course details and publication status can be changed.</Text>
+        <CourseMetadataFields c={c} draft={editDraft} setDraft={setEditDraft} />
+        <View style={s.wrap}>
+          <Btn c={c} title="Save course details" onPress={() => void saveMetadata(course)} busy={busy === `edit-${course.id}`} />
+          <Btn c={c} title="Discard" tone="quiet" onPress={() => { setEditingId(null); setEditDraft(emptyCourseDraft()); setMsg(null); }} />
+        </View>
+      </View> : null}
+      {lessonCourseId === course.id ? <View style={[s.courseEditor, { borderTopColor: c.border }]}>
+        <Text style={{ color: c.mutedForeground, fontSize: 12 }}>This lesson will be added as position {course.lessonCount + 1}. Existing lessons cannot be edited, removed or reordered.</Text>
+        <LessonFields c={c} draft={appendDraft} setDraft={setAppendDraft} heading={`Append lesson · position ${course.lessonCount + 1}`} />
+        <Btn c={c} title={`Add lesson ${course.lessonCount + 1}`} onPress={() => void append(course)}
+          busy={busy === `lesson-${course.id}`} id={`ops-add-lesson-${course.id}`} />
+      </View> : null}
+    </View>)}
+  </View>;
+}
+
 const s = StyleSheet.create({
   pad: { padding: 20, paddingBottom: 60, gap: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -370,4 +662,9 @@ const s = StyleSheet.create({
   between: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   skeleton: { height: 120, borderRadius: 18 },
   empty: { borderWidth: 1, borderStyle: 'dashed', borderRadius: 18, padding: 26, alignItems: 'center', gap: 8 },
+  courseBanner: { borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  courseListHeading: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 6 },
+  courseMetaLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  statusPill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
+  courseEditor: { borderTopWidth: 1, paddingTop: 14, gap: 12 },
 });

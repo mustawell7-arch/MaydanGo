@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { attendance, db, reservations } from "@workspace/db";
 import { BookingError } from "../lib/reservations";
 import { sendMemberNotification } from "../lib/notifications";
+import { DeviceSecurityError, requirePrimaryMemberDevice } from "../lib/member-device-security";
 import { roster, savePolicy, issueQr, scanQr, review, policyInput, scanInput, reviewInput, issueManualCheckinCode, recordManualCheckin, manualCheckinInput } from "../lib/checkin";
 
 const router = Router();
@@ -12,14 +13,14 @@ router.use((req, res, next) => {
   if (!getAuth(req).userId) { res.status(401).json({ message: "Sign in to access attendance." }); return; }
   next();
 });
-router.get("/", async (req, res) => { res.json(await roster(getAuth(req).userId!)); });
-router.post("/scan", async (req, res) => {
+router.get("/", requirePrimaryMemberDevice, async (req, res) => { res.json(await roster(getAuth(req).userId!)); });
+router.post("/scan", requirePrimaryMemberDevice, async (req, res) => {
   const ownerId = getAuth(req).userId!;
   const result = await scanQr(ownerId, scanInput.parse(req.body));
   void sendMemberNotification(ownerId, "attendance_received");
   res.json(result);
 });
-router.post("/:id/manual-code", async (req, res) => {
+router.post("/:id/manual-code", requirePrimaryMemberDevice, async (req, res) => {
   res.json(await issueManualCheckinCode(getAuth(req).userId!, String(req.params.id)));
 });
 router.post("/:id/manual", async (req, res) => {
@@ -60,6 +61,7 @@ router.post("/:id/review", async (req, res) => {
 router.use((error: unknown, _req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => {
   if (error instanceof z.ZodError) { res.status(400).json({ message: "Invalid check-in input. Check your dates, coordinates and reason." }); return; }
   if (error instanceof BookingError) { res.status(error.status).json({ message: error.message }); return; }
+  if (error instanceof DeviceSecurityError) { res.status(error.status).json({ code: error.code, message: error.message }); return; }
   next(error);
 });
 export default router;

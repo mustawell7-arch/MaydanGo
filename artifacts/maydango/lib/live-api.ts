@@ -1,7 +1,8 @@
 import { useAuth } from '@clerk/expo';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { errorCopy } from '@/lib/content';
+import { getDeviceInstallationToken } from '@/lib/device-identity';
 
 export type Rules = {
   quota: number; dailyLimit: number; quotaMode: 'shared' | 'separate';
@@ -31,10 +32,15 @@ export function useApiFetch() {
   const tokenRef = useRef(getToken); tokenRef.current = getToken;
   return useCallback(async <T,>(path: string, init?: { method?: string; body?: unknown }): Promise<T> => {
     const token = await tokenRef.current();
+    const deviceToken = Platform.OS === 'web' ? null : await getDeviceInstallationToken();
     const domain = process.env.EXPO_PUBLIC_DOMAIN;
     const res = await fetch(`${domain ? `https://${domain}` : ''}/api${path}`, {
       method: init?.method ?? 'GET', credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(deviceToken ? { 'X-MaydanGo-Device': deviceToken } : {}),
+      },
       body: init?.body === undefined ? undefined : JSON.stringify(init.body),
     });
     const text = await res.text();

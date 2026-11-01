@@ -20,6 +20,18 @@ Approved-copy PDFs can contain right-to-left text-layer artifacts, including dup
 
 **How to apply:** Render representative Arabic and Sorani PDF pages and compare their visible wording and order before importing extracted strings. Counts and automated checks do not establish linguistic accuracy; native-speaker review remains required.
 
+The website wording review export is a source snapshot, not approved copy: it marks its Arabic and Sorani entries “Review pending,” asks for review before website changes, and excludes the signed-in partner portal.
+
+**Why:** The document distinguishes unreviewed public-site wording from the partner portal’s additional English-only messages.
+
+**How to apply:** Public-site review exports must stay out of released copy until qualified review. Keep the separately uploaded app copy scoped to the mobile operations area and in draft status pending local-speaker review.
+
+The user clarified that the revised English, Iraqi Arabic, and Sorani copy upload is intended for the Expo app's partner/admin operations area, despite its partner-portal filename.
+
+**Why:** The user corrected a scope assumption that had put the uploaded copy on the website instead of the mobile app.
+
+**How to apply:** Scope this copy to the mobile operations area, keep it as a review draft, and do not treat it as native-speaker approval or release authorization.
+
 Expo can emit a React Native DevTools warning about missing `libglib` while Metro and the browser preview still run successfully.
 
 **Why:** This occurred in the Linux workspace during a localization preview; it did not prevent the web bundle from rendering.

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, gt, inArray, lte, sql } from "drizzle-orm";
-import { db, memberships, offerings, reservations, attendance, memberProfiles, partners, waitlistEntries } from "@workspace/db";
+import { and, asc, desc, eq, gt, inArray, isNull, lte, sql } from "drizzle-orm";
+import { db, memberships, offerings, reservations, attendance, memberProfiles, partners, waitlistEntries, memberUpdates } from "@workspace/db";
 import { sendMemberNotification } from "./notifications";
 
 export class BookingError extends Error {
@@ -79,7 +79,7 @@ export async function assertMemberEligibleForOffering(tx: BookingTx, userId: str
 }
 
 export async function memberState(userId: string) {
-  const [membershipRows, rows, profiles, waitlistRows] = await Promise.all([
+  const [membershipRows, rows, profiles, waitlistRows, updateRows] = await Promise.all([
     db.select().from(memberships).where(eq(memberships.userId, userId)),
     db.select({ reservation: reservations, offering: offerings }).from(reservations)
       .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
@@ -88,30 +88,84 @@ export async function memberState(userId: string) {
     db.select({ entry: waitlistEntries, offering: offerings }).from(waitlistEntries)
       .innerJoin(offerings, eq(waitlistEntries.offeringId, offerings.id))
       .where(eq(waitlistEntries.userId, userId)).orderBy(desc(waitlistEntries.createdAt)).limit(50),
+    db.select().from(memberUpdates).where(eq(memberUpdates.userId, userId))
+      .orderBy(desc(memberUpdates.createdAt), desc(memberUpdates.id)).limit(50),
   ]);
   return { profile: profiles[0] ?? null, memberships: membershipRows, bookings: rows.map(({ reservation: r, offering: o }) => ({
     id: r.id, kind: o.kind, targetId: o.targetId, slot: o.slot, title: o.title,
+    localizedTitle: o.localizedTitle, city: o.city, facility: o.facility,
+    cancellationDeadline: o.cancellationDeadline,
     scope: o.scope, startsAt: o.startsAt, status: r.status,
     createdAt: r.createdAt, cancelledAt: r.cancelledAt,
   })), waitlists: waitlistRows.map(({ entry: e, offering: o }) => ({
     id: e.id, offeringId: e.offeringId, title: o.title, startsAt: o.startsAt,
     queuePosition: e.queuePosition, status: e.status, createdAt: e.createdAt,
     offerExpiresAt: e.offerExpiresAt, respondedAt: e.respondedAt,
+  })), waitlistUpdates: updateRows.map(({ id, kind, title, startsAt, createdAt }) => ({
+    id, kind, title, startsAt, createdAt,
   })) };
+}
+
+async function recordWaitlistUpdate(
+  tx: BookingTx,
+  entryId: string,
+  userId: string,
+  offering: typeof offerings.$inferSelect,
+  kind: "waitlist_offer" | "waitlist_expired" | "waitlist_booked",
+  createdAt: Date,
+) {
+  await tx.insert(memberUpdates).values({
+    id: randomUUID(),
+    userId,
+    eventKey: `waitlist:${entryId}:${kind}`,
+    kind,
+    title: offering.title,
+    startsAt: offering.startsAt,
+    createdAt,
+  }).onConflictDoNothing();
 }
 
 type WaitlistChanges = {
   offered: { userId: string; expiresAt: Date }[];
   expired: string[];
+  reminders: { entryId: string; userId: string; expiresAt: Date }[];
 };
 
 async function advanceWaitlistInTransaction(tx: BookingTx, offering: typeof offerings.$inferSelect, now: Date): Promise<WaitlistChanges> {
-  const changes: WaitlistChanges = { offered: [], expired: [] };
+  const changes: WaitlistChanges = { offered: [], expired: [], reminders: [] };
   const expiredRows = await tx.update(waitlistEntries)
     .set({ status: "expired", respondedAt: now })
     .where(and(eq(waitlistEntries.offeringId, offering.id), eq(waitlistEntries.status, "offered"), lte(waitlistEntries.offerExpiresAt, now)))
-    .returning({ userId: waitlistEntries.userId });
+    .returning({ id: waitlistEntries.id, userId: waitlistEntries.userId });
+  for (const row of expiredRows)
+    await recordWaitlistUpdate(tx, row.id, row.userId, offering, "waitlist_expired", now);
   changes.expired.push(...expiredRows.map(row => row.userId));
+
+  const dueReminders = await tx.select({
+    id: waitlistEntries.id,
+    userId: waitlistEntries.userId,
+    expiresAt: waitlistEntries.offerExpiresAt,
+  }).from(waitlistEntries)
+    .where(and(
+      eq(waitlistEntries.offeringId, offering.id),
+      eq(waitlistEntries.status, "offered"),
+      gt(waitlistEntries.offerExpiresAt, now),
+      lte(waitlistEntries.reminderAt, now),
+      isNull(waitlistEntries.reminderAttemptedAt),
+    )).for("update");
+  for (const reminder of dueReminders) {
+    if (!reminder.expiresAt) continue;
+    const [claimed] = await tx.update(waitlistEntries).set({ reminderAttemptedAt: now })
+      .where(and(
+        eq(waitlistEntries.id, reminder.id),
+        eq(waitlistEntries.status, "offered"),
+        gt(waitlistEntries.offerExpiresAt, now),
+        isNull(waitlistEntries.reminderAttemptedAt),
+      )).returning({ id: waitlistEntries.id });
+    if (claimed) changes.reminders.push({
+      entryId: reminder.id, userId: reminder.userId, expiresAt: reminder.expiresAt,
+    });
+  }
 
   const [held] = await tx.select({ count: sql<number>`count(*)::int` }).from(reservations)
     .where(and(eq(reservations.offeringId, offering.id), inArray(reservations.status, ["reserved", "requested"])));
@@ -137,11 +191,22 @@ async function advanceWaitlistInTransaction(tx: BookingTx, offering: typeof offe
     if (expiresAt <= now) {
       await tx.update(waitlistEntries).set({ status: "expired", respondedAt: now })
         .where(eq(waitlistEntries.id, entry.id));
+      await recordWaitlistUpdate(tx, entry.id, entry.userId, offering, "waitlist_expired", now);
       changes.expired.push(entry.userId);
       continue;
     }
-    await tx.update(waitlistEntries).set({ status: "offered", offerExpiresAt: expiresAt, respondedAt: null })
+    const offerDuration = expiresAt.getTime() - now.getTime();
+    const reminderLead = Math.min(10 * 60_000, Math.floor(offerDuration / 2));
+    const reminderAt = new Date(expiresAt.getTime() - reminderLead);
+    await tx.update(waitlistEntries).set({
+      status: "offered",
+      offerExpiresAt: expiresAt,
+      reminderAt,
+      reminderAttemptedAt: null,
+      respondedAt: null,
+    })
       .where(eq(waitlistEntries.id, entry.id));
+    await recordWaitlistUpdate(tx, entry.id, entry.userId, offering, "waitlist_offer", now);
     changes.offered.push({ userId: entry.userId, expiresAt });
     placesToOffer--;
   }
@@ -151,6 +216,23 @@ async function advanceWaitlistInTransaction(tx: BookingTx, offering: typeof offe
 function notifyWaitlistChanges(changes: WaitlistChanges) {
   for (const userId of changes.expired) void sendMemberNotification(userId, "waitlist_expired");
   for (const offer of changes.offered) void sendMemberNotification(offer.userId, "waitlist_offer", { offerExpiresAt: offer.expiresAt });
+  for (const reminder of changes.reminders) {
+    void (async () => {
+      const now = new Date();
+      const [stillOpen] = await db.select({ expiresAt: waitlistEntries.offerExpiresAt }).from(waitlistEntries)
+        .where(and(
+          eq(waitlistEntries.id, reminder.entryId),
+          eq(waitlistEntries.status, "offered"),
+          gt(waitlistEntries.offerExpiresAt, now),
+        )).limit(1);
+      if (!stillOpen?.expiresAt) return;
+      const remainingMinutes = Math.max(1, Math.ceil((stillOpen.expiresAt.getTime() - now.getTime()) / 60_000));
+      await sendMemberNotification(reminder.userId, "waitlist_reminder", {
+        remainingMinutes,
+        dedupeKey: `waitlist-reminder:${reminder.entryId}`,
+      });
+    })().catch(error => console.error("Waitlist reminder dispatch failed.", error));
+  }
 }
 
 export async function joinWaitlist(userId: string, offeringId: string) {
@@ -194,9 +276,12 @@ export async function leaveWaitlist(userId: string, entryId: string) {
       eq(waitlistEntries.id, entryId), eq(waitlistEntries.userId, userId),
     )).for("update");
     if (!entry || !offering) throw new BookingError(404, "Waitlist entry not found.");
-    if (!["waiting", "offered"].includes(entry.status)) return { changed: false, changes: { offered: [], expired: [] } as WaitlistChanges };
+    if (!["waiting", "offered"].includes(entry.status))
+      return { changed: false, changes: { offered: [], expired: [], reminders: [] } as WaitlistChanges };
     await tx.update(waitlistEntries).set({ status: "left", respondedAt: new Date() }).where(eq(waitlistEntries.id, entryId));
-    const changes = entry.status === "offered" ? await advanceWaitlistInTransaction(tx, offering, new Date()) : { offered: [], expired: [] };
+    const changes = entry.status === "offered"
+      ? await advanceWaitlistInTransaction(tx, offering, new Date())
+      : { offered: [], expired: [], reminders: [] };
     return { changed: true, changes };
   });
   notifyWaitlistChanges(result.changes);
@@ -217,9 +302,9 @@ export async function acceptWaitlistOffer(userId: string, entryId: string) {
     const now = new Date();
     if (!offering || !entry) throw new BookingError(404, "Waitlist offer not found.");
     if (entry.status !== "offered" || !entry.offerExpiresAt || entry.offerExpiresAt <= now)
-      return { accepted: false, reason: "expired" as const, changes: { offered: [], expired: [] } as WaitlistChanges };
+      return { accepted: false, reason: "expired" as const, changes: { offered: [], expired: [], reminders: [] } as WaitlistChanges };
     if (offering.startsAt <= now || offering.cancelledAt || !offering.active)
-      return { accepted: false, reason: "closed" as const, changes: { offered: [], expired: [] } as WaitlistChanges };
+      return { accepted: false, reason: "closed" as const, changes: { offered: [], expired: [], reminders: [] } as WaitlistChanges };
     let eligibilityError: BookingError | null = null;
     try {
       await assertMemberEligibleForOffering(tx, userId, offering);
@@ -233,10 +318,11 @@ export async function acceptWaitlistOffer(userId: string, entryId: string) {
       return { accepted: false, reason: "ineligible" as const, eligibilityError, changes };
     }
     await tx.update(waitlistEntries).set({ status: "booked", respondedAt: now }).where(eq(waitlistEntries.id, entryId));
+    await recordWaitlistUpdate(tx, entry.id, userId, offering, "waitlist_booked", now);
     await tx.insert(reservations).values({
       id: randomUUID(), userId, offeringId: offering.id, status: "reserved",
     });
-    return { accepted: true, changes: { offered: [], expired: [] } as WaitlistChanges };
+    return { accepted: true, changes: { offered: [], expired: [], reminders: [] } as WaitlistChanges };
   });
   notifyWaitlistChanges(result.changes);
   if (result.accepted) {
@@ -256,7 +342,7 @@ export async function processWaitlistQueue(now = new Date(), onlyOfferingIds?: s
   for (const offeringId of offeringIds) {
     const changes = await db.transaction(async tx => {
       const [offering] = await tx.select().from(offerings).where(eq(offerings.id, offeringId)).for("update");
-      if (!offering) return { offered: [], expired: [] } as WaitlistChanges;
+      if (!offering) return { offered: [], expired: [], reminders: [] } as WaitlistChanges;
       return advanceWaitlistInTransaction(tx, offering, now);
     });
     notifyWaitlistChanges(changes);
@@ -295,14 +381,16 @@ export async function cancelReservation(userId: string, id: string) {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
     const [r] = await tx.select().from(reservations).where(and(eq(reservations.id, id), eq(reservations.userId, userId))).for("update");
     if (!r) throw new BookingError(404, "Booking not found.");
-    if (r.status === "cancelled") return { cancelled: false, changes: { offered: [], expired: [] } as WaitlistChanges };
+    if (r.status === "cancelled") return { cancelled: false, changes: { offered: [], expired: [], reminders: [] } as WaitlistChanges };
     if (!["reserved", "requested"].includes(r.status)) throw new BookingError(409, "This booking can’t be canceled.");
     if ((await tx.select().from(attendance).where(eq(attendance.reservationId, id))).length)
       throw new BookingError(409, "Attendance already exists. Request an attendance review.");
     const [o] = await tx.select().from(offerings).where(eq(offerings.id, r.offeringId)).for("update");
     if (new Date() >= o.cancellationDeadline) throw new BookingError(409, "The cancellation deadline has passed. Contact support.");
     await tx.update(reservations).set({ status: "cancelled", cancelledAt: new Date() }).where(eq(reservations.id, r.id));
-    const changes = o.scope === "live" ? await advanceWaitlistInTransaction(tx, o, new Date()) : { offered: [], expired: [] };
+    const changes = o.scope === "live"
+      ? await advanceWaitlistInTransaction(tx, o, new Date())
+      : { offered: [], expired: [], reminders: [] };
     return { cancelled: true, changes };
   });
   notifyWaitlistChanges(result.changes);

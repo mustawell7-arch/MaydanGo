@@ -10,7 +10,9 @@ export function ScreenShell({ children, sample = true }: { children: React.React
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { language, hydrated } = useApp();
-  if (!hydrated) return null;
+  // Keep Expo web routes visible while browser storage hydrates; native screens
+  // still wait so saved preferences are applied before their first frame.
+  if (!hydrated && Platform.OS !== 'web') return null;
   return (
     <View
       style={{

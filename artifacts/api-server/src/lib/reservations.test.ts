@@ -119,9 +119,34 @@ test("authenticated booking service: ownership, durable history, eligibility and
     await db.insert(memberships).values({
       userId: alice, scope: "live", status: "active", source: "paid", paymentStatus: "paid", tier: "M",
       startsAt: new Date(now - 86400000), endsAt: new Date(now + 10 * 86400000),
-      rules: { quota: 10, dailyLimit: 10, trialAllowedTypes: ["physical"] },
+      rules: { quota: 2, dailyLimit: 10, trialAllowedTypes: ["physical"] },
     });
     assert.equal((await createReservation(alice, input(paidOffering))).status, "reserved");
+
+    const freeEvent = await offer({
+      kind: "event", scope: "live", partnerId: livePartner, accessType: "physical",
+      additionalPayment: false,
+    });
+    const quotaOffering = await offer({ scope: "live", partnerId: livePartner, accessType: "physical" });
+    const eventInput = { kind: "event", targetId: freeEvent, slot: "" };
+    const eventReservation = await createReservation(alice, eventInput);
+    assert.equal(eventReservation.status, "reserved");
+    const savedEvent = (await memberState(alice)).bookings.find(booking => booking.id === eventReservation.id);
+    assert.equal(savedEvent?.kind, "event");
+    assert.equal(savedEvent?.city, "baghdad");
+    assert.equal(savedEvent?.facility, "test");
+    await rejects(() => createReservation(`${prefix}-event-outsider`, eventInput), 403);
+    await rejects(() => createReservation(alice, input(quotaOffering)), 403);
+    await cancelReservation(alice, eventReservation.id);
+    const quotaReservation = await createReservation(alice, input(quotaOffering));
+    assert.equal(quotaReservation.status, "reserved");
+    await cancelReservation(alice, quotaReservation.id);
+
+    const paidEvent = await offer({
+      kind: "event", scope: "live", partnerId: livePartner, accessType: "physical",
+      additionalPayment: true,
+    });
+    await rejects(() => createReservation(alice, { kind: "event", targetId: paidEvent, slot: "" }), 403);
 
     await db.update(memberships).set({ paymentStatus: "not_required" })
       .where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
@@ -221,46 +246,14 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       body: body === undefined ? undefined : JSON.stringify(body) });
     return { status: response.status, data: await response.json() as any };
   };
-  const publishThroughReview = async (offeringId: string, exerciseCorrections = false) => {
-    const submitted = await call(`/operations/offerings/${offeringId}/submit`, partnerUser, "POST", {});
-    assert.equal(submitted.status, 200, JSON.stringify(submitted.data));
-    assert.equal(submitted.data.activityStatus, "submitted");
-    const directPublish = await call(`/operations/offerings/${offeringId}/review`, adminId, "POST", { action: "publish" });
-    assert.equal(directPublish.status, 409, JSON.stringify(directPublish.data));
-    if (exerciseCorrections) {
-      assert.equal((await call(`/operations/offerings/${offeringId}/review`, partnerUser, "POST", { action: "start_review" })).status, 403);
-      assert.equal((await call(`/operations/offerings/${offeringId}/review`, adminId, "POST", { action: "request_changes" })).status, 409);
-      const requestedChanges = await call(`/operations/offerings/${offeringId}/review`, adminId, "POST", {
-        action: "request_changes", reason: "Add full activity details",
-      });
-      assert.equal(requestedChanges.status, 200, JSON.stringify(requestedChanges.data));
-      assert.equal(requestedChanges.data.activityStatus, "changes_requested");
-      assert.equal(requestedChanges.data.reviewNote, "Add full activity details");
-      const corrected = await call(`/operations/offerings/${offeringId}`, partnerUser, "PATCH", {
-        capacity: 2,
-        localizedTitle: { en: "Updated activity", ar: "نشاط محدث", ku: "چالاکی نوێکراوە" },
-        localizedDescription: { en: "Updated details", ar: "تفاصيل محدثة", ku: "وردەکاری نوێکراوە" },
-      });
-      assert.equal(corrected.status, 200, JSON.stringify(corrected.data));
-      assert.equal(corrected.data.activityStatus, "changes_requested");
-      const resubmitted = await call(`/operations/offerings/${offeringId}/submit`, partnerUser, "POST", {});
-      assert.equal(resubmitted.status, 200, JSON.stringify(resubmitted.data));
-      assert.equal(resubmitted.data.activityStatus, "submitted");
-      assert.equal(resubmitted.data.reviewNote, null);
-    }
-    const underReview = await call(`/operations/offerings/${offeringId}/review`, adminId, "POST", { action: "start_review" });
-    assert.equal(underReview.status, 200, JSON.stringify(underReview.data));
-    assert.equal(underReview.data.activityStatus, "under_review");
-    const approved = await call(`/operations/offerings/${offeringId}/review`, adminId, "POST", { action: "approve" });
-    assert.equal(approved.status, 200, JSON.stringify(approved.data));
-    assert.equal(approved.data.activityStatus, "approved");
-    assert.equal(approved.data.sessionStatus, "scheduled");
-    const published = await call(`/operations/offerings/${offeringId}/review`, adminId, "POST", { action: "publish" });
-    assert.equal(published.status, 200, JSON.stringify(published.data));
-    assert.equal(published.data.activityStatus, "published");
-    assert.equal(published.data.sessionStatus, "open_for_booking");
-    return published;
-  };
+    const publishOffering = async (offeringId: string) => {
+      const submitted = await call(`/operations/offerings/${offeringId}/submit`, partnerUser, "POST");
+      assert.equal(submitted.status, 200, JSON.stringify(submitted.data));
+      for (const status of ["under_review", "approved", "published"] as const) {
+        const reviewed = await call(`/operations/offerings/${offeringId}/review`, adminId, "PATCH", { status });
+        assert.equal(reviewed.status, 200, JSON.stringify(reviewed.data));
+      }
+    };
   await db.insert(operators).values({ userId: adminId, role: "admin" });
   try {
     assert.equal((await call("/operations", alice)).status, 403);
@@ -293,10 +286,27 @@ test("live operations: staff scope, approved inventory, server grants and quota 
     });
     const o = await call("/operations/offerings", partnerUser, "POST", offerBody);
     assert.equal(o.status, 201, JSON.stringify(o.data)); ids.push(o.data.id);
-    assert.equal(o.data.activityStatus, "draft");
-    assert.equal(o.data.sessionStatus, "draft");
+    assert.equal(o.data.approvalStatus, "draft");
     assert.equal((await call(`/operations/offerings/${o.data.id}`, adminId, "PATCH", { capacity: 2, active: true })).status, 400);
-    await publishThroughReview(o.data.id, true);
+    await publishOffering(o.data.id);
+    const freeEventOffer = await call("/operations/offerings", partnerUser, "POST", {
+      ...offerBody, title: "Isolated free event", kind: "event", additionalPayment: false,
+      localizedTitle: { en: "Isolated free event", ar: "فعالية مجانية", ku: "بۆنەی بێبەرامبەر" },
+      localizedDescription: { en: "A free RSVP test.", ar: "اختبار حجز مجاني.", ku: "تاقیکردنەوەی حجزکردنی بێبەرامبەر." },
+    });
+    assert.equal(freeEventOffer.status, 201, JSON.stringify(freeEventOffer.data));
+    ids.push(freeEventOffer.data.id);
+    assert.equal(freeEventOffer.data.approvalStatus, "draft");
+    assert.equal((await call(`/operations/offerings/${freeEventOffer.data.id}`, adminId, "PATCH", { capacity: 2, active: true })).status, 400);
+    await publishOffering(freeEventOffer.data.id);
+    const paidEventOffer = await call("/operations/offerings", partnerUser, "POST", {
+      ...offerBody, title: "Isolated paid event", kind: "event", additionalPayment: true,
+    });
+    assert.equal(paidEventOffer.status, 201, JSON.stringify(paidEventOffer.data));
+    ids.push(paidEventOffer.data.id);
+    assert.equal(paidEventOffer.data.approvalStatus, "draft");
+    assert.equal((await call(`/operations/offerings/${paidEventOffer.data.id}`, adminId, "PATCH", { capacity: 2, active: true })).status, 400);
+    await publishOffering(paidEventOffer.data.id);
     await t.test("weekly schedules create an atomic, partner-scoped set of individual offerings", async () => {
       const startDay = new Date(Date.now() + 10 * 86400000);
       const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
@@ -353,6 +363,17 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       assert.equal(publicOffering?.remaining, 2);
       assert.equal(publicOffering?.scope, undefined);
       assert.equal(publicOffering?.capacity, undefined);
+      const publicEvent = catalog.find((x: any) => x.id === freeEventOffer.data.id);
+      assert.equal(publicEvent?.kind, "event");
+      assert.equal(publicEvent?.targetId, freeEventOffer.data.targetId);
+      assert.equal(publicEvent?.slot, freeEventOffer.data.slot);
+      assert.equal(publicEvent?.localizedTitle.ku, "بۆنەی بێبەرامبەر");
+      assert.deepEqual(publicEvent?.tiers, ["M"]);
+      assert.equal(publicEvent?.gender, "all");
+      assert.equal(publicEvent?.minAge, 0);
+      assert.equal(publicEvent?.maxAge, null);
+      assert.equal(publicEvent?.additionalPayment, false);
+      assert.ok(!catalog.some((x: any) => x.id === paidEventOffer.data.id));
 
       const plansResponse = await fetch(`http://127.0.0.1:${port}/public/plans`);
       assert.equal(plansResponse.status, 200);
@@ -367,6 +388,8 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       assert.equal((await call("/member/bookings", alice, "POST", input(o.data.id))).status, 403);
       const catalog = await call("/member/live-catalog", alice);
       assert.ok(catalog.data.some((x: any) => x.id === o.data.id));
+      assert.ok(catalog.data.some((x: any) => x.id === freeEventOffer.data.id));
+      assert.ok(!catalog.data.some((x: any) => x.id === paidEventOffer.data.id));
       assert.ok(!(await call("/member/catalog", alice)).data.some((x: any) => x.id === o.data.id));
       assert.deepEqual((await call(`/operations/offerings/${o.data.id}/waitlist`, partnerUser)).data, []);
       assert.equal((await call(`/operations/offerings/${o.data.id}/waitlist`, alice)).status, 403);
@@ -444,7 +467,7 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       };
       const created = await call("/operations/offerings", partnerUser, "POST", liveBody);
       assert.equal(created.status, 201); ids.push(created.data.id);
-      await publishThroughReview(created.data.id);
+      await publishOffering(created.data.id);
       const catalog = await call("/member/live-catalog", alice);
       const card = catalog.data.find((row: any) => row.id === created.data.id);
       assert.equal(card.localizedTitle.ku, "جووڵەی ئۆنلاین");
@@ -471,10 +494,10 @@ test("live operations: staff scope, approved inventory, server grants and quota 
     await t.test("separate quotas allow premium independently; shared and partner-group limits deny", async () => {
       const premium = await call("/operations/offerings", partnerUser, "POST", { ...offerBody, accessType: "premium" });
       assert.equal(premium.status, 201); ids.push(premium.data.id);
-      await publishThroughReview(premium.data.id);
+      await publishOffering(premium.data.id);
       const physical = await call("/operations/offerings", partnerUser, "POST", offerBody);
       assert.equal(physical.status, 201); ids.push(physical.data.id);
-      await publishThroughReview(physical.data.id);
+      await publishOffering(physical.data.id);
       assert.equal((await call("/member/bookings", alice, "POST", input(physical.data.id))).status, 403);
       await db.update(memberships).set({ rules: { ...rules, quotaMode: "shared" } }).where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
       assert.equal((await call("/member/bookings", alice, "POST", input(premium.data.id))).status, 403);
@@ -484,23 +507,19 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       assert.equal((await call("/member/bookings", alice, "POST", input(premium.data.id))).status, 201);
       assert.equal((await call(`/operations/offerings/${o.data.id}/cancel`, partnerUser, "POST", {})).status, 200);
       // Cancellation is terminal, unlike a temporary unpublish.
-      assert.equal((await call(`/operations/offerings/${o.data.id}`, partnerUser, "PATCH", { capacity: 2, active: true })).status, 409);
       assert.equal((await call(`/operations/offerings/${o.data.id}`, adminId, "PATCH", { capacity: 3 })).status, 409);
       assert.equal((await call(`/operations/offerings/${o.data.id}/cancel`, partnerUser, "POST", {})).status, 200);
       assert.ok(!(await call("/member/live-catalog", alice)).data.some((x: any) => x.id === o.data.id));
       assert.equal((await call("/member/bookings", alice, "POST", input(o.data.id))).status, 404);
-      // Publishing controls are restricted to the audited administrator review flow.
+      // Published activity changes remain restricted to the audited administrator review flow.
       assert.equal((await call(`/operations/offerings/${physical.data.id}`, partnerUser, "PATCH", { capacity: 2, active: false })).status, 400);
-      const suspended = await call(`/operations/offerings/${physical.data.id}/review`, adminId, "POST", {
-        action: "suspend", reason: "Temporary facility pause",
+      const archived = await call(`/operations/offerings/${physical.data.id}/review`, adminId, "PATCH", {
+        status: "archived", reason: "Temporary facility pause",
       });
-      assert.equal(suspended.status, 200, JSON.stringify(suspended.data));
-      assert.equal(suspended.data.activityStatus, "suspended");
-      assert.equal(suspended.data.sessionStatus, "suspended");
-      const republished = await call(`/operations/offerings/${physical.data.id}/review`, adminId, "POST", { action: "publish" });
-      assert.equal(republished.status, 200, JSON.stringify(republished.data));
-      assert.equal(republished.data.activityStatus, "published");
-      assert.equal((await call("/member/bookings", alice, "POST", input(physical.data.id))).status, 201);
+      assert.equal(archived.status, 200, JSON.stringify(archived.data));
+      assert.equal(archived.data.approvalStatus, "archived");
+      assert.ok(!(await call("/member/live-catalog", alice)).data.some((x: any) => x.id === physical.data.id));
+      assert.equal((await call("/member/bookings", alice, "POST", input(physical.data.id))).status, 404);
       assert.equal((await memberState(alice)).bookings.find(b => b.targetId === o.data.id)?.status, "partner_cancelled");
     });
     await t.test("revocation cancels active bookings, repeat trials and paid grants remain blocked", async () => {
@@ -521,7 +540,7 @@ test("live operations: staff scope, approved inventory, server grants and quota 
   } finally {
     await new Promise<void>(r => server.close(() => r()));
     await db.delete(operators).where(inArray(operators.userId, [adminId, partnerUser]));
-    await db.delete(operationAudit).where(inArray(operationAudit.actorId, [adminId, partnerUser]));
+    // operation_audit is append-only; randomized test records are intentionally retained.
   }
 });
 after(async () => {

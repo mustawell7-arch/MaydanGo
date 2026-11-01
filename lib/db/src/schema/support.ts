@@ -71,9 +71,32 @@ export const pushDeliveries = pgTable("push_deliveries", {
   status: text("status").notNull().default("pending"),
   error: text("error"),
   providerTicketId: text("provider_ticket_id"),
+  dedupeKey: text("dedupe_key"),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }),
+  receiptStatus: text("receipt_status"),
+  receiptError: text("receipt_error"),
+  receiptCheckedAt: timestamp("receipt_checked_at", { withTimezone: true }),
+  receiptAttemptCount: integer("receipt_attempt_count").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   acceptedAt: timestamp("accepted_at", { withTimezone: true }),
 }, t => [
+  uniqueIndex("push_deliveries_dedupe_key_unique").on(t.dedupeKey),
   index("push_deliveries_status_created_idx").on(t.status, t.createdAt),
+  index("push_deliveries_retry_due_idx").on(t.status, t.nextAttemptAt),
+  index("push_deliveries_receipt_due_idx").on(t.status, t.receiptStatus, t.acceptedAt),
   index("push_deliveries_user_created_idx").on(t.userId, t.createdAt),
+]);
+
+export const memberUpdates = pgTable("member_updates", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  eventKey: text("event_key").notNull(),
+  kind: text("kind").notNull(),
+  title: text("title").notNull(),
+  startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  uniqueIndex("member_updates_event_key_unique").on(t.eventKey),
+  index("member_updates_owner_created_idx").on(t.userId, t.createdAt),
 ]);

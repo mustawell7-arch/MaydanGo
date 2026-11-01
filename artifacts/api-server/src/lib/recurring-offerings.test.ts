@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { offeringInput } from "./operation-inputs";
-import { expandWeeklyOffering } from "./recurring-offerings";
+import { expandRecurringOffering, expandWeeklyOffering } from "./recurring-offerings";
 
 const template = offeringInput.parse({
   partnerId: "partner",
@@ -50,7 +50,7 @@ test("weekly schedules reject invalid dates, duplicate weekdays, and ranges over
   assert.throws(() => expandWeeklyOffering(template, {
     repeatUntil: "2099-02-31",
     weekdays: [firstWeekday],
-  }), /valid final date/);
+  }), /valid calendar date/);
   assert.throws(() => expandWeeklyOffering(template, {
     repeatUntil: "2099-01-18",
     weekdays: [firstWeekday, firstWeekday],
@@ -70,4 +70,60 @@ test("weekly schedules reject sessions that overlap the next occurrence", () => 
     repeatUntil: "2099-01-18",
     weekdays: [firstWeekday],
   }), /must not overlap/);
+});
+
+test("daily schedules exclude holiday dates and preserve Baghdad wall-clock times", () => {
+  const sessions = expandRecurringOffering(template, {
+    mode: "daily",
+    interval: 1,
+    repeatUntil: "2099-01-08",
+    excludedDates: ["2099-01-06"],
+  });
+  assert.deepEqual(
+    sessions.map(session => new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Baghdad", year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(new Date(session.startsAt))),
+    ["2099-01-04", "2099-01-05", "2099-01-07", "2099-01-08"],
+  );
+  assert.ok(sessions.every(session => new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Baghdad", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).format(new Date(session.startsAt)) === "09:00"));
+});
+
+test("custom schedules repeat selected weekdays every N weeks", () => {
+  const sessions = expandRecurringOffering(template, {
+    mode: "custom",
+    interval: 2,
+    repeatUntil: "2099-02-01",
+    weekdays: [0, 2],
+  });
+  const days = sessions.map(session => new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Baghdad", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date(session.startsAt)));
+  assert.deepEqual(days, ["2099-01-04", "2099-01-06", "2099-01-18", "2099-01-20", "2099-02-01"]);
+});
+
+test("bulk schedules include the first date and apply exclusions", () => {
+  const sessions = expandRecurringOffering(template, {
+    mode: "dates",
+    repeatUntil: "2099-01-18",
+    dates: ["2099-01-08", "2099-01-12"],
+    excludedDates: ["2099-01-12"],
+  });
+  const days = sessions.map(session => new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Baghdad", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date(session.startsAt)));
+  assert.deepEqual(days, ["2099-01-04", "2099-01-08"]);
+});
+
+test("recurrence inputs reject invalid intervals, out-of-range dates, and excluding every occurrence", () => {
+  assert.throws(() => expandRecurringOffering(template, {
+    mode: "daily", interval: 0, repeatUntil: "2099-01-18",
+  }), /repeat every 1 to 30 days/);
+  assert.throws(() => expandRecurringOffering(template, {
+    mode: "dates", repeatUntil: "2099-01-18", dates: ["2099-01-19"],
+  }), /between the first and final dates/);
+  assert.throws(() => expandRecurringOffering(template, {
+    mode: "daily", repeatUntil: "2099-01-04", excludedDates: ["2099-01-04"],
+  }), /No sessions remain/);
 });

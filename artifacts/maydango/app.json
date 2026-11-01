@@ -23,7 +23,7 @@
           "image": "./assets/images/icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#f6f6ef"
+          "backgroundColor": "#f9f7f1"
         }
       ],
       [
@@ -31,6 +31,15 @@
         {
           "cameraPermission": "MaydanGO uses your camera to scan place check-in codes.",
           "barcodeScannerEnabled": true
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "MaydanGO uses your location to verify check-in at a partner facility.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "motionUsagePermission": false
         }
       ]
     ],
