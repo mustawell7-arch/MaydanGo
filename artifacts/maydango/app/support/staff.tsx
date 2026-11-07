@@ -19,6 +19,7 @@ import {
   useRemoveSupportStaffAgent,
   useReplySupportStaffTicket,
   useUpdateSupportStaffTicket,
+  useUpdateSupportStaffAgentUrgentAlerts,
 } from '@workspace/api-client-react';
 import { Text, TextInput, Pressable, Ionicons } from '@/components/Localized';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
@@ -73,6 +74,7 @@ export default function SupportStaffScreen() {
   const approveDeviceChange = useApproveSupportDeviceChange();
   const addAgent = useAddSupportStaffAgent();
   const removeAgent = useRemoveSupportStaffAgent();
+  const updateUrgentAlertRecipient = useUpdateSupportStaffAgentUrgentAlerts();
   const isAdmin = agents.data?.some(agent => agent.userId === userId && agent.role === 'admin') ?? false;
   const align = app.language === 'en' ? 'left' : 'right';
 
@@ -128,6 +130,20 @@ export default function SupportStaffScreen() {
       setPendingRemovalId(null);
       await refreshTeam();
       setNotice(t('supportRemoveDone'));
+    } catch (error) {
+      setNotice(errorCopy(error));
+    }
+  };
+
+  const setUrgentAlertRecipient = async (targetUserId: string, receiveUrgentAlerts: boolean) => {
+    setNotice(null);
+    try {
+      await updateUrgentAlertRecipient.mutateAsync({
+        userId: targetUserId,
+        data: { receiveUrgentAlerts },
+      });
+      await refreshTeam();
+      setNotice(t('urgentAlertRecipientUpdated'));
     } catch (error) {
       setNotice(errorCopy(error));
     }
@@ -232,6 +248,7 @@ export default function SupportStaffScreen() {
           <View style={[styles.ticketCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.heading, { color: colors.foreground }]}>{t('supportTeamTitle')}</Text>
             <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('supportTeamHint')}</Text>
+            <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('urgentAlertRecipientsHint')}</Text>
             <TextInput
               accessibilityLabel={t('supportAccountId')}
               value={newAgentId}
@@ -250,15 +267,17 @@ export default function SupportStaffScreen() {
               onPress={() => void grantSupportAccess()}
               icon="person-add-outline"
             />
-            {agents.data?.filter(agent => agent.role === 'support').length ? (
-              agents.data.filter(agent => agent.role === 'support').map(agent => (
+            {agents.data?.length ? (
+              agents.data.map(agent => (
                 <View key={agent.userId} style={[styles.teamAgent, { borderColor: colors.border }]}>
                   <View style={styles.teamAgentHeader}>
                     <View style={styles.teamAgentIdentity}>
                       <Text raw style={[styles.label, { color: colors.foreground }]}>{agent.userId}</Text>
-                      <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('supportRoleLabel')}</Text>
+                      <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                        {agent.role === 'admin' ? t('supportAdminRoleLabel') : t('supportRoleLabel')}
+                      </Text>
                     </View>
-                    {pendingRemovalId === agent.userId ? null : (
+                    {agent.role === 'support' && pendingRemovalId !== agent.userId ? (
                       <Pressable
                         accessibilityRole="button"
                         accessibilityLabel={`${t('supportRemoveAccess')} ${agent.userId}`}
@@ -270,8 +289,36 @@ export default function SupportStaffScreen() {
                           {t('supportRemoveAccess')}
                         </Text>
                       </Pressable>
-                    )}
+                    ) : null}
                   </View>
+                  <Pressable
+                    accessibilityRole="switch"
+                    accessibilityLabel={`${t('urgentAlertRecipientLabel')} ${agent.userId}`}
+                    accessibilityState={{
+                      checked: agent.receiveUrgentAlerts,
+                      disabled: updateUrgentAlertRecipient.isPending,
+                    }}
+                    disabled={updateUrgentAlertRecipient.isPending}
+                    onPress={() => void setUrgentAlertRecipient(agent.userId, !agent.receiveUrgentAlerts)}
+                    style={[
+                      styles.teamAgentHeader,
+                      { marginTop: 8, paddingVertical: 8, paddingHorizontal: 10, borderRadius: 10, backgroundColor: colors.secondary },
+                    ]}
+                  >
+                    <Text style={{ color: colors.secondaryForeground, fontWeight: '700' }}>
+                      {t('urgentAlertRecipientLabel')}
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={{ color: agent.receiveUrgentAlerts ? colors.primary : colors.mutedForeground, fontWeight: '700' }}>
+                        {agent.receiveUrgentAlerts ? t('urgentAlertRecipientEnabled') : t('urgentAlertRecipientDisabled')}
+                      </Text>
+                      <Ionicons
+                        name={agent.receiveUrgentAlerts ? 'notifications-outline' : 'notifications-off-outline'}
+                        size={17}
+                        color={agent.receiveUrgentAlerts ? colors.primary : colors.mutedForeground}
+                      />
+                    </View>
+                  </Pressable>
                   {pendingRemovalId === agent.userId ? (
                     <View style={[styles.confirmBox, { backgroundColor: colors.secondary }]}>
                       <Text style={{ color: colors.secondaryForeground, fontWeight: '800' }}>

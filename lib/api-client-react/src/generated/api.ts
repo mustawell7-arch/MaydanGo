@@ -113,6 +113,7 @@ import type {
   StreamMemberCoursePlaybackParams,
   SupportAgent,
   SupportAgentInput,
+  SupportAgentUrgentAlertInput,
   SupportDeviceChange,
   SupportDeviceChangeReview,
   SupportReplyInput,
@@ -7242,6 +7243,89 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRemoveSupportStaffAgentMutationOptions(options), queryClient);
+    }
+
+export const getUpdateSupportStaffAgentUrgentAlertsUrl = (userId: string,) => {
+
+
+
+
+  return `/api/support/staff/agents/${userId}/urgent-alerts`
+}
+
+export const updateSupportStaffAgentUrgentAlerts = async (userId: string,
+    supportAgentUrgentAlertInput: SupportAgentUrgentAlertInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportAgent> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportAgent>(getUpdateSupportStaffAgentUrgentAlertsUrl(userId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportAgentUrgentAlertInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateSupportStaffAgentUrgentAlertsMutationKey = () => ['updateSupportStaffAgentUrgentAlerts'] as const;
+
+export const getUpdateSupportStaffAgentUrgentAlertsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSupportStaffAgentUrgentAlerts>>, TError,UpdateSupportStaffAgentUrgentAlertsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSupportStaffAgentUrgentAlerts>>, TError,UpdateSupportStaffAgentUrgentAlertsMutationVariables, TContext> => {
+
+const mutationKey = getUpdateSupportStaffAgentUrgentAlertsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSupportStaffAgentUrgentAlerts>>, UpdateSupportStaffAgentUrgentAlertsMutationVariables> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  updateSupportStaffAgentUrgentAlerts(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSupportStaffAgentUrgentAlertsMutationResult = NonNullable<Awaited<ReturnType<typeof updateSupportStaffAgentUrgentAlerts>>>
+    export type UpdateSupportStaffAgentUrgentAlertsMutationBody = BodyType<SupportAgentUrgentAlertInput>
+    export type UpdateSupportStaffAgentUrgentAlertsMutationError = ErrorType<unknown>
+    export type UpdateSupportStaffAgentUrgentAlertsMutationVariables = {userId: string;data: BodyType<SupportAgentUrgentAlertInput>}
+
+    export const useUpdateSupportStaffAgentUrgentAlerts = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSupportStaffAgentUrgentAlerts>>, TError,UpdateSupportStaffAgentUrgentAlertsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateSupportStaffAgentUrgentAlerts>>,
+        TError,
+        UpdateSupportStaffAgentUrgentAlertsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateSupportStaffAgentUrgentAlertsMutationOptions(options), queryClient);
     }
 
 export const getGetSupportPendingDeviceChangesUrl = () => {

@@ -4385,7 +4385,8 @@ export const ReplySupportStaffTicketResponse = zod.object({
 
 export const GetSupportStaffAgentsResponseItem = zod.object({
   "userId": zod.string(),
-  "role": zod.enum(['admin', 'support'])
+  "role": zod.enum(['admin', 'support']),
+  "receiveUrgentAlerts": zod.boolean()
 })
 export const GetSupportStaffAgentsResponse = zod.array(GetSupportStaffAgentsResponseItem)
 
@@ -4402,7 +4403,8 @@ export const AddSupportStaffAgentBody = zod.object({
 
 export const AddSupportStaffAgentResponse = zod.object({
   "userId": zod.string(),
-  "role": zod.enum(['admin', 'support'])
+  "role": zod.enum(['admin', 'support']),
+  "receiveUrgentAlerts": zod.boolean()
 })
 
 
@@ -4418,7 +4420,29 @@ export const RemoveSupportStaffAgentParams = zod.object({
 
 export const RemoveSupportStaffAgentResponse = zod.object({
   "userId": zod.string(),
-  "role": zod.enum(['admin', 'support'])
+  "role": zod.enum(['admin', 'support']),
+  "receiveUrgentAlerts": zod.boolean()
+})
+
+
+export const updateSupportStaffAgentUrgentAlertsPathUserIdMax = 160;
+
+
+export const updateSupportStaffAgentUrgentAlertsPathUserIdRegExp = new RegExp('^[A-Za-z0-9_-]{1,160}$');
+
+
+export const UpdateSupportStaffAgentUrgentAlertsParams = zod.object({
+  "userId": zod.coerce.string().min(1).max(updateSupportStaffAgentUrgentAlertsPathUserIdMax).regex(updateSupportStaffAgentUrgentAlertsPathUserIdRegExp)
+})
+
+export const UpdateSupportStaffAgentUrgentAlertsBody = zod.object({
+  "receiveUrgentAlerts": zod.boolean()
+})
+
+export const UpdateSupportStaffAgentUrgentAlertsResponse = zod.object({
+  "userId": zod.string(),
+  "role": zod.enum(['admin', 'support']),
+  "receiveUrgentAlerts": zod.boolean()
 })
 
 

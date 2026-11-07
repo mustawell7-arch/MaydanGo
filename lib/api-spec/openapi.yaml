@@ -429,6 +429,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1support~1staff~1agents"
   /support/staff/agents/{userId}:
     $ref: "./operations.yaml#/paths/~1support~1staff~1agents~1{userId}"
+  /support/staff/agents/{userId}/urgent-alerts:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1agents~1{userId}~1urgent-alerts"
   /support/staff/device-changes:
     $ref: "./operations.yaml#/paths/~1support~1staff~1device-changes"
   /support/staff/device-changes/{id}/approve:

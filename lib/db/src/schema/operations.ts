@@ -14,6 +14,7 @@ export const operators = pgTable("operators", {
   userId: text("user_id").primaryKey(),
   role: text("role").notNull(),
   partnerId: text("partner_id").references(() => partners.id),
+  receiveUrgentAlerts: boolean("receive_urgent_alerts").notNull().default(false),
 });
 export const membershipPlans = pgTable("membership_plans", {
   id: text("id").primaryKey(),

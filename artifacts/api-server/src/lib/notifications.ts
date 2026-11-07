@@ -393,7 +393,10 @@ export async function escalateUnassignedUrgentTickets(now = new Date()) {
   if (!tickets.length) return 0;
 
   const recipients = await db.select({ userId: operators.userId }).from(operators)
-    .where(inArray(operators.role, ["admin", "support"]));
+    .where(and(
+      inArray(operators.role, ["admin", "support"]),
+      eq(operators.receiveUrgentAlerts, true),
+    ));
   if (!recipients.length) return 0;
 
   let escalatedCount = 0;

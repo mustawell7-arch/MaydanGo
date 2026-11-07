@@ -54,7 +54,7 @@ after(async () => {
   restoreFetch?.();
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
   if (ticketIds.length) await db.delete(supportTickets).where(inArray(supportTickets.id, ticketIds));
-  const notificationUsers = [alice, supportId, partnerId];
+  const notificationUsers = [alice, adminId, supportId, partnerId];
   await db.delete(pushDeliveries).where(inArray(pushDeliveries.userId, notificationUsers));
   await db.delete(pushDevices).where(inArray(pushDevices.userId, notificationUsers));
   await db.delete(memberNotificationPreferences).where(inArray(memberNotificationPreferences.userId, notificationUsers));
@@ -70,7 +70,7 @@ after(async () => {
 test("support conversations are private, triaged, audited, and replyable", async () => {
   await db.insert(operators).values([
     { userId: adminId, role: "admin", partnerId: null },
-    { userId: supportId, role: "support", partnerId: null },
+    { userId: supportId, role: "support", partnerId: null, receiveUrgentAlerts: true },
     { userId: partnerId, role: "partner", partnerId: null },
   ]);
   server = app.listen(0);
@@ -90,15 +90,21 @@ test("support conversations are private, triaged, audited, and replyable", async
 
   const supportDeviceId = randomUUID();
   const supportToken = `ExpoPushToken[${randomUUID().replaceAll("-", "")}]`;
+  const adminToken = `ExpoPushToken[${randomUUID().replaceAll("-", "")}]`;
   const partnerToken = `ExpoPushToken[${randomUUID().replaceAll("-", "")}]`;
   await db.insert(memberNotificationPreferences).values([
+    { userId: adminId, pushEnabled: true, language: "en" },
     { userId: supportId, pushEnabled: true, language: "ku" },
     { userId: partnerId, pushEnabled: true, language: "en" },
   ]);
   await db.insert(pushDevices).values([
+    { id: randomUUID(), userId: adminId, token: adminToken, platform: "ios", enabled: true },
     { id: supportDeviceId, userId: supportId, token: supportToken, platform: "ios", enabled: true },
     { id: randomUUID(), userId: partnerId, token: partnerToken, platform: "ios", enabled: true },
   ]);
+  const agentRoster = await call("/support/staff/agents", adminId);
+  assert.equal(agentRoster.data.find((agent: { userId: string }) => agent.userId === adminId)?.receiveUrgentAlerts, false);
+  assert.equal(agentRoster.data.find((agent: { userId: string }) => agent.userId === supportId)?.receiveUrgentAlerts, true);
   const originalFetch = globalThis.fetch;
   const urgentAlertPayloads: any[][] = [];
   globalThis.fetch = (async (input, init) => {
@@ -146,6 +152,8 @@ test("support conversations are private, triaged, audited, and replyable", async
   assert.match(urgentAlertPayloads[0][0].body, /ڕاپۆرتێکی پەلەیی/);
   assert.equal((await db.select({ id: pushDeliveries.id }).from(pushDeliveries)
     .where(and(eq(pushDeliveries.userId, partnerId), eq(pushDeliveries.kind, "support_urgent")))).length, 0);
+  assert.equal((await db.select({ id: pushDeliveries.id }).from(pushDeliveries)
+    .where(and(eq(pushDeliveries.userId, adminId), eq(pushDeliveries.kind, "support_urgent")))).length, 0);
 
   const retryTicketId = randomUUID();
   const retryDedupeKey = `support-urgent-retry:${retryTicketId}`;
@@ -272,6 +280,25 @@ test("support conversations are private, triaged, audited, and replyable", async
   assert.equal((await call("/support/staff/agents", supportId)).status, 200);
   const newAgent = await call("/support/staff/agents", adminId, "POST", { userId: newAgentId });
   assert.equal(newAgent.status, 201);
+  assert.equal(newAgent.data.receiveUrgentAlerts, false);
+  assert.equal((await call(`/support/staff/agents/${newAgentId}/urgent-alerts`, supportId, "PATCH", {
+    receiveUrgentAlerts: true,
+  })).status, 403);
+  const enabledNewAgent = await call(`/support/staff/agents/${newAgentId}/urgent-alerts`, adminId, "PATCH", {
+    receiveUrgentAlerts: true,
+  });
+  assert.equal(enabledNewAgent.status, 200);
+  assert.equal(enabledNewAgent.data.receiveUrgentAlerts, true);
+  const disabledNewAgent = await call(`/support/staff/agents/${newAgentId}/urgent-alerts`, adminId, "PATCH", {
+    receiveUrgentAlerts: false,
+  });
+  assert.equal(disabledNewAgent.status, 200);
+  assert.equal(disabledNewAgent.data.receiveUrgentAlerts, false);
+  const protectedLastRecipient = await call(`/support/staff/agents/${supportId}/urgent-alerts`, adminId, "PATCH", {
+    receiveUrgentAlerts: false,
+  });
+  assert.equal(protectedLastRecipient.status, 409);
+  assert.equal((await call(`/support/staff/agents/${supportId}`, adminId, "DELETE")).status, 409);
   assert.equal((await call("/support/staff/agents", adminId, "POST", { userId: newAgentId })).status, 409);
   const grantAudit = await db.select().from(operationAudit)
     .where(and(eq(operationAudit.actorId, adminId), eq(operationAudit.targetId, newAgentId)));

@@ -768,6 +768,7 @@ export const SupportAgentRole = {
 export interface SupportAgent {
   userId: string;
   role: SupportAgentRole;
+  receiveUrgentAlerts: boolean;
 }
 
 export interface SupportAgentInput {
@@ -777,6 +778,10 @@ export interface SupportAgentInput {
      * @pattern ^[A-Za-z0-9_-]{1,160}$
      */
   userId: string;
+}
+
+export interface SupportAgentUrgentAlertInput {
+  receiveUrgentAlerts: boolean;
 }
 
 export interface NotificationSettings {

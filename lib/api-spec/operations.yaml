@@ -239,6 +239,25 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SupportAgent" }
+  /support/staff/agents/{userId}/urgent-alerts:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema: { type: string, minLength: 1, maxLength: 160, pattern: "^[A-Za-z0-9_-]{1,160}$" }
+    patch:
+      operationId: updateSupportStaffAgentUrgentAlerts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportAgentUrgentAlertInput" }
+      responses:
+        "200":
+          description: Authorized administrator updated urgent alert eligibility
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportAgent" }
   /support/staff/notification-failures:
     get:
       operationId: getSupportNotificationFailures
@@ -1065,15 +1084,22 @@ components:
             - type: "null"
     SupportAgent:
       type: object
-      required: [userId, role]
+      required: [userId, role, receiveUrgentAlerts]
       properties:
         userId: { type: string }
         role: { type: string, enum: [admin, support] }
+        receiveUrgentAlerts: { type: boolean }
     SupportAgentInput:
       type: object
       additionalProperties: false
       required: [userId]
       properties: { userId: { type: string, minLength: 1, maxLength: 160, pattern: "^[A-Za-z0-9_-]{1,160}$" } }
+    SupportAgentUrgentAlertInput:
+      type: object
+      additionalProperties: false
+      required: [receiveUrgentAlerts]
+      properties:
+        receiveUrgentAlerts: { type: boolean }
     NotificationSettings:
       type: object
       required: [pushEnabled, language, registeredDevices]

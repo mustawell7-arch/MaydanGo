@@ -143,7 +143,10 @@ memberSupportRouter.post("/support/tickets", async (req, res) => {
   if (parsed.data.urgent) {
     void (async () => {
       const staff = await db.select({ userId: operators.userId }).from(operators)
-        .where(inArray(operators.role, ["admin", "support"]));
+        .where(and(
+          inArray(operators.role, ["admin", "support"]),
+          eq(operators.receiveUrgentAlerts, true),
+        ));
       const outcomes = await Promise.all(staff.map(member => sendMemberNotification(member.userId, "support_urgent", {
         dedupeKey: `support-urgent:${id}`,
         ticketId: id,
@@ -395,7 +398,11 @@ staffRouter.post("/tickets/:id/replies", async (req, res) => {
 });
 
 staffRouter.get("/agents", async (_req, res) => {
-  const rows = await db.select({ userId: operators.userId, role: operators.role }).from(operators)
+  const rows = await db.select({
+    userId: operators.userId,
+    role: operators.role,
+    receiveUrgentAlerts: operators.receiveUrgentAlerts,
+  }).from(operators)
     .where(inArray(operators.role, ["admin", "support"]));
   res.json(rows);
 });
@@ -419,7 +426,61 @@ staffRouter.post("/agents", async (req, res) => {
     });
     return [created];
   });
-  res.status(201).json({ userId: agent.userId, role: agent.role });
+  res.status(201).json({
+    userId: agent.userId,
+    role: agent.role,
+    receiveUrgentAlerts: agent.receiveUrgentAlerts,
+  });
+});
+
+staffRouter.patch("/agents/:userId/urgent-alerts", async (req, res) => {
+  const operator = res.locals.supportOperator as typeof operators.$inferSelect;
+  if (operator.role !== "admin") {
+    throw new BookingError(403, "Administrator access is required to change urgent alert recipients.");
+  }
+  const parsed = z.object({ receiveUrgentAlerts: z.boolean() }).strict().safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Choose whether this staff member receives urgent alerts." });
+    return;
+  }
+  const targetId = String(req.params.userId);
+  if (!/^[A-Za-z0-9_-]{1,160}$/.test(targetId)) {
+    throw new BookingError(400, "Choose a valid support account.");
+  }
+
+  const updatedAgent = await db.transaction(async tx => {
+    const staff = await tx.select().from(operators)
+      .where(inArray(operators.role, ["admin", "support"]))
+      .orderBy(asc(operators.userId))
+      .for("update");
+    const currentAdmin = staff.find(agent => agent.userId === operator.userId);
+    if (!currentAdmin || currentAdmin.role !== "admin") {
+      throw new BookingError(403, "Administrator access is required to change urgent alert recipients.");
+    }
+    const agent = staff.find(candidate => candidate.userId === targetId);
+    if (!agent) throw new BookingError(404, "Support staff account not found.");
+    if (agent.receiveUrgentAlerts === parsed.data.receiveUrgentAlerts) return agent;
+    if (!parsed.data.receiveUrgentAlerts && staff.filter(candidate => candidate.receiveUrgentAlerts).length <= 1) {
+      throw new BookingError(409, "At least one authorized staff member must remain selected for urgent alerts.");
+    }
+    await tx.update(operators).set({ receiveUrgentAlerts: parsed.data.receiveUrgentAlerts })
+      .where(eq(operators.userId, targetId));
+    await tx.insert(operationAudit).values({
+      id: randomUUID(),
+      actorId: currentAdmin.userId,
+      action: "support.agent.urgent_alerts.update",
+      targetId,
+      detail: parsed.data.receiveUrgentAlerts
+        ? "Urgent safety alerts enabled for staff member."
+        : "Urgent safety alerts disabled for staff member.",
+    });
+    return { ...agent, receiveUrgentAlerts: parsed.data.receiveUrgentAlerts };
+  });
+  res.json({
+    userId: updatedAgent.userId,
+    role: updatedAgent.role,
+    receiveUrgentAlerts: updatedAgent.receiveUrgentAlerts,
+  });
 });
 
 staffRouter.delete("/agents/:userId", async (req, res) => {
@@ -432,22 +493,32 @@ staffRouter.delete("/agents/:userId", async (req, res) => {
     throw new BookingError(400, "Choose a valid support account.");
   }
 
-  await db.transaction(async tx => {
-    const [agent] = await tx.select().from(operators)
-      .where(eq(operators.userId, targetId))
+  const removedAgent = await db.transaction(async tx => {
+    const staff = await tx.select().from(operators)
+      .where(inArray(operators.role, ["admin", "support"]))
+      .orderBy(asc(operators.userId))
       .for("update");
+    const agent = staff.find(candidate => candidate.userId === targetId);
     if (!agent) throw new BookingError(404, "Support agent not found.");
     if (agent.role !== "support") {
       throw new BookingError(409, "Only support roles can be removed here.");
+    }
+    if (agent.receiveUrgentAlerts && staff.filter(candidate => candidate.receiveUrgentAlerts).length <= 1) {
+      throw new BookingError(409, "Enable another authorized staff member before removing the last urgent alert recipient.");
     }
     await tx.delete(operators).where(eq(operators.userId, targetId));
     await tx.insert(operationAudit).values({
       id: randomUUID(), actorId: operator.userId, action: "support.agent.remove", targetId,
       detail: "Support staff role revoked.",
     });
+    return agent;
   });
 
-  res.json({ userId: targetId, role: "support" });
+  res.json({
+    userId: targetId,
+    role: "support",
+    receiveUrgentAlerts: removedAgent.receiveUrgentAlerts,
+  });
 });
 
 staffRouter.get("/notification-failures", async (_req, res) => {
