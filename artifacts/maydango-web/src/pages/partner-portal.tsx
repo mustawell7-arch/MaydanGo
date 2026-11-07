@@ -1,6 +1,6 @@
 import { Children, cloneElement, isValidElement, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetOperationFacilitiesQueryKey, getGetOperationsQueryKey, useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useCancelRecurringOfferingSeries, useChangeLiveOffering, useChangeRecurringOfferingSeries, useCreateRecurringOfferings, useGetAttendance, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReviewAttendance, useRespondToOfferingCorrection, useReviewOfferingApproval, useSubmitLiveOffering } from '@workspace/api-client-react';
+import { getGetMemberSupportTicketsQueryKey, getGetOperationFacilitiesQueryKey, getGetOperationsQueryKey, useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useCancelRecurringOfferingSeries, useChangeLiveOffering, useChangeRecurringOfferingSeries, useCreateRecurringOfferings, useCreateMemberSupportTicket, useGetAttendance, useGetMemberSupportTickets, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReviewAttendance, useRespondToOfferingCorrection, useReviewOfferingApproval, useSubmitLiveOffering } from '@workspace/api-client-react';
 import type { OfferingApprovalStatus, OfferingInput, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody, RecurringOfferingsInput, RecurringScheduleMode } from '@workspace/api-client-react';
 import { useAuth, useClerk } from '@clerk/react';
 import { trackEvent } from '@/lib/analytics';
@@ -10,7 +10,7 @@ import { FacilityProfiles } from '@/pages/facility-profiles';
 import { PartnerOperationsPanel, type OperationsTab, type PortalLanguage } from '@/pages/partner-operations';
 import { formatPartnerPortalNumber, formatPartnerPortalSentence, getPartnerPortalCopy, splitLocalizedCommaList } from '@/lib/partner-portal-copy';
 
-type Tab = 'overview' | 'offerings' | 'attendance' | 'waitlist' | 'partners' | OperationsTab;
+type Tab = 'overview' | 'offerings' | 'attendance' | 'waitlist' | 'partners' | 'support' | OperationsTab;
 type ReviewAction = ReviewAttendanceBody['action'];
 const approvalStatusLabels: Record<OfferingApprovalStatus, string> = {
   draft: 'Draft',
@@ -53,9 +53,9 @@ const savedPortalLanguage = (): PortalLanguage => {
 const formatDate = (value: string, lang: PortalLanguage = savedPortalLanguage()) => new Intl.DateTimeFormat(portalDateLocale(lang), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Baghdad', numberingSystem: 'latn' }).format(new Date(value));
 const localIso = (value: string) => new Date(`${value}:00+03:00`).toISOString();
 const portalLabels: Record<PortalLanguage, Record<string, string>> = {
-  en: { overview: 'Overview', offerings: 'Offerings', attendance: 'Attendance', waitlist: 'Waiting list', partners: 'Partners', facilities: 'Facilities', bookings: 'Sessions & bookings', settlements: 'Settlements', invoices: 'Invoices', greeting: 'Good to see you.', attendanceTitle: 'Attendance review', approvals: 'Partner approvals', workspace: 'Partner operations', language: 'Language' },
-  ar: { overview: 'نظرة عامة', offerings: 'العروض', attendance: 'الحضور', waitlist: 'قائمة الانتظار', partners: 'الشركاء', facilities: 'المرافق', bookings: 'الجلسات والحجوزات', settlements: 'التسويات', invoices: 'الفواتير', greeting: 'سعيدون بعودتك.', attendanceTitle: 'مراجعة الحضور', approvals: 'اعتماد الشركاء', workspace: 'عمليات الشركاء', language: 'اللغة' },
-  ku: { overview: 'پوختە', offerings: 'پێشکەشکراوەکان', attendance: 'ئامادەبوون', waitlist: 'لیستی چاوەڕوانی', partners: 'هاوبەشەکان', facilities: 'شوێنەکان', bookings: 'وانە و حجزەکان', settlements: 'یەکلاکردنەوە', invoices: 'پسووڵەکان', greeting: 'بەخێربێیتەوە.', attendanceTitle: 'پێداچوونەوەی ئامادەبوون', approvals: 'پەسەندکردنی هاوبەش', workspace: 'بەڕێوەبردنی هاوبەش', language: 'زمان' },
+  en: { overview: 'Overview', offerings: 'Offerings', attendance: 'Attendance', waitlist: 'Waiting list', partners: 'Partners', support: 'Help & safety', facilities: 'Facilities', bookings: 'Sessions & bookings', settlements: 'Settlements', invoices: 'Invoices', greeting: 'Good to see you.', attendanceTitle: 'Attendance review', approvals: 'Partner approvals', workspace: 'Partner operations', language: 'Language' },
+  ar: { overview: 'نظرة عامة', offerings: 'العروض', attendance: 'الحضور', waitlist: 'قائمة الانتظار', partners: 'الشركاء', support: 'الدعم والسلامة', facilities: 'المرافق', bookings: 'الجلسات والحجوزات', settlements: 'التسويات', invoices: 'الفواتير', greeting: 'سعيدون بعودتك.', attendanceTitle: 'مراجعة الحضور', approvals: 'اعتماد الشركاء', workspace: 'عمليات الشركاء', language: 'اللغة' },
+  ku: { overview: 'پوختە', offerings: 'پێشکەشکراوەکان', attendance: 'ئامادەبوون', waitlist: 'لیستی چاوەڕوانی', partners: 'هاوبەشەکان', support: 'یارمەتی و سەلامەتی', facilities: 'شوێنەکان', bookings: 'وانە و حجزەکان', settlements: 'یەکلاکردنەوە', invoices: 'پسووڵەکان', greeting: 'بەخێربێیتەوە.', attendanceTitle: 'پێداچوونەوەی ئامادەبوون', approvals: 'پەسەندکردنی هاوبەش', workspace: 'بەڕێوەبردنی هاوبەش', language: 'زمان' },
 };
 const portalLabel = (lang: PortalLanguage, key: string) => {
   const source = portalLabels.en[key] ?? key;
@@ -64,6 +64,15 @@ const portalLabel = (lang: PortalLanguage, key: string) => {
 const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, string>> = {
   ar: {
     'English': 'الإنجليزية', 'MAYDANGO · IRAQ': 'MaydanGo · العراق',
+    'MaydanGo support': 'دعم MaydanGo', 'Help & safety': 'الدعم والسلامة', 'Support request': 'طلب دعم',
+    'Loading…': 'جارٍ التحميل…', 'Support history could not be loaded.': 'تعذر تحميل سجل الدعم.',
+    'Send a support request or report a safety concern.': 'أرسل طلب دعم أو أبلغ عن مشكلة تتعلق بالسلامة.',
+    'Support topic': 'موضوع الدعم', 'Booking question': 'استفسار عن حجز', 'Safety concern': 'مشكلة تتعلق بالسلامة', 'Other support': 'دعم آخر',
+    'Subject': 'الموضوع', 'Booking reference (optional)': 'مرجع الحجز (اختياري)', 'Describe what happened or how we can help': 'اشرح ما حدث أو كيف يمكننا مساعدتك',
+    'Use the reservation reference when available. Include only details needed to review the report.': 'استخدم مرجع الحجز عند توفره. أضف فقط التفاصيل اللازمة لمراجعة البلاغ.',
+    'Send to MaydanGo support': 'إرسال إلى دعم MaydanGo', 'Sending…': 'جارٍ الإرسال…', 'Support request sent.': 'تم إرسال طلب الدعم.',
+    'Could not send the request. Please try again.': 'تعذر إرسال الطلب. حاول مرة أخرى.', 'Your recent support requests': 'طلبات الدعم الأخيرة',
+    'No support requests yet.': 'لا توجد طلبات دعم حتى الآن.', 'Open': 'مفتوح', 'In progress': 'قيد المعالجة', 'Waiting for you': 'بانتظار ردك', 'Resolved': 'تم الحل', 'Closed': 'مغلق',
     'session': 'جلسة', 'event': 'فعالية', 'coach': 'تدريب',
     'confirm': 'تأكيد', 'dispute': 'اعتراض', 'accept request': 'قبول الطلب', 'Reject request': 'رفض الطلب',
     'resolve confirm': 'حل الاعتراض: تأكيد', 'resolve void': 'حل الاعتراض: إبطال',
@@ -196,6 +205,15 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
   },
   ku: {
     'English': 'ئینگلیزی', 'MAYDANGO · IRAQ': 'MaydanGo · عێراق',
+    'MaydanGo support': 'پشتگیریی MaydanGo', 'Help & safety': 'یارمەتی و سەلامەتی', 'Support request': 'داواکاریی پشتگیری',
+    'Loading…': 'باردەکرێت…', 'Support history could not be loaded.': 'نەتوانرا مێژووی پشتگیری باربکرێت.',
+    'Send a support request or report a safety concern.': 'داواکاریی پشتگیری بنێرە یان کێشەیەکی سەلامەتی ڕاپۆرت بکە.',
+    'Support topic': 'بابەتی پشتگیری', 'Booking question': 'پرسیاری حجز', 'Safety concern': 'کێشەی سەلامەتی', 'Other support': 'پشتگیریی تر',
+    'Subject': 'بابەت', 'Booking reference (optional)': 'ژمارەی حجز (ئارەزوومەندانە)', 'Describe what happened or how we can help': 'ڕوون بکەرەوە چی ڕوویدا یان چۆن دەتوانین یارمەتیت بدەین',
+    'Use the reservation reference when available. Include only details needed to review the report.': 'ئەگەر بەردەست بوو ژمارەی حجز بەکاربهێنە. تەنها ئەو وردەکارییانە بنووسە کە بۆ پێداچوونەوەی ڕاپۆرتەکە پێویستن.',
+    'Send to MaydanGo support': 'بۆ پشتگیریی MaydanGo بنێرە', 'Sending…': 'دەنێردرێت…', 'Support request sent.': 'داواکاریی پشتگیری نێردرا.',
+    'Could not send the request. Please try again.': 'نەتوانرا داواکارییەکە بنێردرێت. تکایە دووبارە هەوڵ بدە.', 'Your recent support requests': 'داواکارییەکانی دوایی پشتگیریت',
+    'No support requests yet.': 'هێشتا هیچ داواکارییەکی پشتگیری نییە.', 'Open': 'کراوە', 'In progress': 'لە پڕۆسەدایە', 'Waiting for you': 'چاوەڕێی وەڵامی تۆیە', 'Resolved': 'چارەسەر کرا', 'Closed': 'داخراوە',
     'session': 'وانە', 'event': 'چالاکی', 'coach': 'ڕاهێنان',
     'confirm': 'پشتڕاستکردنەوە', 'dispute': 'ناڕەزایی', 'accept request': 'داواکاری قبوڵ بکە', 'Reject request': 'داواکاری ڕەت بکەوە',
     'resolve confirm': 'چارەسەری ناڕەزایی: پشتڕاستکردنەوە', 'resolve void': 'چارەسەری ناڕەزایی: هەڵوەشاندنەوە',
@@ -636,6 +654,111 @@ function ManualCheckinForm({ reservationId, lang, onClose, onSuccess }: { reserv
   </form></LocalizedContent>;
 }
 
+type PartnerSupportCategory = 'booking' | 'safety' | 'other';
+const partnerSupportStatusLabels: Record<string, string> = {
+  open: 'Open',
+  in_progress: 'In progress',
+  waiting_member: 'Waiting for you',
+  resolved: 'Resolved',
+  closed: 'Closed',
+};
+function partnerSupportSubject(lang: PortalLanguage, subject: string) {
+  if (subject.startsWith('Partner safety report: ')) {
+    return `${portalText(lang, 'Safety concern')}: ${subject.slice('Partner safety report: '.length)}`;
+  }
+  if (subject.startsWith('Partner support: ')) {
+    return `${portalText(lang, 'Support request')}: ${subject.slice('Partner support: '.length)}`;
+  }
+  return subject;
+}
+
+function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
+  const client = useQueryClient();
+  const tickets = useGetMemberSupportTickets({ query: { retry: false } });
+  const createTicket = useCreateMemberSupportTicket();
+  const [category, setCategory] = useState<PartnerSupportCategory>('booking');
+  const [subject, setSubject] = useState('');
+  const [reference, setReference] = useState('');
+  const [message, setMessage] = useState('');
+  const [notice, setNotice] = useState('');
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    const prefix = category === 'safety' ? 'Partner safety report: ' : 'Partner support: ';
+    const referenceDetails = reference.trim() ? `Booking reference: ${reference.trim()}\n\n` : '';
+    createTicket.mutate({
+      data: {
+        subject: `${prefix}${subject.trim()}`,
+        category,
+        message: `Partner portal submission\n${referenceDetails}${message.trim()}`,
+        language: lang,
+      },
+    }, {
+      onSuccess: () => {
+        void client.invalidateQueries({ queryKey: getGetMemberSupportTicketsQueryKey() });
+        setCategory('booking');
+        setSubject('');
+        setReference('');
+        setMessage('');
+        setNotice('Support request sent.');
+      },
+      onError: () => setNotice('Could not send the request. Please try again.'),
+    });
+  };
+
+  return <LocalizedContent lang={lang}><section className="grid gap-5 xl:grid-cols-[1.1fr_.9fr]">
+    <form onSubmit={submit} className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-7" data-testid="partner-support-form">
+      <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a76445]">MaydanGo support</p>
+      <h2 className="mt-2 font-display text-xl font-bold">Help & safety</h2>
+      <p className="mt-2 text-sm leading-6 text-[#687a71]">Send a support request or report a safety concern.</p>
+      <div className="mt-5 grid gap-4">
+        <label className="block text-xs font-semibold text-[#51665e]">Support topic
+          <select value={category} onChange={event => setCategory(event.target.value as PartnerSupportCategory)} className={fieldClass()} data-testid="select-partner-support-topic">
+            <option value="booking">Booking question</option>
+            <option value="safety">Safety concern</option>
+            <option value="other">Other support</option>
+          </select>
+        </label>
+        <label className="block text-xs font-semibold text-[#51665e]">Subject
+          <input required minLength={4} maxLength={90} value={subject} onChange={event => setSubject(event.target.value)} className={fieldClass()} data-testid="input-partner-support-subject" />
+        </label>
+        <label className="block text-xs font-semibold text-[#51665e]">Booking reference (optional)
+          <input maxLength={100} value={reference} onChange={event => setReference(event.target.value)} className={fieldClass()} data-testid="input-partner-support-reference" />
+        </label>
+        <label className="block text-xs font-semibold text-[#51665e]">Describe what happened or how we can help
+          <textarea required minLength={10} maxLength={4500} rows={5} value={message} onChange={event => setMessage(event.target.value)} className={`${fieldClass()} resize-y`} data-testid="textarea-partner-support-message" />
+        </label>
+      </div>
+      <p className="mt-3 text-[11px] leading-5 text-[#75847c]">Use the reservation reference when available. Include only details needed to review the report.</p>
+      {notice && <p role="status" className="mt-3 text-sm text-[#36564b]" data-testid="status-partner-support">{notice}</p>}
+      <div className="mt-4 flex justify-end">
+        <Button type="submit" disabled={createTicket.isPending || subject.trim().length < 4 || message.trim().length < 10}>
+          {createTicket.isPending ? 'Sending…' : 'Send to MaydanGo support'}
+        </Button>
+      </div>
+    </form>
+    <section className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-7" aria-labelledby="partner-support-history">
+      <h2 id="partner-support-history" className="font-display text-xl font-bold">Your recent support requests</h2>
+      {tickets.isLoading ? <p className="mt-4 text-sm text-[#75847c]">Loading…</p>
+        : tickets.isError ? <div role="alert" className="mt-4 rounded-xl bg-[#fff7f3] p-4 text-sm text-[#9a4435]">
+          <p>Support history could not be loaded.</p>
+          <button type="button" className="mt-2 font-bold" onClick={() => void tickets.refetch()}>Retry</button>
+        </div>
+        : tickets.data?.length ? <ul className="mt-4 divide-y divide-[#ece7d9]">
+          {tickets.data.slice(0, 8).map(ticket => <li key={ticket.id} className="flex items-start justify-between gap-3 py-3" data-testid={`partner-support-ticket-${ticket.id}`}>
+            <div className="min-w-0">
+              <p className="break-words text-sm font-semibold text-[#36564b]">{partnerSupportSubject(lang, ticket.subject)}</p>
+              <p className="mt-1 text-[10px] text-[#75847c]">{formatDate(ticket.lastMessageAt, lang)}</p>
+            </div>
+            <span className="shrink-0 rounded-full bg-[#e7eee4] px-2.5 py-1 text-[10px] font-bold text-[#36564b]">
+              {portalText(lang, partnerSupportStatusLabels[ticket.status] ?? ticket.status)}
+            </span>
+          </li>)}
+        </ul> : <p className="mt-4 text-sm text-[#75847c]">No support requests yet.</p>}
+    </section>
+  </section></LocalizedContent>;
+}
+
 function WaitlistPanel({ offeringId, lang }: { offeringId: string; lang: PortalLanguage }) {
   const [open, setOpen] = useState(false);
   const waitlist = useGetOfferingWaitlist(offeringId, { query: { enabled: open, refetchInterval: 30_000 } });
@@ -827,6 +950,7 @@ export default function PartnerPortal() {
         <div className="mt-8 hidden rounded-2xl bg-[#f8f5eb] p-4 lg:block"><p className="text-[9px] font-bold uppercase tracking-[.17em] text-[#a76445]">Workspace</p><p className="mt-2 truncate text-sm font-bold">{title}</p><p className="mt-1 text-xs text-[#687a71]">{isAdmin ? 'Administrator access' : 'Partner access'}</p></div>
         <nav aria-label="Portal navigation" className="mt-5 flex gap-2 overflow-x-auto lg:mt-8 lg:flex-col">
           {([['overview', Activity], ['offerings', Dumbbell], ['attendance', CalendarDays], ['waitlist', Clock3], ['facilities', MapPin], ...(isAdmin ? [['partners', Users]] as const : [['bookings', CalendarDays], ['settlements', Wallet], ['invoices', FileText]] as const)] as const).map(([id, Icon]) => <button data-testid={`tab-${id}`} key={id} onClick={() => setTab(id as Tab)} aria-current={tab === id ? 'page' : undefined} className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${tab === id ? 'bg-[#174d43] text-[#fff9e9]' : 'text-[#536b61] hover:bg-[#dedaca]'}`}><Icon size={16} />{portalLabel(language, id)}{id === 'waitlist' ? ` · ${waitlist.length}` : ''}</button>)}
+          <button data-testid="tab-support" type="button" onClick={() => setTab('support')} aria-current={tab === 'support' ? 'page' : undefined} className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${tab === 'support' ? 'bg-[#174d43] text-[#fff9e9]' : 'text-[#536b61] hover:bg-[#dedaca]'}`}><CircleAlert size={16} />{portalLabel(language, 'support')}</button>
         </nav>
          <div className="mt-8 hidden border-t border-[#d6d0bf] pt-5 lg:block">{isAdmin && <Link href="/finance" className="mb-4 flex items-center gap-2 text-xs font-semibold text-[#174d43] hover:text-[#28695a]"><Wallet size={14} />Finance desk</Link>}<Link href="/" className="flex items-center gap-2 text-xs font-semibold text-[#63766d] hover:text-[#174d43]"><ArrowLeft size={14} />Public MaydanGo site</Link><button onClick={() => signOut({ redirectUrl: '/' })} className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-[#63766d] hover:text-[#9a4435]"><LogOut size={14} />Sign out</button></div>
       </aside>
@@ -938,6 +1062,7 @@ export default function PartnerPortal() {
               <p className="mt-2 text-sm text-[#75847c]">Active queues for your upcoming offerings will appear here.</p>
             </div>}
           </section>}
+          {tab === 'support' && <PartnerSupportPanel lang={language} />}
           {tab === 'attendance' && <section><div className="mb-5 flex items-end justify-between"><p className="max-w-2xl text-sm leading-6 text-[#687a71]">Review reservations in the server-scoped roster. Member names are not returned or displayed; each decision requires a reason and is recorded by the service.</p><Button kind="quiet" onClick={() => void attendance.refetch()}><RefreshCw size={15} />Refresh</Button></div>{attendance.isLoading ? <div className="h-48 animate-pulse rounded-3xl bg-[#e5e0d1]" /> : attendance.isError ? <div role="alert" className="rounded-3xl border border-[#e0c4b9] bg-[#fff7f3] p-7"><p className="font-semibold">Attendance roster unavailable</p><Button onClick={() => void attendance.refetch()}>Retry</Button></div> : rows.length ? <div className="grid gap-4">{rows.map(row => {
             const state = `${row.status} ${row.bookingStatus}`.toLowerCase();
              const actions: ReviewAction[] = state.includes('disput')
