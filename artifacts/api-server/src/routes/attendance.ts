@@ -51,6 +51,10 @@ router.post("/:id/review", async (req, res) => {
     const [booking] = await db.select({ userId: reservations.userId }).from(reservations)
       .where(eq(reservations.id, id)).limit(1);
     if (booking) void sendMemberNotification(booking.userId, "booking_created");
+  } else if (result.action === "reject_request") {
+    const [booking] = await db.select({ userId: reservations.userId }).from(reservations)
+      .where(eq(reservations.id, id)).limit(1);
+    if (booking) void sendMemberNotification(booking.userId, "booking_rejected");
   } else {
     const [record] = await db.select({ userId: attendance.userId }).from(attendance)
       .where(eq(attendance.reservationId, id)).limit(1);

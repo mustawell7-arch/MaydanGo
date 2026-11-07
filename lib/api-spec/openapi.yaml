@@ -309,7 +309,7 @@ paths:
               type: object
               required: [action, reason]
               properties:
-                action: { type: string, enum: [confirm, no_show, dispute, void, resolve_confirm, resolve_void, accept_request, lock] }
+                action: { type: string, enum: [confirm, no_show, dispute, void, resolve_confirm, resolve_void, accept_request, reject_request, lock] }
                 reason: { type: string }
       responses:
         "200": { description: Audited review saved }

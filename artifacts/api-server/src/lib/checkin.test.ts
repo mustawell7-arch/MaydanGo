@@ -11,6 +11,7 @@ const prefix = `checkin-test-${randomUUID()}`;
 const member = `${prefix}-member`, staff = `${prefix}-staff`, secondStaff = `${prefix}-second-staff`, admin = `${prefix}-admin`, stranger = `${prefix}-stranger`;
 const p = `${prefix}-partner`, o = `${prefix}-offering`, r = `${prefix}-reservation`;
 const nextOffering = `${prefix}-next`;
+const requestReservation = `${prefix}-request-reservation`;
 const manualReservation = `${prefix}-manual-reservation`;
 const fraudOffering = `${prefix}-fraud-offering`, fraudReservation = `${prefix}-fraud-reservation`;
 const mainFacilityProfile = `${prefix}-facility-profile`, otherFacilityProfile = `${prefix}-other-facility-profile`;
@@ -79,6 +80,32 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
       const address = server.address() as { port: number };
       assert.equal((await fetch(`http://127.0.0.1:${address.port}/api/attendance`)).status, 401);
     } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
+  });
+  await t.test("partner rejection is scoped, reasoned, and only applies to a future request", async () => {
+    await db.insert(reservations).values({
+      id: requestReservation, userId: member, offeringId: nextOffering, status: "requested",
+    });
+    await reject(() => review(stranger, requestReservation, {
+      action: "reject_request", reason: "Not an assigned partner",
+    }), 403);
+    await review(staff, requestReservation, {
+      action: "reject_request", reason: "The requested session is unavailable",
+    });
+    const [booking] = await db.select().from(reservations).where(eq(reservations.id, requestReservation));
+    assert.equal(booking.status, "partner_cancelled");
+    assert.ok(booking.cancelledAt);
+    const [decision] = await db.select().from(attendanceEvents).where(and(
+      eq(attendanceEvents.reservationId, requestReservation),
+      eq(attendanceEvents.action, "reject_request"),
+    ));
+    assert.equal(decision.before, "requested");
+    assert.equal(decision.after, "partner_cancelled");
+    assert.equal(decision.reason, "The requested session is unavailable");
+    await reject(() => review(staff, requestReservation, {
+      action: "reject_request", reason: "Reject the same request again",
+    }), 409);
+    await db.delete(attendanceEvents).where(eq(attendanceEvents.reservationId, requestReservation));
+    await db.delete(reservations).where(eq(reservations.id, requestReservation));
   });
   await t.test("only assigned partner/admin may configure or issue; no policy fails closed", async () => {
     await reject(() => issueQr(stranger, r), 403);

@@ -65,7 +65,7 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
   ar: {
     'English': 'الإنجليزية', 'MAYDANGO · IRAQ': 'MaydanGo · العراق',
     'session': 'جلسة', 'event': 'فعالية', 'coach': 'تدريب',
-    'confirm': 'تأكيد', 'dispute': 'اعتراض', 'accept request': 'قبول الطلب',
+    'confirm': 'تأكيد', 'dispute': 'اعتراض', 'accept request': 'قبول الطلب', 'Reject request': 'رفض الطلب',
     'resolve confirm': 'حل الاعتراض: تأكيد', 'resolve void': 'حل الاعتراض: إبطال',
     'void': 'إبطال', 'lock': 'قفل', 'locked': 'مقفل', 'manual.checkin': 'تسجيل حضور بمساعدة الموظف',
     'partner cancelled': 'ألغاه الشريك', 'offer accepted': 'تم قبول العرض', 'offer declined': 'تم رفض العرض',
@@ -111,6 +111,7 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Enter a start, end, and cancellation deadline.': 'أدخل وقت البدء والانتهاء وآخر موعد للإلغاء.',
     'Offering schedule saved.': 'تم حفظ جدول العرض.',
     'Attendance review recorded.': 'تم تسجيل مراجعة الحضور.',
+    'Booking request rejected.': 'تم رفض طلب الحجز وإبلاغ العضو.',
     'Select a partner before creating this offering.': 'اختر شريكاً قبل إنشاء هذا العرض.',
     'Choose a valid first session date.': 'اختر تاريخاً صحيحاً لأول جلسة.',
     'Choose an inclusive repeat-until date.': 'اختر تاريخاً صحيحاً لنهاية التكرار ويشمل ذلك اليوم.',
@@ -196,7 +197,7 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
   ku: {
     'English': 'ئینگلیزی', 'MAYDANGO · IRAQ': 'MaydanGo · عێراق',
     'session': 'وانە', 'event': 'چالاکی', 'coach': 'ڕاهێنان',
-    'confirm': 'پشتڕاستکردنەوە', 'dispute': 'ناڕەزایی', 'accept request': 'داواکاری قبوڵ بکە',
+    'confirm': 'پشتڕاستکردنەوە', 'dispute': 'ناڕەزایی', 'accept request': 'داواکاری قبوڵ بکە', 'Reject request': 'داواکاری ڕەت بکەوە',
     'resolve confirm': 'چارەسەری ناڕەزایی: پشتڕاستکردنەوە', 'resolve void': 'چارەسەری ناڕەزایی: هەڵوەشاندنەوە',
     'void': 'هەڵوەشاندنەوە', 'lock': 'داخستن', 'locked': 'داخراوە', 'manual.checkin': 'تۆمارکردن بە یارمەتی کارمەند',
     'partner cancelled': 'لە لایەن هاوبەشەوە هەڵوەشێنراوەتەوە', 'offer accepted': 'ئۆفەرەکە قبوڵکرا', 'offer declined': 'ئۆفەرەکە ڕەتکرایەوە',
@@ -242,6 +243,7 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Enter a start, end, and cancellation deadline.': 'کاتی دەستپێک، کۆتایی و کۆتا کاتی هەڵوەشاندنەوە بنووسە.',
     'Offering schedule saved.': 'خشتەی پێشکەشکراو پاشەکەوت کرا.',
     'Attendance review recorded.': 'پێداچوونەوەی ئامادەبوون تۆمارکرا.',
+    'Booking request rejected.': 'داواکاریی حجز ڕەتکرایەوە و ئەندام ئاگادار کرایەوە.',
     'Select a partner before creating this offering.': 'پێش دروستکردنی ئەم پێشکەشکراوە هاوبەشێک هەڵبژێرە.',
     'Choose a valid first session date.': 'بەروارێکی دروست بۆ یەکەمین وانە هەڵبژێرە.',
     'Choose an inclusive repeat-until date.': 'بەرواری کۆتایی دووبارەبوونەوە هەڵبژێرە کە ئەو ڕۆژەش لەخۆبگرێت.',
@@ -812,12 +814,12 @@ export default function PartnerPortal() {
         invalidate();
         setReviewing(null);
         setReason('');
-        setNotice('Attendance review recorded.');
+        setNotice(reviewing.action === 'reject_request' ? 'Booking request rejected.' : 'Attendance review recorded.');
       },
       onError: () => mutationError('Attendance review'),
     });
   };
-  const actionLabel: Record<string, string> = { confirm: 'Confirm', no_show: 'Mark no-show', dispute: 'Dispute', resolve_confirm: 'Resolve: confirm', resolve_void: 'Resolve: void', accept_request: 'Accept request' };
+  const actionLabel: Record<string, string> = { confirm: 'Confirm', no_show: 'Mark no-show', dispute: 'Dispute', resolve_confirm: 'Resolve: confirm', resolve_void: 'Resolve: void', accept_request: 'Accept request', reject_request: 'Reject request' };
   return <main dir={language === 'en' ? 'ltr' : 'rtl'} lang={portalDateLocale(language)} className={`min-h-[100dvh] bg-[#f3f0e5] text-[#173d35] ${language !== 'en' ? 'rtl-copy' : ''}`}>
     <div className="min-h-[100dvh] lg:grid lg:grid-cols-[248px_1fr]">
       <aside className="border-b border-[#dcd6c6] bg-[#e9e5d7] px-5 py-4 lg:sticky lg:top-0 lg:h-[100dvh] lg:border-b-0 lg:border-r lg:px-6 lg:py-7">
@@ -938,7 +940,13 @@ export default function PartnerPortal() {
           </section>}
           {tab === 'attendance' && <section><div className="mb-5 flex items-end justify-between"><p className="max-w-2xl text-sm leading-6 text-[#687a71]">Review reservations in the server-scoped roster. Member names are not returned or displayed; each decision requires a reason and is recorded by the service.</p><Button kind="quiet" onClick={() => void attendance.refetch()}><RefreshCw size={15} />Refresh</Button></div>{attendance.isLoading ? <div className="h-48 animate-pulse rounded-3xl bg-[#e5e0d1]" /> : attendance.isError ? <div role="alert" className="rounded-3xl border border-[#e0c4b9] bg-[#fff7f3] p-7"><p className="font-semibold">Attendance roster unavailable</p><Button onClick={() => void attendance.refetch()}>Retry</Button></div> : rows.length ? <div className="grid gap-4">{rows.map(row => {
             const state = `${row.status} ${row.bookingStatus}`.toLowerCase();
-            const actions: ReviewAction[] = state.includes('disput') ? role === 'admin' ? ['resolve_confirm', 'resolve_void'] : [] : state.includes('request') ? ['accept_request', 'dispute'] : ['confirm', 'no_show', 'dispute'];
+             const actions: ReviewAction[] = state.includes('disput')
+               ? role === 'admin' ? ['resolve_confirm', 'resolve_void'] : []
+               : row.bookingStatus === 'requested' ? ['accept_request', 'reject_request']
+               : row.bookingStatus !== 'reserved' ? []
+               : row.status === 'pending' ? ['confirm', 'dispute']
+               : ['confirmed', 'no_show'].includes(row.status) ? ['dispute']
+               : row.status === 'not_checked_in' && row.policy && Date.now() >= Date.parse(row.policy.closesAt) ? ['no_show'] : [];
             const attendanceDetails = row as typeof row & { manualCheckin?: boolean; manualRepeatUse?: boolean };
             const hasCurrentPolicyWindow = row.policy !== undefined && Number.isFinite(Date.parse(row.policy.opensAt)) && Number.isFinite(Date.parse(row.policy.closesAt)) && Date.now() >= Date.parse(row.policy.opensAt) && Date.now() <= Date.parse(row.policy.closesAt);
             const canManualCheckin = role === 'partner' && !row.locked && row.status === 'not_checked_in' && row.bookingStatus === 'reserved' && hasCurrentPolicyWindow;

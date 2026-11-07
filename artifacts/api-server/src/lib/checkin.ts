@@ -2,7 +2,7 @@ import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 
 import { and, desc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, manualCheckinChallenges, memberships, offerings, operators, partners, reservations, memberProfiles } from "@workspace/db";
 import { z } from "zod";
-import { BookingError } from "./reservations";
+import { BookingError, processWaitlistQueue } from "./reservations";
 import { iraqCalendarDate, openingState, previousIraqCalendarDate } from "./facility-hours";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -20,7 +20,7 @@ export const scanInput = z.object({
   mocked: z.boolean().optional(),
 }).strict();
 export const reviewInput = z.object({
-  action: z.enum(["confirm", "no_show", "dispute", "void", "resolve_confirm", "resolve_void", "accept_request", "lock"]),
+  action: z.enum(["confirm", "no_show", "dispute", "void", "resolve_confirm", "resolve_void", "accept_request", "reject_request", "lock"]),
   reason: z.string().trim().min(5).max(500),
 }).strict();
 export const manualCheckinInput = z.object({
@@ -248,16 +248,23 @@ export async function scanQr(actor: string, input: z.infer<typeof scanInput>) {
   });
 }
 export async function review(actor: string, id: string, input: z.infer<typeof reviewInput>) {
-  return db.transaction(async tx => {
+  const rejectedOfferingId = await db.transaction(async tx => {
     const c = await context(tx, id), { action, reason } = input;
     const now = new Date();
     const ownDispute = action === "dispute" && c.r.userId === actor;
     const op = ownDispute ? null : await staff(tx, actor, c.o.partnerId);
+    if (action === "reject_request") {
+      if (c.r.status !== "requested" || c.o.startsAt <= now || !c.o.active || c.o.cancelledAt)
+        throw new BookingError(409, "Only upcoming active booking requests may be rejected.");
+      await tx.update(reservations).set({ status: "partner_cancelled", cancelledAt: now }).where(eq(reservations.id, id));
+      await event(tx, id, actor, action, "requested", "partner_cancelled", reason);
+      return c.o.id;
+    }
     if (action === "accept_request") {
       if (c.r.status !== "requested" || c.o.startsAt <= now || !c.o.active || c.o.cancelledAt)
         throw new BookingError(409, "Only upcoming active requests may be confirmed.");
       await tx.update(reservations).set({ status: "reserved" }).where(eq(reservations.id, id));
-      await event(tx, id, actor, action, "requested", "reserved", reason); return;
+      await event(tx, id, actor, action, "requested", "reserved", reason); return null;
     }
     if (!c.p) throw new BookingError(409, "Configure the attendance policy first.");
     const locked = !!c.a?.lockedAt || now >= c.p.correctionEndsAt;
@@ -267,7 +274,7 @@ export async function review(actor: string, id: string, input: z.infer<typeof re
       if (op?.role !== "admin" || !c.a || c.a.status === "disputed" || now < c.o.endsAt)
         throw new BookingError(403, "Only administrators can lock reconciled attendance after the session.");
       await tx.update(attendance).set({ lockedAt: now }).where(eq(attendance.id, c.a.id));
-      await event(tx, id, actor, action, c.a.status, c.a.status, reason); return;
+      await event(tx, id, actor, action, c.a.status, c.a.status, reason); return null;
     }
     if (action.startsWith("resolve_") && (op?.role !== "admin" || c.a?.status !== "disputed"))
       throw new BookingError(403, "Disputes require administrator review.");
@@ -307,7 +314,9 @@ export async function review(actor: string, id: string, input: z.infer<typeof re
       await tx.update(reservations).set({ status: "cancelled", cancelledAt: now }).where(eq(reservations.id, id));
     }
     await event(tx, id, actor, action, c.a?.status ?? "not_checked_in", status, reason);
+    return null;
   });
+  if (rejectedOfferingId) await processWaitlistQueue(new Date(), [rejectedOfferingId]);
 }
 export async function roster(actor: string) {
   const [op] = await db.select().from(operators).where(eq(operators.userId, actor));

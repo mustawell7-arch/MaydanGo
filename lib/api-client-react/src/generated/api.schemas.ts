@@ -1716,6 +1716,7 @@ export const ReviewAttendanceBodyAction = {
   resolve_confirm: 'resolve_confirm',
   resolve_void: 'resolve_void',
   accept_request: 'accept_request',
+  reject_request: 'reject_request',
   lock: 'lock',
 } as const;
 
