@@ -20,3 +20,9 @@ Use Iraqi heritage across regions in MaydanGo's visual identity: the eight-point
 **Why:** The user requested recognizable heritage from Kurdistan, the south, the west, and other Iraqi regions so the app feels welcoming and representative.
 
 **How to apply:** Treat sacred or religious patterns as decorative heritage rather than a national or political emblem; keep labels accurate, regional representation balanced, and reconstructions clearly identified.
+
+For the current heritage gallery, use original illustrations rather than documentary photos; the user asked the agent to choose a design that suits Iraq's regions.
+
+**Why:** The user chose a custom visual direction instead of sourcing real landmark photography.
+
+**How to apply:** Continue with a cohesive, regionally balanced illustrated style unless the user asks to change it.
