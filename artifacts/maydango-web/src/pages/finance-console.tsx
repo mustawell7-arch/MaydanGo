@@ -113,7 +113,7 @@ const copy: Record<Language, Record<string, string>> = {
 const lifecycleCopy: Record<Language, Record<string, string>> = {
   en: {
     manageStatus: 'Manage status', lifecycleAction: 'Lifecycle action', lifecycleError: 'Membership status could not be changed. Check the plan rules and try again.',
-    lifecycleWarning: 'Immediate cancellation, pause, suspension, or termination cancels upcoming bookings and releases those places. End-of-term cancellation keeps access until the end date.',
+    lifecycleWarning: 'Immediate cancellation, pause, suspension, or termination cancels upcoming bookings and releases those places; reactivation does not restore them. End-of-term cancellation keeps access until the end date.',
     paidLifecycle: 'Paid membership changes remain unavailable until the payment milestone.',
     startOnIraqTime: 'Optional start date (Iraq time)', pauseRemaining: 'Allowed pause days remaining', action_schedule_cancel: 'Cancel at end of term', action_cancel_now: 'Cancel now',
     action_reactivate: 'Reactivate membership', action_pause: 'Pause membership', action_resume: 'Resume membership',
@@ -125,7 +125,7 @@ const lifecycleCopy: Record<Language, Record<string, string>> = {
   },
   ar: {
     manageStatus: 'إدارة الحالة', lifecycleAction: 'إجراء دورة العضوية', lifecycleError: 'تعذر تغيير حالة العضوية. تحقق من شروط الخطة وحاول مرة أخرى.',
-    lifecycleWarning: 'الإلغاء الفوري أو الإيقاف المؤقت أو التعليق أو الإنهاء يلغي الحجوزات القادمة ويحرر المقاعد. الإلغاء في نهاية المدة يبقي الوصول حتى تاريخ الانتهاء.',
+    lifecycleWarning: 'الإلغاء الفوري أو الإيقاف المؤقت أو التعليق أو الإنهاء يلغي الحجوزات القادمة ويحرر المقاعد، ولا تعيد إعادة التفعيل تلك الحجوزات. الإلغاء في نهاية المدة يبقي الوصول حتى تاريخ الانتهاء.',
     paidLifecycle: 'تغييرات العضويات المدفوعة متوقفة حتى مرحلة الدفع.',
     startOnIraqTime: 'تاريخ البدء الاختياري (توقيت العراق)', pauseRemaining: 'أيام الإيقاف المتبقية', action_schedule_cancel: 'إلغاء عند نهاية المدة', action_cancel_now: 'إلغاء فوري',
     action_reactivate: 'إعادة تفعيل العضوية', action_pause: 'إيقاف العضوية مؤقتاً', action_resume: 'استئناف العضوية',
@@ -137,7 +137,7 @@ const lifecycleCopy: Record<Language, Record<string, string>> = {
   },
   ku: {
     manageStatus: 'بەڕێوەبردنی دۆخ', lifecycleAction: 'کرداری ئەندامێتی', lifecycleError: 'نەتوانرا دۆخی ئەندامێتی بگۆڕدرێت. یاساکانی پلان بپشکنە و دووبارە هەوڵ بدەرەوە.',
-    lifecycleWarning: 'هەڵوەشاندنەوەی دەستبەجێ، پشوودان، ڕاگرتن یان کۆتاییهێنان حجزەکانی داهاتوو هەڵدەوەشێنێتەوە و شوێنەکان ئازاد دەکات. هەڵوەشاندنەوەی کۆتایی ماوە دەستگەیشتن تا ڕۆژی کۆتایی دەپارێزێت.',
+    lifecycleWarning: 'هەڵوەشاندنەوەی دەستبەجێ، پشوودان، ڕاگرتن یان کۆتاییهێنان حجزەکانی داهاتوو هەڵدەوەشێنێتەوە و شوێنەکان ئازاد دەکات؛ چالاککردنەوە حجزە هەڵوەشاوەکان ناگەڕێنێتەوە. هەڵوەشاندنەوەی کۆتایی ماوە دەستگەیشتن تا ڕۆژی کۆتایی دەپارێزێت.',
     paidLifecycle: 'گۆڕینی ئەندامێتی پارەدراو تا قۆناغی پارەدان ناچالاکە.',
     startOnIraqTime: 'بەرواری دەستپێکی ئارەزوومەندانە (کاتی عێراق)', pauseRemaining: 'ڕۆژەکانی پشوودانی ماوە', action_schedule_cancel: 'هەڵوەشاندنەوە لە کۆتایی ماوە',
     action_cancel_now: 'هەڵوەشاندنەوەی دەستبەجێ', action_reactivate: 'چالاککردنەوەی ئەندامێتی',
@@ -159,12 +159,16 @@ const minimumIraqStartDate = () => {
   next.setUTCDate(next.getUTCDate() + 1);
   return next.toISOString().slice(0, 10);
 };
-const lifecycleActionsFor = (status: string): MembershipLifecycleAction[] => {
-  if (['active', 'trial'].includes(status)) return ['schedule_cancel', 'cancel_now', 'pause', 'suspend', 'terminate'];
-  if (status === 'scheduled_cancellation') return ['reactivate', 'cancel_now', 'suspend', 'terminate'];
-  if (status === 'scheduled') return ['cancel_now', 'terminate'];
-  if (status === 'paused') return ['resume', 'cancel_now', 'terminate'];
-  if (['cancelled', 'suspended'].includes(status)) return ['reactivate', 'terminate'];
+const lifecycleActionsFor = (member: Pick<MemberRow, 'status' | 'pauseAllowanceDays' | 'pauseUsedDays'>): MembershipLifecycleAction[] => {
+  if (['active', 'trial'].includes(member.status)) return [
+    'schedule_cancel', 'cancel_now',
+    ...(member.pauseAllowanceDays > member.pauseUsedDays ? ['pause' as const] : []),
+    'suspend', 'terminate',
+  ];
+  if (member.status === 'scheduled_cancellation') return ['reactivate', 'cancel_now', 'suspend', 'terminate'];
+  if (member.status === 'scheduled') return ['cancel_now', 'terminate'];
+  if (member.status === 'paused') return ['resume', 'cancel_now', 'terminate'];
+  if (['cancelled', 'suspended'].includes(member.status)) return ['reactivate', 'terminate'];
   return [];
 };
 const defaultFrom = (() => { const d = new Date(); d.setDate(d.getDate() - 30); return dateOnly(d); })();
@@ -477,7 +481,7 @@ export default function FinanceConsole() {
                 {role === 'admin' && <td className="px-4 py-3"><div className="flex flex-wrap gap-2">
                   <button onClick={() => { setMembershipAction({ member: item, action: 'grant' }); setMembershipPlanId(''); setMembershipStartsOn(''); setMembershipReason(''); }} className="rounded-lg border border-[#d8d2c4] px-2.5 py-2 text-[10px] font-bold text-[#36564b]" data-testid={`button-grant-membership-${item.userId}`}>{t('grantAccess')}</button>
                   <button onClick={() => { setMembershipAction({ member: item, action: 'revoke' }); setMembershipReason(''); }} className="rounded-lg border border-[#d9a89a] px-2.5 py-2 text-[10px] font-bold text-[#9a4435]" data-testid={`button-revoke-membership-${item.userId}`}>{t('revokeAccess')}</button>
-                  <button onClick={() => { setMembershipAction({ member: item, action: 'lifecycle' }); setLifecycleType(lifecycleActionsFor(item.status)[0] ?? 'schedule_cancel'); setMembershipReason(''); }} disabled={item.source === 'paid' || item.paymentStatus !== 'not_required' || !lifecycleActionsFor(item.status).length} title={item.source === 'paid' || item.paymentStatus !== 'not_required' ? lc('paidLifecycle') : undefined} className="rounded-lg border border-[#d8d2c4] px-2.5 py-2 text-[10px] font-bold text-[#36564b] disabled:cursor-not-allowed disabled:opacity-40" data-testid={`button-manage-membership-${item.userId}`}>{lc('manageStatus')}</button>
+                  <button onClick={() => { setMembershipAction({ member: item, action: 'lifecycle' }); setLifecycleType(lifecycleActionsFor(item)[0] ?? 'schedule_cancel'); setMembershipReason(''); }} disabled={item.source === 'paid' || item.paymentStatus !== 'not_required' || !lifecycleActionsFor(item).length} title={item.source === 'paid' || item.paymentStatus !== 'not_required' ? lc('paidLifecycle') : undefined} className="rounded-lg border border-[#d8d2c4] px-2.5 py-2 text-[10px] font-bold text-[#36564b] disabled:cursor-not-allowed disabled:opacity-40" data-testid={`button-manage-membership-${item.userId}`}>{lc('manageStatus')}</button>
                 </div></td>}
               </tr>)}</tbody>
             </table>{!filtered(members, ['userId','status','paymentStatus','tier','source']).length && <Empty title={members.length ? t('noRows') : t('noMembers')} />}</div>
@@ -544,7 +548,7 @@ export default function FinanceConsole() {
         </>}
         {membershipAction.action === 'lifecycle' && <>
           <label className="block text-xs font-semibold">{lc('lifecycleAction')}<select value={lifecycleType} onChange={e => setLifecycleType(e.target.value as MembershipLifecycleAction)} className={`${field} mt-1`} data-testid="select-membership-lifecycle-action">
-            {lifecycleActionsFor(membershipAction.member.status).map(action => <option key={action} value={action}>{lc(`action_${action}`)}</option>)}
+            {lifecycleActionsFor(membershipAction.member).map(action => <option key={action} value={action}>{lc(`action_${action}`)}</option>)}
           </select></label>
           {lifecycleType === 'pause' && <p className="rounded-xl bg-[#f7f4eb] p-3 text-xs">{lc('pauseRemaining')}: {Math.max(0, membershipAction.member.pauseAllowanceDays - membershipAction.member.pauseUsedDays)}</p>}
           <p className="rounded-xl border border-[#d7b880] bg-[#fff8e9] p-3 text-xs leading-relaxed text-[#755e2e]">{lc('lifecycleWarning')}</p>

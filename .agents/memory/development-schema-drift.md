@@ -7,6 +7,8 @@ When a development `db push` reports an existing relation conflict while new sch
 
 Keep `approval_status` as the offering review state. The development database lacks the legacy `activity_status` column; do not reintroduce it in the ORM without an explicit additive migration and reviewed data transition.
 
+The normal Drizzle push also warned that it would delete populated `activity_status` and `review_note` columns from `booking_offerings` (26 rows each). Do not accept that prompt or use `push-force`; preserve those records until an explicitly reviewed, non-destructive schema transition is available.
+
 **Why:** A facility-profile table remained absent after Drizzle reported that the existing attendance relation already existed; automatic approval could drop or replace legacy data. A later check-in test also confirmed that the database does not have the legacy offering-status column.
 
 **How to apply:** If a dev schema push fails around attendance, waitlist, or offering-status fields, inspect the current and source schemas and handle legacy-data decisions explicitly before retrying. The normal post-merge setup remains the supported schema application path.
