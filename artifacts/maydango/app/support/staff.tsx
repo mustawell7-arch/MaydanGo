@@ -249,6 +249,14 @@ export default function SupportStaffScreen() {
             <Text style={[styles.heading, { color: colors.foreground }]}>{t('supportTeamTitle')}</Text>
             <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('supportTeamHint')}</Text>
             <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('urgentAlertRecipientsHint')}</Text>
+            <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('urgentAlertRecipientReadinessHint')}</Text>
+            {!agents.data?.some(agent =>
+              agent.receiveUrgentAlerts && agent.pushEnabled && (agent.activeDeviceCount ?? 0) > 0,
+            ) ? (
+              <Text accessibilityRole="alert" style={[styles.caption, { color: colors.destructive, fontWeight: '700' }]}>
+                {t('urgentAlertNoReadyRecipients')}
+              </Text>
+            ) : null}
             <TextInput
               accessibilityLabel={t('supportAccountId')}
               value={newAgentId}
@@ -268,7 +276,14 @@ export default function SupportStaffScreen() {
               icon="person-add-outline"
             />
             {agents.data?.length ? (
-              agents.data.map(agent => (
+              agents.data.map(agent => {
+                const pushSetupReady = agent.pushEnabled === true && (agent.activeDeviceCount ?? 0) > 0;
+                const pushReadinessMessage = agent.pushEnabled !== true
+                  ? t('urgentAlertRecipientPushDisabled')
+                  : (agent.activeDeviceCount ?? 0) === 0
+                    ? t('urgentAlertRecipientNoDevice')
+                    : t('urgentAlertRecipientPushReady');
+                return (
                 <View key={agent.userId} style={[styles.teamAgent, { borderColor: colors.border }]}>
                   <View style={styles.teamAgentHeader}>
                     <View style={styles.teamAgentIdentity}>
@@ -319,6 +334,14 @@ export default function SupportStaffScreen() {
                       />
                     </View>
                   </Pressable>
+                  {agent.receiveUrgentAlerts ? (
+                    <Text style={[
+                      styles.caption,
+                      { color: pushSetupReady ? colors.primary : colors.destructive, fontWeight: '700' },
+                    ]}>
+                      {pushReadinessMessage}
+                    </Text>
+                  ) : null}
                   {pendingRemovalId === agent.userId ? (
                     <View style={[styles.confirmBox, { backgroundColor: colors.secondary }]}>
                       <Text style={{ color: colors.secondaryForeground, fontWeight: '800' }}>
@@ -348,7 +371,8 @@ export default function SupportStaffScreen() {
                     </View>
                   ) : null}
                 </View>
-              ))
+                );
+              })
             ) : (
               <Text style={{ color: colors.mutedForeground }}>{t('supportNoAgents')}</Text>
             )}

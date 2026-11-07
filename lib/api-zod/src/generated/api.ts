@@ -4383,10 +4383,16 @@ export const ReplySupportStaffTicketResponse = zod.object({
 }))
 
 
+export const getSupportStaffAgentsResponseActiveDeviceCountMin = 0;
+
+
+
 export const GetSupportStaffAgentsResponseItem = zod.object({
   "userId": zod.string(),
   "role": zod.enum(['admin', 'support']),
-  "receiveUrgentAlerts": zod.boolean()
+  "receiveUrgentAlerts": zod.boolean(),
+  "pushEnabled": zod.boolean().optional().describe('Present only to administrators.'),
+  "activeDeviceCount": zod.number().int().min(getSupportStaffAgentsResponseActiveDeviceCountMin).optional().describe('Present only to administrators; never includes device tokens.')
 })
 export const GetSupportStaffAgentsResponse = zod.array(GetSupportStaffAgentsResponseItem)
 
@@ -4401,10 +4407,16 @@ export const AddSupportStaffAgentBody = zod.object({
   "userId": zod.string().min(1).max(addSupportStaffAgentBodyUserIdMax).regex(addSupportStaffAgentBodyUserIdRegExp)
 })
 
+export const addSupportStaffAgentResponseActiveDeviceCountMin = 0;
+
+
+
 export const AddSupportStaffAgentResponse = zod.object({
   "userId": zod.string(),
   "role": zod.enum(['admin', 'support']),
-  "receiveUrgentAlerts": zod.boolean()
+  "receiveUrgentAlerts": zod.boolean(),
+  "pushEnabled": zod.boolean().optional().describe('Present only to administrators.'),
+  "activeDeviceCount": zod.number().int().min(addSupportStaffAgentResponseActiveDeviceCountMin).optional().describe('Present only to administrators; never includes device tokens.')
 })
 
 
@@ -4418,10 +4430,16 @@ export const RemoveSupportStaffAgentParams = zod.object({
   "userId": zod.coerce.string().min(1).max(removeSupportStaffAgentPathUserIdMax).regex(removeSupportStaffAgentPathUserIdRegExp)
 })
 
+export const removeSupportStaffAgentResponseActiveDeviceCountMin = 0;
+
+
+
 export const RemoveSupportStaffAgentResponse = zod.object({
   "userId": zod.string(),
   "role": zod.enum(['admin', 'support']),
-  "receiveUrgentAlerts": zod.boolean()
+  "receiveUrgentAlerts": zod.boolean(),
+  "pushEnabled": zod.boolean().optional().describe('Present only to administrators.'),
+  "activeDeviceCount": zod.number().int().min(removeSupportStaffAgentResponseActiveDeviceCountMin).optional().describe('Present only to administrators; never includes device tokens.')
 })
 
 
@@ -4439,10 +4457,16 @@ export const UpdateSupportStaffAgentUrgentAlertsBody = zod.object({
   "receiveUrgentAlerts": zod.boolean()
 })
 
+export const updateSupportStaffAgentUrgentAlertsResponseActiveDeviceCountMin = 0;
+
+
+
 export const UpdateSupportStaffAgentUrgentAlertsResponse = zod.object({
   "userId": zod.string(),
   "role": zod.enum(['admin', 'support']),
-  "receiveUrgentAlerts": zod.boolean()
+  "receiveUrgentAlerts": zod.boolean(),
+  "pushEnabled": zod.boolean().optional().describe('Present only to administrators.'),
+  "activeDeviceCount": zod.number().int().min(updateSupportStaffAgentUrgentAlertsResponseActiveDeviceCountMin).optional().describe('Present only to administrators; never includes device tokens.')
 })
 
 

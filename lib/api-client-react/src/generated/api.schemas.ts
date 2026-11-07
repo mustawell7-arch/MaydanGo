@@ -769,6 +769,13 @@ export interface SupportAgent {
   userId: string;
   role: SupportAgentRole;
   receiveUrgentAlerts: boolean;
+  /** Present only to administrators. */
+  pushEnabled?: boolean;
+  /**
+     * Present only to administrators; never includes device tokens.
+     * @minimum 0
+     */
+  activeDeviceCount?: number;
 }
 
 export interface SupportAgentInput {

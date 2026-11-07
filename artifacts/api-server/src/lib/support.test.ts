@@ -103,8 +103,23 @@ test("support conversations are private, triaged, audited, and replyable", async
     { id: randomUUID(), userId: partnerId, token: partnerToken, platform: "ios", enabled: true },
   ]);
   const agentRoster = await call("/support/staff/agents", adminId);
-  assert.equal(agentRoster.data.find((agent: { userId: string }) => agent.userId === adminId)?.receiveUrgentAlerts, false);
-  assert.equal(agentRoster.data.find((agent: { userId: string }) => agent.userId === supportId)?.receiveUrgentAlerts, true);
+  const adminReadiness = agentRoster.data.find((agent: { userId: string }) => agent.userId === adminId);
+  const supportReadiness = agentRoster.data.find((agent: { userId: string }) => agent.userId === supportId);
+  assert.equal(adminReadiness?.receiveUrgentAlerts, false);
+  assert.equal(adminReadiness?.pushEnabled, true);
+  assert.equal(adminReadiness?.activeDeviceCount, 1);
+  assert.equal(supportReadiness?.receiveUrgentAlerts, true);
+  assert.equal(supportReadiness?.pushEnabled, true);
+  assert.equal(supportReadiness?.activeDeviceCount, 1);
+  assert.doesNotMatch(JSON.stringify(agentRoster.data), /ExpoPushToken/);
+  await db.update(pushDevices).set({ enabled: false }).where(eq(pushDevices.id, supportDeviceId));
+  const noActiveDeviceRoster = await call("/support/staff/agents", adminId);
+  assert.equal(noActiveDeviceRoster.data.find((agent: { userId: string }) => agent.userId === supportId)?.activeDeviceCount, 0);
+  await db.update(pushDevices).set({ enabled: true }).where(eq(pushDevices.id, supportDeviceId));
+  const supportRoster = await call("/support/staff/agents", supportId);
+  const supportRosterRow = supportRoster.data.find((agent: { userId: string }) => agent.userId === supportId);
+  assert.equal(Object.hasOwn(supportRosterRow, "pushEnabled"), false);
+  assert.equal(Object.hasOwn(supportRosterRow, "activeDeviceCount"), false);
   const originalFetch = globalThis.fetch;
   const urgentAlertPayloads: any[][] = [];
   globalThis.fetch = (async (input, init) => {

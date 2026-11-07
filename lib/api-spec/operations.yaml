@@ -1089,6 +1089,8 @@ components:
         userId: { type: string }
         role: { type: string, enum: [admin, support] }
         receiveUrgentAlerts: { type: boolean }
+        pushEnabled: { type: boolean, description: Present only to administrators. }
+        activeDeviceCount: { type: integer, minimum: 0, description: Present only to administrators; never includes device tokens. }
     SupportAgentInput:
       type: object
       additionalProperties: false

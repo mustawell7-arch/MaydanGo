@@ -404,7 +404,33 @@ staffRouter.get("/agents", async (_req, res) => {
     receiveUrgentAlerts: operators.receiveUrgentAlerts,
   }).from(operators)
     .where(inArray(operators.role, ["admin", "support"]));
-  res.json(rows);
+  const viewer = res.locals.supportOperator as typeof operators.$inferSelect;
+  if (viewer.role !== "admin" || !rows.length) {
+    res.json(rows);
+    return;
+  }
+
+  const userIds = rows.map(agent => agent.userId);
+  const [preferences, devices] = await Promise.all([
+    db.select({
+      userId: memberNotificationPreferences.userId,
+      pushEnabled: memberNotificationPreferences.pushEnabled,
+    }).from(memberNotificationPreferences)
+      .where(inArray(memberNotificationPreferences.userId, userIds)),
+    db.select({
+      userId: pushDevices.userId,
+      count: sql<number>`count(*)::int`,
+    }).from(pushDevices)
+      .where(and(inArray(pushDevices.userId, userIds), eq(pushDevices.enabled, true)))
+      .groupBy(pushDevices.userId),
+  ]);
+  const preferencesByUser = new Map(preferences.map(preference => [preference.userId, preference.pushEnabled]));
+  const deviceCountByUser = new Map(devices.map(device => [device.userId, device.count]));
+  res.json(rows.map(agent => ({
+    ...agent,
+    pushEnabled: preferencesByUser.get(agent.userId) ?? false,
+    activeDeviceCount: deviceCountByUser.get(agent.userId) ?? 0,
+  })));
 });
 
 staffRouter.post("/agents", async (req, res) => {
