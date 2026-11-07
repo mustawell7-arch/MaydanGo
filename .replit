@@ -17,7 +17,7 @@ expertMode = true
 
 [postMerge]
 path = "scripts/post-merge.sh"
-timeoutMs = 20000
+timeoutMs = 60000
 
 [nix]
 channel = "stable-25_05"
@@ -31,3 +31,6 @@ MAYDANGO_PAYOUTS_VERIFIED = "false"
 MAYDANGO_PAYTABS_RECURRING_VERIFIED = "false"
 PAYTABS_CALLBACK_URL = "https://ae877da1-f25f-4b89-90ab-12bbbd996789-00-3ez9fps0k6xfg-ad5nj9xc.kira.replit.dev/api/payments/webhook"
 PAYTABS_RETURN_URL = "https://ae877da1-f25f-4b89-90ab-12bbbd996789-00-3ez9fps0k6xfg-ad5nj9xc.kira.replit.dev/api/payments/return"
+
+[userenv.shared]
+VITE_CONTACT_EMAIL = "maydangoing@gmail.com"

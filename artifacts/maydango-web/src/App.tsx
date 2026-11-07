@@ -20,6 +20,7 @@ import approvedCopy from '@/approved-copy.json';
 import { Route, Switch, useLocation, Router as WouterRouter, Link, Redirect } from 'wouter';
 import PartnerPortal from '@/pages/partner-portal';
 import FinanceConsole from '@/pages/finance-console';
+import { createContactEmailDraft, initialContactTopic, verifiedContactEmail } from '@/lib/contact-enquiry';
 import './index.css';
 
 const queryClient = new QueryClient();
@@ -363,11 +364,6 @@ function verifiedHttpsDestination(key: string) {
   } catch {
     return '';
   }
-}
-
-function verifiedContactEmail() {
-  const email = destination('VITE_CONTACT_EMAIL');
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
 }
 
 function Layout({ children, language, setLanguage }: { children: ReactNode; language: Language; setLanguage: (language: Language) => void }) {
@@ -760,20 +756,19 @@ function OnlinePage({ t, language }: { t: Copy; language: Language }) {
   </>;
 }
 
-const landingCopy: Record<string, { kicker: string; title: string; intro: string; bullets: string[]; env: string; cta: string }> = {
-  partner: { kicker: 'partner', title: 'partnerTitle', intro: 'partnerIntro', bullets: ['partnerBullet1', 'partnerBullet2', 'partnerBullet3'], env: 'VITE_PARTNER_ENQUIRY_URL', cta: 'partner' },
-  corporate: { kicker: 'corporate', title: 'corporateTitle', intro: 'corporateIntro', bullets: ['corporateBullet1', 'corporateBullet2', 'corporateBullet3'], env: 'VITE_CORPORATE_ENQUIRY_URL', cta: 'corporate' },
+const landingCopy: Record<string, { kicker: string; title: string; intro: string; bullets: string[]; topic: 'partner' | 'corporate'; cta: string }> = {
+  partner: { kicker: 'partner', title: 'partnerTitle', intro: 'partnerIntro', bullets: ['partnerBullet1', 'partnerBullet2', 'partnerBullet3'], topic: 'partner', cta: 'topicPartner' },
+  corporate: { kicker: 'corporate', title: 'corporateTitle', intro: 'corporateIntro', bullets: ['corporateBullet1', 'corporateBullet2', 'corporateBullet3'], topic: 'corporate', cta: 'topicCorporate' },
 };
 
 function EnquiryPage({ type, t }: { type: 'partner' | 'corporate'; t: Copy }) {
   const content = landingCopy[type];
-  const url = verifiedHttpsDestination(content.env);
   return <>
     <PageHero kicker={t[content.kicker]} title={t[content.title]} description={t[content.intro]} />
     <PageWrap className="py-14 md:py-20">
       <div className="grid gap-12 md:grid-cols-[1fr_.75fr]">
         <div className="grid gap-0">{content.bullets.map((key, index) => <div className="flex gap-4 border-b border-border py-6 first:border-t" key={key}><span className="font-mono text-xs text-primary">0{index + 1}</span><p className="max-w-lg text-lg leading-7">{t[key]}</p><Check className="ms-auto mt-1 shrink-0 text-primary" size={18} /></div>)}</div>
-        <aside className="rounded-[2rem] bg-[#eadfcd] p-7 md:p-9"><SectionKicker>{t.contact}</SectionKicker><h2 className="font-display text-3xl font-bold tracking-[-.05em]">{t[content.cta]}</h2><p className="mt-4 text-sm leading-6 text-foreground/65">{url ? t.verifiedContinue : t.noDestination}</p>{url ? <a href={url} target="_blank" rel="noreferrer" className="mt-7 inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground" data-testid={`link-${type}-enquiry`}>{t[content.cta]}<MoveUpRight size={16} /></a> : <p className="mt-7 rounded-xl border border-border bg-card/70 p-4 text-xs leading-5 text-foreground/60" role="status">{t.contactUnavailable}</p>}{type === 'partner' && <div className="mt-8 border-t border-[#cdbba5] pt-5"><p className="text-xs leading-5 text-foreground/65">{t.approved_partner_prompt}</p><Link href="/sign-in" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-partner-portal-sign-in">{t.partner_operations_sign_in}<ArrowRight size={15} /></Link></div>}</aside>
+        <aside className="rounded-[2rem] bg-[#eadfcd] p-7 md:p-9"><SectionKicker>{t.contact}</SectionKicker><h2 className="font-display text-3xl font-bold tracking-[-.05em]">{t[content.cta]}</h2><p className="mt-4 text-sm leading-6 text-foreground/65">{t.availabilityD}</p><Link href={`/contact?topic=${content.topic}`} className="mt-7 inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground" data-testid={`link-${type}-enquiry`}>{t[content.cta]}<MoveUpRight size={16} /></Link>{type === 'partner' && <div className="mt-8 border-t border-[#cdbba5] pt-5"><p className="text-xs leading-5 text-foreground/65">{t.approved_partner_prompt}</p><Link href="/sign-in" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-partner-portal-sign-in">{t.partner_operations_sign_in}<ArrowRight size={15} /></Link></div>}</aside>
       </div>
     </PageWrap>
   </>;
@@ -794,26 +789,27 @@ function HelpPage({ t }: { t: Copy }) {
 }
 
 function ContactPage({ t }: { t: Copy }) {
-  const email = verifiedContactEmail();
+  const email = verifiedContactEmail(destination('VITE_CONTACT_EMAIL'));
   const [draftHref, setDraftHref] = useState('');
+  const initialTopic = initialContactTopic(window.location.search);
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
-    defaultValues: { topic: 'membership', name: '', replyEmail: '', message: '' },
+    defaultValues: { topic: initialTopic, name: '', replyEmail: '', message: '' },
   });
   const handleSubmit = (values: ContactFormValues) => {
-    if (!email) return;
-    const topics: Record<string, string> = {
-      membership: t.topicMembership, partner: t.topicPartner, corporate: t.topicCorporate, other: t.topicOther,
-    };
-    const subject = topics[values.topic] || t.topicOther;
-    const body = [
-      `${t.contactTopic}: ${subject}`,
-      `${t.nameLabel}: ${values.name || '-'}`,
-      `${t.emailLabel}: ${values.replyEmail || '-'}`,
-      '',
-      values.message,
-    ].join('\n');
-    setDraftHref(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+    const href = createContactEmailDraft(email, values, {
+      contactTopic: t.contactTopic,
+      nameLabel: t.nameLabel,
+      emailLabel: t.emailLabel,
+      topicLabels: {
+        membership: t.topicMembership,
+        partner: t.topicPartner,
+        corporate: t.topicCorporate,
+        other: t.topicOther,
+      },
+    });
+    if (!href) return;
+    setDraftHref(href);
   };
   return <>
     <PageHero kicker={t.contact} title={t.contactTitle} description={t.availabilityD} />
