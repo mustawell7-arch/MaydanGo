@@ -43,7 +43,7 @@ async function memberTicketDetail(ownerId: string, id: string) {
     db.select().from(supportTicketEvents).where(eq(supportTicketEvents.ticketId, id)).orderBy(asc(supportTicketEvents.createdAt)),
   ]);
   return {
-    id: ticket.id, subject: ticket.subject, category: ticket.category, status: ticket.status,
+    id: ticket.id, subject: ticket.subject, category: ticket.category, urgent: ticket.urgent, status: ticket.status,
     language: ticket.language, createdAt: ticket.createdAt, updatedAt: ticket.updatedAt, lastMessageAt: ticket.lastMessageAt,
     messages: messages.map(m => ({ id: m.id, authorRole: m.authorRole, message: m.body, language: m.language, createdAt: m.createdAt })),
     events: events.map(e => ({
@@ -60,7 +60,7 @@ async function staffTicketDetail(id: string) {
     db.select().from(supportTicketEvents).where(eq(supportTicketEvents.ticketId, id)).orderBy(asc(supportTicketEvents.createdAt)),
   ]);
   return {
-    id: ticket.id, subject: ticket.subject, category: ticket.category, status: ticket.status,
+    id: ticket.id, subject: ticket.subject, category: ticket.category, urgent: ticket.urgent, status: ticket.status,
     language: ticket.language, createdAt: ticket.createdAt, updatedAt: ticket.updatedAt, lastMessageAt: ticket.lastMessageAt,
     memberUserId: ticket.userId, assignedTo: ticket.assignedTo,
     messages: messages.map(m => ({
@@ -92,7 +92,7 @@ memberSupportRouter.get("/support/tickets", async (req, res) => {
   const rows = await db.select().from(supportTickets).where(eq(supportTickets.userId, ownerId))
     .orderBy(desc(supportTickets.lastMessageAt)).limit(100);
   res.json(rows.map(t => ({
-    id: t.id, subject: t.subject, category: t.category, status: t.status, language: t.language,
+    id: t.id, subject: t.subject, category: t.category, urgent: t.urgent, status: t.status, language: t.language,
     createdAt: t.createdAt, updatedAt: t.updatedAt, lastMessageAt: t.lastMessageAt,
   })));
 });
@@ -103,14 +103,19 @@ memberSupportRouter.post("/support/tickets", async (req, res) => {
     category: ticketCategorySchema,
     message: z.string().trim().min(10).max(5000),
     language: languageSchema,
+    urgent: z.boolean().optional().default(false),
   }).strict().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ message: "Add a subject and a message, then try again." }); return; }
+  if (parsed.data.urgent && parsed.data.category !== "safety") {
+    res.status(400).json({ message: "Urgent priority is only available for safety reports." });
+    return;
+  }
   const ownerId = userId(req);
   const id = randomUUID();
   const now = new Date();
   await db.transaction(async tx => {
     await tx.insert(supportTickets).values({
-      id, userId: ownerId, subject: parsed.data.subject, category: parsed.data.category,
+      id, userId: ownerId, subject: parsed.data.subject, category: parsed.data.category, urgent: parsed.data.urgent,
       language: parsed.data.language, status: "open", createdAt: now, updatedAt: now, lastMessageAt: now,
     });
     await tx.insert(supportMessages).values({
@@ -118,7 +123,8 @@ memberSupportRouter.post("/support/tickets", async (req, res) => {
       body: parsed.data.message, language: parsed.data.language, createdAt: now,
     });
     await tx.insert(supportTicketEvents).values({
-      id: randomUUID(), ticketId: id, actorId: ownerId, action: "created", nextStatus: "open", createdAt: now,
+      id: randomUUID(), ticketId: id, actorId: ownerId, action: "created", nextStatus: "open",
+      detail: parsed.data.urgent ? "Urgent safety report submitted." : "", createdAt: now,
     });
   });
   res.status(201).json(await memberTicketDetail(ownerId, id));
@@ -246,9 +252,12 @@ staffRouter.get("/tickets", async (req, res) => {
   if (status && !status.success) { res.status(400).json({ message: "Choose a valid ticket status." }); return; }
   const rows = await db.select().from(supportTickets)
     .where(status?.success ? eq(supportTickets.status, status.data) : undefined)
-    .orderBy(desc(supportTickets.lastMessageAt)).limit(100);
+    .orderBy(
+      desc(sql`CASE WHEN ${supportTickets.urgent} = true AND ${supportTickets.status} NOT IN ('resolved', 'closed') THEN 1 ELSE 0 END`),
+      desc(supportTickets.lastMessageAt),
+    ).limit(100);
   res.json(rows.map(t => ({
-    id: t.id, subject: t.subject, category: t.category, status: t.status, language: t.language,
+    id: t.id, subject: t.subject, category: t.category, urgent: t.urgent, status: t.status, language: t.language,
     createdAt: t.createdAt, updatedAt: t.updatedAt, lastMessageAt: t.lastMessageAt,
     memberUserId: t.userId, assignedTo: t.assignedTo,
   })));

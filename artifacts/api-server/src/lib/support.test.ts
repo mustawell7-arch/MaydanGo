@@ -84,6 +84,32 @@ test("support conversations are private, triaged, audited, and replyable", async
   assert.equal((await call(`/member/support/tickets/${created.data.id}`, undefined)).status, 401);
   assert.equal((await call("/support/staff/tickets", partnerId)).status, 403);
 
+  const urgentSafety = await call("/member/support/tickets", alice, "POST", {
+    subject: "Urgent safety concern", category: "safety",
+    message: "A serious safety concern needs MaydanGo support review.", language: "ar", urgent: true,
+  });
+  assert.equal(urgentSafety.status, 201);
+  ticketIds.push(urgentSafety.data.id);
+  assert.equal(urgentSafety.data.urgent, true);
+  const regularSafety = await call("/member/support/tickets", bob, "POST", {
+    subject: "Safety follow-up", category: "safety",
+    message: "A non-urgent safety question for the support team.", language: "en",
+  });
+  assert.equal(regularSafety.status, 201);
+  ticketIds.push(regularSafety.data.id);
+  assert.equal(regularSafety.data.urgent, false);
+  await db.update(supportTickets).set({ lastMessageAt: new Date(Date.now() + 60_000) })
+    .where(eq(supportTickets.id, regularSafety.data.id));
+  const rejectedUrgency = await call("/member/support/tickets", alice, "POST", {
+    subject: "Urgent booking question", category: "booking",
+    message: "Urgent priority must not be used for a booking-only request.", language: "en", urgent: true,
+  });
+  assert.equal(rejectedUrgency.status, 400);
+  const queue = await call("/support/staff/tickets", supportId);
+  assert.equal(queue.data[0].id, urgentSafety.data.id);
+  assert.equal(queue.data[0].urgent, true);
+  assert.equal((await call("/member/support/tickets", alice)).data[0].urgent, true);
+
   const assigned = await call(`/support/staff/tickets/${created.data.id}`, supportId, "PATCH", {
     assignedTo: supportId, status: "in_progress",
   });

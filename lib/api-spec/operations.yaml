@@ -973,6 +973,7 @@ components:
         category: { $ref: "#/components/schemas/SupportTicketCategory" }
         message: { type: string, minLength: 10, maxLength: 5000 }
         language: { $ref: "#/components/schemas/SupportedLanguage" }
+        urgent: { type: boolean, default: false }
     SupportReplyInput:
       type: object
       additionalProperties: false
@@ -982,11 +983,12 @@ components:
         language: { $ref: "#/components/schemas/SupportedLanguage" }
     SupportTicketSummary:
       type: object
-      required: [id, subject, category, status, language, createdAt, updatedAt, lastMessageAt]
+      required: [id, subject, category, urgent, status, language, createdAt, updatedAt, lastMessageAt]
       properties:
         id: { type: string }
         subject: { type: string }
         category: { $ref: "#/components/schemas/SupportTicketCategory" }
+        urgent: { type: boolean }
         status: { $ref: "#/components/schemas/SupportTicketStatus" }
         language: { $ref: "#/components/schemas/SupportedLanguage" }
         createdAt: { type: string, format: date-time }

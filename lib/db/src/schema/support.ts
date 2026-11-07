@@ -5,6 +5,7 @@ export const supportTickets = pgTable("support_tickets", {
   userId: text("user_id").notNull(),
   subject: text("subject").notNull(),
   category: text("category").notNull(),
+  urgent: boolean("urgent").notNull().default(false),
   language: text("language").notNull().default("en"),
   status: text("status").notNull().default("open"),
   assignedTo: text("assigned_to"),
@@ -15,6 +16,7 @@ export const supportTickets = pgTable("support_tickets", {
 }, t => [
   index("support_tickets_owner_activity_idx").on(t.userId, t.lastMessageAt),
   index("support_tickets_queue_idx").on(t.status, t.lastMessageAt),
+  index("support_tickets_urgent_queue_idx").on(t.urgent, t.status, t.lastMessageAt),
   index("support_tickets_assignee_idx").on(t.assignedTo, t.status),
 ]);
 

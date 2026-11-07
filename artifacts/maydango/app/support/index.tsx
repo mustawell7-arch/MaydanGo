@@ -42,6 +42,7 @@ export default function SupportCenterScreen() {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [category, setCategory] = useState<Category>('other');
+  const [urgentSafety, setUrgentSafety] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [permissionBlocked, setPermissionBlocked] = useState(false);
   const tickets = useGetMemberSupportTickets({ query: { enabled: app.signedIn } });
@@ -65,11 +66,12 @@ export default function SupportCenterScreen() {
     setNotice(null);
     try {
       const ticket = await createTicket.mutateAsync({
-        data: { subject: subject.trim(), category, message: message.trim(), language: app.language },
+        data: { subject: subject.trim(), category, urgent: category === 'safety' && urgentSafety, message: message.trim(), language: app.language },
       });
       await queryClient.invalidateQueries({ queryKey: getGetMemberSupportTicketsQueryKey() });
       setSubject('');
       setMessage('');
+      setUrgentSafety(false);
       setNotice(t('supportTicketCreated'));
       router.push({ pathname: '/support/[id]', params: { id: ticket.id } });
     } catch (error) {
@@ -188,10 +190,27 @@ export default function SupportCenterScreen() {
                 <Text style={[styles.label, { color: colors.mutedForeground, textAlign: align }]}>{t('ticketCategory')}</Text>
                 <View style={styles.chips}>
                   {(Object.keys(categoryKeys) as Category[]).map(value => (
-                    <Choice key={value} colors={colors} selected={category === value} title={t(categoryKeys[value])} onPress={() => setCategory(value)} />
+                    <Choice key={value} colors={colors} selected={category === value} title={t(categoryKeys[value])} onPress={() => {
+                      setCategory(value);
+                      if (value !== 'safety') setUrgentSafety(false);
+                    }} />
                   ))}
                 </View>
               </View>
+              {category === 'safety' ? (
+                <View style={styles.field}>
+                  <Pressable
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: urgentSafety }}
+                    onPress={() => setUrgentSafety(value => !value)}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}
+                  >
+                    <Ionicons name={urgentSafety ? 'checkbox' : 'square-outline'} size={20} color={urgentSafety ? colors.destructive : colors.mutedForeground} />
+                    <Text style={{ color: colors.foreground, fontWeight: '700' }}>{t('urgentSafety')}</Text>
+                  </Pressable>
+                  <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('urgentSafetyHint')}</Text>
+                </View>
+              ) : null}
               <View style={styles.field}>
                 <Text style={[styles.label, { color: colors.mutedForeground, textAlign: align }]}>{t('ticketMessage')}</Text>
                 <TextInput
@@ -234,6 +253,7 @@ export default function SupportCenterScreen() {
                 <View style={{ flex: 1, gap: 5 }}>
                   <Text style={[styles.ticketTitle, { color: colors.foreground, textAlign: align }]} numberOfLines={2}>{ticket.subject}</Text>
                   <Text style={[styles.caption, { color: colors.mutedForeground, textAlign: align }]}>{t(categoryKeys[ticket.category as Category])}</Text>
+                  {ticket.urgent ? <Text style={[styles.caption, { color: colors.destructive, fontWeight: '800', textAlign: align }]}>{t('urgentSafety')}</Text> : null}
                 </View>
                 <View style={[styles.status, { backgroundColor: colors.secondary }]}>
                   <Text style={{ color: colors.secondaryForeground, fontSize: 11, fontWeight: '700' }}>{t(statusKeys[ticket.status as Status])}</Text>

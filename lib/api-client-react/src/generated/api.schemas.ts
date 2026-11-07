@@ -661,6 +661,7 @@ export interface SupportTicketInput {
      */
   message: string;
   language: SupportedLanguage;
+  urgent?: boolean;
 }
 
 export interface SupportReplyInput {
@@ -676,6 +677,7 @@ export interface SupportTicketSummary {
   id: string;
   subject: string;
   category: SupportTicketCategory;
+  urgent: boolean;
   status: SupportTicketStatus;
   language: SupportedLanguage;
   createdAt: string;

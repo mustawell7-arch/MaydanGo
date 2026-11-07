@@ -202,6 +202,7 @@ export default function SupportStaffScreen() {
                   { borderColor: selectedId === ticket.id ? colors.primary : colors.border, backgroundColor: selectedId === ticket.id ? colors.secondary : colors.background },
                 ]}>
                 <Text style={[styles.ticketTitle, { color: colors.foreground }]} numberOfLines={2}>{ticket.subject}</Text>
+                {ticket.urgent ? <Text style={[styles.caption, { color: colors.destructive, fontWeight: '800' }]}>{t('urgentSafety')}</Text> : null}
                 <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t(statusKeys[ticket.status as Status])}</Text>
                 <Text style={[styles.caption, { color: colors.mutedForeground }]}>{ticket.memberUserId}</Text>
               </Pressable>
@@ -296,6 +297,12 @@ export default function SupportStaffScreen() {
               <Text style={[styles.caption, { color: colors.mutedForeground }]}>
                 {t(categoryKeys[detail.data.category] ?? 'categoryOther')} · {detail.data.memberUserId} · {detail.data.language.toUpperCase()}
               </Text>
+              {detail.data.urgent ? (
+                <View style={[styles.confirmBox, { backgroundColor: colors.destructive }]}>
+                  <Text style={{ color: colors.destructiveForeground, fontWeight: '800' }}>{t('urgentSafety')}</Text>
+                  <Text style={{ color: colors.destructiveForeground, fontSize: 12, lineHeight: 18 }}>{t('urgentSafetyStaffHint')}</Text>
+                </View>
+              ) : null}
               <Text style={[styles.label, { color: colors.mutedForeground }]}>{t('supportSetStatus')}</Text>
               <View style={styles.wrap}>
                 {statuses.map(status => (

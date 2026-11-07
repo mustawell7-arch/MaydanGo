@@ -74,6 +74,8 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Could not send the reply. Please try again.': 'تعذر إرسال الرد. حاول مرة أخرى.',
     'Refresh conversation': 'تحديث المحادثة',
     'Support topic': 'موضوع الدعم', 'Booking question': 'استفسار عن حجز', 'Safety concern': 'مشكلة تتعلق بالسلامة', 'Other support': 'دعم آخر',
+    'Urgent safety concern': 'بلاغ سلامة عاجل',
+    'Urgent safety reports are prioritized in the MaydanGo support queue. This form is not an emergency service; contact local emergency services if someone is in immediate danger.': 'تُعطى بلاغات السلامة العاجلة أولوية في قائمة دعم MaydanGo. هذا النموذج ليس خدمة طوارئ؛ اتصل بخدمات الطوارئ المحلية إذا كان هناك خطر فوري.',
     'Subject': 'الموضوع', 'Booking reference (optional)': 'مرجع الحجز (اختياري)', 'Describe what happened or how we can help': 'اشرح ما حدث أو كيف يمكننا مساعدتك',
     'Use the reservation reference when available. Include only details needed to review the report.': 'استخدم مرجع الحجز عند توفره. أضف فقط التفاصيل اللازمة لمراجعة البلاغ.',
     'Send to MaydanGo support': 'إرسال إلى دعم MaydanGo', 'Sending…': 'جارٍ الإرسال…', 'Support request sent.': 'تم إرسال طلب الدعم.',
@@ -221,6 +223,8 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Could not send the reply. Please try again.': 'نەتوانرا وەڵامەکە بنێردرێت. تکایە دووبارە هەوڵ بدە.',
     'Refresh conversation': 'گفتوگۆکە نوێ بکەرەوە',
     'Support topic': 'بابەتی پشتگیری', 'Booking question': 'پرسیاری حجز', 'Safety concern': 'کێشەی سەلامەتی', 'Other support': 'پشتگیریی تر',
+    'Urgent safety concern': 'ڕاپۆرتی پەلەیی سەلامەتی',
+    'Urgent safety reports are prioritized in the MaydanGo support queue. This form is not an emergency service; contact local emergency services if someone is in immediate danger.': 'ڕاپۆرتە عاجلەکانی سەلامەتی لە لیستی پشتگیریی MaydanGo پێشینەیان پێدەدرێت. ئەم فۆڕمە خزمەتگوزاریی فریاکەوتن نییە؛ ئەگەر مەترسییەکی دەستبەجێ هەیە، پەیوەندی بە خزمەتگوزارییەکانی فریاکەوتنی ناوخۆیی بکە.',
     'Subject': 'بابەت', 'Booking reference (optional)': 'ژمارەی حجز (ئارەزوومەندانە)', 'Describe what happened or how we can help': 'ڕوون بکەرەوە چی ڕوویدا یان چۆن دەتوانین یارمەتیت بدەین',
     'Use the reservation reference when available. Include only details needed to review the report.': 'ئەگەر بەردەست بوو ژمارەی حجز بەکاربهێنە. تەنها ئەو وردەکارییانە بنووسە کە بۆ پێداچوونەوەی ڕاپۆرتەکە پێویستن.',
     'Send to MaydanGo support': 'بۆ پشتگیریی MaydanGo بنێرە', 'Sending…': 'دەنێردرێت…', 'Support request sent.': 'داواکاریی پشتگیری نێردرا.',
@@ -694,6 +698,7 @@ function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
   const createTicket = useCreateMemberSupportTicket();
   const replyTicket = useReplyMemberSupportTicket();
   const [category, setCategory] = useState<PartnerSupportCategory>('booking');
+  const [urgentSafety, setUrgentSafety] = useState(false);
   const [subject, setSubject] = useState('');
   const [reference, setReference] = useState('');
   const [message, setMessage] = useState('');
@@ -709,6 +714,7 @@ function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
       data: {
         subject: `${prefix}${subject.trim()}`,
         category,
+        urgent: urgentSafety,
         message: `Partner portal submission\n${referenceDetails}${message.trim()}`,
         language: lang,
       },
@@ -716,6 +722,7 @@ function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
       onSuccess: () => {
         void client.invalidateQueries({ queryKey: getGetMemberSupportTicketsQueryKey() });
         setCategory('booking');
+        setUrgentSafety(false);
         setSubject('');
         setReference('');
         setMessage('');
@@ -749,12 +756,23 @@ function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
       <p className="mt-2 text-sm leading-6 text-[#687a71]">Send a support request or report a safety concern.</p>
       <div className="mt-5 grid gap-4">
         <label className="block text-xs font-semibold text-[#51665e]">Support topic
-          <select value={category} onChange={event => setCategory(event.target.value as PartnerSupportCategory)} className={fieldClass()} data-testid="select-partner-support-topic">
+          <select value={category} onChange={event => {
+            const next = event.target.value as PartnerSupportCategory;
+            setCategory(next);
+            if (next !== 'safety') setUrgentSafety(false);
+          }} className={fieldClass()} data-testid="select-partner-support-topic">
             <option value="booking">Booking question</option>
             <option value="safety">Safety concern</option>
             <option value="other">Other support</option>
           </select>
         </label>
+        {category === 'safety' && <div className="rounded-2xl border border-[#e5b8a6] bg-[#fff5f0] p-3">
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-bold text-[#8f3f32]">
+            <input type="checkbox" checked={urgentSafety} onChange={event => setUrgentSafety(event.target.checked)} className="h-4 w-4 accent-[#9a4435]" />
+            Urgent safety concern
+          </label>
+          <p className="mt-2 text-xs leading-5 text-[#805d55]">Urgent safety reports are prioritized in the MaydanGo support queue. This form is not an emergency service; contact local emergency services if someone is in immediate danger.</p>
+        </div>}
         <label className="block text-xs font-semibold text-[#51665e]">Subject
           <input required minLength={4} maxLength={90} value={subject} onChange={event => setSubject(event.target.value)} className={fieldClass()} data-testid="input-partner-support-subject" />
         </label>
@@ -789,6 +807,7 @@ function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
                 <span className="min-w-0">
                   <span className="block break-words text-sm font-semibold text-[#36564b]">{partnerSupportSubject(lang, ticket.subject)}</span>
                   <span className="mt-1 block text-[10px] text-[#75847c]">{formatDate(ticket.lastMessageAt, lang)}</span>
+                  {ticket.urgent && <span className="mt-1 inline-block rounded-full bg-[#9a4435] px-2 py-1 text-[10px] font-bold text-white">Urgent safety concern</span>}
                 </span>
                 <span className="shrink-0 rounded-full bg-[#e7eee4] px-2.5 py-1 text-[10px] font-bold text-[#36564b]">
                   {portalText(lang, partnerSupportStatusLabels[ticket.status] ?? ticket.status)}
@@ -811,6 +830,7 @@ function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
               <span className="rounded-full bg-[#e7eee4] px-2.5 py-1 text-[10px] font-bold text-[#36564b]">
                 {portalText(lang, partnerSupportStatusLabels[conversation.data.status] ?? conversation.data.status)}
               </span>
+              {conversation.data.urgent && <span className="rounded-full bg-[#9a4435] px-2.5 py-1 text-[10px] font-bold text-white">Urgent safety concern</span>}
               <span className="text-xs text-[#75847c]">{partnerSupportSubject(lang, conversation.data.subject)}</span>
             </div>
             <ol className="mt-4 max-h-96 space-y-3 overflow-y-auto rounded-2xl bg-[#f7f4eb] p-3 sm:p-4" aria-live="polite">
