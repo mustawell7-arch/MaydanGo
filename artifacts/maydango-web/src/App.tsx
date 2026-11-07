@@ -124,6 +124,14 @@ const legacyTranslations: Record<Language, Copy> = {
     notCheckout: 'Membership checkout is not enabled. These options are a starting point for an availability enquiry.',
     ask: 'Ask about availability', getUpdates: 'Get updates', exploreFacilities: 'Explore facilities',
     exploreOnline: 'Explore online training', currentOfferings: 'Available sessions and events',
+    heritageKicker: 'IRAQ · MANY STORIES',
+    heritageTitle: 'A heritage as wide as Iraq',
+    heritageSubtitle: 'Landmarks and traditions from across the country.',
+    heritageGeometry: 'Eight-point Islamic geometry', heritageGeometryNote: 'A historic decorative pattern',
+    heritageLamassu: 'Assyrian winged bull', heritageIshtar: 'Ishtar Gate · ancient Babylon',
+    heritageErbil: 'Erbil Citadel', heritageUr: 'Ziggurat of Ur',
+    heritageGardens: 'Hanging Gardens of Babylon', heritageGardensNote: 'Historical interpretation',
+    heritageHatra: 'Hatra · Nineveh', heritageAnbar: 'Wadi Hauran · Anbar',
     kind: 'Format', location: 'Location', partnerName: 'Hosted by', starts: 'Starts',
     sessionType: 'Class', eventType: 'Event', coachType: 'Coaching',
     physicalType: 'In person', premiumType: 'Premium', liveType: 'Online',
@@ -196,6 +204,14 @@ const legacyTranslations: Record<Language, Copy> = {
     notCheckout: 'الدفع للعضوية غير متاح. هذه الخيارات نقطة بداية للاستفسار عن التوفر.',
     ask: 'استفسر عن التوفر', getUpdates: 'اطلب التحديثات', exploreFacilities: 'استكشف المرافق',
     exploreOnline: 'استكشف التدريب عبر الإنترنت', currentOfferings: 'الجلسات والفعاليات المتاحة',
+    heritageKicker: 'العراق · حكايات متعددة',
+    heritageTitle: 'تراث عراقي من الشمال إلى الجنوب',
+    heritageSubtitle: 'معالم وتقاليد من مناطق العراق المختلفة.',
+    heritageGeometry: 'نجمة هندسية إسلامية ذات ثمانية رؤوس', heritageGeometryNote: 'زخرفة تاريخية',
+    heritageLamassu: 'الثور الآشوري المجنّح', heritageIshtar: 'بوابة عشتار · بابل القديمة',
+    heritageErbil: 'قلعة أربيل', heritageUr: 'زقورة أور',
+    heritageGardens: 'حدائق بابل المعلّقة', heritageGardensNote: 'تصوّر تاريخي',
+    heritageHatra: 'الحضر · نينوى', heritageAnbar: 'وادي حوران · الأنبار',
     kind: 'النوع', location: 'الموقع', partnerName: 'الجهة المضيفة', starts: 'يبدأ',
     sessionType: 'حصة', eventType: 'فعالية', coachType: 'تدريب',
     physicalType: 'حضوري', premiumType: 'مميز', liveType: 'عبر الإنترنت',
@@ -268,6 +284,14 @@ const legacyTranslations: Record<Language, Copy> = {
     notCheckout: 'پارەدان بۆ ئەندامێتی چالاک نییە. ئەم هەڵبژاردانە بۆ پرسیارکردن دەستپێکێکن.',
     ask: 'لە بەردەستبوون بپرسە', getUpdates: 'نوێکاری وەربگرە', exploreFacilities: 'شوێنەکان ببینە',
     exploreOnline: 'ڕاهێنانی ئۆنلاین ببینە', currentOfferings: 'وانە و چالاکییە بەردەستەکان',
+    heritageKicker: 'عێراق · چیرۆکی جۆراوجۆر',
+    heritageTitle: 'میراتی عێراق، لە باکوور تا باشوور',
+    heritageSubtitle: 'شوێن و نەریت لە ناوچە جیاوازەکانی عێراق.',
+    heritageGeometry: 'نەخشەی هەشت‌گۆشەیی ئیسلامی', heritageGeometryNote: 'نەخشەیەکی مێژوویی',
+    heritageLamassu: 'گوێدرێژی ئاشووریی باڵدار', heritageIshtar: 'دەروازەی عیشتار · بابڵی کۆن',
+    heritageErbil: 'قەڵای هەولێر', heritageUr: 'زەقوورەی ئور',
+    heritageGardens: 'باخچە هەڵواسرانەکانی بابڵ', heritageGardensNote: 'وێنەیەکی مێژوویی',
+    heritageHatra: 'حەترە · نەینەوا', heritageAnbar: 'دۆڵی حەوران · ئەنبار',
     kind: 'جۆر', location: 'شوێن', partnerName: 'لە لایەن', starts: 'دەستپێدەکات',
     sessionType: 'وانە', eventType: 'بۆنە', coachType: 'ڕاهێنان',
     physicalType: 'ڕووبەڕوو', premiumType: 'تایبەت', liveType: 'ئۆنلاین',
@@ -537,6 +561,7 @@ function HomePage({ t, language }: { t: Copy; language: Language }) {
       </div>
        <OfferingCards offerings={upcoming} language={language} loading={catalog.isLoading} error={catalog.isError} retry={() => catalog.refetch()} t={t} compact />
     </PageWrap>
+    <HeritageGallery t={t} />
     <section className="mx-3 mb-3 rounded-[2rem] bg-[#e98960] px-6 py-14 text-[#173e37] md:mx-6 md:px-14 md:py-20">
       <PageWrap className="!px-0">
         <div className="grid gap-9 md:grid-cols-[1fr_auto] md:items-center">
@@ -546,6 +571,101 @@ function HomePage({ t, language }: { t: Copy; language: Language }) {
       </PageWrap>
     </section>
   </>;
+}
+
+type HeritageKind = 'star' | 'lamassu' | 'ishtar' | 'erbil' | 'ur' | 'gardens' | 'hatra' | 'anbar';
+
+const heritageItems: { kind: HeritageKind; title: string; note?: string }[] = [
+  { kind: 'star', title: 'heritageGeometry', note: 'heritageGeometryNote' },
+  { kind: 'lamassu', title: 'heritageLamassu' },
+  { kind: 'ishtar', title: 'heritageIshtar' },
+  { kind: 'erbil', title: 'heritageErbil' },
+  { kind: 'ur', title: 'heritageUr' },
+  { kind: 'gardens', title: 'heritageGardens', note: 'heritageGardensNote' },
+  { kind: 'hatra', title: 'heritageHatra' },
+  { kind: 'anbar', title: 'heritageAnbar' },
+];
+
+function HeritageArt({ kind }: { kind: HeritageKind }) {
+  const art = {
+    star: <polygon points="80,9 89,34 115,25 101,48 127,59 101,69 111,94 88,81 75,104 66,80 40,89 51,67 25,57 51,48 42,22 66,35" fill="#174e43" stroke="#f2d07d" strokeWidth="2" strokeLinejoin="round" />,
+    lamassu: <g>
+      <path d="M47 49C38 31 47 18 67 18c15 0 27 13 24 31Z" fill="#e98960" stroke="#174e43" strokeWidth="2" />
+      <path d="M57 47c-5-18 3-28 17-29 8 4 11 15 8 30" fill="none" stroke="#f2d07d" strokeWidth="3" />
+      <path d="M38 50h66l16 11 3 16h-14l-5-10h-9l-1 17H82V69H61l-2 15H47l1-17h-9l-5 11H22l5-19Z" fill="#174e43" />
+      <path d="m104 51 20-5 9 5-2 15-10 3m-3-23 3-9 5 8m5 2 7-5-2 9" fill="#174e43" stroke="#f2d07d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="127" cy="55" r="1.8" fill="#f2d07d" />
+    </g>,
+    ishtar: <g>
+      <rect x="25" y="25" width="110" height="58" rx="3" fill="#174e43" />
+      <path d="M59 83V69c0-28 42-28 42 0v14Z" fill="#eeeae3" />
+      <path d="M31 28v-9h14v9m8 0v-9h14v9m8 0v-9h14v9m8 0v-9h14v9m8 0v-9h10v9" fill="#e98960" />
+      <path d="M33 38h19m56 0h19M35 45h17m56 0h17" stroke="#f2d07d" strokeWidth="2" />
+      <path d="m48 48 6 7-6 7-6-7Zm64 0 6 7-6 7-6-7Z" fill="#f2d07d" />
+    </g>,
+    erbil: <g>
+      <path d="M16 83c9-18 22-21 34-26 18-8 32-2 42-7 16-8 27 2 38 7 9 5 15 13 18 26Z" fill="#e98960" />
+      <path d="M27 61V46h15v-7h13v10h13V38h14v9h14V36h14v11h17v14Z" fill="#174e43" />
+      <path d="M26 61h102M38 48v8m24-7v8m27-9v8m27-8v8" stroke="#f2d07d" strokeWidth="2" />
+      <path d="M48 54h8v8h-8m27-10h8v10h-8m18-10h8v10h-8" fill="#eeeae3" />
+    </g>,
+    ur: <g>
+      <path d="M31 82h98v-9h-14V63h-14V53H87V43H73v10H59v10H45v10H31Z" fill="#e98960" />
+      <path d="M74 82V54h12v28M30 73h100M44 63h72M58 53h44" stroke="#174e43" strokeWidth="2" />
+      <path d="m76 81 4-26 4 26" fill="#f2d07d" />
+      <path d="M18 85h124" stroke="#174e43" strokeWidth="2.5" strokeLinecap="round" />
+    </g>,
+    gardens: <g>
+      <path d="M27 81h106l-12-12H39Zm12-13h82l-11-12H50Zm11-13h58L98 44H62Zm12-12h32l-7-10H72Z" fill="#174e43" />
+      <path d="M48 69c-4-9 1-13-3-20m66 20c5-9-1-13 5-20M63 55c-4-7 1-12-3-19m37 19c5-7 0-12 4-19" fill="none" stroke="#f2d07d" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="45" cy="47" r="5" fill="#e98960" /><circle cx="116" cy="47" r="5" fill="#e98960" />
+      <circle cx="60" cy="34" r="5" fill="#e98960" /><circle cx="101" cy="34" r="5" fill="#e98960" />
+    </g>,
+    hatra: <g>
+      <path d="M28 83V50c0-21 21-30 52-30s52 9 52 30v33Z" fill="#e98960" />
+      <path d="M47 82V53c0-15 12-22 33-22s33 7 33 22v29Z" fill="#eeeae3" />
+      <path d="M58 82V59c0-11 9-17 22-17s22 6 22 17v23Z" fill="#174e43" />
+      <path d="M37 51v28m10-35v36m66-36v36m10-29v28M21 83h118" stroke="#f2d07d" strokeWidth="2" />
+    </g>,
+    anbar: <g>
+      <path d="M0 20c23 7 34 31 43 51 4 6 9 11 15 12H0Z" fill="#e98960" />
+      <path d="M160 15c-21 13-30 36-39 56-4 6-10 11-17 12h56Z" fill="#174e43" />
+      <path d="M60 84c18-14 15-25 15-25-3-11 13-21 16-22 15-9 13-19 10-25" fill="none" stroke="#f2d07d" strokeWidth="6" strokeLinecap="round" />
+      <path d="m18 32 13 6m105-6-12 6M26 48l13 6m93-5-12 6" stroke="#f2d07d" strokeWidth="2" strokeLinecap="round" />
+    </g>,
+  }[kind];
+
+  return <svg viewBox="0 0 160 100" className="h-full w-full" aria-hidden="true">
+    <rect width="160" height="100" fill="#eeeae3" />
+    <circle cx="132" cy="19" r="9" fill="#f2d07d" />
+    <path d="M0 86c28-6 54-7 80-1s54 2 80-3v18H0Z" fill="#e98960" opacity=".5" />
+    {art}
+  </svg>;
+}
+
+function HeritageGallery({ t }: { t: Copy }) {
+  return <section className="border-y border-border bg-[#f3f0e5] py-16 md:py-24" aria-labelledby="heritage-gallery-title">
+    <PageWrap>
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div>
+          <SectionKicker>{t.heritageKicker}</SectionKicker>
+          <h2 id="heritage-gallery-title" className="font-display max-w-2xl text-4xl font-bold leading-[1.05] tracking-[-.06em] md:text-6xl">{t.heritageTitle}</h2>
+        </div>
+        <p className="max-w-md text-sm leading-6 text-foreground/65 md:pb-1">{t.heritageSubtitle}</p>
+      </div>
+      <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 lg:gap-4">
+        {heritageItems.map(item => <figure key={item.kind} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm" data-testid={`card-heritage-${item.kind}`}>
+          <div className="aspect-[1.55/1] overflow-hidden bg-muted p-2 sm:p-3">
+            <HeritageArt kind={item.kind} />
+          </div>
+          <figcaption className="min-h-[68px] px-3 py-3 md:px-4">
+            <p className="text-xs font-bold leading-5 text-foreground md:text-sm">{t[item.title]}</p>
+            {item.note ? <p className="mt-1 text-[10px] leading-4 text-muted-foreground md:text-xs">{t[item.note]}</p> : null}
+          </figcaption>
+        </figure>)}
+      </div>
+    </PageWrap>
+  </section>;
 }
 
 function HeroArtwork({ label }: { label: string }) {
