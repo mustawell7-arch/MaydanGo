@@ -4234,7 +4234,8 @@ export const GetSupportStaffTicketsResponseItem = zod.object({
 }).and(zod.object({
   "memberUserId": zod.string(),
   "assignedTo": zod.string().nullable(),
-  "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required'])
+  "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required']),
+  "urgentOverdue": zod.boolean()
 }))
 export const GetSupportStaffTicketsResponse = zod.array(GetSupportStaffTicketsResponseItem)
 
@@ -4256,7 +4257,8 @@ export const GetSupportStaffTicketResponse = zod.object({
 }).and(zod.object({
   "memberUserId": zod.string(),
   "assignedTo": zod.string().nullable(),
-  "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required'])
+  "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required']),
+  "urgentOverdue": zod.boolean()
 })).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
@@ -4303,7 +4305,8 @@ export const UpdateSupportStaffTicketResponse = zod.object({
 }).and(zod.object({
   "memberUserId": zod.string(),
   "assignedTo": zod.string().nullable(),
-  "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required'])
+  "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required']),
+  "urgentOverdue": zod.boolean()
 })).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
@@ -4354,7 +4357,8 @@ export const ReplySupportStaffTicketResponse = zod.object({
 }).and(zod.object({
   "memberUserId": zod.string(),
   "assignedTo": zod.string().nullable(),
-  "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required'])
+  "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required']),
+  "urgentOverdue": zod.boolean()
 })).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),

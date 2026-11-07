@@ -11,7 +11,8 @@ import {
 import memberRouter from "../routes/member";
 import staffSupportRouter from "../routes/support";
 import {
-  checkPendingPushReceipts, refreshUrgentAlertFallbackStatus, retryPendingPushDeliveries, sendMemberNotification,
+  checkPendingPushReceipts, refreshUrgentAlertFallbackStatus, retryPendingPushDeliveries,
+  sendMemberNotification, sendUrgentEscalationReminder, URGENT_UNASSIGNED_ESCALATION_DELAY_MS,
 } from "./notifications";
 
 const prefix = `support-test-${randomUUID()}`;
@@ -516,4 +517,57 @@ test("push opt-out is respected, and provider failure stays visible without chan
   assert.equal(delivery.status, "skipped");
   assert.equal(expoCalls, beforeOptOutCalls);
   assert.equal((await call("/member/notifications/settings", bob, "GET")).data.pushEnabled, false);
+
+  const [urgentTicketForEscalation] = await db.select().from(supportTickets).where(and(
+    eq(supportTickets.userId, alice),
+    eq(supportTickets.urgent, true),
+  )).limit(1);
+  assert.ok(urgentTicketForEscalation);
+  const escalationTicketId = urgentTicketForEscalation.id;
+  const tooEarlyAt = new Date(Date.now() - URGENT_UNASSIGNED_ESCALATION_DELAY_MS + 60_000);
+  await db.update(supportTickets).set({ createdAt: tooEarlyAt }).where(eq(supportTickets.id, escalationTicketId));
+  assert.equal(await sendUrgentEscalationReminder(escalationTicketId, [supportId]), false);
+
+  const overdueAt = new Date(Date.now() - URGENT_UNASSIGNED_ESCALATION_DELAY_MS - 60_000);
+  await db.update(supportTickets).set({ createdAt: overdueAt, assignedTo: supportId })
+    .where(eq(supportTickets.id, escalationTicketId));
+  assert.equal(await sendUrgentEscalationReminder(escalationTicketId, [supportId]), false);
+  await db.update(supportTickets).set({ assignedTo: null }).where(eq(supportTickets.id, escalationTicketId));
+  const overdueQueue = await call("/support/staff/tickets", supportId);
+  const overdueTicket = overdueQueue.data.find((ticket: { id: string }) => ticket.id === escalationTicketId);
+  assert.equal(overdueTicket?.urgentOverdue, true);
+  const memberTicket = await call(`/member/support/tickets/${escalationTicketId}`, alice);
+  assert.equal(Object.hasOwn(memberTicket.data, "urgentOverdue"), false);
+
+  const escalationPayloads: any[][] = [];
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = (async (input, init) => {
+    if (String(input).startsWith("https://exp.host/--/api/v2/push/send")) {
+      const messages = JSON.parse(String(init?.body)) as any[];
+      escalationPayloads.push(messages);
+      return new Response(JSON.stringify({ data: messages.map((_, index) => ({
+        status: "ok", id: `urgent-escalation-${index}`,
+      })) }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+    return previousFetch(input, init);
+  }) as typeof fetch;
+  try {
+    assert.equal(await sendUrgentEscalationReminder(escalationTicketId, [supportId]), true);
+    assert.equal(escalationPayloads.length, 1);
+    assert.equal(escalationPayloads[0][0].data.kind, "support_urgent_escalation");
+    assert.equal(escalationPayloads[0][0].data.ticketId, escalationTicketId);
+    assert.match(escalationPayloads[0][0].body, /30 خولەک/);
+    assert.doesNotMatch(escalationPayloads[0][0].body, /serious safety concern/);
+    assert.equal(await sendUrgentEscalationReminder(escalationTicketId, [supportId]), false);
+    const [escalatedTicket] = await db.select().from(supportTickets)
+      .where(eq(supportTickets.id, escalationTicketId));
+    assert.ok(escalatedTicket?.urgentEscalatedAt);
+    const escalationAudit = await db.select().from(operationAudit).where(and(
+      eq(operationAudit.targetId, escalationTicketId),
+      eq(operationAudit.action, "support.ticket.urgent_escalation"),
+    ));
+    assert.equal(escalationAudit.length, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

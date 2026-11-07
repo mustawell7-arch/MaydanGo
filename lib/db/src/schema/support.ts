@@ -7,6 +7,7 @@ export const supportTickets = pgTable("support_tickets", {
   category: text("category").notNull(),
   urgent: boolean("urgent").notNull().default(false),
   urgentAlertStatus: text("urgent_alert_status").notNull().default("not_applicable"),
+  urgentEscalatedAt: timestamp("urgent_escalated_at", { withTimezone: true }),
   language: text("language").notNull().default("en"),
   status: text("status").notNull().default("open"),
   assignedTo: text("assigned_to"),

@@ -213,6 +213,9 @@ export default function SupportStaffScreen() {
                 ]}>
                 <Text style={[styles.ticketTitle, { color: colors.foreground }]} numberOfLines={2}>{ticket.subject}</Text>
                 {ticket.urgent ? <Text style={[styles.caption, { color: colors.destructive, fontWeight: '800' }]}>{t('urgentSafety')}</Text> : null}
+                {ticket.urgentOverdue ? (
+                  <Text style={[styles.caption, { color: colors.destructive, fontWeight: '800' }]}>{t('urgentUnassignedOverdue')}</Text>
+                ) : null}
                 {ticket.urgentAlertStatus === 'fallback_required' ? (
                   <Text style={[styles.caption, { color: colors.destructive, fontWeight: '800' }]}>{t('urgentAlertFallbackLabel')}</Text>
                 ) : ticket.urgentAlertStatus === 'pending' ? (
@@ -316,6 +319,12 @@ export default function SupportStaffScreen() {
                 <View style={[styles.confirmBox, { backgroundColor: colors.destructive }]}>
                   <Text style={{ color: colors.destructiveForeground, fontWeight: '800' }}>{t('urgentSafety')}</Text>
                   <Text style={{ color: colors.destructiveForeground, fontSize: 12, lineHeight: 18 }}>{t('urgentSafetyStaffHint')}</Text>
+                </View>
+              ) : null}
+              {detail.data.urgentOverdue ? (
+                <View style={[styles.confirmBox, { backgroundColor: colors.destructive }]}>
+                  <Text style={{ color: colors.destructiveForeground, fontWeight: '800' }}>{t('urgentUnassignedOverdue')}</Text>
+                  <Text style={{ color: colors.destructiveForeground, fontSize: 12, lineHeight: 18 }}>{t('urgentUnassignedOverdueHint')}</Text>
                 </View>
               ) : null}
               {detail.data.urgentAlertStatus === 'fallback_required' ? (

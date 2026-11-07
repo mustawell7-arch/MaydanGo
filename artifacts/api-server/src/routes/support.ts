@@ -15,7 +15,10 @@ import {
   supportTickets,
 } from "@workspace/db";
 import { BookingError } from "../lib/reservations";
-import { sendMemberNotification } from "../lib/notifications";
+import {
+  sendMemberNotification,
+  URGENT_UNASSIGNED_ESCALATION_DELAY_MS,
+} from "../lib/notifications";
 import {
   approveMemberDeviceChange,
   DeviceSecurityError,
@@ -27,6 +30,14 @@ const staffRouter = Router();
 const languageSchema = z.enum(["en", "ar", "ku"]);
 const ticketStatusSchema = z.enum(["open", "in_progress", "waiting_member", "resolved", "closed"]);
 const ticketCategorySchema = z.enum(["booking", "account", "access", "safety", "other"]);
+const activeTicketStatuses = new Set(["open", "in_progress", "waiting_member"]);
+
+function isUrgentOverdue(ticket: typeof supportTickets.$inferSelect, now = new Date()) {
+  return ticket.urgent
+    && !ticket.assignedTo
+    && activeTicketStatuses.has(ticket.status)
+    && now.getTime() - ticket.createdAt.getTime() >= URGENT_UNASSIGNED_ESCALATION_DELAY_MS;
+}
 
 function userId(req: Request) {
   const id = getAuth(req).userId;
@@ -61,7 +72,7 @@ async function staffTicketDetail(id: string) {
   ]);
   return {
     id: ticket.id, subject: ticket.subject, category: ticket.category, urgent: ticket.urgent,
-    urgentAlertStatus: ticket.urgentAlertStatus, status: ticket.status,
+    urgentAlertStatus: ticket.urgentAlertStatus, urgentOverdue: isUrgentOverdue(ticket), status: ticket.status,
     language: ticket.language, createdAt: ticket.createdAt, updatedAt: ticket.updatedAt, lastMessageAt: ticket.lastMessageAt,
     memberUserId: ticket.userId, assignedTo: ticket.assignedTo,
     messages: messages.map(m => ({
@@ -280,6 +291,7 @@ staffRouter.get("/tickets", async (req, res) => {
     ).limit(100);
   res.json(rows.map(t => ({
     id: t.id, subject: t.subject, category: t.category, urgent: t.urgent, urgentAlertStatus: t.urgentAlertStatus,
+    urgentOverdue: isUrgentOverdue(t),
     status: t.status, language: t.language,
     createdAt: t.createdAt, updatedAt: t.updatedAt, lastMessageAt: t.lastMessageAt,
     memberUserId: t.userId, assignedTo: t.assignedTo,

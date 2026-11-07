@@ -731,6 +731,7 @@ export type SupportStaffTicketSummary = SupportTicketSummary & ({
   /** @nullable */
   assignedTo: string | null;
   urgentAlertStatus: SupportStaffTicketSummaryUrgentAlertStatus;
+  urgentOverdue: boolean;
 });
 
 export type SupportStaffMessage = SupportMessage & {

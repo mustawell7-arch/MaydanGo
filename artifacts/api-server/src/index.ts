@@ -1,7 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { processWaitlistQueue } from "./lib/reservations";
-import { recoverPushDeliveries } from "./lib/notifications";
+import { escalateUnassignedUrgentTickets, recoverPushDeliveries } from "./lib/notifications";
 
 const runPushDeliveryRecovery = async () => {
   try {
@@ -11,6 +11,15 @@ const runPushDeliveryRecovery = async () => {
     }
   } catch (err) {
     logger.error({ err }, "Push delivery recovery failed");
+  }
+};
+
+const runUrgentEscalations = async () => {
+  try {
+    const escalatedCount = await escalateUnassignedUrgentTickets();
+    if (escalatedCount) logger.info({ escalatedCount }, "Urgent support reports escalated");
+  } catch (err) {
+    logger.error({ err }, "Urgent support escalation failed");
   }
 };
 
@@ -37,6 +46,7 @@ app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
   void processWaitlistQueue().catch(err => logger.error({ err }, "Initial waitlist processing failed"));
   void runPushDeliveryRecovery();
+  void runUrgentEscalations();
 });
 
 const waitlistExpiryTimer = setInterval(() => {
@@ -48,3 +58,8 @@ const pushDeliveryRecoveryTimer = setInterval(() => {
   void runPushDeliveryRecovery();
 }, 15_000);
 pushDeliveryRecoveryTimer.unref();
+
+const urgentEscalationTimer = setInterval(() => {
+  void runUrgentEscalations();
+}, 60_000);
+urgentEscalationTimer.unref();

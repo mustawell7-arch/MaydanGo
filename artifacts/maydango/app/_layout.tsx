@@ -46,7 +46,7 @@ function RootLayoutNav() {
     if (Platform.OS === 'web' || !lastNotificationResponse) return;
     const { actionIdentifier, notification } = lastNotificationResponse;
     const data = notification.request.content.data as { kind?: unknown; ticketId?: unknown };
-    if (data.kind !== 'support_urgent') return;
+    if (data.kind !== 'support_urgent' && data.kind !== 'support_urgent_escalation') return;
     void Notifications.clearLastNotificationResponseAsync().catch(() => {});
     if (
       actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER

@@ -1,6 +1,7 @@
-import { and, asc, eq, isNull, lte, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import {
-  db, memberNotificationPreferences, pushDeliveries, pushDevices, supportTickets, waitlistEntries,
+  db, memberNotificationPreferences, operationAudit, operators, pushDeliveries, pushDevices, supportTickets,
+  waitlistEntries,
 } from "@workspace/db";
 import { randomUUID } from "node:crypto";
 
@@ -20,6 +21,7 @@ export type NotificationKind =
   | "support_reply"
   | "support_status"
   | "support_urgent"
+  | "support_urgent_escalation"
   | "waitlist_promoted"
   | "waitlist_cancelled";
 
@@ -39,6 +41,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     support_reply: { title: "Support replied", body: "There is a new reply in your MaydanGO support conversation." },
     support_status: { title: "Support update", body: "The status of your MaydanGO support request has changed." },
     support_urgent: { title: "Urgent safety report", body: "A new urgent safety report is in the MaydanGO support queue. Please review and assign it to an authorized teammate." },
+    support_urgent_escalation: { title: "Urgent report still unassigned", body: "An urgent safety report is still unassigned after 30 minutes. Open MaydanGO support and assign it to an authorized teammate." },
     waitlist_promoted: { title: "A place opened", body: "A place in your MaydanGO class is now reserved for you." },
     waitlist_cancelled: { title: "Class cancelled", body: "The partner cancelled this class, so you were removed from its waiting list." },
   },
@@ -57,6 +60,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     support_reply: { title: "ردّ فريق الدعم", body: "هناك رد جديد في محادثة الدعم الخاصة بك في MaydanGO." },
     support_status: { title: "تحديث من الدعم", body: "تغيّرت حالة طلب الدعم الخاص بك في MaydanGO." },
     support_urgent: { title: "بلاغ سلامة عاجل", body: "يوجد بلاغ سلامة عاجل جديد في قائمة دعم MaydanGO. يرجى مراجعته وإسناده إلى عضو مخوّل من فريق الدعم." },
+    support_urgent_escalation: { title: "تذكير ببلاغ سلامة عاجل غير مسند", body: "ما زال هناك بلاغ سلامة عاجل غير مسند بعد 30 دقيقة. افتح دعم MaydanGO وأسنده إلى عضو مخوّل من الفريق." },
     waitlist_promoted: { title: "توفر مكان", body: "تم حجز مكان لك في الحصة التي انتظرتها عبر MaydanGO." },
     waitlist_cancelled: { title: "تم إلغاء الحصة", body: "ألغى الشريك هذه الحصة، لذلك أُزلت من قائمة الانتظار." },
   },
@@ -75,6 +79,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     support_reply: { title: "وەڵامی پشتگیری", body: "وەڵامێکی نوێ لە گفتوگۆی پشتگیریی MaydanGO هەیە." },
     support_status: { title: "نوێکاریی پشتگیری", body: "دۆخی داواکاریی پشتگیریی MaydanGO گۆڕاوە." },
     support_urgent: { title: "ڕاپۆرتی پەلەیی سەلامەتی", body: "ڕاپۆرتێکی پەلەیی نوێی سەلامەتی لە لیستی پشتگیریی MaydanGO هەیە. تکایە پێداچوونەوەی بۆ بکە و بیسپێرە بە ئەندامێکی ڕێگەپێدراوی تیمی پشتگیری." },
+    support_urgent_escalation: { title: "بیرخستنەوەی ڕاپۆرتی پەلەیی ناسپێردراو", body: "دوای 30 خولەک هێشتا ڕاپۆرتێکی پەلەیی سەلامەتی نەسپێردراوە. پشتگیریی MaydanGO بکەرەوە و بیسپێرە بە ئەندامێکی ڕێگەپێدراوی تیم." },
     waitlist_promoted: { title: "شوێنێک بەردەست بوو", body: "شوێنێک لە وانەکەت لە MaydanGO بۆ تۆ حجز کرا." },
     waitlist_cancelled: { title: "وانەکە هەڵوەشێندرایەوە", body: "شریکەکە وانەکەی هەڵوەشاندەوە، بۆیە لە لیستی چاوەڕوانی دەرتکرایت." },
   },
@@ -102,6 +107,9 @@ const RECEIPT_READY_AFTER_MS = 15 * 60_000;
 const RECEIPT_RECHECK_AFTER_MS = 15 * 60_000;
 const MAX_RECEIPT_CHECKS = 3;
 const RECOVERY_BATCH_SIZE = 100;
+export const URGENT_UNASSIGNED_ESCALATION_DELAY_MS = 30 * 60_000;
+const ACTIVE_SUPPORT_TICKET_STATUSES = ["open", "in_progress", "waiting_member"] as const;
+const URGENT_ESCALATION_KIND = "support_urgent_escalation";
 
 type PushDeliveryRow = typeof pushDeliveries.$inferSelect;
 type PushDeviceRow = typeof pushDevices.$inferSelect;
@@ -110,7 +118,9 @@ type ExpoPushTicket = { status?: string; id?: string; message?: string; details?
 type ExpoPushReceipt = { status?: string; message?: string; details?: { error?: string } };
 
 async function markUrgentAlertAccepted(delivery: PushDeliveryRow) {
-  const ticketId = delivery.kind === "support_urgent" ? delivery.payloadData?.ticketId : undefined;
+  const ticketId = delivery.kind === "support_urgent" || delivery.kind === URGENT_ESCALATION_KIND
+    ? delivery.payloadData?.ticketId
+    : undefined;
   if (!ticketId) return;
   try {
     await db.update(supportTickets).set({ urgentAlertStatus: "accepted" })
@@ -126,7 +136,7 @@ export async function refreshUrgentAlertFallbackStatus(ticketId: string) {
       status: pushDeliveries.status,
       receiptStatus: pushDeliveries.receiptStatus,
     }).from(pushDeliveries).where(and(
-      eq(pushDeliveries.kind, "support_urgent"),
+      inArray(pushDeliveries.kind, ["support_urgent", URGENT_ESCALATION_KIND]),
       sql`${pushDeliveries.payloadData}->>'ticketId' = ${ticketId}`,
     ));
     const hasConfirmedDevice = deliveries.some(delivery => delivery.receiptStatus === "ok");
@@ -242,7 +252,7 @@ async function sendPushAttempts(attempts: PushAttempt[], now: Date) {
       await recordAttemptFailure(attempt, failure, now, errorCode === "MessageRateExceeded");
     }));
     const urgentTicketIds = [...new Set(attempts.flatMap(({ delivery }) =>
-      delivery.kind === "support_urgent" && delivery.payloadData?.ticketId
+      (delivery.kind === "support_urgent" || delivery.kind === URGENT_ESCALATION_KIND) && delivery.payloadData?.ticketId
         ? [delivery.payloadData.ticketId]
         : [],
     ))];
@@ -287,7 +297,9 @@ export async function sendMemberNotification(userId: string, kind: NotificationK
     const remaining = context.remainingMinutes === undefined ? "" : remainingTime(context.remainingMinutes, language);
     const body = localized.body.replace("{deadline}", deadline).replace("{remaining}", remaining);
     const now = new Date();
-    const payloadData: Record<string, string> = kind === "support_urgent" && context.ticketId
+    const payloadData: Record<string, string> = (
+      kind === "support_urgent" || kind === URGENT_ESCALATION_KIND
+    ) && context.ticketId
       ? { ticketId: context.ticketId }
       : {};
     const rows = devices.map(device => ({
@@ -320,6 +332,77 @@ export async function sendMemberNotification(userId: string, kind: NotificationK
     console.error("Operational push notification failed outside delivery tracking.", messageOf(error));
     return { status: "failed" as const };
   }
+}
+
+export async function sendUrgentEscalationReminder(ticketId: string, recipientUserIds: string[], now = new Date()) {
+  const cutoff = new Date(now.getTime() - URGENT_UNASSIGNED_ESCALATION_DELAY_MS);
+  const [ticket] = await db.select({ id: supportTickets.id }).from(supportTickets).where(and(
+    eq(supportTickets.id, ticketId),
+    eq(supportTickets.urgent, true),
+    isNull(supportTickets.assignedTo),
+    isNull(supportTickets.urgentEscalatedAt),
+    inArray(supportTickets.status, ACTIVE_SUPPORT_TICKET_STATUSES),
+    lte(supportTickets.createdAt, cutoff),
+  )).limit(1);
+  if (!ticket || !recipientUserIds.length) return false;
+
+  const outcomes = await Promise.all(recipientUserIds.map(userId => sendMemberNotification(
+    userId,
+    URGENT_ESCALATION_KIND,
+    { dedupeKey: `support-urgent-escalation:${ticketId}`, ticketId },
+  )));
+  let acceptedByProvider = outcomes.some(outcome => outcome.status === "sent");
+  if (!acceptedByProvider) {
+    const [priorAcceptedDelivery] = await db.select({ id: pushDeliveries.id }).from(pushDeliveries).where(and(
+      eq(pushDeliveries.kind, URGENT_ESCALATION_KIND),
+      eq(pushDeliveries.status, "sent"),
+      sql`${pushDeliveries.payloadData}->>'ticketId' = ${ticketId}`,
+    )).limit(1);
+    acceptedByProvider = Boolean(priorAcceptedDelivery);
+  }
+  if (!acceptedByProvider) return false;
+
+  const [marked] = await db.update(supportTickets).set({ urgentEscalatedAt: now }).where(and(
+    eq(supportTickets.id, ticketId),
+    eq(supportTickets.urgent, true),
+    isNull(supportTickets.assignedTo),
+    isNull(supportTickets.urgentEscalatedAt),
+    inArray(supportTickets.status, ACTIVE_SUPPORT_TICKET_STATUSES),
+  )).returning({ id: supportTickets.id });
+  if (!marked) return false;
+
+  await db.insert(operationAudit).values({
+    id: randomUUID(),
+    actorId: "system:urgent-escalation",
+    action: "support.ticket.urgent_escalation",
+    targetId: ticketId,
+    detail: "Urgent report remained unassigned for 30 minutes; reminder push accepted by Expo.",
+  });
+  return true;
+}
+
+export async function escalateUnassignedUrgentTickets(now = new Date()) {
+  const cutoff = new Date(now.getTime() - URGENT_UNASSIGNED_ESCALATION_DELAY_MS);
+  const tickets = await db.select({ id: supportTickets.id }).from(supportTickets).where(and(
+    eq(supportTickets.urgent, true),
+    isNull(supportTickets.assignedTo),
+    isNull(supportTickets.urgentEscalatedAt),
+    inArray(supportTickets.status, ACTIVE_SUPPORT_TICKET_STATUSES),
+    lte(supportTickets.createdAt, cutoff),
+  )).orderBy(asc(supportTickets.createdAt)).limit(100);
+  if (!tickets.length) return 0;
+
+  const recipients = await db.select({ userId: operators.userId }).from(operators)
+    .where(inArray(operators.role, ["admin", "support"]));
+  if (!recipients.length) return 0;
+
+  let escalatedCount = 0;
+  for (const ticket of tickets) {
+    if (await sendUrgentEscalationReminder(ticket.id, recipients.map(recipient => recipient.userId), now)) {
+      escalatedCount += 1;
+    }
+  }
+  return escalatedCount;
 }
 
 export async function retryPendingPushDeliveries(now = new Date()) {
@@ -477,7 +560,7 @@ export async function checkPendingPushReceipts(now = new Date()) {
     );
   }));
   const urgentTicketIds = [...new Set(claimed.flatMap(delivery =>
-    delivery.kind === "support_urgent" && delivery.payloadData?.ticketId
+    (delivery.kind === "support_urgent" || delivery.kind === URGENT_ESCALATION_KIND) && delivery.payloadData?.ticketId
       ? [delivery.payloadData.ticketId]
       : [],
   ))];

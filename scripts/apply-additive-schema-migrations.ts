@@ -8,6 +8,7 @@ const migrationPaths = [
   new URL("../lib/db/migrations/0007_urgent_support_reports.sql", import.meta.url),
   new URL("../lib/db/migrations/0008_support_alert_payload.sql", import.meta.url),
   new URL("../lib/db/migrations/0009_urgent_alert_status.sql", import.meta.url),
+  new URL("../lib/db/migrations/0010_urgent_report_escalation.sql", import.meta.url),
 ];
 
 try {
