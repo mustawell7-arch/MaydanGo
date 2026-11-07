@@ -10,6 +10,7 @@ import { Text, Pressable, Ionicons } from '@/components/Localized';
 import { router } from 'expo-router';
 import { ScreenShell } from '@/components/ScreenShell';
 import { FacilityCard } from '@/components/FacilityCard';
+import { IraqHeritageStrip } from '@/components/IraqHeritageStrip';
 import { categories, getCityLabel } from '@/data/demo';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
@@ -374,6 +375,8 @@ export default function HomeScreen() {
         ) : (
           <Text style={[styles.dashboardMeta, styles.emptyEvents, { color: colors.mutedForeground }]}>{t('noEvents')}</Text>
         )}
+
+        <IraqHeritageStrip />
 
         <View style={styles.categoryRow}>
           <Text style={[styles.categoryEyebrow, { color: colors.mutedForeground }]}>

@@ -63,6 +63,11 @@ assert.equal(errorCopy(new Error('secret provider details')), 'Account request f
 assert.equal(translate('en', 'checkInHint'), 'At the door? Scan to check in.');
 assert.equal(translate('ar', 'checkInHint'), 'وصلت؟ امسح الكود وسجّل وصولك.');
 assert.equal(translate('ku', 'checkInHint'), 'گەیشتیت؟ کۆدەکە سکان بکە و گەیشتنت تۆمار بکە.');
+for (const language of ['en', 'ar', 'ku']) {
+  for (const key of ['heritageTitle', 'heritageSubtitle', 'heritageGeometry', 'heritageLamassu', 'heritageIshtarGate', 'heritageErbil', 'heritageUr', 'heritageGardens', 'heritageHatra', 'heritageAnbar']) {
+    assert.notEqual(translate(language, key), key, `${language} is missing ${key}`);
+  }
+}
 assert.equal(translate('en', 'visitsLeft'), '{n} visits left');
 assert.equal(translate('en', 'spotsLeft'), '{n} spots left');
 assert.equal(translate('en', 'cancelled'), 'Booking canceled');

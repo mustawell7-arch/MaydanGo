@@ -14,3 +14,9 @@ The user wants nobody to feel discriminated against or disrespected. Online trai
 **Why:** The user explicitly emphasized respectful inclusion and at-home access alongside physical memberships.
 
 **How to apply:** Give physical and online services clear access paths; describe session eligibility neutrally and avoid assuming a person's abilities, preferences, or access based on their region or gender.
+
+Use Iraqi heritage across regions in MaydanGo's visual identity: the eight-point Islamic geometric motif, Assyrian winged bull, Ishtar Gate, Erbil Citadel, Ur's ziggurat, and Hanging Gardens as a historical interpretation, with Hatra for the north and Wadi Hauran or historic Anah for the west.
+
+**Why:** The user requested recognizable heritage from Kurdistan, the south, the west, and other Iraqi regions so the app feels welcoming and representative.
+
+**How to apply:** Treat sacred or religious patterns as decorative heritage rather than a national or political emblem; keep labels accurate, regional representation balanced, and reconstructions clearly identified.
