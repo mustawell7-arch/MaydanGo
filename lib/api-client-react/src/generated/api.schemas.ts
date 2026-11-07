@@ -791,6 +791,15 @@ export interface SupportAgentUrgentAlertInput {
   receiveUrgentAlerts: boolean;
 }
 
+export interface SupportUrgentAlertRecipientAudit {
+  id: string;
+  actorId: string;
+  recipientUserId: string;
+  fromReceiving: boolean;
+  toReceiving: boolean;
+  createdAt: string;
+}
+
 export interface NotificationSettings {
   pushEnabled: boolean;
   language: SupportedLanguage;

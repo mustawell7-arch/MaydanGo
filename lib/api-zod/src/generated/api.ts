@@ -4470,6 +4470,17 @@ export const UpdateSupportStaffAgentUrgentAlertsResponse = zod.object({
 })
 
 
+export const GetSupportUrgentAlertRecipientHistoryResponseItem = zod.object({
+  "id": zod.string(),
+  "actorId": zod.string(),
+  "recipientUserId": zod.string(),
+  "fromReceiving": zod.boolean(),
+  "toReceiving": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const GetSupportUrgentAlertRecipientHistoryResponse = zod.array(GetSupportUrgentAlertRecipientHistoryResponseItem)
+
+
 export const GetSupportPendingDeviceChangesResponseItem = zod.object({
   "id": zod.string(),
   "userId": zod.string(),

@@ -122,7 +122,8 @@ import type {
   SupportStaffTicketUpdate,
   SupportTicketDetail,
   SupportTicketInput,
-  SupportTicketSummary
+  SupportTicketSummary,
+  SupportUrgentAlertRecipientAudit
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -7327,6 +7328,101 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getUpdateSupportStaffAgentUrgentAlertsMutationOptions(options), queryClient);
     }
+
+export const getGetSupportUrgentAlertRecipientHistoryUrl = () => {
+
+
+
+
+  return `/api/support/staff/urgent-alert-recipient-history`
+}
+
+export const getSupportUrgentAlertRecipientHistory = async ( options?: Parameters<typeof customFetch>[1]): Promise<SupportUrgentAlertRecipientAudit[]> => {
+
+  return customFetch<SupportUrgentAlertRecipientAudit[]>(getGetSupportUrgentAlertRecipientHistoryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportUrgentAlertRecipientHistoryQueryKey = () => {
+    return [
+    `/api/support/staff/urgent-alert-recipient-history`
+    ] as const;
+    }
+
+
+export const getGetSupportUrgentAlertRecipientHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportUrgentAlertRecipientHistoryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>> = ({ signal }) => getSupportUrgentAlertRecipientHistory({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSupportUrgentAlertRecipientHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>>
+export type GetSupportUrgentAlertRecipientHistoryQueryError = ErrorType<unknown>
+
+
+export function useGetSupportUrgentAlertRecipientHistory<TData = Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportUrgentAlertRecipientHistory<TData = Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportUrgentAlertRecipientHistory<TData = Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSupportUrgentAlertRecipientHistory<TData = Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportUrgentAlertRecipientHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSupportUrgentAlertRecipientHistoryQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetSupportPendingDeviceChangesUrl = () => {
 

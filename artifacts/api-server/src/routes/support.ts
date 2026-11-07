@@ -39,6 +39,20 @@ function isUrgentOverdue(ticket: typeof supportTickets.$inferSelect, now = new D
     && now.getTime() - ticket.createdAt.getTime() >= URGENT_UNASSIGNED_ESCALATION_DELAY_MS;
 }
 
+function parseUrgentRecipientTransition(detail: string) {
+  const match = detail.match(/from=(true|false);to=(true|false)$/);
+  if (match) {
+    return { fromReceiving: match[1] === "true", toReceiving: match[2] === "true" };
+  }
+  if (detail.includes("Urgent safety alerts enabled for staff member.")) {
+    return { fromReceiving: false, toReceiving: true };
+  }
+  if (detail.includes("Urgent safety alerts disabled for staff member.")) {
+    return { fromReceiving: true, toReceiving: false };
+  }
+  return null;
+}
+
 function userId(req: Request) {
   const id = getAuth(req).userId;
   if (!id) throw new BookingError(401, "Sign in to contact MaydanGO support.");
@@ -496,9 +510,9 @@ staffRouter.patch("/agents/:userId/urgent-alerts", async (req, res) => {
       actorId: currentAdmin.userId,
       action: "support.agent.urgent_alerts.update",
       targetId,
-      detail: parsed.data.receiveUrgentAlerts
+      detail: `${parsed.data.receiveUrgentAlerts
         ? "Urgent safety alerts enabled for staff member."
-        : "Urgent safety alerts disabled for staff member.",
+        : "Urgent safety alerts disabled for staff member."} from=${agent.receiveUrgentAlerts};to=${parsed.data.receiveUrgentAlerts}`,
     });
     return { ...agent, receiveUrgentAlerts: parsed.data.receiveUrgentAlerts };
   });
@@ -507,6 +521,33 @@ staffRouter.patch("/agents/:userId/urgent-alerts", async (req, res) => {
     role: updatedAgent.role,
     receiveUrgentAlerts: updatedAgent.receiveUrgentAlerts,
   });
+});
+
+staffRouter.get("/urgent-alert-recipient-history", async (_req, res) => {
+  const operator = res.locals.supportOperator as typeof operators.$inferSelect;
+  if (operator.role !== "admin") {
+    throw new BookingError(403, "Administrator access is required to review urgent alert recipient history.");
+  }
+  const rows = await db.select({
+    id: operationAudit.id,
+    actorId: operationAudit.actorId,
+    recipientUserId: operationAudit.targetId,
+    detail: operationAudit.detail,
+    createdAt: operationAudit.createdAt,
+  }).from(operationAudit)
+    .where(eq(operationAudit.action, "support.agent.urgent_alerts.update"))
+    .orderBy(desc(operationAudit.createdAt))
+    .limit(50);
+  res.json(rows.flatMap(row => {
+    const transition = parseUrgentRecipientTransition(row.detail);
+    return transition ? [{
+      id: row.id,
+      actorId: row.actorId,
+      recipientUserId: row.recipientUserId,
+      ...transition,
+      createdAt: row.createdAt,
+    }] : [];
+  }));
 });
 
 staffRouter.delete("/agents/:userId", async (req, res) => {

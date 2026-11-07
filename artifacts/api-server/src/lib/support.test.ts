@@ -309,6 +309,19 @@ test("support conversations are private, triaged, audited, and replyable", async
   });
   assert.equal(disabledNewAgent.status, 200);
   assert.equal(disabledNewAgent.data.receiveUrgentAlerts, false);
+  const recipientHistory = await call("/support/staff/urgent-alert-recipient-history", adminId);
+  assert.equal(recipientHistory.status, 200);
+  const newAgentHistory = recipientHistory.data.filter((event: { recipientUserId: string }) =>
+    event.recipientUserId === newAgentId);
+  assert.deepEqual(newAgentHistory.map((event: { fromReceiving: boolean; toReceiving: boolean }) => [
+    event.fromReceiving, event.toReceiving,
+  ]).sort((left: boolean[], right: boolean[]) => Number(left[0]) - Number(right[0])), [
+    [false, true],
+    [true, false],
+  ]);
+  assert.ok(newAgentHistory.every((event: { actorId: string }) => event.actorId === adminId));
+  assert.ok(newAgentHistory.every((event: Record<string, unknown>) => !("detail" in event)));
+  assert.equal((await call("/support/staff/urgent-alert-recipient-history", supportId)).status, 403);
   const protectedLastRecipient = await call(`/support/staff/agents/${supportId}/urgent-alerts`, adminId, "PATCH", {
     receiveUrgentAlerts: false,
   });

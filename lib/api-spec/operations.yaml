@@ -258,6 +258,17 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SupportAgent" }
+  /support/staff/urgent-alert-recipient-history:
+    get:
+      operationId: getSupportUrgentAlertRecipientHistory
+      responses:
+        "200":
+          description: Latest administrator-only urgent alert recipient changes; no device or report data
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SupportUrgentAlertRecipientAudit" }
   /support/staff/notification-failures:
     get:
       operationId: getSupportNotificationFailures
@@ -1102,6 +1113,17 @@ components:
       required: [receiveUrgentAlerts]
       properties:
         receiveUrgentAlerts: { type: boolean }
+    SupportUrgentAlertRecipientAudit:
+      type: object
+      additionalProperties: false
+      required: [id, actorId, recipientUserId, fromReceiving, toReceiving, createdAt]
+      properties:
+        id: { type: string }
+        actorId: { type: string }
+        recipientUserId: { type: string }
+        fromReceiving: { type: boolean }
+        toReceiving: { type: boolean }
+        createdAt: { type: string, format: date-time }
     NotificationSettings:
       type: object
       required: [pushEnabled, language, registeredDevices]
