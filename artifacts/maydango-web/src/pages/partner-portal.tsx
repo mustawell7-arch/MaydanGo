@@ -1,6 +1,6 @@
 import { Children, cloneElement, isValidElement, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetMemberSupportTicketsQueryKey, getGetOperationFacilitiesQueryKey, getGetOperationsQueryKey, useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useCancelRecurringOfferingSeries, useChangeLiveOffering, useChangeRecurringOfferingSeries, useCreateRecurringOfferings, useCreateMemberSupportTicket, useGetAttendance, useGetMemberSupportTickets, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReviewAttendance, useRespondToOfferingCorrection, useReviewOfferingApproval, useSubmitLiveOffering } from '@workspace/api-client-react';
+import { getGetMemberSupportTicketQueryKey, getGetMemberSupportTicketsQueryKey, getGetOperationFacilitiesQueryKey, getGetOperationsQueryKey, useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useCancelRecurringOfferingSeries, useChangeLiveOffering, useChangeRecurringOfferingSeries, useCreateRecurringOfferings, useCreateMemberSupportTicket, useGetAttendance, useGetMemberSupportTicket, useGetMemberSupportTickets, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReplyMemberSupportTicket, useReviewAttendance, useRespondToOfferingCorrection, useReviewOfferingApproval, useSubmitLiveOffering } from '@workspace/api-client-react';
 import type { OfferingApprovalStatus, OfferingInput, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody, RecurringOfferingsInput, RecurringScheduleMode } from '@workspace/api-client-react';
 import { useAuth, useClerk } from '@clerk/react';
 import { trackEvent } from '@/lib/analytics';
@@ -67,6 +67,12 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'MaydanGo support': 'دعم MaydanGo', 'Help & safety': 'الدعم والسلامة', 'Support request': 'طلب دعم',
     'Loading…': 'جارٍ التحميل…', 'Support history could not be loaded.': 'تعذر تحميل سجل الدعم.',
     'Send a support request or report a safety concern.': 'أرسل طلب دعم أو أبلغ عن مشكلة تتعلق بالسلامة.',
+    'Select a request to read the conversation and reply to MaydanGo support.': 'اختر طلباً لقراءة المحادثة والرد على دعم MaydanGo.',
+    'Loading conversation…': 'جارٍ تحميل المحادثة…', 'Conversation could not be loaded.': 'تعذر تحميل المحادثة.',
+    'Your support conversation': 'محادثة الدعم', 'You': 'أنت',
+    'Write a reply': 'اكتب رداً', 'Send reply': 'إرسال الرد', 'Reply sent.': 'تم إرسال الرد.',
+    'Could not send the reply. Please try again.': 'تعذر إرسال الرد. حاول مرة أخرى.',
+    'Refresh conversation': 'تحديث المحادثة',
     'Support topic': 'موضوع الدعم', 'Booking question': 'استفسار عن حجز', 'Safety concern': 'مشكلة تتعلق بالسلامة', 'Other support': 'دعم آخر',
     'Subject': 'الموضوع', 'Booking reference (optional)': 'مرجع الحجز (اختياري)', 'Describe what happened or how we can help': 'اشرح ما حدث أو كيف يمكننا مساعدتك',
     'Use the reservation reference when available. Include only details needed to review the report.': 'استخدم مرجع الحجز عند توفره. أضف فقط التفاصيل اللازمة لمراجعة البلاغ.',
@@ -208,6 +214,12 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'MaydanGo support': 'پشتگیریی MaydanGo', 'Help & safety': 'یارمەتی و سەلامەتی', 'Support request': 'داواکاریی پشتگیری',
     'Loading…': 'باردەکرێت…', 'Support history could not be loaded.': 'نەتوانرا مێژووی پشتگیری باربکرێت.',
     'Send a support request or report a safety concern.': 'داواکاریی پشتگیری بنێرە یان کێشەیەکی سەلامەتی ڕاپۆرت بکە.',
+    'Select a request to read the conversation and reply to MaydanGo support.': 'داواکارییەک هەڵبژێرە بۆ خوێندنەوەی گفتوگۆکە و وەڵامدانەوەی پشتگیریی MaydanGo.',
+    'Loading conversation…': 'گفتوگۆکە بار دەکرێت…', 'Conversation could not be loaded.': 'نەتوانرا گفتوگۆکە باربکرێت.',
+    'Your support conversation': 'گفتوگۆی پشتگیریت', 'You': 'تۆ',
+    'Write a reply': 'وەڵامێک بنووسە', 'Send reply': 'وەڵام بنێرە', 'Reply sent.': 'وەڵامەکە نێردرا.',
+    'Could not send the reply. Please try again.': 'نەتوانرا وەڵامەکە بنێردرێت. تکایە دووبارە هەوڵ بدە.',
+    'Refresh conversation': 'گفتوگۆکە نوێ بکەرەوە',
     'Support topic': 'بابەتی پشتگیری', 'Booking question': 'پرسیاری حجز', 'Safety concern': 'کێشەی سەلامەتی', 'Other support': 'پشتگیریی تر',
     'Subject': 'بابەت', 'Booking reference (optional)': 'ژمارەی حجز (ئارەزوومەندانە)', 'Describe what happened or how we can help': 'ڕوون بکەرەوە چی ڕوویدا یان چۆن دەتوانین یارمەتیت بدەین',
     'Use the reservation reference when available. Include only details needed to review the report.': 'ئەگەر بەردەست بوو ژمارەی حجز بەکاربهێنە. تەنها ئەو وردەکارییانە بنووسە کە بۆ پێداچوونەوەی ڕاپۆرتەکە پێویستن.',
@@ -675,12 +687,19 @@ function partnerSupportSubject(lang: PortalLanguage, subject: string) {
 function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
   const client = useQueryClient();
   const tickets = useGetMemberSupportTickets({ query: { retry: false } });
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const conversation = useGetMemberSupportTicket(selectedTicketId ?? '', {
+    query: { enabled: !!selectedTicketId, retry: false, refetchInterval: 30_000 },
+  });
   const createTicket = useCreateMemberSupportTicket();
+  const replyTicket = useReplyMemberSupportTicket();
   const [category, setCategory] = useState<PartnerSupportCategory>('booking');
   const [subject, setSubject] = useState('');
   const [reference, setReference] = useState('');
   const [message, setMessage] = useState('');
   const [notice, setNotice] = useState('');
+  const [replyText, setReplyText] = useState('');
+  const [replyNotice, setReplyNotice] = useState('');
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -703,6 +722,23 @@ function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
         setNotice('Support request sent.');
       },
       onError: () => setNotice('Could not send the request. Please try again.'),
+    });
+  };
+
+  const sendReply = (event: FormEvent) => {
+    event.preventDefault();
+    const ticketId = selectedTicketId;
+    const body = replyText.trim();
+    if (!ticketId || !body) return;
+    setReplyNotice('');
+    replyTicket.mutate({ id: ticketId, data: { message: body, language: lang } }, {
+      onSuccess: data => {
+        client.setQueryData(getGetMemberSupportTicketQueryKey(ticketId), data);
+        void client.invalidateQueries({ queryKey: getGetMemberSupportTicketsQueryKey() });
+        setReplyText('');
+        setReplyNotice('Reply sent.');
+      },
+      onError: () => setReplyNotice('Could not send the reply. Please try again.'),
     });
   };
 
@@ -737,25 +773,71 @@ function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
         </Button>
       </div>
     </form>
-    <section className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-7" aria-labelledby="partner-support-history">
-      <h2 id="partner-support-history" className="font-display text-xl font-bold">Your recent support requests</h2>
-      {tickets.isLoading ? <p className="mt-4 text-sm text-[#75847c]">Loading…</p>
-        : tickets.isError ? <div role="alert" className="mt-4 rounded-xl bg-[#fff7f3] p-4 text-sm text-[#9a4435]">
-          <p>Support history could not be loaded.</p>
-          <button type="button" className="mt-2 font-bold" onClick={() => void tickets.refetch()}>Retry</button>
+    <div className="space-y-5">
+      <section className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-7" aria-labelledby="partner-support-history">
+        <h2 id="partner-support-history" className="font-display text-xl font-bold">Your recent support requests</h2>
+        {tickets.isLoading ? <p className="mt-4 text-sm text-[#75847c]">Loading…</p>
+          : tickets.isError ? <div role="alert" className="mt-4 rounded-xl bg-[#fff7f3] p-4 text-sm text-[#9a4435]">
+            <p>Support history could not be loaded.</p>
+            <button type="button" className="mt-2 font-bold" onClick={() => void tickets.refetch()}>Retry</button>
+          </div>
+          : tickets.data?.length ? <ul className="mt-4 divide-y divide-[#ece7d9]">
+            {tickets.data.slice(0, 8).map(ticket => <li key={ticket.id} data-testid={`partner-support-ticket-${ticket.id}`}>
+              <button type="button" aria-expanded={selectedTicketId === ticket.id}
+                onClick={() => { setSelectedTicketId(selectedTicketId === ticket.id ? null : ticket.id); setReplyText(''); setReplyNotice(''); }}
+                className={`flex w-full items-start justify-between gap-3 rounded-xl py-3 text-left ${selectedTicketId === ticket.id ? 'bg-[#f2ebda] px-3' : ''}`}>
+                <span className="min-w-0">
+                  <span className="block break-words text-sm font-semibold text-[#36564b]">{partnerSupportSubject(lang, ticket.subject)}</span>
+                  <span className="mt-1 block text-[10px] text-[#75847c]">{formatDate(ticket.lastMessageAt, lang)}</span>
+                </span>
+                <span className="shrink-0 rounded-full bg-[#e7eee4] px-2.5 py-1 text-[10px] font-bold text-[#36564b]">
+                  {portalText(lang, partnerSupportStatusLabels[ticket.status] ?? ticket.status)}
+                </span>
+              </button>
+            </li>)}
+          </ul> : <p className="mt-4 text-sm text-[#75847c]">No support requests yet.</p>}
+      </section>
+      {selectedTicketId && <section className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-7" aria-labelledby="partner-support-conversation">
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="partner-support-conversation" className="font-display text-xl font-bold">Your support conversation</h2>
+          <button type="button" className="text-xs font-bold text-[#28695a]" onClick={() => void conversation.refetch()}>Refresh conversation</button>
         </div>
-        : tickets.data?.length ? <ul className="mt-4 divide-y divide-[#ece7d9]">
-          {tickets.data.slice(0, 8).map(ticket => <li key={ticket.id} className="flex items-start justify-between gap-3 py-3" data-testid={`partner-support-ticket-${ticket.id}`}>
-            <div className="min-w-0">
-              <p className="break-words text-sm font-semibold text-[#36564b]">{partnerSupportSubject(lang, ticket.subject)}</p>
-              <p className="mt-1 text-[10px] text-[#75847c]">{formatDate(ticket.lastMessageAt, lang)}</p>
+        {conversation.isLoading ? <p className="mt-4 text-sm text-[#75847c]">Loading conversation…</p>
+          : conversation.isError || !conversation.data ? <div role="alert" className="mt-4 rounded-xl bg-[#fff7f3] p-4 text-sm text-[#9a4435]">
+            <p>Conversation could not be loaded.</p>
+            <button type="button" className="mt-2 font-bold" onClick={() => void conversation.refetch()}>Retry</button>
+          </div> : <>
+            <div className="mt-4 flex items-center gap-2">
+              <span className="rounded-full bg-[#e7eee4] px-2.5 py-1 text-[10px] font-bold text-[#36564b]">
+                {portalText(lang, partnerSupportStatusLabels[conversation.data.status] ?? conversation.data.status)}
+              </span>
+              <span className="text-xs text-[#75847c]">{partnerSupportSubject(lang, conversation.data.subject)}</span>
             </div>
-            <span className="shrink-0 rounded-full bg-[#e7eee4] px-2.5 py-1 text-[10px] font-bold text-[#36564b]">
-              {portalText(lang, partnerSupportStatusLabels[ticket.status] ?? ticket.status)}
-            </span>
-          </li>)}
-        </ul> : <p className="mt-4 text-sm text-[#75847c]">No support requests yet.</p>}
-    </section>
+            <ol className="mt-4 max-h-96 space-y-3 overflow-y-auto rounded-2xl bg-[#f7f4eb] p-3 sm:p-4" aria-live="polite">
+              {conversation.data.messages.map(item => {
+                const mine = item.authorRole === 'member';
+                return <li key={item.id} className={`max-w-[92%] rounded-2xl p-3 ${mine ? 'ml-auto bg-[#e1efdf]' : 'mr-auto bg-white'}`}>
+                  <p className="whitespace-pre-wrap break-words text-sm leading-6 text-[#36564b]">{item.message}</p>
+                  <p className="mt-2 text-[10px] text-[#75847c]">{portalText(lang, mine ? 'You' : 'MaydanGo support')} · {formatDate(item.createdAt, lang)}</p>
+                </li>;
+              })}
+            </ol>
+            <form onSubmit={sendReply} className="mt-4">
+              <label className="block text-xs font-semibold text-[#51665e]">Write a reply
+                <textarea required minLength={1} maxLength={5000} rows={3} value={replyText} onChange={event => setReplyText(event.target.value)}
+                  className={`${fieldClass()} resize-y`} data-testid="textarea-partner-support-reply" />
+              </label>
+              {replyNotice && <p role="status" className={`mt-2 text-sm ${replyNotice === 'Reply sent.' ? 'text-[#36564b]' : 'text-[#9a4435]'}`} data-testid="status-partner-support-reply">{replyNotice}</p>}
+              <div className="mt-3 flex justify-end">
+                <Button type="submit" disabled={replyTicket.isPending || !replyText.trim()}>
+                  {replyTicket.isPending ? 'Sending…' : 'Send reply'}
+                </Button>
+              </div>
+            </form>
+          </>}
+      </section>}
+      {!selectedTicketId && <p className="text-xs leading-5 text-[#75847c]">Select a request to read the conversation and reply to MaydanGo support.</p>}
+    </div>
   </section></LocalizedContent>;
 }
 
