@@ -4481,6 +4481,56 @@ export const GetSupportUrgentAlertRecipientHistoryResponseItem = zod.object({
 export const GetSupportUrgentAlertRecipientHistoryResponse = zod.array(GetSupportUrgentAlertRecipientHistoryResponseItem)
 
 
+export const getSupportUrgentAlertDeliveryOutcomesResponseDeviceCountMin = 0;
+
+export const getSupportUrgentAlertDeliveryOutcomesResponseAcceptedDeviceCountMin = 0;
+
+export const getSupportUrgentAlertDeliveryOutcomesResponseFailedDeviceCountMin = 0;
+
+export const getSupportUrgentAlertDeliveryOutcomesResponseRetryPendingDeviceCountMin = 0;
+
+export const getSupportUrgentAlertDeliveryOutcomesResponsePendingDeviceCountMin = 0;
+
+export const getSupportUrgentAlertDeliveryOutcomesResponseCancelledDeviceCountMin = 0;
+
+export const getSupportUrgentAlertDeliveryOutcomesResponseReceiptOkCountMin = 0;
+
+export const getSupportUrgentAlertDeliveryOutcomesResponseReceiptPendingCountMin = 0;
+
+export const getSupportUrgentAlertDeliveryOutcomesResponseReceiptErrorCountMin = 0;
+
+export const getSupportUrgentAlertDeliveryOutcomesResponseReceiptUnavailableCountMin = 0;
+
+export const getSupportUrgentAlertDeliveryOutcomesResponseReceiptNotCheckedCountMin = 0;
+
+export const getSupportUrgentAlertDeliveryOutcomesResponseAttemptCountMin = 0;
+
+
+
+export const GetSupportUrgentAlertDeliveryOutcomesResponseItem = zod.object({
+  "ticketId": zod.string(),
+  "recipientUserId": zod.string(),
+  "kind": zod.enum(['support_urgent', 'support_urgent_escalation']),
+  "deviceCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseDeviceCountMin),
+  "acceptedDeviceCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseAcceptedDeviceCountMin),
+  "failedDeviceCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseFailedDeviceCountMin),
+  "retryPendingDeviceCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseRetryPendingDeviceCountMin),
+  "pendingDeviceCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponsePendingDeviceCountMin),
+  "cancelledDeviceCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseCancelledDeviceCountMin),
+  "receiptOkCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptOkCountMin),
+  "receiptPendingCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptPendingCountMin),
+  "receiptErrorCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptErrorCountMin),
+  "receiptUnavailableCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptUnavailableCountMin),
+  "receiptNotCheckedCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptNotCheckedCountMin),
+  "attemptCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseAttemptCountMin),
+  "createdAt": zod.coerce.date(),
+  "latestActivityAt": zod.coerce.date(),
+  "sendStatus": zod.enum(['accepted', 'partial', 'retrying', 'pending', 'failed', 'cancelled']),
+  "receiptStatus": zod.enum(['no_receipt', 'pending', 'no_error', 'partial', 'error', 'unavailable'])
+})
+export const GetSupportUrgentAlertDeliveryOutcomesResponse = zod.array(GetSupportUrgentAlertDeliveryOutcomesResponseItem)
+
+
 export const GetSupportPendingDeviceChangesResponseItem = zod.object({
   "id": zod.string(),
   "userId": zod.string(),

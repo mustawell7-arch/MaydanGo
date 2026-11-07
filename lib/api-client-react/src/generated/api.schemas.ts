@@ -800,6 +800,72 @@ export interface SupportUrgentAlertRecipientAudit {
   createdAt: string;
 }
 
+export type SupportUrgentAlertDeliveryOutcomeKind = typeof SupportUrgentAlertDeliveryOutcomeKind[keyof typeof SupportUrgentAlertDeliveryOutcomeKind];
+
+
+export const SupportUrgentAlertDeliveryOutcomeKind = {
+  support_urgent: 'support_urgent',
+  support_urgent_escalation: 'support_urgent_escalation',
+} as const;
+
+export type SupportUrgentAlertDeliveryOutcomeSendStatus = typeof SupportUrgentAlertDeliveryOutcomeSendStatus[keyof typeof SupportUrgentAlertDeliveryOutcomeSendStatus];
+
+
+export const SupportUrgentAlertDeliveryOutcomeSendStatus = {
+  accepted: 'accepted',
+  partial: 'partial',
+  retrying: 'retrying',
+  pending: 'pending',
+  failed: 'failed',
+  cancelled: 'cancelled',
+} as const;
+
+export type SupportUrgentAlertDeliveryOutcomeReceiptStatus = typeof SupportUrgentAlertDeliveryOutcomeReceiptStatus[keyof typeof SupportUrgentAlertDeliveryOutcomeReceiptStatus];
+
+
+export const SupportUrgentAlertDeliveryOutcomeReceiptStatus = {
+  no_receipt: 'no_receipt',
+  pending: 'pending',
+  no_error: 'no_error',
+  partial: 'partial',
+  error: 'error',
+  unavailable: 'unavailable',
+} as const;
+
+export interface SupportUrgentAlertDeliveryOutcome {
+  ticketId: string;
+  recipientUserId: string;
+  kind: SupportUrgentAlertDeliveryOutcomeKind;
+  /** @minimum 0 */
+  deviceCount: number;
+  /** @minimum 0 */
+  acceptedDeviceCount: number;
+  /** @minimum 0 */
+  failedDeviceCount: number;
+  /** @minimum 0 */
+  retryPendingDeviceCount: number;
+  /** @minimum 0 */
+  pendingDeviceCount: number;
+  /** @minimum 0 */
+  cancelledDeviceCount: number;
+  /** @minimum 0 */
+  receiptOkCount: number;
+  /** @minimum 0 */
+  receiptPendingCount: number;
+  /** @minimum 0 */
+  receiptErrorCount: number;
+  /** @minimum 0 */
+  receiptUnavailableCount: number;
+  /** @minimum 0 */
+  receiptNotCheckedCount: number;
+  /** @minimum 0 */
+  attemptCount: number;
+  createdAt: string;
+  latestActivityAt: string;
+  sendStatus: SupportUrgentAlertDeliveryOutcomeSendStatus;
+  receiptStatus: SupportUrgentAlertDeliveryOutcomeReceiptStatus;
+}
+
 export interface NotificationSettings {
   pushEnabled: boolean;
   language: SupportedLanguage;

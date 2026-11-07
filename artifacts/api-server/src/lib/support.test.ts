@@ -169,6 +169,17 @@ test("support conversations are private, triaged, audited, and replyable", async
     .where(and(eq(pushDeliveries.userId, partnerId), eq(pushDeliveries.kind, "support_urgent")))).length, 0);
   assert.equal((await db.select({ id: pushDeliveries.id }).from(pushDeliveries)
     .where(and(eq(pushDeliveries.userId, adminId), eq(pushDeliveries.kind, "support_urgent")))).length, 0);
+  const initialUrgentOutcomes = await call("/support/staff/urgent-alert-delivery-outcomes", adminId);
+  assert.equal(initialUrgentOutcomes.status, 200);
+  const acceptedUrgentOutcome = initialUrgentOutcomes.data.find((outcome: {
+    ticketId: string; recipientUserId: string; kind: string;
+  }) => outcome.ticketId === urgentSafety.data.id
+    && outcome.recipientUserId === supportId && outcome.kind === "support_urgent");
+  assert.equal(acceptedUrgentOutcome?.sendStatus, "accepted");
+  assert.equal(acceptedUrgentOutcome?.acceptedDeviceCount, 1);
+  assert.equal(acceptedUrgentOutcome?.receiptStatus, "pending");
+  assert.equal((await call("/support/staff/urgent-alert-delivery-outcomes", supportId)).status, 403);
+  assert.doesNotMatch(JSON.stringify(initialUrgentOutcomes.data), /ExpoPushToken|providerTicketId|deviceId|subject|body/);
 
   const retryTicketId = randomUUID();
   const retryDedupeKey = `support-urgent-retry:${retryTicketId}`;
@@ -252,8 +263,23 @@ test("support conversations are private, triaged, audited, and replyable", async
   ));
   assert.ok(urgentDelivery?.providerTicketId);
   await db.update(pushDeliveries).set({
-    status: "failed", receiptStatus: "error", receiptError: "DeviceNotRegistered",
+    status: "sent", receiptStatus: "ok", receiptError: null, receiptCheckedAt: new Date(),
   }).where(eq(pushDeliveries.id, urgentDelivery!.id));
+  const receiptSuccessOutcomes = await call("/support/staff/urgent-alert-delivery-outcomes", adminId);
+  const receiptSuccess = receiptSuccessOutcomes.data.find((outcome: { ticketId: string; kind: string }) =>
+    outcome.ticketId === urgentSafety.data.id && outcome.kind === "support_urgent");
+  assert.equal(receiptSuccess?.receiptStatus, "no_error");
+  assert.equal(receiptSuccess?.receiptOkCount, 1);
+  await db.update(pushDeliveries).set({
+    status: "failed", error: "DeviceNotRegistered", receiptStatus: "error", receiptError: "DeviceNotRegistered",
+  }).where(eq(pushDeliveries.id, urgentDelivery!.id));
+  const receiptFailureOutcomes = await call("/support/staff/urgent-alert-delivery-outcomes", adminId);
+  const receiptFailure = receiptFailureOutcomes.data.find((outcome: { ticketId: string; kind: string }) =>
+    outcome.ticketId === urgentSafety.data.id && outcome.kind === "support_urgent");
+  assert.equal(receiptFailure?.sendStatus, "failed");
+  assert.equal(receiptFailure?.failedDeviceCount, 1);
+  assert.equal(receiptFailure?.receiptStatus, "error");
+  assert.equal(receiptFailure?.receiptErrorCount, 1);
   await refreshUrgentAlertFallbackStatus(urgentSafety.data.id);
   const receiptFallback = await call(`/support/staff/tickets/${urgentSafety.data.id}`, supportId);
   assert.equal(receiptFallback.data.urgentAlertStatus, "fallback_required");

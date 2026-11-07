@@ -123,6 +123,7 @@ import type {
   SupportTicketDetail,
   SupportTicketInput,
   SupportTicketSummary,
+  SupportUrgentAlertDeliveryOutcome,
   SupportUrgentAlertRecipientAudit
 } from './api.schemas';
 
@@ -7412,6 +7413,101 @@ export function useGetSupportUrgentAlertRecipientHistory<TData = Awaited<ReturnT
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetSupportUrgentAlertRecipientHistoryQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetSupportUrgentAlertDeliveryOutcomesUrl = () => {
+
+
+
+
+  return `/api/support/staff/urgent-alert-delivery-outcomes`
+}
+
+export const getSupportUrgentAlertDeliveryOutcomes = async ( options?: Parameters<typeof customFetch>[1]): Promise<SupportUrgentAlertDeliveryOutcome[]> => {
+
+  return customFetch<SupportUrgentAlertDeliveryOutcome[]>(getGetSupportUrgentAlertDeliveryOutcomesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportUrgentAlertDeliveryOutcomesQueryKey = () => {
+    return [
+    `/api/support/staff/urgent-alert-delivery-outcomes`
+    ] as const;
+    }
+
+
+export const getGetSupportUrgentAlertDeliveryOutcomesQueryOptions = <TData = Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportUrgentAlertDeliveryOutcomesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>> = ({ signal }) => getSupportUrgentAlertDeliveryOutcomes({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSupportUrgentAlertDeliveryOutcomesQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>>
+export type GetSupportUrgentAlertDeliveryOutcomesQueryError = ErrorType<unknown>
+
+
+export function useGetSupportUrgentAlertDeliveryOutcomes<TData = Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportUrgentAlertDeliveryOutcomes<TData = Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportUrgentAlertDeliveryOutcomes<TData = Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSupportUrgentAlertDeliveryOutcomes<TData = Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportUrgentAlertDeliveryOutcomes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSupportUrgentAlertDeliveryOutcomesQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

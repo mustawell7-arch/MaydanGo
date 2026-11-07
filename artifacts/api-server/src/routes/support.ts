@@ -606,6 +606,140 @@ staffRouter.get("/notification-failures", async (_req, res) => {
   })));
 });
 
+staffRouter.get("/urgent-alert-delivery-outcomes", async (_req, res) => {
+  const operator = res.locals.supportOperator as typeof operators.$inferSelect;
+  if (operator.role !== "admin") {
+    throw new BookingError(403, "Administrator access is required to review urgent alert delivery outcomes.");
+  }
+  const rows = await db.select({
+    recipientUserId: pushDeliveries.userId,
+    kind: pushDeliveries.kind,
+    payloadData: pushDeliveries.payloadData,
+    status: pushDeliveries.status,
+    receiptStatus: pushDeliveries.receiptStatus,
+    attemptCount: pushDeliveries.attemptCount,
+    createdAt: pushDeliveries.createdAt,
+    acceptedAt: pushDeliveries.acceptedAt,
+    receiptCheckedAt: pushDeliveries.receiptCheckedAt,
+  }).from(pushDeliveries).where(and(
+    inArray(pushDeliveries.kind, ["support_urgent", "support_urgent_escalation"]),
+    sql`${pushDeliveries.payloadData}->>'ticketId' is not null`,
+  )).orderBy(desc(pushDeliveries.createdAt)).limit(500);
+
+  const groups = new Map<string, {
+    ticketId: string;
+    recipientUserId: string;
+    kind: "support_urgent" | "support_urgent_escalation";
+    deviceCount: number;
+    acceptedDeviceCount: number;
+    failedDeviceCount: number;
+    retryPendingDeviceCount: number;
+    pendingDeviceCount: number;
+    cancelledDeviceCount: number;
+    receiptOkCount: number;
+    receiptPendingCount: number;
+    receiptErrorCount: number;
+    receiptUnavailableCount: number;
+    receiptNotCheckedCount: number;
+    attemptCount: number;
+    createdAt: Date;
+    latestActivityAt: Date;
+    sendStatuses: Set<string>;
+    receiptStatuses: Set<string>;
+  }>();
+
+  for (const row of rows) {
+    const ticketId = row.payloadData?.ticketId;
+    if (
+      typeof ticketId !== "string"
+      || (row.kind !== "support_urgent" && row.kind !== "support_urgent_escalation")
+    ) continue;
+    const key = JSON.stringify([ticketId, row.recipientUserId, row.kind]);
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        ticketId,
+        recipientUserId: row.recipientUserId,
+        kind: row.kind,
+        deviceCount: 0,
+        acceptedDeviceCount: 0,
+        failedDeviceCount: 0,
+        retryPendingDeviceCount: 0,
+        pendingDeviceCount: 0,
+        cancelledDeviceCount: 0,
+        receiptOkCount: 0,
+        receiptPendingCount: 0,
+        receiptErrorCount: 0,
+        receiptUnavailableCount: 0,
+        receiptNotCheckedCount: 0,
+        attemptCount: 0,
+        createdAt: row.createdAt,
+        latestActivityAt: row.createdAt,
+        sendStatuses: new Set(),
+        receiptStatuses: new Set(),
+      };
+      groups.set(key, group);
+    }
+    group.deviceCount += 1;
+    group.attemptCount += row.attemptCount;
+    if (row.createdAt < group.createdAt) group.createdAt = row.createdAt;
+    const activityAt = [row.createdAt, row.acceptedAt, row.receiptCheckedAt]
+      .filter((value): value is Date => value !== null)
+      .reduce((latest, value) => value > latest ? value : latest, row.createdAt);
+    if (activityAt > group.latestActivityAt) group.latestActivityAt = activityAt;
+
+    group.sendStatuses.add(row.status);
+    if (row.status === "sent") group.acceptedDeviceCount += 1;
+    else if (row.status === "failed") group.failedDeviceCount += 1;
+    else if (row.status === "retry_pending") group.retryPendingDeviceCount += 1;
+    else if (row.status === "pending") group.pendingDeviceCount += 1;
+    else if (row.status === "cancelled") group.cancelledDeviceCount += 1;
+
+    const receiptStatus = row.receiptStatus ?? "not_checked";
+    group.receiptStatuses.add(receiptStatus);
+    if (receiptStatus === "ok") group.receiptOkCount += 1;
+    else if (receiptStatus === "pending") group.receiptPendingCount += 1;
+    else if (receiptStatus === "error") group.receiptErrorCount += 1;
+    else if (receiptStatus === "unavailable") group.receiptUnavailableCount += 1;
+    else group.receiptNotCheckedCount += 1;
+  }
+
+  const outcomes = [...groups.values()].map(group => {
+    const sendStates = group.sendStatuses;
+    const sendStatus = group.acceptedDeviceCount === group.deviceCount
+      ? "accepted"
+      : group.acceptedDeviceCount > 0 || sendStates.size > 1
+        ? "partial"
+        : group.retryPendingDeviceCount > 0
+          ? "retrying"
+          : group.pendingDeviceCount > 0
+            ? "pending"
+            : group.cancelledDeviceCount === group.deviceCount
+              ? "cancelled"
+              : "failed";
+    const receiptStatuses = group.receiptStatuses;
+    const receiptStatus = receiptStatuses.size > 1
+      ? "partial"
+      : receiptStatuses.has("ok")
+        ? "no_error"
+        : receiptStatuses.has("pending")
+          ? "pending"
+          : receiptStatuses.has("error")
+            ? "error"
+            : receiptStatuses.has("unavailable")
+              ? "unavailable"
+              : "no_receipt";
+    const {
+      sendStatuses: _sendStatuses,
+      receiptStatuses: _receiptStatuses,
+      ...publicOutcome
+    } = group;
+    return { ...publicOutcome, sendStatus, receiptStatus };
+  }).sort((a, b) => b.latestActivityAt.getTime() - a.latestActivityAt.getTime()).slice(0, 100);
+
+  res.json(outcomes);
+});
+
 function handleError(error: unknown, _req: Request, res: Response, next: NextFunction) {
   if (error instanceof z.ZodError) { res.status(400).json({ message: error.issues.map(issue => issue.message).join(" ") }); return; }
   if (error instanceof BookingError) { res.status(error.status).json({ message: error.message }); return; }

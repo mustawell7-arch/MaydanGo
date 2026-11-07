@@ -269,6 +269,17 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/SupportUrgentAlertRecipientAudit" }
+  /support/staff/urgent-alert-delivery-outcomes:
+    get:
+      operationId: getSupportUrgentAlertDeliveryOutcomes
+      responses:
+        "200":
+          description: Latest admin-only per-recipient urgent push outcomes, without device tokens or report content
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SupportUrgentAlertDeliveryOutcome" }
   /support/staff/notification-failures:
     get:
       operationId: getSupportNotificationFailures
@@ -1124,6 +1135,30 @@ components:
         fromReceiving: { type: boolean }
         toReceiving: { type: boolean }
         createdAt: { type: string, format: date-time }
+    SupportUrgentAlertDeliveryOutcome:
+      type: object
+      additionalProperties: false
+      required: [ticketId, recipientUserId, kind, deviceCount, acceptedDeviceCount, failedDeviceCount, retryPendingDeviceCount, pendingDeviceCount, cancelledDeviceCount, receiptOkCount, receiptPendingCount, receiptErrorCount, receiptUnavailableCount, receiptNotCheckedCount, attemptCount, createdAt, latestActivityAt, sendStatus, receiptStatus]
+      properties:
+        ticketId: { type: string }
+        recipientUserId: { type: string }
+        kind: { type: string, enum: [support_urgent, support_urgent_escalation] }
+        deviceCount: { type: integer, minimum: 0 }
+        acceptedDeviceCount: { type: integer, minimum: 0 }
+        failedDeviceCount: { type: integer, minimum: 0 }
+        retryPendingDeviceCount: { type: integer, minimum: 0 }
+        pendingDeviceCount: { type: integer, minimum: 0 }
+        cancelledDeviceCount: { type: integer, minimum: 0 }
+        receiptOkCount: { type: integer, minimum: 0 }
+        receiptPendingCount: { type: integer, minimum: 0 }
+        receiptErrorCount: { type: integer, minimum: 0 }
+        receiptUnavailableCount: { type: integer, minimum: 0 }
+        receiptNotCheckedCount: { type: integer, minimum: 0 }
+        attemptCount: { type: integer, minimum: 0 }
+        createdAt: { type: string, format: date-time }
+        latestActivityAt: { type: string, format: date-time }
+        sendStatus: { type: string, enum: [accepted, partial, retrying, pending, failed, cancelled] }
+        receiptStatus: { type: string, enum: [no_receipt, pending, no_error, partial, error, unavailable] }
     NotificationSettings:
       type: object
       required: [pushEnabled, language, registeredDevices]

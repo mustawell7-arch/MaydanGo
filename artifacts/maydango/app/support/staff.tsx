@@ -7,6 +7,7 @@ import {
   getGetSupportStaffAgentsQueryKey,
   getGetSupportNotificationFailuresQueryKey,
   getGetSupportPendingDeviceChangesQueryKey,
+  getGetSupportUrgentAlertDeliveryOutcomesQueryKey,
   getGetSupportUrgentAlertRecipientHistoryQueryKey,
   getGetSupportStaffTicketQueryKey,
   getGetSupportStaffTicketsQueryKey,
@@ -15,6 +16,7 @@ import {
   useGetSupportNotificationFailures,
   useGetSupportPendingDeviceChanges,
   useGetSupportStaffAgents,
+  useGetSupportUrgentAlertDeliveryOutcomes,
   useGetSupportUrgentAlertRecipientHistory,
   useGetSupportStaffTicket,
   useGetSupportStaffTickets,
@@ -48,6 +50,22 @@ const categoryKeys: Record<string, MessageKey> = {
   booking: 'categoryBooking', account: 'categoryAccount', access: 'categoryAccess',
   safety: 'categorySafety', other: 'categoryOther',
 };
+const urgentDeliverySendKeys: Record<string, MessageKey> = {
+  accepted: 'urgentDeliverySendAccepted',
+  partial: 'urgentDeliverySendPartial',
+  retrying: 'urgentDeliverySendRetrying',
+  pending: 'urgentDeliverySendPending',
+  failed: 'urgentDeliverySendFailed',
+  cancelled: 'urgentDeliverySendCancelled',
+};
+const urgentDeliveryReceiptKeys: Record<string, MessageKey> = {
+  no_receipt: 'urgentDeliveryReceiptNoReceipt',
+  pending: 'urgentDeliveryReceiptPending',
+  no_error: 'urgentDeliveryReceiptNoError',
+  partial: 'urgentDeliveryReceiptPartial',
+  error: 'urgentDeliveryReceiptError',
+  unavailable: 'urgentDeliveryReceiptUnavailable',
+};
 
 export default function SupportStaffScreen() {
   const colors = useColors();
@@ -68,6 +86,9 @@ export default function SupportStaffScreen() {
   const isAdmin = agents.data?.some(agent => agent.userId === userId && agent.role === 'admin') ?? false;
   const recipientHistory = useGetSupportUrgentAlertRecipientHistory({
     query: { enabled: app.signedIn && isAdmin, staleTime: 30_000 },
+  });
+  const urgentDeliveryOutcomes = useGetSupportUrgentAlertDeliveryOutcomes({
+    query: { enabled: app.signedIn && isAdmin, refetchInterval: 60_000 },
   });
   const failures = useGetSupportNotificationFailures({ query: { enabled: app.signedIn, refetchInterval: 60_000 } });
   const deviceChanges = useGetSupportPendingDeviceChanges({ query: { enabled: app.signedIn, refetchInterval: 30_000 } });
@@ -99,6 +120,7 @@ export default function SupportStaffScreen() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: getGetSupportStaffTicketsQueryKey() }),
       queryClient.invalidateQueries({ queryKey: getGetSupportNotificationFailuresQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: getGetSupportUrgentAlertDeliveryOutcomesQueryKey() }),
       queryClient.invalidateQueries({ queryKey: getGetSupportPendingDeviceChangesQueryKey() }),
       ...(selectedId ? [queryClient.invalidateQueries({ queryKey: getGetSupportStaffTicketQueryKey(selectedId) })] : []),
     ]);
@@ -408,6 +430,101 @@ export default function SupportStaffScreen() {
                 <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('urgentAlertHistoryEmpty')}</Text>
               )}
             </View>
+          </View>
+        ) : null}
+
+        {isAdmin ? (
+          <View style={[styles.ticketCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.heading, { color: colors.foreground }]}>{t('urgentDeliveryOutcomesTitle')}</Text>
+            <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('urgentDeliveryOutcomesHint')}</Text>
+            {urgentDeliveryOutcomes.isLoading ? (
+              <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('supportLoading')}</Text>
+            ) : urgentDeliveryOutcomes.isError ? (
+              <Text style={[styles.caption, { color: colors.destructive }]}>{t('urgentDeliveryOutcomesError')}</Text>
+            ) : urgentDeliveryOutcomes.data?.length ? (
+              urgentDeliveryOutcomes.data.slice(0, 20).map(event => (
+                <View key={`${event.ticketId}-${event.recipientUserId}-${event.kind}`} style={[styles.teamAgent, { borderColor: colors.border }]}>
+                  <View style={styles.teamAgentHeader}>
+                    <View style={styles.teamAgentIdentity}>
+                      <Text style={[styles.label, { color: colors.foreground }]}>
+                        {t(event.kind === 'support_urgent' ? 'urgentDeliveryKindInitial' : 'urgentDeliveryKindEscalation')}
+                      </Text>
+                      <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                        {formatBaghdadDate(event.latestActivityAt, app.language)}
+                      </Text>
+                    </View>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${t('urgentDeliveryOpenReport')} ${event.ticketId}`}
+                      onPress={() => selectTicket(event.ticketId)}
+                      style={styles.removeButton}
+                    >
+                      <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 12 }}>
+                        {t('urgentDeliveryOpenReport')}
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                    {t('urgentDeliveryRecipient')}: {event.recipientUserId}
+                  </Text>
+                  <Text style={[styles.caption, { color: colors.foreground, fontWeight: '700' }]}>
+                    {t(urgentDeliverySendKeys[event.sendStatus] ?? 'urgentDeliverySendPending')}
+                    {' · '}
+                    {event.acceptedDeviceCount}/{event.deviceCount} {t('urgentDeliveryDevices')}
+                  </Text>
+                  {event.failedDeviceCount > 0 ? (
+                    <Text style={[styles.caption, { color: colors.destructive }]}>
+                      {t('urgentDeliverySendFailed')}: {event.failedDeviceCount}
+                    </Text>
+                  ) : null}
+                  {event.retryPendingDeviceCount > 0 ? (
+                    <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                      {t('urgentDeliverySendRetrying')}: {event.retryPendingDeviceCount}
+                    </Text>
+                  ) : null}
+                  {event.pendingDeviceCount > 0 ? (
+                    <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                      {t('urgentDeliverySendPending')}: {event.pendingDeviceCount}
+                    </Text>
+                  ) : null}
+                  {event.cancelledDeviceCount > 0 ? (
+                    <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                      {t('urgentDeliverySendCancelled')}: {event.cancelledDeviceCount}
+                    </Text>
+                  ) : null}
+                  <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                    {t(urgentDeliveryReceiptKeys[event.receiptStatus] ?? 'urgentDeliveryReceiptNoReceipt')}
+                    {' · '}
+                    {event.receiptOkCount}/{event.deviceCount} {t('urgentDeliveryDevices')}
+                  </Text>
+                  {event.receiptPendingCount > 0 ? (
+                    <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                      {t('urgentDeliveryReceiptPending')}: {event.receiptPendingCount}
+                    </Text>
+                  ) : null}
+                  {event.receiptErrorCount > 0 ? (
+                    <Text style={[styles.caption, { color: colors.destructive }]}>
+                      {t('urgentDeliveryReceiptError')}: {event.receiptErrorCount}
+                    </Text>
+                  ) : null}
+                  {event.receiptUnavailableCount > 0 ? (
+                    <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                      {t('urgentDeliveryReceiptUnavailable')}: {event.receiptUnavailableCount}
+                    </Text>
+                  ) : null}
+                  {event.receiptNotCheckedCount > 0 ? (
+                    <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                      {t('urgentDeliveryReceiptNotChecked')}: {event.receiptNotCheckedCount}
+                    </Text>
+                  ) : null}
+                  <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                    {t('pushAttempts')}: {event.attemptCount}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('urgentDeliveryOutcomesEmpty')}</Text>
+            )}
           </View>
         ) : null}
 
