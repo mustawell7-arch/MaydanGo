@@ -17,6 +17,7 @@ export type NotificationKind =
   | "attendance_updated"
   | "support_reply"
   | "support_status"
+  | "support_urgent"
   | "waitlist_promoted"
   | "waitlist_cancelled";
 
@@ -35,6 +36,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     attendance_updated: { title: "Attendance update", body: "Your class attendance record has been updated." },
     support_reply: { title: "Support replied", body: "There is a new reply in your MaydanGO support conversation." },
     support_status: { title: "Support update", body: "The status of your MaydanGO support request has changed." },
+    support_urgent: { title: "Urgent safety report", body: "A new urgent safety report is in the MaydanGO support queue. Please review and assign it to an authorized teammate." },
     waitlist_promoted: { title: "A place opened", body: "A place in your MaydanGO class is now reserved for you." },
     waitlist_cancelled: { title: "Class cancelled", body: "The partner cancelled this class, so you were removed from its waiting list." },
   },
@@ -52,6 +54,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     attendance_updated: { title: "تحديث الحضور", body: "تم تحديث سجل حضورك للحصة." },
     support_reply: { title: "ردّ فريق الدعم", body: "هناك رد جديد في محادثة الدعم الخاصة بك في MaydanGO." },
     support_status: { title: "تحديث من الدعم", body: "تغيّرت حالة طلب الدعم الخاص بك في MaydanGO." },
+    support_urgent: { title: "بلاغ سلامة عاجل", body: "يوجد بلاغ سلامة عاجل جديد في قائمة دعم MaydanGO. يرجى مراجعته وإسناده إلى عضو مخوّل من فريق الدعم." },
     waitlist_promoted: { title: "توفر مكان", body: "تم حجز مكان لك في الحصة التي انتظرتها عبر MaydanGO." },
     waitlist_cancelled: { title: "تم إلغاء الحصة", body: "ألغى الشريك هذه الحصة، لذلك أُزلت من قائمة الانتظار." },
   },
@@ -69,6 +72,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     attendance_updated: { title: "نوێکاریی ئامادەبوون", body: "تۆماری ئامادەبوونت بۆ وانەکە نوێ کرایەوە." },
     support_reply: { title: "وەڵامی پشتگیری", body: "وەڵامێکی نوێ لە گفتوگۆی پشتگیریی MaydanGO هەیە." },
     support_status: { title: "نوێکاریی پشتگیری", body: "دۆخی داواکاریی پشتگیریی MaydanGO گۆڕاوە." },
+    support_urgent: { title: "ڕاپۆرتی پەلەیی سەلامەتی", body: "ڕاپۆرتێکی پەلەیی نوێی سەلامەتی لە لیستی پشتگیریی MaydanGO هەیە. تکایە پێداچوونەوەی بۆ بکە و بیسپێرە بە ئەندامێکی ڕێگەپێدراوی تیمی پشتگیری." },
     waitlist_promoted: { title: "شوێنێک بەردەست بوو", body: "شوێنێک لە وانەکەت لە MaydanGO بۆ تۆ حجز کرا." },
     waitlist_cancelled: { title: "وانەکە هەڵوەشێندرایەوە", body: "شریکەکە وانەکەی هەڵوەشاندەوە، بۆیە لە لیستی چاوەڕوانی دەرتکرایت." },
   },

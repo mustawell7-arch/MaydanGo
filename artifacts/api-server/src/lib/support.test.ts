@@ -51,9 +51,10 @@ after(async () => {
   restoreFetch?.();
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
   if (ticketIds.length) await db.delete(supportTickets).where(inArray(supportTickets.id, ticketIds));
-  await db.delete(pushDeliveries).where(eq(pushDeliveries.userId, alice));
-  await db.delete(pushDevices).where(eq(pushDevices.userId, alice));
-  await db.delete(memberNotificationPreferences).where(eq(memberNotificationPreferences.userId, alice));
+  const notificationUsers = [alice, supportId, partnerId];
+  await db.delete(pushDeliveries).where(inArray(pushDeliveries.userId, notificationUsers));
+  await db.delete(pushDevices).where(inArray(pushDevices.userId, notificationUsers));
+  await db.delete(memberNotificationPreferences).where(inArray(memberNotificationPreferences.userId, notificationUsers));
   await db.delete(reservations).where(eq(reservations.userId, alice));
   await db.delete(memberships).where(eq(memberships.userId, alice));
   if (offeringIds.length) await db.delete(offerings).where(inArray(offerings.id, offeringIds));
@@ -84,13 +85,60 @@ test("support conversations are private, triaged, audited, and replyable", async
   assert.equal((await call(`/member/support/tickets/${created.data.id}`, undefined)).status, 401);
   assert.equal((await call("/support/staff/tickets", partnerId)).status, 403);
 
-  const urgentSafety = await call("/member/support/tickets", alice, "POST", {
-    subject: "Urgent safety concern", category: "safety",
-    message: "A serious safety concern needs MaydanGo support review.", language: "ar", urgent: true,
-  });
+  const supportDeviceId = randomUUID();
+  const supportToken = `ExpoPushToken[${randomUUID().replaceAll("-", "")}]`;
+  const partnerToken = `ExpoPushToken[${randomUUID().replaceAll("-", "")}]`;
+  await db.insert(memberNotificationPreferences).values([
+    { userId: supportId, pushEnabled: true, language: "ku" },
+    { userId: partnerId, pushEnabled: true, language: "en" },
+  ]);
+  await db.insert(pushDevices).values([
+    { id: supportDeviceId, userId: supportId, token: supportToken, platform: "ios", enabled: true },
+    { id: randomUUID(), userId: partnerId, token: partnerToken, platform: "ios", enabled: true },
+  ]);
+  const originalFetch = globalThis.fetch;
+  const urgentAlertPayloads: any[][] = [];
+  globalThis.fetch = (async (input, init) => {
+    if (String(input).startsWith("https://exp.host/--/api/v2/push/send")) {
+      const messages = JSON.parse(String(init?.body)) as any[];
+      urgentAlertPayloads.push(messages);
+      return new Response(JSON.stringify({ data: messages.map((_, index) => ({
+        status: "ok", id: `urgent-alert-${index}`,
+      })) }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+    return originalFetch(input, init);
+  }) as typeof fetch;
+  let urgentSafety: { status: number; data: any } | null = null;
+  try {
+    urgentSafety = await call("/member/support/tickets", alice, "POST", {
+      subject: "Urgent safety concern", category: "safety",
+      message: "A serious safety concern needs MaydanGo support review.", language: "ar", urgent: true,
+    });
+    for (let attempt = 0; attempt < 50 && !urgentAlertPayloads.length; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 20));
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.ok(urgentSafety);
   assert.equal(urgentSafety.status, 201);
   ticketIds.push(urgentSafety.data.id);
   assert.equal(urgentSafety.data.urgent, true);
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const alert = await db.select({ id: pushDeliveries.id }).from(pushDeliveries)
+      .where(and(
+        eq(pushDeliveries.userId, supportId),
+        eq(pushDeliveries.kind, "support_urgent"),
+        eq(pushDeliveries.dedupeKey, `support-urgent:${urgentSafety.data.id}:${supportDeviceId}`),
+      )).limit(1);
+    if (alert.length) break;
+    await new Promise(resolve => setTimeout(resolve, 20));
+  }
+  assert.equal(urgentAlertPayloads.length, 1);
+  assert.equal(urgentAlertPayloads[0][0].to, supportToken);
+  assert.match(urgentAlertPayloads[0][0].body, /ڕاپۆرتێکی پەلەیی/);
+  assert.equal((await db.select({ id: pushDeliveries.id }).from(pushDeliveries)
+    .where(and(eq(pushDeliveries.userId, partnerId), eq(pushDeliveries.kind, "support_urgent")))).length, 0);
   const regularSafety = await call("/member/support/tickets", bob, "POST", {
     subject: "Safety follow-up", category: "safety",
     message: "A non-urgent safety question for the support team.", language: "en",

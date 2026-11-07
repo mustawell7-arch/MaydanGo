@@ -148,6 +148,7 @@ export default function SupportCenterScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.cardTitle, { color: colors.foreground, textAlign: align }]}>{t('pushSettingsTitle')}</Text>
                   <Text style={[styles.body, { color: colors.mutedForeground, textAlign: align }]}>{t('pushSettingsHint')}</Text>
+                  {agents.data ? <Text style={[styles.caption, { color: colors.mutedForeground, textAlign: align }]}>{t('urgentSafetyPushOptInHint')}</Text> : null}
                 </View>
                 <Ionicons name="notifications-outline" size={22} color={colors.primary} />
               </View>

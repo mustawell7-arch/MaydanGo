@@ -127,6 +127,15 @@ memberSupportRouter.post("/support/tickets", async (req, res) => {
       detail: parsed.data.urgent ? "Urgent safety report submitted." : "", createdAt: now,
     });
   });
+  if (parsed.data.urgent) {
+    void (async () => {
+      const staff = await db.select({ userId: operators.userId }).from(operators)
+        .where(inArray(operators.role, ["admin", "support"]));
+      await Promise.all(staff.map(member => sendMemberNotification(member.userId, "support_urgent", {
+        dedupeKey: `support-urgent:${id}`,
+      })));
+    })().catch(error => req.log.error({ err: error, ticketId: id }, "Urgent support alert fan-out failed"));
+  }
   res.status(201).json(await memberTicketDetail(ownerId, id));
 });
 

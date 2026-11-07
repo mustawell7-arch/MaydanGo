@@ -75,7 +75,7 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Refresh conversation': 'تحديث المحادثة',
     'Support topic': 'موضوع الدعم', 'Booking question': 'استفسار عن حجز', 'Safety concern': 'مشكلة تتعلق بالسلامة', 'Other support': 'دعم آخر',
     'Urgent safety concern': 'بلاغ سلامة عاجل',
-    'Urgent safety reports are prioritized in the MaydanGo support queue. This form is not an emergency service; contact local emergency services if someone is in immediate danger.': 'تُعطى بلاغات السلامة العاجلة أولوية في قائمة دعم MaydanGo. هذا النموذج ليس خدمة طوارئ؛ اتصل بخدمات الطوارئ المحلية إذا كان هناك خطر فوري.',
+    'Urgent safety reports are prioritized in the MaydanGo support queue. Authorized support staff with notifications enabled receive a push alert. This form is not an emergency service; contact local emergency services if someone is in immediate danger.': 'تُعطى بلاغات السلامة العاجلة أولوية في قائمة دعم MaydanGo. ويتلقى موظفو الدعم المخوّلون الذين فعّلوا الإشعارات تنبيهاً. هذا النموذج ليس خدمة طوارئ؛ اتصل بخدمات الطوارئ المحلية إذا كان هناك خطر فوري.',
     'Subject': 'الموضوع', 'Booking reference (optional)': 'مرجع الحجز (اختياري)', 'Describe what happened or how we can help': 'اشرح ما حدث أو كيف يمكننا مساعدتك',
     'Use the reservation reference when available. Include only details needed to review the report.': 'استخدم مرجع الحجز عند توفره. أضف فقط التفاصيل اللازمة لمراجعة البلاغ.',
     'Send to MaydanGo support': 'إرسال إلى دعم MaydanGo', 'Sending…': 'جارٍ الإرسال…', 'Support request sent.': 'تم إرسال طلب الدعم.',
@@ -224,7 +224,7 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Refresh conversation': 'گفتوگۆکە نوێ بکەرەوە',
     'Support topic': 'بابەتی پشتگیری', 'Booking question': 'پرسیاری حجز', 'Safety concern': 'کێشەی سەلامەتی', 'Other support': 'پشتگیریی تر',
     'Urgent safety concern': 'ڕاپۆرتی پەلەیی سەلامەتی',
-    'Urgent safety reports are prioritized in the MaydanGo support queue. This form is not an emergency service; contact local emergency services if someone is in immediate danger.': 'ڕاپۆرتە عاجلەکانی سەلامەتی لە لیستی پشتگیریی MaydanGo پێشینەیان پێدەدرێت. ئەم فۆڕمە خزمەتگوزاریی فریاکەوتن نییە؛ ئەگەر مەترسییەکی دەستبەجێ هەیە، پەیوەندی بە خزمەتگوزارییەکانی فریاکەوتنی ناوخۆیی بکە.',
+    'Urgent safety reports are prioritized in the MaydanGo support queue. Authorized support staff with notifications enabled receive a push alert. This form is not an emergency service; contact local emergency services if someone is in immediate danger.': 'ڕاپۆرتە عاجلەکانی سەلامەتی لە لیستی پشتگیریی MaydanGo پێشینەیان پێدەدرێت. کارمەندانی ڕێگەپێدراوی پشتگیری کە ئاگادارکردنەوەیان چالاک کردووە ئاگادارکردنەوەی دەستبەجێ وەردەگرن. ئەم فۆڕمە خزمەتگوزاریی فریاکەوتن نییە؛ ئەگەر مەترسییەکی دەستبەجێ هەیە، پەیوەندی بە خزمەتگوزارییەکانی فریاکەوتنی ناوخۆیی بکە.',
     'Subject': 'بابەت', 'Booking reference (optional)': 'ژمارەی حجز (ئارەزوومەندانە)', 'Describe what happened or how we can help': 'ڕوون بکەرەوە چی ڕوویدا یان چۆن دەتوانین یارمەتیت بدەین',
     'Use the reservation reference when available. Include only details needed to review the report.': 'ئەگەر بەردەست بوو ژمارەی حجز بەکاربهێنە. تەنها ئەو وردەکارییانە بنووسە کە بۆ پێداچوونەوەی ڕاپۆرتەکە پێویستن.',
     'Send to MaydanGo support': 'بۆ پشتگیریی MaydanGo بنێرە', 'Sending…': 'دەنێردرێت…', 'Support request sent.': 'داواکاریی پشتگیری نێردرا.',
@@ -771,7 +771,7 @@ function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
             <input type="checkbox" checked={urgentSafety} onChange={event => setUrgentSafety(event.target.checked)} className="h-4 w-4 accent-[#9a4435]" />
             Urgent safety concern
           </label>
-          <p className="mt-2 text-xs leading-5 text-[#805d55]">Urgent safety reports are prioritized in the MaydanGo support queue. This form is not an emergency service; contact local emergency services if someone is in immediate danger.</p>
+          <p className="mt-2 text-xs leading-5 text-[#805d55]">Urgent safety reports are prioritized in the MaydanGo support queue. Authorized support staff with notifications enabled receive a push alert. This form is not an emergency service; contact local emergency services if someone is in immediate danger.</p>
         </div>}
         <label className="block text-xs font-semibold text-[#51665e]">Subject
           <input required minLength={4} maxLength={90} value={subject} onChange={event => setSubject(event.target.value)} className={fieldClass()} data-testid="input-partner-support-subject" />
