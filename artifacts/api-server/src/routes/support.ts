@@ -588,6 +588,30 @@ staffRouter.delete("/agents/:userId", async (req, res) => {
   });
 });
 
+staffRouter.get("/access-history", async (_req, res) => {
+  const operator = res.locals.supportOperator as typeof operators.$inferSelect;
+  if (operator.role !== "admin") {
+    throw new BookingError(403, "Administrator access is required to review support access history.");
+  }
+  const rows = await db.select({
+    id: operationAudit.id,
+    actorId: operationAudit.actorId,
+    targetUserId: operationAudit.targetId,
+    action: operationAudit.action,
+    createdAt: operationAudit.createdAt,
+  }).from(operationAudit)
+    .where(inArray(operationAudit.action, ["support.agent.add", "support.agent.remove"]))
+    .orderBy(desc(operationAudit.createdAt))
+    .limit(100);
+  res.json(rows.map(row => ({
+    id: row.id,
+    actorId: row.actorId,
+    targetUserId: row.targetUserId,
+    action: row.action === "support.agent.add" ? "granted" : "removed",
+    createdAt: row.createdAt,
+  })));
+});
+
 staffRouter.get("/notification-failures", async (_req, res) => {
   const rows = await db.select({
     id: pushDeliveries.id, userId: pushDeliveries.userId, kind: pushDeliveries.kind,

@@ -866,6 +866,22 @@ export interface SupportUrgentAlertDeliveryOutcome {
   receiptStatus: SupportUrgentAlertDeliveryOutcomeReceiptStatus;
 }
 
+export type SupportStaffAccessAuditEventAction = typeof SupportStaffAccessAuditEventAction[keyof typeof SupportStaffAccessAuditEventAction];
+
+
+export const SupportStaffAccessAuditEventAction = {
+  granted: 'granted',
+  removed: 'removed',
+} as const;
+
+export interface SupportStaffAccessAuditEvent {
+  id: string;
+  actorId: string;
+  targetUserId: string;
+  action: SupportStaffAccessAuditEventAction;
+  createdAt: string;
+}
+
 export interface NotificationSettings {
   pushEnabled: boolean;
   language: SupportedLanguage;

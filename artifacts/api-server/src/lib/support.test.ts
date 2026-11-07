@@ -385,6 +385,17 @@ test("support conversations are private, triaged, audited, and replyable", async
   const revokeAudit = await db.select().from(operationAudit)
     .where(and(eq(operationAudit.actorId, adminId), eq(operationAudit.targetId, removableAgentId)));
   assert.ok(revokeAudit.some(row => row.action === "support.agent.remove"));
+  const accessHistory = await call("/support/staff/access-history", adminId);
+  assert.equal(accessHistory.status, 200);
+  const newAgentAccess = accessHistory.data.filter((event: { targetUserId: string }) =>
+    event.targetUserId === newAgentId);
+  assert.deepEqual(newAgentAccess.map((event: { action: string }) => event.action), ["granted"]);
+  const removableAgentAccess = accessHistory.data.filter((event: { targetUserId: string }) =>
+    event.targetUserId === removableAgentId);
+  assert.deepEqual(removableAgentAccess.map((event: { action: string }) => event.action), ["removed", "granted"]);
+  assert.ok([...newAgentAccess, ...removableAgentAccess].every((event: { actorId: string }) => event.actorId === adminId));
+  assert.ok(accessHistory.data.every((event: Record<string, unknown>) => !("detail" in event)));
+  assert.equal((await call("/support/staff/access-history", supportId)).status, 403);
 });
 
 test("push opt-out is respected, and provider failure stays visible without changing live booking state", async () => {

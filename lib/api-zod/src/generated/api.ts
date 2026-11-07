@@ -4531,6 +4531,16 @@ export const GetSupportUrgentAlertDeliveryOutcomesResponseItem = zod.object({
 export const GetSupportUrgentAlertDeliveryOutcomesResponse = zod.array(GetSupportUrgentAlertDeliveryOutcomesResponseItem)
 
 
+export const GetSupportStaffAccessHistoryResponseItem = zod.object({
+  "id": zod.string(),
+  "actorId": zod.string(),
+  "targetUserId": zod.string(),
+  "action": zod.enum(['granted', 'removed']),
+  "createdAt": zod.coerce.date()
+})
+export const GetSupportStaffAccessHistoryResponse = zod.array(GetSupportStaffAccessHistoryResponseItem)
+
+
 export const GetSupportPendingDeviceChangesResponseItem = zod.object({
   "id": zod.string(),
   "userId": zod.string(),

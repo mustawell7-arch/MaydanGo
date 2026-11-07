@@ -117,6 +117,7 @@ import type {
   SupportDeviceChange,
   SupportDeviceChangeReview,
   SupportReplyInput,
+  SupportStaffAccessAuditEvent,
   SupportStaffTicketDetail,
   SupportStaffTicketSummary,
   SupportStaffTicketUpdate,
@@ -7508,6 +7509,101 @@ export function useGetSupportUrgentAlertDeliveryOutcomes<TData = Awaited<ReturnT
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetSupportUrgentAlertDeliveryOutcomesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetSupportStaffAccessHistoryUrl = () => {
+
+
+
+
+  return `/api/support/staff/access-history`
+}
+
+export const getSupportStaffAccessHistory = async ( options?: Parameters<typeof customFetch>[1]): Promise<SupportStaffAccessAuditEvent[]> => {
+
+  return customFetch<SupportStaffAccessAuditEvent[]>(getGetSupportStaffAccessHistoryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportStaffAccessHistoryQueryKey = () => {
+    return [
+    `/api/support/staff/access-history`
+    ] as const;
+    }
+
+
+export const getGetSupportStaffAccessHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getSupportStaffAccessHistory>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffAccessHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportStaffAccessHistoryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportStaffAccessHistory>>> = ({ signal }) => getSupportStaffAccessHistory({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffAccessHistory>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSupportStaffAccessHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportStaffAccessHistory>>>
+export type GetSupportStaffAccessHistoryQueryError = ErrorType<unknown>
+
+
+export function useGetSupportStaffAccessHistory<TData = Awaited<ReturnType<typeof getSupportStaffAccessHistory>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffAccessHistory>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportStaffAccessHistory>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportStaffAccessHistory>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportStaffAccessHistory<TData = Awaited<ReturnType<typeof getSupportStaffAccessHistory>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffAccessHistory>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportStaffAccessHistory>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportStaffAccessHistory>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportStaffAccessHistory<TData = Awaited<ReturnType<typeof getSupportStaffAccessHistory>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffAccessHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSupportStaffAccessHistory<TData = Awaited<ReturnType<typeof getSupportStaffAccessHistory>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffAccessHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSupportStaffAccessHistoryQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

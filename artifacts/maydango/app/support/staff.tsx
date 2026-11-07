@@ -7,6 +7,7 @@ import {
   getGetSupportStaffAgentsQueryKey,
   getGetSupportNotificationFailuresQueryKey,
   getGetSupportPendingDeviceChangesQueryKey,
+  getGetSupportStaffAccessHistoryQueryKey,
   getGetSupportUrgentAlertDeliveryOutcomesQueryKey,
   getGetSupportUrgentAlertRecipientHistoryQueryKey,
   getGetSupportStaffTicketQueryKey,
@@ -15,6 +16,7 @@ import {
   useApproveSupportDeviceChange,
   useGetSupportNotificationFailures,
   useGetSupportPendingDeviceChanges,
+  useGetSupportStaffAccessHistory,
   useGetSupportStaffAgents,
   useGetSupportUrgentAlertDeliveryOutcomes,
   useGetSupportUrgentAlertRecipientHistory,
@@ -87,6 +89,9 @@ export default function SupportStaffScreen() {
   const recipientHistory = useGetSupportUrgentAlertRecipientHistory({
     query: { enabled: app.signedIn && isAdmin, staleTime: 30_000 },
   });
+  const supportAccessHistory = useGetSupportStaffAccessHistory({
+    query: { enabled: app.signedIn && isAdmin, staleTime: 30_000 },
+  });
   const urgentDeliveryOutcomes = useGetSupportUrgentAlertDeliveryOutcomes({
     query: { enabled: app.signedIn && isAdmin, refetchInterval: 60_000 },
   });
@@ -130,6 +135,7 @@ export default function SupportStaffScreen() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: getGetSupportStaffAgentsQueryKey() }),
       queryClient.invalidateQueries({ queryKey: getGetSupportStaffTicketsQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: getGetSupportStaffAccessHistoryQueryKey() }),
       queryClient.invalidateQueries({ queryKey: getGetSupportUrgentAlertRecipientHistoryQueryKey() }),
     ]);
   };
@@ -428,6 +434,32 @@ export default function SupportStaffScreen() {
                 ))
               ) : (
                 <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('urgentAlertHistoryEmpty')}</Text>
+              )}
+            </View>
+            <View style={[styles.audit, { borderTopColor: colors.border }]}>
+              <Text style={[styles.label, { color: colors.mutedForeground }]}>{t('supportAccessHistoryTitle')}</Text>
+              {supportAccessHistory.isLoading ? (
+                <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('supportLoading')}</Text>
+              ) : supportAccessHistory.isError ? (
+                <Text style={[styles.caption, { color: colors.destructive }]}>{t('supportAccessHistoryError')}</Text>
+              ) : supportAccessHistory.data?.length ? (
+                supportAccessHistory.data.slice(0, 10).map(event => (
+                  <View key={event.id} style={[styles.teamAgent, { borderColor: colors.border }]}>
+                    <Text style={[styles.label, { color: event.action === 'granted' ? colors.primary : colors.destructive }]}>
+                      {t(event.action === 'granted' ? 'supportAccessGranted' : 'supportAccessRemoved')}
+                      {' · '}
+                      {formatBaghdadDate(event.createdAt, app.language)}
+                    </Text>
+                    <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                      {t('supportAccessHistoryActor')}: {event.actorId}
+                    </Text>
+                    <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                      {t('supportAccessHistoryTarget')}: {event.targetUserId}
+                    </Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('supportAccessHistoryEmpty')}</Text>
               )}
             </View>
           </View>

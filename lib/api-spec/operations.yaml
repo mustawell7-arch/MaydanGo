@@ -280,6 +280,17 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/SupportUrgentAlertDeliveryOutcome" }
+  /support/staff/access-history:
+    get:
+      operationId: getSupportStaffAccessHistory
+      responses:
+        "200":
+          description: Latest administrator-only support role grant and removal audit events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SupportStaffAccessAuditEvent" }
   /support/staff/notification-failures:
     get:
       operationId: getSupportNotificationFailures
@@ -1159,6 +1170,16 @@ components:
         latestActivityAt: { type: string, format: date-time }
         sendStatus: { type: string, enum: [accepted, partial, retrying, pending, failed, cancelled] }
         receiptStatus: { type: string, enum: [no_receipt, pending, no_error, partial, error, unavailable] }
+    SupportStaffAccessAuditEvent:
+      type: object
+      additionalProperties: false
+      required: [id, actorId, targetUserId, action, createdAt]
+      properties:
+        id: { type: string }
+        actorId: { type: string }
+        targetUserId: { type: string }
+        action: { type: string, enum: [granted, removed] }
+        createdAt: { type: string, format: date-time }
     NotificationSettings:
       type: object
       required: [pushEnabled, language, registeredDevices]
