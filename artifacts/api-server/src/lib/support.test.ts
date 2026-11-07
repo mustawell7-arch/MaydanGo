@@ -10,7 +10,9 @@ import {
 } from "@workspace/db";
 import memberRouter from "../routes/member";
 import staffSupportRouter from "../routes/support";
-import { checkPendingPushReceipts, retryPendingPushDeliveries, sendMemberNotification } from "./notifications";
+import {
+  checkPendingPushReceipts, refreshUrgentAlertFallbackStatus, retryPendingPushDeliveries, sendMemberNotification,
+} from "./notifications";
 
 const prefix = `support-test-${randomUUID()}`;
 const alice = `${prefix}-member`;
@@ -198,7 +200,39 @@ test("support conversations are private, triaged, audited, and replyable", async
   const queue = await call("/support/staff/tickets", supportId);
   assert.equal(queue.data[0].id, urgentSafety.data.id);
   assert.equal(queue.data[0].urgent, true);
+  assert.equal(queue.data[0].urgentAlertStatus, "accepted");
   assert.equal((await call("/member/support/tickets", alice)).data[0].urgent, true);
+
+  await db.update(memberNotificationPreferences).set({ pushEnabled: false })
+    .where(eq(memberNotificationPreferences.userId, supportId));
+  const noPushFallback = await call("/member/support/tickets", alice, "POST", {
+    subject: "Safety alert without push", category: "safety",
+    message: "This urgent report verifies the in-app fallback status.", language: "en", urgent: true,
+  });
+  assert.equal(noPushFallback.status, 201);
+  ticketIds.push(noPushFallback.data.id);
+  assert.equal(Object.hasOwn(noPushFallback.data, "urgentAlertStatus"), false);
+  let fallbackDetail: { status: number; data: any } | null = null;
+  for (let attempt = 0; attempt < 50; attempt++) {
+    fallbackDetail = await call(`/support/staff/tickets/${noPushFallback.data.id}`, supportId);
+    if (fallbackDetail.data.urgentAlertStatus === "fallback_required") break;
+    await new Promise(resolve => setTimeout(resolve, 20));
+  }
+  assert.equal(fallbackDetail?.data.urgentAlertStatus, "fallback_required");
+  await db.update(memberNotificationPreferences).set({ pushEnabled: true })
+    .where(eq(memberNotificationPreferences.userId, supportId));
+
+  const [urgentDelivery] = await db.select().from(pushDeliveries).where(and(
+    eq(pushDeliveries.kind, "support_urgent"),
+    eq(pushDeliveries.dedupeKey, `support-urgent:${urgentSafety.data.id}:${supportDeviceId}`),
+  ));
+  assert.ok(urgentDelivery?.providerTicketId);
+  await db.update(pushDeliveries).set({
+    status: "failed", receiptStatus: "error", receiptError: "DeviceNotRegistered",
+  }).where(eq(pushDeliveries.id, urgentDelivery!.id));
+  await refreshUrgentAlertFallbackStatus(urgentSafety.data.id);
+  const receiptFallback = await call(`/support/staff/tickets/${urgentSafety.data.id}`, supportId);
+  assert.equal(receiptFallback.data.urgentAlertStatus, "fallback_required");
 
   const assigned = await call(`/support/staff/tickets/${created.data.id}`, supportId, "PATCH", {
     assignedTo: supportId, status: "in_progress",

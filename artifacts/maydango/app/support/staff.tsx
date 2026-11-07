@@ -64,7 +64,10 @@ export default function SupportStaffScreen() {
   const agents = useGetSupportStaffAgents({ query: { enabled: app.signedIn } });
   const failures = useGetSupportNotificationFailures({ query: { enabled: app.signedIn, refetchInterval: 60_000 } });
   const deviceChanges = useGetSupportPendingDeviceChanges({ query: { enabled: app.signedIn, refetchInterval: 30_000 } });
-  const detail = useGetSupportStaffTicket(selectedId, { query: { enabled: !!selectedId && app.signedIn } });
+  const detail = useGetSupportStaffTicket(selectedId, { query: {
+    enabled: !!selectedId && app.signedIn,
+    refetchInterval: 30_000,
+  } });
   const updateTicket = useUpdateSupportStaffTicket();
   const reply = useReplySupportStaffTicket();
   const approveDeviceChange = useApproveSupportDeviceChange();
@@ -210,6 +213,11 @@ export default function SupportStaffScreen() {
                 ]}>
                 <Text style={[styles.ticketTitle, { color: colors.foreground }]} numberOfLines={2}>{ticket.subject}</Text>
                 {ticket.urgent ? <Text style={[styles.caption, { color: colors.destructive, fontWeight: '800' }]}>{t('urgentSafety')}</Text> : null}
+                {ticket.urgentAlertStatus === 'fallback_required' ? (
+                  <Text style={[styles.caption, { color: colors.destructive, fontWeight: '800' }]}>{t('urgentAlertFallbackLabel')}</Text>
+                ) : ticket.urgentAlertStatus === 'pending' ? (
+                  <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('urgentAlertPendingLabel')}</Text>
+                ) : null}
                 <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t(statusKeys[ticket.status as Status])}</Text>
                 <Text style={[styles.caption, { color: colors.mutedForeground }]}>{ticket.memberUserId}</Text>
               </Pressable>
@@ -309,6 +317,14 @@ export default function SupportStaffScreen() {
                   <Text style={{ color: colors.destructiveForeground, fontWeight: '800' }}>{t('urgentSafety')}</Text>
                   <Text style={{ color: colors.destructiveForeground, fontSize: 12, lineHeight: 18 }}>{t('urgentSafetyStaffHint')}</Text>
                 </View>
+              ) : null}
+              {detail.data.urgentAlertStatus === 'fallback_required' ? (
+                <View style={[styles.confirmBox, { backgroundColor: colors.destructive }]}>
+                  <Text style={{ color: colors.destructiveForeground, fontWeight: '800' }}>{t('urgentAlertFallbackLabel')}</Text>
+                  <Text style={{ color: colors.destructiveForeground, fontSize: 12, lineHeight: 18 }}>{t('urgentAlertFallbackHint')}</Text>
+                </View>
+              ) : detail.data.urgentAlertStatus === 'pending' ? (
+                <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('urgentAlertPendingLabel')}</Text>
               ) : null}
               <Text style={[styles.label, { color: colors.mutedForeground }]}>{t('supportSetStatus')}</Text>
               <View style={styles.wrap}>

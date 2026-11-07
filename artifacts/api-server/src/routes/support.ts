@@ -60,7 +60,8 @@ async function staffTicketDetail(id: string) {
     db.select().from(supportTicketEvents).where(eq(supportTicketEvents.ticketId, id)).orderBy(asc(supportTicketEvents.createdAt)),
   ]);
   return {
-    id: ticket.id, subject: ticket.subject, category: ticket.category, urgent: ticket.urgent, status: ticket.status,
+    id: ticket.id, subject: ticket.subject, category: ticket.category, urgent: ticket.urgent,
+    urgentAlertStatus: ticket.urgentAlertStatus, status: ticket.status,
     language: ticket.language, createdAt: ticket.createdAt, updatedAt: ticket.updatedAt, lastMessageAt: ticket.lastMessageAt,
     memberUserId: ticket.userId, assignedTo: ticket.assignedTo,
     messages: messages.map(m => ({
@@ -116,6 +117,7 @@ memberSupportRouter.post("/support/tickets", async (req, res) => {
   await db.transaction(async tx => {
     await tx.insert(supportTickets).values({
       id, userId: ownerId, subject: parsed.data.subject, category: parsed.data.category, urgent: parsed.data.urgent,
+      urgentAlertStatus: parsed.data.urgent ? "pending" : "not_applicable",
       language: parsed.data.language, status: "open", createdAt: now, updatedAt: now, lastMessageAt: now,
     });
     await tx.insert(supportMessages).values({
@@ -131,11 +133,21 @@ memberSupportRouter.post("/support/tickets", async (req, res) => {
     void (async () => {
       const staff = await db.select({ userId: operators.userId }).from(operators)
         .where(inArray(operators.role, ["admin", "support"]));
-      await Promise.all(staff.map(member => sendMemberNotification(member.userId, "support_urgent", {
+      const outcomes = await Promise.all(staff.map(member => sendMemberNotification(member.userId, "support_urgent", {
         dedupeKey: `support-urgent:${id}`,
         ticketId: id,
       })));
-    })().catch(error => req.log.error({ err: error, ticketId: id }, "Urgent support alert fan-out failed"));
+      const anyAccepted = outcomes.some(outcome => outcome.status === "sent");
+      if (!anyAccepted) {
+        await db.update(supportTickets).set({ urgentAlertStatus: "fallback_required" })
+          .where(and(eq(supportTickets.id, id), eq(supportTickets.urgentAlertStatus, "pending")));
+      }
+    })().catch(async error => {
+      await db.update(supportTickets).set({ urgentAlertStatus: "fallback_required" })
+        .where(eq(supportTickets.id, id))
+        .catch(updateError => req.log.error({ err: updateError, ticketId: id }, "Urgent alert fallback status could not be recorded"));
+      req.log.error({ err: error, ticketId: id }, "Urgent support alert fan-out failed");
+    });
   }
   res.status(201).json(await memberTicketDetail(ownerId, id));
 });
@@ -267,7 +279,8 @@ staffRouter.get("/tickets", async (req, res) => {
       desc(supportTickets.lastMessageAt),
     ).limit(100);
   res.json(rows.map(t => ({
-    id: t.id, subject: t.subject, category: t.category, urgent: t.urgent, status: t.status, language: t.language,
+    id: t.id, subject: t.subject, category: t.category, urgent: t.urgent, urgentAlertStatus: t.urgentAlertStatus,
+    status: t.status, language: t.language,
     createdAt: t.createdAt, updatedAt: t.updatedAt, lastMessageAt: t.lastMessageAt,
     memberUserId: t.userId, assignedTo: t.assignedTo,
   })));

@@ -1,5 +1,7 @@
-import { and, asc, eq, isNull, lte, or } from "drizzle-orm";
-import { db, memberNotificationPreferences, pushDeliveries, pushDevices, waitlistEntries } from "@workspace/db";
+import { and, asc, eq, isNull, lte, or, sql } from "drizzle-orm";
+import {
+  db, memberNotificationPreferences, pushDeliveries, pushDevices, supportTickets, waitlistEntries,
+} from "@workspace/db";
 import { randomUUID } from "node:crypto";
 
 export type AppLanguage = "en" | "ar" | "ku";
@@ -107,6 +109,46 @@ type PushAttempt = { delivery: PushDeliveryRow; device: PushDeviceRow };
 type ExpoPushTicket = { status?: string; id?: string; message?: string; details?: { error?: string } };
 type ExpoPushReceipt = { status?: string; message?: string; details?: { error?: string } };
 
+async function markUrgentAlertAccepted(delivery: PushDeliveryRow) {
+  const ticketId = delivery.kind === "support_urgent" ? delivery.payloadData?.ticketId : undefined;
+  if (!ticketId) return;
+  try {
+    await db.update(supportTickets).set({ urgentAlertStatus: "accepted" })
+      .where(and(eq(supportTickets.id, ticketId), eq(supportTickets.urgent, true)));
+  } catch (error) {
+    console.error("Could not record accepted urgent support alert.", error);
+  }
+}
+
+export async function refreshUrgentAlertFallbackStatus(ticketId: string) {
+  try {
+    const deliveries = await db.select({
+      status: pushDeliveries.status,
+      receiptStatus: pushDeliveries.receiptStatus,
+    }).from(pushDeliveries).where(and(
+      eq(pushDeliveries.kind, "support_urgent"),
+      sql`${pushDeliveries.payloadData}->>'ticketId' = ${ticketId}`,
+    ));
+    const hasConfirmedDevice = deliveries.some(delivery => delivery.receiptStatus === "ok");
+    const hasPendingDelivery = deliveries.some(delivery =>
+      delivery.status === "pending"
+      || delivery.status === "retry_pending"
+      || delivery.receiptStatus === "pending"
+      || delivery.receiptStatus === null,
+    );
+    const allDeliveriesUnconfirmed = deliveries.length > 0 && deliveries.every(delivery =>
+      ["error", "unavailable"].includes(delivery.receiptStatus ?? "")
+      || (delivery.status === "failed" && delivery.receiptStatus === null),
+    );
+    if (!hasConfirmedDevice && !hasPendingDelivery && allDeliveriesUnconfirmed) {
+      await db.update(supportTickets).set({ urgentAlertStatus: "fallback_required" })
+        .where(and(eq(supportTickets.id, ticketId), eq(supportTickets.urgent, true)));
+    }
+  } catch (error) {
+    console.error("Could not evaluate urgent support alert delivery.", error);
+  }
+}
+
 function retryAt(attemptCount: number, now: Date) {
   const delay = SEND_RETRY_DELAYS_MS[Math.min(Math.max(attemptCount - 1, 0), SEND_RETRY_DELAYS_MS.length - 1)];
   return new Date(now.getTime() + delay);
@@ -188,6 +230,7 @@ async function sendPushAttempts(attempts: PushAttempt[], now: Date) {
           receiptCheckedAt: ticket.id ? null : now,
           receiptAttemptCount: 0,
         }).where(eq(pushDeliveries.id, attempt.delivery.id));
+        await markUrgentAlertAccepted(attempt.delivery);
         return;
       }
 
@@ -198,6 +241,12 @@ async function sendPushAttempts(attempts: PushAttempt[], now: Date) {
       }
       await recordAttemptFailure(attempt, failure, now, errorCode === "MessageRateExceeded");
     }));
+    const urgentTicketIds = [...new Set(attempts.flatMap(({ delivery }) =>
+      delivery.kind === "support_urgent" && delivery.payloadData?.ticketId
+        ? [delivery.payloadData.ticketId]
+        : [],
+    ))];
+    await Promise.all(urgentTicketIds.map(refreshUrgentAlertFallbackStatus));
     return attempts.every((_, index) => tickets[index]?.status === "ok");
   } catch (error) {
     const failure = messageOf(error);
@@ -427,6 +476,12 @@ export async function checkPendingPushReceipts(now = new Date()) {
       },
     );
   }));
+  const urgentTicketIds = [...new Set(claimed.flatMap(delivery =>
+    delivery.kind === "support_urgent" && delivery.payloadData?.ticketId
+      ? [delivery.payloadData.ticketId]
+      : [],
+  ))];
+  await Promise.all(urgentTicketIds.map(refreshUrgentAlertFallbackStatus));
   return claimed.length;
 }
 

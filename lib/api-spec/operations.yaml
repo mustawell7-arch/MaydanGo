@@ -1023,10 +1023,11 @@ components:
       allOf:
         - $ref: "#/components/schemas/SupportTicketSummary"
         - type: object
-          required: [memberUserId, assignedTo]
+          required: [memberUserId, assignedTo, urgentAlertStatus]
           properties:
             memberUserId: { type: string }
             assignedTo: { type: [string, "null"] }
+            urgentAlertStatus: { type: string, enum: [not_applicable, pending, accepted, fallback_required] }
     SupportStaffMessage:
       allOf:
         - $ref: "#/components/schemas/SupportMessage"

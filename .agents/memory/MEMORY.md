@@ -12,3 +12,4 @@
 - [Guardian verification](guardian-verification.md) — Partners verify guardian requirements at the venue; MaydanGo must not collect guardian information.
 - [Waitlist schema sync](waitlist-schema-sync.md) — Drizzle push-force can still hit non-interactive rename prompts; preserve legacy fields or migrate explicitly.
 - [Development schema drift](development-schema-drift.md) — Resolve existing dev database conflicts before pushing schema; never auto-approve data-loss changes.
+- [Urgent alert fallback](urgent-alert-fallback.md) — Public mailbox is the intended destination, but Gmail sending is not connected; current fallback is in-app only.

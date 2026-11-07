@@ -4233,7 +4233,8 @@ export const GetSupportStaffTicketsResponseItem = zod.object({
   "lastMessageAt": zod.coerce.date()
 }).and(zod.object({
   "memberUserId": zod.string(),
-  "assignedTo": zod.string().nullable()
+  "assignedTo": zod.string().nullable(),
+  "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required'])
 }))
 export const GetSupportStaffTicketsResponse = zod.array(GetSupportStaffTicketsResponseItem)
 
@@ -4254,7 +4255,8 @@ export const GetSupportStaffTicketResponse = zod.object({
   "lastMessageAt": zod.coerce.date()
 }).and(zod.object({
   "memberUserId": zod.string(),
-  "assignedTo": zod.string().nullable()
+  "assignedTo": zod.string().nullable(),
+  "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required'])
 })).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
@@ -4300,7 +4302,8 @@ export const UpdateSupportStaffTicketResponse = zod.object({
   "lastMessageAt": zod.coerce.date()
 }).and(zod.object({
   "memberUserId": zod.string(),
-  "assignedTo": zod.string().nullable()
+  "assignedTo": zod.string().nullable(),
+  "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required'])
 })).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
@@ -4350,7 +4353,8 @@ export const ReplySupportStaffTicketResponse = zod.object({
   "lastMessageAt": zod.coerce.date()
 }).and(zod.object({
   "memberUserId": zod.string(),
-  "assignedTo": zod.string().nullable()
+  "assignedTo": zod.string().nullable(),
+  "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required'])
 })).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),

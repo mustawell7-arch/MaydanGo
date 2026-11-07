@@ -716,10 +716,21 @@ export type SupportTicketDetail = SupportTicketSummary & {
   events: SupportTicketEvent[];
 };
 
+export type SupportStaffTicketSummaryUrgentAlertStatus = typeof SupportStaffTicketSummaryUrgentAlertStatus[keyof typeof SupportStaffTicketSummaryUrgentAlertStatus];
+
+
+export const SupportStaffTicketSummaryUrgentAlertStatus = {
+  not_applicable: 'not_applicable',
+  pending: 'pending',
+  accepted: 'accepted',
+  fallback_required: 'fallback_required',
+} as const;
+
 export type SupportStaffTicketSummary = SupportTicketSummary & ({
   memberUserId: string;
   /** @nullable */
   assignedTo: string | null;
+  urgentAlertStatus: SupportStaffTicketSummaryUrgentAlertStatus;
 });
 
 export type SupportStaffMessage = SupportMessage & {
