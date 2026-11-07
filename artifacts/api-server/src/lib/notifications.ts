@@ -155,7 +155,7 @@ async function sendPushAttempts(attempts: PushAttempt[], now: Date) {
         title: delivery.title,
         body: delivery.body,
         sound: "default",
-        data: { kind: delivery.kind },
+        data: { ...(delivery.payloadData ?? {}), kind: delivery.kind },
       }))),
       signal: AbortSignal.timeout(8000),
     });
@@ -216,6 +216,7 @@ export async function sendMemberNotification(userId: string, kind: NotificationK
   offerExpiresAt?: Date;
   remainingMinutes?: number;
   dedupeKey?: string;
+  ticketId?: string;
 } = {}) {
   try {
     const [preference] = await db.select().from(memberNotificationPreferences)
@@ -237,6 +238,9 @@ export async function sendMemberNotification(userId: string, kind: NotificationK
     const remaining = context.remainingMinutes === undefined ? "" : remainingTime(context.remainingMinutes, language);
     const body = localized.body.replace("{deadline}", deadline).replace("{remaining}", remaining);
     const now = new Date();
+    const payloadData: Record<string, string> = kind === "support_urgent" && context.ticketId
+      ? { ticketId: context.ticketId }
+      : {};
     const rows = devices.map(device => ({
       id: randomUUID(),
       userId,
@@ -244,6 +248,7 @@ export async function sendMemberNotification(userId: string, kind: NotificationK
       kind,
       title: localized.title,
       body,
+      payloadData,
       status: "pending",
       dedupeKey: context.dedupeKey ? `${context.dedupeKey}:${device.id}` : null,
       attemptCount: 1,

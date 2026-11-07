@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useAuth } from '@clerk/expo';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetSupportStaffAgentsQueryKey,
@@ -52,7 +52,9 @@ export default function SupportStaffScreen() {
   const t = (key: MessageKey) => translate(app.language, key);
   const { userId } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedId, setSelectedId] = useState('');
+  const params = useLocalSearchParams<{ ticketId?: string }>();
+  const notificationTicketId = typeof params.ticketId === 'string' ? params.ticketId : '';
+  const [selectedId, setSelectedId] = useState(() => notificationTicketId);
   const [message, setMessage] = useState('');
   const [deviceReasons, setDeviceReasons] = useState<Record<string, string>>({});
   const [newAgentId, setNewAgentId] = useState('');
@@ -73,10 +75,15 @@ export default function SupportStaffScreen() {
 
   useEffect(() => {
     if (!selectedId && tickets.data?.length) setSelectedId(tickets.data[0].id);
-    if (selectedId && tickets.data?.length && !tickets.data.some(ticket => ticket.id === selectedId)) {
+    if (selectedId && tickets.data?.length && !notificationTicketId && !tickets.data.some(ticket => ticket.id === selectedId)) {
       setSelectedId(tickets.data[0].id);
     }
-  }, [tickets.data, selectedId]);
+  }, [tickets.data, selectedId, notificationTicketId]);
+
+  const selectTicket = (ticketId: string) => {
+    setSelectedId(ticketId);
+    if (notificationTicketId) router.setParams({ ticketId: undefined });
+  };
 
   const refresh = async () => {
     await Promise.all([
@@ -197,7 +204,7 @@ export default function SupportStaffScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.queue}>
             {tickets.data?.map(ticket => (
               <Pressable key={ticket.id} accessibilityRole="button" accessibilityState={{ selected: selectedId === ticket.id }}
-                onPress={() => setSelectedId(ticket.id)} style={[
+                onPress={() => selectTicket(ticket.id)} style={[
                   styles.queueItem,
                   { borderColor: selectedId === ticket.id ? colors.primary : colors.border, backgroundColor: selectedId === ticket.id ? colors.secondary : colors.background },
                 ]}>

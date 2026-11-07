@@ -12,7 +12,8 @@ import {
   DMSans_700Bold,
   useFonts,
 } from '@expo-google-fonts/dm-sans';
-import { Stack, useSegments } from 'expo-router';
+import { router, Stack, useSegments } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import { translate } from '@/lib/i18n';
@@ -38,8 +39,22 @@ function RootLayoutNav() {
   const device = useDeviceSecurity();
   const segments = useSegments();
   const isSupportRoute = segments[0] === 'support';
+  const lastNotificationResponse = Notifications.useLastNotificationResponse();
   useEffect(() => { queryClient.clear(); }, [userId]);
   useEffect(() => { setAuthTokenGetter(() => getToken()); }, [getToken]);
+  useEffect(() => {
+    if (Platform.OS === 'web' || !lastNotificationResponse) return;
+    const { actionIdentifier, notification } = lastNotificationResponse;
+    const data = notification.request.content.data as { kind?: unknown; ticketId?: unknown };
+    if (data.kind !== 'support_urgent') return;
+    void Notifications.clearLastNotificationResponseAsync().catch(() => {});
+    if (
+      actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER
+      || typeof data.ticketId !== 'string'
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(data.ticketId)
+    ) return;
+    router.push({ pathname: '/support/staff', params: { ticketId: data.ticketId } });
+  }, [lastNotificationResponse]);
   const { language } = useApp();
   if (Platform.OS !== 'web' && isSignedIn && !isSupportRoute && (
     !device.status || device.loading || device.status.status === 'pending'

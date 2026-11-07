@@ -6,6 +6,7 @@ const migrationPaths = [
   new URL("../lib/db/migrations/0003_offering_approval_workflow.sql", import.meta.url),
   new URL("../lib/db/migrations/0006_additive_workspace_schema.sql", import.meta.url),
   new URL("../lib/db/migrations/0007_urgent_support_reports.sql", import.meta.url),
+  new URL("../lib/db/migrations/0008_support_alert_payload.sql", import.meta.url),
 ];
 
 try {

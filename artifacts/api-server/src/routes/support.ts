@@ -133,6 +133,7 @@ memberSupportRouter.post("/support/tickets", async (req, res) => {
         .where(inArray(operators.role, ["admin", "support"]));
       await Promise.all(staff.map(member => sendMemberNotification(member.userId, "support_urgent", {
         dedupeKey: `support-urgent:${id}`,
+        ticketId: id,
       })));
     })().catch(error => req.log.error({ err: error, ticketId: id }, "Urgent support alert fan-out failed"));
   }

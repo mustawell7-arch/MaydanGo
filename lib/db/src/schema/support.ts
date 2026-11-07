@@ -1,4 +1,4 @@
-import { pgTable, text, boolean, timestamp, integer, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, timestamp, integer, index, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
 
 export const supportTickets = pgTable("support_tickets", {
   id: text("id").primaryKey(),
@@ -70,6 +70,7 @@ export const pushDeliveries = pgTable("push_deliveries", {
   kind: text("kind").notNull(),
   title: text("title").notNull(),
   body: text("body").notNull(),
+  payloadData: jsonb("payload_data").$type<Record<string, string>>().notNull().default({}),
   status: text("status").notNull().default("pending"),
   error: text("error"),
   providerTicketId: text("provider_ticket_id"),

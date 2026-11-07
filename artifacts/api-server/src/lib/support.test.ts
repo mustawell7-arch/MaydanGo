@@ -136,9 +136,51 @@ test("support conversations are private, triaged, audited, and replyable", async
   }
   assert.equal(urgentAlertPayloads.length, 1);
   assert.equal(urgentAlertPayloads[0][0].to, supportToken);
+  assert.deepEqual(urgentAlertPayloads[0][0].data, {
+    kind: "support_urgent",
+    ticketId: urgentSafety.data.id,
+  });
   assert.match(urgentAlertPayloads[0][0].body, /ڕاپۆرتێکی پەلەیی/);
   assert.equal((await db.select({ id: pushDeliveries.id }).from(pushDeliveries)
     .where(and(eq(pushDeliveries.userId, partnerId), eq(pushDeliveries.kind, "support_urgent")))).length, 0);
+
+  const retryTicketId = randomUUID();
+  const retryDedupeKey = `support-urgent-retry:${retryTicketId}`;
+  globalThis.fetch = (async (input, init) => {
+    if (String(input).startsWith("https://exp.host/--/api/v2/push/send")) {
+      assert.equal(JSON.parse(String(init?.body))[0].data.ticketId, retryTicketId);
+      return new Response("rate limited", { status: 429 });
+    }
+    return originalFetch(input, init);
+  }) as typeof fetch;
+  try {
+    assert.equal((await sendMemberNotification(supportId, "support_urgent", {
+      ticketId: retryTicketId, dedupeKey: retryDedupeKey,
+    })).status, "failed");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  const [retryableUrgentDelivery] = await db.select().from(pushDeliveries)
+    .where(eq(pushDeliveries.dedupeKey, `${retryDedupeKey}:${supportDeviceId}`));
+  assert.equal(retryableUrgentDelivery?.status, "retry_pending");
+  assert.deepEqual(retryableUrgentDelivery?.payloadData, { ticketId: retryTicketId });
+  let retriedAlertData: unknown;
+  globalThis.fetch = (async (input, init) => {
+    if (String(input).startsWith("https://exp.host/--/api/v2/push/send")) {
+      retriedAlertData = JSON.parse(String(init?.body))[0].data;
+      return new Response(JSON.stringify({ data: [{ status: "ok", id: "urgent-alert-retried" }] }), {
+        status: 200, headers: { "Content-Type": "application/json" },
+      });
+    }
+    return originalFetch(input, init);
+  }) as typeof fetch;
+  try {
+    assert.equal(await retryPendingPushDeliveries(new Date(Date.now() + 60_000)), 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.deepEqual(retriedAlertData, { kind: "support_urgent", ticketId: retryTicketId });
+
   const regularSafety = await call("/member/support/tickets", bob, "POST", {
     subject: "Safety follow-up", category: "safety",
     message: "A non-urgent safety question for the support team.", language: "en",
