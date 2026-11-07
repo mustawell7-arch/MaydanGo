@@ -13,6 +13,22 @@ export type AccessRules = {
   corporateId?: string;
   facilityLimits?: Record<string, number>;
   categoryLimits?: Record<string, number>;
+  planTerms?: {
+    description: LocalizedText;
+    trialPeriodDays: number;
+    minimumContractMonths: number;
+    renewalPeriodDays: number;
+    cancellationPeriodDays: number;
+    automaticRenewal: boolean;
+    pauseAllowanceDays: number;
+    priceProtectionMonths: number;
+    promotionalPriceIqd: number | null;
+    corporatePriceIqd: number | null;
+    digitalContentAccess: boolean;
+    guestPasses: number;
+    eventAccess: boolean;
+    additionalPaymentAllowed: boolean;
+  };
 };
 export type OfferingApprovalStatus =
   | "draft"

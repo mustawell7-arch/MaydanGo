@@ -1370,6 +1370,70 @@ export interface JoinAccess {
   validUntil: string;
 }
 
+export type PlanTermsDescription = {
+  /** @maxLength 240 */
+  en: string;
+  /** @maxLength 240 */
+  ar: string;
+  /** @maxLength 240 */
+  ku: string;
+};
+
+export interface PlanTerms {
+  description: PlanTermsDescription;
+  /**
+     * @minimum 0
+     * @maximum 366
+     */
+  trialPeriodDays: number;
+  /**
+     * @minimum 0
+     * @maximum 120
+     */
+  minimumContractMonths: number;
+  /**
+     * @minimum 1
+     * @maximum 366
+     */
+  renewalPeriodDays: number;
+  /**
+     * @minimum 0
+     * @maximum 366
+     */
+  cancellationPeriodDays: number;
+  automaticRenewal: boolean;
+  /**
+     * @minimum 0
+     * @maximum 366
+     */
+  pauseAllowanceDays: number;
+  /**
+     * @minimum 0
+     * @maximum 120
+     */
+  priceProtectionMonths: number;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     * @nullable
+     */
+  promotionalPriceIqd: number | null;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     * @nullable
+     */
+  corporatePriceIqd: number | null;
+  digitalContentAccess: boolean;
+  /**
+     * @minimum 0
+     * @maximum 10000
+     */
+  guestPasses: number;
+  eventAccess: boolean;
+  additionalPaymentAllowed: boolean;
+}
+
 export type EntitlementRulesQuotaMode = typeof EntitlementRulesQuotaMode[keyof typeof EntitlementRulesQuotaMode];
 
 
@@ -1413,6 +1477,7 @@ export interface EntitlementRules {
   partnerGroupLimits?: EntitlementRulesPartnerGroupLimits;
   trialAllowedTypes?: EntitlementRulesTrialAllowedTypesItem[];
   corporateId?: string;
+  planTerms?: PlanTerms;
 }
 
 export type PlanInputKind = typeof PlanInputKind[keyof typeof PlanInputKind];

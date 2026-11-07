@@ -1551,6 +1551,32 @@ components:
       properties:
         url: { type: string, format: uri }
         validUntil: { type: string, format: date-time }
+    PlanTerms:
+      type: object
+      additionalProperties: false
+      required: [description, trialPeriodDays, minimumContractMonths, renewalPeriodDays, cancellationPeriodDays, automaticRenewal, pauseAllowanceDays, priceProtectionMonths, promotionalPriceIqd, corporatePriceIqd, digitalContentAccess, guestPasses, eventAccess, additionalPaymentAllowed]
+      properties:
+        description:
+          type: object
+          additionalProperties: false
+          required: [en, ar, ku]
+          properties:
+            en: { type: string, maxLength: 240 }
+            ar: { type: string, maxLength: 240 }
+            ku: { type: string, maxLength: 240 }
+        trialPeriodDays: { type: integer, minimum: 0, maximum: 366 }
+        minimumContractMonths: { type: integer, minimum: 0, maximum: 120 }
+        renewalPeriodDays: { type: integer, minimum: 1, maximum: 366 }
+        cancellationPeriodDays: { type: integer, minimum: 0, maximum: 366 }
+        automaticRenewal: { type: boolean }
+        pauseAllowanceDays: { type: integer, minimum: 0, maximum: 366 }
+        priceProtectionMonths: { type: integer, minimum: 0, maximum: 120 }
+        promotionalPriceIqd: { type: [integer, "null"], minimum: 0, maximum: 1000000000 }
+        corporatePriceIqd: { type: [integer, "null"], minimum: 0, maximum: 1000000000 }
+        digitalContentAccess: { type: boolean }
+        guestPasses: { type: integer, minimum: 0, maximum: 10000 }
+        eventAccess: { type: boolean }
+        additionalPaymentAllowed: { type: boolean }
     EntitlementRules:
       type: object
       additionalProperties: false
@@ -1570,6 +1596,7 @@ components:
         partnerGroupLimits: { type: object, additionalProperties: { type: integer, minimum: 0 } }
         trialAllowedTypes: { type: array, items: { type: string, enum: [physical, premium, live] } }
         corporateId: { type: string }
+        planTerms: { $ref: "#/components/schemas/PlanTerms" }
     PlanInput:
       type: object
       additionalProperties: false

@@ -1224,6 +1224,38 @@ export const getOperationsResponsePlansItemOneRulesCategoryLimitsMinOne = 0;
 
 export const getOperationsResponsePlansItemOneRulesPartnerGroupLimitsMinOne = 0;
 
+export const getOperationsResponsePlansItemOneRulesPlanTermsDescriptionEnMax = 240;
+
+export const getOperationsResponsePlansItemOneRulesPlanTermsDescriptionArMax = 240;
+
+export const getOperationsResponsePlansItemOneRulesPlanTermsDescriptionKuMax = 240;
+
+export const getOperationsResponsePlansItemOneRulesPlanTermsTrialPeriodDaysMin = 0;
+export const getOperationsResponsePlansItemOneRulesPlanTermsTrialPeriodDaysMax = 366;
+
+export const getOperationsResponsePlansItemOneRulesPlanTermsMinimumContractMonthsMin = 0;
+export const getOperationsResponsePlansItemOneRulesPlanTermsMinimumContractMonthsMax = 120;
+
+export const getOperationsResponsePlansItemOneRulesPlanTermsRenewalPeriodDaysMax = 366;
+
+export const getOperationsResponsePlansItemOneRulesPlanTermsCancellationPeriodDaysMin = 0;
+export const getOperationsResponsePlansItemOneRulesPlanTermsCancellationPeriodDaysMax = 366;
+
+export const getOperationsResponsePlansItemOneRulesPlanTermsPauseAllowanceDaysMin = 0;
+export const getOperationsResponsePlansItemOneRulesPlanTermsPauseAllowanceDaysMax = 366;
+
+export const getOperationsResponsePlansItemOneRulesPlanTermsPriceProtectionMonthsMin = 0;
+export const getOperationsResponsePlansItemOneRulesPlanTermsPriceProtectionMonthsMax = 120;
+
+export const getOperationsResponsePlansItemOneRulesPlanTermsPromotionalPriceIqdMin = 0;
+export const getOperationsResponsePlansItemOneRulesPlanTermsPromotionalPriceIqdMax = 1000000000;
+
+export const getOperationsResponsePlansItemOneRulesPlanTermsCorporatePriceIqdMin = 0;
+export const getOperationsResponsePlansItemOneRulesPlanTermsCorporatePriceIqdMax = 1000000000;
+
+export const getOperationsResponsePlansItemOneRulesPlanTermsGuestPassesMin = 0;
+export const getOperationsResponsePlansItemOneRulesPlanTermsGuestPassesMax = 10000;
+
 export const getOperationsResponsePlansItemOnePriceIqdMax = 1000000000;
 
 
@@ -1330,7 +1362,27 @@ export const GetOperationsResponse = zod.object({
   "categoryLimits": zod.record(zod.string(), zod.number().int().min(getOperationsResponsePlansItemOneRulesCategoryLimitsMinOne)).optional(),
   "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(getOperationsResponsePlansItemOneRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
-  "corporateId": zod.string().optional()
+  "corporateId": zod.string().optional(),
+  "planTerms": zod.object({
+  "description": zod.object({
+  "en": zod.string().max(getOperationsResponsePlansItemOneRulesPlanTermsDescriptionEnMax),
+  "ar": zod.string().max(getOperationsResponsePlansItemOneRulesPlanTermsDescriptionArMax),
+  "ku": zod.string().max(getOperationsResponsePlansItemOneRulesPlanTermsDescriptionKuMax)
+}),
+  "trialPeriodDays": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsTrialPeriodDaysMin).max(getOperationsResponsePlansItemOneRulesPlanTermsTrialPeriodDaysMax),
+  "minimumContractMonths": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsMinimumContractMonthsMin).max(getOperationsResponsePlansItemOneRulesPlanTermsMinimumContractMonthsMax),
+  "renewalPeriodDays": zod.number().int().min(1).max(getOperationsResponsePlansItemOneRulesPlanTermsRenewalPeriodDaysMax),
+  "cancellationPeriodDays": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsCancellationPeriodDaysMin).max(getOperationsResponsePlansItemOneRulesPlanTermsCancellationPeriodDaysMax),
+  "automaticRenewal": zod.boolean(),
+  "pauseAllowanceDays": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsPauseAllowanceDaysMin).max(getOperationsResponsePlansItemOneRulesPlanTermsPauseAllowanceDaysMax),
+  "priceProtectionMonths": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsPriceProtectionMonthsMin).max(getOperationsResponsePlansItemOneRulesPlanTermsPriceProtectionMonthsMax),
+  "promotionalPriceIqd": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsPromotionalPriceIqdMin).max(getOperationsResponsePlansItemOneRulesPlanTermsPromotionalPriceIqdMax).nullable(),
+  "corporatePriceIqd": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsCorporatePriceIqdMin).max(getOperationsResponsePlansItemOneRulesPlanTermsCorporatePriceIqdMax).nullable(),
+  "digitalContentAccess": zod.boolean(),
+  "guestPasses": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsGuestPassesMin).max(getOperationsResponsePlansItemOneRulesPlanTermsGuestPassesMax),
+  "eventAccess": zod.boolean(),
+  "additionalPaymentAllowed": zod.boolean()
+}).optional()
 }),
   "priceIqd": zod.number().int().min(1).max(getOperationsResponsePlansItemOnePriceIqdMax).nullable()
 }).and(zod.object({
@@ -2792,6 +2844,38 @@ export const addMembershipPlanBodyRulesCategoryLimitsMinOne = 0;
 
 export const addMembershipPlanBodyRulesPartnerGroupLimitsMinOne = 0;
 
+export const addMembershipPlanBodyRulesPlanTermsDescriptionEnMax = 240;
+
+export const addMembershipPlanBodyRulesPlanTermsDescriptionArMax = 240;
+
+export const addMembershipPlanBodyRulesPlanTermsDescriptionKuMax = 240;
+
+export const addMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMin = 0;
+export const addMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMax = 366;
+
+export const addMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMin = 0;
+export const addMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMax = 120;
+
+export const addMembershipPlanBodyRulesPlanTermsRenewalPeriodDaysMax = 366;
+
+export const addMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMin = 0;
+export const addMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMax = 366;
+
+export const addMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMin = 0;
+export const addMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMax = 366;
+
+export const addMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMin = 0;
+export const addMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMax = 120;
+
+export const addMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMin = 0;
+export const addMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMax = 1000000000;
+
+export const addMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMin = 0;
+export const addMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMax = 1000000000;
+
+export const addMembershipPlanBodyRulesPlanTermsGuestPassesMin = 0;
+export const addMembershipPlanBodyRulesPlanTermsGuestPassesMax = 10000;
+
 export const addMembershipPlanBodyPriceIqdMax = 1000000000;
 
 
@@ -2816,7 +2900,27 @@ export const AddMembershipPlanBody = zod.object({
   "categoryLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanBodyRulesCategoryLimitsMinOne)).optional(),
   "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanBodyRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
-  "corporateId": zod.string().optional()
+  "corporateId": zod.string().optional(),
+  "planTerms": zod.object({
+  "description": zod.object({
+  "en": zod.string().max(addMembershipPlanBodyRulesPlanTermsDescriptionEnMax),
+  "ar": zod.string().max(addMembershipPlanBodyRulesPlanTermsDescriptionArMax),
+  "ku": zod.string().max(addMembershipPlanBodyRulesPlanTermsDescriptionKuMax)
+}),
+  "trialPeriodDays": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMin).max(addMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMax),
+  "minimumContractMonths": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMin).max(addMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMax),
+  "renewalPeriodDays": zod.number().int().min(1).max(addMembershipPlanBodyRulesPlanTermsRenewalPeriodDaysMax),
+  "cancellationPeriodDays": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMin).max(addMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMax),
+  "automaticRenewal": zod.boolean(),
+  "pauseAllowanceDays": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMin).max(addMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMax),
+  "priceProtectionMonths": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMin).max(addMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMax),
+  "promotionalPriceIqd": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMin).max(addMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMax).nullable(),
+  "corporatePriceIqd": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMin).max(addMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMax).nullable(),
+  "digitalContentAccess": zod.boolean(),
+  "guestPasses": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsGuestPassesMin).max(addMembershipPlanBodyRulesPlanTermsGuestPassesMax),
+  "eventAccess": zod.boolean(),
+  "additionalPaymentAllowed": zod.boolean()
+}).optional()
 }),
   "priceIqd": zod.number().int().min(1).max(addMembershipPlanBodyPriceIqdMax).nullable()
 })
@@ -2838,6 +2942,38 @@ export const addMembershipPlanResponseOneRulesFacilityLimitsMinOne = 0;
 export const addMembershipPlanResponseOneRulesCategoryLimitsMinOne = 0;
 
 export const addMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne = 0;
+
+export const addMembershipPlanResponseOneRulesPlanTermsDescriptionEnMax = 240;
+
+export const addMembershipPlanResponseOneRulesPlanTermsDescriptionArMax = 240;
+
+export const addMembershipPlanResponseOneRulesPlanTermsDescriptionKuMax = 240;
+
+export const addMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMin = 0;
+export const addMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMax = 366;
+
+export const addMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMin = 0;
+export const addMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMax = 120;
+
+export const addMembershipPlanResponseOneRulesPlanTermsRenewalPeriodDaysMax = 366;
+
+export const addMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMin = 0;
+export const addMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMax = 366;
+
+export const addMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMin = 0;
+export const addMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMax = 366;
+
+export const addMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMin = 0;
+export const addMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMax = 120;
+
+export const addMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMin = 0;
+export const addMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMax = 1000000000;
+
+export const addMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMin = 0;
+export const addMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMax = 1000000000;
+
+export const addMembershipPlanResponseOneRulesPlanTermsGuestPassesMin = 0;
+export const addMembershipPlanResponseOneRulesPlanTermsGuestPassesMax = 10000;
 
 export const addMembershipPlanResponseOnePriceIqdMax = 1000000000;
 
@@ -2863,7 +2999,27 @@ export const AddMembershipPlanResponse = zod.object({
   "categoryLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanResponseOneRulesCategoryLimitsMinOne)).optional(),
   "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
-  "corporateId": zod.string().optional()
+  "corporateId": zod.string().optional(),
+  "planTerms": zod.object({
+  "description": zod.object({
+  "en": zod.string().max(addMembershipPlanResponseOneRulesPlanTermsDescriptionEnMax),
+  "ar": zod.string().max(addMembershipPlanResponseOneRulesPlanTermsDescriptionArMax),
+  "ku": zod.string().max(addMembershipPlanResponseOneRulesPlanTermsDescriptionKuMax)
+}),
+  "trialPeriodDays": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMin).max(addMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMax),
+  "minimumContractMonths": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMin).max(addMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMax),
+  "renewalPeriodDays": zod.number().int().min(1).max(addMembershipPlanResponseOneRulesPlanTermsRenewalPeriodDaysMax),
+  "cancellationPeriodDays": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMin).max(addMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMax),
+  "automaticRenewal": zod.boolean(),
+  "pauseAllowanceDays": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMin).max(addMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMax),
+  "priceProtectionMonths": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMin).max(addMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMax),
+  "promotionalPriceIqd": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMin).max(addMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMax).nullable(),
+  "corporatePriceIqd": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMin).max(addMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMax).nullable(),
+  "digitalContentAccess": zod.boolean(),
+  "guestPasses": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsGuestPassesMin).max(addMembershipPlanResponseOneRulesPlanTermsGuestPassesMax),
+  "eventAccess": zod.boolean(),
+  "additionalPaymentAllowed": zod.boolean()
+}).optional()
 }),
   "priceIqd": zod.number().int().min(1).max(addMembershipPlanResponseOnePriceIqdMax).nullable()
 }).and(zod.object({
@@ -2896,6 +3052,38 @@ export const replaceMembershipPlanBodyRulesCategoryLimitsMinOne = 0;
 
 export const replaceMembershipPlanBodyRulesPartnerGroupLimitsMinOne = 0;
 
+export const replaceMembershipPlanBodyRulesPlanTermsDescriptionEnMax = 240;
+
+export const replaceMembershipPlanBodyRulesPlanTermsDescriptionArMax = 240;
+
+export const replaceMembershipPlanBodyRulesPlanTermsDescriptionKuMax = 240;
+
+export const replaceMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMin = 0;
+export const replaceMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMax = 366;
+
+export const replaceMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMin = 0;
+export const replaceMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMax = 120;
+
+export const replaceMembershipPlanBodyRulesPlanTermsRenewalPeriodDaysMax = 366;
+
+export const replaceMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMin = 0;
+export const replaceMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMax = 366;
+
+export const replaceMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMin = 0;
+export const replaceMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMax = 366;
+
+export const replaceMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMin = 0;
+export const replaceMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMax = 120;
+
+export const replaceMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMin = 0;
+export const replaceMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMax = 1000000000;
+
+export const replaceMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMin = 0;
+export const replaceMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMax = 1000000000;
+
+export const replaceMembershipPlanBodyRulesPlanTermsGuestPassesMin = 0;
+export const replaceMembershipPlanBodyRulesPlanTermsGuestPassesMax = 10000;
+
 export const replaceMembershipPlanBodyPriceIqdMax = 1000000000;
 
 
@@ -2920,7 +3108,27 @@ export const ReplaceMembershipPlanBody = zod.object({
   "categoryLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanBodyRulesCategoryLimitsMinOne)).optional(),
   "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanBodyRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
-  "corporateId": zod.string().optional()
+  "corporateId": zod.string().optional(),
+  "planTerms": zod.object({
+  "description": zod.object({
+  "en": zod.string().max(replaceMembershipPlanBodyRulesPlanTermsDescriptionEnMax),
+  "ar": zod.string().max(replaceMembershipPlanBodyRulesPlanTermsDescriptionArMax),
+  "ku": zod.string().max(replaceMembershipPlanBodyRulesPlanTermsDescriptionKuMax)
+}),
+  "trialPeriodDays": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMin).max(replaceMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMax),
+  "minimumContractMonths": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMin).max(replaceMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMax),
+  "renewalPeriodDays": zod.number().int().min(1).max(replaceMembershipPlanBodyRulesPlanTermsRenewalPeriodDaysMax),
+  "cancellationPeriodDays": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMin).max(replaceMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMax),
+  "automaticRenewal": zod.boolean(),
+  "pauseAllowanceDays": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMin).max(replaceMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMax),
+  "priceProtectionMonths": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMin).max(replaceMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMax),
+  "promotionalPriceIqd": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMin).max(replaceMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMax).nullable(),
+  "corporatePriceIqd": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMin).max(replaceMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMax).nullable(),
+  "digitalContentAccess": zod.boolean(),
+  "guestPasses": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsGuestPassesMin).max(replaceMembershipPlanBodyRulesPlanTermsGuestPassesMax),
+  "eventAccess": zod.boolean(),
+  "additionalPaymentAllowed": zod.boolean()
+}).optional()
 }),
   "priceIqd": zod.number().int().min(1).max(replaceMembershipPlanBodyPriceIqdMax).nullable()
 })
@@ -2942,6 +3150,38 @@ export const replaceMembershipPlanResponseOneRulesFacilityLimitsMinOne = 0;
 export const replaceMembershipPlanResponseOneRulesCategoryLimitsMinOne = 0;
 
 export const replaceMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne = 0;
+
+export const replaceMembershipPlanResponseOneRulesPlanTermsDescriptionEnMax = 240;
+
+export const replaceMembershipPlanResponseOneRulesPlanTermsDescriptionArMax = 240;
+
+export const replaceMembershipPlanResponseOneRulesPlanTermsDescriptionKuMax = 240;
+
+export const replaceMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMin = 0;
+export const replaceMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMax = 366;
+
+export const replaceMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMin = 0;
+export const replaceMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMax = 120;
+
+export const replaceMembershipPlanResponseOneRulesPlanTermsRenewalPeriodDaysMax = 366;
+
+export const replaceMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMin = 0;
+export const replaceMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMax = 366;
+
+export const replaceMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMin = 0;
+export const replaceMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMax = 366;
+
+export const replaceMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMin = 0;
+export const replaceMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMax = 120;
+
+export const replaceMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMin = 0;
+export const replaceMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMax = 1000000000;
+
+export const replaceMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMin = 0;
+export const replaceMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMax = 1000000000;
+
+export const replaceMembershipPlanResponseOneRulesPlanTermsGuestPassesMin = 0;
+export const replaceMembershipPlanResponseOneRulesPlanTermsGuestPassesMax = 10000;
 
 export const replaceMembershipPlanResponseOnePriceIqdMax = 1000000000;
 
@@ -2967,7 +3207,27 @@ export const ReplaceMembershipPlanResponse = zod.object({
   "categoryLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanResponseOneRulesCategoryLimitsMinOne)).optional(),
   "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
-  "corporateId": zod.string().optional()
+  "corporateId": zod.string().optional(),
+  "planTerms": zod.object({
+  "description": zod.object({
+  "en": zod.string().max(replaceMembershipPlanResponseOneRulesPlanTermsDescriptionEnMax),
+  "ar": zod.string().max(replaceMembershipPlanResponseOneRulesPlanTermsDescriptionArMax),
+  "ku": zod.string().max(replaceMembershipPlanResponseOneRulesPlanTermsDescriptionKuMax)
+}),
+  "trialPeriodDays": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMin).max(replaceMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMax),
+  "minimumContractMonths": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMin).max(replaceMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMax),
+  "renewalPeriodDays": zod.number().int().min(1).max(replaceMembershipPlanResponseOneRulesPlanTermsRenewalPeriodDaysMax),
+  "cancellationPeriodDays": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMin).max(replaceMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMax),
+  "automaticRenewal": zod.boolean(),
+  "pauseAllowanceDays": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMin).max(replaceMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMax),
+  "priceProtectionMonths": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMin).max(replaceMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMax),
+  "promotionalPriceIqd": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMin).max(replaceMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMax).nullable(),
+  "corporatePriceIqd": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMin).max(replaceMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMax).nullable(),
+  "digitalContentAccess": zod.boolean(),
+  "guestPasses": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsGuestPassesMin).max(replaceMembershipPlanResponseOneRulesPlanTermsGuestPassesMax),
+  "eventAccess": zod.boolean(),
+  "additionalPaymentAllowed": zod.boolean()
+}).optional()
 }),
   "priceIqd": zod.number().int().min(1).max(replaceMembershipPlanResponseOnePriceIqdMax).nullable()
 }).and(zod.object({
@@ -4609,6 +4869,38 @@ export const getLivePlansResponseOneRulesCategoryLimitsMinOne = 0;
 
 export const getLivePlansResponseOneRulesPartnerGroupLimitsMinOne = 0;
 
+export const getLivePlansResponseOneRulesPlanTermsDescriptionEnMax = 240;
+
+export const getLivePlansResponseOneRulesPlanTermsDescriptionArMax = 240;
+
+export const getLivePlansResponseOneRulesPlanTermsDescriptionKuMax = 240;
+
+export const getLivePlansResponseOneRulesPlanTermsTrialPeriodDaysMin = 0;
+export const getLivePlansResponseOneRulesPlanTermsTrialPeriodDaysMax = 366;
+
+export const getLivePlansResponseOneRulesPlanTermsMinimumContractMonthsMin = 0;
+export const getLivePlansResponseOneRulesPlanTermsMinimumContractMonthsMax = 120;
+
+export const getLivePlansResponseOneRulesPlanTermsRenewalPeriodDaysMax = 366;
+
+export const getLivePlansResponseOneRulesPlanTermsCancellationPeriodDaysMin = 0;
+export const getLivePlansResponseOneRulesPlanTermsCancellationPeriodDaysMax = 366;
+
+export const getLivePlansResponseOneRulesPlanTermsPauseAllowanceDaysMin = 0;
+export const getLivePlansResponseOneRulesPlanTermsPauseAllowanceDaysMax = 366;
+
+export const getLivePlansResponseOneRulesPlanTermsPriceProtectionMonthsMin = 0;
+export const getLivePlansResponseOneRulesPlanTermsPriceProtectionMonthsMax = 120;
+
+export const getLivePlansResponseOneRulesPlanTermsPromotionalPriceIqdMin = 0;
+export const getLivePlansResponseOneRulesPlanTermsPromotionalPriceIqdMax = 1000000000;
+
+export const getLivePlansResponseOneRulesPlanTermsCorporatePriceIqdMin = 0;
+export const getLivePlansResponseOneRulesPlanTermsCorporatePriceIqdMax = 1000000000;
+
+export const getLivePlansResponseOneRulesPlanTermsGuestPassesMin = 0;
+export const getLivePlansResponseOneRulesPlanTermsGuestPassesMax = 10000;
+
 export const getLivePlansResponseOnePriceIqdMax = 1000000000;
 
 
@@ -4633,7 +4925,27 @@ export const GetLivePlansResponseItem = zod.object({
   "categoryLimits": zod.record(zod.string(), zod.number().int().min(getLivePlansResponseOneRulesCategoryLimitsMinOne)).optional(),
   "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(getLivePlansResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
-  "corporateId": zod.string().optional()
+  "corporateId": zod.string().optional(),
+  "planTerms": zod.object({
+  "description": zod.object({
+  "en": zod.string().max(getLivePlansResponseOneRulesPlanTermsDescriptionEnMax),
+  "ar": zod.string().max(getLivePlansResponseOneRulesPlanTermsDescriptionArMax),
+  "ku": zod.string().max(getLivePlansResponseOneRulesPlanTermsDescriptionKuMax)
+}),
+  "trialPeriodDays": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsTrialPeriodDaysMin).max(getLivePlansResponseOneRulesPlanTermsTrialPeriodDaysMax),
+  "minimumContractMonths": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsMinimumContractMonthsMin).max(getLivePlansResponseOneRulesPlanTermsMinimumContractMonthsMax),
+  "renewalPeriodDays": zod.number().int().min(1).max(getLivePlansResponseOneRulesPlanTermsRenewalPeriodDaysMax),
+  "cancellationPeriodDays": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsCancellationPeriodDaysMin).max(getLivePlansResponseOneRulesPlanTermsCancellationPeriodDaysMax),
+  "automaticRenewal": zod.boolean(),
+  "pauseAllowanceDays": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsPauseAllowanceDaysMin).max(getLivePlansResponseOneRulesPlanTermsPauseAllowanceDaysMax),
+  "priceProtectionMonths": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsPriceProtectionMonthsMin).max(getLivePlansResponseOneRulesPlanTermsPriceProtectionMonthsMax),
+  "promotionalPriceIqd": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsPromotionalPriceIqdMin).max(getLivePlansResponseOneRulesPlanTermsPromotionalPriceIqdMax).nullable(),
+  "corporatePriceIqd": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsCorporatePriceIqdMin).max(getLivePlansResponseOneRulesPlanTermsCorporatePriceIqdMax).nullable(),
+  "digitalContentAccess": zod.boolean(),
+  "guestPasses": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsGuestPassesMin).max(getLivePlansResponseOneRulesPlanTermsGuestPassesMax),
+  "eventAccess": zod.boolean(),
+  "additionalPaymentAllowed": zod.boolean()
+}).optional()
 }),
   "priceIqd": zod.number().int().min(1).max(getLivePlansResponseOnePriceIqdMax).nullable()
 }).and(zod.object({

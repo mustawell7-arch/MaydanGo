@@ -351,9 +351,17 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       assert.equal(otherPartner.status, 403);
     });
     const rules = { quota: 1, dailyLimit: 10, quotaMode: "separate", physicalQuota: 1, premiumQuota: 1, liveQuota: 1, trialAllowedTypes: ["physical", "premium", "live"] };
-    const planBody = { name: "Isolated trial", tier: "M", kind: "trial", durationDays: 7, active: true, priceIqd: null, rules };
+    const planTerms = {
+      description: { en: "Isolated trial", ar: "تجربة معزولة", ku: "تاقیکردنەوەی جیاواز" },
+      trialPeriodDays: 7, minimumContractMonths: 0, renewalPeriodDays: 30, cancellationPeriodDays: 0,
+      automaticRenewal: false, pauseAllowanceDays: 0, priceProtectionMonths: 0,
+      promotionalPriceIqd: null, corporatePriceIqd: null, digitalContentAccess: false,
+      guestPasses: 0, eventAccess: true, additionalPaymentAllowed: false,
+    };
+    const planBody = { name: "Isolated trial", tier: "M", kind: "trial", durationDays: 7, active: true, priceIqd: null, rules: { ...rules, planTerms } };
     const plan = await call("/operations/plans", adminId, "POST", planBody);
     assert.equal(plan.status, 201); planIds.push(plan.data.id);
+    assert.deepEqual(plan.data.rules.planTerms, planTerms);
     await t.test("public catalog and plans expose only approved live summaries without authentication", async () => {
       const catalogResponse = await fetch(`http://127.0.0.1:${port}/public/catalog`);
       assert.equal(catalogResponse.status, 200);

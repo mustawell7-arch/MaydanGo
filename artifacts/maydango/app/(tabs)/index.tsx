@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -9,20 +10,74 @@ import { Text, Pressable, Ionicons } from '@/components/Localized';
 import { router } from 'expo-router';
 import { ScreenShell } from '@/components/ScreenShell';
 import { FacilityCard } from '@/components/FacilityCard';
-import { categories, facilities, getCityLabel, sessions } from '@/data/demo';
+import { categories, getCityLabel } from '@/data/demo';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { translate } from '@/lib/i18n';
+import { dateTime } from '@/lib/content';
+import { cityIdForFacility, facilityText } from '@/lib/facility-content';
+import {
+  getGetPublicCatalogQueryKey,
+  getGetPublicFacilitiesQueryKey,
+  useGetMemberCourses,
+  useGetMemberLiveClasses,
+  useGetPublicCatalog,
+  useGetPublicFacilities,
+} from '@workspace/api-client-react';
 
 export default function HomeScreen() {
   const colors = useColors();
   const app = useApp();
   const t = (key: Parameters<typeof translate>[1]) => translate(app.language, key);
   const currentCity = getCityLabel(app.selectedCityId, app.language);
-  const featured = sessions[0];
-  const nearbyFacilities = app.selectedCityId === 'all'
-    ? facilities.slice(0, 5)
-    : facilities.filter((facility) => facility.cityId === app.selectedCityId).slice(0, 4);
+  const facilitiesQuery = useGetPublicFacilities({
+    query: { queryKey: getGetPublicFacilitiesQueryKey(), refetchInterval: 60_000 },
+  });
+  const eventsQuery = useGetPublicCatalog({
+    query: { queryKey: getGetPublicCatalogQueryKey(), refetchInterval: 60_000 },
+  });
+  const coursesQuery = useGetMemberCourses({ query: { enabled: app.signedIn } });
+  const liveQuery = useGetMemberLiveClasses({
+    query: { enabled: app.signedIn, refetchInterval: 30_000 },
+  });
+  const activeMembership = app.memberMemberships.find((membership) =>
+    membership.scope !== 'preview' &&
+    ['active', 'trial'].includes(membership.status) &&
+    Date.parse(membership.endsAt) > Date.now(),
+  );
+  const nearbyFacilities = useMemo(() => {
+    const rows = (facilitiesQuery.data ?? []).filter((facility) =>
+      app.selectedCityId === 'all' || cityIdForFacility(facility.city) === app.selectedCityId,
+    );
+    return rows.sort((a, b) => {
+      const favoriteOrder = Number(app.favorites.includes(b.id)) - Number(app.favorites.includes(a.id));
+      if (favoriteOrder) return favoriteOrder;
+      return Number(b.openingStatus === 'open') - Number(a.openingStatus === 'open');
+    }).slice(0, 4);
+  }, [facilitiesQuery.data, app.selectedCityId, app.favorites]);
+  const upcomingBooking = useMemo(() => app.serverBookings
+    .filter((booking) =>
+      !['cancelled', 'partner_cancelled'].includes(String(booking.status)) &&
+      Date.parse(booking.startsAt) > Date.now(),
+    )
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0], [app.serverBookings]);
+  const nextLiveClass = useMemo(() => (liveQuery.data ?? [])
+    .filter((item) => item.booked && Date.parse(item.startsAt) > Date.now())
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0], [liveQuery.data]);
+  const coursesInProgress = (coursesQuery.data ?? []).filter((course) =>
+    course.enrolled && course.completedLessons < course.lessonCount,
+  ).slice(0, 2);
+  const upcomingEvents = useMemo(() => (eventsQuery.data ?? [])
+    .filter((event) =>
+      event.kind === 'event' &&
+      !event.additionalPayment &&
+      Date.parse(event.startsAt) > Date.now() &&
+      (app.selectedCityId === 'all' || cityIdForFacility(event.city) === app.selectedCityId),
+    )
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+    .slice(0, 3), [eventsQuery.data, app.selectedCityId]);
+  const localized = (value: { en?: string; ar?: string; ku?: string } | null | undefined) =>
+    value?.[app.language] || value?.en || '';
 
   return (
     <ScreenShell>
@@ -74,80 +129,149 @@ export default function HomeScreen() {
           accessibilityRole="button"
           onPress={() => router.push('/membership')}
           style={({ pressed }) => [
-            styles.passCard,
+            styles.membershipCard,
             { backgroundColor: colors.primary, opacity: pressed ? 0.94 : 1 },
           ]}
         >
-          <View style={styles.passGlow} />
-          <View style={styles.passTop}>
-            <View>
-              <Text style={styles.passEyebrow}>Sample plan · no real access</Text>
-              <View style={styles.passTitleRow}>
-                <Text style={styles.passTier}>{app.membershipTier}</Text>
-                <View style={styles.activePill}>
-                  <View style={styles.activeDot} />
-                  <Text style={styles.activeText}>Preview</Text>
-                </View>
-              </View>
-            </View>
-            <View style={styles.passMark}>
+          <View style={styles.membershipTop}>
+            <Text style={styles.membershipEyebrow}>{t('yourPass')}</Text>
+            <View style={styles.membershipMark}>
               <Ionicons name="arrow-forward" size={18} color="#d9f2a1" />
             </View>
           </View>
-          <View style={styles.quotaBlock}>
-            <View style={styles.quotaLabels}>
-              <Text style={styles.quotaNumber}>{app.visitsRemaining} / 12</Text>
-              <Text style={styles.quotaCaption}>{t('visitsLeft').replace('{n}', String(app.visitsRemaining))}</Text>
-            </View>
-            <View style={styles.progressTrack}>
-              <View
-                style={[
-                  styles.progressFill,
-                  { width: `${Math.max(0, (app.visitsRemaining / 12) * 100)}%` },
-                ]}
-              />
-            </View>
-          </View>
-          <View style={styles.passBottom}>
-            <Text style={styles.liveQuota}>6 {t('liveClasses')}</Text>
-            <Text style={styles.viewMembership}>{t('managePass')}</Text>
-          </View>
+          <Text style={styles.membershipTier}>
+            {activeMembership ? activeMembership.tier : t('choosePlan')}
+          </Text>
+          <Text style={styles.membershipDetails}>
+            {activeMembership
+              ? `${t('managePass')} · ${dateTime(activeMembership.endsAt, app.language, true)}`
+              : t('planNote')}
+          </Text>
         </Pressable>
 
         <View style={styles.sectionHeader}>
           <View>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              {t('todayForYou')}
+              {t('upcoming')}
             </Text>
             <Text style={[styles.sectionSub, { color: colors.mutedForeground }]}>
-              {t('todayForYouHint')}
+              {t('bookings')}
             </Text>
           </View>
-          <Pressable onPress={() => router.push('/explore')} accessibilityRole="button">
+          <Pressable onPress={() => router.push('/bookings')} accessibilityRole="button">
             <Text style={[styles.seeAll, { color: colors.primary }]}>{t('seeAll')}</Text>
           </Pressable>
         </View>
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push({ pathname: '/session/[id]', params: { id: featured.id } })}
-          style={({ pressed }) => [styles.featuredCard, { opacity: pressed ? 0.93 : 1 }]}
-        >
-          <Image source={featured.image} style={styles.featuredImage} resizeMode="cover" />
-          <View style={styles.featuredShade} />
-          <View style={styles.featuredBadge}>
-            <Ionicons name="flash" size={11} color="#18352b" />
-            <Text style={styles.featuredBadgeText}>MAYDANGO PICK</Text>
-          </View>
-          <View style={styles.featuredCopy}>
-            <Text style={styles.featuredTime}>{featured.time} · {featured.duration}</Text>
-            <Text style={styles.featuredTitle}>{featured.title}</Text>
-            <Text style={styles.featuredInstructor}>with {featured.instructor}</Text>
-          </View>
-          <View style={styles.featuredArrow}>
-            <Ionicons name="arrow-forward" size={19} color="#18352b" />
-          </View>
-        </Pressable>
+        {upcomingBooking ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/bookings')}
+            style={({ pressed }) => [
+              styles.dashboardCard,
+              { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.9 : 1 },
+            ]}
+          >
+            <View style={[styles.dashboardIcon, { backgroundColor: colors.secondary }]}>
+              <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.dashboardMeta, { color: colors.primary }]}>
+                {dateTime(upcomingBooking.startsAt, app.language)}
+              </Text>
+              <Text style={[styles.dashboardTitle, { color: colors.foreground }]}>
+                {upcomingBooking.localizedTitle
+                  ? facilityText(upcomingBooking.localizedTitle, app.language)
+                  : upcomingBooking.title}
+              </Text>
+              <Text style={[styles.dashboardMeta, { color: colors.mutedForeground }]}>
+                {[upcomingBooking.facility, upcomingBooking.city].filter(Boolean).join(' · ')}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.mutedForeground} />
+          </Pressable>
+        ) : app.signedIn && !app.memberLoading ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/explore')}
+            style={[styles.emptyBooking, { backgroundColor: colors.secondary }]}
+          >
+            <Text style={[styles.dashboardTitle, { color: colors.foreground }]}>{t('noBookings')}</Text>
+            <Text style={[styles.dashboardMeta, { color: colors.mutedForeground }]}>{t('noBookingsHint')}</Text>
+            <Text style={[styles.seeAll, { color: colors.primary, marginTop: 8 }]}>{t('findClass')}</Text>
+          </Pressable>
+        ) : null}
+
+        {nextLiveClass ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/online')}
+            style={[styles.dashboardCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          >
+            <View style={[styles.dashboardIcon, { backgroundColor: colors.accent }]}>
+              <Ionicons name="videocam-outline" size={20} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.dashboardMeta, { color: colors.primary }]}>{t('live')}</Text>
+              <Text style={[styles.dashboardTitle, { color: colors.foreground }]}>
+                {localized(nextLiveClass.localizedTitle) || nextLiveClass.title}
+              </Text>
+              <Text style={[styles.dashboardMeta, { color: colors.mutedForeground }]}>
+                {dateTime(nextLiveClass.startsAt, app.language)}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.mutedForeground} />
+          </Pressable>
+        ) : null}
+
+        {coursesInProgress.length ? (
+          <>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t('continueLearning')}</Text>
+              </View>
+              <Pressable onPress={() => router.push('/online')} accessibilityRole="button">
+                <Text style={[styles.seeAll, { color: colors.primary }]}>{t('seeAll')}</Text>
+              </Pressable>
+            </View>
+            {coursesInProgress.map((course) => {
+              const progress = course.lessonCount > 0
+                ? Math.round((course.completedLessons / course.lessonCount) * 100)
+                : 0;
+              return (
+                <Pressable
+                  key={course.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t('continueCourse')}: ${localized(course.localizedTitle)}`}
+                  onPress={() => router.push({ pathname: '/course/[id]', params: { id: course.id } })}
+                  style={({ pressed }) => [
+                    styles.courseProgressCard,
+                    { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.9 : 1 },
+                  ]}
+                >
+                  {course.thumbnailUrl ? (
+                    <Image source={{ uri: course.thumbnailUrl }} style={styles.courseThumbnail} />
+                  ) : (
+                    <View style={[styles.courseThumbnail, styles.courseThumbnailFallback, { backgroundColor: colors.secondary }]}>
+                      <Ionicons name="fitness-outline" size={22} color={colors.primary} />
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.dashboardTitle, { color: colors.foreground }]}>
+                      {localized(course.localizedTitle)}
+                    </Text>
+                    <View style={[styles.progressTrack, { backgroundColor: colors.secondary }]}>
+                      <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: colors.primary }]} />
+                    </View>
+                    <Text style={[styles.dashboardMeta, { color: colors.mutedForeground }]}>
+                      {course.completedLessons}/{course.lessonCount} · {progress}%
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </>
+        ) : null}
 
         <View style={styles.checkinHint}>
           <View style={[styles.checkinIcon, { backgroundColor: colors.accent }]}>
@@ -177,18 +301,79 @@ export default function HomeScreen() {
             <Text style={[styles.seeAll, { color: colors.primary }]}>{t('exploreAll')}</Text>
           </Pressable>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalCards}>
-          {nearbyFacilities.slice(0, 3).map((facility) => (
+        {facilitiesQuery.isLoading ? (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : facilitiesQuery.isError ? (
+          <Pressable accessibilityRole="button" onPress={() => void facilitiesQuery.refetch()} style={styles.emptyBooking}>
+            <Text style={[styles.dashboardMeta, { color: colors.destructive }]}>{t('catalogLoadError')}</Text>
+          </Pressable>
+        ) : nearbyFacilities.length ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalCards}>
+            {nearbyFacilities.map((facility) => (
             <FacilityCard
               key={facility.id}
               facility={facility}
               favorite={app.favorites.includes(facility.id)}
-              onPress={() => router.push({ pathname: '/facility/[id]', params: { id: facility.id, sample: 'true' } })}
+              onPress={() => router.push({ pathname: '/facility/[id]', params: { id: facility.id } })}
               onToggleFavorite={() => app.toggleFavorite(facility.id)}
               compact
             />
-          ))}
-        </ScrollView>
+            ))}
+          </ScrollView>
+        ) : (
+          <View style={[styles.emptyBooking, { backgroundColor: colors.secondary }]}>
+            <Text style={[styles.dashboardMeta, { color: colors.mutedForeground }]}>{t('noPublishedFacilities')}</Text>
+          </View>
+        )}
+
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t('events')}</Text>
+            <Text style={[styles.sectionSub, { color: colors.mutedForeground }]}>{currentCity}</Text>
+          </View>
+          <Pressable onPress={() => router.push({ pathname: '/explore', params: { kind: 'events' } })} accessibilityRole="button">
+            <Text style={[styles.seeAll, { color: colors.primary }]}>{t('seeAll')}</Text>
+          </Pressable>
+        </View>
+        {eventsQuery.isLoading ? (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : eventsQuery.isError ? (
+          <Pressable accessibilityRole="button" onPress={() => void eventsQuery.refetch()} style={styles.emptyBooking}>
+            <Text style={[styles.dashboardMeta, { color: colors.destructive }]}>{t('eventLoadError')}</Text>
+          </Pressable>
+        ) : upcomingEvents.length ? (
+          upcomingEvents.map((event) => (
+            <Pressable
+              key={event.id}
+              accessibilityRole="button"
+              onPress={() => router.push({ pathname: '/explore', params: { kind: 'events' } })}
+              style={({ pressed }) => [
+                styles.eventRow,
+                { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.9 : 1 },
+              ]}
+            >
+              <View style={[styles.dashboardIcon, { backgroundColor: colors.secondary }]}>
+                <Ionicons name="ticket-outline" size={19} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.dashboardMeta, { color: colors.primary }]}>{dateTime(event.startsAt, app.language)}</Text>
+                <Text style={[styles.dashboardTitle, { color: colors.foreground }]}>
+                  {event.localizedTitle ? facilityText(event.localizedTitle, app.language) : event.title}
+                </Text>
+                <Text style={[styles.dashboardMeta, { color: colors.mutedForeground }]}>
+                  {[event.facility, event.city].filter(Boolean).join(' · ')}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.mutedForeground} />
+            </Pressable>
+          ))
+        ) : (
+          <Text style={[styles.dashboardMeta, styles.emptyEvents, { color: colors.mutedForeground }]}>{t('noEvents')}</Text>
+        )}
 
         <View style={styles.categoryRow}>
           <Text style={[styles.categoryEyebrow, { color: colors.mutedForeground }]}>
@@ -255,39 +440,17 @@ const styles = StyleSheet.create({
   eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.6, marginBottom: 8 },
   greeting: { fontSize: 32, lineHeight: 36, fontWeight: '800', letterSpacing: -1 },
   greetingAccent: { fontSize: 32, lineHeight: 36, fontWeight: '800', letterSpacing: -1 },
-  passCard: {
+  membershipCard: {
     marginHorizontal: 20,
-    minHeight: 178,
+    minHeight: 145,
     borderRadius: 25,
     overflow: 'hidden',
-    padding: 19,
+    padding: 18,
     marginBottom: 27,
   },
-  passGlow: {
-    position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 120,
-    right: -80,
-    top: -100,
-    backgroundColor: 'rgba(200,232,130,0.12)',
-  },
-  passTop: { justifyContent: 'space-between', alignItems: 'flex-start' },
-  passEyebrow: { color: '#c7d6c8', fontSize: 9, fontWeight: '800', letterSpacing: 1.5 },
-  passTitleRow: { alignItems: 'center', gap: 10, marginTop: 8 },
-  passTier: { color: '#f5f7ee', fontSize: 31, fontWeight: '800', lineHeight: 34 },
-  activePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  activeDot: { width: 6, height: 6, borderRadius: 4, backgroundColor: '#c6e57d' },
-  activeText: { color: '#e2ebdc', fontSize: 9, fontWeight: '800', letterSpacing: 0.7 },
-  passMark: {
+  membershipTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  membershipEyebrow: { color: '#c7d6c8', fontSize: 9, fontWeight: '800', letterSpacing: 1.3 },
+  membershipMark: {
     width: 34,
     height: 34,
     borderRadius: 12,
@@ -296,19 +459,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  quotaBlock: { marginTop: 14 },
-  quotaLabels: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 7 },
-  quotaNumber: { color: '#f5f7ee', fontSize: 14, fontWeight: '800' },
-  quotaCaption: { color: '#c7d6c8', fontSize: 11, fontWeight: '500' },
-  progressTrack: { height: 5, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.16)' },
-  progressFill: { height: '100%', borderRadius: 6, backgroundColor: '#c6e57d' },
-  passBottom: {
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  liveQuota: { color: '#c7d6c8', fontSize: 10, fontWeight: '600' },
-  viewMembership: { color: '#d8f09b', fontSize: 10, fontWeight: '800' },
+  membershipTier: { color: '#f5f7ee', fontSize: 22, fontWeight: '800', marginTop: 9 },
+  membershipDetails: { color: '#c7d6c8', fontSize: 10, lineHeight: 15, marginTop: 5 },
   sectionHeader: {
     justifyContent: 'space-between',
     alignItems: 'flex-end',
@@ -318,47 +470,19 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 19, lineHeight: 24, fontWeight: '800', letterSpacing: -0.4 },
   sectionSub: { marginTop: 3, fontSize: 11, fontWeight: '500' },
   seeAll: { fontSize: 11, fontWeight: '800', paddingBottom: 3 },
-  featuredCard: {
-    height: 205,
-    marginHorizontal: 20,
-    marginBottom: 13,
-    borderRadius: 22,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  featuredImage: { width: '100%', height: '100%' },
-  featuredShade: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(14,31,24,0.32)',
-  },
-  featuredBadge: {
-    position: 'absolute',
-    top: 14,
-    left: 14,
-    backgroundColor: '#c6e57d',
-    borderRadius: 9,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  featuredBadgeText: { color: '#18352b', fontSize: 8, fontWeight: '900', letterSpacing: 1 },
-  featuredCopy: { position: 'absolute', bottom: 17, left: 17, right: 56 },
-  featuredTime: { color: '#e6eddf', fontSize: 10, fontWeight: '600', marginBottom: 4 },
-  featuredTitle: { color: '#ffffff', fontSize: 21, lineHeight: 25, fontWeight: '800' },
-  featuredInstructor: { color: '#e6eddf', fontSize: 11, marginTop: 4 },
-  featuredArrow: {
-    position: 'absolute',
-    right: 15,
-    bottom: 16,
-    width: 37,
-    height: 37,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#c6e57d',
-  },
+  dashboardCard: { marginHorizontal: 20, marginBottom: 10, borderWidth: 1, borderRadius: 18, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 11 },
+  dashboardIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  dashboardMeta: { fontSize: 10, lineHeight: 15, fontWeight: '500' },
+  dashboardTitle: { fontSize: 13, lineHeight: 18, fontWeight: '800' },
+  emptyBooking: { marginHorizontal: 20, marginBottom: 14, padding: 14, borderRadius: 16 },
+  loadingRow: { height: 52, alignItems: 'center', justifyContent: 'center' },
+  courseProgressCard: { marginHorizontal: 20, marginBottom: 10, borderWidth: 1, borderRadius: 18, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 11 },
+  courseThumbnail: { width: 62, height: 62, borderRadius: 14 },
+  courseThumbnailFallback: { alignItems: 'center', justifyContent: 'center' },
+  progressTrack: { height: 5, borderRadius: 5, marginTop: 8, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 5 },
+  eventRow: { marginHorizontal: 20, marginBottom: 9, borderWidth: 1, borderRadius: 18, padding: 11, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  emptyEvents: { marginHorizontal: 22, marginBottom: 12 },
   checkinHint: {
     marginHorizontal: 20,
     marginBottom: 27,

@@ -20,6 +20,22 @@ export const rulesInput = z.object({
   facilityLimits: limits, categoryLimits: limits, partnerGroupLimits: limits,
   trialAllowedTypes: z.array(z.enum(["physical", "premium", "live"])).optional(),
   corporateId: label.optional(),
+  planTerms: z.object({
+    description: localizedText,
+    trialPeriodDays: z.number().int().min(0).max(366),
+    minimumContractMonths: z.number().int().min(0).max(120),
+    renewalPeriodDays: z.number().int().min(1).max(366),
+    cancellationPeriodDays: z.number().int().min(0).max(366),
+    automaticRenewal: z.boolean(),
+    pauseAllowanceDays: z.number().int().min(0).max(366),
+    priceProtectionMonths: z.number().int().min(0).max(120),
+    promotionalPriceIqd: z.number().int().min(0).max(1_000_000_000).nullable(),
+    corporatePriceIqd: z.number().int().min(0).max(1_000_000_000).nullable(),
+    digitalContentAccess: z.boolean(),
+    guestPasses: z.number().int().min(0).max(10_000),
+    eventAccess: z.boolean(),
+    additionalPaymentAllowed: z.boolean(),
+  }).strict().optional(),
 }).strict();
 export const planInput = z.object({
   name: label, tier: label, kind: z.enum(["paid", "trial", "corporate"]),
@@ -34,6 +50,9 @@ export const planInput = z.object({
     ctx.addIssue({ code: "custom", message: "Paid plans require a price in IQD." });
   if (p.kind !== "paid" && p.priceIqd !== null)
     ctx.addIssue({ code: "custom", message: "Only paid plans can have a payment price." });
+  const promotionalPrice = p.rules.planTerms?.promotionalPriceIqd;
+  if (promotionalPrice !== null && promotionalPrice !== undefined && p.priceIqd !== null && promotionalPrice > p.priceIqd)
+    ctx.addIssue({ code: "custom", path: ["rules", "planTerms", "promotionalPriceIqd"], message: "Promotional price cannot exceed the monthly plan price." });
 });
 export const partnerInput = z.object({ name: label, groupId: label, ownerUserId: label }).strict();
 const facilityHoursInput = z.array(z.object({

@@ -25,9 +25,10 @@ import {
   Filter, LockKeyhole, RefreshCw, Search, ShieldCheck, Users, WalletCards, X,
 } from 'lucide-react';
 import { Link, Redirect } from 'wouter';
+import MembershipPlanManager from '@/pages/membership-plan-manager';
 
 type Language = 'en' | 'ar' | 'ku';
-type Tab = 'overview' | 'members' | 'bookings' | 'customer-invoices' | 'partner-invoices' | 'settlements' | 'reconciliation' | 'audit';
+type Tab = 'overview' | 'members' | 'bookings' | 'customer-invoices' | 'partner-invoices' | 'settlements' | 'reconciliation' | 'audit' | 'plans';
 type AnyRecord = Record<string, unknown>;
 type MemberRow = { userId: string; status: string; paymentStatus: string; tier: string; source: string; startsAt: string; endsAt: string };
 type BookingRow = { id: string; userId: string; offeringId: string; title: string; partnerId: string; partnerName: string; facility: string; city: string; startsAt: string; status: string; createdAt: string };
@@ -179,7 +180,7 @@ export default function FinanceConsole() {
   const overviewQuery = useGetFinanceOverview({ query: { queryKey: getGetFinanceOverviewQueryKey(), refetchOnMount: 'always', enabled: isLoaded && isSignedIn } });
   const settlementsQuery = useGetFinanceSettlements(settlementPeriod, { query: { queryKey: getGetFinanceSettlementsQueryKey(settlementPeriod), refetchOnMount: 'always', enabled: isLoaded && isSignedIn } });
   const auditQuery = useGetFinanceAudit({ query: { queryKey: getGetFinanceAuditQueryKey(), refetchOnMount: 'always', enabled: isLoaded && isSignedIn } });
-  const operationsQuery = useGetOperations({ query: { enabled: isLoaded && isSignedIn && overviewQuery.data?.role === 'admin', retry: false } });
+  const operationsQuery = useGetOperations({ query: { enabled: isLoaded && isSignedIn && overviewQuery.data?.role === 'admin', refetchOnMount: 'always', retry: false } });
   const refundMutation = useRequestFinanceRefund();
   const payoutMutation = useRequestFinancePayoutTracking();
   const decideMutation = useDecideFinanceReview();
@@ -311,6 +312,11 @@ export default function FinanceConsole() {
     { key: 'bookings', label: t('bookings'), icon: <CalendarDays size={16} /> }, { key: 'customer-invoices', label: t('customerInvoices'), icon: <FileText size={16} /> },
     { key: 'partner-invoices', label: t('partnerInvoices'), icon: <WalletCards size={16} /> }, { key: 'settlements', label: t('settlements'), icon: <ShieldCheck size={16} /> },
     { key: 'reconciliation', label: t('reconciliation'), icon: <ArrowLeftRight size={16} /> }, { key: 'audit', label: t('audit'), icon: <Clock3 size={16} /> },
+    ...(role === 'admin' ? [{
+      key: 'plans' as const,
+      label: language === 'ar' ? 'خطط العضوية' : language === 'ku' ? 'پلانەکانی ئەندامێتی' : 'Membership plans',
+      icon: <Banknote size={16} />,
+    }] : []),
   ];
   const textCell = (value: unknown, fallback = '—') => <span className="text-[#36564b]">{str(value, fallback)}</span>;
   const statusBadge = (status: string) => {
@@ -411,6 +417,15 @@ export default function FinanceConsole() {
           </>}
 
           {tab === 'reconciliation' && <Panel title={t('reconciliation')} subtitle={t('serverScope')}><div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-xs"><thead><tr className="bg-[#f7f4eb] text-[10px] uppercase tracking-[.1em] text-[#78857c]">{[t('eventType'),t('status'),t('received'),t('processed'),t('invoice')].map(label => <th key={label} className="px-4 py-3 font-bold">{label}</th>)}</tr></thead><tbody>{reconciliation.filter(item => !search || `${item.id} ${item.eventType} ${item.status}`.toLowerCase().includes(search.toLowerCase())).map(item => <tr key={item.id} className="border-t border-[#eee9de]" data-testid={`row-reconciliation-${item.id}`}><td className="px-4 py-3 font-semibold">{item.eventType}</td><td className="px-4 py-3">{statusBadge(item.status)}</td><td className="px-4 py-3">{formatDate(item.receivedAt, locale)}</td><td className="px-4 py-3">{formatDate(item.processedAt, locale)}</td><td className="px-4 py-3 font-mono">{item.id}</td></tr>)}</tbody></table>{!reconciliation.length && <Empty title={t('emptyTitle')} text={t('emptyCopy')} />}</div></Panel>}
+
+          {tab === 'plans' && role === 'admin' && <MembershipPlanManager
+            plans={operationsQuery.data?.plans ?? []}
+            isLoading={operationsQuery.isLoading}
+            isError={operationsQuery.isError}
+            onRetry={() => void operationsQuery.refetch()}
+            onSaved={async () => { await operationsQuery.refetch(); }}
+            language={language}
+          />}
 
           {tab === 'audit' && <div className="space-y-5">
             <Panel title={t('audit')} subtitle={t('serverScope')}>
