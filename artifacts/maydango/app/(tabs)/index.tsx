@@ -42,7 +42,7 @@ export default function HomeScreen() {
   });
   const activeMembership = app.memberMemberships.find((membership) =>
     membership.scope !== 'preview' &&
-    ['active', 'trial'].includes(membership.status) &&
+    ['active', 'trial', 'scheduled_cancellation'].includes(membership.status) &&
     Date.parse(membership.endsAt) > Date.now(),
   );
   const nearbyFacilities = useMemo(() => {

@@ -2,7 +2,7 @@ import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 
 import { and, desc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, manualCheckinChallenges, memberships, offerings, operators, partners, reservations, memberProfiles } from "@workspace/db";
 import { z } from "zod";
-import { BookingError, processWaitlistQueue } from "./reservations";
+import { BookingError, membershipCanAccess, processWaitlistQueue } from "./reservations";
 import { iraqCalendarDate, openingState, previousIraqCalendarDate } from "./facility-hours";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -69,7 +69,7 @@ async function eligible(tx: Tx, c: Awaited<ReturnType<typeof context>>) {
     (["trial", "corporate"].includes(m.source) && m.paymentStatus === "not_required") ||
     (m.source === "paid" && m.paymentStatus === "paid")
   );
-  if (!m || !["active", "trial"].includes(m.status) || !paymentEligible ||
+  if (!m || !membershipCanAccess(m, now) || !paymentEligible ||
       m.startsAt > now || m.endsAt <= now || m.endsAt < o.endsAt)
     throw new BookingError(403, "An active eligible membership is required.");
   const rules = m.rules;

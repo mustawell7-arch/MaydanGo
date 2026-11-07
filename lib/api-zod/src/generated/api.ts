@@ -3247,10 +3247,29 @@ export const GrantLiveAccessBody = zod.object({
   "reason": zod.string().min(grantLiveAccessBodyOneReasonMin)
 }).and(zod.object({
   "planId": zod.string(),
-  "corporateId": zod.string().optional()
+  "corporateId": zod.string().optional(),
+  "startsOn": zod.coerce.date().optional().describe('Optional start date in Iraq time.')
 }))
 
 export const GrantLiveAccessResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const changeMembershipLifecycleBodyUserIdMax = 160;
+
+export const changeMembershipLifecycleBodyReasonMin = 5;
+export const changeMembershipLifecycleBodyReasonMax = 500;
+
+
+
+export const ChangeMembershipLifecycleBody = zod.object({
+  "userId": zod.string().min(1).max(changeMembershipLifecycleBodyUserIdMax),
+  "action": zod.enum(['schedule_cancel', 'cancel_now', 'reactivate', 'pause', 'resume', 'suspend', 'terminate']),
+  "reason": zod.string().min(changeMembershipLifecycleBodyReasonMin).max(changeMembershipLifecycleBodyReasonMax)
+})
+
+export const ChangeMembershipLifecycleResponse = zod.object({
   "ok": zod.boolean()
 })
 
@@ -3303,6 +3322,10 @@ export const RequestMembershipRefundResponse = zod.object({
 })
 
 
+export const getFinanceOverviewResponseCustomersItemPauseAllowanceDaysMin = 0;
+
+export const getFinanceOverviewResponseCustomersItemPauseUsedDaysMin = 0;
+
 
 
 
@@ -3319,7 +3342,18 @@ export const GetFinanceOverviewResponse = zod.object({
   "approved": zod.boolean()
 }))),
   "facilities": zod.array(zod.record(zod.string(), zod.unknown())),
-  "customers": zod.array(zod.record(zod.string(), zod.unknown())),
+  "customers": zod.array(zod.object({
+  "userId": zod.string(),
+  "status": zod.enum(['draft', 'trial', 'scheduled', 'active', 'payment_overdue', 'grace_period', 'paused', 'scheduled_cancellation', 'cancelled', 'expired', 'suspended', 'terminated']),
+  "paymentStatus": zod.string(),
+  "tier": zod.string(),
+  "source": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "pauseAllowanceDays": zod.number().int().min(getFinanceOverviewResponseCustomersItemPauseAllowanceDaysMin),
+  "pauseUsedDays": zod.number().int().min(getFinanceOverviewResponseCustomersItemPauseUsedDaysMin),
+  "pausedAt": zod.coerce.date().nullable()
+})),
   "bookings": zod.array(zod.record(zod.string(), zod.unknown())),
   "customerInvoices": zod.array(zod.record(zod.string(), zod.unknown())),
   "partnerInvoices": zod.array(zod.record(zod.string(), zod.unknown())),

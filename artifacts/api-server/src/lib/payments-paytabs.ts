@@ -86,7 +86,7 @@ export async function createMemberCheckout(userId: string, localPlanId: string) 
         current.startsAt <= now && current.endsAt > now) {
       throw new PaymentError(409, "Resolve the current subscription payment before starting another membership.");
     }
-    if (current && ["active", "trial"].includes(current.status) && current.endsAt > now) {
+    if (current && ["active", "trial", "scheduled_cancellation"].includes(current.status) && current.endsAt > now) {
       throw new PaymentError(409, "An active live membership already exists.");
     }
     const [pending] = await tx.select().from(membershipBilling)
@@ -330,7 +330,7 @@ async function applyVerifiedPayment(
 
     const [existing] = await tx.select().from(memberships)
       .where(and(eq(memberships.userId, billing.userId), eq(memberships.scope, "live")));
-    if (existing && existing.source !== "paid" && ["active", "trial"].includes(existing.status) && existing.endsAt > now) {
+    if (existing && existing.source !== "paid" && ["active", "trial", "scheduled_cancellation"].includes(existing.status) && existing.endsAt > now) {
       await flagPaidConflict();
       return;
     }

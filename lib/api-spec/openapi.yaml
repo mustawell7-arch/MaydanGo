@@ -361,6 +361,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1plans~1{id}"
   /operations/grants:
     $ref: "./operations.yaml#/paths/~1operations~1grants"
+  /operations/memberships/lifecycle:
+    $ref: "./operations.yaml#/paths/~1operations~1memberships~1lifecycle"
   /operations/revoke:
     $ref: "./operations.yaml#/paths/~1operations~1revoke"
   /operations/refunds:

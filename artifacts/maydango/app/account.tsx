@@ -79,7 +79,7 @@ export default function AccountScreen() {
       {isSignedIn ? <>
         <Text raw style={{ color: c.foreground }}>{user?.primaryEmailAddress?.emailAddress}</Text>
         <Text style={{ color: c.foreground, fontWeight: '700' }}>Server-verified memberships</Text>
-        {app.memberMemberships.length ? app.memberMemberships.map(m => <Text key={m.scope} style={{ color: c.foreground }}>{m.scope === 'preview' ? 'Sample-only trial' : m.source === 'corporate' ? 'Corporate' : m.source === 'trial' ? 'Trial' : 'Real membership'} · {m.tier} · {m.status} · ends {dateTime(m.endsAt, app.language, true)}</Text>) : <Text style={{ color: c.mutedForeground }}>No active membership. Local plan selections do not grant access.</Text>}
+        {app.memberMemberships.length ? app.memberMemberships.map(m => <Text key={m.scope} style={{ color: c.foreground }}>{m.scope === 'preview' ? 'Sample-only trial' : m.source === 'corporate' ? 'Corporate' : m.source === 'trial' ? 'Trial' : 'Real membership'} · {m.tier} · {m.status.replaceAll('_', ' ')} · ends {dateTime(m.endsAt, app.language, true)}</Text>) : <Text style={{ color: c.mutedForeground }}>No active membership. Local plan selections do not grant access.</Text>}
         <MemberNotice />
         <Pressable testID="link-live" accessibilityRole="button" onPress={() => router.push('/live')} style={[styles.button, { backgroundColor: c.accent }]}><Text style={{ color: c.accentForeground, fontWeight: '700' }}>Real partner availability</Text></Pressable>
         <Pressable testID="link-operations" accessibilityRole="button" onPress={() => router.push('/operations')} style={[styles.button, { backgroundColor: c.secondary }]}><Text style={{ color: c.secondaryForeground, fontWeight: '700' }}>Staff operations</Text></Pressable>

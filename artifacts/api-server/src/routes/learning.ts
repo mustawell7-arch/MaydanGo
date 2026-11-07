@@ -12,7 +12,7 @@ import {
   GetMemberCoursesResponse, GetMemberLiveClassesResponse, UpdateCourseProgressBody,
   UpdateCourseProgressResponse,
 } from "@workspace/api-zod";
-import { BookingError } from "../lib/reservations";
+import { BookingError, membershipCanAccess } from "../lib/reservations";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 import { courseRecordingContentType, isPrivateCourseRecordingPath } from "../lib/course-recordings";
 import { createCoursePlaybackToken, verifyCoursePlaybackToken } from "../lib/course-playback-token";
@@ -26,8 +26,7 @@ async function currentLiveMembership(userId: string) {
     and(eq(memberships.userId, userId), eq(memberships.scope, "live")),
   );
   const now = new Date();
-  if (!membership || !["active", "trial"].includes(membership.status)
-      || membership.startsAt > now || membership.endsAt <= now) return null;
+  if (!membership || !membershipCanAccess(membership, now)) return null;
   // Match existing booking policy. Preview memberships and unpaid activation never grant content access.
   if (!((["trial", "corporate"].includes(membership.source)) && membership.paymentStatus === "not_required")) return null;
   if (membership.source === "trial" && !membership.rules.trialAllowedTypes?.includes("live")) return null;

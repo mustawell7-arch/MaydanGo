@@ -5,7 +5,7 @@ import { Readable } from "node:stream";
 import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lte, lt } from "drizzle-orm";
 import { z } from "zod";
 import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, facilityProfiles, facilityHoursOverrides, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents } from "@workspace/db";
-import { BookingError, processWaitlistQueue } from "../lib/reservations";
+import { BookingError, effectiveMembershipStatus, processWaitlistQueue } from "../lib/reservations";
 import { createFacilityProfileInput, facilityHoursOverrideInput, facilityProfileFields, offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
 import {
   AddLearningLessonBody, AddLearningLessonResponse, ChangeLiveOfferingBody,
@@ -80,6 +80,20 @@ function ensureHttps(value: string | null | undefined, label: string) {
 }
 async function audit(tx: Tx, actorId: string, action: string, targetId: string, detail = "") {
   await tx.insert(operationAudit).values({ id: randomUUID(), actorId, action, targetId, detail });
+}
+type PauseEvent = { action: string; createdAt: Date };
+function summarizePauseEvents(events: PauseEvent[], now = new Date()) {
+  let openPause: Date | null = null;
+  let usedMs = 0;
+  for (const event of events) {
+    if (event.action === "membership.pause") openPause = event.createdAt;
+    else if (event.action === "membership.resume" && openPause) {
+      usedMs += Math.max(0, event.createdAt.getTime() - openPause.getTime());
+      openPause = null;
+    } else if (event.action === "membership.pause_closed") openPause = null;
+  }
+  const visibleUsedMs = usedMs + (openPause ? Math.max(0, now.getTime() - openPause.getTime()) : 0);
+  return { pausedAt: openPause, usedMs, pauseUsedDays: Math.ceil(visibleUsedMs / 86400000) };
 }
 function own(res: import("express").Response, partnerId: string | null) {
   if (res.locals.operator.role !== "admin" && res.locals.operator.partnerId !== partnerId)
@@ -1075,6 +1089,7 @@ router.get("/finance", async (_req, res) => {
     db.select({
       userId: memberships.userId, status: memberships.status, paymentStatus: memberships.paymentStatus,
       tier: memberships.tier, source: memberships.source, startsAt: memberships.startsAt, endsAt: memberships.endsAt,
+      rules: memberships.rules,
     }).from(memberships).where(eq(memberships.scope, "live")).orderBy(desc(memberships.endsAt)).limit(500),
     db.select({
       id: reservations.id, userId: reservations.userId, offeringId: offerings.id, title: offerings.title,
@@ -1108,13 +1123,34 @@ router.get("/finance", async (_req, res) => {
     db.select().from(financeReviewEvents).orderBy(desc(financeReviewEvents.createdAt)).limit(500),
     db.select().from(operationAudit).orderBy(desc(operationAudit.createdAt)).limit(500),
   ]);
+  const pauseEvents = membershipRows.length ? await db.select({
+    targetId: operationAudit.targetId, action: operationAudit.action, createdAt: operationAudit.createdAt,
+  }).from(operationAudit).where(and(
+    inArray(operationAudit.targetId, membershipRows.map(membership => membership.userId)),
+    inArray(operationAudit.action, ["membership.pause", "membership.resume", "membership.pause_closed"]),
+  )).orderBy(asc(operationAudit.createdAt)) : [];
+  const pausesByUser = new Map<string, PauseEvent[]>();
+  for (const event of pauseEvents) {
+    const current = pausesByUser.get(event.targetId) ?? [];
+    current.push(event);
+    pausesByUser.set(event.targetId, current);
+  }
   res.json({
     role: res.locals.operator.role,
     paymentGateEnabled: paymentsEnabled(),
     livePayoutGateEnabled: payoutApprovalEnabled(),
     partners: partnersRows,
     facilities: facilityRows,
-    customers: membershipRows,
+    customers: membershipRows.map(({ rules, ...membership }) => {
+      const pause = summarizePauseEvents(pausesByUser.get(membership.userId) ?? []);
+      return {
+        ...membership,
+        status: effectiveMembershipStatus(membership),
+        pauseAllowanceDays: rules.planTerms?.pauseAllowanceDays ?? 0,
+        pauseUsedDays: pause.pauseUsedDays,
+        pausedAt: pause.pausedAt,
+      };
+    }),
     bookings: bookingRows,
     customerInvoices: billingRows,
     partnerInvoices,
@@ -1593,7 +1629,8 @@ router.put("/plans/:id", async (req, res) => {
 router.post("/grants", async (req, res) => {
   admin(res);
   const input = z.object({ userId: z.string().min(1).max(160), planId: z.string().uuid(),
-    corporateId: z.string().max(160).optional(), reason: z.string().trim().min(5).max(500) }).strict().parse(req.body);
+    corporateId: z.string().max(160).optional(), startsOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    reason: z.string().trim().min(5).max(500) }).strict().parse(req.body);
   await db.transaction(async tx => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${input.userId}))`);
     const [p] = await tx.select().from(membershipPlans).where(eq(membershipPlans.id, input.planId)).for("share");
@@ -1604,10 +1641,19 @@ router.post("/grants", async (req, res) => {
     if (p.kind === "trial" && (await tx.select().from(accessGrants).where(and(eq(accessGrants.userId, input.userId), eq(accessGrants.kind, "trial")))).length)
       throw new BookingError(409, "This member has already received a live trial.");
     const [existing] = await tx.select().from(memberships).where(and(eq(memberships.userId, input.userId), eq(memberships.scope, "live")));
-    if (existing && ["active", "trial"].includes(existing.status) && existing.endsAt > new Date())
+    if (existing && ["active", "trial", "scheduled", "scheduled_cancellation", "paused", "suspended"].includes(existing.status) && existing.endsAt > new Date())
       throw new BookingError(409, "Revoke the existing membership before granting a replacement.");
-    const startsAt = new Date(), endsAt = new Date(startsAt.getTime() + p.durationDays * 86400000);
-    const membership = { scope: "live", status: p.kind === "trial" ? "trial" : "active",
+    const now = new Date();
+    if (input.startsOn) {
+      const utcDate = new Date(`${input.startsOn}T00:00:00Z`);
+      if (!Number.isFinite(utcDate.getTime()) || utcDate.toISOString().slice(0, 10) !== input.startsOn)
+        throw new BookingError(400, "Choose a valid Iraq calendar date.");
+    }
+    const startsAt = input.startsOn ? new Date(`${input.startsOn}T00:00:00+03:00`) : now;
+    if (input.startsOn && startsAt <= now)
+      throw new BookingError(400, "A scheduled membership must start on a future Iraq date.");
+    const endsAt = new Date(startsAt.getTime() + p.durationDays * 86400000);
+    const membership = { scope: "live", status: startsAt > now ? "scheduled" : p.kind === "trial" ? "trial" : "active",
       paymentStatus: "not_required", tier: p.tier, source: p.kind, billingId: null, corporateId: input.corporateId ?? null,
       startsAt, endsAt, rules: p.rules };
     await tx.insert(memberships).values({ userId: input.userId, ...membership })
@@ -1617,6 +1663,102 @@ router.post("/grants", async (req, res) => {
     await audit(tx, res.locals.operator.userId, "membership.grant", input.userId, input.reason);
   });
   res.status(201).json({ ok: true });
+});
+router.post("/memberships/lifecycle", async (req, res) => {
+  admin(res);
+  const input = z.object({
+    userId: z.string().trim().min(1).max(160),
+    action: z.enum(["schedule_cancel", "cancel_now", "reactivate", "pause", "resume", "suspend", "terminate"]),
+    reason: z.string().trim().min(5).max(500),
+  }).strict().parse(req.body);
+  const now = new Date();
+  const result = await db.transaction(async tx => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${input.userId}))`);
+    const [membership] = await tx.select().from(memberships).where(and(
+      eq(memberships.userId, input.userId), eq(memberships.scope, "live"),
+    )).for("update");
+    if (!membership) throw new BookingError(404, "Live membership not found.");
+    if (membership.source === "paid" || membership.billingId || membership.paymentStatus !== "not_required")
+      throw new BookingError(409, "Paid membership lifecycle changes are reserved for the payment milestone.");
+    const status = effectiveMembershipStatus(membership, now);
+    const pauseEvents = await tx.select({ action: operationAudit.action, createdAt: operationAudit.createdAt })
+      .from(operationAudit).where(and(eq(operationAudit.targetId, input.userId),
+        inArray(operationAudit.action, ["membership.pause", "membership.resume", "membership.pause_closed"])))
+      .orderBy(asc(operationAudit.createdAt));
+    const pauseHistory = summarizePauseEvents(pauseEvents, now);
+    let nextStatus = membership.status;
+    let endsAt = membership.endsAt;
+    let cancelBookings = false;
+
+    if (input.action === "schedule_cancel") {
+      if (!["active", "trial", "scheduled", "scheduled_cancellation"].includes(membership.status) || endsAt <= now)
+        throw new BookingError(409, "Only a current membership can be scheduled for end-of-term cancellation.");
+      nextStatus = "scheduled_cancellation";
+    } else if (input.action === "cancel_now") {
+      if (["cancelled", "expired", "terminated"].includes(status))
+        throw new BookingError(409, "This membership is already ended.");
+      nextStatus = "cancelled";
+      cancelBookings = true;
+    } else if (input.action === "reactivate") {
+      if (!["scheduled_cancellation", "cancelled", "suspended"].includes(membership.status) || endsAt <= now)
+        throw new BookingError(409, "Only an unexpired cancelled or suspended membership can be reactivated.");
+      nextStatus = membership.source === "trial" ? "trial" : "active";
+    } else if (input.action === "pause") {
+      const allowance = membership.rules.planTerms?.pauseAllowanceDays ?? 0;
+      if (!["active", "trial"].includes(membership.status) || endsAt <= now || pauseHistory.pausedAt)
+        throw new BookingError(409, "Only a current active membership can be paused.");
+      if (allowance * 86400000 <= pauseHistory.usedMs)
+        throw new BookingError(409, "This plan has no remaining pause allowance.");
+      nextStatus = "paused";
+      cancelBookings = true;
+    } else if (input.action === "resume") {
+      if (membership.status !== "paused" || !pauseHistory.pausedAt)
+        throw new BookingError(409, "This membership is not paused.");
+      const allowance = membership.rules.planTerms?.pauseAllowanceDays ?? 0;
+      const elapsedMs = Math.max(0, now.getTime() - pauseHistory.pausedAt.getTime());
+      const remainingMs = Math.max(0, allowance * 86400000 - pauseHistory.usedMs);
+      const extensionMs = Math.min(elapsedMs, remainingMs);
+      endsAt = new Date(endsAt.getTime() + extensionMs);
+      nextStatus = endsAt <= now ? "expired" : membership.source === "trial" ? "trial" : "active";
+    } else if (input.action === "suspend") {
+      if (!["active", "trial", "scheduled", "scheduled_cancellation"].includes(membership.status) || endsAt <= now)
+        throw new BookingError(409, "Only a current membership can be suspended.");
+      nextStatus = "suspended";
+      cancelBookings = true;
+    } else {
+      if (["cancelled", "expired", "terminated"].includes(status))
+        throw new BookingError(409, "This membership is already ended.");
+      nextStatus = "terminated";
+      cancelBookings = true;
+    }
+
+    await tx.update(memberships).set({ status: nextStatus, endsAt })
+      .where(and(eq(memberships.userId, input.userId), eq(memberships.scope, "live")));
+
+    let cancelledOfferingIds: string[] = [];
+    if (cancelBookings) {
+      const held = await tx.select({ offeringId: reservations.offeringId })
+        .from(reservations).innerJoin(offerings, eq(reservations.offeringId, offerings.id))
+        .where(and(
+          eq(reservations.userId, input.userId), eq(offerings.scope, "live"),
+          gt(offerings.startsAt, now), inArray(reservations.status, ["reserved", "requested"]),
+        ));
+      cancelledOfferingIds = [...new Set(held.map(row => row.offeringId))];
+      if (cancelledOfferingIds.length) {
+        await tx.update(reservations).set({ status: "cancelled", cancelledAt: now })
+          .where(and(eq(reservations.userId, input.userId),
+            inArray(reservations.offeringId, cancelledOfferingIds),
+            inArray(reservations.status, ["reserved", "requested"])));
+      }
+    }
+    await audit(tx, res.locals.operator.userId, `membership.${input.action}`, input.userId, input.reason);
+    if (pauseHistory.pausedAt && ["cancel_now", "terminate"].includes(input.action))
+      await audit(tx, res.locals.operator.userId, "membership.pause_closed", input.userId, "Pause closed by membership status change.");
+    return cancelledOfferingIds;
+  });
+  for (const offeringId of result) await processWaitlistQueue(now, [offeringId]);
+  if (result.length) void sendMemberNotification(input.userId, "booking_cancelled");
+  res.json({ ok: true });
 });
 router.post("/revoke", async (req, res) => {
   admin(res);

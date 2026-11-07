@@ -581,6 +581,20 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/OperationSuccess" }
+  /operations/memberships/lifecycle:
+    post:
+      operationId: changeMembershipLifecycle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MembershipLifecycleInput" }
+      responses:
+        "200":
+          description: Audited non-payment membership lifecycle transition
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OperationSuccess" }
   /operations/revoke:
     post:
       operationId: revokeLiveAccess
@@ -1668,7 +1682,18 @@ components:
         - $ref: "#/components/schemas/AccessRevokeInput"
         - type: object
           required: [planId]
-          properties: { planId: { type: string }, corporateId: { type: string } }
+          properties:
+            planId: { type: string }
+            corporateId: { type: string }
+            startsOn: { type: string, format: date, description: "Optional start date in Iraq time." }
+    MembershipLifecycleInput:
+      type: object
+      required: [userId, action, reason]
+      additionalProperties: false
+      properties:
+        userId: { type: string, minLength: 1, maxLength: 160 }
+        action: { type: string, enum: [schedule_cancel, cancel_now, reactivate, pause, resume, suspend, terminate] }
+        reason: { type: string, minLength: 5, maxLength: 500 }
     OperationsState:
       type: object
       required: [role, partnerId, partners, offerings, waitlist, plans]
@@ -1755,7 +1780,7 @@ components:
         livePayoutGateEnabled: { type: boolean }
         partners: { type: array, items: { $ref: "#/components/schemas/Partner" } }
         facilities: { type: array, items: { type: object, additionalProperties: true } }
-        customers: { type: array, items: { type: object, additionalProperties: true } }
+        customers: { type: array, items: { $ref: "#/components/schemas/MembershipSummary" } }
         bookings: { type: array, items: { type: object, additionalProperties: true } }
         customerInvoices: { type: array, items: { type: object, additionalProperties: true } }
         partnerInvoices: { type: array, items: { type: object, additionalProperties: true } }
@@ -1763,6 +1788,20 @@ components:
         reviewItems: { type: array, items: { $ref: "#/components/schemas/FinanceReviewItem" } }
         reviewEvents: { type: array, items: { type: object, additionalProperties: true } }
         audit: { type: array, items: { type: object, additionalProperties: true } }
+    MembershipSummary:
+      type: object
+      required: [userId, status, paymentStatus, tier, source, startsAt, endsAt, pauseAllowanceDays, pauseUsedDays, pausedAt]
+      properties:
+        userId: { type: string }
+        status: { type: string, enum: [draft, trial, scheduled, active, payment_overdue, grace_period, paused, scheduled_cancellation, cancelled, expired, suspended, terminated] }
+        paymentStatus: { type: string }
+        tier: { type: string }
+        source: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        pauseAllowanceDays: { type: integer, minimum: 0 }
+        pauseUsedDays: { type: integer, minimum: 0 }
+        pausedAt: { type: [string, "null"], format: date-time }
     FinanceSettlementSummary:
       type: object
       required: [from, to, groups, verifiedVisits, rejectedVisits, disputedVisits, onHoldVisits, payoutApprovalEnabled, amountCalculationAvailable]

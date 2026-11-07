@@ -8,6 +8,24 @@ export class BookingError extends Error {
 }
 type BookingTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
+export function membershipCanAccess(membership: {
+  status: string; startsAt: Date; endsAt: Date;
+}, now = new Date()) {
+  return membership.startsAt <= now && membership.endsAt > now &&
+    ["active", "trial", "scheduled", "scheduled_cancellation"].includes(membership.status);
+}
+
+export function effectiveMembershipStatus(membership: {
+  status: string; source: string; startsAt: Date; endsAt: Date;
+}, now = new Date()) {
+  if (membership.status === "scheduled" && membership.startsAt <= now)
+    return membership.source === "trial" ? "trial" : "active";
+  if (membership.status !== "paused" && membership.endsAt <= now &&
+      ["active", "trial", "scheduled", "scheduled_cancellation"].includes(membership.status))
+    return "expired";
+  return membership.status;
+}
+
 export async function assertMemberEligibleForOffering(tx: BookingTx, userId: string, o: typeof offerings.$inferSelect) {
   const now = new Date();
   if (o.scope === "live") {
@@ -19,7 +37,7 @@ export async function assertMemberEligibleForOffering(tx: BookingTx, userId: str
     ? ((["trial", "corporate"].includes(m.source) && m.paymentStatus === "not_required") ||
        (m.source === "paid" && m.paymentStatus === "paid"))
     : m.paymentStatus === "paid");
-  if (!m || !["active", "trial"].includes(m.status) || !paymentEligible ||
+  if (!m || !membershipCanAccess(m, now) || !paymentEligible ||
       m.startsAt > now || m.endsAt < o.endsAt || m.endsAt <= now) {
     throw new BookingError(403, "You need an active membership that covers this class.");
   }
@@ -91,7 +109,9 @@ export async function memberState(userId: string) {
     db.select().from(memberUpdates).where(eq(memberUpdates.userId, userId))
       .orderBy(desc(memberUpdates.createdAt), desc(memberUpdates.id)).limit(50),
   ]);
-  return { profile: profiles[0] ?? null, memberships: membershipRows, bookings: rows.map(({ reservation: r, offering: o }) => ({
+  return { profile: profiles[0] ?? null,
+    memberships: membershipRows.map(membership => ({ ...membership, status: effectiveMembershipStatus(membership) })),
+    bookings: rows.map(({ reservation: r, offering: o }) => ({
     id: r.id, kind: o.kind, targetId: o.targetId, slot: o.slot, title: o.title,
     localizedTitle: o.localizedTitle, city: o.city, facility: o.facility,
     cancellationDeadline: o.cancellationDeadline,

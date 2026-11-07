@@ -14,6 +14,7 @@ import {
   useGetOperations,
   useGrantLiveAccess,
   useRevokeLiveAccess,
+  useChangeMembershipLifecycle,
   useRequestFinancePayoutTracking,
   useRequestFinanceRefund,
   useReviewPartnerFinanceInvoice,
@@ -30,7 +31,8 @@ import MembershipPlanManager from '@/pages/membership-plan-manager';
 type Language = 'en' | 'ar' | 'ku';
 type Tab = 'overview' | 'members' | 'bookings' | 'customer-invoices' | 'partner-invoices' | 'settlements' | 'reconciliation' | 'audit' | 'plans';
 type AnyRecord = Record<string, unknown>;
-type MemberRow = { userId: string; status: string; paymentStatus: string; tier: string; source: string; startsAt: string; endsAt: string };
+type MembershipLifecycleAction = 'schedule_cancel' | 'cancel_now' | 'reactivate' | 'pause' | 'resume' | 'suspend' | 'terminate';
+type MemberRow = { userId: string; status: string; paymentStatus: string; tier: string; source: string; startsAt: string; endsAt: string; pauseAllowanceDays: number; pauseUsedDays: number; pausedAt: string | null };
 type BookingRow = { id: string; userId: string; offeringId: string; title: string; partnerId: string; partnerName: string; facility: string; city: string; startsAt: string; status: string; createdAt: string };
 type CustomerInvoiceRow = { id: string; userId: string; planId: string; planName: string; status: string; paymentStatus: string; amountIqd: number; refundStatus: string; periodStartsAt: string; periodEndsAt: string; createdAt: string; updatedAt: string };
 type PartnerInvoiceRow = { id: string; partnerId: string; invoiceNumber: string; amountIqd: number; issuedAt: string; periodStart: string; periodEnd: string; documentName: string; status: string; submittedBy: string; createdAt: string };
@@ -108,7 +110,63 @@ const copy: Record<Language, Record<string, string>> = {
   },
 };
 
+const lifecycleCopy: Record<Language, Record<string, string>> = {
+  en: {
+    manageStatus: 'Manage status', lifecycleAction: 'Lifecycle action', lifecycleError: 'Membership status could not be changed. Check the plan rules and try again.',
+    lifecycleWarning: 'Immediate cancellation, pause, suspension, or termination cancels upcoming bookings and releases those places. End-of-term cancellation keeps access until the end date.',
+    paidLifecycle: 'Paid membership changes remain unavailable until the payment milestone.',
+    startOnIraqTime: 'Optional start date (Iraq time)', pauseRemaining: 'Allowed pause days remaining', action_schedule_cancel: 'Cancel at end of term', action_cancel_now: 'Cancel now',
+    action_reactivate: 'Reactivate membership', action_pause: 'Pause membership', action_resume: 'Resume membership',
+    action_suspend: 'Suspend for misuse', action_terminate: 'Terminate permanently', confirmLifecycle: 'Apply status change',
+    status_draft: 'Draft', status_trial: 'Trial', status_scheduled: 'Scheduled', status_active: 'Active',
+    status_payment_overdue: 'Payment overdue', status_grace_period: 'Grace period', status_paused: 'Paused',
+    status_scheduled_cancellation: 'Scheduled for cancellation', status_cancelled: 'Cancelled', status_expired: 'Expired',
+    status_suspended: 'Suspended for misuse', status_terminated: 'Terminated by administrator',
+  },
+  ar: {
+    manageStatus: 'إدارة الحالة', lifecycleAction: 'إجراء دورة العضوية', lifecycleError: 'تعذر تغيير حالة العضوية. تحقق من شروط الخطة وحاول مرة أخرى.',
+    lifecycleWarning: 'الإلغاء الفوري أو الإيقاف المؤقت أو التعليق أو الإنهاء يلغي الحجوزات القادمة ويحرر المقاعد. الإلغاء في نهاية المدة يبقي الوصول حتى تاريخ الانتهاء.',
+    paidLifecycle: 'تغييرات العضويات المدفوعة متوقفة حتى مرحلة الدفع.',
+    startOnIraqTime: 'تاريخ البدء الاختياري (توقيت العراق)', pauseRemaining: 'أيام الإيقاف المتبقية', action_schedule_cancel: 'إلغاء عند نهاية المدة', action_cancel_now: 'إلغاء فوري',
+    action_reactivate: 'إعادة تفعيل العضوية', action_pause: 'إيقاف العضوية مؤقتاً', action_resume: 'استئناف العضوية',
+    action_suspend: 'تعليق بسبب إساءة الاستخدام', action_terminate: 'إنهاء نهائي', confirmLifecycle: 'تطبيق تغيير الحالة',
+    status_draft: 'مسودة', status_trial: 'تجريبية', status_scheduled: 'مجدولة', status_active: 'نشطة',
+    status_payment_overdue: 'دفعة متأخرة', status_grace_period: 'فترة سماح', status_paused: 'متوقفة مؤقتاً',
+    status_scheduled_cancellation: 'مجدولة للإلغاء', status_cancelled: 'ملغاة', status_expired: 'منتهية',
+    status_suspended: 'معلقة بسبب إساءة الاستخدام', status_terminated: 'منهية من المدير',
+  },
+  ku: {
+    manageStatus: 'بەڕێوەبردنی دۆخ', lifecycleAction: 'کرداری ئەندامێتی', lifecycleError: 'نەتوانرا دۆخی ئەندامێتی بگۆڕدرێت. یاساکانی پلان بپشکنە و دووبارە هەوڵ بدەرەوە.',
+    lifecycleWarning: 'هەڵوەشاندنەوەی دەستبەجێ، پشوودان، ڕاگرتن یان کۆتاییهێنان حجزەکانی داهاتوو هەڵدەوەشێنێتەوە و شوێنەکان ئازاد دەکات. هەڵوەشاندنەوەی کۆتایی ماوە دەستگەیشتن تا ڕۆژی کۆتایی دەپارێزێت.',
+    paidLifecycle: 'گۆڕینی ئەندامێتی پارەدراو تا قۆناغی پارەدان ناچالاکە.',
+    startOnIraqTime: 'بەرواری دەستپێکی ئارەزوومەندانە (کاتی عێراق)', pauseRemaining: 'ڕۆژەکانی پشوودانی ماوە', action_schedule_cancel: 'هەڵوەشاندنەوە لە کۆتایی ماوە',
+    action_cancel_now: 'هەڵوەشاندنەوەی دەستبەجێ', action_reactivate: 'چالاککردنەوەی ئەندامێتی',
+    action_pause: 'پشوودانی ئەندامێتی', action_resume: 'دەستپێکردنەوەی ئەندامێتی',
+    action_suspend: 'ڕاگرتن بەهۆی بەکارهێنانی خراپ', action_terminate: 'کۆتاییهێنانی هەمیشەیی',
+    confirmLifecycle: 'گۆڕینی دۆخ جێبەجێ بکە',
+    status_draft: 'ڕەشنووس', status_trial: 'تاقیکردنەوە', status_scheduled: 'خشتەکراو', status_active: 'چالاک',
+    status_payment_overdue: 'پارەدان دواخراوە', status_grace_period: 'ماوەی لێبووردن', status_paused: 'پشووداوە',
+    status_scheduled_cancellation: 'بۆ هەڵوەشاندنەوە دانراوە', status_cancelled: 'هەڵوەشێندراوەتەوە',
+    status_expired: 'ماوەکەی تەواو بووە', status_suspended: 'بەهۆی بەکارهێنانی خراپ ڕاگیراوە',
+    status_terminated: 'لە لایەن بەڕێوەبەرەوە کۆتایی پێهاتووە',
+  },
+};
+
 const dateOnly = (date: Date) => date.toISOString().slice(0, 10);
+const minimumIraqStartDate = () => {
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Baghdad' }).format(new Date());
+  const next = new Date(`${today}T00:00:00Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  return next.toISOString().slice(0, 10);
+};
+const lifecycleActionsFor = (status: string): MembershipLifecycleAction[] => {
+  if (['active', 'trial'].includes(status)) return ['schedule_cancel', 'cancel_now', 'pause', 'suspend', 'terminate'];
+  if (status === 'scheduled_cancellation') return ['reactivate', 'cancel_now', 'suspend', 'terminate'];
+  if (status === 'scheduled') return ['cancel_now', 'terminate'];
+  if (status === 'paused') return ['resume', 'cancel_now', 'terminate'];
+  if (['cancelled', 'suspended'].includes(status)) return ['reactivate', 'terminate'];
+  return [];
+};
 const defaultFrom = (() => { const d = new Date(); d.setDate(d.getDate() - 30); return dateOnly(d); })();
 const defaultTo = dateOnly(new Date());
 const asRecord = (value: unknown): AnyRecord => value && typeof value === 'object' ? value as AnyRecord : {};
@@ -163,14 +221,17 @@ export default function FinanceConsole() {
   const [invoiceReason, setInvoiceReason] = useState('');
   const [payoutInvoice, setPayoutInvoice] = useState<PartnerInvoiceRow | null>(null);
   const [payoutReason, setPayoutReason] = useState('');
-  const [membershipAction, setMembershipAction] = useState<{ member: MemberRow; action: 'grant' | 'revoke' } | null>(null);
+  const [membershipAction, setMembershipAction] = useState<{ member: MemberRow; action: 'grant' | 'revoke' | 'lifecycle' } | null>(null);
   const [membershipPlanId, setMembershipPlanId] = useState('');
   const [membershipCorporateId, setMembershipCorporateId] = useState('');
+  const [membershipStartsOn, setMembershipStartsOn] = useState('');
+  const [lifecycleType, setLifecycleType] = useState<MembershipLifecycleAction>('schedule_cancel');
   const [membershipReason, setMembershipReason] = useState('');
   const [bookingToCancel, setBookingToCancel] = useState<BookingRow | null>(null);
   const [bookingCancelReason, setBookingCancelReason] = useState('');
   const [busyId, setBusyId] = useState('');
   const t = (key: string) => copy[language][key] ?? key;
+  const lc = (key: string) => lifecycleCopy[language][key] ?? key;
   const rtl = language === 'ar' || language === 'ku';
 
   const payoutPeriod = activeReview?.kind === 'payout' && activeReview.periodStart && activeReview.periodEnd
@@ -187,6 +248,7 @@ export default function FinanceConsole() {
   const invoiceMutation = useReviewPartnerFinanceInvoice();
   const grantMutation = useGrantLiveAccess();
   const revokeMutation = useRevokeLiveAccess();
+  const lifecycleMutation = useChangeMembershipLifecycle();
   const cancelBookingMutation = useCancelAdminBooking();
 
   const invalidateFinance = async () => {
@@ -270,9 +332,16 @@ export default function FinanceConsole() {
       setMembershipAction(null);
       setMembershipReason('');
       setMembershipCorporateId('');
+      setMembershipStartsOn('');
       setFeedback(t('saved'));
       void invalidateFinance();
     };
+    if (action === 'lifecycle') {
+      lifecycleMutation.mutate({ data: {
+        userId: member.userId, action: lifecycleType, reason: membershipReason.trim(),
+      } }, { onSuccess, onError: () => setFeedback(lc('lifecycleError')) });
+      return;
+    }
     if (action === 'revoke') {
       revokeMutation.mutate({ data: { userId: member.userId, reason: membershipReason.trim() } }, {
         onSuccess, onError: () => setFeedback(t('revokeError')),
@@ -285,6 +354,7 @@ export default function FinanceConsole() {
     grantMutation.mutate({ data: {
       userId: member.userId, planId, reason: membershipReason.trim(),
       ...(plan.kind === 'corporate' ? { corporateId: membershipCorporateId.trim() } : {}),
+      ...(membershipStartsOn ? { startsOn: membershipStartsOn } : {}),
     } }, { onSuccess, onError: () => setFeedback(t('grantError')) });
   };
   const handleBookingCancellation = (event: FormEvent) => {
@@ -320,8 +390,9 @@ export default function FinanceConsole() {
   ];
   const textCell = (value: unknown, fallback = '—') => <span className="text-[#36564b]">{str(value, fallback)}</span>;
   const statusBadge = (status: string) => {
-    const label = status === 'rejected' ? t('status_rejected') : t(status);
-    return <Badge tone={['accepted', 'active', 'paid', 'confirmed', 'completed', 'approved_manual'].includes(status.toLowerCase()) ? 'green' : ['rejected', 'failed', 'cancelled', 'void'].includes(status.toLowerCase()) ? 'red' : ['pending', 'processing', 'provider_pending', 'under_review', 'on_hold', 'disputed'].includes(status.toLowerCase()) ? 'amber' : 'neutral'}>{label === (status === 'rejected' ? 'status_rejected' : status) ? status.replaceAll('_', ' ') : label}</Badge>;
+    const localizedLifecycle = lc(`status_${status}`);
+    const label = localizedLifecycle !== `status_${status}` ? localizedLifecycle : status === 'rejected' ? t('status_rejected') : t(status);
+    return <Badge tone={['accepted', 'active', 'paid', 'confirmed', 'completed', 'approved_manual'].includes(status.toLowerCase()) ? 'green' : ['rejected', 'failed', 'cancelled', 'terminated', 'void'].includes(status.toLowerCase()) ? 'red' : ['pending', 'processing', 'provider_pending', 'under_review', 'on_hold', 'disputed', 'paused', 'suspended', 'scheduled_cancellation'].includes(status.toLowerCase()) ? 'amber' : 'neutral'}>{label === (status === 'rejected' ? 'status_rejected' : status) ? status.replaceAll('_', ' ') : label}</Badge>;
   };
 
   return <div dir={rtl ? 'rtl' : 'ltr'} className="min-h-[100dvh] bg-[#f5f2e9] text-[#173d35]" data-testid="finance-console">
@@ -398,7 +469,19 @@ export default function FinanceConsole() {
             {tab !== 'settlements' && tab !== 'audit' && <div className="flex flex-wrap gap-2"><label className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a9389]" size={14} /><input className={`${field} w-[min(72vw,240px)] ps-9`} value={search} onChange={e => setSearch(e.target.value)} placeholder={t('search')} data-testid="input-finance-search" /></label><label className="relative"><Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a9389]" size={14} /><select className={`${field} w-[150px] ps-9`} value={statusFilter} onChange={e => setStatusFilter(e.target.value)} aria-label={t('allStatuses')} data-testid="select-finance-status"><option value="all">{t('allStatuses')}</option>{Array.from(new Set([...members, ...bookings, ...customerInvoices, ...partnerInvoices].map(item => item.status).filter(Boolean))).map(status => <option key={status} value={status.toLowerCase()}>{status.replaceAll('_', ' ')}</option>)}</select></label></div>}
           </div>}
 
-          {tab === 'members' && <Panel title={t('members')} subtitle={t('serverScope')}><div className="overflow-x-auto"><table className="w-full min-w-[790px] text-left text-xs"><thead><tr className="bg-[#f7f4eb] text-[10px] uppercase tracking-[.1em] text-[#78857c]">{[t('customer'), t('status'), t('paymentStatus'), t('plan'), t('created'), t('period'), ...(role === 'admin' ? [t('memberActions')] : [])].map(label => <th key={label} className="px-4 py-3 font-bold">{label}</th>)}</tr></thead><tbody>{filtered(members, ['userId','status','paymentStatus','tier','source']).map((item, i) => <tr key={`${item.userId}-${i}`} className="border-t border-[#eee9de]" data-testid={`row-membership-${item.userId}`}><td className="px-4 py-3 font-mono text-[11px]">{textCell(item.userId)}</td><td className="px-4 py-3">{statusBadge(item.status)}</td><td className="px-4 py-3">{statusBadge(item.paymentStatus)}</td><td className="px-4 py-3">{textCell(item.tier || item.source)}</td><td className="px-4 py-3">{formatDate(item.startsAt, locale)}</td><td className="px-4 py-3">{formatDate(item.endsAt, locale)}</td>{role === 'admin' && <td className="px-4 py-3"><div className="flex gap-2"><button onClick={() => { setMembershipAction({ member: item, action: 'grant' }); setMembershipPlanId(''); setMembershipReason(''); }} className="rounded-lg border border-[#d8d2c4] px-2.5 py-2 text-[10px] font-bold text-[#36564b]" data-testid={`button-grant-membership-${item.userId}`}>{t('grantAccess')}</button><button onClick={() => { setMembershipAction({ member: item, action: 'revoke' }); setMembershipReason(''); }} className="rounded-lg border border-[#d9a89a] px-2.5 py-2 text-[10px] font-bold text-[#9a4435]" data-testid={`button-revoke-membership-${item.userId}`}>{t('revokeAccess')}</button></div></td>}</tr>)}</tbody></table>{!filtered(members, ['userId','status','paymentStatus','tier','source']).length && <Empty title={members.length ? t('noRows') : t('noMembers')} />}</div></Panel>}
+          {tab === 'members' && <Panel title={t('members')} subtitle={t('serverScope')}>
+            <div className="overflow-x-auto"><table className="w-full min-w-[1000px] text-left text-xs">
+              <thead><tr className="bg-[#f7f4eb] text-[10px] uppercase tracking-[.1em] text-[#78857c]">{[t('customer'), t('status'), t('paymentStatus'), t('plan'), t('created'), t('period'), ...(role === 'admin' ? [t('memberActions')] : [])].map(label => <th key={label} className="px-4 py-3 font-bold">{label}</th>)}</tr></thead>
+              <tbody>{filtered(members, ['userId','status','paymentStatus','tier','source']).map((item, i) => <tr key={`${item.userId}-${i}`} className="border-t border-[#eee9de]" data-testid={`row-membership-${item.userId}`}>
+                <td className="px-4 py-3 font-mono text-[11px]">{textCell(item.userId)}</td><td className="px-4 py-3">{statusBadge(item.status)}</td><td className="px-4 py-3">{statusBadge(item.paymentStatus)}</td><td className="px-4 py-3">{textCell(item.tier || item.source)}</td><td className="px-4 py-3">{formatDate(item.startsAt, locale)}</td><td className="px-4 py-3">{formatDate(item.endsAt, locale)}</td>
+                {role === 'admin' && <td className="px-4 py-3"><div className="flex flex-wrap gap-2">
+                  <button onClick={() => { setMembershipAction({ member: item, action: 'grant' }); setMembershipPlanId(''); setMembershipStartsOn(''); setMembershipReason(''); }} className="rounded-lg border border-[#d8d2c4] px-2.5 py-2 text-[10px] font-bold text-[#36564b]" data-testid={`button-grant-membership-${item.userId}`}>{t('grantAccess')}</button>
+                  <button onClick={() => { setMembershipAction({ member: item, action: 'revoke' }); setMembershipReason(''); }} className="rounded-lg border border-[#d9a89a] px-2.5 py-2 text-[10px] font-bold text-[#9a4435]" data-testid={`button-revoke-membership-${item.userId}`}>{t('revokeAccess')}</button>
+                  <button onClick={() => { setMembershipAction({ member: item, action: 'lifecycle' }); setLifecycleType(lifecycleActionsFor(item.status)[0] ?? 'schedule_cancel'); setMembershipReason(''); }} disabled={item.source === 'paid' || item.paymentStatus !== 'not_required' || !lifecycleActionsFor(item.status).length} title={item.source === 'paid' || item.paymentStatus !== 'not_required' ? lc('paidLifecycle') : undefined} className="rounded-lg border border-[#d8d2c4] px-2.5 py-2 text-[10px] font-bold text-[#36564b] disabled:cursor-not-allowed disabled:opacity-40" data-testid={`button-manage-membership-${item.userId}`}>{lc('manageStatus')}</button>
+                </div></td>}
+              </tr>)}</tbody>
+            </table>{!filtered(members, ['userId','status','paymentStatus','tier','source']).length && <Empty title={members.length ? t('noRows') : t('noMembers')} />}</div>
+          </Panel>}
 
           {tab === 'bookings' && <Panel title={t('bookings')} subtitle={role === 'admin' ? t('bookingManage') : t('serverScope')} action={role === 'admin' ? <Link href="/partner-portal" className="text-xs font-bold text-[#174d43]" data-testid="link-booking-management">{t('bookingManage')} <ArrowUpRight className="inline" size={13} /></Link> : undefined}><div className="overflow-x-auto"><table className="w-full min-w-[900px] text-left text-xs"><thead><tr className="bg-[#f7f4eb] text-[10px] uppercase tracking-[.1em] text-[#78857c]">{[t('offering'),t('partner'),t('customer'),t('status'),t('period'),t('created'),...(role === 'admin' ? [t('cancelBooking')] : [])].map(label => <th key={label} className="px-4 py-3 font-bold">{label}</th>)}</tr></thead><tbody>{filtered(bookings, ['id','title','partnerName','facility','city','userId','status']).map(item => <tr key={item.id} className="border-t border-[#eee9de]" data-testid={`row-booking-${item.id}`}><td className="px-4 py-3"><p className="font-semibold">{textCell(item.title)}</p><p className="mt-1 text-[10px] text-[#859087]">{item.facility} · {item.city}</p></td><td className="px-4 py-3">{textCell(item.partnerName)}</td><td className="px-4 py-3 font-mono text-[11px]">{textCell(item.userId)}</td><td className="px-4 py-3">{statusBadge(item.status)}</td><td className="px-4 py-3">{formatDate(item.startsAt, locale)}</td><td className="px-4 py-3">{formatDate(item.createdAt, locale)}</td>{role === 'admin' && <td className="px-4 py-3"><button onClick={() => { setBookingToCancel(item); setBookingCancelReason(''); }} disabled={!['reserved','requested'].includes(item.status) || new Date(item.startsAt).getTime() <= Date.now()} className="rounded-lg border border-[#d9a89a] px-2.5 py-2 text-[10px] font-bold text-[#9a4435] disabled:cursor-not-allowed disabled:opacity-40" data-testid={`button-cancel-booking-${item.id}`}>{t('cancelBooking')}</button></td>}</tr>)}</tbody></table>{!filtered(bookings, ['id','title','partnerName','facility','city','userId','status']).length && <Empty title={bookings.length ? t('noRows') : t('noBookings')} />}</div></Panel>}
 
@@ -448,7 +531,7 @@ export default function FinanceConsole() {
     {invoiceReview && <Modal title={t('invoiceReview')} onClose={() => setInvoiceReview(null)} testId="dialog-partner-invoice-review"><form onSubmit={handleInvoiceReview} className="space-y-3"><div className="rounded-xl bg-[#f7f4eb] p-3 text-xs">{invoiceReview.invoiceNumber} · {partnerName(invoiceReview.partnerId)} · {formatIqd(invoiceReview.amountIqd)} IQD</div><label className="block text-xs font-semibold">{t('status')}<select value={invoiceStatus} onChange={e => setInvoiceStatus(e.target.value as typeof invoiceStatus)} className={`${field} mt-1`} data-testid="select-invoice-decision"><option value="under_review">{t('markReview')}</option><option value="accepted">{t('acceptInvoice')}</option><option value="rejected">{t('rejectInvoice')}</option></select></label><label className="block text-xs font-semibold">{t('note')}<textarea required minLength={5} maxLength={500} value={invoiceReason} onChange={e => setInvoiceReason(e.target.value)} className={`${field} mt-1 min-h-24`} data-testid="textarea-invoice-review-reason" /></label><div className="flex justify-end gap-2"><button type="button" onClick={() => setInvoiceReview(null)} className="rounded-xl border border-[#d8d2c4] px-4 py-2 text-xs font-bold" data-testid="button-cancel-invoice-review">{t('cancel')}</button><button type="submit" disabled={invoiceMutation.isPending} className="rounded-xl bg-[#174d43] px-4 py-2 text-xs font-bold text-[#fff9e9] disabled:opacity-40" data-testid="button-submit-invoice-review">{t('saveDecision')}</button></div></form></Modal>}
 
     {payoutInvoice && <Modal title={t('payoutTracking')} onClose={() => setPayoutInvoice(null)} testId="dialog-payout-tracking"><div className="mb-4 rounded-xl border border-[#d7b880] bg-[#fff8e9] p-3 text-xs leading-relaxed text-[#755e2e]">{t('trackingOnly')} {t('noSettlementAmount')}</div><div className="mb-4 rounded-xl bg-[#f7f4eb] p-3 text-xs"><p className="font-semibold">{partnerName(payoutInvoice.partnerId)} · {payoutInvoice.invoiceNumber}</p><p className="mt-1 font-mono">{formatIqd(payoutInvoice.amountIqd)} IQD</p><p className="mt-1">{formatDate(payoutInvoice.periodStart, locale)} – {formatDate(payoutInvoice.periodEnd, locale)}</p></div><form onSubmit={handlePayoutTracking} className="space-y-3"><label className="block text-xs font-semibold">{t('requestReason')}<textarea required minLength={5} maxLength={500} value={payoutReason} onChange={e => setPayoutReason(e.target.value)} className={`${field} mt-1 min-h-24`} data-testid="textarea-payout-reason" /></label><div className="flex justify-end gap-2"><button type="button" onClick={() => setPayoutInvoice(null)} className="rounded-xl border border-[#d8d2c4] px-4 py-2 text-xs font-bold" data-testid="button-cancel-payout-tracking">{t('cancel')}</button><button type="submit" disabled={payoutMutation.isPending} className="rounded-xl bg-[#174d43] px-4 py-2 text-xs font-bold text-[#fff9e9] disabled:opacity-40" data-testid="button-submit-payout-tracking">{t('submitTracking')}</button></div></form></Modal>}
-    {membershipAction && <Modal title={membershipAction.action === 'grant' ? t('grantAccess') : t('revokeAccess')} onClose={() => setMembershipAction(null)} testId={`dialog-membership-${membershipAction.action}`}>
+    {membershipAction && <Modal title={membershipAction.action === 'grant' ? t('grantAccess') : membershipAction.action === 'revoke' ? t('revokeAccess') : lc('manageStatus')} onClose={() => setMembershipAction(null)} testId={`dialog-membership-${membershipAction.action}`}>
       <p className="mb-4 rounded-xl bg-[#f7f4eb] p-3 text-xs font-mono">{membershipAction.member.userId}</p>
       <form onSubmit={handleMembershipAction} className="space-y-3">
         {membershipAction.action === 'grant' && <>
@@ -456,10 +539,19 @@ export default function FinanceConsole() {
             {grantablePlans.map(plan => <option key={plan.id} value={plan.id}>{plan.name} · {plan.kind}</option>)}
           </select></label>
           {grantablePlans.find(plan => plan.id === (membershipPlanId || grantablePlans[0]?.id))?.kind === 'corporate' && <label className="block text-xs font-semibold">{t('corporateId')}<input required value={membershipCorporateId} onChange={e => setMembershipCorporateId(e.target.value)} className={`${field} mt-1`} data-testid="input-membership-corporate-id" /></label>}
+          <label className="block text-xs font-semibold">{lc('startOnIraqTime')}<input type="date" min={minimumIraqStartDate()} value={membershipStartsOn} onChange={e => setMembershipStartsOn(e.target.value)} className={`${field} mt-1`} data-testid="input-membership-start-date" /></label>
           {!grantablePlans.length && <p className="rounded-xl border border-[#d7b880] bg-[#fff8e9] p-3 text-xs">{t('gateDisabled')}</p>}
         </>}
+        {membershipAction.action === 'lifecycle' && <>
+          <label className="block text-xs font-semibold">{lc('lifecycleAction')}<select value={lifecycleType} onChange={e => setLifecycleType(e.target.value as MembershipLifecycleAction)} className={`${field} mt-1`} data-testid="select-membership-lifecycle-action">
+            {lifecycleActionsFor(membershipAction.member.status).map(action => <option key={action} value={action}>{lc(`action_${action}`)}</option>)}
+          </select></label>
+          {lifecycleType === 'pause' && <p className="rounded-xl bg-[#f7f4eb] p-3 text-xs">{lc('pauseRemaining')}: {Math.max(0, membershipAction.member.pauseAllowanceDays - membershipAction.member.pauseUsedDays)}</p>}
+          <p className="rounded-xl border border-[#d7b880] bg-[#fff8e9] p-3 text-xs leading-relaxed text-[#755e2e]">{lc('lifecycleWarning')}</p>
+          <p className="text-xs text-[#6d7b72]">{lc('paidLifecycle')}</p>
+        </>}
         <label className="block text-xs font-semibold">{t('actionReason')}<textarea required minLength={5} maxLength={500} value={membershipReason} onChange={e => setMembershipReason(e.target.value)} className={`${field} mt-1 min-h-24`} data-testid="textarea-membership-action-reason" /></label>
-        <div className="flex justify-end gap-2"><button type="button" onClick={() => setMembershipAction(null)} className="rounded-xl border border-[#d8d2c4] px-4 py-2 text-xs font-bold" data-testid="button-cancel-membership-action">{t('cancel')}</button><button type="submit" disabled={grantMutation.isPending || revokeMutation.isPending || (membershipAction.action === 'grant' && !grantablePlans.length)} className="rounded-xl bg-[#174d43] px-4 py-2 text-xs font-bold text-[#fff9e9] disabled:opacity-40" data-testid="button-submit-membership-action">{membershipAction.action === 'grant' ? t('confirmGrant') : t('confirmRevoke')}</button></div>
+        <div className="flex justify-end gap-2"><button type="button" onClick={() => setMembershipAction(null)} className="rounded-xl border border-[#d8d2c4] px-4 py-2 text-xs font-bold" data-testid="button-cancel-membership-action">{t('cancel')}</button><button type="submit" disabled={grantMutation.isPending || revokeMutation.isPending || lifecycleMutation.isPending || (membershipAction.action === 'grant' && !grantablePlans.length)} className="rounded-xl bg-[#174d43] px-4 py-2 text-xs font-bold text-[#fff9e9] disabled:opacity-40" data-testid="button-submit-membership-action">{membershipAction.action === 'grant' ? t('confirmGrant') : membershipAction.action === 'revoke' ? t('confirmRevoke') : lc('confirmLifecycle')}</button></div>
       </form>
     </Modal>}
     {bookingToCancel && <Modal title={t('cancelBooking')} onClose={() => setBookingToCancel(null)} testId="dialog-booking-cancellation">

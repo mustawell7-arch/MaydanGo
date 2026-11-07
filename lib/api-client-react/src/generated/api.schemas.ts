@@ -1577,7 +1577,36 @@ export interface AccessRevokeInput {
 export type AccessGrantInput = AccessRevokeInput & {
   planId: string;
   corporateId?: string;
+  /** Optional start date in Iraq time. */
+  startsOn?: string;
 };
+
+export type MembershipLifecycleInputAction = typeof MembershipLifecycleInputAction[keyof typeof MembershipLifecycleInputAction];
+
+
+export const MembershipLifecycleInputAction = {
+  schedule_cancel: 'schedule_cancel',
+  cancel_now: 'cancel_now',
+  reactivate: 'reactivate',
+  pause: 'pause',
+  resume: 'resume',
+  suspend: 'suspend',
+  terminate: 'terminate',
+} as const;
+
+export interface MembershipLifecycleInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  userId: string;
+  action: MembershipLifecycleInputAction;
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason: string;
+}
 
 export type OperationsStateRole = typeof OperationsStateRole[keyof typeof OperationsStateRole];
 
@@ -1734,8 +1763,6 @@ export const FinanceOverviewRole = {
 
 export type FinanceOverviewFacilitiesItem = { [key: string]: unknown };
 
-export type FinanceOverviewCustomersItem = { [key: string]: unknown };
-
 export type FinanceOverviewBookingsItem = { [key: string]: unknown };
 
 export type FinanceOverviewCustomerInvoicesItem = { [key: string]: unknown };
@@ -1748,13 +1775,47 @@ export type FinanceOverviewReviewEventsItem = { [key: string]: unknown };
 
 export type FinanceOverviewAuditItem = { [key: string]: unknown };
 
+export type MembershipSummaryStatus = typeof MembershipSummaryStatus[keyof typeof MembershipSummaryStatus];
+
+
+export const MembershipSummaryStatus = {
+  draft: 'draft',
+  trial: 'trial',
+  scheduled: 'scheduled',
+  active: 'active',
+  payment_overdue: 'payment_overdue',
+  grace_period: 'grace_period',
+  paused: 'paused',
+  scheduled_cancellation: 'scheduled_cancellation',
+  cancelled: 'cancelled',
+  expired: 'expired',
+  suspended: 'suspended',
+  terminated: 'terminated',
+} as const;
+
+export interface MembershipSummary {
+  userId: string;
+  status: MembershipSummaryStatus;
+  paymentStatus: string;
+  tier: string;
+  source: string;
+  startsAt: string;
+  endsAt: string;
+  /** @minimum 0 */
+  pauseAllowanceDays: number;
+  /** @minimum 0 */
+  pauseUsedDays: number;
+  /** @nullable */
+  pausedAt: string | null;
+}
+
 export interface FinanceOverview {
   role: FinanceOverviewRole;
   paymentGateEnabled: boolean;
   livePayoutGateEnabled: boolean;
   partners: Partner[];
   facilities: FinanceOverviewFacilitiesItem[];
-  customers: FinanceOverviewCustomersItem[];
+  customers: MembershipSummary[];
   bookings: FinanceOverviewBookingsItem[];
   customerInvoices: FinanceOverviewCustomerInvoicesItem[];
   partnerInvoices: FinanceOverviewPartnerInvoicesItem[];

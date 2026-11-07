@@ -11,7 +11,7 @@ import { createReservation, cancelReservation, memberState, joinWaitlist, leaveW
 import app from "../app";
 
 const prefix = `test-${randomUUID()}`;
-const alice = `${prefix}-a`, bob = `${prefix}-b`;
+const alice = `${prefix}-a`, bob = `${prefix}-b`, charlie = `${prefix}-c`;
 const ids: string[] = [];
 const waitlistUsers: string[] = [];
 const partnerIds: string[] = [], planIds: string[] = [];
@@ -354,7 +354,7 @@ test("live operations: staff scope, approved inventory, server grants and quota 
     const planTerms = {
       description: { en: "Isolated trial", ar: "تجربة معزولة", ku: "تاقیکردنەوەی جیاواز" },
       trialPeriodDays: 7, minimumContractMonths: 0, renewalPeriodDays: 30, cancellationPeriodDays: 0,
-      automaticRenewal: false, pauseAllowanceDays: 0, priceProtectionMonths: 0,
+      automaticRenewal: false, pauseAllowanceDays: 3, priceProtectionMonths: 0,
       promotionalPriceIqd: null, corporatePriceIqd: null, digitalContentAccess: false,
       guestPasses: 0, eventAccess: true, additionalPaymentAllowed: false,
     };
@@ -420,6 +420,86 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       assert.equal((await call("/member/bookings", alice, "POST", { ...input(o.data.id), tier: "XL" })).status, 400);
       assert.equal((await call("/member/bookings", alice, "POST", input(o.data.id))).status, 201);
       assert.equal((await call(`/operations/offerings/${o.data.id}`, partnerUser, "PATCH", { capacity: 0 })).status, 400);
+    });
+    await t.test("membership schedule, pause, cancellation, reactivation, and termination follow lifecycle rules", async () => {
+      const lifecycleOffering = await call("/operations/offerings", partnerUser, "POST", { ...offerBody, capacity: 20 });
+      assert.equal(lifecycleOffering.status, 201, JSON.stringify(lifecycleOffering.data));
+      ids.push(lifecycleOffering.data.id);
+      await publishOffering(lifecycleOffering.data.id);
+      const iraqToday = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Baghdad" }).format(new Date());
+      const futureDate = new Date(`${iraqToday}T00:00:00Z`);
+      futureDate.setUTCDate(futureDate.getUTCDate() + 1);
+      const startsOn = futureDate.toISOString().slice(0, 10);
+      const grant = await call("/operations/grants", adminId, "POST", {
+        userId: charlie, planId: plan.data.id, startsOn, reason: "Schedule trial access",
+      });
+      assert.equal(grant.status, 201);
+      const [scheduled] = await db.select().from(memberships).where(and(eq(memberships.userId, charlie), eq(memberships.scope, "live")));
+      assert.equal(scheduled?.status, "scheduled");
+      assert.equal((await call("/member/bookings", charlie, "POST", input(lifecycleOffering.data.id))).status, 403);
+
+      await db.update(memberships).set({ startsAt: new Date(Date.now() - 1000) })
+        .where(and(eq(memberships.userId, charlie), eq(memberships.scope, "live")));
+      assert.equal((await memberState(charlie)).memberships[0]?.status, "trial");
+      assert.equal((await call("/operations/memberships/lifecycle", partnerUser, "POST", {
+        userId: charlie, action: "schedule_cancel", reason: "Test unauthorized action",
+      })).status, 403);
+      assert.equal((await call("/operations/memberships/lifecycle", adminId, "POST", {
+        userId: charlie, action: "schedule_cancel", reason: "Member requested end of term",
+      })).status, 200);
+      assert.equal((await db.select().from(memberships).where(eq(memberships.userId, charlie)))[0]?.status, "scheduled_cancellation");
+
+      const booking = await call("/member/bookings", charlie, "POST", input(lifecycleOffering.data.id));
+      assert.equal(booking.status, 201, JSON.stringify(booking.data));
+      assert.equal((await call("/operations/memberships/lifecycle", adminId, "POST", {
+        userId: charlie, action: "pause", reason: "Member requested a pause",
+      })).status, 409, "scheduled cancellation must be reactivated before pausing");
+      assert.equal((await call("/operations/memberships/lifecycle", adminId, "POST", {
+        userId: charlie, action: "reactivate", reason: "Member changed their mind",
+      })).status, 200);
+      assert.equal((await call("/operations/memberships/lifecycle", adminId, "POST", {
+        userId: charlie, action: "pause", reason: "Member requested a pause",
+      })).status, 200);
+      const [paused] = await db.select().from(memberships).where(eq(memberships.userId, charlie));
+      assert.equal(paused?.status, "paused");
+      assert.ok((await db.select().from(operationAudit).where(and(
+        eq(operationAudit.targetId, charlie), eq(operationAudit.action, "membership.pause"),
+      ))).length);
+      const pausedBookings = await db.select().from(reservations).where(and(
+        eq(reservations.userId, charlie), eq(reservations.offeringId, lifecycleOffering.data.id),
+      ));
+      assert.ok(pausedBookings.some(item => item.status === "cancelled"));
+      assert.equal((await call("/member/bookings", charlie, "POST", input(lifecycleOffering.data.id))).status, 403);
+      assert.equal((await call("/operations/memberships/lifecycle", adminId, "POST", {
+        userId: charlie, action: "resume", reason: "Member resumed training",
+      })).status, 200);
+      const [resumed] = await db.select().from(memberships).where(eq(memberships.userId, charlie));
+      assert.equal(resumed?.status, "trial");
+      assert.ok(resumed?.endsAt && resumed.endsAt >= paused!.endsAt);
+
+      const resumedBooking = await call("/member/bookings", charlie, "POST", input(lifecycleOffering.data.id));
+      assert.equal(resumedBooking.status, 201);
+      assert.equal((await call("/operations/memberships/lifecycle", adminId, "POST", {
+        userId: charlie, action: "suspend", reason: "Misuse review requires suspension",
+      })).status, 200);
+      assert.equal((await call("/member/bookings", charlie, "POST", input(lifecycleOffering.data.id))).status, 403);
+      assert.equal((await call("/operations/memberships/lifecycle", adminId, "POST", {
+        userId: charlie, action: "reactivate", reason: "Misuse review cleared",
+      })).status, 200);
+      assert.equal((await call("/operations/memberships/lifecycle", adminId, "POST", {
+        userId: charlie, action: "cancel_now", reason: "Member requested immediate cancellation",
+      })).status, 200);
+      assert.equal((await db.select().from(memberships).where(eq(memberships.userId, charlie)))[0]?.status, "cancelled");
+      assert.equal((await call("/operations/memberships/lifecycle", adminId, "POST", {
+        userId: charlie, action: "reactivate", reason: "Member renewed request",
+      })).status, 200);
+      assert.equal((await call("/operations/memberships/lifecycle", adminId, "POST", {
+        userId: charlie, action: "terminate", reason: "Administrator closed membership",
+      })).status, 200);
+      assert.equal((await db.select().from(memberships).where(eq(memberships.userId, charlie)))[0]?.status, "terminated");
+      assert.equal((await call("/operations/memberships/lifecycle", adminId, "POST", {
+        userId: charlie, action: "reactivate", reason: "Should not reactivate terminated",
+      })).status, 409);
     });
     await t.test("localized courses keep lessons and progress on the owning account", async () => {
       const content = (en: string, ar: string, ku: string) => ({ en, ar, ku });
@@ -552,7 +632,7 @@ test("live operations: staff scope, approved inventory, server grants and quota 
   }
 });
 after(async () => {
-  const users = [alice, bob, ...waitlistUsers];
+  const users = [alice, bob, charlie, ...waitlistUsers];
   await db.delete(reservations).where(inArray(reservations.userId, users));
   await db.delete(memberships).where(inArray(memberships.userId, users));
   await db.delete(memberProfiles).where(inArray(memberProfiles.userId, [alice, bob]));

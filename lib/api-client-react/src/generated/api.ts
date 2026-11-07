@@ -74,6 +74,7 @@ import type {
   MemberLiveClass,
   MemberState,
   MemberSubscriptionResponse,
+  MembershipLifecycleInput,
   NotificationFailure,
   NotificationSettings,
   NotificationSettingsInput,
@@ -3840,6 +3841,88 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getGrantLiveAccessMutationOptions(options), queryClient);
+    }
+
+export const getChangeMembershipLifecycleUrl = () => {
+
+
+
+
+  return `/api/operations/memberships/lifecycle`
+}
+
+export const changeMembershipLifecycle = async (membershipLifecycleInput: MembershipLifecycleInput, options?: Parameters<typeof customFetch>[1]): Promise<OperationSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<OperationSuccess>(getChangeMembershipLifecycleUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(membershipLifecycleInput)
+  }
+);}
+
+
+
+
+
+export const getChangeMembershipLifecycleMutationKey = () => ['changeMembershipLifecycle'] as const;
+
+export const getChangeMembershipLifecycleMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeMembershipLifecycle>>, TError,ChangeMembershipLifecycleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof changeMembershipLifecycle>>, TError,ChangeMembershipLifecycleMutationVariables, TContext> => {
+
+const mutationKey = getChangeMembershipLifecycleMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof changeMembershipLifecycle>>, ChangeMembershipLifecycleMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  changeMembershipLifecycle(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ChangeMembershipLifecycleMutationResult = NonNullable<Awaited<ReturnType<typeof changeMembershipLifecycle>>>
+    export type ChangeMembershipLifecycleMutationBody = BodyType<MembershipLifecycleInput>
+    export type ChangeMembershipLifecycleMutationError = ErrorType<unknown>
+    export type ChangeMembershipLifecycleMutationVariables = {data: BodyType<MembershipLifecycleInput>}
+
+    export const useChangeMembershipLifecycle = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeMembershipLifecycle>>, TError,ChangeMembershipLifecycleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof changeMembershipLifecycle>>,
+        TError,
+        ChangeMembershipLifecycleMutationVariables,
+        TContext
+      > => {
+      return useMutation(getChangeMembershipLifecycleMutationOptions(options), queryClient);
     }
 
 export const getRevokeLiveAccessUrl = () => {
