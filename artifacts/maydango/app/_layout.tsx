@@ -39,11 +39,41 @@ function RootLayoutNav() {
   const device = useDeviceSecurity();
   const segments = useSegments();
   const isSupportRoute = segments[0] === 'support';
-  const lastNotificationResponse = Notifications.useLastNotificationResponse();
   useEffect(() => { queryClient.clear(); }, [userId]);
   useEffect(() => { setAuthTokenGetter(() => getToken()); }, [getToken]);
+  const { language } = useApp();
+  if (Platform.OS !== 'web' && isSignedIn && !isSupportRoute && (
+    !device.status || device.loading || device.status.status === 'pending'
+  )) {
+    return <DeviceSecurityGate />;
+  }
+  return (
+    <>
+      {Platform.OS !== 'web' ? <NativeNotificationResponseHandler /> : null}
+      <Stack screenOptions={{ headerBackTitle: translate(language, 'back') }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="live" options={{ headerShown: false }} />
+        <Stack.Screen name="operations" options={{ headerShown: false }} />
+        <Stack.Screen name="facility/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="session/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="course/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="cities" options={{ headerShown: false }} />
+        <Stack.Screen name="checkin" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="membership" options={{ headerShown: false }} />
+        <Stack.Screen name="account" options={{ headerShown: false }} />
+        <Stack.Screen name="device-security" options={{ headerShown: false }} />
+        <Stack.Screen name="support/index" options={{ headerShown: false }} />
+        <Stack.Screen name="support/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="support/staff" options={{ headerShown: false }} />
+      </Stack>
+    </>
+  );
+}
+
+function NativeNotificationResponseHandler() {
+  const lastNotificationResponse = Notifications.useLastNotificationResponse();
   useEffect(() => {
-    if (Platform.OS === 'web' || !lastNotificationResponse) return;
+    if (!lastNotificationResponse) return;
     const { actionIdentifier, notification } = lastNotificationResponse;
     const data = notification.request.content.data as { kind?: unknown; ticketId?: unknown };
     if (data.kind !== 'support_urgent' && data.kind !== 'support_urgent_escalation') return;
@@ -55,30 +85,7 @@ function RootLayoutNav() {
     ) return;
     router.push({ pathname: '/support/staff', params: { ticketId: data.ticketId } });
   }, [lastNotificationResponse]);
-  const { language } = useApp();
-  if (Platform.OS !== 'web' && isSignedIn && !isSupportRoute && (
-    !device.status || device.loading || device.status.status === 'pending'
-  )) {
-    return <DeviceSecurityGate />;
-  }
-  return (
-    <Stack screenOptions={{ headerBackTitle: translate(language, 'back') }}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="live" options={{ headerShown: false }} />
-      <Stack.Screen name="operations" options={{ headerShown: false }} />
-      <Stack.Screen name="facility/[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="session/[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="course/[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="cities" options={{ headerShown: false }} />
-      <Stack.Screen name="checkin" options={{ headerShown: false, presentation: 'modal' }} />
-      <Stack.Screen name="membership" options={{ headerShown: false }} />
-      <Stack.Screen name="account" options={{ headerShown: false }} />
-      <Stack.Screen name="device-security" options={{ headerShown: false }} />
-      <Stack.Screen name="support/index" options={{ headerShown: false }} />
-      <Stack.Screen name="support/[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="support/staff" options={{ headerShown: false }} />
-    </Stack>
-  );
+  return null;
 }
 
 export default function RootLayout() {

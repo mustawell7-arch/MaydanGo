@@ -7,6 +7,7 @@ import {
   getGetSupportStaffAgentsQueryKey,
   getGetSupportNotificationFailuresQueryKey,
   getGetSupportPendingDeviceChangesQueryKey,
+  getGetSupportUrgentAlertRecipientHistoryQueryKey,
   getGetSupportStaffTicketQueryKey,
   getGetSupportStaffTicketsQueryKey,
   useAddSupportStaffAgent,
@@ -14,6 +15,7 @@ import {
   useGetSupportNotificationFailures,
   useGetSupportPendingDeviceChanges,
   useGetSupportStaffAgents,
+  useGetSupportUrgentAlertRecipientHistory,
   useGetSupportStaffTicket,
   useGetSupportStaffTickets,
   useRemoveSupportStaffAgent,
@@ -63,6 +65,10 @@ export default function SupportStaffScreen() {
   const [notice, setNotice] = useState<string | null>(null);
   const tickets = useGetSupportStaffTickets(undefined, { query: { enabled: app.signedIn, refetchInterval: 30_000 } });
   const agents = useGetSupportStaffAgents({ query: { enabled: app.signedIn } });
+  const isAdmin = agents.data?.some(agent => agent.userId === userId && agent.role === 'admin') ?? false;
+  const recipientHistory = useGetSupportUrgentAlertRecipientHistory({
+    query: { enabled: app.signedIn && isAdmin, staleTime: 30_000 },
+  });
   const failures = useGetSupportNotificationFailures({ query: { enabled: app.signedIn, refetchInterval: 60_000 } });
   const deviceChanges = useGetSupportPendingDeviceChanges({ query: { enabled: app.signedIn, refetchInterval: 30_000 } });
   const detail = useGetSupportStaffTicket(selectedId, { query: {
@@ -75,7 +81,6 @@ export default function SupportStaffScreen() {
   const addAgent = useAddSupportStaffAgent();
   const removeAgent = useRemoveSupportStaffAgent();
   const updateUrgentAlertRecipient = useUpdateSupportStaffAgentUrgentAlerts();
-  const isAdmin = agents.data?.some(agent => agent.userId === userId && agent.role === 'admin') ?? false;
   const align = app.language === 'en' ? 'left' : 'right';
 
   useEffect(() => {
@@ -103,6 +108,7 @@ export default function SupportStaffScreen() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: getGetSupportStaffAgentsQueryKey() }),
       queryClient.invalidateQueries({ queryKey: getGetSupportStaffTicketsQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: getGetSupportUrgentAlertRecipientHistoryQueryKey() }),
     ]);
   };
 
@@ -376,6 +382,32 @@ export default function SupportStaffScreen() {
             ) : (
               <Text style={{ color: colors.mutedForeground }}>{t('supportNoAgents')}</Text>
             )}
+            <View style={[styles.audit, { borderTopColor: colors.border }]}>
+              <Text style={[styles.label, { color: colors.mutedForeground }]}>{t('urgentAlertHistoryTitle')}</Text>
+              {recipientHistory.isLoading ? (
+                <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('supportLoading')}</Text>
+              ) : recipientHistory.isError ? (
+                <Text style={[styles.caption, { color: colors.destructive }]}>{t('urgentAlertHistoryLoadError')}</Text>
+              ) : recipientHistory.data?.length ? (
+                recipientHistory.data.slice(0, 10).map(event => (
+                  <View key={event.id} style={[styles.teamAgent, { borderColor: colors.border }]}>
+                    <Text style={[styles.label, { color: event.toReceiving ? colors.primary : colors.mutedForeground }]}>
+                      {t(event.toReceiving ? 'urgentAlertHistoryEnabled' : 'urgentAlertHistoryDisabled')}
+                      {' · '}
+                      {formatBaghdadDate(event.createdAt, app.language)}
+                    </Text>
+                    <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                      {t('urgentAlertHistoryActor')}: {event.actorId}
+                    </Text>
+                    <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                      {t('urgentAlertHistoryRecipient')}: {event.recipientUserId}
+                    </Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={[styles.caption, { color: colors.mutedForeground }]}>{t('urgentAlertHistoryEmpty')}</Text>
+              )}
+            </View>
           </View>
         ) : null}
 
