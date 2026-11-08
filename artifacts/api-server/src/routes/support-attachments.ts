@@ -6,11 +6,15 @@ import { db, operators, supportAttachments, supportMessages, supportTicketEvents
 import {
   CompleteMemberSupportAttachmentParams,
   CompleteMemberSupportAttachmentResponse,
+  CompleteSupportStaffAttachmentParams,
+  DeletePendingMemberSupportAttachmentParams,
+  DeletePendingSupportStaffAttachmentParams,
   GetMemberSupportTicketAttachmentsResponse,
   GetMemberSupportTicketAttachmentsResponseItem,
   GetSupportStaffTicketAttachmentsResponse,
   RequestMemberSupportAttachmentUploadUrlBody,
   RequestMemberSupportAttachmentUploadUrlResponse,
+  RequestSupportStaffAttachmentUploadUrlBody,
 } from "@workspace/api-zod";
 import { BookingError } from "../lib/reservations";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
@@ -83,6 +87,25 @@ async function ownedTicket(ticketId: string, ownerId: string) {
   return ticket;
 }
 
+async function accessibleTicket(ticketId: string, userId: string, role: "member" | "support" | "admin") {
+  if (role === "member") return ownedTicket(ticketId, userId);
+  const [ticket] = await db.select({ id: supportTickets.id }).from(supportTickets)
+    .where(eq(supportTickets.id, ticketId)).limit(1);
+  if (!ticket) throw new BookingError(404, "Support request not found.");
+  return ticket;
+}
+
+async function authoredMessage(ticketId: string, messageId: string, userId: string, role: "member" | "support" | "admin") {
+  const [message] = await db.select({ id: supportMessages.id }).from(supportMessages).where(and(
+    eq(supportMessages.id, messageId),
+    eq(supportMessages.ticketId, ticketId),
+    eq(supportMessages.authorId, userId),
+    eq(supportMessages.authorRole, role),
+  )).limit(1);
+  if (!message) throw new BookingError(404, "Your support message was not found.");
+  return message;
+}
+
 async function readReadyAttachments(ticketId: string) {
   const rows = await db.select().from(supportAttachments).where(and(
     eq(supportAttachments.ticketId, ticketId),
@@ -91,24 +114,24 @@ async function readReadyAttachments(ticketId: string) {
   return GetMemberSupportTicketAttachmentsResponse.parse(rows.map(asAttachment));
 }
 
-async function requestUpload(req: Request, res: Response, ownerId: string): Promise<void> {
-  const parsed = RequestMemberSupportAttachmentUploadUrlBody.safeParse(req.body);
+async function requestUpload(
+  req: Request,
+  res: Response,
+  uploaderId: string,
+  uploaderRole: "member" | "support" | "admin",
+  bodySchema: typeof RequestMemberSupportAttachmentUploadUrlBody = RequestMemberSupportAttachmentUploadUrlBody,
+): Promise<void> {
+  const parsed = bodySchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ message: "Choose one supported file up to 10 MB." });
     return;
   }
   const ticketId = String(req.params.id);
-  const ticket = await ownedTicket(ticketId, ownerId);
-  if (ticket.status === "closed" || ticket.status === "resolved") {
+  const ticket = await accessibleTicket(ticketId, uploaderId, uploaderRole);
+  if (uploaderRole === "member" && "status" in ticket && (ticket.status === "closed" || ticket.status === "resolved")) {
     throw new BookingError(409, "Reply to reopen this request before adding an attachment.");
   }
-  const [message] = await db.select({ id: supportMessages.id }).from(supportMessages).where(and(
-    eq(supportMessages.id, parsed.data.messageId),
-    eq(supportMessages.ticketId, ticketId),
-    eq(supportMessages.authorId, ownerId),
-    eq(supportMessages.authorRole, "member"),
-  )).limit(1);
-  if (!message) throw new BookingError(404, "Your support message was not found.");
+  const message = await authoredMessage(ticketId, parsed.data.messageId, uploaderId, uploaderRole);
   const count = await db.select({ count: sql<number>`count(*)::int` }).from(supportAttachments)
     .where(and(eq(supportAttachments.messageId, message.id), sql`${supportAttachments.status} IN ('pending', 'ready')`));
   if ((count[0]?.count ?? 0) >= MAX_ATTACHMENTS_PER_MESSAGE) {
@@ -121,8 +144,8 @@ async function requestUpload(req: Request, res: Response, ownerId: string): Prom
     id,
     ticketId,
     messageId: message.id,
-    uploaderId: ownerId,
-    uploaderRole: "member",
+    uploaderId,
+    uploaderRole,
     fileName,
     contentType: parsed.data.contentType,
     size: parsed.data.size,
@@ -134,21 +157,23 @@ async function requestUpload(req: Request, res: Response, ownerId: string): Prom
   }));
 }
 
-async function completeUpload(req: Request, res: Response, ownerId: string): Promise<void> {
+async function completeUpload(
+  req: Request,
+  res: Response,
+  uploaderId: string,
+  uploaderRole: "member" | "support" | "admin",
+  attachmentId: string,
+): Promise<void> {
   const ticketId = String(req.params.id);
-  await ownedTicket(ticketId, ownerId);
-  const parsedParams = CompleteMemberSupportAttachmentParams.safeParse(req.params);
-  if (!parsedParams.success) {
-    res.status(400).json({ message: "Invalid support attachment identifier." });
-    return;
-  }
-  const attachmentId = parsedParams.data.attachmentId;
+  await accessibleTicket(ticketId, uploaderId, uploaderRole);
   const [row] = await db.select().from(supportAttachments).where(and(
     eq(supportAttachments.id, attachmentId),
     eq(supportAttachments.ticketId, ticketId),
-    eq(supportAttachments.uploaderId, ownerId),
+    eq(supportAttachments.uploaderId, uploaderId),
+    eq(supportAttachments.uploaderRole, uploaderRole),
   )).limit(1);
   if (!row) throw new BookingError(404, "Support attachment not found.");
+  await authoredMessage(ticketId, row.messageId, uploaderId, uploaderRole);
   if (row.status === "ready") {
     res.json(CompleteMemberSupportAttachmentResponse.parse(asAttachment(row)));
     return;
@@ -168,24 +193,48 @@ async function completeUpload(req: Request, res: Response, ownerId: string): Pro
   const now = new Date();
   const ready = await db.transaction(async tx => {
     const [current] = await tx.select().from(supportAttachments).where(eq(supportAttachments.id, attachmentId)).for("update");
-    if (!current || current.ticketId !== ticketId || current.uploaderId !== ownerId) {
+    if (!current || current.ticketId !== ticketId || current.uploaderId !== uploaderId || current.uploaderRole !== uploaderRole) {
       throw new BookingError(404, "Support attachment not found.");
     }
     if (current.status === "ready") return current;
+    await authoredMessage(ticketId, current.messageId, uploaderId, uploaderRole);
     const [updated] = await tx.update(supportAttachments).set({ status: "ready" })
       .where(and(eq(supportAttachments.id, attachmentId), eq(supportAttachments.status, "pending"))).returning();
     if (!updated) throw new BookingError(409, "This upload is no longer pending.");
     await tx.insert(supportTicketEvents).values({
       id: randomUUID(),
       ticketId,
-      actorId: ownerId,
+      actorId: uploaderId,
       action: "attachment_added",
-      detail: "Member added an attachment to a support message.",
+      detail: uploaderRole === "member" ? "Member added an attachment to a support message." : "Support staff added an attachment to a reply.",
       createdAt: now,
     });
     return updated;
   });
   res.json(CompleteMemberSupportAttachmentResponse.parse(asAttachment(ready)));
+}
+
+async function deletePendingUpload(
+  req: Request,
+  res: Response,
+  uploaderId: string,
+  uploaderRole: "member" | "support" | "admin",
+  attachmentId: string,
+): Promise<void> {
+  const ticketId = String(req.params.id);
+  await accessibleTicket(ticketId, uploaderId, uploaderRole);
+  const [row] = await db.select().from(supportAttachments).where(and(
+    eq(supportAttachments.id, attachmentId),
+    eq(supportAttachments.ticketId, ticketId),
+    eq(supportAttachments.uploaderId, uploaderId),
+    eq(supportAttachments.uploaderRole, uploaderRole),
+    eq(supportAttachments.status, "pending"),
+  )).limit(1);
+  if (!row) throw new BookingError(404, "Pending support attachment not found.");
+  await authoredMessage(ticketId, row.messageId, uploaderId, uploaderRole);
+  await supportAttachmentStorage.deletePrivateFile(row.objectPath);
+  await db.delete(supportAttachments).where(eq(supportAttachments.id, row.id));
+  res.sendStatus(204);
 }
 
 async function downloadAttachment(
@@ -225,27 +274,19 @@ memberSupportAttachmentRouter.get("/support/tickets/:id/attachments", async (req
 });
 
 memberSupportAttachmentRouter.post("/support/tickets/:id/attachments/upload-url", async (req, res): Promise<void> => {
-  await requestUpload(req, res, signedInUserId(req));
+  await requestUpload(req, res, signedInUserId(req), "member");
 });
 
 memberSupportAttachmentRouter.post("/support/tickets/:id/attachments/:attachmentId/complete", async (req, res): Promise<void> => {
-  await completeUpload(req, res, signedInUserId(req));
+  const params = CompleteMemberSupportAttachmentParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ message: "Invalid support attachment identifier." }); return; }
+  await completeUpload(req, res, signedInUserId(req), "member", params.data.attachmentId);
 });
 
 memberSupportAttachmentRouter.delete("/support/tickets/:id/attachments/:attachmentId", async (req, res): Promise<void> => {
-  const ownerId = signedInUserId(req);
-  const ticketId = String(req.params.id);
-  await ownedTicket(ticketId, ownerId);
-  const [row] = await db.select().from(supportAttachments).where(and(
-    eq(supportAttachments.id, String(req.params.attachmentId)),
-    eq(supportAttachments.ticketId, ticketId),
-    eq(supportAttachments.uploaderId, ownerId),
-    eq(supportAttachments.status, "pending"),
-  )).limit(1);
-  if (!row) throw new BookingError(404, "Pending support attachment not found.");
-  await supportAttachmentStorage.deletePrivateFile(row.objectPath);
-  await db.delete(supportAttachments).where(eq(supportAttachments.id, row.id));
-  res.sendStatus(204);
+  const params = DeletePendingMemberSupportAttachmentParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ message: "Invalid support attachment identifier." }); return; }
+  await deletePendingUpload(req, res, signedInUserId(req), "member", params.data.attachmentId);
 });
 
 memberSupportAttachmentRouter.get("/support/tickets/:id/attachments/:attachmentId/download", async (req, res): Promise<void> => {
@@ -256,12 +297,13 @@ memberSupportAttachmentRouter.get("/support/tickets/:id/attachments/:attachmentI
 staffSupportAttachmentRouter.use(async (req, res, next: NextFunction): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) { res.status(401).json({ message: "Sign in to continue." }); return; }
-  const [operator] = await db.select({ role: operators.role }).from(operators).where(eq(operators.userId, userId)).limit(1);
+  const [operator] = await db.select({ userId: operators.userId, role: operators.role }).from(operators)
+    .where(eq(operators.userId, userId)).limit(1);
   if (operator?.role !== "admin" && operator?.role !== "support") {
     res.status(403).json({ message: "Authorized support staff access is required." });
     return;
   }
-  res.locals.supportAttachmentStaffId = userId;
+  res.locals.supportAttachmentStaff = { userId: operator.userId, role: operator.role };
   next();
 });
 
@@ -271,6 +313,25 @@ staffSupportAttachmentRouter.get("/tickets/:id/attachments", async (req, res): P
     .where(eq(supportTickets.id, ticketId)).limit(1);
   if (!ticket) throw new BookingError(404, "Support request not found.");
   res.json(GetSupportStaffTicketAttachmentsResponse.parse(await readReadyAttachments(ticket.id)));
+});
+
+staffSupportAttachmentRouter.post("/tickets/:id/attachments/upload-url", async (req, res): Promise<void> => {
+  const staff = res.locals.supportAttachmentStaff as { userId: string; role: "admin" | "support" };
+  await requestUpload(req, res, staff.userId, staff.role, RequestSupportStaffAttachmentUploadUrlBody);
+});
+
+staffSupportAttachmentRouter.post("/tickets/:id/attachments/:attachmentId/complete", async (req, res): Promise<void> => {
+  const params = CompleteSupportStaffAttachmentParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ message: "Invalid support attachment identifier." }); return; }
+  const staff = res.locals.supportAttachmentStaff as { userId: string; role: "admin" | "support" };
+  await completeUpload(req, res, staff.userId, staff.role, params.data.attachmentId);
+});
+
+staffSupportAttachmentRouter.delete("/tickets/:id/attachments/:attachmentId", async (req, res): Promise<void> => {
+  const params = DeletePendingSupportStaffAttachmentParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ message: "Invalid support attachment identifier." }); return; }
+  const staff = res.locals.supportAttachmentStaff as { userId: string; role: "admin" | "support" };
+  await deletePendingUpload(req, res, staff.userId, staff.role, params.data.attachmentId);
 });
 
 staffSupportAttachmentRouter.get("/tickets/:id/attachments/:attachmentId/download", async (req, res): Promise<void> => {

@@ -22,7 +22,7 @@ import {
   type SupportTicketStatus,
   type SupportedLanguage,
 } from '@workspace/api-client-react';
-import { downloadSupportStaffFile } from '@/lib/support-attachments';
+import { downloadSupportStaffFile, supportAttachmentType, uploadSupportStaffAttachments } from '@/lib/support-attachments';
 
 type Lang = 'en' | 'ar' | 'ku';
 type StatusFilter = 'all' | SupportTicketStatus;
@@ -36,6 +36,10 @@ const words: Record<Lang, Record<string, string>> = {
     conversation: 'Conversation', timeline: 'Activity history', assigned: 'Assigned to', unassigned: 'Unassigned', assign: 'Assign to…', status: 'Status',
     reply: 'Public reply', replyHint: 'This message will be visible to the member or partner.', replyPlaceholder: 'Write a clear, helpful response…', send: 'Send reply', sending: 'Sending…',
     attachments: 'Attachments', downloadAttachment: 'Download attachment', attachmentDownloadError: 'The attachment could not be downloaded.',
+    addAttachments: 'Add files to this reply', attachmentHint: 'Up to 3 files, 10 MB each. PDF, JPEG, PNG, or WebP.',
+    attachmentLimit: 'Choose no more than 3 files.', attachmentInvalid: 'Choose a supported file up to 10 MB.',
+    attachmentUploadError: 'Your reply was sent, but a file could not be attached. Retry the upload below.',
+    attachmentUploadSuccess: 'Attachment uploaded.', removeAttachment: 'Remove', retryAttachmentUpload: 'Retry file upload',
     loading: 'Loading support queue', retry: 'Retry', loadError: 'The support queue could not be loaded.', detailError: 'This ticket could not be loaded.', empty: 'No tickets in this view', emptyHint: 'Try another status filter or check again shortly.',
     denied: 'Access restricted', deniedText: 'Only authorized MaydanGo support staff and administrators can view this work surface.',
     alert: 'Urgent alert outcome', alertPending: 'Push alert is pending.', alertAccepted: 'Push delivery was accepted by the notification service. This does not confirm it was seen.',
@@ -56,6 +60,10 @@ const words: Record<Lang, Record<string, string>> = {
     conversation: 'المحادثة', timeline: 'سجل النشاط', assigned: 'مسند إلى', unassigned: 'غير مسند', assign: 'إسناد إلى…', status: 'الحالة',
     reply: 'رد علني', replyHint: 'ستظهر هذه الرسالة للعضو أو الشريك.', replyPlaceholder: 'اكتب رداً واضحاً ومفيداً…', send: 'إرسال الرد', sending: 'جارٍ الإرسال…',
     attachments: 'المرفقات', downloadAttachment: 'تنزيل المرفق', attachmentDownloadError: 'تعذر تنزيل المرفق.',
+    addAttachments: 'إضافة ملفات إلى هذا الرد', attachmentHint: 'حتى 3 ملفات، 10 ميغابايت لكل ملف. PDF أو JPEG أو PNG أو WebP.',
+    attachmentLimit: 'اختر 3 ملفات كحد أقصى.', attachmentInvalid: 'اختر ملفاً مدعوماً بحجم لا يتجاوز 10 ميغابايت.',
+    attachmentUploadError: 'أُرسل الرد، لكن تعذر إرفاق ملف. أعد محاولة الرفع أدناه.',
+    attachmentUploadSuccess: 'تم رفع المرفق.', removeAttachment: 'إزالة', retryAttachmentUpload: 'إعادة رفع الملف',
     loading: 'جارٍ تحميل قائمة الدعم', retry: 'إعادة المحاولة', loadError: 'تعذر تحميل قائمة الدعم.', detailError: 'تعذر تحميل هذا الطلب.', empty: 'لا توجد طلبات في هذا العرض', emptyHint: 'جرّب تصفية حالة أخرى أو أعد التحقق بعد قليل.',
     denied: 'الوصول مقيّد', deniedText: 'يمكن لموظفي دعم ميدان جو المعتمدين والمسؤولين فقط عرض مساحة العمل هذه.',
     alert: 'نتيجة التنبيه العاجل', alertPending: 'التنبيه الفوري قيد الانتظار.', alertAccepted: 'قبلت خدمة الإشعارات إرسال التنبيه. هذا لا يؤكد أن أحداً قد شاهده.',
@@ -76,6 +84,10 @@ const words: Record<Lang, Record<string, string>> = {
     conversation: 'گفتوگۆ', timeline: 'مێژووی چالاکی', assigned: 'سپێردراوە بە', unassigned: 'نەسپێردراوە', assign: 'بسپێرە بە…', status: 'دۆخ',
     reply: 'وەڵامی گشتی', replyHint: 'ئەم نامەیە بۆ ئەندام یان هاوبەش دەردەکەوێت.', replyPlaceholder: 'وەڵامێکی ڕوون و یارمەتیدەر بنووسە…', send: 'ناردنی وەڵام', sending: 'لە ناردندایە…',
     attachments: 'هاوپێچەکان', downloadAttachment: 'داگرتنی هاوپێچ', attachmentDownloadError: 'داگرتنی هاوپێچ سەرکەوتوو نەبوو.',
+    addAttachments: 'زیادکردنی فایل بۆ ئەم وەڵامە', attachmentHint: 'تا ٣ فایل، هەر یەکە ١٠ مێگابایت. PDF، JPEG، PNG یان WebP.',
+    attachmentLimit: 'تەنها تا ٣ فایل هەڵبژێرە.', attachmentInvalid: 'فایلێکی پشتگیریکراو تا ١٠ مێگابایت هەڵبژێرە.',
+    attachmentUploadError: 'وەڵامەکە نێردرا، بەڵام فایلێک هاوپێچ نەکرا. لە خوارەوە دووبارە هەوڵ بدەوە.',
+    attachmentUploadSuccess: 'هاوپێچەکە بارکرا.', removeAttachment: 'لابردن', retryAttachmentUpload: 'دووبارە بارکردنی فایل',
     loading: 'بارکردنی ڕیزی پشتگیری', retry: 'هەوڵدانەوە', loadError: 'بارکردنی ڕیزی پشتگیری سەرکەوتوو نەبوو.', detailError: 'بارکردنی ئەم داواکارییە سەرکەوتوو نەبوو.', empty: 'هیچ داواکارییەک لەم بینینەدا نییە', emptyHint: 'پاڵاوتنی دۆخێکی تر تاقی بکەرەوە یان کەمێک دواتر بگەڕێوە.',
     denied: 'دەستگەیشتن سنووردارە', deniedText: 'تەنها تیمی پشتگیری و بەڕێوەبەرانی ڕێگەپێدراوی مەیدان گۆ دەتوانن ئەم شوێنی کارە ببینن.',
     alert: 'ئەنجامی ئاگادارکردنەوەی پەلە', alertPending: 'ئاگادارکردنەوەی پۆش لە چاوەڕوانیدایە.', alertAccepted: 'خزمەتگوزاری ئاگادارکردنەوە ناردنی پەسەند کرد. ئەمە دڵنیایی نادات کە کەسێک بینیبێتی.',
@@ -116,6 +128,9 @@ export function SupportDeskPage() {
   const [selectedId, setSelectedId] = useState('');
   const [feedback, setFeedback] = useState('');
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState('');
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
+  const [attachmentBusy, setAttachmentBusy] = useState(false);
+  const [pendingAttachmentMessageId, setPendingAttachmentMessageId] = useState('');
   const replyForm = useForm<ReplyValues>({
     resolver: zodResolver(replySchema),
     defaultValues: { message: '' },
@@ -155,7 +170,7 @@ export function SupportDeskPage() {
     try {
       await downloadSupportStaffFile(selectedId, attachmentId, fileName);
     } catch {
-      setFeedback('attachment-error');
+      setFeedback('download-error');
     } finally {
       setDownloadingAttachmentId('');
     }
@@ -174,20 +189,68 @@ export function SupportDeskPage() {
       onError: () => setFeedback('error'),
     });
   };
-  const sendReply = (values: ReplyValues) => {
+  const sendReply = async (values: ReplyValues) => {
     if (!selectedId || !values.message.trim()) return;
     setFeedback('');
-    reply.mutate({ id: selectedId, data: { message: values.message.trim(), language: (active?.language ?? language) as SupportedLanguage } }, {
-      onSuccess: async () => {
-        await Promise.all([
-          client.invalidateQueries({ queryKey: getGetSupportStaffTicketsQueryKey() }),
-          client.invalidateQueries({ queryKey: getGetSupportStaffTicketQueryKey(selectedId) }),
-        ]);
-        replyForm.reset({ message: '' });
-        setFeedback('sent');
-      },
-      onError: () => setFeedback('reply-error'),
-    });
+    setAttachmentBusy(true);
+    try {
+      const updated = await reply.mutateAsync({
+        id: selectedId,
+        data: { message: values.message.trim(), language: (active?.language ?? language) as SupportedLanguage },
+      });
+      const latestMessage = updated.messages[updated.messages.length - 1];
+      let attachmentFailed = false;
+      if (attachmentFiles.length && latestMessage?.id) {
+        const filesRemaining = [...attachmentFiles];
+        try {
+          await uploadSupportStaffAttachments(selectedId, latestMessage.id, [...filesRemaining], uploaded => {
+            const index = filesRemaining.indexOf(uploaded);
+            if (index >= 0) filesRemaining.splice(index, 1);
+            setAttachmentFiles([...filesRemaining]);
+          });
+          setPendingAttachmentMessageId('');
+        } catch {
+          attachmentFailed = true;
+          setAttachmentFiles([...filesRemaining]);
+          setPendingAttachmentMessageId(latestMessage.id);
+        }
+      } else {
+        setAttachmentFiles([]);
+        setPendingAttachmentMessageId('');
+      }
+      await Promise.all([
+        client.invalidateQueries({ queryKey: getGetSupportStaffTicketsQueryKey() }),
+        client.invalidateQueries({ queryKey: getGetSupportStaffTicketQueryKey(selectedId) }),
+        client.invalidateQueries({ queryKey: getGetSupportStaffTicketAttachmentsQueryKey(selectedId) }),
+      ]);
+      replyForm.reset({ message: '' });
+      setFeedback(attachmentFailed ? 'attachment-error' : 'sent');
+    } catch {
+      setFeedback('reply-error');
+    } finally {
+      setAttachmentBusy(false);
+    }
+  };
+  const retryAttachmentUpload = async () => {
+    if (!selectedId || !pendingAttachmentMessageId || !attachmentFiles.length) return;
+    setAttachmentBusy(true);
+    setFeedback('');
+    const filesRemaining = [...attachmentFiles];
+    try {
+      await uploadSupportStaffAttachments(selectedId, pendingAttachmentMessageId, [...filesRemaining], uploaded => {
+        const index = filesRemaining.indexOf(uploaded);
+        if (index >= 0) filesRemaining.splice(index, 1);
+        setAttachmentFiles([...filesRemaining]);
+      });
+      setPendingAttachmentMessageId('');
+      await client.invalidateQueries({ queryKey: getGetSupportStaffTicketAttachmentsQueryKey(selectedId) });
+      setFeedback('attachment-uploaded');
+    } catch {
+      setAttachmentFiles([...filesRemaining]);
+      setFeedback('attachment-error');
+    } finally {
+      setAttachmentBusy(false);
+    }
   };
   const roleLabel = (role: string) => role === 'member' ? t.memberLabel : role === 'admin' ? t.adminLabel : t.supportLabel;
   const statusLabel = (status: string) => t[status] ?? status;
@@ -235,7 +298,7 @@ export function SupportDeskPage() {
         </div>
         <div className="max-h-[74vh] overflow-y-auto p-2">
           {queue.isLoading ? <div className="space-y-2 p-2" data-testid="support-queue-skeleton">{[1,2,3,4,5].map(i => <div key={i} className="h-24 animate-pulse rounded-2xl bg-[#eeeadf]" />)}</div>
-            : sortedTickets.length ? sortedTickets.map(ticket => <button type="button" key={ticket.id} data-testid={`ticket-row-${ticket.id}`} aria-current={selectedId === ticket.id ? 'true' : undefined} onClick={() => { setSelectedId(ticket.id); replyForm.reset({ message: '' }); setFeedback(''); }} className={`mb-1 w-full rounded-2xl border p-3.5 text-start transition hover:bg-[#f5f2e9] ${selectedId === ticket.id ? 'border-[#9db3a4] bg-[#eef2e9] shadow-[inset_3px_0_0_#28695a]' : 'border-transparent bg-transparent'}`}>
+            : sortedTickets.length ? sortedTickets.map(ticket => <button type="button" key={ticket.id} data-testid={`ticket-row-${ticket.id}`} aria-current={selectedId === ticket.id ? 'true' : undefined} disabled={attachmentBusy} onClick={() => { setSelectedId(ticket.id); setAttachmentFiles([]); setPendingAttachmentMessageId(''); replyForm.reset({ message: '' }); setFeedback(''); }} className={`mb-1 w-full rounded-2xl border p-3.5 text-start transition hover:bg-[#f5f2e9] disabled:cursor-wait disabled:opacity-60 ${selectedId === ticket.id ? 'border-[#9db3a4] bg-[#eef2e9] shadow-[inset_3px_0_0_#28695a]' : 'border-transparent bg-transparent'}`}>
               <div className="flex items-start justify-between gap-3"><span data-testid={`text-ticket-subject-${ticket.id}`} className="min-w-0 break-words text-sm font-bold leading-5 text-[#29483e]">{ticket.subject}</span>{ticket.urgent && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#f7e7df] px-2 py-1 text-[9px] font-extrabold uppercase tracking-wide text-[#934638]"><AlertTriangle size={11}/>{t.urgent}</span>}</div>
               {ticket.urgentOverdue && <span data-testid={`badge-ticket-overdue-${ticket.id}`} className="mt-2 inline-flex rounded-full bg-[#9a4435] px-2 py-1 text-[9px] font-bold text-white">{t.overdue}</span>}
               <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] text-[#75847c]"><span className="rounded-full bg-[#e9e5d7] px-2 py-1 font-semibold text-[#536b61]">{t[ticket.category] ?? ticket.category}</span><span>{langName[ticketLanguage(ticket.language)]}</span><span className="ms-auto inline-flex items-center gap-1"><Clock3 size={11}/>{dateLabel(ticket.lastMessageAt, language)}</span></div>
@@ -263,7 +326,9 @@ export function SupportDeskPage() {
                 <AlertTriangle size={17} className="mt-0.5 shrink-0"/><div><p className="text-xs font-bold">{t.alert}{active.urgentOverdue ? ` · ${t.overdue}` : ''}</p><p className="mt-1 text-xs leading-5">{active.urgentOverdue ? t.alertOverdue : active.urgentAlertStatus === 'pending' ? t.alertPending : active.urgentAlertStatus === 'accepted' ? t.alertAccepted : active.urgentAlertStatus === 'fallback_required' ? t.alertFallback : t.alertNone}</p><p className="mt-1.5 text-[10px] leading-4 opacity-80">{t.alertNote}</p></div>
               </div>}
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[10px] text-[#75847c]"><span className="inline-flex items-center gap-1.5"><UserRound size={12}/>{t.customerId}: {active.memberUserId}</span><span className="inline-flex items-center gap-1.5"><Clock3 size={12}/>{t.lastActivity}: {dateLabel(active.lastMessageAt, language)}</span></div>
-              {feedback && <p role="status" data-testid="status-ticket-action" className={`mt-3 text-xs font-semibold ${feedback === 'error' || feedback === 'reply-error' ? 'text-[#9a4435]' : 'text-[#28695a]'}`}>{feedback === 'sent' ? t.replySent : feedback === 'reply-error' ? t.failedReply : feedback === 'error' ? t.updateError : feedback === 'saved' ? <><Check size={12} className="inline"/> {t.event}</> : ''}</p>}
+               {feedback && <p role="status" data-testid="status-ticket-action" className={`mt-3 text-xs font-semibold ${['error', 'reply-error', 'attachment-error', 'attachment-invalid', 'attachment-limit', 'download-error'].includes(feedback) ? 'text-[#9a4435]' : 'text-[#28695a]'}`}>
+                 {feedback === 'sent' ? t.replySent : feedback === 'reply-error' ? t.failedReply : feedback === 'error' ? t.updateError : feedback === 'saved' ? <><Check size={12} className="inline"/> {t.event}</> : feedback === 'attachment-error' ? t.attachmentUploadError : feedback === 'attachment-invalid' ? t.attachmentInvalid : feedback === 'attachment-limit' ? t.attachmentLimit : feedback === 'attachment-uploaded' ? t.attachmentUploadSuccess : feedback === 'download-error' ? t.attachmentDownloadError : ''}
+               </p>}
             </div>
 
             <div className="grid flex-1 lg:grid-cols-[minmax(0,1fr)_250px]">
@@ -288,10 +353,38 @@ export function SupportDeskPage() {
                   <div className="mb-2 flex items-end justify-between gap-3"><div><h3 className="text-xs font-extrabold text-[#36564b]">{t.reply}</h3><p className="mt-1 text-[10px] text-[#75847c]">{t.replyHint}</p></div><span className="text-[10px] tabular-nums text-[#8a958d]">{replyText.length}/5000</span></div>
                   <FormField control={replyForm.control} name="message" render={({ field: replyField }) => <FormItem>
                     <FormLabel className="sr-only">{t.reply}</FormLabel>
-                    <FormControl><Textarea {...replyField} data-testid="textarea-support-reply" maxLength={5000} rows={3} placeholder={t.replyPlaceholder} className={`${field} w-full resize-y leading-6 placeholder:text-[#9a9f96]`} /></FormControl>
+                     <FormControl><Textarea {...replyField} data-testid="textarea-support-reply" disabled={attachmentBusy || !!pendingAttachmentMessageId} maxLength={5000} rows={3} placeholder={t.replyPlaceholder} className={`${field} w-full resize-y leading-6 placeholder:text-[#9a9f96]`} /></FormControl>
                     <FormMessage />
                   </FormItem>} />
-                  <div className="mt-3 flex items-center justify-between gap-3"><span className="text-[10px] text-[#75847c]">{langName[ticketLanguage(active.language)]}</span><button type="submit" data-testid="button-send-support-reply" disabled={reply.isPending || !replyText.trim()} className="inline-flex items-center gap-2 rounded-full bg-[#174d43] px-4 py-2.5 text-xs font-bold text-[#fff9e9] transition hover:bg-[#226556] disabled:cursor-not-allowed disabled:opacity-45">{reply.isPending ? t.sending : t.send}<ArrowUpRight size={14}/></button></div>
+                   <div className="mt-3">
+                     <label htmlFor="support-reply-attachments" className="block text-xs font-semibold text-[#51665e]">{t.addAttachments}
+                       <input id="support-reply-attachments" data-testid="input-support-reply-attachments" type="file" multiple disabled={attachmentBusy || !!pendingAttachmentMessageId}
+                         accept="application/pdf,image/jpeg,image/png,image/webp"
+                         onChange={event => {
+                           const chosen = Array.from(event.currentTarget.files ?? []);
+                           event.currentTarget.value = '';
+                           if (attachmentFiles.length + chosen.length > 3) { setFeedback('attachment-limit'); return; }
+                           if (chosen.some(file => !supportAttachmentType(file) || file.size < 1 || file.size > 10 * 1024 * 1024)) { setFeedback('attachment-invalid'); return; }
+                           setFeedback('');
+                           setAttachmentFiles(current => [...current, ...chosen]);
+                         }}
+                         className={`${field} mt-1.5 w-full p-2 text-xs file:mr-3 file:rounded-full file:border-0 file:bg-[#e7eee4] file:px-3 file:py-1.5 file:text-xs file:font-bold disabled:opacity-60`} />
+                     </label>
+                     <p className="mt-1 text-[10px] leading-4 text-[#75847c]">{t.attachmentHint}</p>
+                     {attachmentFiles.map((file, index) => <div key={`${file.name}-${index}`} className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-[#f2efe4] px-3 py-2 text-xs">
+                       <span className="truncate">{file.name}</span>
+                       <button type="button" aria-label={`${t.removeAttachment}: ${file.name}`} disabled={attachmentBusy} onClick={() => {
+                         const remaining = attachmentFiles.filter((_, fileIndex) => fileIndex !== index);
+                         setAttachmentFiles(remaining);
+                         if (!remaining.length) setPendingAttachmentMessageId('');
+                       }} className="shrink-0 font-bold text-[#8f3f32] disabled:opacity-50">{t.removeAttachment}</button>
+                     </div>)}
+                     {pendingAttachmentMessageId && attachmentFiles.length > 0 && <button type="button" data-testid="button-retry-support-attachments" disabled={attachmentBusy}
+                       onClick={() => void retryAttachmentUpload()} className="mt-2 rounded-full border border-[#a76445] px-3 py-2 text-xs font-bold text-[#8f3f32] disabled:opacity-50">
+                       {attachmentBusy ? t.sending : t.retryAttachmentUpload}
+                     </button>}
+                   </div>
+                   <div className="mt-3 flex items-center justify-between gap-3"><span className="text-[10px] text-[#75847c]">{langName[ticketLanguage(active.language)]}</span><button type="submit" data-testid="button-send-support-reply" disabled={reply.isPending || attachmentBusy || !!pendingAttachmentMessageId || !replyText.trim()} className="inline-flex items-center gap-2 rounded-full bg-[#174d43] px-4 py-2.5 text-xs font-bold text-[#fff9e9] transition hover:bg-[#226556] disabled:cursor-not-allowed disabled:opacity-45">{reply.isPending || attachmentBusy ? t.sending : t.send}<ArrowUpRight size={14}/></button></div>
                 </form></Form>
               </section>
 

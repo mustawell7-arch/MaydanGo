@@ -41,7 +41,8 @@
           "locationAlwaysPermission": false,
           "motionUsagePermission": false
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -280,6 +280,45 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/SupportAttachment" } }
+    post:
+      operationId: requestSupportStaffAttachmentUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportAttachmentUploadInput" }
+      responses:
+        "201":
+          description: Short-lived upload URL for a private staff reply attachment
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportAttachmentUploadResponse" }
+  /support/staff/tickets/{id}/attachments/{attachmentId}/complete:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: attachmentId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: completeSupportStaffAttachment
+      responses:
+        "200":
+          description: Staff reply attachment verified and available to the ticket member
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportAttachment" }
+  /support/staff/tickets/{id}/attachments/{attachmentId}:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: attachmentId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      operationId: deletePendingSupportStaffAttachment
+      responses:
+        "204": { description: Pending staff reply upload deleted }
   /support/staff/tickets/{id}/attachments/{attachmentId}/download:
     parameters:
       - { $ref: "#/components/parameters/Id" }

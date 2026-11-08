@@ -19,7 +19,7 @@ import { useColors } from '@/hooks/useColors';
 import { errorCopy } from '@/lib/content';
 import { translate, type MessageKey } from '@/lib/i18n';
 import { SupportAttachmentPicker } from '@/components/SupportAttachmentPicker';
-import { uploadSupportAttachments, type SupportAttachmentDraft } from '@/lib/support-attachments';
+import { shareSupportAttachment, uploadSupportAttachments, type SupportAttachmentDraft } from '@/lib/support-attachments';
 
 type Status = 'open' | 'in_progress' | 'waiting_member' | 'resolved' | 'closed';
 const statusKeys: Record<Status, MessageKey> = {
@@ -39,12 +39,25 @@ export default function SupportTicketScreen() {
   const [message, setMessage] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<SupportAttachmentDraft[]>([]);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
+  const [downloadingAttachmentId, setDownloadingAttachmentId] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
   const ticket = useGetMemberSupportTicket(id, { query: { enabled: !!id && app.signedIn } });
   const attachments = useGetMemberSupportTicketAttachments(id, {
-    query: { enabled: !!id && app.signedIn, queryKey: getGetMemberSupportTicketAttachmentsQueryKey(id) },
+    query: { enabled: !!id && app.signedIn, queryKey: getGetMemberSupportTicketAttachmentsQueryKey(id), refetchInterval: 20_000 },
   });
   const reply = useReplyMemberSupportTicket();
+
+  const openAttachment = async (attachment: NonNullable<typeof attachments.data>[number]) => {
+    setDownloadingAttachmentId(attachment.id);
+    setNotice(null);
+    try {
+      await shareSupportAttachment(id, attachment.id, attachment.fileName, attachment.contentType);
+    } catch {
+      setNotice(t('supportAttachmentDownloadFailed'));
+    } finally {
+      setDownloadingAttachmentId('');
+    }
+  };
 
   const sendReply = async () => {
     if (!message.trim()) return;
@@ -124,10 +137,13 @@ export default function SupportTicketScreen() {
                       {mine ? t('supportYou') : 'MaydanGO'} · {new Date(item.createdAt).toLocaleString()}
                     </Text>
                     {messageAttachments.map(file => (
-                      <View key={file.id} style={styles.attachmentRow}>
+                      <Pressable key={file.id} accessibilityRole="button" accessibilityLabel={`${t('supportAttachmentOpen')}: ${file.fileName}`}
+                        testID={`button-open-support-attachment-${file.id}`} disabled={downloadingAttachmentId === file.id}
+                        onPress={() => void openAttachment(file)} style={[styles.attachmentRow, { opacity: downloadingAttachmentId === file.id ? 0.55 : 1 }]}>
                         <Ionicons name="document-attach-outline" size={15} color={mine ? colors.primaryForeground : colors.primary} />
                         <Text numberOfLines={1} style={[styles.attachmentName, { color: mine ? colors.primaryForeground : colors.foreground }]}>{file.fileName}</Text>
-                      </View>
+                        <Ionicons name="download-outline" size={15} color={mine ? colors.primaryForeground : colors.primary} />
+                      </Pressable>
                     ))}
                   </View>
                 );

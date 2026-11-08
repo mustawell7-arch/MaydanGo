@@ -1,9 +1,12 @@
 import {
   completeMemberSupportAttachment,
+  completeSupportStaffAttachment,
   deletePendingMemberSupportAttachment,
+  deletePendingSupportStaffAttachment,
   downloadMemberSupportAttachment,
   downloadSupportStaffAttachment,
   requestMemberSupportAttachmentUploadUrl,
+  requestSupportStaffAttachmentUploadUrl,
   type SupportAttachmentUploadInputContentType,
 } from "@workspace/api-client-react";
 
@@ -45,6 +48,40 @@ export async function uploadMemberSupportAttachments(ticketId: string, messageId
       await completeMemberSupportAttachment(ticketId, upload.id);
     } catch (error) {
       await deletePendingMemberSupportAttachment(ticketId, upload.id).catch(() => undefined);
+      throw error;
+    }
+  }
+}
+
+export async function uploadSupportStaffAttachments(
+  ticketId: string,
+  messageId: string,
+  files: File[],
+  onUploaded?: (file: File) => void,
+) {
+  if (files.length > 3) throw new Error("You can attach up to three files to one message.");
+  for (const file of files) {
+    const contentType = supportAttachmentType(file);
+    if (!contentType || file.size < 1 || file.size > 10 * 1024 * 1024) {
+      throw new Error("Choose a PDF, JPEG, PNG, or WebP file up to 10 MB.");
+    }
+    const upload = await requestSupportStaffAttachmentUploadUrl(ticketId, {
+      messageId,
+      fileName: file.name,
+      contentType,
+      size: file.size,
+    });
+    try {
+      const response = await fetch(upload.uploadURL, {
+        method: "PUT",
+        headers: { "Content-Type": contentType },
+        body: file,
+      });
+      if (!response.ok) throw new Error("The file could not be uploaded.");
+      await completeSupportStaffAttachment(ticketId, upload.id);
+      onUploaded?.(file);
+    } catch (error) {
+      await deletePendingSupportStaffAttachment(ticketId, upload.id).catch(() => undefined);
       throw error;
     }
   }

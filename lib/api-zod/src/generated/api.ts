@@ -5970,6 +5970,58 @@ export const GetSupportStaffTicketAttachmentsResponseItem = zod.object({
 export const GetSupportStaffTicketAttachmentsResponse = zod.array(GetSupportStaffTicketAttachmentsResponseItem)
 
 
+export const RequestSupportStaffAttachmentUploadUrlParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const requestSupportStaffAttachmentUploadUrlBodyFileNameMax = 180;
+
+export const requestSupportStaffAttachmentUploadUrlBodySizeMax = 10485760;
+
+
+
+export const RequestSupportStaffAttachmentUploadUrlBody = zod.object({
+  "messageId": zod.string().uuid(),
+  "fileName": zod.string().min(1).max(requestSupportStaffAttachmentUploadUrlBodyFileNameMax),
+  "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
+  "size": zod.number().int().min(1).max(requestSupportStaffAttachmentUploadUrlBodySizeMax)
+})
+
+export const RequestSupportStaffAttachmentUploadUrlResponse = zod.object({
+  "id": zod.string().uuid(),
+  "uploadURL": zod.string().url(),
+  "objectPath": zod.string()
+})
+
+
+export const CompleteSupportStaffAttachmentParams = zod.object({
+  "id": zod.coerce.string(),
+  "attachmentId": zod.coerce.string().uuid()
+})
+
+export const completeSupportStaffAttachmentResponseSizeMax = 10485760;
+
+
+
+export const CompleteSupportStaffAttachmentResponse = zod.object({
+  "id": zod.string().uuid(),
+  "messageId": zod.string().uuid(),
+  "fileName": zod.string(),
+  "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
+  "size": zod.number().int().min(1).max(completeSupportStaffAttachmentResponseSizeMax),
+  "uploaderRole": zod.enum(['member', 'support', 'admin']),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const DeletePendingSupportStaffAttachmentParams = zod.object({
+  "id": zod.coerce.string(),
+  "attachmentId": zod.coerce.string().uuid()
+})
+
+export const DeletePendingSupportStaffAttachmentResponse = zod.void()
+
+
 export const DownloadSupportStaffAttachmentParams = zod.object({
   "id": zod.coerce.string(),
   "attachmentId": zod.coerce.string().uuid()

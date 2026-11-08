@@ -1,8 +1,10 @@
-import { File } from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import { fetch as expoFetch } from 'expo/fetch';
+import * as Sharing from 'expo-sharing';
 import {
   completeMemberSupportAttachment,
   deletePendingMemberSupportAttachment,
+  downloadMemberSupportAttachment,
   requestMemberSupportAttachmentUploadUrl,
   type SupportAttachmentUploadInputContentType,
 } from '@workspace/api-client-react';
@@ -56,4 +58,19 @@ export async function uploadSupportAttachments(
       throw error;
     }
   }
+}
+
+export async function shareSupportAttachment(
+  ticketId: string,
+  attachmentId: string,
+  fileName: string,
+  contentType: SupportAttachmentUploadInputContentType,
+) {
+  const blob = await downloadMemberSupportAttachment(ticketId, attachmentId);
+  const safeName = fileName.replace(/[\\/\u0000-\u001f\u007f]/g, '_').slice(0, 140) || 'support-attachment';
+  const file = new File(Paths.cache, `${attachmentId}-${safeName}`);
+  file.create({ overwrite: true });
+  file.write(new Uint8Array(await blob.arrayBuffer()));
+  if (!await Sharing.isAvailableAsync()) throw new Error('File sharing is not available on this device.');
+  await Sharing.shareAsync(file.uri, { mimeType: contentType, dialogTitle: fileName });
 }
