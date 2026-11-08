@@ -29,6 +29,7 @@ import {
   type SupportedLanguage,
 } from '@workspace/api-client-react';
 import { downloadSupportStaffFile, supportAttachmentType, uploadSupportStaffAttachments } from '@/lib/support-attachments';
+import { SupportCaseEscalations } from '@/components/support-case-escalations';
 
 type Lang = 'en' | 'ar' | 'ku';
 type StatusFilter = 'all' | SupportTicketStatus;
@@ -36,6 +37,7 @@ type StatusFilter = 'all' | SupportTicketStatus;
 const words: Record<Lang, Record<string, string>> = {
   en: {
     eyebrow: 'MAYDANGO · OPERATIONS', title: 'Support desk', subtitle: 'A clear view of member and partner requests across Iraq.',
+    escalated: 'Case escalated', escalationCloseHint: 'Resolve the case escalation before closing this ticket.',
     queue: 'Ticket queue', inbox: 'tickets', all: 'All tickets', open: 'Open', in_progress: 'In progress', waiting_member: 'Waiting on member', resolved: 'Resolved', closed: 'Closed',
     urgent: 'Urgent', overdue: 'Overdue', member: 'Member', partner: 'Partner', safety: 'Safety', booking: 'Booking', account: 'Account', access: 'Access', other: 'Other',
     selectTicket: 'Choose a ticket', selectHint: 'Select a request to review its conversation, alert outcome and audit history.',
@@ -66,6 +68,7 @@ const words: Record<Lang, Record<string, string>> = {
   },
   ar: {
     eyebrow: 'ميدان جو · العمليات', title: 'مكتب الدعم', subtitle: 'عرض واضح لطلبات الأعضاء والشركاء في أنحاء العراق.',
+    escalated: 'طلب مصعّد', escalationCloseHint: 'عالج التصعيد قبل إغلاق هذا الطلب.',
     queue: 'قائمة الطلبات', inbox: 'طلبات', all: 'كل الطلبات', open: 'مفتوح', in_progress: 'قيد المعالجة', waiting_member: 'بانتظار العضو', resolved: 'تم الحل', closed: 'مغلق',
     urgent: 'عاجل', overdue: 'متأخر', member: 'عضو', partner: 'شريك', safety: 'السلامة', booking: 'الحجز', account: 'الحساب', access: 'الوصول', other: 'أخرى',
     selectTicket: 'اختر طلباً', selectHint: 'اختر طلباً لمراجعة المحادثة ونتيجة التنبيه وسجل النشاط.',
@@ -96,6 +99,7 @@ const words: Record<Lang, Record<string, string>> = {
   },
   ku: {
     eyebrow: 'مەیدان گۆ · کارگێڕی', title: 'مێزی پشتگیری', subtitle: 'بینینێکی ڕوون بۆ داواکاریی ئەندامان و هاوبەشان لە سەرانسەری عێراق.',
+    escalated: 'داواکاری ئاستبەرزکراوەتەوە', escalationCloseHint: 'پێش داخستنی داواکاری، ئاستبەرزکردنەوەکە چارەسەر بکە.',
     queue: 'ڕیزی داواکارییەکان', inbox: 'داواکاری', all: 'هەموو داواکارییەکان', open: 'کراوە', in_progress: 'لە پێشچووندایە', waiting_member: 'چاوەڕوانی ئەندام', resolved: 'چارەسەرکرا', closed: 'داخرا',
     urgent: 'پەلە', overdue: 'دواکەوتوو', member: 'ئەندام', partner: 'هاوبەش', safety: 'سەلامەتی', booking: 'حجزکردن', account: 'هەژمار', access: 'دەستگەیشتن', other: 'هیتر',
     selectTicket: 'داواکارییەک هەڵبژێرە', selectHint: 'داواکارییەک هەڵبژێرە بۆ پێداچوونەوەی گفتوگۆ، ئەنجامی ئاگادارکردنەوە و مێژووی کار.',
@@ -183,6 +187,7 @@ export function SupportDeskPage() {
   const agents = agentsQuery.data ?? [];
   const authorized = !!userId && agents.some(agent => agent.userId === userId && (agent.role === 'admin' || agent.role === 'support'));
   const active = detail.data;
+  const hasActiveEscalation = tickets.some(ticket => ticket.id === selectedId && ticket.hasActiveEscalation);
   const relatedRecords = relatedRecordsQuery.data?.records ?? [];
 
   useEffect(() => {
@@ -193,6 +198,7 @@ export function SupportDeskPage() {
 
   const sortedTickets = useMemo(() => [...tickets].sort((a, b) => {
     if (a.urgent !== b.urgent) return a.urgent ? -1 : 1;
+    if (!!a.hasActiveEscalation !== !!b.hasActiveEscalation) return a.hasActiveEscalation ? -1 : 1;
     return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
   }), [tickets]);
   const refresh = () => void queue.refetch();
@@ -383,6 +389,7 @@ export function SupportDeskPage() {
             : sortedTickets.length ? sortedTickets.map(ticket => <button type="button" key={ticket.id} data-testid={`ticket-row-${ticket.id}`} aria-current={selectedId === ticket.id ? 'true' : undefined} disabled={attachmentBusy} onClick={() => { setSelectedId(ticket.id); setInternalNoteText(''); setRelatedRecordChoice(''); setAttachmentFiles([]); setPendingAttachmentMessageId(''); replyForm.reset({ message: '' }); setFeedback(''); }} className={`mb-1 w-full rounded-2xl border p-3.5 text-start transition hover:bg-[#f5f2e9] disabled:cursor-wait disabled:opacity-60 ${selectedId === ticket.id ? 'border-[#9db3a4] bg-[#eef2e9] shadow-[inset_3px_0_0_#28695a]' : 'border-transparent bg-transparent'}`}>
               <div className="flex items-start justify-between gap-3"><span data-testid={`text-ticket-subject-${ticket.id}`} className="min-w-0 break-words text-sm font-bold leading-5 text-[#29483e]">{ticket.subject}</span>{ticket.urgent && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#f7e7df] px-2 py-1 text-[9px] font-extrabold uppercase tracking-wide text-[#934638]"><AlertTriangle size={11}/>{t.urgent}</span>}</div>
               {ticket.urgentOverdue && <span data-testid={`badge-ticket-overdue-${ticket.id}`} className="mt-2 inline-flex rounded-full bg-[#9a4435] px-2 py-1 text-[9px] font-bold text-white">{t.overdue}</span>}
+              {ticket.hasActiveEscalation && <span data-testid={`badge-case-escalated-${ticket.id}`} className="mt-2 inline-flex rounded-full bg-[#f4ddc6] px-2 py-1 text-[9px] font-bold text-[#80533e]">{t.escalated}</span>}
               <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] text-[#75847c]"><span className="rounded-full bg-[#e9e5d7] px-2 py-1 font-semibold text-[#536b61]">{t[ticket.category] ?? ticket.category}</span><span>{langName[ticketLanguage(ticket.language)]}</span><span className="ms-auto inline-flex items-center gap-1"><Clock3 size={11}/>{dateLabel(ticket.lastMessageAt, language)}</span></div>
               <div className="mt-2 flex items-center justify-between gap-2"><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${ticket.status === 'resolved' || ticket.status === 'closed' ? 'bg-[#e6eee5] text-[#45694f]' : 'bg-[#f0ede3] text-[#596f65]'}`}>{statusLabel(ticket.status)}</span><span className="max-w-28 truncate text-[10px] text-[#75847c]">{ticket.assignedTo ? `${t.assigned}: ${ticket.assignedTo}` : t.unassigned}</span></div>
             </button>) : <div className="px-5 py-12 text-center" data-testid="support-empty"><div className="mx-auto grid h-11 w-11 place-items-center rounded-2xl bg-[#eeeadf] text-[#64796d]"><MessageSquareText size={19}/></div><p className="mt-3 text-sm font-bold">{t.empty}</p><p className="mt-1 text-xs leading-5 text-[#75847c]">{t.emptyHint}</p></div>}
@@ -400,8 +407,8 @@ export function SupportDeskPage() {
                   <div className="mt-3 flex flex-wrap items-center gap-2"><span data-testid={`status-active-ticket-${active.id}`} className="rounded-full bg-[#e8eee5] px-2.5 py-1 text-[10px] font-bold text-[#36564b]">{statusLabel(active.status)}</span>{active.urgent && <span className="inline-flex items-center gap-1 rounded-full bg-[#f7e7df] px-2.5 py-1 text-[10px] font-bold text-[#934638]"><AlertTriangle size={12}/>{t.urgent}</span>}{active.urgentOverdue && <span className="rounded-full bg-[#9a4435] px-2.5 py-1 text-[10px] font-bold text-white">{t.overdue}</span>}<span className="inline-flex items-center gap-1 text-[10px] text-[#75847c]"><Languages size={12}/>{langName[ticketLanguage(active.language)]}</span></div>
                 </div>
                 <div className="grid min-w-[190px] gap-3 sm:grid-cols-2 lg:min-w-[280px]">
-                  <label className="grid gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#718078]">{t.assigned}<select data-testid={`select-assignee-${active.id}`} value={active.assignedTo ?? ''} disabled={update.isPending} onChange={e => updateTicket({ assignedTo: e.target.value || null })} className={`${field} w-full text-xs normal-case tracking-normal`}><option value="">{t.noAgent}</option>{agents.map(agent => <option key={agent.userId} value={agent.userId}>{agent.userId} · {agent.role}</option>)}</select></label>
-                  <label className="grid gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#718078]">{t.status}<select data-testid={`select-status-${active.id}`} value={active.status} disabled={update.isPending} onChange={e => updateTicket({ status: e.target.value as SupportTicketStatus })} className={`${field} w-full text-xs normal-case tracking-normal`}>{statusKeys.map(s => <option key={s} value={s}>{statusLabel(s)}</option>)}</select></label>
+                  <label className="grid gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#718078]">{t.assigned}<select data-testid={`select-assignee-${active.id}`} value={active.assignedTo ?? ''} disabled={update.isPending || hasActiveEscalation} onChange={e => updateTicket({ assignedTo: e.target.value || null })} className={`${field} w-full text-xs normal-case tracking-normal`}><option value="">{t.noAgent}</option>{agents.map(agent => <option key={agent.userId} value={agent.userId}>{agent.userId} · {agent.role}</option>)}</select></label>
+                  <label className="grid gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#718078]">{t.status}<select data-testid={`select-status-${active.id}`} value={active.status} disabled={update.isPending} onChange={e => updateTicket({ status: e.target.value as SupportTicketStatus })} className={`${field} w-full text-xs normal-case tracking-normal`}>{statusKeys.map(s => <option key={s} value={s} disabled={hasActiveEscalation && ['resolved', 'closed'].includes(s)}>{statusLabel(s)}</option>)}</select>{hasActiveEscalation && <span className="normal-case tracking-normal">{t.escalationCloseHint}</span>}</label>
                 </div>
               </div>
               {active.urgent && <div data-testid={`alert-outcome-${active.id}`} className={`mt-4 flex items-start gap-3 rounded-2xl border p-3.5 ${active.urgentAlertStatus === 'fallback_required' || active.urgentOverdue ? 'border-[#e4c3b7] bg-[#fff5f1] text-[#805d55]' : 'border-[#e2d9bd] bg-[#f6f0dd] text-[#675e43]'}`}>
@@ -488,6 +495,7 @@ export function SupportDeskPage() {
               </section>
 
               <aside className="p-4 sm:p-5" aria-label={t.timeline}>
+                <SupportCaseEscalations key={active.id} ticketId={active.id} ticketStatus={active.status} agents={agents} userId={userId!} language={language}/>
                 <section className="mb-6 rounded-2xl border border-[#d8e2d5] bg-[#f1f4eb] p-3.5" data-testid="support-related-records">
                   <h3 className="text-xs font-extrabold text-[#36564b]">{t.relatedRecords}</h3>
                   <p className="mt-1 text-[10px] leading-4 text-[#75847c]">{t.relatedRecordsHint}</p>

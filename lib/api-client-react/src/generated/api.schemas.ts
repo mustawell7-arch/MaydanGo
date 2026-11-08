@@ -837,7 +837,44 @@ export type SupportStaffTicketSummary = SupportTicketSummary & ({
   assignedTo: string | null;
   urgentAlertStatus: SupportStaffTicketSummaryUrgentAlertStatus;
   urgentOverdue: boolean;
+  hasActiveEscalation?: boolean;
 });
+
+export interface SupportCaseEscalation {
+  id: string;
+  ticketId: string;
+  targetUserId: string;
+  reason: string;
+  raisedBy: string;
+  raisedAt: string;
+  /** @nullable */
+  resolvedBy: string | null;
+  /** @nullable */
+  resolvedAt: string | null;
+  /** @nullable */
+  resolution: string | null;
+}
+
+export interface SupportCaseEscalationInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  targetUserId: string;
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
+  reason: string;
+}
+
+export interface SupportCaseResolutionInput {
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
+  resolution: string;
+}
 
 export type SupportStaffMessage = SupportMessage & {
   authorId: string;

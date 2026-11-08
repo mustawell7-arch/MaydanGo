@@ -5802,7 +5802,8 @@ export const GetSupportStaffTicketsResponseItem = zod.object({
   "memberUserId": zod.string(),
   "assignedTo": zod.string().nullable(),
   "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required']),
-  "urgentOverdue": zod.boolean()
+  "urgentOverdue": zod.boolean(),
+  "hasActiveEscalation": zod.boolean().optional()
 }))
 export const GetSupportStaffTicketsResponse = zod.array(GetSupportStaffTicketsResponseItem)
 
@@ -5825,7 +5826,8 @@ export const GetSupportStaffTicketResponse = zod.object({
   "memberUserId": zod.string(),
   "assignedTo": zod.string().nullable(),
   "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required']),
-  "urgentOverdue": zod.boolean()
+  "urgentOverdue": zod.boolean(),
+  "hasActiveEscalation": zod.boolean().optional()
 })).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
@@ -5874,7 +5876,8 @@ export const UpdateSupportStaffTicketResponse = zod.object({
   "memberUserId": zod.string(),
   "assignedTo": zod.string().nullable(),
   "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required']),
-  "urgentOverdue": zod.boolean()
+  "urgentOverdue": zod.boolean(),
+  "hasActiveEscalation": zod.boolean().optional()
 })).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
@@ -5927,7 +5930,8 @@ export const ReplySupportStaffTicketResponse = zod.object({
   "memberUserId": zod.string(),
   "assignedTo": zod.string().nullable(),
   "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required']),
-  "urgentOverdue": zod.boolean()
+  "urgentOverdue": zod.boolean(),
+  "hasActiveEscalation": zod.boolean().optional()
 })).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
@@ -5979,7 +5983,8 @@ export const AddSupportStaffInternalNoteResponse = zod.object({
   "memberUserId": zod.string(),
   "assignedTo": zod.string().nullable(),
   "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required']),
-  "urgentOverdue": zod.boolean()
+  "urgentOverdue": zod.boolean(),
+  "hasActiveEscalation": zod.boolean().optional()
 })).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
@@ -6003,6 +6008,82 @@ export const AddSupportStaffInternalNoteResponse = zod.object({
   "detail": zod.string()
 })))
 }))
+
+
+export const GetSupportCaseEscalationsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetSupportCaseEscalationsResponseItem = zod.object({
+  "id": zod.string(),
+  "ticketId": zod.string(),
+  "targetUserId": zod.string(),
+  "reason": zod.string(),
+  "raisedBy": zod.string(),
+  "raisedAt": zod.coerce.date(),
+  "resolvedBy": zod.string().nullable(),
+  "resolvedAt": zod.coerce.date().nullable(),
+  "resolution": zod.string().nullable()
+})
+export const GetSupportCaseEscalationsResponse = zod.array(GetSupportCaseEscalationsResponseItem)
+
+
+export const CreateSupportCaseEscalationParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const createSupportCaseEscalationBodyTargetUserIdMax = 160;
+
+export const createSupportCaseEscalationBodyReasonMin = 10;
+export const createSupportCaseEscalationBodyReasonMax = 2000;
+
+
+
+export const CreateSupportCaseEscalationBody = zod.object({
+  "targetUserId": zod.string().min(1).max(createSupportCaseEscalationBodyTargetUserIdMax),
+  "reason": zod.string().min(createSupportCaseEscalationBodyReasonMin).max(createSupportCaseEscalationBodyReasonMax)
+})
+
+export const CreateSupportCaseEscalationResponseItem = zod.object({
+  "id": zod.string(),
+  "ticketId": zod.string(),
+  "targetUserId": zod.string(),
+  "reason": zod.string(),
+  "raisedBy": zod.string(),
+  "raisedAt": zod.coerce.date(),
+  "resolvedBy": zod.string().nullable(),
+  "resolvedAt": zod.coerce.date().nullable(),
+  "resolution": zod.string().nullable()
+})
+export const CreateSupportCaseEscalationResponse = zod.array(CreateSupportCaseEscalationResponseItem)
+
+
+export const ResolveSupportCaseEscalationParams = zod.object({
+  "id": zod.coerce.string(),
+  "escalationId": zod.coerce.string()
+})
+
+export const resolveSupportCaseEscalationBodyResolutionMin = 10;
+export const resolveSupportCaseEscalationBodyResolutionMax = 2000;
+
+
+
+export const ResolveSupportCaseEscalationBody = zod.object({
+  "resolution": zod.string().min(resolveSupportCaseEscalationBodyResolutionMin).max(resolveSupportCaseEscalationBodyResolutionMax)
+})
+
+export const ResolveSupportCaseEscalationResponseItem = zod.object({
+  "id": zod.string(),
+  "ticketId": zod.string(),
+  "targetUserId": zod.string(),
+  "reason": zod.string(),
+  "raisedBy": zod.string(),
+  "raisedAt": zod.coerce.date(),
+  "resolvedBy": zod.string().nullable(),
+  "resolvedAt": zod.coerce.date().nullable(),
+  "resolution": zod.string().nullable()
+})
+export const ResolveSupportCaseEscalationResponse = zod.array(ResolveSupportCaseEscalationResponseItem)
 
 
 export const GetSupportStaffTicketRelatedRecordsParams = zod.object({

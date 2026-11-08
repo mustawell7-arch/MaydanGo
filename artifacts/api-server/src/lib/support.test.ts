@@ -374,6 +374,52 @@ test("support conversations are private, triaged, audited, and replyable", async
   assert.equal((await call(`/support/staff/tickets/${created.data.id}/notes`, partnerId, "POST", {
     message: "This should be rejected.",
   })).status, 403);
+  const escalationPath = `/support/staff/tickets/${created.data.id}/escalations`;
+  const escalationReason = "Please review the partner schedule conflict internally.";
+  assert.equal((await call(escalationPath, alice)).status, 403);
+  assert.equal((await call(escalationPath, partnerId, "POST", {
+    targetUserId: adminId, reason: escalationReason,
+  })).status, 403);
+  assert.equal((await call(escalationPath, supportId, "POST", {
+    targetUserId: partnerId, reason: escalationReason,
+  })).status, 400);
+  assert.equal((await call(escalationPath, supportId, "POST", {
+    targetUserId: adminId, reason: "          ",
+  })).status, 400);
+  const raisedCase = await call(escalationPath, supportId, "POST", {
+    targetUserId: adminId, reason: escalationReason,
+  });
+  assert.equal(raisedCase.status, 201);
+  const escalationId = raisedCase.data[0].id;
+  assert.equal((await call(escalationPath, supportId)).data[0].id, escalationId);
+  assert.equal((await call(escalationPath, supportId, "POST", {
+    targetUserId: adminId, reason: escalationReason,
+  })).status, 409);
+  const escalatedQueue = await call("/support/staff/tickets", adminId);
+  assert.equal(escalatedQueue.data.find((item: { id: string }) => item.id === created.data.id).hasActiveEscalation, true);
+  assert.equal(escalatedQueue.data.find((item: { id: string }) => item.id === created.data.id).assignedTo, adminId);
+  assert.equal((await call(`/support/staff/tickets/${created.data.id}`, adminId, "PATCH", { status: "closed" })).status, 409);
+  assert.equal((await call(`/support/staff/tickets/${created.data.id}`, adminId, "PATCH", { assignedTo: supportId })).status, 409);
+  assert.equal((await call(`${escalationPath}/${escalationId}/resolve`, supportId, "POST", {
+    resolution: "This sender must not resolve the receiving administrator's escalation.",
+  })).status, 403);
+  const resolvedCase = await call(`${escalationPath}/${escalationId}/resolve`, adminId, "POST", {
+    resolution: "Checked the schedule and explained the correction to support.",
+  });
+  assert.equal(resolvedCase.status, 200);
+  assert.equal(resolvedCase.data[0].resolvedBy, adminId);
+  assert.ok(resolvedCase.data[0].resolvedAt);
+  assert.equal((await call(`${escalationPath}/${escalationId}/resolve`, adminId, "POST", {
+    resolution: "This repeated resolution must be rejected.",
+  })).status, 409);
+  const toSupport = await call(escalationPath, adminId, "POST", { targetUserId: supportId, reason: escalationReason });
+  const supportEscalation = toSupport.data.find((item: { resolvedAt: string | null }) => !item.resolvedAt);
+  assert.equal((await call(`${escalationPath}/${supportEscalation.id}/resolve`, supportId, "POST", {
+    resolution: "Confirmed the corrected schedule with the partner.",
+  })).status, 200);
+  assert.equal((await call("/support/staff/tickets", supportId)).data.find(
+    (item: { id: string }) => item.id === created.data.id,
+  ).hasActiveEscalation, false);
   const memberView = await call(`/member/support/tickets/${created.data.id}`, alice);
   assert.equal(memberView.status, 200);
   assert.equal(memberView.data.messages.length, 2);
@@ -383,6 +429,9 @@ test("support conversations are private, triaged, audited, and replyable", async
   ));
   assert.equal("memberUserId" in memberView.data, false);
   assert.equal("records" in memberView.data, false);
+  assert.equal("escalations" in memberView.data, false);
+  assert.equal(JSON.stringify(memberView.data).includes(escalationReason), false);
+  assert.equal(memberView.data.lastMessageAt, response.data.lastMessageAt);
   assert.equal((await call(`/member/support/tickets/${created.data.id}`, bob)).status, 404);
 
   const memberReply = await call(`/member/support/tickets/${created.data.id}/replies`, alice, "POST", {
@@ -394,6 +443,9 @@ test("support conversations are private, triaged, audited, and replyable", async
   const closed = await call(`/support/staff/tickets/${created.data.id}`, adminId, "PATCH", { status: "closed" });
   assert.equal(closed.status, 200);
   assert.equal(closed.data.status, "closed");
+  assert.equal((await call(escalationPath, supportId, "POST", {
+    targetUserId: adminId, reason: escalationReason,
+  })).status, 409);
   assert.ok(closed.data.events.some((event: { nextStatus: string | null }) => event.nextStatus === "closed"));
   const auditRows = await db.select().from(operationAudit)
     .where(and(eq(operationAudit.actorId, adminId), eq(operationAudit.targetId, created.data.id)));

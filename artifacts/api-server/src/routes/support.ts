@@ -1,7 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   AddSupportStaffInternalNoteBody,
@@ -18,11 +18,13 @@ import {
   pushDevices,
   reservations,
   supportMessages,
+  supportCaseEscalations,
   supportTicketLinks,
   supportTicketEvents,
   supportTickets,
 } from "@workspace/db";
 import { BookingError } from "../lib/reservations";
+import caseEscalationRouter from "./support-case-escalations";
 import {
   sendMemberNotification,
   URGENT_UNASSIGNED_ESCALATION_DELAY_MS,
@@ -373,14 +375,24 @@ staffRouter.get("/tickets", async (req, res) => {
     .where(status?.success ? eq(supportTickets.status, status.data) : undefined)
     .orderBy(
       desc(sql`CASE WHEN ${supportTickets.urgent} = true AND ${supportTickets.status} NOT IN ('resolved', 'closed') THEN 1 ELSE 0 END`),
+      desc(sql`CASE WHEN EXISTS (
+        SELECT 1 FROM ${supportCaseEscalations}
+        WHERE ${supportCaseEscalations.ticketId} = ${supportTickets.id}
+          AND ${supportCaseEscalations.resolvedAt} IS NULL
+      ) THEN 1 ELSE 0 END`),
       desc(supportTickets.lastMessageAt),
     ).limit(100);
+  const activeEscalations = rows.length ? await db.select({ ticketId: supportCaseEscalations.ticketId })
+    .from(supportCaseEscalations).where(and(
+      inArray(supportCaseEscalations.ticketId, rows.map(row => row.id)), isNull(supportCaseEscalations.resolvedAt),
+    )) : [];
+  const escalatedIds = new Set(activeEscalations.map(item => item.ticketId));
   res.json(rows.map(t => ({
     id: t.id, subject: t.subject, category: t.category, urgent: t.urgent, urgentAlertStatus: t.urgentAlertStatus,
     urgentOverdue: isUrgentOverdue(t),
     status: t.status, language: t.language,
     createdAt: t.createdAt, updatedAt: t.updatedAt, lastMessageAt: t.lastMessageAt,
-    memberUserId: t.userId, assignedTo: t.assignedTo,
+    memberUserId: t.userId, assignedTo: t.assignedTo, hasActiveEscalation: escalatedIds.has(t.id),
   })));
 });
 
@@ -418,6 +430,14 @@ staffRouter.patch("/tickets/:id", async (req, res) => {
       if (!agent) throw new BookingError(400, "Assign the ticket to an authorized support agent.");
     }
     const nextStatus = parsed.data.status ?? ticket.status;
+    const [activeEscalation] = await tx.select({ targetUserId: supportCaseEscalations.targetUserId }).from(supportCaseEscalations)
+      .where(and(eq(supportCaseEscalations.ticketId, id), isNull(supportCaseEscalations.resolvedAt))).limit(1);
+    if (activeEscalation && ["resolved", "closed"].includes(nextStatus)) {
+      throw new BookingError(409, "Resolve the active case escalation before closing this ticket.");
+    }
+    if (activeEscalation && Object.hasOwn(parsed.data, "assignedTo") && parsed.data.assignedTo !== activeEscalation.targetUserId) {
+      throw new BookingError(409, "Resolve the active case escalation before reassigning this ticket.");
+    }
     const nextAssignee = Object.hasOwn(parsed.data, "assignedTo") ? parsed.data.assignedTo ?? null : ticket.assignedTo;
     const statusChanged = nextStatus !== ticket.status;
     const assigneeChanged = nextAssignee !== ticket.assignedTo;
@@ -937,6 +957,7 @@ function handleError(error: unknown, _req: Request, res: Response, next: NextFun
   if (error instanceof DeviceSecurityError) { res.status(error.status).json({ code: error.code, message: error.message }); return; }
   next(error);
 }
+staffRouter.use(caseEscalationRouter);
 memberSupportRouter.use(handleError);
 staffRouter.use(handleError);
 

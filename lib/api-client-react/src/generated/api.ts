@@ -162,6 +162,9 @@ import type {
   SupportAttachment,
   SupportAttachmentUploadInput,
   SupportAttachmentUploadResponse,
+  SupportCaseEscalation,
+  SupportCaseEscalationInput,
+  SupportCaseResolutionInput,
   SupportDeviceChange,
   SupportDeviceChangeReview,
   SupportInternalNoteInput,
@@ -10161,6 +10164,269 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getAddSupportStaffInternalNoteMutationOptions(options), queryClient);
+    }
+
+export const getGetSupportCaseEscalationsUrl = (id: string,) => {
+
+
+
+
+  return `/api/support/staff/tickets/${id}/escalations`
+}
+
+export const getSupportCaseEscalations = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<SupportCaseEscalation[]> => {
+
+  return customFetch<SupportCaseEscalation[]>(getGetSupportCaseEscalationsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportCaseEscalationsQueryKey = (id: string,) => {
+    return [
+    `/api/support/staff/tickets/${id}/escalations`
+    ] as const;
+    }
+
+
+export const getGetSupportCaseEscalationsQueryOptions = <TData = Awaited<ReturnType<typeof getSupportCaseEscalations>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportCaseEscalations>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportCaseEscalationsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportCaseEscalations>>> = ({ signal }) => getSupportCaseEscalations(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportCaseEscalations>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSupportCaseEscalationsQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportCaseEscalations>>>
+export type GetSupportCaseEscalationsQueryError = ErrorType<unknown>
+
+
+export function useGetSupportCaseEscalations<TData = Awaited<ReturnType<typeof getSupportCaseEscalations>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportCaseEscalations>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportCaseEscalations>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportCaseEscalations>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportCaseEscalations<TData = Awaited<ReturnType<typeof getSupportCaseEscalations>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportCaseEscalations>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportCaseEscalations>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportCaseEscalations>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportCaseEscalations<TData = Awaited<ReturnType<typeof getSupportCaseEscalations>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportCaseEscalations>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSupportCaseEscalations<TData = Awaited<ReturnType<typeof getSupportCaseEscalations>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportCaseEscalations>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSupportCaseEscalationsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSupportCaseEscalationUrl = (id: string,) => {
+
+
+
+
+  return `/api/support/staff/tickets/${id}/escalations`
+}
+
+export const createSupportCaseEscalation = async (id: string,
+    supportCaseEscalationInput: SupportCaseEscalationInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportCaseEscalation[]> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportCaseEscalation[]>(getCreateSupportCaseEscalationUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportCaseEscalationInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSupportCaseEscalationMutationKey = () => ['createSupportCaseEscalation'] as const;
+
+export const getCreateSupportCaseEscalationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportCaseEscalation>>, TError,CreateSupportCaseEscalationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSupportCaseEscalation>>, TError,CreateSupportCaseEscalationMutationVariables, TContext> => {
+
+const mutationKey = getCreateSupportCaseEscalationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSupportCaseEscalation>>, CreateSupportCaseEscalationMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createSupportCaseEscalation(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSupportCaseEscalationMutationResult = NonNullable<Awaited<ReturnType<typeof createSupportCaseEscalation>>>
+    export type CreateSupportCaseEscalationMutationBody = BodyType<SupportCaseEscalationInput>
+    export type CreateSupportCaseEscalationMutationError = ErrorType<unknown>
+    export type CreateSupportCaseEscalationMutationVariables = {id: string;data: BodyType<SupportCaseEscalationInput>}
+
+    export const useCreateSupportCaseEscalation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportCaseEscalation>>, TError,CreateSupportCaseEscalationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createSupportCaseEscalation>>,
+        TError,
+        CreateSupportCaseEscalationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateSupportCaseEscalationMutationOptions(options), queryClient);
+    }
+
+export const getResolveSupportCaseEscalationUrl = (id: string,
+    escalationId: string,) => {
+
+
+
+
+  return `/api/support/staff/tickets/${id}/escalations/${escalationId}/resolve`
+}
+
+export const resolveSupportCaseEscalation = async (id: string,
+    escalationId: string,
+    supportCaseResolutionInput: SupportCaseResolutionInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportCaseEscalation[]> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportCaseEscalation[]>(getResolveSupportCaseEscalationUrl(id,escalationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportCaseResolutionInput)
+  }
+);}
+
+
+
+
+
+export const getResolveSupportCaseEscalationMutationKey = () => ['resolveSupportCaseEscalation'] as const;
+
+export const getResolveSupportCaseEscalationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolveSupportCaseEscalation>>, TError,ResolveSupportCaseEscalationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resolveSupportCaseEscalation>>, TError,ResolveSupportCaseEscalationMutationVariables, TContext> => {
+
+const mutationKey = getResolveSupportCaseEscalationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resolveSupportCaseEscalation>>, ResolveSupportCaseEscalationMutationVariables> = (props) => {
+          const {id,escalationId,data} = props ?? {};
+
+          return  resolveSupportCaseEscalation(id,escalationId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResolveSupportCaseEscalationMutationResult = NonNullable<Awaited<ReturnType<typeof resolveSupportCaseEscalation>>>
+    export type ResolveSupportCaseEscalationMutationBody = BodyType<SupportCaseResolutionInput>
+    export type ResolveSupportCaseEscalationMutationError = ErrorType<unknown>
+    export type ResolveSupportCaseEscalationMutationVariables = {id: string;escalationId: string;data: BodyType<SupportCaseResolutionInput>}
+
+    export const useResolveSupportCaseEscalation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolveSupportCaseEscalation>>, TError,ResolveSupportCaseEscalationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof resolveSupportCaseEscalation>>,
+        TError,
+        ResolveSupportCaseEscalationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getResolveSupportCaseEscalationMutationOptions(options), queryClient);
     }
 
 export const getGetSupportStaffTicketRelatedRecordsUrl = (id: string,) => {

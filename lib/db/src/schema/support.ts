@@ -81,6 +81,21 @@ export const supportTicketLinks = pgTable("support_ticket_links", {
     .where(sql`${t.attendanceId} IS NOT NULL`),
 ]);
 
+export const supportCaseEscalations = pgTable("support_case_escalations", {
+  id: text("id").primaryKey(),
+  ticketId: text("ticket_id").notNull().references(() => supportTickets.id, { onDelete: "cascade" }),
+  targetUserId: text("target_user_id").notNull(),
+  reason: text("reason").notNull(),
+  raisedBy: text("raised_by").notNull(),
+  raisedAt: timestamp("raised_at", { withTimezone: true }).notNull().defaultNow(),
+  resolvedBy: text("resolved_by"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  resolution: text("resolution"),
+}, t => [
+  uniqueIndex("support_case_one_active_escalation").on(t.ticketId).where(sql`${t.resolvedAt} IS NULL`),
+  index("support_case_escalation_target_idx").on(t.targetUserId, t.resolvedAt),
+]);
+
 export const memberNotificationPreferences = pgTable("member_notification_preferences", {
   userId: text("user_id").primaryKey(),
   pushEnabled: boolean("push_enabled").notNull().default(false),

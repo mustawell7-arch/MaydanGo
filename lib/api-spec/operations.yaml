@@ -285,6 +285,46 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SupportStaffTicketDetail" }
+  /support/staff/tickets/{id}/escalations:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getSupportCaseEscalations
+      responses:
+        "200":
+          description: Staff-only manual case escalation history
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/SupportCaseEscalation" } }
+    post:
+      operationId: createSupportCaseEscalation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportCaseEscalationInput" }
+      responses:
+        "201":
+          description: Case escalated and assigned to the selected staff member
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/SupportCaseEscalation" } }
+  /support/staff/tickets/{id}/escalations/{escalationId}/resolve:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - { name: escalationId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: resolveSupportCaseEscalation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportCaseResolutionInput" }
+      responses:
+        "200":
+          description: Escalation resolved without closing the member ticket
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/SupportCaseEscalation" } }
   /support/staff/tickets/{id}/related-records:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     get:
@@ -1686,6 +1726,33 @@ components:
             assignedTo: { type: [string, "null"] }
             urgentAlertStatus: { type: string, enum: [not_applicable, pending, accepted, fallback_required] }
             urgentOverdue: { type: boolean }
+            hasActiveEscalation: { type: boolean }
+    SupportCaseEscalation:
+      type: object
+      required: [id, ticketId, targetUserId, reason, raisedBy, raisedAt, resolvedBy, resolvedAt, resolution]
+      properties:
+        id: { type: string }
+        ticketId: { type: string }
+        targetUserId: { type: string }
+        reason: { type: string }
+        raisedBy: { type: string }
+        raisedAt: { type: string, format: date-time }
+        resolvedBy: { type: [string, "null"] }
+        resolvedAt: { type: [string, "null"], format: date-time }
+        resolution: { type: [string, "null"] }
+    SupportCaseEscalationInput:
+      type: object
+      additionalProperties: false
+      required: [targetUserId, reason]
+      properties:
+        targetUserId: { type: string, minLength: 1, maxLength: 160 }
+        reason: { type: string, minLength: 10, maxLength: 2000 }
+    SupportCaseResolutionInput:
+      type: object
+      additionalProperties: false
+      required: [resolution]
+      properties:
+        resolution: { type: string, minLength: 10, maxLength: 2000 }
     SupportStaffMessage:
       allOf:
         - $ref: "#/components/schemas/SupportMessage"

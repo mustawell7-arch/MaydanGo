@@ -502,6 +502,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1replies"
   /support/staff/tickets/{id}/notes:
     $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1notes"
+  /support/staff/tickets/{id}/escalations:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1escalations"
+  /support/staff/tickets/{id}/escalations/{escalationId}/resolve:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1escalations~1{escalationId}~1resolve"
   /support/staff/tickets/{id}/related-records:
     $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1related-records"
   /support/staff/tickets/{id}/links:
