@@ -24,6 +24,7 @@ import { PublicCourseBrowser, PublicFacilityBrowser, PublicHomeShowcase } from '
 import MemberAccountPage from '@/pages/member-account';
 import { AdminInstructorAccessPage, InstructorPortalPage } from '@/pages/instructor-access';
 import { createContactEmailDraft, initialContactTopic, verifiedContactEmail } from '@/lib/contact-enquiry';
+import { CorporateAdminPage, CorporateInvitePage, CorporatePortalPage } from '@/pages/corporate-workspace';
 import './index.css';
 
 const queryClient = new QueryClient();
@@ -182,6 +183,8 @@ const legacyTranslations: Record<Language, Copy> = {
     corporateDetail1: 'Discuss options for employees, including local facilities and online sessions where available.',
     corporateDetail2: 'Ask about company contributions, HR administration, and reporting needs.',
     corporateDetail3: 'Availability, contributions, and reporting arrangements need confirmation; this enquiry does not activate a plan.',
+    corporatePortalPrompt: 'Already invited as a company HR administrator?',
+    corporatePortalSignIn: 'Open the company portal',
     verifiedContinue: 'Continue to the verified enquiry destination.',
     contactTopic: 'What is your enquiry about?', topicMembership: 'Membership availability',
     topicPartner: 'Partner enquiry', topicInstructor: 'Instructor enquiry', topicCorporate: 'Organisation enquiry', topicOther: 'Something else',
@@ -283,6 +286,8 @@ const legacyTranslations: Record<Language, Copy> = {
     corporateDetail1: 'ناقش خيارات للموظفين، بما فيها المرافق المحلية والجلسات عبر الإنترنت عند توفرها.',
     corporateDetail2: 'استفسر عن مساهمة الشركة وإدارة الموارد البشرية واحتياجات التقارير.',
     corporateDetail3: 'يجب تأكيد التوفر والمساهمات وترتيبات التقارير؛ لا يؤدي الاستفسار إلى تفعيل خطة.',
+    corporatePortalPrompt: 'هل تلقيت دعوة بصفتك مسؤول موارد بشرية في شركة؟',
+    corporatePortalSignIn: 'افتح بوابة الشركات',
     verifiedContinue: 'تابع إلى وجهة الاستفسار المعتمدة.',
     contactTopic: 'ما موضوع استفسارك؟', topicMembership: 'التوفر للعضوية',
     topicPartner: 'استفسار شراكة', topicInstructor: 'استفسار مدرب', topicCorporate: 'استفسار مؤسسة', topicOther: 'موضوع آخر',
@@ -384,6 +389,8 @@ const legacyTranslations: Record<Language, Copy> = {
     corporateDetail1: 'لەبارەی هەڵبژاردە بۆ کارمەندان گفتوگۆ بکە، لەوانە شوێنی خۆجێیی و وانەی ئۆنلاین کاتێک بەردەستە.',
     corporateDetail2: 'لەبارەی بەشداریی کۆمپانیا، بەڕێوەبردنی HR و پێویستییەکانی ڕاپۆرت بپرسە.',
     corporateDetail3: 'بەردەستبوون، بەشداری و ڕێککەوتنی ڕاپۆرت پێویستی بە پشتڕاستکردنەوە هەیە؛ پرسیارکردن پلان چالاک ناکات.',
+    corporatePortalPrompt: 'ئایا وەک بەڕێوەبەری HR ـی کۆمپانیا بانگهێشت کراویت؟',
+    corporatePortalSignIn: 'کردنەوەی پۆرتاڵی کۆمپانیا',
     verifiedContinue: 'بەردەوامبە بۆ شوێنی پرسیاری پەسەندکراو.',
     contactTopic: 'پرسیارەکەت لەسەر چییە؟', topicMembership: 'بەردەستبوونی ئەندامێتی',
     topicPartner: 'پرسیاری هاوبەشی', topicInstructor: 'پرسیاری ڕاهێنەر', topicCorporate: 'پرسیاری دامەزراوە', topicOther: 'شتێکی تر',
@@ -877,7 +884,7 @@ function EnquiryPage({ type, t }: { type: 'partner' | 'instructor' | 'corporate'
     <PageWrap className="py-14 md:py-20">
       <div className="grid gap-12 md:grid-cols-[1fr_.75fr]">
         <div className="grid gap-0">{content.bullets.map((key, index) => <div className="flex gap-4 border-b border-border py-6 first:border-t" key={key}><span className="font-mono text-xs text-primary">0{index + 1}</span><p className="max-w-lg text-lg leading-7">{t[key]}</p><Check className="ms-auto mt-1 shrink-0 text-primary" size={18} /></div>)}</div>
-        <aside className="rounded-[2rem] bg-[#eadfcd] p-7 md:p-9"><SectionKicker>{t.contact}</SectionKicker><h2 className="font-display text-3xl font-bold tracking-[-.05em]">{t[content.cta]}</h2><p className="mt-4 text-sm leading-6 text-foreground/65">{t.availabilityD}</p><Link href={`/contact?topic=${content.topic}`} className="mt-7 inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground" data-testid={`link-${type}-enquiry`}>{t[content.cta]}<MoveUpRight size={16} /></Link>{type === 'partner' && <div className="mt-8 border-t border-[#cdbba5] pt-5"><p className="text-xs leading-5 text-foreground/65">{t.approved_partner_prompt}</p><Link href="/sign-in" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-partner-portal-sign-in">{t.partner_operations_sign_in}<ArrowRight size={15} /></Link></div>}</aside>
+        <aside className="rounded-[2rem] bg-[#eadfcd] p-7 md:p-9"><SectionKicker>{t.contact}</SectionKicker><h2 className="font-display text-3xl font-bold tracking-[-.05em]">{t[content.cta]}</h2><p className="mt-4 text-sm leading-6 text-foreground/65">{t.availabilityD}</p><Link href={`/contact?topic=${content.topic}`} className="mt-7 inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground" data-testid={`link-${type}-enquiry`}>{t[content.cta]}<MoveUpRight size={16} /></Link>{type === 'partner' && <div className="mt-8 border-t border-[#cdbba5] pt-5"><p className="text-xs leading-5 text-foreground/65">{t.approved_partner_prompt}</p><Link href="/sign-in" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-partner-portal-sign-in">{t.partner_operations_sign_in}<ArrowRight size={15} /></Link></div>}{type === 'corporate' && <div className="mt-8 border-t border-[#cdbba5] pt-5"><p className="text-xs leading-5 text-foreground/65">{t.corporatePortalPrompt}</p><Link href="/corporate-portal" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-corporate-portal-sign-in">{t.corporatePortalSignIn}<ArrowRight size={15} /></Link></div>}</aside>
       </div>
     </PageWrap>
   </>;
@@ -1028,6 +1035,9 @@ function ContentRouter() {
 
 function Router() {
   return <Switch>
+    <Route path="/admin/corporate" component={CorporateAdminPage} />
+    <Route path="/corporate-portal" component={CorporatePortalPage} />
+    <Route path="/corporate-invite" component={CorporateInvitePage} />
     <Route path="/partner-portal" component={PartnerPortal} />
     <Route path="/finance" component={FinanceConsole} />
     <Route path="/instructor-portal" component={InstructorPortalPage} />
@@ -1047,7 +1057,10 @@ function HomeRedirect() {
 
 function SignInPage() {
   const requestedPath = new URLSearchParams(window.location.search).get('redirect_url');
-  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access'].includes(requestedPath ?? '') ? requestedPath! : undefined;
+  const normalizedPath = requestedPath?.startsWith(basePath) ? requestedPath.slice(basePath.length) : requestedPath;
+  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access', '/admin/corporate', '/corporate-portal'].includes(normalizedPath ?? '')
+    ? normalizedPath!
+    : normalizedPath?.startsWith('/corporate-invite?token=') ? normalizedPath : undefined;
   const redirectTo = safePath ? `${basePath}${safePath}` : undefined;
   const redirectQuery = safePath ? `?redirect_url=${encodeURIComponent(safePath)}` : '';
   return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f3f0e5] px-4 py-10"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up${redirectQuery}`} forceRedirectUrl={redirectTo} /></div>;
@@ -1055,7 +1068,10 @@ function SignInPage() {
 
 function SignUpPage() {
   const requestedPath = new URLSearchParams(window.location.search).get('redirect_url');
-  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access'].includes(requestedPath ?? '') ? requestedPath! : undefined;
+  const normalizedPath = requestedPath?.startsWith(basePath) ? requestedPath.slice(basePath.length) : requestedPath;
+  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access', '/admin/corporate', '/corporate-portal'].includes(normalizedPath ?? '')
+    ? normalizedPath!
+    : normalizedPath?.startsWith('/corporate-invite?token=') ? normalizedPath : undefined;
   const redirectTo = safePath ? `${basePath}${safePath}` : undefined;
   const redirectQuery = safePath ? `?redirect_url=${encodeURIComponent(safePath)}` : '';
   return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f3f0e5] px-4 py-10"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in${redirectQuery}`} forceRedirectUrl={redirectTo} /></div>;

@@ -12,6 +12,8 @@ import operationsMarketingRouter from "./operations-marketing";
 import operationsAnalyticsRouter from "./operations-analytics";
 import publicLearningRouter from "./public-learning";
 import instructorRouter from "./instructor";
+import corporateRouter from "./corporate";
+import operationsCorporateRouter from "./operations-corporate";
 
 const router: IRouter = Router();
 router.use("/public", publicReviewsRouter);
@@ -19,6 +21,8 @@ router.use("/public", publicLearningRouter);
 router.use("/public", publicRouter);
 router.use("/member", memberRouter);
 router.use("/instructor", instructorRouter);
+router.use("/corporate", corporateRouter);
+router.use("/operations/corporate-organizations", operationsCorporateRouter);
 router.use("/operations/quality", qualityControlRouter);
 router.use("/operations", operationsReviewsRouter);
 router.use("/operations", operationsMarketingRouter);

@@ -11,6 +11,7 @@ export * from "./member-devices";
 export * from "./quality-control";
 export * from "./reviews";
 export * from "./instructor";
+export * from "./corporate";
 // Export your models here. Add one export per file
 // export * from "./posts";
 //

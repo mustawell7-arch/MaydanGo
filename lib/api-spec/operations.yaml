@@ -817,6 +817,105 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SupportTicketDetail" }
+  /operations/corporate-organizations:
+    get:
+      operationId: getCorporateOrganizations
+      responses:
+        "200":
+          description: Organization records and roster counts for authorized administrators
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/CorporateOrganizationAdminSummary" } }
+    post:
+      operationId: createCorporateOrganization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorporateOrganizationInput" }
+      responses:
+        "201":
+          description: Organization created with a one-time HR administrator invitation link
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorporateOrganizationCreated" }
+  /operations/corporate-organizations/{id}/admin-invitations:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: inviteCorporateAdministrator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorporateAdministratorInvitationInput" }
+      responses:
+        "201":
+          description: One-time invitation link created for a verified HR administrator email
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorporateInvitationLink" }
+  /corporate/portal:
+    get:
+      operationId: getCorporatePortal
+      responses:
+        "200":
+          description: HR sees only organizations they administer; employees see only their own enrollment and membership
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorporatePortalResponse" }
+  /corporate/invitations/accept:
+    post:
+      operationId: acceptCorporateInvitation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorporateInvitationAcceptanceInput" }
+      responses:
+        "200":
+          description: Invitation accepted after verified Clerk email matches the invitation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorporateInvitationAcceptance" }
+  /corporate/employee-invitations:
+    post:
+      operationId: inviteCorporateEmployees
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorporateEmployeeInvitationInput" }
+      responses:
+        "201":
+          description: Employee roster entries and copyable one-time links created for the authorized company
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorporateEmployeeInvitationBatch" }
+  /corporate/employee-invitations/{id}/reissue:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: reissueCorporateEmployeeInvitation
+      responses:
+        "200":
+          description: New one-time invitation link issued to the invited employee
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorporateInvitationLink" }
+  /corporate/employees/{id}/remove:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: removeCorporateEmployee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorporateEmployeeRemovalInput" }
+      responses:
+        "200":
+          description: Employee removed from the company's roster; no membership or payment is changed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorporateEmployeeRemoval" }
   /operations/plans:
     post:
       operationId: addMembershipPlan
@@ -2019,6 +2118,134 @@ components:
         status: { type: string, enum: [approved, rejected] }
         courseCount: { type: integer }
         offeringCount: { type: integer }
+    CorporateOrganizationInput:
+      type: object
+      additionalProperties: false
+      required: [name, administratorEmail]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 160 }
+        administratorEmail: { type: string, format: email, maxLength: 320 }
+    CorporateAdministratorInvitationInput:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email: { type: string, format: email, maxLength: 320 }
+    CorporateOrganizationAdminSummary:
+      type: object
+      required: [id, name, status, createdAt, administratorCount, employeeCount]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        status: { type: string, enum: [active, suspended] }
+        createdAt: { type: string, format: date-time }
+        administratorCount: { type: integer, minimum: 0 }
+        employeeCount: { type: integer, minimum: 0 }
+    CorporateInvitationLink:
+      type: object
+      required: [id, email, role, token, expiresAt]
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        role: { type: string, enum: [hr_admin, employee] }
+        token: { type: string }
+        expiresAt: { type: string, format: date-time }
+    CorporateOrganizationCreated:
+      type: object
+      required: [organization, administratorInvitation]
+      properties:
+        organization: { $ref: "#/components/schemas/CorporateOrganizationAdminSummary" }
+        administratorInvitation: { $ref: "#/components/schemas/CorporateInvitationLink" }
+    CorporateEmployeeRecord:
+      type: object
+      required: [id, pendingInvitationId, email, status, invitedAt, inviteExpiresAt, activatedAt]
+      properties:
+        id: { type: string }
+        pendingInvitationId: { type: ["string", "null"] }
+        email: { type: string, format: email }
+        status: { type: string, enum: [invited, active, removed] }
+        invitedAt: { type: string, format: date-time }
+        inviteExpiresAt: { type: ["string", "null"], format: date-time }
+        activatedAt: { type: ["string", "null"], format: date-time }
+    CorporateMembershipSummary:
+      type: object
+      required: [status, tier, startsAt, endsAt]
+      properties:
+        status: { type: string }
+        tier: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+    CorporateAdminOrganization:
+      type: object
+      required: [id, name, employees]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        employees: { type: array, items: { $ref: "#/components/schemas/CorporateEmployeeRecord" } }
+    CorporateEmployeeEnrollment:
+      type: object
+      required: [id, organizationId, organizationName, status, membership]
+      properties:
+        id: { type: string }
+        organizationId: { type: string }
+        organizationName: { type: string }
+        status: { type: string, enum: [invited, active, removed] }
+        membership:
+          anyOf:
+            - $ref: "#/components/schemas/CorporateMembershipSummary"
+            - type: "null"
+    CorporatePortalResponse:
+      type: object
+      required: [adminOrganizations, myEnrollments]
+      properties:
+        adminOrganizations: { type: array, items: { $ref: "#/components/schemas/CorporateAdminOrganization" } }
+        myEnrollments: { type: array, items: { $ref: "#/components/schemas/CorporateEmployeeEnrollment" } }
+    CorporateInvitationAcceptanceInput:
+      type: object
+      additionalProperties: false
+      required: [token]
+      properties:
+        token: { type: string, minLength: 32, maxLength: 256 }
+    CorporateInvitationAcceptance:
+      type: object
+      required: [organizationId, organizationName, role]
+      properties:
+        organizationId: { type: string }
+        organizationName: { type: string }
+        role: { type: string, enum: [hr_admin, employee] }
+    CorporateEmployeeInvitationInput:
+      type: object
+      additionalProperties: false
+      required: [organizationId, emails]
+      properties:
+        organizationId: { type: string, minLength: 1 }
+        emails: { type: array, minItems: 1, maxItems: 100, items: { type: string, format: email, maxLength: 320 } }
+    CorporateEmployeeInvitationItem:
+      type: object
+      required: [employeeId, id, email, token, expiresAt]
+      properties:
+        employeeId: { type: string }
+        id: { type: string }
+        email: { type: string, format: email }
+        token: { type: string }
+        expiresAt: { type: string, format: date-time }
+    CorporateEmployeeInvitationBatch:
+      type: object
+      required: [invitations]
+      properties:
+        invitations: { type: array, items: { $ref: "#/components/schemas/CorporateEmployeeInvitationItem" } }
+    CorporateEmployeeRemovalInput:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 5, maxLength: 500 }
+    CorporateEmployeeRemoval:
+      type: object
+      required: [id, status]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [removed] }
     CourseSummary:
       allOf:
         - $ref: "#/components/schemas/CourseMetadataInput"

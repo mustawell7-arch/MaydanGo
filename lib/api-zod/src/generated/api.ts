@@ -3364,6 +3364,181 @@ export const ReplyInstructorSupportTicketResponse = zod.object({
 }))
 
 
+export const getCorporateOrganizationsResponseAdministratorCountMin = 0;
+
+export const getCorporateOrganizationsResponseEmployeeCountMin = 0;
+
+
+
+export const GetCorporateOrganizationsResponseItem = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "status": zod.enum(['active', 'suspended']),
+  "createdAt": zod.coerce.date(),
+  "administratorCount": zod.number().int().min(getCorporateOrganizationsResponseAdministratorCountMin),
+  "employeeCount": zod.number().int().min(getCorporateOrganizationsResponseEmployeeCountMin)
+})
+export const GetCorporateOrganizationsResponse = zod.array(GetCorporateOrganizationsResponseItem)
+
+
+export const createCorporateOrganizationBodyNameMin = 2;
+export const createCorporateOrganizationBodyNameMax = 160;
+
+export const createCorporateOrganizationBodyAdministratorEmailMax = 320;
+
+
+
+export const CreateCorporateOrganizationBody = zod.object({
+  "name": zod.string().min(createCorporateOrganizationBodyNameMin).max(createCorporateOrganizationBodyNameMax),
+  "administratorEmail": zod.string().email().max(createCorporateOrganizationBodyAdministratorEmailMax)
+})
+
+export const createCorporateOrganizationResponseOrganizationAdministratorCountMin = 0;
+
+export const createCorporateOrganizationResponseOrganizationEmployeeCountMin = 0;
+
+
+
+export const CreateCorporateOrganizationResponse = zod.object({
+  "organization": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "status": zod.enum(['active', 'suspended']),
+  "createdAt": zod.coerce.date(),
+  "administratorCount": zod.number().int().min(createCorporateOrganizationResponseOrganizationAdministratorCountMin),
+  "employeeCount": zod.number().int().min(createCorporateOrganizationResponseOrganizationEmployeeCountMin)
+}),
+  "administratorInvitation": zod.object({
+  "id": zod.string(),
+  "email": zod.string().email(),
+  "role": zod.enum(['hr_admin', 'employee']),
+  "token": zod.string(),
+  "expiresAt": zod.coerce.date()
+})
+})
+
+
+export const InviteCorporateAdministratorParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const inviteCorporateAdministratorBodyEmailMax = 320;
+
+
+
+export const InviteCorporateAdministratorBody = zod.object({
+  "email": zod.string().email().max(inviteCorporateAdministratorBodyEmailMax)
+})
+
+export const InviteCorporateAdministratorResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string().email(),
+  "role": zod.enum(['hr_admin', 'employee']),
+  "token": zod.string(),
+  "expiresAt": zod.coerce.date()
+})
+
+
+export const GetCorporatePortalResponse = zod.object({
+  "adminOrganizations": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "employees": zod.array(zod.object({
+  "id": zod.string(),
+  "pendingInvitationId": zod.string().nullable(),
+  "email": zod.string().email(),
+  "status": zod.enum(['invited', 'active', 'removed']),
+  "invitedAt": zod.coerce.date(),
+  "inviteExpiresAt": zod.coerce.date().nullable(),
+  "activatedAt": zod.coerce.date().nullable()
+}))
+})),
+  "myEnrollments": zod.array(zod.object({
+  "id": zod.string(),
+  "organizationId": zod.string(),
+  "organizationName": zod.string(),
+  "status": zod.enum(['invited', 'active', 'removed']),
+  "membership": zod.union([zod.object({
+  "status": zod.string(),
+  "tier": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date()
+}),zod.null()])
+}))
+})
+
+
+export const acceptCorporateInvitationBodyTokenMin = 32;
+export const acceptCorporateInvitationBodyTokenMax = 256;
+
+
+
+export const AcceptCorporateInvitationBody = zod.object({
+  "token": zod.string().min(acceptCorporateInvitationBodyTokenMin).max(acceptCorporateInvitationBodyTokenMax)
+})
+
+export const AcceptCorporateInvitationResponse = zod.object({
+  "organizationId": zod.string(),
+  "organizationName": zod.string(),
+  "role": zod.enum(['hr_admin', 'employee'])
+})
+
+
+
+export const inviteCorporateEmployeesBodyEmailsItemMax = 320;
+
+export const inviteCorporateEmployeesBodyEmailsMax = 100;
+
+
+
+export const InviteCorporateEmployeesBody = zod.object({
+  "organizationId": zod.string().min(1),
+  "emails": zod.array(zod.string().email().max(inviteCorporateEmployeesBodyEmailsItemMax)).min(1).max(inviteCorporateEmployeesBodyEmailsMax)
+})
+
+export const InviteCorporateEmployeesResponse = zod.object({
+  "invitations": zod.array(zod.object({
+  "employeeId": zod.string(),
+  "id": zod.string(),
+  "email": zod.string().email(),
+  "token": zod.string(),
+  "expiresAt": zod.coerce.date()
+}))
+})
+
+
+export const ReissueCorporateEmployeeInvitationParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ReissueCorporateEmployeeInvitationResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string().email(),
+  "role": zod.enum(['hr_admin', 'employee']),
+  "token": zod.string(),
+  "expiresAt": zod.coerce.date()
+})
+
+
+export const RemoveCorporateEmployeeParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const removeCorporateEmployeeBodyReasonMin = 5;
+export const removeCorporateEmployeeBodyReasonMax = 500;
+
+
+
+export const RemoveCorporateEmployeeBody = zod.object({
+  "reason": zod.string().min(removeCorporateEmployeeBodyReasonMin).max(removeCorporateEmployeeBodyReasonMax)
+})
+
+export const RemoveCorporateEmployeeResponse = zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['removed'])
+})
+
+
 export const addMembershipPlanBodyDurationDaysMax = 366;
 
 export const addMembershipPlanBodyRulesQuotaMin = 0;

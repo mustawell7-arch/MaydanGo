@@ -1763,6 +1763,183 @@ export interface InstructorAccessDecisionResponse {
   offeringCount: number;
 }
 
+export interface CorporateOrganizationInput {
+  /**
+     * @minLength 2
+     * @maxLength 160
+     */
+  name: string;
+  /** @maxLength 320 */
+  administratorEmail: string;
+}
+
+export interface CorporateAdministratorInvitationInput {
+  /** @maxLength 320 */
+  email: string;
+}
+
+export type CorporateOrganizationAdminSummaryStatus = typeof CorporateOrganizationAdminSummaryStatus[keyof typeof CorporateOrganizationAdminSummaryStatus];
+
+
+export const CorporateOrganizationAdminSummaryStatus = {
+  active: 'active',
+  suspended: 'suspended',
+} as const;
+
+export interface CorporateOrganizationAdminSummary {
+  id: string;
+  name: string;
+  status: CorporateOrganizationAdminSummaryStatus;
+  createdAt: string;
+  /** @minimum 0 */
+  administratorCount: number;
+  /** @minimum 0 */
+  employeeCount: number;
+}
+
+export type CorporateInvitationLinkRole = typeof CorporateInvitationLinkRole[keyof typeof CorporateInvitationLinkRole];
+
+
+export const CorporateInvitationLinkRole = {
+  hr_admin: 'hr_admin',
+  employee: 'employee',
+} as const;
+
+export interface CorporateInvitationLink {
+  id: string;
+  email: string;
+  role: CorporateInvitationLinkRole;
+  token: string;
+  expiresAt: string;
+}
+
+export interface CorporateOrganizationCreated {
+  organization: CorporateOrganizationAdminSummary;
+  administratorInvitation: CorporateInvitationLink;
+}
+
+export type CorporateEmployeeRecordStatus = typeof CorporateEmployeeRecordStatus[keyof typeof CorporateEmployeeRecordStatus];
+
+
+export const CorporateEmployeeRecordStatus = {
+  invited: 'invited',
+  active: 'active',
+  removed: 'removed',
+} as const;
+
+export interface CorporateEmployeeRecord {
+  id: string;
+  /** @nullable */
+  pendingInvitationId: string | null;
+  email: string;
+  status: CorporateEmployeeRecordStatus;
+  invitedAt: string;
+  /** @nullable */
+  inviteExpiresAt: string | null;
+  /** @nullable */
+  activatedAt: string | null;
+}
+
+export interface CorporateMembershipSummary {
+  status: string;
+  tier: string;
+  startsAt: string;
+  endsAt: string;
+}
+
+export interface CorporateAdminOrganization {
+  id: string;
+  name: string;
+  employees: CorporateEmployeeRecord[];
+}
+
+export type CorporateEmployeeEnrollmentStatus = typeof CorporateEmployeeEnrollmentStatus[keyof typeof CorporateEmployeeEnrollmentStatus];
+
+
+export const CorporateEmployeeEnrollmentStatus = {
+  invited: 'invited',
+  active: 'active',
+  removed: 'removed',
+} as const;
+
+export interface CorporateEmployeeEnrollment {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  status: CorporateEmployeeEnrollmentStatus;
+  membership: CorporateMembershipSummary | null;
+}
+
+export interface CorporatePortalResponse {
+  adminOrganizations: CorporateAdminOrganization[];
+  myEnrollments: CorporateEmployeeEnrollment[];
+}
+
+export interface CorporateInvitationAcceptanceInput {
+  /**
+     * @minLength 32
+     * @maxLength 256
+     */
+  token: string;
+}
+
+export type CorporateInvitationAcceptanceRole = typeof CorporateInvitationAcceptanceRole[keyof typeof CorporateInvitationAcceptanceRole];
+
+
+export const CorporateInvitationAcceptanceRole = {
+  hr_admin: 'hr_admin',
+  employee: 'employee',
+} as const;
+
+export interface CorporateInvitationAcceptance {
+  organizationId: string;
+  organizationName: string;
+  role: CorporateInvitationAcceptanceRole;
+}
+
+export interface CorporateEmployeeInvitationInput {
+  /** @minLength 1 */
+  organizationId: string;
+  /**
+     * @minItems 1
+     * @maxItems 100
+     * @items.maxLength 320
+     */
+  emails: string[];
+}
+
+export interface CorporateEmployeeInvitationItem {
+  employeeId: string;
+  id: string;
+  email: string;
+  token: string;
+  expiresAt: string;
+}
+
+export interface CorporateEmployeeInvitationBatch {
+  invitations: CorporateEmployeeInvitationItem[];
+}
+
+export interface CorporateEmployeeRemovalInput {
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason: string;
+}
+
+export type CorporateEmployeeRemovalStatus = typeof CorporateEmployeeRemovalStatus[keyof typeof CorporateEmployeeRemovalStatus];
+
+
+export const CorporateEmployeeRemovalStatus = {
+  removed: 'removed',
+} as const;
+
+export interface CorporateEmployeeRemoval {
+  id: string;
+  status: CorporateEmployeeRemovalStatus;
+}
+
 export type CourseSummary = CourseMetadataInput & {
   id: string;
   title: string;

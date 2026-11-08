@@ -386,6 +386,20 @@ paths:
     $ref: "./operations.yaml#/paths/~1instructor~1support~1tickets~1{id}"
   /instructor/support/tickets/{id}/replies:
     $ref: "./operations.yaml#/paths/~1instructor~1support~1tickets~1{id}~1replies"
+  /operations/corporate-organizations:
+    $ref: "./operations.yaml#/paths/~1operations~1corporate-organizations"
+  /operations/corporate-organizations/{id}/admin-invitations:
+    $ref: "./operations.yaml#/paths/~1operations~1corporate-organizations~1{id}~1admin-invitations"
+  /corporate/portal:
+    $ref: "./operations.yaml#/paths/~1corporate~1portal"
+  /corporate/invitations/accept:
+    $ref: "./operations.yaml#/paths/~1corporate~1invitations~1accept"
+  /corporate/employee-invitations:
+    $ref: "./operations.yaml#/paths/~1corporate~1employee-invitations"
+  /corporate/employee-invitations/{id}/reissue:
+    $ref: "./operations.yaml#/paths/~1corporate~1employee-invitations~1{id}~1reissue"
+  /corporate/employees/{id}/remove:
+    $ref: "./operations.yaml#/paths/~1corporate~1employees~1{id}~1remove"
   /operations/plans:
     $ref: "./operations.yaml#/paths/~1operations~1plans"
   /operations/plans/{id}:
