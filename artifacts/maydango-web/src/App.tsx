@@ -23,6 +23,7 @@ import FinanceConsole from '@/pages/finance-console';
 import { PublicCourseBrowser, PublicFacilityBrowser, PublicHomeShowcase } from '@/pages/public-catalog-sections';
 import MemberAccountPage from '@/pages/member-account';
 import { AdminInstructorAccessPage, InstructorPortalPage } from '@/pages/instructor-access';
+import SupportDeskPage from '@/pages/support-desk';
 import { createContactEmailDraft, initialContactTopic, verifiedContactEmail } from '@/lib/contact-enquiry';
 import { CorporateAdminPage, CorporateInvitePage, CorporatePortalPage } from '@/pages/corporate-workspace';
 import './index.css';
@@ -159,6 +160,7 @@ const legacyTranslations: Record<Language, Copy> = {
     featureWelcome: 'Feel welcome', featureWelcomeD: 'Explore options shaped by local partners.',
     geography: 'Baghdad · Erbil · Basra · and beyond', heroStamp: 'your pace, your place',
     legalTitle: 'The important details.', helpTitle: 'Good to know.',
+    supportStaffSignIn: 'Support staff sign-in',
     'page_title:/instructor': 'Teach with MaydanGo',
     'page_description:/instructor': 'Explore instructor enquiries for courses and live sessions. Rates and payout terms must be confirmed before any agreement.',
     'page_title:/account': 'Your MaydanGo account',
@@ -262,6 +264,7 @@ const legacyTranslations: Record<Language, Copy> = {
     featureWelcome: 'مكان مرحب', featureWelcomeD: 'اكتشف خيارات يشكلها الشركاء المحليون.',
     geography: 'بغداد · أربيل · البصرة · ومناطق أخرى', heroStamp: 'إيقاعك ومكانك',
     legalTitle: 'تفاصيل مهمة.', helpTitle: 'معلومات مفيدة.',
+    supportStaffSignIn: 'دخول فريق الدعم',
     'page_title:/instructor': 'قدّم التدريب مع MaydanGo',
     'page_description:/instructor': 'استكشف الاستفسار عن تقديم الدورات والجلسات المباشرة. يجب تأكيد الأجور وشروط الدفع قبل أي اتفاق.',
     'page_title:/account': 'حسابك في MaydanGo',
@@ -365,6 +368,7 @@ const legacyTranslations: Record<Language, Copy> = {
     featureWelcome: 'بەخێربێیت', featureWelcomeD: 'هەڵبژاردەی دروستکراو لەلایەن هاوبەشانی خۆجێیی ببینە.',
     geography: 'بەغدا · هەولێر · بەسرە · و زیاتر', heroStamp: 'ڕێتم و شوێنی تۆ',
     legalTitle: 'وردەکاریی گرنگ.', helpTitle: 'زانیاریی باش.',
+    supportStaffSignIn: 'چوونەژوورەوەی تیمی پشتگیری',
     'page_title:/instructor': 'لەگەڵ MaydanGo ڕاهێنان پێشکەش بکە',
     'page_description:/instructor': 'لەبارەی پێشکەشکردنی کۆرس و وانەی ڕاستەوخۆ بپرسە. پێش هەر ڕێککەوتنێک دەبێت کرێ و مەرجی پارەدان پشتڕاست بکرێنەوە.',
     'page_title:/account': 'هەژماری MaydanGo ـی تۆ',
@@ -902,7 +906,7 @@ function HelpPage({ t }: { t: Copy }) {
         <div><SectionKicker>{t.help}</SectionKicker><h2 className="font-display text-4xl font-bold leading-tight tracking-[-.05em]">{t.availabilityTitle}</h2><p className="mt-4 max-w-sm text-sm leading-6 text-foreground/60">{t.availabilityD}</p><Link href="/contact" className="mt-7 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground" data-testid="link-help-contact-cta">{t.contact}<ArrowUpRight size={15} /></Link></div>
         <div>{questions.map(([question, answer], i) => <details key={question} className="group border-b border-border py-5 first:border-t" open={i === 0}><summary className="flex cursor-pointer list-none items-center justify-between gap-5 font-display text-xl font-bold tracking-[-.03em]"><span>{question}</span><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border transition group-open:rotate-45"><span className="text-xl font-normal">+</span></span></summary><p className="max-w-xl pt-4 text-sm leading-6 text-foreground/65">{answer}</p></details>)}</div>
       </div>
-      <div className="mt-14 rounded-2xl bg-[#eadfcd] p-7 md:flex md:items-center md:justify-between"><p className="font-display text-2xl font-bold">{t.notCheckout}</p><Link href="/membership-plans" className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-primary md:mt-0" data-testid="link-help-plans">{t.plans}<ArrowUpRight size={15} /></Link></div>
+      <div className="mt-14 rounded-2xl bg-[#eadfcd] p-7 md:flex md:items-center md:justify-between"><p className="font-display text-2xl font-bold">{t.notCheckout}</p><div className="mt-5 flex flex-wrap items-center gap-5 md:mt-0"><Link href="/membership-plans" className="inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-help-plans">{t.plans}<ArrowUpRight size={15} /></Link><Link href="/support-desk" className="inline-flex items-center gap-2 text-xs font-semibold text-foreground/60 hover:text-primary" data-testid="link-support-desk">{t.supportStaffSignIn}<ArrowRight size={14} /></Link></div></div>
     </PageWrap>
   </>;
 }
@@ -1038,6 +1042,7 @@ function Router() {
     <Route path="/admin/corporate" component={CorporateAdminPage} />
     <Route path="/corporate-portal" component={CorporatePortalPage} />
     <Route path="/corporate-invite" component={CorporateInvitePage} />
+    <Route path="/support-desk" component={SupportDeskPage} />
     <Route path="/partner-portal" component={PartnerPortal} />
     <Route path="/finance" component={FinanceConsole} />
     <Route path="/instructor-portal" component={InstructorPortalPage} />
@@ -1058,7 +1063,7 @@ function HomeRedirect() {
 function SignInPage() {
   const requestedPath = new URLSearchParams(window.location.search).get('redirect_url');
   const normalizedPath = requestedPath?.startsWith(basePath) ? requestedPath.slice(basePath.length) : requestedPath;
-  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access', '/admin/corporate', '/corporate-portal'].includes(normalizedPath ?? '')
+  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access', '/admin/corporate', '/corporate-portal', '/support-desk'].includes(normalizedPath ?? '')
     ? normalizedPath!
     : normalizedPath?.startsWith('/corporate-invite?token=') ? normalizedPath : undefined;
   const redirectTo = safePath ? `${basePath}${safePath}` : undefined;
@@ -1069,7 +1074,7 @@ function SignInPage() {
 function SignUpPage() {
   const requestedPath = new URLSearchParams(window.location.search).get('redirect_url');
   const normalizedPath = requestedPath?.startsWith(basePath) ? requestedPath.slice(basePath.length) : requestedPath;
-  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access', '/admin/corporate', '/corporate-portal'].includes(normalizedPath ?? '')
+  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access', '/admin/corporate', '/corporate-portal', '/support-desk'].includes(normalizedPath ?? '')
     ? normalizedPath!
     : normalizedPath?.startsWith('/corporate-invite?token=') ? normalizedPath : undefined;
   const redirectTo = safePath ? `${basePath}${safePath}` : undefined;

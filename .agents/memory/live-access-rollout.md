@@ -20,6 +20,12 @@ Finance controls are review and status tracking only: they must not initiate ban
 
 **How to apply:** Keep money movement outside finance approval endpoints. Require verified gates and separate approval before any provider refund, and preserve a manual-only payout status.
 
+The user wants payment work left until the final task in the provided milestones.
+
+**Why:** The user explicitly deferred payment work to the end.
+
+**How to apply:** Continue with non-payment milestones first; do not start checkout, invoicing, or settlement work before the final stage.
+
 Free event RSVPs consume one standard membership visit; there is no separate event-ticket payment.
 
 **Why:** The user explicitly chose to treat each event RSVP like a normal class reservation rather than add an event fee.
