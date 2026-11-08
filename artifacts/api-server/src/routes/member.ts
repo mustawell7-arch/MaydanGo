@@ -4,7 +4,7 @@ import { z } from "zod";
 import { db, memberships, memberProfiles, offerings, reservations, partners, waitlistEntries } from "@workspace/db";
 import { eq, and, inArray, sql, gt, asc, isNull, ne, or } from "drizzle-orm";
 import {
-  BookingError, memberState, createReservation, cancelReservation,
+  BookingError, memberState, memberAccountSummary, createReservation, cancelReservation,
   acceptWaitlistOffer, joinWaitlist, leaveWaitlist,
 } from "../lib/reservations";
 import learningRouter from "./learning";
@@ -22,6 +22,9 @@ const router = Router();
 router.use((req, res, next) => {
   if (!getAuth(req).userId) { res.status(401).json({ message: "Sign in to manage your bookings." }); return; }
   next();
+});
+router.get("/account", async (req, res) => {
+  res.json(await memberAccountSummary(getAuth(req).userId!));
 });
 router.get("/device", async (req, res) => {
   const token = readMemberDeviceToken(req);

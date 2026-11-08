@@ -126,6 +126,16 @@ export async function memberState(userId: string) {
   })) };
 }
 
+export async function memberAccountSummary(userId: string) {
+  const state = await memberState(userId);
+  return {
+    memberships: state.memberships.map(({ scope, status, tier, endsAt }) => ({
+      scope, status, tier, endsAt,
+    })),
+    bookings: state.bookings,
+  };
+}
+
 async function recordWaitlistUpdate(
   tx: BookingTx,
   entryId: string,

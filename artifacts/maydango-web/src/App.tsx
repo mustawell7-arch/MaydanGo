@@ -21,6 +21,7 @@ import { Route, Switch, useLocation, Router as WouterRouter, Link, Redirect } fr
 import PartnerPortal from '@/pages/partner-portal';
 import FinanceConsole from '@/pages/finance-console';
 import { PublicCourseBrowser, PublicFacilityBrowser, PublicHomeShowcase } from '@/pages/public-catalog-sections';
+import MemberAccountPage from '@/pages/member-account';
 import { createContactEmailDraft, initialContactTopic, verifiedContactEmail } from '@/lib/contact-enquiry';
 import './index.css';
 
@@ -104,9 +105,11 @@ type Copy = Record<string, string>;
 
 const legacyTranslations: Record<Language, Copy> = {
   en: {
-    home: 'Home', how: 'How it works', plans: 'Membership', facilities: 'Facilities', online: 'Train online', legal: 'Legal information',
+    home: 'Home', how: 'How it works', plans: 'Membership', facilities: 'Facilities', online: 'Train online', legal: 'Legal information', account: 'My account',
     partner: 'Partner with us', instructor: 'For instructors', corporate: 'For organisations', help: 'Help', contact: 'Contact',
     mainNavigation: 'Main navigation', selectLanguage: 'Select language', openMenu: 'Open menu', closeMenu: 'Close menu',
+    accountSignInSubtitle: 'Sign in to view your MaydanGo account.',
+    accountSignUpSubtitle: 'Create your MaydanGo member account.',
     eyebrow: 'A little more movement, wherever you are',
     hero: 'Make room for\nfeeling good.',
     intro: 'One membership for movement in your city and guidance from home. Built with local places, coaches and communities across Iraq.',
@@ -156,6 +159,8 @@ const legacyTranslations: Record<Language, Copy> = {
     legalTitle: 'The important details.', helpTitle: 'Good to know.',
     'page_title:/instructor': 'Teach with MaydanGo',
     'page_description:/instructor': 'Explore instructor enquiries for courses and live sessions. Rates and payout terms must be confirmed before any agreement.',
+    'page_title:/account': 'Your MaydanGo account',
+    'page_description:/account': 'Privately review your membership and bookings and update your basic account details.',
     contactTitle: 'Let’s find the right next step.', partnerTitle: 'Make your space part of the movement.',
     corporateTitle: 'More room for wellbeing at work.', instructorTitle: 'Share what you teach.',
     partnerIntro: 'MaydanGo connects people with places and coaches that make wellbeing feel closer to everyday life. Tell us about your work and we can explore a fit together.',
@@ -201,9 +206,11 @@ const legacyTranslations: Record<Language, Copy> = {
     regionNote: 'IRAQ · KURDISTAN · WEST · SOUTH', movementNote: 'MOVEMENT, YOUR WAY',
   },
   ar: {
-    home: 'الرئيسية', how: 'كيف تعمل', plans: 'العضوية', facilities: 'المرافق', online: 'تدريب عبر الإنترنت', legal: 'معلومات قانونية',
+    home: 'الرئيسية', how: 'كيف تعمل', plans: 'العضوية', facilities: 'المرافق', online: 'تدريب عبر الإنترنت', legal: 'معلومات قانونية', account: 'حسابي',
     partner: 'كن شريكاً', instructor: 'للمدربين', corporate: 'للمؤسسات', help: 'المساعدة', contact: 'تواصل معنا',
     mainNavigation: 'التنقل الرئيسي', selectLanguage: 'اختر اللغة', openMenu: 'افتح القائمة', closeMenu: 'أغلق القائمة',
+    accountSignInSubtitle: 'سجّل الدخول لعرض حسابك في MaydanGo.',
+    accountSignUpSubtitle: 'أنشئ حساب عضوية MaydanGo.',
     eyebrow: 'حركة أكثر قليلاً، أينما كنت',
     hero: 'اترك مساحة\nللشعور الأفضل.',
     intro: 'عضوية واحدة للحركة في مدينتك وللتوجيه من المنزل. نبنيها مع الأماكن والمدربين والمجتمعات المحلية في أنحاء العراق.',
@@ -253,6 +260,8 @@ const legacyTranslations: Record<Language, Copy> = {
     legalTitle: 'تفاصيل مهمة.', helpTitle: 'معلومات مفيدة.',
     'page_title:/instructor': 'قدّم التدريب مع MaydanGo',
     'page_description:/instructor': 'استكشف الاستفسار عن تقديم الدورات والجلسات المباشرة. يجب تأكيد الأجور وشروط الدفع قبل أي اتفاق.',
+    'page_title:/account': 'حسابك في MaydanGo',
+    'page_description:/account': 'راجع عضويتك وحجوزاتك وحدّث تفاصيل حسابك الأساسية بشكل خاص.',
     contactTitle: 'لنجد الخطوة التالية المناسبة.', partnerTitle: 'اجعل مكانك جزءاً من الحركة.',
     corporateTitle: 'مساحة أكبر للعافية في العمل.', instructorTitle: 'شاركنا ما تقدمه.',
     partnerIntro: 'تربط MaydanGo الناس بأماكن ومدربين يجعلون العافية أقرب للحياة اليومية. أخبرنا عن عملك لنستكشف فرص التعاون.',
@@ -298,9 +307,11 @@ const legacyTranslations: Record<Language, Copy> = {
     regionNote: 'العراق · كردستان · غرب العراق · جنوبه', movementNote: 'الحركة على طريقتك',
   },
   ku: {
-    home: 'سەرەتا', how: 'چۆن کار دەکات', plans: 'ئەندامێتی', facilities: 'شوێنەکان', online: 'ڕاهێنانی ئۆنلاین', legal: 'زانیاریی یاسایی',
+    home: 'سەرەتا', how: 'چۆن کار دەکات', plans: 'ئەندامێتی', facilities: 'شوێنەکان', online: 'ڕاهێنانی ئۆنلاین', legal: 'زانیاریی یاسایی', account: 'هەژمارەکەم',
     partner: 'بەشداربە', instructor: 'بۆ ڕاهێنەران', corporate: 'بۆ دامەزراوەکان', help: 'یارمەتی', contact: 'پەیوەندی',
     mainNavigation: 'ڕێنمایی سەرەکی', selectLanguage: 'زمان هەڵبژێرە', openMenu: 'کردنەوەی لیست', closeMenu: 'داخستنی لیست',
+    accountSignInSubtitle: 'بچۆ ژوورەوە بۆ بینینی هەژماری MaydanGo ـی خۆت.',
+    accountSignUpSubtitle: 'هەژماری ئەندامی MaydanGo دروست بکە.',
     eyebrow: 'جووڵەیەکی زیاتر، لە هەر شوێنێک بیت',
     hero: 'شوێنێک دابنێ\nبۆ هەستکردنی باشتر.',
     intro: 'یەک ئەندامێتی بۆ جووڵە لە شارەکەت و ڕێنمایی لە ماڵەوە. لەگەڵ شوێن و ڕاهێنەر و کۆمەڵگە خۆجێییەکان لە سەرانسەری عێراق دروستکراوە.',
@@ -350,6 +361,8 @@ const legacyTranslations: Record<Language, Copy> = {
     legalTitle: 'وردەکاریی گرنگ.', helpTitle: 'زانیاریی باش.',
     'page_title:/instructor': 'لەگەڵ MaydanGo ڕاهێنان پێشکەش بکە',
     'page_description:/instructor': 'لەبارەی پێشکەشکردنی کۆرس و وانەی ڕاستەوخۆ بپرسە. پێش هەر ڕێککەوتنێک دەبێت کرێ و مەرجی پارەدان پشتڕاست بکرێنەوە.',
+    'page_title:/account': 'هەژماری MaydanGo ـی تۆ',
+    'page_description:/account': 'ئەندامێتی و حجزەکانت ببینە و وردەکاریی سەرەکیی هەژمارەکەت بە شێوەی تایبەت نوێ بکەرەوە.',
     contactTitle: 'با هەنگاوی داهاتوو بدۆزینەوە.', partnerTitle: 'شوێنەکەت ببە بەشێک لە جووڵە.',
     corporateTitle: 'شوێنێکی زیاتر بۆ تەندروستی لە کاردا.', instructorTitle: 'باسی ئەوە بکە فێری چی دەکەیت.',
     partnerIntro: 'MaydanGo خەڵک دەبەستێتەوە بە شوێن و ڕاهێنەر کە تەندروستی دەهێنێتە نزیک ژیانی ڕۆژانە. باسی کارەکەت بکە تا گونجاوی هاوکاری ببینین.',
@@ -423,7 +436,7 @@ function countUnit(count: number, kind: 'days' | 'places', language: Language, t
 const routes = [
   ['/', 'home'], ['/how-it-works', 'how'], ['/membership-plans', 'plans'], ['/facilities', 'facilities'], ['/events', 'events'],
   ['/online-training', 'online'], ['/partner', 'partner'], ['/instructor', 'instructor'], ['/corporate', 'corporate'], ['/help', 'help'],
-  ['/contact', 'contact'], ['/legal', 'legal'],
+  ['/contact', 'contact'], ['/legal', 'legal'], ['/account', 'account'],
 ] as const;
 
 function destination(key: string) {
@@ -1005,6 +1018,7 @@ function ContentRouter() {
         <Route path="/help" component={() => <HelpPage t={t} />} />
         <Route path="/contact" component={() => <ContactPage t={t} />} />
         <Route path="/legal" component={() => <LegalPage t={t} />} />
+        <Route path="/account" component={() => <MemberAccountPage language={language} />} />
         <Route component={() => <NotFound title={t.not_found_title} description={t.not_found_description} />} />
       </Switch>
     </ErrorBoundary>
@@ -1029,11 +1043,17 @@ function HomeRedirect() {
 }
 
 function SignInPage() {
-  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f3f0e5] px-4 py-10"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></div>;
+  const redirectToAccount = new URLSearchParams(window.location.search).get('redirect_url') === '/account';
+  const accountPath = redirectToAccount ? `${basePath}/account` : undefined;
+  const redirectQuery = redirectToAccount ? '?redirect_url=%2Faccount' : '';
+  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f3f0e5] px-4 py-10"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up${redirectQuery}`} forceRedirectUrl={accountPath} /></div>;
 }
 
 function SignUpPage() {
-  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f3f0e5] px-4 py-10"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></div>;
+  const redirectToAccount = new URLSearchParams(window.location.search).get('redirect_url') === '/account';
+  const accountPath = redirectToAccount ? `${basePath}/account` : undefined;
+  const redirectQuery = redirectToAccount ? '?redirect_url=%2Faccount' : '';
+  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f3f0e5] px-4 py-10"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in${redirectQuery}`} forceRedirectUrl={accountPath} /></div>;
 }
 
 function ClerkQueryClientCacheInvalidator() {
@@ -1052,8 +1072,10 @@ function ClerkQueryClientCacheInvalidator() {
 }
 
 function ClerkProviderWithRoutes() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const t = translations[savedLanguage()];
+  const accountAuthFlow = (location.startsWith('/sign-in') || location.startsWith('/sign-up')) &&
+    new URLSearchParams(window.location.search).get('redirect_url') === '/account';
   return <ClerkProvider
     publishableKey={clerkPubKey}
     proxyUrl={clerkProxyUrl}
@@ -1061,8 +1083,8 @@ function ClerkProviderWithRoutes() {
     signInUrl={`${basePath}/sign-in`}
     signUpUrl={`${basePath}/sign-up`}
     localization={{
-      signIn: { start: { title: t.sign_in_title, subtitle: t.sign_in_subtitle } },
-      signUp: { start: { title: t.sign_up_title, subtitle: t.sign_up_subtitle } },
+      signIn: { start: { title: t.sign_in_title, subtitle: accountAuthFlow ? t.accountSignInSubtitle : t.sign_in_subtitle } },
+      signUp: { start: { title: t.sign_up_title, subtitle: accountAuthFlow ? t.accountSignUpSubtitle : t.sign_up_subtitle } },
     }}
     routerPush={to => setLocation(stripBase(to))}
     routerReplace={to => setLocation(stripBase(to), { replace: true })}

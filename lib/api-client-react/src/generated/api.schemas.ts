@@ -572,6 +572,18 @@ export interface MemberState {
   waitlistUpdates: MemberWaitlistUpdate[];
 }
 
+export type MemberAccountSummaryMembershipsItem = {
+  scope: string;
+  status: string;
+  tier: string;
+  endsAt: string;
+};
+
+export interface MemberAccountSummary {
+  memberships: MemberAccountSummaryMembershipsItem[];
+  bookings: MemberBooking[];
+}
+
 export interface HealthStatus {
   status: string;
 }

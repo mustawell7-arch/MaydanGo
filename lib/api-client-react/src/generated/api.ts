@@ -82,6 +82,7 @@ import type {
   LessonInput,
   LiveOffering,
   LivePlan,
+  MemberAccountSummary,
   MemberCancellationResult,
   MemberCheckoutInput,
   MemberCheckoutResult,
@@ -9739,6 +9740,101 @@ export function useGetMemberState<TData = Awaited<ReturnType<typeof getMemberSta
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetMemberStateQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMemberAccountSummaryUrl = () => {
+
+
+
+
+  return `/api/member/account`
+}
+
+export const getMemberAccountSummary = async ( options?: Parameters<typeof customFetch>[1]): Promise<MemberAccountSummary> => {
+
+  return customFetch<MemberAccountSummary>(getGetMemberAccountSummaryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberAccountSummaryQueryKey = () => {
+    return [
+    `/api/member/account`
+    ] as const;
+    }
+
+
+export const getGetMemberAccountSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAccountSummary>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberAccountSummaryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberAccountSummary>>> = ({ signal }) => getMemberAccountSummary({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberAccountSummary>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberAccountSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberAccountSummary>>>
+export type GetMemberAccountSummaryQueryError = ErrorType<unknown>
+
+
+export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAccountSummary>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberAccountSummary>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberAccountSummary>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAccountSummary>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberAccountSummary>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberAccountSummary>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAccountSummary>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAccountSummary>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberAccountSummaryQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

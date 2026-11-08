@@ -5878,6 +5878,44 @@ export const GetMemberStateResponse = zod.object({
 })
 
 
+export const getMemberAccountSummaryResponseBookingsItemLocalizedTitleOneEnMax = 500;
+
+export const getMemberAccountSummaryResponseBookingsItemLocalizedTitleOneArMax = 500;
+
+export const getMemberAccountSummaryResponseBookingsItemLocalizedTitleOneKuMax = 500;
+
+
+
+export const GetMemberAccountSummaryResponse = zod.object({
+  "memberships": zod.array(zod.object({
+  "scope": zod.string(),
+  "status": zod.string(),
+  "tier": zod.string(),
+  "endsAt": zod.coerce.date()
+})),
+  "bookings": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.string(),
+  "targetId": zod.string(),
+  "slot": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberAccountSummaryResponseBookingsItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(getMemberAccountSummaryResponseBookingsItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(getMemberAccountSummaryResponseBookingsItemLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "cancellationDeadline": zod.coerce.date(),
+  "scope": zod.string(),
+  "startsAt": zod.string(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "cancelledAt": zod.string().nullish()
+}))
+})
+
+
 export const EnablePreviewMembershipBody = zod.object({
   "acknowledgeSampleData": zod.boolean()
 })

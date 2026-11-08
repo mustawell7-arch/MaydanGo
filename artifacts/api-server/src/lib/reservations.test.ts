@@ -7,7 +7,7 @@ import express from "express";
 import operationsRouter from "../routes/operations";
 import memberRouter from "../routes/member";
 import publicRouter from "../routes/public";
-import { createReservation, cancelReservation, memberState, joinWaitlist, leaveWaitlist, acceptWaitlistOffer, processWaitlistQueue, BookingError } from "./reservations";
+import { createReservation, cancelReservation, memberState, memberAccountSummary, joinWaitlist, leaveWaitlist, acceptWaitlistOffer, processWaitlistQueue, BookingError } from "./reservations";
 import app from "../app";
 
 const prefix = `test-${randomUUID()}`;
@@ -46,6 +46,10 @@ test("authenticated booking service: ownership, durable history, eligibility and
     const result = await createReservation(alice, input(id)); bookingId = result.id;
     const state = await memberState(alice);
     assert.equal(state.bookings.find(b => b.id === result.id)?.status, "reserved");
+    const account = await memberAccountSummary(alice);
+    assert.deepEqual(Object.keys(account).sort(), ["bookings", "memberships"]);
+    assert.equal(account.bookings.find(b => b.id === result.id)?.status, "reserved");
+    assert.equal(Object.hasOwn(account, "profile"), false);
     const again = await memberState(alice);
     assert.deepEqual(again.bookings, state.bookings);
   });
@@ -219,9 +223,33 @@ test("HTTP endpoints reject unauthenticated access and forged bearer tokens", as
   const address = server.address() as { port: number };
   try {
     for (const headers of [{}, { authorization: "Bearer invalid-forged-token" }]) {
-      const res = await fetch(`http://127.0.0.1:${address.port}/api/member`, { headers });
-      assert.equal(res.status, 401);
+      for (const path of ["/api/member", "/api/member/account"]) {
+        const res = await fetch(`http://127.0.0.1:${address.port}${path}`, { headers });
+        assert.equal(res.status, 401);
+      }
     }
+  } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
+});
+test("web account summary is authenticated but does not require a registered mobile device", async () => {
+  const harness = express();
+  harness.use((req, _res, next) => {
+    Object.assign(req, { auth: Object.assign(
+      () => ({ userId: req.headers["x-test-user"], tokenType: "session_token" }),
+      { [Symbol.for("@clerk/express.auth")]: true },
+    ) });
+    next();
+  });
+  harness.use("/api/member", memberRouter);
+  const server = harness.listen(0);
+  await new Promise<void>(resolve => server.once("listening", resolve));
+  const address = server.address() as { port: number };
+  try {
+    const accountResponse = await fetch(`http://127.0.0.1:${address.port}/api/member/account`, {
+      headers: { "x-test-user": alice },
+    });
+    assert.equal(accountResponse.status, 200);
+    const account = await accountResponse.json() as Record<string, unknown>;
+    assert.deepEqual(Object.keys(account).sort(), ["bookings", "memberships"]);
   } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
 });
 test("live operations: staff scope, approved inventory, server grants and quota models", async t => {

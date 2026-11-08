@@ -541,6 +541,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MemberState"
+  /member/account:
+    get:
+      operationId: getMemberAccountSummary
+      responses:
+        "200":
+          description: Signed-in member's own membership summaries and bookings; no profile or payment data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberAccountSummary"
   /member/preview-membership:
     post:
       operationId: enablePreviewMembership
@@ -997,6 +1007,24 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MemberWaitlistUpdate"
+    MemberAccountSummary:
+      type: object
+      required: [memberships, bookings]
+      properties:
+        memberships:
+          type: array
+          items:
+            type: object
+            required: [scope, status, tier, endsAt]
+            properties:
+              scope: { type: string }
+              status: { type: string }
+              tier: { type: string }
+              endsAt: { type: string, format: date-time }
+        bookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemberBooking"
     MemberWaitlistEntry:
       type: object
       required: [id, offeringId, title, startsAt, queuePosition, status, createdAt]
