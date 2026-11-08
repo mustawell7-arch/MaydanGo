@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lte, lt } from "drizzle-orm";
 import { z } from "zod";
-import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, facilityProfiles, facilityHoursOverrides, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents } from "@workspace/db";
+import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, facilityProfiles, facilityHoursOverrides, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents } from "@workspace/db";
 import { BookingError, effectiveMembershipStatus, processWaitlistQueue } from "../lib/reservations";
 import { createFacilityProfileInput, facilityHoursOverrideInput, facilityProfileFields, offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
 import {
@@ -253,6 +253,11 @@ router.delete("/facilities/:id", async (req, res) => {
       eq(offerings.facility, existing.facility),
     )).limit(1);
     if (linked) throw new BookingError(409, "This facility is used by existing sessions and cannot be deleted.");
+    const [qualityRecord] = await tx.select({ id: facilityQualityAssessments.id }).from(facilityQualityAssessments)
+      .where(eq(facilityQualityAssessments.facilityId, id)).limit(1);
+    const [incident] = await tx.select({ id: facilityQualityIncidents.id }).from(facilityQualityIncidents)
+      .where(eq(facilityQualityIncidents.facilityId, id)).limit(1);
+    if (qualityRecord || incident) throw new BookingError(409, "This facility has quality history and cannot be deleted.");
     await tx.delete(facilityProfiles).where(eq(facilityProfiles.id, id));
     await audit(tx, res.locals.operator.userId, "facility.delete", id);
   });

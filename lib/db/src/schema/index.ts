@@ -8,6 +8,7 @@ export * from "./payments";
 export * from "./partner-invoices";
 export * from "./finance";
 export * from "./member-devices";
+export * from "./quality-control";
 // Export your models here. Add one export per file
 // export * from "./posts";
 //

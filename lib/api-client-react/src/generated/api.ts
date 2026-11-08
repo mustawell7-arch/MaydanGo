@@ -46,6 +46,13 @@ import type {
   FacilityProfile,
   FacilityProfileInput,
   FacilityProfileUpdate,
+  FacilityQualityAssessment,
+  FacilityQualityAssessmentFollowUp,
+  FacilityQualityAssessmentInput,
+  FacilityQualityControl,
+  FacilityQualityIncident,
+  FacilityQualityIncidentInput,
+  FacilityQualityIncidentUpdate,
   FinanceAudit,
   FinanceDecision,
   FinanceInvoiceReview,
@@ -4806,6 +4813,431 @@ export function useGetFinanceAudit<TData = Awaited<ReturnType<typeof getFinanceA
 
 
 
+
+export const getGetFacilityQualityControlUrl = () => {
+
+
+
+
+  return `/api/operations/quality`
+}
+
+export const getFacilityQualityControl = async ( options?: Parameters<typeof customFetch>[1]): Promise<FacilityQualityControl> => {
+
+  return customFetch<FacilityQualityControl>(getGetFacilityQualityControlUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFacilityQualityControlQueryKey = () => {
+    return [
+    `/api/operations/quality`
+    ] as const;
+    }
+
+
+export const getGetFacilityQualityControlQueryOptions = <TData = Awaited<ReturnType<typeof getFacilityQualityControl>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFacilityQualityControl>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFacilityQualityControlQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFacilityQualityControl>>> = ({ signal }) => getFacilityQualityControl({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFacilityQualityControl>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetFacilityQualityControlQueryResult = NonNullable<Awaited<ReturnType<typeof getFacilityQualityControl>>>
+export type GetFacilityQualityControlQueryError = ErrorType<unknown>
+
+
+export function useGetFacilityQualityControl<TData = Awaited<ReturnType<typeof getFacilityQualityControl>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFacilityQualityControl>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFacilityQualityControl>>,
+          TError,
+          Awaited<ReturnType<typeof getFacilityQualityControl>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFacilityQualityControl<TData = Awaited<ReturnType<typeof getFacilityQualityControl>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFacilityQualityControl>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFacilityQualityControl>>,
+          TError,
+          Awaited<ReturnType<typeof getFacilityQualityControl>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFacilityQualityControl<TData = Awaited<ReturnType<typeof getFacilityQualityControl>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFacilityQualityControl>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetFacilityQualityControl<TData = Awaited<ReturnType<typeof getFacilityQualityControl>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFacilityQualityControl>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetFacilityQualityControlQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateFacilityQualityAssessmentUrl = () => {
+
+
+
+
+  return `/api/operations/quality/assessments`
+}
+
+export const createFacilityQualityAssessment = async (facilityQualityAssessmentInput: FacilityQualityAssessmentInput, options?: Parameters<typeof customFetch>[1]): Promise<FacilityQualityAssessment> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FacilityQualityAssessment>(getCreateFacilityQualityAssessmentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(facilityQualityAssessmentInput)
+  }
+);}
+
+
+
+
+
+export const getCreateFacilityQualityAssessmentMutationKey = () => ['createFacilityQualityAssessment'] as const;
+
+export const getCreateFacilityQualityAssessmentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFacilityQualityAssessment>>, TError,CreateFacilityQualityAssessmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createFacilityQualityAssessment>>, TError,CreateFacilityQualityAssessmentMutationVariables, TContext> => {
+
+const mutationKey = getCreateFacilityQualityAssessmentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createFacilityQualityAssessment>>, CreateFacilityQualityAssessmentMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createFacilityQualityAssessment(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateFacilityQualityAssessmentMutationResult = NonNullable<Awaited<ReturnType<typeof createFacilityQualityAssessment>>>
+    export type CreateFacilityQualityAssessmentMutationBody = BodyType<FacilityQualityAssessmentInput>
+    export type CreateFacilityQualityAssessmentMutationError = ErrorType<void>
+    export type CreateFacilityQualityAssessmentMutationVariables = {data: BodyType<FacilityQualityAssessmentInput>}
+
+    export const useCreateFacilityQualityAssessment = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFacilityQualityAssessment>>, TError,CreateFacilityQualityAssessmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createFacilityQualityAssessment>>,
+        TError,
+        CreateFacilityQualityAssessmentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateFacilityQualityAssessmentMutationOptions(options), queryClient);
+    }
+
+export const getUpdateFacilityQualityAssessmentUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/quality/assessments/${id}`
+}
+
+export const updateFacilityQualityAssessment = async (id: string,
+    facilityQualityAssessmentFollowUp: FacilityQualityAssessmentFollowUp, options?: Parameters<typeof customFetch>[1]): Promise<FacilityQualityAssessment> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FacilityQualityAssessment>(getUpdateFacilityQualityAssessmentUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(facilityQualityAssessmentFollowUp)
+  }
+);}
+
+
+
+
+
+export const getUpdateFacilityQualityAssessmentMutationKey = () => ['updateFacilityQualityAssessment'] as const;
+
+export const getUpdateFacilityQualityAssessmentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFacilityQualityAssessment>>, TError,UpdateFacilityQualityAssessmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateFacilityQualityAssessment>>, TError,UpdateFacilityQualityAssessmentMutationVariables, TContext> => {
+
+const mutationKey = getUpdateFacilityQualityAssessmentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateFacilityQualityAssessment>>, UpdateFacilityQualityAssessmentMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateFacilityQualityAssessment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateFacilityQualityAssessmentMutationResult = NonNullable<Awaited<ReturnType<typeof updateFacilityQualityAssessment>>>
+    export type UpdateFacilityQualityAssessmentMutationBody = BodyType<FacilityQualityAssessmentFollowUp>
+    export type UpdateFacilityQualityAssessmentMutationError = ErrorType<void>
+    export type UpdateFacilityQualityAssessmentMutationVariables = {id: string;data: BodyType<FacilityQualityAssessmentFollowUp>}
+
+    export const useUpdateFacilityQualityAssessment = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFacilityQualityAssessment>>, TError,UpdateFacilityQualityAssessmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateFacilityQualityAssessment>>,
+        TError,
+        UpdateFacilityQualityAssessmentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateFacilityQualityAssessmentMutationOptions(options), queryClient);
+    }
+
+export const getCreateFacilityQualityIncidentUrl = () => {
+
+
+
+
+  return `/api/operations/quality/incidents`
+}
+
+export const createFacilityQualityIncident = async (facilityQualityIncidentInput: FacilityQualityIncidentInput, options?: Parameters<typeof customFetch>[1]): Promise<FacilityQualityIncident> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FacilityQualityIncident>(getCreateFacilityQualityIncidentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(facilityQualityIncidentInput)
+  }
+);}
+
+
+
+
+
+export const getCreateFacilityQualityIncidentMutationKey = () => ['createFacilityQualityIncident'] as const;
+
+export const getCreateFacilityQualityIncidentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFacilityQualityIncident>>, TError,CreateFacilityQualityIncidentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createFacilityQualityIncident>>, TError,CreateFacilityQualityIncidentMutationVariables, TContext> => {
+
+const mutationKey = getCreateFacilityQualityIncidentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createFacilityQualityIncident>>, CreateFacilityQualityIncidentMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createFacilityQualityIncident(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateFacilityQualityIncidentMutationResult = NonNullable<Awaited<ReturnType<typeof createFacilityQualityIncident>>>
+    export type CreateFacilityQualityIncidentMutationBody = BodyType<FacilityQualityIncidentInput>
+    export type CreateFacilityQualityIncidentMutationError = ErrorType<void>
+    export type CreateFacilityQualityIncidentMutationVariables = {data: BodyType<FacilityQualityIncidentInput>}
+
+    export const useCreateFacilityQualityIncident = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFacilityQualityIncident>>, TError,CreateFacilityQualityIncidentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createFacilityQualityIncident>>,
+        TError,
+        CreateFacilityQualityIncidentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateFacilityQualityIncidentMutationOptions(options), queryClient);
+    }
+
+export const getUpdateFacilityQualityIncidentUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/quality/incidents/${id}`
+}
+
+export const updateFacilityQualityIncident = async (id: string,
+    facilityQualityIncidentUpdate: FacilityQualityIncidentUpdate, options?: Parameters<typeof customFetch>[1]): Promise<FacilityQualityIncident> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FacilityQualityIncident>(getUpdateFacilityQualityIncidentUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(facilityQualityIncidentUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateFacilityQualityIncidentMutationKey = () => ['updateFacilityQualityIncident'] as const;
+
+export const getUpdateFacilityQualityIncidentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFacilityQualityIncident>>, TError,UpdateFacilityQualityIncidentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateFacilityQualityIncident>>, TError,UpdateFacilityQualityIncidentMutationVariables, TContext> => {
+
+const mutationKey = getUpdateFacilityQualityIncidentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateFacilityQualityIncident>>, UpdateFacilityQualityIncidentMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateFacilityQualityIncident(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateFacilityQualityIncidentMutationResult = NonNullable<Awaited<ReturnType<typeof updateFacilityQualityIncident>>>
+    export type UpdateFacilityQualityIncidentMutationBody = BodyType<FacilityQualityIncidentUpdate>
+    export type UpdateFacilityQualityIncidentMutationError = ErrorType<void>
+    export type UpdateFacilityQualityIncidentMutationVariables = {id: string;data: BodyType<FacilityQualityIncidentUpdate>}
+
+    export const useUpdateFacilityQualityIncident = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFacilityQualityIncident>>, TError,UpdateFacilityQualityIncidentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateFacilityQualityIncident>>,
+        TError,
+        UpdateFacilityQualityIncidentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateFacilityQualityIncidentMutationOptions(options), queryClient);
+    }
 
 export const getGetLiveCatalogUrl = () => {
 

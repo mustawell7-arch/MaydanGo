@@ -1867,6 +1867,231 @@ export interface FinanceAudit {
   financeReviews: FinanceAuditFinanceReviewsItem[];
 }
 
+export type QualityCheckStatus = typeof QualityCheckStatus[keyof typeof QualityCheckStatus];
+
+
+export const QualityCheckStatus = {
+  pass: 'pass',
+  action_required: 'action_required',
+  not_applicable: 'not_applicable',
+} as const;
+
+export interface FacilityHygieneChecklist {
+  cleanliness: QualityCheckStatus;
+  changingAreas: QualityCheckStatus;
+  showers: QualityCheckStatus;
+  waterSanitation: QualityCheckStatus;
+}
+
+export interface FacilitySafetyChecklist {
+  emergencyExits: QualityCheckStatus;
+  firstAid: QualityCheckStatus;
+  equipmentCondition: QualityCheckStatus;
+  incidentPlan: QualityCheckStatus;
+}
+
+export interface FacilityQualityFacility {
+  id: string;
+  partnerId: string;
+  partnerName: string;
+  facility: string;
+  city: string;
+}
+
+export type FacilityQualityAssessmentStatus = typeof FacilityQualityAssessmentStatus[keyof typeof FacilityQualityAssessmentStatus];
+
+
+export const FacilityQualityAssessmentStatus = {
+  approved: 'approved',
+  action_required: 'action_required',
+  suspended: 'suspended',
+} as const;
+
+export interface FacilityQualityAssessment {
+  id: string;
+  facilityId: string;
+  partnerId: string;
+  partnerName: string;
+  facility: string;
+  city: string;
+  reviewedOn: string;
+  /** @nullable */
+  nextReviewOn: string | null;
+  /** @nullable */
+  licenceExpiresOn: string | null;
+  /** @nullable */
+  insuranceExpiresOn: string | null;
+  hygieneChecklist: FacilityHygieneChecklist;
+  safetyChecklist: FacilitySafetyChecklist;
+  status: FacilityQualityAssessmentStatus;
+  findings: string;
+  /** @nullable */
+  correctiveAction: string | null;
+  /** @nullable */
+  correctiveDueOn: string | null;
+  createdBy: string;
+  updatedBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type FacilityQualityAssessmentInputStatus = typeof FacilityQualityAssessmentInputStatus[keyof typeof FacilityQualityAssessmentInputStatus];
+
+
+export const FacilityQualityAssessmentInputStatus = {
+  approved: 'approved',
+  action_required: 'action_required',
+  suspended: 'suspended',
+} as const;
+
+export interface FacilityQualityAssessmentInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  facilityId: string;
+  reviewedOn: string;
+  /** @nullable */
+  nextReviewOn: string | null;
+  /** @nullable */
+  licenceExpiresOn: string | null;
+  /** @nullable */
+  insuranceExpiresOn: string | null;
+  hygieneChecklist: FacilityHygieneChecklist;
+  safetyChecklist: FacilitySafetyChecklist;
+  status: FacilityQualityAssessmentInputStatus;
+  /**
+     * @minLength 5
+     * @maxLength 2000
+     */
+  findings: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  correctiveAction: string | null;
+  /** @nullable */
+  correctiveDueOn: string | null;
+}
+
+export type FacilityQualityAssessmentFollowUpStatus = typeof FacilityQualityAssessmentFollowUpStatus[keyof typeof FacilityQualityAssessmentFollowUpStatus];
+
+
+export const FacilityQualityAssessmentFollowUpStatus = {
+  approved: 'approved',
+  action_required: 'action_required',
+  suspended: 'suspended',
+} as const;
+
+export interface FacilityQualityAssessmentFollowUp {
+  status: FacilityQualityAssessmentFollowUpStatus;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  correctiveAction: string | null;
+  /** @nullable */
+  correctiveDueOn: string | null;
+}
+
+export type FacilityQualityIncidentIncidentType = typeof FacilityQualityIncidentIncidentType[keyof typeof FacilityQualityIncidentIncidentType];
+
+
+export const FacilityQualityIncidentIncidentType = {
+  safety: 'safety',
+  hygiene: 'hygiene',
+  equipment: 'equipment',
+  facility: 'facility',
+  other: 'other',
+} as const;
+
+export type FacilityQualityIncidentStatus = typeof FacilityQualityIncidentStatus[keyof typeof FacilityQualityIncidentStatus];
+
+
+export const FacilityQualityIncidentStatus = {
+  open: 'open',
+  under_review: 'under_review',
+  resolved: 'resolved',
+} as const;
+
+export interface FacilityQualityIncident {
+  id: string;
+  facilityId: string;
+  partnerId: string;
+  partnerName: string;
+  facility: string;
+  city: string;
+  incidentType: FacilityQualityIncidentIncidentType;
+  occurredAt: string;
+  description: string;
+  status: FacilityQualityIncidentStatus;
+  /** @nullable */
+  resolution: string | null;
+  reportedBy: string;
+  updatedBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type FacilityQualityIncidentInputIncidentType = typeof FacilityQualityIncidentInputIncidentType[keyof typeof FacilityQualityIncidentInputIncidentType];
+
+
+export const FacilityQualityIncidentInputIncidentType = {
+  safety: 'safety',
+  hygiene: 'hygiene',
+  equipment: 'equipment',
+  facility: 'facility',
+  other: 'other',
+} as const;
+
+export interface FacilityQualityIncidentInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  facilityId: string;
+  incidentType: FacilityQualityIncidentInputIncidentType;
+  occurredAt: string;
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
+  description: string;
+}
+
+export type FacilityQualityIncidentUpdateStatus = typeof FacilityQualityIncidentUpdateStatus[keyof typeof FacilityQualityIncidentUpdateStatus];
+
+
+export const FacilityQualityIncidentUpdateStatus = {
+  open: 'open',
+  under_review: 'under_review',
+  resolved: 'resolved',
+} as const;
+
+export interface FacilityQualityIncidentUpdate {
+  status: FacilityQualityIncidentUpdateStatus;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  resolution: string | null;
+}
+
+export type FacilityQualityControlRole = typeof FacilityQualityControlRole[keyof typeof FacilityQualityControlRole];
+
+
+export const FacilityQualityControlRole = {
+  admin: 'admin',
+  partner: 'partner',
+} as const;
+
+export interface FacilityQualityControl {
+  role: FacilityQualityControlRole;
+  facilities: FacilityQualityFacility[];
+  assessments: FacilityQualityAssessment[];
+  incidents: FacilityQualityIncident[];
+}
+
 export type GetAttendance200RowsItemEventsItem = {
   action: string;
   reason: string;

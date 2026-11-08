@@ -309,6 +309,82 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/OperationsState" }
+  /operations/quality:
+    get:
+      operationId: getFacilityQualityControl
+      responses:
+        "200":
+          description: Facility quality history and incident reports within the operator's authorized partner scope
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacilityQualityControl" }
+  /operations/quality/assessments:
+    post:
+      operationId: createFacilityQualityAssessment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FacilityQualityAssessmentInput" }
+      responses:
+        "201":
+          description: New quality assessment recorded and audited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacilityQualityAssessment" }
+        "400": { description: "Invalid quality checklist, dates, or corrective-action information" }
+        "403": { description: Only authorized administrators can create inspections }
+        "404": { description: Facility not found }
+  /operations/quality/assessments/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: updateFacilityQualityAssessment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FacilityQualityAssessmentFollowUp" }
+      responses:
+        "200":
+          description: Assessment follow-up updated and audited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacilityQualityAssessment" }
+        "400": { description: Invalid status or corrective action }
+        "404": { description: Assessment not found }
+  /operations/quality/incidents:
+    post:
+      operationId: createFacilityQualityIncident
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FacilityQualityIncidentInput" }
+      responses:
+        "201":
+          description: Facility incident report submitted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacilityQualityIncident" }
+        "400": { description: Invalid incident details }
+        "404": { description: Facility not found }
+  /operations/quality/incidents/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: updateFacilityQualityIncident
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FacilityQualityIncidentUpdate" }
+      responses:
+        "200":
+          description: Incident review status updated and audited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacilityQualityIncident" }
+        "400": { description: Invalid incident status or resolution }
+        "404": { description: Incident not found }
   /operations/partners:
     post:
       operationId: addPartner
@@ -1836,3 +1912,128 @@ components:
       properties:
         operations: { type: array, items: { type: object, additionalProperties: true } }
         financeReviews: { type: array, items: { type: object, additionalProperties: true } }
+    QualityCheckStatus:
+      type: string
+      enum: [pass, action_required, not_applicable]
+    FacilityHygieneChecklist:
+      type: object
+      additionalProperties: false
+      required: [cleanliness, changingAreas, showers, waterSanitation]
+      properties:
+        cleanliness: { $ref: "#/components/schemas/QualityCheckStatus" }
+        changingAreas: { $ref: "#/components/schemas/QualityCheckStatus" }
+        showers: { $ref: "#/components/schemas/QualityCheckStatus" }
+        waterSanitation: { $ref: "#/components/schemas/QualityCheckStatus" }
+    FacilitySafetyChecklist:
+      type: object
+      additionalProperties: false
+      required: [emergencyExits, firstAid, equipmentCondition, incidentPlan]
+      properties:
+        emergencyExits: { $ref: "#/components/schemas/QualityCheckStatus" }
+        firstAid: { $ref: "#/components/schemas/QualityCheckStatus" }
+        equipmentCondition: { $ref: "#/components/schemas/QualityCheckStatus" }
+        incidentPlan: { $ref: "#/components/schemas/QualityCheckStatus" }
+    FacilityQualityFacility:
+      type: object
+      additionalProperties: false
+      required: [id, partnerId, partnerName, facility, city]
+      properties:
+        id: { type: string }
+        partnerId: { type: string }
+        partnerName: { type: string }
+        facility: { type: string }
+        city: { type: string }
+    FacilityQualityAssessment:
+      type: object
+      additionalProperties: false
+      required: [id, facilityId, partnerId, partnerName, facility, city, reviewedOn, nextReviewOn, licenceExpiresOn, insuranceExpiresOn, hygieneChecklist, safetyChecklist, status, findings, correctiveAction, correctiveDueOn, createdBy, updatedBy, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        facilityId: { type: string }
+        partnerId: { type: string }
+        partnerName: { type: string }
+        facility: { type: string }
+        city: { type: string }
+        reviewedOn: { type: string, format: date }
+        nextReviewOn: { type: ["string", "null"], format: date }
+        licenceExpiresOn: { type: ["string", "null"], format: date }
+        insuranceExpiresOn: { type: ["string", "null"], format: date }
+        hygieneChecklist: { $ref: "#/components/schemas/FacilityHygieneChecklist" }
+        safetyChecklist: { $ref: "#/components/schemas/FacilitySafetyChecklist" }
+        status: { type: string, enum: [approved, action_required, suspended] }
+        findings: { type: string }
+        correctiveAction: { type: ["string", "null"] }
+        correctiveDueOn: { type: ["string", "null"], format: date }
+        createdBy: { type: string }
+        updatedBy: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    FacilityQualityAssessmentInput:
+      type: object
+      additionalProperties: false
+      required: [facilityId, reviewedOn, nextReviewOn, licenceExpiresOn, insuranceExpiresOn, hygieneChecklist, safetyChecklist, status, findings, correctiveAction, correctiveDueOn]
+      properties:
+        facilityId: { type: string, minLength: 1, maxLength: 160 }
+        reviewedOn: { type: string, format: date }
+        nextReviewOn: { type: ["string", "null"], format: date }
+        licenceExpiresOn: { type: ["string", "null"], format: date }
+        insuranceExpiresOn: { type: ["string", "null"], format: date }
+        hygieneChecklist: { $ref: "#/components/schemas/FacilityHygieneChecklist" }
+        safetyChecklist: { $ref: "#/components/schemas/FacilitySafetyChecklist" }
+        status: { type: string, enum: [approved, action_required, suspended] }
+        findings: { type: string, minLength: 5, maxLength: 2000 }
+        correctiveAction: { type: ["string", "null"], maxLength: 2000 }
+        correctiveDueOn: { type: ["string", "null"], format: date }
+    FacilityQualityAssessmentFollowUp:
+      type: object
+      additionalProperties: false
+      required: [status, correctiveAction, correctiveDueOn]
+      properties:
+        status: { type: string, enum: [approved, action_required, suspended] }
+        correctiveAction: { type: ["string", "null"], maxLength: 2000 }
+        correctiveDueOn: { type: ["string", "null"], format: date }
+    FacilityQualityIncident:
+      type: object
+      additionalProperties: false
+      required: [id, facilityId, partnerId, partnerName, facility, city, incidentType, occurredAt, description, status, resolution, reportedBy, updatedBy, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        facilityId: { type: string }
+        partnerId: { type: string }
+        partnerName: { type: string }
+        facility: { type: string }
+        city: { type: string }
+        incidentType: { type: string, enum: [safety, hygiene, equipment, facility, other] }
+        occurredAt: { type: string, format: date-time }
+        description: { type: string }
+        status: { type: string, enum: [open, under_review, resolved] }
+        resolution: { type: ["string", "null"] }
+        reportedBy: { type: string }
+        updatedBy: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    FacilityQualityIncidentInput:
+      type: object
+      additionalProperties: false
+      required: [facilityId, incidentType, occurredAt, description]
+      properties:
+        facilityId: { type: string, minLength: 1, maxLength: 160 }
+        incidentType: { type: string, enum: [safety, hygiene, equipment, facility, other] }
+        occurredAt: { type: string, format: date-time }
+        description: { type: string, minLength: 10, maxLength: 2000 }
+    FacilityQualityIncidentUpdate:
+      type: object
+      additionalProperties: false
+      required: [status, resolution]
+      properties:
+        status: { type: string, enum: [open, under_review, resolved] }
+        resolution: { type: ["string", "null"], maxLength: 2000 }
+    FacilityQualityControl:
+      type: object
+      additionalProperties: false
+      required: [role, facilities, assessments, incidents]
+      properties:
+        role: { type: string, enum: [admin, partner] }
+        facilities: { type: array, items: { $ref: "#/components/schemas/FacilityQualityFacility" } }
+        assessments: { type: array, items: { $ref: "#/components/schemas/FacilityQualityAssessment" } }
+        incidents: { type: array, items: { $ref: "#/components/schemas/FacilityQualityIncident" } }

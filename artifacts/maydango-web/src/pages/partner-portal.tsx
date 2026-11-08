@@ -5,12 +5,13 @@ import type { OfferingApprovalStatus, OfferingInput, OfferingUpdate, PartnerInpu
 import { useAuth, useClerk } from '@clerk/react';
 import { trackEvent } from '@/lib/analytics';
 import { Link, Redirect } from 'wouter';
-import { Activity, ArrowLeft, ArrowUpRight, CalendarDays, Check, CircleAlert, Clock3, Dumbbell, FileText, LogOut, MapPin, Plus, RefreshCw, ShieldCheck, Users, Wallet, X } from 'lucide-react';
+import { Activity, ArrowLeft, ArrowUpRight, CalendarDays, Check, CircleAlert, ClipboardCheck, Clock3, Dumbbell, FileText, LogOut, MapPin, Plus, RefreshCw, ShieldCheck, Users, Wallet, X } from 'lucide-react';
 import { FacilityProfiles } from '@/pages/facility-profiles';
+import { FacilityQualityControl } from '@/pages/facility-quality-control';
 import { PartnerOperationsPanel, type OperationsTab, type PortalLanguage } from '@/pages/partner-operations';
 import { formatPartnerPortalNumber, formatPartnerPortalSentence, getPartnerPortalCopy, splitLocalizedCommaList } from '@/lib/partner-portal-copy';
 
-type Tab = 'overview' | 'offerings' | 'attendance' | 'waitlist' | 'partners' | 'support' | OperationsTab;
+type Tab = 'overview' | 'offerings' | 'attendance' | 'waitlist' | 'partners' | 'support' | 'quality' | OperationsTab;
 type ReviewAction = ReviewAttendanceBody['action'];
 const approvalStatusLabels: Record<OfferingApprovalStatus, string> = {
   draft: 'Draft',
@@ -53,9 +54,9 @@ const savedPortalLanguage = (): PortalLanguage => {
 const formatDate = (value: string, lang: PortalLanguage = savedPortalLanguage()) => new Intl.DateTimeFormat(portalDateLocale(lang), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Baghdad', numberingSystem: 'latn' }).format(new Date(value));
 const localIso = (value: string) => new Date(`${value}:00+03:00`).toISOString();
 const portalLabels: Record<PortalLanguage, Record<string, string>> = {
-  en: { overview: 'Overview', offerings: 'Offerings', attendance: 'Attendance', waitlist: 'Waiting list', partners: 'Partners', support: 'Help & safety', facilities: 'Facilities', bookings: 'Sessions & bookings', settlements: 'Settlements', invoices: 'Invoices', greeting: 'Good to see you.', attendanceTitle: 'Attendance review', approvals: 'Partner approvals', workspace: 'Partner operations', language: 'Language' },
-  ar: { overview: 'نظرة عامة', offerings: 'العروض', attendance: 'الحضور', waitlist: 'قائمة الانتظار', partners: 'الشركاء', support: 'الدعم والسلامة', facilities: 'المرافق', bookings: 'الجلسات والحجوزات', settlements: 'التسويات', invoices: 'الفواتير', greeting: 'سعيدون بعودتك.', attendanceTitle: 'مراجعة الحضور', approvals: 'اعتماد الشركاء', workspace: 'عمليات الشركاء', language: 'اللغة' },
-  ku: { overview: 'پوختە', offerings: 'پێشکەشکراوەکان', attendance: 'ئامادەبوون', waitlist: 'لیستی چاوەڕوانی', partners: 'هاوبەشەکان', support: 'یارمەتی و سەلامەتی', facilities: 'شوێنەکان', bookings: 'وانە و حجزەکان', settlements: 'یەکلاکردنەوە', invoices: 'پسووڵەکان', greeting: 'بەخێربێیتەوە.', attendanceTitle: 'پێداچوونەوەی ئامادەبوون', approvals: 'پەسەندکردنی هاوبەش', workspace: 'بەڕێوەبردنی هاوبەش', language: 'زمان' },
+  en: { overview: 'Overview', offerings: 'Offerings', attendance: 'Attendance', waitlist: 'Waiting list', partners: 'Partners', support: 'Help & safety', quality: 'Facility quality', facilities: 'Facilities', bookings: 'Sessions & bookings', settlements: 'Settlements', invoices: 'Invoices', greeting: 'Good to see you.', attendanceTitle: 'Attendance review', approvals: 'Partner approvals', workspace: 'Partner operations', language: 'Language' },
+  ar: { overview: 'نظرة عامة', offerings: 'العروض', attendance: 'الحضور', waitlist: 'قائمة الانتظار', partners: 'الشركاء', support: 'الدعم والسلامة', quality: 'جودة المرافق', facilities: 'المرافق', bookings: 'الجلسات والحجوزات', settlements: 'التسويات', invoices: 'الفواتير', greeting: 'سعيدون بعودتك.', attendanceTitle: 'مراجعة الحضور', approvals: 'اعتماد الشركاء', workspace: 'عمليات الشركاء', language: 'اللغة' },
+  ku: { overview: 'پوختە', offerings: 'پێشکەشکراوەکان', attendance: 'ئامادەبوون', waitlist: 'لیستی چاوەڕوانی', partners: 'هاوبەشەکان', support: 'یارمەتی و سەلامەتی', quality: 'کوالێتی شوێنەکان', facilities: 'شوێنەکان', bookings: 'وانە و حجزەکان', settlements: 'یەکلاکردنەوە', invoices: 'پسووڵەکان', greeting: 'بەخێربێیتەوە.', attendanceTitle: 'پێداچوونەوەی ئامادەبوون', approvals: 'پەسەندکردنی هاوبەش', workspace: 'بەڕێوەبردنی هاوبەش', language: 'زمان' },
 };
 const portalLabel = (lang: PortalLanguage, key: string) => {
   const source = portalLabels.en[key] ?? key;
@@ -1052,6 +1053,7 @@ export default function PartnerPortal() {
         <div className="mt-8 hidden rounded-2xl bg-[#f8f5eb] p-4 lg:block"><p className="text-[9px] font-bold uppercase tracking-[.17em] text-[#a76445]">Workspace</p><p className="mt-2 truncate text-sm font-bold">{title}</p><p className="mt-1 text-xs text-[#687a71]">{isAdmin ? 'Administrator access' : 'Partner access'}</p></div>
         <nav aria-label="Portal navigation" className="mt-5 flex gap-2 overflow-x-auto lg:mt-8 lg:flex-col">
           {([['overview', Activity], ['offerings', Dumbbell], ['attendance', CalendarDays], ['waitlist', Clock3], ['facilities', MapPin], ...(isAdmin ? [['partners', Users]] as const : [['bookings', CalendarDays], ['settlements', Wallet], ['invoices', FileText]] as const)] as const).map(([id, Icon]) => <button data-testid={`tab-${id}`} key={id} onClick={() => setTab(id as Tab)} aria-current={tab === id ? 'page' : undefined} className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${tab === id ? 'bg-[#174d43] text-[#fff9e9]' : 'text-[#536b61] hover:bg-[#dedaca]'}`}><Icon size={16} />{portalLabel(language, id)}{id === 'waitlist' ? ` · ${waitlist.length}` : ''}</button>)}
+          <button data-testid="tab-quality" type="button" onClick={() => setTab('quality')} aria-current={tab === 'quality' ? 'page' : undefined} className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${tab === 'quality' ? 'bg-[#174d43] text-[#fff9e9]' : 'text-[#536b61] hover:bg-[#dedaca]'}`}><ClipboardCheck size={16} />{portalLabel(language, 'quality')}</button>
           <button data-testid="tab-support" type="button" onClick={() => setTab('support')} aria-current={tab === 'support' ? 'page' : undefined} className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${tab === 'support' ? 'bg-[#174d43] text-[#fff9e9]' : 'text-[#536b61] hover:bg-[#dedaca]'}`}><CircleAlert size={16} />{portalLabel(language, 'support')}</button>
         </nav>
          <div className="mt-8 hidden border-t border-[#d6d0bf] pt-5 lg:block">{isAdmin && <Link href="/finance" className="mb-4 flex items-center gap-2 text-xs font-semibold text-[#174d43] hover:text-[#28695a]"><Wallet size={14} />Finance desk</Link>}<Link href="/" className="flex items-center gap-2 text-xs font-semibold text-[#63766d] hover:text-[#174d43]"><ArrowLeft size={14} />Public MaydanGo site</Link><button onClick={() => signOut({ redirectUrl: '/' })} className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-[#63766d] hover:text-[#9a4435]"><LogOut size={14} />Sign out</button></div>
@@ -1211,6 +1213,7 @@ export default function PartnerPortal() {
               </article>)}
             </div>
           </section>}
+          {tab === 'quality' && <FacilityQualityControl lang={language} isAdmin={isAdmin} />}
           {!isAdmin && (['facilities', 'bookings', 'settlements', 'invoices'] as OperationsTab[]).includes(tab as OperationsTab) && <PartnerOperationsPanel tab={tab as OperationsTab} lang={language} partnerId={operations.data.partnerId ?? ''} isAdmin={false} attendance={rows} offerings={offerings} onNotice={setNotice} />}
         </div>
         <footer className="mx-auto mt-12 flex max-w-6xl items-center justify-between border-t border-[#ddd7c6] pt-5 text-[10px] font-semibold uppercase tracking-[.14em] text-[#879187]"><span>MaydanGo partner operations</span><span className="flex items-center gap-1"><Clock3 size={12} /> Iraq local time</span></footer>

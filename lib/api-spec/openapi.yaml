@@ -89,6 +89,7 @@ paths:
       responses:
         "204": { description: Facility profile removed }
         "404": { description: Facility not found }
+        "409": { description: Facility has sessions or quality history and cannot be removed }
   /operations/facilities/{id}/hours-overrides:
     post:
       operationId: createFacilityHoursOverride
@@ -383,6 +384,16 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1finance~1invoices~1{id}~1document"
   /operations/finance/audit:
     $ref: "./operations.yaml#/paths/~1operations~1finance~1audit"
+  /operations/quality:
+    $ref: "./operations.yaml#/paths/~1operations~1quality"
+  /operations/quality/assessments:
+    $ref: "./operations.yaml#/paths/~1operations~1quality~1assessments"
+  /operations/quality/assessments/{id}:
+    $ref: "./operations.yaml#/paths/~1operations~1quality~1assessments~1{id}"
+  /operations/quality/incidents:
+    $ref: "./operations.yaml#/paths/~1operations~1quality~1incidents"
+  /operations/quality/incidents/{id}:
+    $ref: "./operations.yaml#/paths/~1operations~1quality~1incidents~1{id}"
   /member/live-catalog:
     $ref: "./operations.yaml#/paths/~1member~1live-catalog"
   /member/device:
