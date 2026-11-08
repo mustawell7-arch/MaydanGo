@@ -11,12 +11,14 @@ import operationsReviewsRouter from "./operations-reviews";
 import operationsMarketingRouter from "./operations-marketing";
 import operationsAnalyticsRouter from "./operations-analytics";
 import publicLearningRouter from "./public-learning";
+import instructorRouter from "./instructor";
 
 const router: IRouter = Router();
 router.use("/public", publicReviewsRouter);
 router.use("/public", publicLearningRouter);
 router.use("/public", publicRouter);
 router.use("/member", memberRouter);
+router.use("/instructor", instructorRouter);
 router.use("/operations/quality", qualityControlRouter);
 router.use("/operations", operationsReviewsRouter);
 router.use("/operations", operationsMarketingRouter);

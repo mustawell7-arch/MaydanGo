@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lte, lt } from "drizzle-orm";
 import { z } from "zod";
-import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, facilityProfiles, facilityHoursOverrides, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents } from "@workspace/db";
+import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, facilityProfiles, facilityHoursOverrides, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents, instructorPortalRequests, instructorCourseAssignments, instructorOfferingAssignments } from "@workspace/db";
 import { BookingError, effectiveMembershipStatus, processWaitlistQueue } from "../lib/reservations";
 import { createFacilityProfileInput, facilityHoursOverrideInput, facilityProfileFields, offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
 import {
@@ -16,6 +16,8 @@ import {
   CreateRecurringOfferingsResponse, GetOperationFacilitiesResponse,
   UpdateFacilityProfileBody, UpdateFacilityProfileResponse,
   UpdateLearningCourseBody, UpdateLearningCourseResponse,
+  DecideInstructorAccessRequestBody, DecideInstructorAccessRequestResponse,
+  GetInstructorAccessRequestsResponse,
 } from "@workspace/api-zod";
 import { sendMemberNotification } from "../lib/notifications";
 import { expandRecurringOffering } from "../lib/recurring-offerings";
@@ -1482,6 +1484,133 @@ router.get("/finance/audit", async (_req, res) => {
     db.select().from(financeReviewEvents).orderBy(desc(financeReviewEvents.createdAt)).limit(500),
   ]);
   res.json({ operations: operationEvents, financeReviews: reviewEvents });
+});
+
+router.get("/instructor-access-requests", async (_req, res) => {
+  admin(res);
+  const now = new Date();
+  const [requests, courses, upcomingOfferings] = await Promise.all([
+    db.select({
+      id: instructorPortalRequests.id,
+      userId: instructorPortalRequests.userId,
+      message: instructorPortalRequests.message,
+      status: instructorPortalRequests.status,
+      submittedAt: instructorPortalRequests.submittedAt,
+    }).from(instructorPortalRequests)
+      .where(eq(instructorPortalRequests.status, "pending"))
+      .orderBy(asc(instructorPortalRequests.submittedAt)),
+    db.select({
+      id: learningCourses.id,
+      title: learningCourses.title,
+      localizedTitle: learningCourses.localizedTitle,
+      category: learningCourses.category,
+      published: learningCourses.published,
+    }).from(learningCourses).orderBy(desc(learningCourses.updatedAt)),
+    db.select({
+      id: offerings.id,
+      kind: offerings.kind,
+      title: offerings.title,
+      localizedTitle: offerings.localizedTitle,
+      city: offerings.city,
+      facility: offerings.facility,
+      startsAt: offerings.startsAt,
+      endsAt: offerings.endsAt,
+    }).from(offerings).where(and(
+      eq(offerings.approvalStatus, "published"),
+      eq(offerings.active, true),
+      isNull(offerings.cancelledAt),
+      eq(offerings.additionalPayment, false),
+      gt(offerings.startsAt, now),
+    )).orderBy(asc(offerings.startsAt)).limit(300),
+  ]);
+  res.json(GetInstructorAccessRequestsResponse.parse({ requests, courses, offerings: upcomingOfferings }));
+});
+
+router.post("/instructor-access-requests/:id/decision", async (req, res) => {
+  admin(res);
+  const parsed = DecideInstructorAccessRequestBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Choose a valid decision and, when declining, give a reason." });
+    return;
+  }
+  const input = parsed.data;
+  if (
+    new Set(input.courseIds).size !== input.courseIds.length
+    || new Set(input.offeringIds).size !== input.offeringIds.length
+    || (input.decision === "reject" && (!input.reason || input.courseIds.length > 0 || input.offeringIds.length > 0))
+  ) {
+    res.status(400).json({ message: "Use unique assignments and provide a reason without assignments when declining." });
+    return;
+  }
+  const id = String(req.params.id);
+  const actorId = getAuth(req).userId!;
+  const now = new Date();
+  const result = await db.transaction(async tx => {
+    const [request] = await tx.select().from(instructorPortalRequests)
+      .where(eq(instructorPortalRequests.id, id)).for("update");
+    if (!request) throw new BookingError(404, "Instructor access request not found.");
+    if (request.status !== "pending") throw new BookingError(409, "This request has already been reviewed.");
+
+    if (input.decision === "approve") {
+      const [existingOperator] = await tx.select().from(operators)
+        .where(eq(operators.userId, request.userId)).for("update");
+      if (existingOperator && existingOperator.role !== "instructor") {
+        throw new BookingError(409, "This account already has a different staff role. Resolve the role assignment before approving.");
+      }
+      if (input.courseIds.length) {
+        const validCourses = await tx.select({ id: learningCourses.id }).from(learningCourses)
+          .where(inArray(learningCourses.id, input.courseIds));
+        if (validCourses.length !== input.courseIds.length) {
+          throw new BookingError(400, "One or more selected courses are no longer available.");
+        }
+      }
+      if (input.offeringIds.length) {
+        const validOfferings = await tx.select({ id: offerings.id }).from(offerings).where(and(
+          inArray(offerings.id, input.offeringIds),
+          eq(offerings.approvalStatus, "published"),
+          eq(offerings.active, true),
+          isNull(offerings.cancelledAt),
+          eq(offerings.additionalPayment, false),
+          gt(offerings.startsAt, now),
+        ));
+        if (validOfferings.length !== input.offeringIds.length) {
+          throw new BookingError(400, "One or more selected upcoming sessions are no longer available.");
+        }
+      }
+
+      if (!existingOperator) {
+        await tx.insert(operators).values({ userId: request.userId, role: "instructor" });
+      }
+      if (input.courseIds.length) {
+        await tx.insert(instructorCourseAssignments).values(input.courseIds.map(courseId => ({
+          id: randomUUID(), userId: request.userId, courseId, assignedBy: actorId,
+        }))).onConflictDoNothing();
+      }
+      if (input.offeringIds.length) {
+        await tx.insert(instructorOfferingAssignments).values(input.offeringIds.map(offeringId => ({
+          id: randomUUID(), userId: request.userId, offeringId, assignedBy: actorId,
+        }))).onConflictDoNothing();
+      }
+    }
+
+    const status = input.decision === "approve" ? "approved" : "rejected";
+    const [updated] = await tx.update(instructorPortalRequests).set({
+      status,
+      decisionReason: input.reason ?? null,
+      decidedAt: now,
+      decidedBy: actorId,
+      updatedAt: now,
+    }).where(eq(instructorPortalRequests.id, id)).returning();
+    await audit(tx, actorId, `instructor.access.${status}`, id,
+      `user=${request.userId};courses=${input.decision === "approve" ? input.courseIds.length : 0};sessions=${input.decision === "approve" ? input.offeringIds.length : 0}`);
+    return {
+      id: updated.id,
+      status,
+      courseCount: input.decision === "approve" ? input.courseIds.length : 0,
+      offeringCount: input.decision === "approve" ? input.offeringIds.length : 0,
+    };
+  });
+  res.json(DecideInstructorAccessRequestResponse.parse(result));
 });
 
 router.get("/courses", async (_req, res) => {

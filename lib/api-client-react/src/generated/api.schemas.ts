@@ -1599,6 +1599,170 @@ export interface GetOperationCoursesResponse {
   courses: CourseAdminRecord[];
 }
 
+export interface InstructorAccessRequestInput {
+  /**
+     * @minLength 10
+     * @maxLength 1000
+     */
+  message: string;
+}
+
+export interface InstructorSupportTicketInput {
+  /**
+     * @minLength 4
+     * @maxLength 100
+     */
+  subject: string;
+  /**
+     * @minLength 10
+     * @maxLength 5000
+     */
+  message: string;
+  language: SupportedLanguage;
+}
+
+export type InstructorAccessDecisionInputDecision = typeof InstructorAccessDecisionInputDecision[keyof typeof InstructorAccessDecisionInputDecision];
+
+
+export const InstructorAccessDecisionInputDecision = {
+  approve: 'approve',
+  reject: 'reject',
+} as const;
+
+export interface InstructorAccessDecisionInput {
+  decision: InstructorAccessDecisionInputDecision;
+  /**
+     * @maxItems 100
+     * @items.minLength 1
+     */
+  courseIds: string[];
+  /**
+     * @maxItems 100
+     * @items.minLength 1
+     */
+  offeringIds: string[];
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  reason?: string;
+}
+
+export type InstructorAccessRequestStatusStatus = typeof InstructorAccessRequestStatusStatus[keyof typeof InstructorAccessRequestStatusStatus];
+
+
+export const InstructorAccessRequestStatusStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface InstructorAccessRequestStatus {
+  id: string;
+  status: InstructorAccessRequestStatusStatus;
+  message: string;
+  /** @nullable */
+  decisionReason?: string | null;
+  submittedAt: string;
+}
+
+export interface InstructorAssignedCourse {
+  id: string;
+  title: string;
+  localizedTitle: LocalizedText;
+  localizedSummary: LocalizedText;
+  localizedInstructor: LocalizedText;
+  category: string;
+  level: string;
+  durationMinutes: number;
+  published: boolean;
+}
+
+export interface InstructorUpcomingSession {
+  id: string;
+  kind: string;
+  title: string;
+  localizedTitle: LocalizedText | null;
+  city: string;
+  facility: string;
+  startsAt: string;
+  endsAt: string;
+}
+
+export type InstructorPortalResponseAccessStatus = typeof InstructorPortalResponseAccessStatus[keyof typeof InstructorPortalResponseAccessStatus];
+
+
+export const InstructorPortalResponseAccessStatus = {
+  not_requested: 'not_requested',
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface InstructorPortalResponse {
+  accessStatus: InstructorPortalResponseAccessStatus;
+  request: InstructorAccessRequestStatus | null;
+  courses: InstructorAssignedCourse[];
+  upcomingSessions: InstructorUpcomingSession[];
+}
+
+export type InstructorAccessRequestAdminStatus = typeof InstructorAccessRequestAdminStatus[keyof typeof InstructorAccessRequestAdminStatus];
+
+
+export const InstructorAccessRequestAdminStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface InstructorAccessRequestAdmin {
+  id: string;
+  userId: string;
+  message: string;
+  status: InstructorAccessRequestAdminStatus;
+  submittedAt: string;
+}
+
+export interface InstructorCourseOption {
+  id: string;
+  title: string;
+  localizedTitle: LocalizedText;
+  category: string;
+  published: boolean;
+}
+
+export interface InstructorOfferingOption {
+  id: string;
+  kind: string;
+  title: string;
+  localizedTitle: LocalizedText | null;
+  city: string;
+  facility: string;
+  startsAt: string;
+  endsAt: string;
+}
+
+export interface GetInstructorAccessRequestsResponse {
+  requests: InstructorAccessRequestAdmin[];
+  courses: InstructorCourseOption[];
+  offerings: InstructorOfferingOption[];
+}
+
+export type InstructorAccessDecisionResponseStatus = typeof InstructorAccessDecisionResponseStatus[keyof typeof InstructorAccessDecisionResponseStatus];
+
+
+export const InstructorAccessDecisionResponseStatus = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface InstructorAccessDecisionResponse {
+  id: string;
+  status: InstructorAccessDecisionResponseStatus;
+  courseCount: number;
+  offeringCount: number;
+}
+
 export type CourseSummary = CourseMetadataInput & {
   id: string;
   title: string;

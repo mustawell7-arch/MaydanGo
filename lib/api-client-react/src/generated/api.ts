@@ -72,11 +72,18 @@ import type {
   GetAttendance200,
   GetBookingCatalog200Item,
   GetFinanceSettlementsParams,
+  GetInstructorAccessRequestsResponse,
   GetOperationCoursesResponse,
   GetOperationsAnalyticsParams,
   GetPartnerSettlementSummaryParams,
   GetSupportStaffTicketsParams,
   HealthStatus,
+  InstructorAccessDecisionInput,
+  InstructorAccessDecisionResponse,
+  InstructorAccessRequestInput,
+  InstructorAccessRequestStatus,
+  InstructorPortalResponse,
+  InstructorSupportTicketInput,
   IssueCheckinQr200,
   JoinAccess,
   LessonInput,
@@ -3993,6 +4000,716 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getAddLearningLessonMutationOptions(options), queryClient);
+    }
+
+export const getGetInstructorAccessRequestsUrl = () => {
+
+
+
+
+  return `/api/operations/instructor-access-requests`
+}
+
+export const getInstructorAccessRequests = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetInstructorAccessRequestsResponse> => {
+
+  return customFetch<GetInstructorAccessRequestsResponse>(getGetInstructorAccessRequestsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInstructorAccessRequestsQueryKey = () => {
+    return [
+    `/api/operations/instructor-access-requests`
+    ] as const;
+    }
+
+
+export const getGetInstructorAccessRequestsQueryOptions = <TData = Awaited<ReturnType<typeof getInstructorAccessRequests>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorAccessRequests>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInstructorAccessRequestsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInstructorAccessRequests>>> = ({ signal }) => getInstructorAccessRequests({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInstructorAccessRequests>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetInstructorAccessRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof getInstructorAccessRequests>>>
+export type GetInstructorAccessRequestsQueryError = ErrorType<unknown>
+
+
+export function useGetInstructorAccessRequests<TData = Awaited<ReturnType<typeof getInstructorAccessRequests>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorAccessRequests>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorAccessRequests>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorAccessRequests>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorAccessRequests<TData = Awaited<ReturnType<typeof getInstructorAccessRequests>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorAccessRequests>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorAccessRequests>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorAccessRequests>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorAccessRequests<TData = Awaited<ReturnType<typeof getInstructorAccessRequests>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorAccessRequests>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetInstructorAccessRequests<TData = Awaited<ReturnType<typeof getInstructorAccessRequests>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorAccessRequests>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetInstructorAccessRequestsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDecideInstructorAccessRequestUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/instructor-access-requests/${id}/decision`
+}
+
+export const decideInstructorAccessRequest = async (id: string,
+    instructorAccessDecisionInput: InstructorAccessDecisionInput, options?: Parameters<typeof customFetch>[1]): Promise<InstructorAccessDecisionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<InstructorAccessDecisionResponse>(getDecideInstructorAccessRequestUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(instructorAccessDecisionInput)
+  }
+);}
+
+
+
+
+
+export const getDecideInstructorAccessRequestMutationKey = () => ['decideInstructorAccessRequest'] as const;
+
+export const getDecideInstructorAccessRequestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof decideInstructorAccessRequest>>, TError,DecideInstructorAccessRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof decideInstructorAccessRequest>>, TError,DecideInstructorAccessRequestMutationVariables, TContext> => {
+
+const mutationKey = getDecideInstructorAccessRequestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof decideInstructorAccessRequest>>, DecideInstructorAccessRequestMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  decideInstructorAccessRequest(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DecideInstructorAccessRequestMutationResult = NonNullable<Awaited<ReturnType<typeof decideInstructorAccessRequest>>>
+    export type DecideInstructorAccessRequestMutationBody = BodyType<InstructorAccessDecisionInput>
+    export type DecideInstructorAccessRequestMutationError = ErrorType<unknown>
+    export type DecideInstructorAccessRequestMutationVariables = {id: string;data: BodyType<InstructorAccessDecisionInput>}
+
+    export const useDecideInstructorAccessRequest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof decideInstructorAccessRequest>>, TError,DecideInstructorAccessRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof decideInstructorAccessRequest>>,
+        TError,
+        DecideInstructorAccessRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDecideInstructorAccessRequestMutationOptions(options), queryClient);
+    }
+
+export const getGetInstructorPortalUrl = () => {
+
+
+
+
+  return `/api/instructor/portal`
+}
+
+export const getInstructorPortal = async ( options?: Parameters<typeof customFetch>[1]): Promise<InstructorPortalResponse> => {
+
+  return customFetch<InstructorPortalResponse>(getGetInstructorPortalUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInstructorPortalQueryKey = () => {
+    return [
+    `/api/instructor/portal`
+    ] as const;
+    }
+
+
+export const getGetInstructorPortalQueryOptions = <TData = Awaited<ReturnType<typeof getInstructorPortal>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorPortal>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInstructorPortalQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInstructorPortal>>> = ({ signal }) => getInstructorPortal({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInstructorPortal>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetInstructorPortalQueryResult = NonNullable<Awaited<ReturnType<typeof getInstructorPortal>>>
+export type GetInstructorPortalQueryError = ErrorType<unknown>
+
+
+export function useGetInstructorPortal<TData = Awaited<ReturnType<typeof getInstructorPortal>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorPortal>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorPortal>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorPortal>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorPortal<TData = Awaited<ReturnType<typeof getInstructorPortal>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorPortal>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorPortal>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorPortal>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorPortal<TData = Awaited<ReturnType<typeof getInstructorPortal>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorPortal>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetInstructorPortal<TData = Awaited<ReturnType<typeof getInstructorPortal>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorPortal>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetInstructorPortalQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSubmitInstructorAccessRequestUrl = () => {
+
+
+
+
+  return `/api/instructor/access-request`
+}
+
+export const submitInstructorAccessRequest = async (instructorAccessRequestInput: InstructorAccessRequestInput, options?: Parameters<typeof customFetch>[1]): Promise<InstructorAccessRequestStatus> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<InstructorAccessRequestStatus>(getSubmitInstructorAccessRequestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(instructorAccessRequestInput)
+  }
+);}
+
+
+
+
+
+export const getSubmitInstructorAccessRequestMutationKey = () => ['submitInstructorAccessRequest'] as const;
+
+export const getSubmitInstructorAccessRequestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitInstructorAccessRequest>>, TError,SubmitInstructorAccessRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitInstructorAccessRequest>>, TError,SubmitInstructorAccessRequestMutationVariables, TContext> => {
+
+const mutationKey = getSubmitInstructorAccessRequestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitInstructorAccessRequest>>, SubmitInstructorAccessRequestMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  submitInstructorAccessRequest(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitInstructorAccessRequestMutationResult = NonNullable<Awaited<ReturnType<typeof submitInstructorAccessRequest>>>
+    export type SubmitInstructorAccessRequestMutationBody = BodyType<InstructorAccessRequestInput>
+    export type SubmitInstructorAccessRequestMutationError = ErrorType<unknown>
+    export type SubmitInstructorAccessRequestMutationVariables = {data: BodyType<InstructorAccessRequestInput>}
+
+    export const useSubmitInstructorAccessRequest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitInstructorAccessRequest>>, TError,SubmitInstructorAccessRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof submitInstructorAccessRequest>>,
+        TError,
+        SubmitInstructorAccessRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSubmitInstructorAccessRequestMutationOptions(options), queryClient);
+    }
+
+export const getGetInstructorSupportTicketsUrl = () => {
+
+
+
+
+  return `/api/instructor/support/tickets`
+}
+
+export const getInstructorSupportTickets = async ( options?: Parameters<typeof customFetch>[1]): Promise<SupportTicketSummary[]> => {
+
+  return customFetch<SupportTicketSummary[]>(getGetInstructorSupportTicketsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInstructorSupportTicketsQueryKey = () => {
+    return [
+    `/api/instructor/support/tickets`
+    ] as const;
+    }
+
+
+export const getGetInstructorSupportTicketsQueryOptions = <TData = Awaited<ReturnType<typeof getInstructorSupportTickets>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorSupportTickets>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInstructorSupportTicketsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInstructorSupportTickets>>> = ({ signal }) => getInstructorSupportTickets({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInstructorSupportTickets>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetInstructorSupportTicketsQueryResult = NonNullable<Awaited<ReturnType<typeof getInstructorSupportTickets>>>
+export type GetInstructorSupportTicketsQueryError = ErrorType<unknown>
+
+
+export function useGetInstructorSupportTickets<TData = Awaited<ReturnType<typeof getInstructorSupportTickets>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorSupportTickets>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorSupportTickets>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorSupportTickets>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorSupportTickets<TData = Awaited<ReturnType<typeof getInstructorSupportTickets>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorSupportTickets>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorSupportTickets>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorSupportTickets>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorSupportTickets<TData = Awaited<ReturnType<typeof getInstructorSupportTickets>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorSupportTickets>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetInstructorSupportTickets<TData = Awaited<ReturnType<typeof getInstructorSupportTickets>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorSupportTickets>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetInstructorSupportTicketsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateInstructorSupportTicketUrl = () => {
+
+
+
+
+  return `/api/instructor/support/tickets`
+}
+
+export const createInstructorSupportTicket = async (instructorSupportTicketInput: InstructorSupportTicketInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportTicketDetail> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportTicketDetail>(getCreateInstructorSupportTicketUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(instructorSupportTicketInput)
+  }
+);}
+
+
+
+
+
+export const getCreateInstructorSupportTicketMutationKey = () => ['createInstructorSupportTicket'] as const;
+
+export const getCreateInstructorSupportTicketMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInstructorSupportTicket>>, TError,CreateInstructorSupportTicketMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createInstructorSupportTicket>>, TError,CreateInstructorSupportTicketMutationVariables, TContext> => {
+
+const mutationKey = getCreateInstructorSupportTicketMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createInstructorSupportTicket>>, CreateInstructorSupportTicketMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createInstructorSupportTicket(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateInstructorSupportTicketMutationResult = NonNullable<Awaited<ReturnType<typeof createInstructorSupportTicket>>>
+    export type CreateInstructorSupportTicketMutationBody = BodyType<InstructorSupportTicketInput>
+    export type CreateInstructorSupportTicketMutationError = ErrorType<unknown>
+    export type CreateInstructorSupportTicketMutationVariables = {data: BodyType<InstructorSupportTicketInput>}
+
+    export const useCreateInstructorSupportTicket = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInstructorSupportTicket>>, TError,CreateInstructorSupportTicketMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createInstructorSupportTicket>>,
+        TError,
+        CreateInstructorSupportTicketMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateInstructorSupportTicketMutationOptions(options), queryClient);
+    }
+
+export const getGetInstructorSupportTicketUrl = (id: string,) => {
+
+
+
+
+  return `/api/instructor/support/tickets/${id}`
+}
+
+export const getInstructorSupportTicket = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<SupportTicketDetail> => {
+
+  return customFetch<SupportTicketDetail>(getGetInstructorSupportTicketUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInstructorSupportTicketQueryKey = (id: string,) => {
+    return [
+    `/api/instructor/support/tickets/${id}`
+    ] as const;
+    }
+
+
+export const getGetInstructorSupportTicketQueryOptions = <TData = Awaited<ReturnType<typeof getInstructorSupportTicket>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorSupportTicket>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInstructorSupportTicketQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInstructorSupportTicket>>> = ({ signal }) => getInstructorSupportTicket(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInstructorSupportTicket>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetInstructorSupportTicketQueryResult = NonNullable<Awaited<ReturnType<typeof getInstructorSupportTicket>>>
+export type GetInstructorSupportTicketQueryError = ErrorType<unknown>
+
+
+export function useGetInstructorSupportTicket<TData = Awaited<ReturnType<typeof getInstructorSupportTicket>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorSupportTicket>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorSupportTicket>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorSupportTicket>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorSupportTicket<TData = Awaited<ReturnType<typeof getInstructorSupportTicket>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorSupportTicket>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorSupportTicket>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorSupportTicket>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorSupportTicket<TData = Awaited<ReturnType<typeof getInstructorSupportTicket>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorSupportTicket>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetInstructorSupportTicket<TData = Awaited<ReturnType<typeof getInstructorSupportTicket>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorSupportTicket>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetInstructorSupportTicketQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getReplyInstructorSupportTicketUrl = (id: string,) => {
+
+
+
+
+  return `/api/instructor/support/tickets/${id}/replies`
+}
+
+export const replyInstructorSupportTicket = async (id: string,
+    supportReplyInput: SupportReplyInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportTicketDetail> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportTicketDetail>(getReplyInstructorSupportTicketUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportReplyInput)
+  }
+);}
+
+
+
+
+
+export const getReplyInstructorSupportTicketMutationKey = () => ['replyInstructorSupportTicket'] as const;
+
+export const getReplyInstructorSupportTicketMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replyInstructorSupportTicket>>, TError,ReplyInstructorSupportTicketMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof replyInstructorSupportTicket>>, TError,ReplyInstructorSupportTicketMutationVariables, TContext> => {
+
+const mutationKey = getReplyInstructorSupportTicketMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof replyInstructorSupportTicket>>, ReplyInstructorSupportTicketMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  replyInstructorSupportTicket(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReplyInstructorSupportTicketMutationResult = NonNullable<Awaited<ReturnType<typeof replyInstructorSupportTicket>>>
+    export type ReplyInstructorSupportTicketMutationBody = BodyType<SupportReplyInput>
+    export type ReplyInstructorSupportTicketMutationError = ErrorType<unknown>
+    export type ReplyInstructorSupportTicketMutationVariables = {id: string;data: BodyType<SupportReplyInput>}
+
+    export const useReplyInstructorSupportTicket = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof replyInstructorSupportTicket>>, TError,ReplyInstructorSupportTicketMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof replyInstructorSupportTicket>>,
+        TError,
+        ReplyInstructorSupportTicketMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReplyInstructorSupportTicketMutationOptions(options), queryClient);
     }
 
 export const getAddMembershipPlanUrl = () => {

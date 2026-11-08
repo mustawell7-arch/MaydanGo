@@ -723,6 +723,100 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CourseLesson" }
+  /operations/instructor-access-requests:
+    get:
+      operationId: getInstructorAccessRequests
+      responses:
+        "200":
+          description: Pending instructor requests and administrator-controlled assignment options
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetInstructorAccessRequestsResponse" }
+  /operations/instructor-access-requests/{id}/decision:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: decideInstructorAccessRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InstructorAccessDecisionInput" }
+      responses:
+        "200":
+          description: Instructor access decision and course assignments saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InstructorAccessDecisionResponse" }
+  /instructor/portal:
+    get:
+      operationId: getInstructorPortal
+      responses:
+        "200":
+          description: Instructor access state and only the courses and future sessions assigned to the signed-in instructor
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InstructorPortalResponse" }
+  /instructor/access-request:
+    post:
+      operationId: submitInstructorAccessRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InstructorAccessRequestInput" }
+      responses:
+        "201":
+          description: Instructor portal access request submitted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InstructorAccessRequestStatus" }
+  /instructor/support/tickets:
+    get:
+      operationId: getInstructorSupportTickets
+      responses:
+        "200":
+          description: Support conversations owned by the signed-in approved instructor
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/SupportTicketSummary" } }
+    post:
+      operationId: createInstructorSupportTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InstructorSupportTicketInput" }
+      responses:
+        "201":
+          description: Instructor support conversation created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportTicketDetail" }
+  /instructor/support/tickets/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getInstructorSupportTicket
+      responses:
+        "200":
+          description: Owned instructor conversation and its replies
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportTicketDetail" }
+  /instructor/support/tickets/{id}/replies:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: replyInstructorSupportTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportReplyInput" }
+      responses:
+        "201":
+          description: Instructor reply saved to the owned conversation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportTicketDetail" }
   /operations/plans:
     post:
       operationId: addMembershipPlan
@@ -1802,6 +1896,129 @@ components:
         courses:
           type: array
           items: { $ref: "#/components/schemas/CourseAdminRecord" }
+    InstructorAccessRequestInput:
+      type: object
+      additionalProperties: false
+      required: [message]
+      properties:
+        message: { type: string, minLength: 10, maxLength: 1000 }
+    InstructorSupportTicketInput:
+      type: object
+      additionalProperties: false
+      required: [subject, message, language]
+      properties:
+        subject: { type: string, minLength: 4, maxLength: 100 }
+        message: { type: string, minLength: 10, maxLength: 5000 }
+        language: { $ref: "#/components/schemas/SupportedLanguage" }
+    InstructorAccessDecisionInput:
+      type: object
+      additionalProperties: false
+      required: [decision, courseIds, offeringIds]
+      properties:
+        decision: { type: string, enum: [approve, reject] }
+        courseIds: { type: array, maxItems: 100, items: { type: string, minLength: 1 } }
+        offeringIds: { type: array, maxItems: 100, items: { type: string, minLength: 1 } }
+        reason: { type: string, minLength: 5, maxLength: 1000 }
+    InstructorAccessRequestStatus:
+      type: object
+      required: [id, status, message, submittedAt]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [pending, approved, rejected] }
+        message: { type: string }
+        decisionReason: { type: [string, "null"] }
+        submittedAt: { type: string, format: date-time }
+    InstructorAssignedCourse:
+      type: object
+      required: [id, title, localizedTitle, localizedSummary, localizedInstructor, category, level, durationMinutes, published]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedSummary: { $ref: "#/components/schemas/LocalizedText" }
+        localizedInstructor: { $ref: "#/components/schemas/LocalizedText" }
+        category: { type: string }
+        level: { type: string }
+        durationMinutes: { type: integer }
+        published: { type: boolean }
+    InstructorUpcomingSession:
+      type: object
+      required: [id, kind, title, localizedTitle, city, facility, startsAt, endsAt]
+      properties:
+        id: { type: string }
+        kind: { type: string }
+        title: { type: string }
+        localizedTitle: { anyOf: [{ $ref: "#/components/schemas/LocalizedText" }, { type: "null" }] }
+        city: { type: string }
+        facility: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+    InstructorPortalResponse:
+      type: object
+      required: [accessStatus, request, courses, upcomingSessions]
+      properties:
+        accessStatus: { type: string, enum: [not_requested, pending, approved, rejected] }
+        request:
+          anyOf:
+            - $ref: "#/components/schemas/InstructorAccessRequestStatus"
+            - type: "null"
+        courses:
+          type: array
+          items: { $ref: "#/components/schemas/InstructorAssignedCourse" }
+        upcomingSessions:
+          type: array
+          items: { $ref: "#/components/schemas/InstructorUpcomingSession" }
+    InstructorAccessRequestAdmin:
+      type: object
+      required: [id, userId, message, status, submittedAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        message: { type: string }
+        status: { type: string, enum: [pending, approved, rejected] }
+        submittedAt: { type: string, format: date-time }
+    InstructorCourseOption:
+      type: object
+      required: [id, title, localizedTitle, category, published]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        category: { type: string }
+        published: { type: boolean }
+    InstructorOfferingOption:
+      type: object
+      required: [id, kind, title, localizedTitle, city, facility, startsAt, endsAt]
+      properties:
+        id: { type: string }
+        kind: { type: string }
+        title: { type: string }
+        localizedTitle: { anyOf: [{ $ref: "#/components/schemas/LocalizedText" }, { type: "null" }] }
+        city: { type: string }
+        facility: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+    GetInstructorAccessRequestsResponse:
+      type: object
+      required: [requests, courses, offerings]
+      properties:
+        requests:
+          type: array
+          items: { $ref: "#/components/schemas/InstructorAccessRequestAdmin" }
+        courses:
+          type: array
+          items: { $ref: "#/components/schemas/InstructorCourseOption" }
+        offerings:
+          type: array
+          items: { $ref: "#/components/schemas/InstructorOfferingOption" }
+    InstructorAccessDecisionResponse:
+      type: object
+      required: [id, status, courseCount, offeringCount]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [approved, rejected] }
+        courseCount: { type: integer }
+        offeringCount: { type: integer }
     CourseSummary:
       allOf:
         - $ref: "#/components/schemas/CourseMetadataInput"

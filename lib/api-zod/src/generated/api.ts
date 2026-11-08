@@ -3065,6 +3065,305 @@ export const AddLearningLessonResponse = zod.object({
 })
 
 
+export const getInstructorAccessRequestsResponseCoursesItemLocalizedTitleEnMax = 240;
+
+export const getInstructorAccessRequestsResponseCoursesItemLocalizedTitleArMax = 240;
+
+export const getInstructorAccessRequestsResponseCoursesItemLocalizedTitleKuMax = 240;
+
+export const getInstructorAccessRequestsResponseOfferingsItemLocalizedTitleOneEnMax = 240;
+
+export const getInstructorAccessRequestsResponseOfferingsItemLocalizedTitleOneArMax = 240;
+
+export const getInstructorAccessRequestsResponseOfferingsItemLocalizedTitleOneKuMax = 240;
+
+
+
+export const GetInstructorAccessRequestsResponse = zod.object({
+  "requests": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "message": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "submittedAt": zod.coerce.date()
+})),
+  "courses": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(getInstructorAccessRequestsResponseCoursesItemLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(getInstructorAccessRequestsResponseCoursesItemLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(getInstructorAccessRequestsResponseCoursesItemLocalizedTitleKuMax)
+}),
+  "category": zod.string(),
+  "published": zod.boolean()
+})),
+  "offerings": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(getInstructorAccessRequestsResponseOfferingsItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(getInstructorAccessRequestsResponseOfferingsItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(getInstructorAccessRequestsResponseOfferingsItemLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date()
+}))
+})
+
+
+export const DecideInstructorAccessRequestParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+export const decideInstructorAccessRequestBodyCourseIdsMax = 100;
+
+
+export const decideInstructorAccessRequestBodyOfferingIdsMax = 100;
+
+export const decideInstructorAccessRequestBodyReasonMin = 5;
+export const decideInstructorAccessRequestBodyReasonMax = 1000;
+
+
+
+export const DecideInstructorAccessRequestBody = zod.object({
+  "decision": zod.enum(['approve', 'reject']),
+  "courseIds": zod.array(zod.string().min(1)).max(decideInstructorAccessRequestBodyCourseIdsMax),
+  "offeringIds": zod.array(zod.string().min(1)).max(decideInstructorAccessRequestBodyOfferingIdsMax),
+  "reason": zod.string().min(decideInstructorAccessRequestBodyReasonMin).max(decideInstructorAccessRequestBodyReasonMax).optional()
+})
+
+export const DecideInstructorAccessRequestResponse = zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['approved', 'rejected']),
+  "courseCount": zod.number().int(),
+  "offeringCount": zod.number().int()
+})
+
+
+export const getInstructorPortalResponseCoursesItemLocalizedTitleEnMax = 240;
+
+export const getInstructorPortalResponseCoursesItemLocalizedTitleArMax = 240;
+
+export const getInstructorPortalResponseCoursesItemLocalizedTitleKuMax = 240;
+
+export const getInstructorPortalResponseCoursesItemLocalizedSummaryEnMax = 240;
+
+export const getInstructorPortalResponseCoursesItemLocalizedSummaryArMax = 240;
+
+export const getInstructorPortalResponseCoursesItemLocalizedSummaryKuMax = 240;
+
+export const getInstructorPortalResponseCoursesItemLocalizedInstructorEnMax = 240;
+
+export const getInstructorPortalResponseCoursesItemLocalizedInstructorArMax = 240;
+
+export const getInstructorPortalResponseCoursesItemLocalizedInstructorKuMax = 240;
+
+export const getInstructorPortalResponseUpcomingSessionsItemLocalizedTitleOneEnMax = 240;
+
+export const getInstructorPortalResponseUpcomingSessionsItemLocalizedTitleOneArMax = 240;
+
+export const getInstructorPortalResponseUpcomingSessionsItemLocalizedTitleOneKuMax = 240;
+
+
+
+export const GetInstructorPortalResponse = zod.object({
+  "accessStatus": zod.enum(['not_requested', 'pending', 'approved', 'rejected']),
+  "request": zod.union([zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "message": zod.string(),
+  "decisionReason": zod.string().nullish(),
+  "submittedAt": zod.coerce.date()
+}),zod.null()]),
+  "courses": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(getInstructorPortalResponseCoursesItemLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(getInstructorPortalResponseCoursesItemLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(getInstructorPortalResponseCoursesItemLocalizedTitleKuMax)
+}),
+  "localizedSummary": zod.object({
+  "en": zod.string().min(1).max(getInstructorPortalResponseCoursesItemLocalizedSummaryEnMax),
+  "ar": zod.string().min(1).max(getInstructorPortalResponseCoursesItemLocalizedSummaryArMax),
+  "ku": zod.string().min(1).max(getInstructorPortalResponseCoursesItemLocalizedSummaryKuMax)
+}),
+  "localizedInstructor": zod.object({
+  "en": zod.string().min(1).max(getInstructorPortalResponseCoursesItemLocalizedInstructorEnMax),
+  "ar": zod.string().min(1).max(getInstructorPortalResponseCoursesItemLocalizedInstructorArMax),
+  "ku": zod.string().min(1).max(getInstructorPortalResponseCoursesItemLocalizedInstructorKuMax)
+}),
+  "category": zod.string(),
+  "level": zod.string(),
+  "durationMinutes": zod.number().int(),
+  "published": zod.boolean()
+})),
+  "upcomingSessions": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.union([zod.object({
+  "en": zod.string().min(1).max(getInstructorPortalResponseUpcomingSessionsItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(getInstructorPortalResponseUpcomingSessionsItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(getInstructorPortalResponseUpcomingSessionsItemLocalizedTitleOneKuMax)
+}),zod.null()]),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date()
+}))
+})
+
+
+export const submitInstructorAccessRequestBodyMessageMin = 10;
+export const submitInstructorAccessRequestBodyMessageMax = 1000;
+
+
+
+export const SubmitInstructorAccessRequestBody = zod.object({
+  "message": zod.string().min(submitInstructorAccessRequestBodyMessageMin).max(submitInstructorAccessRequestBodyMessageMax)
+})
+
+export const SubmitInstructorAccessRequestResponse = zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "message": zod.string(),
+  "decisionReason": zod.string().nullish(),
+  "submittedAt": zod.coerce.date()
+})
+
+
+export const GetInstructorSupportTicketsResponseItem = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "urgent": zod.boolean(),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+})
+export const GetInstructorSupportTicketsResponse = zod.array(GetInstructorSupportTicketsResponseItem)
+
+
+export const createInstructorSupportTicketBodySubjectMin = 4;
+export const createInstructorSupportTicketBodySubjectMax = 100;
+
+export const createInstructorSupportTicketBodyMessageMin = 10;
+export const createInstructorSupportTicketBodyMessageMax = 5000;
+
+
+
+export const CreateInstructorSupportTicketBody = zod.object({
+  "subject": zod.string().min(createInstructorSupportTicketBodySubjectMin).max(createInstructorSupportTicketBodySubjectMax),
+  "message": zod.string().min(createInstructorSupportTicketBodyMessageMin).max(createInstructorSupportTicketBodyMessageMax),
+  "language": zod.enum(['en', 'ar', 'ku'])
+})
+
+export const CreateInstructorSupportTicketResponse = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "urgent": zod.boolean(),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "message": zod.string(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date()
+})),
+  "events": zod.array(zod.object({
+  "action": zod.string(),
+  "previousStatus": zod.string().nullish(),
+  "nextStatus": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+export const GetInstructorSupportTicketParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetInstructorSupportTicketResponse = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "urgent": zod.boolean(),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "message": zod.string(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date()
+})),
+  "events": zod.array(zod.object({
+  "action": zod.string(),
+  "previousStatus": zod.string().nullish(),
+  "nextStatus": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+export const ReplyInstructorSupportTicketParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const replyInstructorSupportTicketBodyMessageMax = 5000;
+
+
+
+export const ReplyInstructorSupportTicketBody = zod.object({
+  "message": zod.string().min(1).max(replyInstructorSupportTicketBodyMessageMax),
+  "language": zod.enum(['en', 'ar', 'ku'])
+})
+
+export const ReplyInstructorSupportTicketResponse = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "urgent": zod.boolean(),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "message": zod.string(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date()
+})),
+  "events": zod.array(zod.object({
+  "action": zod.string(),
+  "previousStatus": zod.string().nullish(),
+  "nextStatus": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
 export const addMembershipPlanBodyDurationDaysMax = 366;
 
 export const addMembershipPlanBodyRulesQuotaMin = 0;

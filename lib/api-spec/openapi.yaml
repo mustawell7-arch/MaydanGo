@@ -372,6 +372,20 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1courses~1{id}"
   /operations/courses/{id}/lessons:
     $ref: "./operations.yaml#/paths/~1operations~1courses~1{id}~1lessons"
+  /operations/instructor-access-requests:
+    $ref: "./operations.yaml#/paths/~1operations~1instructor-access-requests"
+  /operations/instructor-access-requests/{id}/decision:
+    $ref: "./operations.yaml#/paths/~1operations~1instructor-access-requests~1{id}~1decision"
+  /instructor/portal:
+    $ref: "./operations.yaml#/paths/~1instructor~1portal"
+  /instructor/access-request:
+    $ref: "./operations.yaml#/paths/~1instructor~1access-request"
+  /instructor/support/tickets:
+    $ref: "./operations.yaml#/paths/~1instructor~1support~1tickets"
+  /instructor/support/tickets/{id}:
+    $ref: "./operations.yaml#/paths/~1instructor~1support~1tickets~1{id}"
+  /instructor/support/tickets/{id}/replies:
+    $ref: "./operations.yaml#/paths/~1instructor~1support~1tickets~1{id}~1replies"
   /operations/plans:
     $ref: "./operations.yaml#/paths/~1operations~1plans"
   /operations/plans/{id}:

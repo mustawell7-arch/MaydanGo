@@ -22,6 +22,7 @@ import PartnerPortal from '@/pages/partner-portal';
 import FinanceConsole from '@/pages/finance-console';
 import { PublicCourseBrowser, PublicFacilityBrowser, PublicHomeShowcase } from '@/pages/public-catalog-sections';
 import MemberAccountPage from '@/pages/member-account';
+import { AdminInstructorAccessPage, InstructorPortalPage } from '@/pages/instructor-access';
 import { createContactEmailDraft, initialContactTopic, verifiedContactEmail } from '@/lib/contact-enquiry';
 import './index.css';
 
@@ -1029,6 +1030,8 @@ function Router() {
   return <Switch>
     <Route path="/partner-portal" component={PartnerPortal} />
     <Route path="/finance" component={FinanceConsole} />
+    <Route path="/instructor-portal" component={InstructorPortalPage} />
+    <Route path="/admin/instructor-access" component={AdminInstructorAccessPage} />
     <Route path="/sign-in/*?" component={SignInPage} />
     <Route path="/sign-up/*?" component={SignUpPage} />
     <Route path="/" component={HomeRedirect} />
@@ -1043,17 +1046,19 @@ function HomeRedirect() {
 }
 
 function SignInPage() {
-  const redirectToAccount = new URLSearchParams(window.location.search).get('redirect_url') === '/account';
-  const accountPath = redirectToAccount ? `${basePath}/account` : undefined;
-  const redirectQuery = redirectToAccount ? '?redirect_url=%2Faccount' : '';
-  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f3f0e5] px-4 py-10"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up${redirectQuery}`} forceRedirectUrl={accountPath} /></div>;
+  const requestedPath = new URLSearchParams(window.location.search).get('redirect_url');
+  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access'].includes(requestedPath ?? '') ? requestedPath! : undefined;
+  const redirectTo = safePath ? `${basePath}${safePath}` : undefined;
+  const redirectQuery = safePath ? `?redirect_url=${encodeURIComponent(safePath)}` : '';
+  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f3f0e5] px-4 py-10"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up${redirectQuery}`} forceRedirectUrl={redirectTo} /></div>;
 }
 
 function SignUpPage() {
-  const redirectToAccount = new URLSearchParams(window.location.search).get('redirect_url') === '/account';
-  const accountPath = redirectToAccount ? `${basePath}/account` : undefined;
-  const redirectQuery = redirectToAccount ? '?redirect_url=%2Faccount' : '';
-  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f3f0e5] px-4 py-10"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in${redirectQuery}`} forceRedirectUrl={accountPath} /></div>;
+  const requestedPath = new URLSearchParams(window.location.search).get('redirect_url');
+  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access'].includes(requestedPath ?? '') ? requestedPath! : undefined;
+  const redirectTo = safePath ? `${basePath}${safePath}` : undefined;
+  const redirectQuery = safePath ? `?redirect_url=${encodeURIComponent(safePath)}` : '';
+  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f3f0e5] px-4 py-10"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in${redirectQuery}`} forceRedirectUrl={redirectTo} /></div>;
 }
 
 function ClerkQueryClientCacheInvalidator() {

@@ -692,7 +692,7 @@ function partnerSupportSubject(lang: PortalLanguage, subject: string) {
   return subject;
 }
 
-function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
+export function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
   const client = useQueryClient();
   const tickets = useGetMemberSupportTickets({ query: { retry: false } });
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
@@ -1056,6 +1056,7 @@ export default function PartnerPortal() {
         <div className="mt-8 hidden rounded-2xl bg-[#f8f5eb] p-4 lg:block"><p className="text-[9px] font-bold uppercase tracking-[.17em] text-[#a76445]">Workspace</p><p className="mt-2 truncate text-sm font-bold">{title}</p><p className="mt-1 text-xs text-[#687a71]">{isAdmin ? 'Administrator access' : 'Partner access'}</p></div>
         <nav aria-label="Portal navigation" className="mt-5 flex gap-2 overflow-x-auto lg:mt-8 lg:flex-col">
           {([['overview', Activity], ['offerings', Dumbbell], ['attendance', CalendarDays], ['waitlist', Clock3], ['facilities', MapPin], ['analytics', TrendingUp], ...(isAdmin ? [['partners', Users]] as const : [['bookings', CalendarDays], ['settlements', Wallet], ['invoices', FileText]] as const)] as const).map(([id, Icon]) => <button data-testid={`tab-${id}`} key={id} onClick={() => setTab(id as Tab)} aria-current={tab === id ? 'page' : undefined} className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${tab === id ? 'bg-[#174d43] text-[#fff9e9]' : 'text-[#536b61] hover:bg-[#dedaca]'}`}><Icon size={16} />{portalLabel(language, id)}{id === 'waitlist' ? ` · ${waitlist.length}` : ''}</button>)}
+          {isAdmin && <Link data-testid="link-admin-instructor-access" href="/admin/instructor-access" className="flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold text-[#536b61] transition hover:bg-[#dedaca]"><Users size={16} />{language === 'ar' ? 'طلبات المدربين' : language === 'ku' ? 'داواکارییەکانی ڕاهێنەران' : 'Instructor access'}</Link>}
           <button data-testid="tab-quality" type="button" onClick={() => setTab('quality')} aria-current={tab === 'quality' ? 'page' : undefined} className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${tab === 'quality' ? 'bg-[#174d43] text-[#fff9e9]' : 'text-[#536b61] hover:bg-[#dedaca]'}`}><ClipboardCheck size={16} />{portalLabel(language, 'quality')}</button>
           <button data-testid="tab-reviews" type="button" onClick={() => setTab('reviews')} aria-current={tab === 'reviews' ? 'page' : undefined} className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${tab === 'reviews' ? 'bg-[#174d43] text-[#fff9e9]' : 'text-[#536b61] hover:bg-[#dedaca]'}`}><Star size={16} />{portalLabel(language, 'reviews')}</button>
           {!isAdmin && <button data-testid="tab-marketing" type="button" onClick={() => setTab('marketing')} aria-current={tab === 'marketing' ? 'page' : undefined} className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${tab === 'marketing' ? 'bg-[#174d43] text-[#fff9e9]' : 'text-[#536b61] hover:bg-[#dedaca]'}`}><Megaphone size={16} />{portalLabel(language, 'marketing')}</button>}
