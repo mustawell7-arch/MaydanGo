@@ -11,6 +11,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { getCityLabel } from '@/data/demo';
 import { languageName, translate, type Language } from '@/lib/i18n';
+import { reviewCopy } from '@/lib/reviews-copy';
 
 export default function ProfileScreen() {
   const colors = useColors();
@@ -85,6 +86,7 @@ export default function ProfileScreen() {
         </View>
         <View style={styles.menuList}>
           <MenuRow icon="heart-outline" label={t('favorites')} value={`${app.favorites.length}`} colors={colors} onPress={() => router.push('/explore')} />
+          <MenuRow icon="star-outline" label={reviewCopy(app.language, 'title')} colors={colors} onPress={() => router.push('/reviews')} />
           <MenuRow icon="help-circle-outline" label={t('help')} colors={colors} onPress={() => router.push('/support')} />
           <MenuRow icon="shield-checkmark-outline" label={t('deviceSecurity')} colors={colors} onPress={() => router.push('/device-security')} last />
         </View>

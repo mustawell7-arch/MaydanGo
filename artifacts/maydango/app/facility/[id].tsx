@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, Pressable, Ionicons } from '@/components/Localized';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -23,6 +23,16 @@ import {
 import { directionsUrl } from '@/lib/location';
 import { cities, facilities as sampleFacilities, getCityLabel, type Facility as SampleFacility } from '@/data/demo';
 import { localize } from '@/lib/content';
+import { getGetPublicFacilityReviewsQueryKey, useGetPublicFacilityReviews, useReportFacilityReview } from '@workspace/api-client-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { reviewCopy, type ReviewCopyKey } from '@/lib/reviews-copy';
+
+const reportReasons = [
+  ['abusive', 'reportAbusive'],
+  ['personal_information', 'reportPersonal'],
+  ['misleading', 'reportMisleading'],
+  ['other', 'reportOther'],
+] as const;
 
 export default function FacilityDetailScreen() {
   const colors = useColors();
@@ -128,6 +138,17 @@ function FacilityDetails({ facility }: { facility: PublicFacility }) {
   const colors = useColors();
   const app = useApp();
   const t = (key: Parameters<typeof translate>[1]) => translate(app.language, key);
+  const reviewText = (key: ReviewCopyKey) => reviewCopy(app.language, key);
+  const reviewsQuery = useGetPublicFacilityReviews(facility.id, {
+    query: {
+      queryKey: getGetPublicFacilityReviewsQueryKey(facility.id),
+      refetchOnMount: 'always',
+      retry: false,
+    },
+  });
+  const reportReview = useReportFacilityReview();
+  const [reportingId, setReportingId] = useState<string | null>(null);
+  const [reportNotice, setReportNotice] = useState('');
   const name = facilityText(facility.localizedName, app.language);
   const cityId = cityIdForFacility(facility.city);
   const city = cities.some(item => item.id === cityId) ? getCityLabel(cityId, app.language) : facility.city;
@@ -183,6 +204,66 @@ function FacilityDetails({ facility }: { facility: PublicFacility }) {
               <Text style={[styles.statusCaption, { color: colors.mutedForeground }]}>{t('openingHours')} · {t('iraqTime')}</Text>
             </View>
           </View>
+
+          <Section title={reviewText('title')} color={colors.foreground}>
+            {reviewsQuery.isLoading
+              ? <Text raw style={[styles.bodyCopy, { color: colors.mutedForeground }]}>{translate(app.language, 'loadingFacilities')}</Text>
+              : reviewsQuery.isError || !reviewsQuery.data
+                ? <Pressable accessibilityRole="button" onPress={() => void reviewsQuery.refetch()}>
+                  <Text raw style={[styles.bodyCopy, { color: colors.primary }]}>{translate(app.language, 'tryAgain')}</Text>
+                </Pressable>
+                : <>
+                  <View style={[styles.reviewSummary, { backgroundColor: colors.secondary }]}>
+                    <Ionicons name="star" size={19} color={colors.primary} />
+                    <Text raw style={[styles.reviewAverage, { color: colors.foreground }]}>
+                      {reviewsQuery.data.averageRating === null ? '—' : reviewsQuery.data.averageRating.toFixed(1)}
+                    </Text>
+                    <Text raw style={[styles.statusCaption, { color: colors.mutedForeground }]}>
+                      {reviewText('basedOn').replace('{count}', String(reviewsQuery.data.reviewCount))}
+                    </Text>
+                  </View>
+                  {reportNotice ? <Text raw style={[styles.reviewNotice, { color: reportNotice === reviewText('reportError') ? colors.destructive : colors.primary }]}>{reportNotice}</Text> : null}
+                  {reviewsQuery.data.reviews.length
+                    ? reviewsQuery.data.reviews.slice(0, 8).map(review => (
+                      <View key={review.id} style={[styles.publicReviewCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <View style={styles.reviewHeading}>
+                          <View style={styles.starsLine}>
+                            {[1, 2, 3, 4, 5].map(star => <Ionicons key={star} name={star <= review.overallRating ? 'star' : 'star-outline'} size={13} color={colors.primary} />)}
+                          </View>
+                          <Text raw style={[styles.reviewDate, { color: colors.mutedForeground }]}>{dateTime(review.createdAt, app.language, true)}</Text>
+                        </View>
+                        {review.content ? <Text raw style={[styles.bodyCopy, { color: colors.foreground, textAlign }]}>{review.content}</Text> : null}
+                        {review.partnerResponse ? <View style={[styles.partnerResponse, { backgroundColor: colors.secondary }]}>
+                          <Text raw style={[styles.reviewDate, { color: colors.secondaryForeground, fontWeight: '800' }]}>{reviewText('partnerResponse')}</Text>
+                          <Text raw style={[styles.bodyCopy, { color: colors.secondaryForeground, textAlign }]}>{review.partnerResponse}</Text>
+                        </View> : null}
+                        {app.signedIn ? <View style={styles.reportWrap}>
+                          {reportingId === review.id ? reportReasons.map(([reason, label]) => (
+                            <Pressable key={reason} accessibilityRole="button" disabled={reportReview.isPending}
+                              testID={`report-review-${review.id}-${reason}`}
+                              onPress={() => {
+                                void reportReview.mutateAsync({ id: review.id, data: { reason, details: null } })
+                                  .then(() => { setReportNotice(reviewText('reportSent')); setReportingId(null); })
+                                  .catch(() => setReportNotice(reviewText('reportError')));
+                              }}
+                              style={[styles.reportReason, { borderColor: colors.border, opacity: reportReview.isPending ? 0.55 : 1 }]}>
+                              <Text raw style={[styles.reportText, { color: colors.foreground }]}>{reviewText(label)}</Text>
+                            </Pressable>
+                          )) : <Pressable accessibilityRole="button" testID={`button-report-review-${review.id}`}
+                            onPress={() => { setReportingId(review.id); setReportNotice(reviewText('reportReason')); }}
+                            style={styles.reportAction}>
+                            <Text raw style={[styles.reportText, { color: colors.destructive }]}>{reviewText('report')}</Text>
+                          </Pressable>}
+                        </View> : null}
+                      </View>
+                    ))
+                    : <Text raw style={[styles.bodyCopy, { color: colors.mutedForeground }]}>{reviewText('noPublicReviews')}</Text>}
+                  <Pressable accessibilityRole="button" testID="button-write-review" onPress={() => router.push('/reviews')} style={styles.reviewLink}>
+                    <Ionicons name="create-outline" size={16} color={colors.primary} />
+                    <Text raw style={[styles.actionText, { color: colors.primary }]}>{reviewText('rateVisit')}</Text>
+                  </Pressable>
+                </>}
+          </Section>
 
           <Section title={t('facilityDetails')} color={colors.foreground}>
             <Text style={[styles.bodyCopy, { color: colors.mutedForeground, textAlign }]}>{facilityText(facility.localizedDescription, app.language)}</Text>
@@ -343,6 +424,19 @@ const styles = StyleSheet.create({
   heroPartner: { fontSize: 11, marginTop: 6 },
   body: { paddingHorizontal: 20, paddingTop: 18 },
   statusCard: { flexDirection: 'row', alignItems: 'center', gap: 11, padding: 13, borderRadius: 16, marginBottom: 5 },
+  reviewSummary: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 15, padding: 12, marginBottom: 10 },
+  reviewAverage: { fontSize: 17, fontWeight: '900' },
+  reviewHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 7 },
+  starsLine: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  reviewDate: { fontSize: 9, lineHeight: 14 },
+  publicReviewCard: { borderWidth: 1, borderRadius: 15, padding: 12, marginBottom: 8 },
+  partnerResponse: { borderRadius: 11, padding: 10, marginTop: 9 },
+  reportWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 7, alignItems: 'center' },
+  reportReason: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 6 },
+  reportAction: { paddingVertical: 6, paddingHorizontal: 4 },
+  reportText: { fontSize: 9, fontWeight: '700' },
+  reviewNotice: { fontSize: 11, lineHeight: 16, marginBottom: 8 },
+  reviewLink: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 3 },
   statusIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   statusTitle: { fontSize: 13, fontWeight: '800' },
   statusCaption: { fontSize: 10, marginTop: 4 },

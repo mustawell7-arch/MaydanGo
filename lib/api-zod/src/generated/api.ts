@@ -1410,6 +1410,218 @@ export const AddPartnerResponse = zod.object({
 }))
 
 
+export const GetPartnerMarketingProfileResponse = zod.object({
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "logoUrl": zod.string().url().nullable()
+})
+
+
+export const updatePartnerMarketingProfileBodyLogoUrlMax = 2048;
+
+
+
+export const UpdatePartnerMarketingProfileBody = zod.object({
+  "logoUrl": zod.string().url().max(updatePartnerMarketingProfileBodyLogoUrlMax).nullable()
+})
+
+export const UpdatePartnerMarketingProfileResponse = zod.object({
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "logoUrl": zod.string().url().nullable()
+})
+
+
+export const GetOperationsAnalyticsQueryParams = zod.object({
+  "from": zod.date().optional(),
+  "to": zod.date().optional()
+})
+
+export const getOperationsAnalyticsResponseSummaryVisitsMin = 0;
+
+export const getOperationsAnalyticsResponseSummaryPhysicalCheckInsMin = 0;
+
+export const getOperationsAnalyticsResponseSummaryPremiumCheckInsMin = 0;
+
+export const getOperationsAnalyticsResponseSummaryLiveClassBookingsMin = 0;
+
+export const getOperationsAnalyticsResponseSummaryCourseEnrollmentsMin = 0;
+
+export const getOperationsAnalyticsResponseSummaryCourseCompletionsMin = 0;
+
+export const getOperationsAnalyticsResponseSummaryActiveSubscriptionsMin = 0;
+
+export const getOperationsAnalyticsResponseSummaryCorporateActiveMembersMin = 0;
+
+export const getOperationsAnalyticsResponseSummaryDailyVisitsMin = 0;
+
+export const getOperationsAnalyticsResponseSummaryMonthlyVisitsMin = 0;
+
+export const getOperationsAnalyticsResponseSummaryUniqueCustomersMin = 0;
+
+export const getOperationsAnalyticsResponseSummaryRepeatCustomersMin = 0;
+
+export const getOperationsAnalyticsResponseSummaryRetentionRateMin = 0;
+export const getOperationsAnalyticsResponseSummaryRetentionRateMax = 100;
+
+export const getOperationsAnalyticsResponseSummaryNoShowRateMin = 0;
+export const getOperationsAnalyticsResponseSummaryNoShowRateMax = 100;
+
+export const getOperationsAnalyticsResponseSummaryCancellationRateMin = 0;
+export const getOperationsAnalyticsResponseSummaryCancellationRateMax = 100;
+
+export const getOperationsAnalyticsResponseSummaryOccupancyRateMin = 0;
+export const getOperationsAnalyticsResponseSummaryOccupancyRateMax = 100;
+
+export const getOperationsAnalyticsResponseSummaryAverageRatingMin = 0;
+export const getOperationsAnalyticsResponseSummaryAverageRatingMax = 5;
+
+export const getOperationsAnalyticsResponseSummaryRatingCountMin = 0;
+
+export const getOperationsAnalyticsResponseTrendItemVisitsMin = 0;
+
+export const getOperationsAnalyticsResponseTrendItemLiveBookingsMin = 0;
+
+export const getOperationsAnalyticsResponseTrendItemCourseEnrollmentsMin = 0;
+
+export const getOperationsAnalyticsResponseTrendItemCourseCompletionsMin = 0;
+
+export const getOperationsAnalyticsResponseFacilityPerformanceItemVisitsMin = 0;
+
+export const getOperationsAnalyticsResponseFacilityPerformanceItemUniqueCustomersMin = 0;
+
+export const getOperationsAnalyticsResponseFacilityPerformanceItemBookingsMin = 0;
+
+export const getOperationsAnalyticsResponseFacilityPerformanceItemCancellationsMin = 0;
+
+export const getOperationsAnalyticsResponseFacilityPerformanceItemNoShowsMin = 0;
+
+export const getOperationsAnalyticsResponseFacilityPerformanceItemOccupancyRateMin = 0;
+export const getOperationsAnalyticsResponseFacilityPerformanceItemOccupancyRateMax = 100;
+
+export const getOperationsAnalyticsResponseFacilityPerformanceItemAverageRatingMin = 0;
+export const getOperationsAnalyticsResponseFacilityPerformanceItemAverageRatingMax = 5;
+
+export const getOperationsAnalyticsResponseFacilityPerformanceItemRatingCountMin = 0;
+
+export const getOperationsAnalyticsResponsePopularClassesItemBookingsMin = 0;
+
+export const getOperationsAnalyticsResponsePopularClassesItemVisitsMin = 0;
+
+export const getOperationsAnalyticsResponsePopularClassesItemOccupancyRateMin = 0;
+export const getOperationsAnalyticsResponsePopularClassesItemOccupancyRateMax = 100;
+
+export const getOperationsAnalyticsResponseCoursePerformanceItemEnrollmentsMin = 0;
+
+export const getOperationsAnalyticsResponseCoursePerformanceItemCompletionsMin = 0;
+
+export const getOperationsAnalyticsResponseCoursePerformanceItemCompletionRateMin = 0;
+export const getOperationsAnalyticsResponseCoursePerformanceItemCompletionRateMax = 100;
+
+export const getOperationsAnalyticsResponsePartnerPerformanceItemVisitsMin = 0;
+
+export const getOperationsAnalyticsResponsePartnerPerformanceItemUniqueCustomersMin = 0;
+
+export const getOperationsAnalyticsResponsePartnerPerformanceItemNoShowsMin = 0;
+
+export const getOperationsAnalyticsResponsePartnerPerformanceItemBookingsMin = 0;
+
+export const getOperationsAnalyticsResponsePartnerPerformanceItemCancellationsMin = 0;
+
+export const getOperationsAnalyticsResponsePartnerPerformanceItemOccupancyRateMin = 0;
+export const getOperationsAnalyticsResponsePartnerPerformanceItemOccupancyRateMax = 100;
+
+export const getOperationsAnalyticsResponsePartnerPerformanceItemNoShowRateMin = 0;
+export const getOperationsAnalyticsResponsePartnerPerformanceItemNoShowRateMax = 100;
+
+export const getOperationsAnalyticsResponsePartnerPerformanceItemCancellationRateMin = 0;
+export const getOperationsAnalyticsResponsePartnerPerformanceItemCancellationRateMax = 100;
+
+export const getOperationsAnalyticsResponsePartnerPerformanceItemAverageRatingMin = 0;
+export const getOperationsAnalyticsResponsePartnerPerformanceItemAverageRatingMax = 5;
+
+export const getOperationsAnalyticsResponsePartnerPerformanceItemRatingCountMin = 0;
+
+
+
+export const GetOperationsAnalyticsResponse = zod.object({
+  "role": zod.enum(['admin', 'partner']),
+  "scopeName": zod.string(),
+  "period": zod.object({
+  "from": zod.coerce.date(),
+  "to": zod.coerce.date(),
+  "timeZone": zod.enum(['Asia/Baghdad'])
+}),
+  "summary": zod.object({
+  "visits": zod.number().int().min(getOperationsAnalyticsResponseSummaryVisitsMin),
+  "physicalCheckIns": zod.number().int().min(getOperationsAnalyticsResponseSummaryPhysicalCheckInsMin),
+  "premiumCheckIns": zod.number().int().min(getOperationsAnalyticsResponseSummaryPremiumCheckInsMin),
+  "liveClassBookings": zod.number().int().min(getOperationsAnalyticsResponseSummaryLiveClassBookingsMin),
+  "courseEnrollments": zod.number().int().min(getOperationsAnalyticsResponseSummaryCourseEnrollmentsMin).nullable(),
+  "courseCompletions": zod.number().int().min(getOperationsAnalyticsResponseSummaryCourseCompletionsMin).nullable(),
+  "activeSubscriptions": zod.number().int().min(getOperationsAnalyticsResponseSummaryActiveSubscriptionsMin).nullable(),
+  "corporateActiveMembers": zod.number().int().min(getOperationsAnalyticsResponseSummaryCorporateActiveMembersMin).nullable(),
+  "dailyVisits": zod.number().int().min(getOperationsAnalyticsResponseSummaryDailyVisitsMin),
+  "monthlyVisits": zod.number().int().min(getOperationsAnalyticsResponseSummaryMonthlyVisitsMin),
+  "uniqueCustomers": zod.number().int().min(getOperationsAnalyticsResponseSummaryUniqueCustomersMin),
+  "repeatCustomers": zod.number().int().min(getOperationsAnalyticsResponseSummaryRepeatCustomersMin),
+  "retentionRate": zod.number().min(getOperationsAnalyticsResponseSummaryRetentionRateMin).max(getOperationsAnalyticsResponseSummaryRetentionRateMax).nullable(),
+  "noShowRate": zod.number().min(getOperationsAnalyticsResponseSummaryNoShowRateMin).max(getOperationsAnalyticsResponseSummaryNoShowRateMax).nullable(),
+  "cancellationRate": zod.number().min(getOperationsAnalyticsResponseSummaryCancellationRateMin).max(getOperationsAnalyticsResponseSummaryCancellationRateMax).nullable(),
+  "occupancyRate": zod.number().min(getOperationsAnalyticsResponseSummaryOccupancyRateMin).max(getOperationsAnalyticsResponseSummaryOccupancyRateMax).nullable(),
+  "averageRating": zod.number().min(getOperationsAnalyticsResponseSummaryAverageRatingMin).max(getOperationsAnalyticsResponseSummaryAverageRatingMax).nullable(),
+  "ratingCount": zod.number().int().min(getOperationsAnalyticsResponseSummaryRatingCountMin)
+}),
+  "trend": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "visits": zod.number().int().min(getOperationsAnalyticsResponseTrendItemVisitsMin),
+  "liveBookings": zod.number().int().min(getOperationsAnalyticsResponseTrendItemLiveBookingsMin),
+  "courseEnrollments": zod.number().int().min(getOperationsAnalyticsResponseTrendItemCourseEnrollmentsMin),
+  "courseCompletions": zod.number().int().min(getOperationsAnalyticsResponseTrendItemCourseCompletionsMin)
+})),
+  "facilityPerformance": zod.array(zod.object({
+  "facility": zod.string(),
+  "city": zod.string(),
+  "visits": zod.number().int().min(getOperationsAnalyticsResponseFacilityPerformanceItemVisitsMin),
+  "uniqueCustomers": zod.number().int().min(getOperationsAnalyticsResponseFacilityPerformanceItemUniqueCustomersMin),
+  "bookings": zod.number().int().min(getOperationsAnalyticsResponseFacilityPerformanceItemBookingsMin),
+  "cancellations": zod.number().int().min(getOperationsAnalyticsResponseFacilityPerformanceItemCancellationsMin),
+  "noShows": zod.number().int().min(getOperationsAnalyticsResponseFacilityPerformanceItemNoShowsMin),
+  "occupancyRate": zod.number().min(getOperationsAnalyticsResponseFacilityPerformanceItemOccupancyRateMin).max(getOperationsAnalyticsResponseFacilityPerformanceItemOccupancyRateMax).nullable(),
+  "averageRating": zod.number().min(getOperationsAnalyticsResponseFacilityPerformanceItemAverageRatingMin).max(getOperationsAnalyticsResponseFacilityPerformanceItemAverageRatingMax).nullable(),
+  "ratingCount": zod.number().int().min(getOperationsAnalyticsResponseFacilityPerformanceItemRatingCountMin)
+})),
+  "popularClasses": zod.array(zod.object({
+  "title": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "bookings": zod.number().int().min(getOperationsAnalyticsResponsePopularClassesItemBookingsMin),
+  "visits": zod.number().int().min(getOperationsAnalyticsResponsePopularClassesItemVisitsMin),
+  "occupancyRate": zod.number().min(getOperationsAnalyticsResponsePopularClassesItemOccupancyRateMin).max(getOperationsAnalyticsResponsePopularClassesItemOccupancyRateMax).nullable()
+})),
+  "coursePerformance": zod.array(zod.object({
+  "title": zod.string(),
+  "enrollments": zod.number().int().min(getOperationsAnalyticsResponseCoursePerformanceItemEnrollmentsMin),
+  "completions": zod.number().int().min(getOperationsAnalyticsResponseCoursePerformanceItemCompletionsMin),
+  "completionRate": zod.number().min(getOperationsAnalyticsResponseCoursePerformanceItemCompletionRateMin).max(getOperationsAnalyticsResponseCoursePerformanceItemCompletionRateMax).nullable()
+})),
+  "partnerPerformance": zod.array(zod.object({
+  "partnerName": zod.string(),
+  "visits": zod.number().int().min(getOperationsAnalyticsResponsePartnerPerformanceItemVisitsMin),
+  "uniqueCustomers": zod.number().int().min(getOperationsAnalyticsResponsePartnerPerformanceItemUniqueCustomersMin),
+  "noShows": zod.number().int().min(getOperationsAnalyticsResponsePartnerPerformanceItemNoShowsMin),
+  "bookings": zod.number().int().min(getOperationsAnalyticsResponsePartnerPerformanceItemBookingsMin),
+  "cancellations": zod.number().int().min(getOperationsAnalyticsResponsePartnerPerformanceItemCancellationsMin),
+  "occupancyRate": zod.number().min(getOperationsAnalyticsResponsePartnerPerformanceItemOccupancyRateMin).max(getOperationsAnalyticsResponsePartnerPerformanceItemOccupancyRateMax).nullable(),
+  "noShowRate": zod.number().min(getOperationsAnalyticsResponsePartnerPerformanceItemNoShowRateMin).max(getOperationsAnalyticsResponsePartnerPerformanceItemNoShowRateMax).nullable(),
+  "cancellationRate": zod.number().min(getOperationsAnalyticsResponsePartnerPerformanceItemCancellationRateMin).max(getOperationsAnalyticsResponsePartnerPerformanceItemCancellationRateMax).nullable(),
+  "averageRating": zod.number().min(getOperationsAnalyticsResponsePartnerPerformanceItemAverageRatingMin).max(getOperationsAnalyticsResponsePartnerPerformanceItemAverageRatingMax).nullable(),
+  "ratingCount": zod.number().int().min(getOperationsAnalyticsResponsePartnerPerformanceItemRatingCountMin)
+})),
+  "unavailableMetrics": zod.array(zod.enum(['membership_sales', 'renewals', 'membership_cancellations', 'churn', 'revenue', 'failed_payments', 'partner_cost', 'gross_margin', 'event_revenue', 'instructor_performance', 'referral_performance', 'promotion_performance', 'fraud_alerts', 'refund_rate', 'chargeback_rate', 'estimated_earnings', 'accounting_export']))
+})
+
+
 export const ApprovePartnerParams = zod.object({
   "id": zod.coerce.string()
 })
@@ -3820,6 +4032,245 @@ export const UpdateFacilityQualityIncidentResponse = zod.object({
 })
 
 
+export const getOperationsFacilityReviewsResponseReviewsItemOverallRatingMax = 5;
+
+export const getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsCleanlinessMax = 5;
+
+export const getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsStaffMax = 5;
+
+export const getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsEquipmentMax = 5;
+
+export const getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsInstructorMax = 5;
+
+export const getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsFacilitiesMax = 5;
+
+export const getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsInformationAccuracyMax = 5;
+
+export const getOperationsFacilityReviewsResponseReviewsItemContentMax = 2000;
+
+export const getOperationsFacilityReviewsResponseReviewsItemModerationReasonMax = 500;
+
+export const getOperationsFacilityReviewsResponseReviewsItemPartnerResponseMax = 2000;
+
+export const getOperationsFacilityReviewsResponseReviewsItemReportCountMin = 0;
+
+export const getOperationsFacilityReviewsResponseReviewsItemReportsItemDetailsMax = 500;
+
+
+
+export const GetOperationsFacilityReviewsResponse = zod.object({
+  "role": zod.enum(['admin', 'partner']),
+  "reviews": zod.array(zod.object({
+  "id": zod.string(),
+  "facilityId": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "reviewerUserId": zod.string().nullable(),
+  "reviewPrivilegeSuspended": zod.boolean(),
+  "overallRating": zod.number().int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemOverallRatingMax),
+  "categoryRatings": zod.object({
+  "cleanliness": zod.number().int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsCleanlinessMax).nullable(),
+  "staff": zod.number().int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsStaffMax).nullable(),
+  "equipment": zod.number().int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsEquipmentMax).nullable(),
+  "instructor": zod.number().int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsInstructorMax).nullable(),
+  "facilities": zod.number().int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsFacilitiesMax).nullable(),
+  "informationAccuracy": zod.number().int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsInformationAccuracyMax).nullable()
+}),
+  "content": zod.string().max(getOperationsFacilityReviewsResponseReviewsItemContentMax).nullable(),
+  "status": zod.enum(['published', 'hidden', 'removed']),
+  "moderationReason": zod.string().max(getOperationsFacilityReviewsResponseReviewsItemModerationReasonMax).nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "partnerResponse": zod.string().max(getOperationsFacilityReviewsResponseReviewsItemPartnerResponseMax).nullable(),
+  "reportCount": zod.number().int().min(getOperationsFacilityReviewsResponseReviewsItemReportCountMin),
+  "reports": zod.array(zod.object({
+  "id": zod.string(),
+  "reason": zod.enum(['abusive', 'personal_information', 'misleading', 'other']),
+  "details": zod.string().max(getOperationsFacilityReviewsResponseReviewsItemReportsItemDetailsMax).nullable(),
+  "status": zod.enum(['open', 'reviewed']),
+  "createdAt": zod.coerce.date()
+}))
+}))
+})
+
+
+export const ModerateFacilityReviewParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const moderateFacilityReviewBodyReasonMin = 5;
+export const moderateFacilityReviewBodyReasonMax = 500;
+
+
+
+export const ModerateFacilityReviewBody = zod.object({
+  "status": zod.enum(['published', 'hidden', 'removed']),
+  "reason": zod.string().min(moderateFacilityReviewBodyReasonMin).max(moderateFacilityReviewBodyReasonMax)
+})
+
+export const moderateFacilityReviewResponseOverallRatingMax = 5;
+
+export const moderateFacilityReviewResponseCategoryRatingsCleanlinessMax = 5;
+
+export const moderateFacilityReviewResponseCategoryRatingsStaffMax = 5;
+
+export const moderateFacilityReviewResponseCategoryRatingsEquipmentMax = 5;
+
+export const moderateFacilityReviewResponseCategoryRatingsInstructorMax = 5;
+
+export const moderateFacilityReviewResponseCategoryRatingsFacilitiesMax = 5;
+
+export const moderateFacilityReviewResponseCategoryRatingsInformationAccuracyMax = 5;
+
+export const moderateFacilityReviewResponseContentMax = 2000;
+
+export const moderateFacilityReviewResponseModerationReasonMax = 500;
+
+export const moderateFacilityReviewResponsePartnerResponseMax = 2000;
+
+export const moderateFacilityReviewResponseReportCountMin = 0;
+
+export const moderateFacilityReviewResponseReportsItemDetailsMax = 500;
+
+
+
+export const ModerateFacilityReviewResponse = zod.object({
+  "id": zod.string(),
+  "facilityId": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "reviewerUserId": zod.string().nullable(),
+  "reviewPrivilegeSuspended": zod.boolean(),
+  "overallRating": zod.number().int().min(1).max(moderateFacilityReviewResponseOverallRatingMax),
+  "categoryRatings": zod.object({
+  "cleanliness": zod.number().int().min(1).max(moderateFacilityReviewResponseCategoryRatingsCleanlinessMax).nullable(),
+  "staff": zod.number().int().min(1).max(moderateFacilityReviewResponseCategoryRatingsStaffMax).nullable(),
+  "equipment": zod.number().int().min(1).max(moderateFacilityReviewResponseCategoryRatingsEquipmentMax).nullable(),
+  "instructor": zod.number().int().min(1).max(moderateFacilityReviewResponseCategoryRatingsInstructorMax).nullable(),
+  "facilities": zod.number().int().min(1).max(moderateFacilityReviewResponseCategoryRatingsFacilitiesMax).nullable(),
+  "informationAccuracy": zod.number().int().min(1).max(moderateFacilityReviewResponseCategoryRatingsInformationAccuracyMax).nullable()
+}),
+  "content": zod.string().max(moderateFacilityReviewResponseContentMax).nullable(),
+  "status": zod.enum(['published', 'hidden', 'removed']),
+  "moderationReason": zod.string().max(moderateFacilityReviewResponseModerationReasonMax).nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "partnerResponse": zod.string().max(moderateFacilityReviewResponsePartnerResponseMax).nullable(),
+  "reportCount": zod.number().int().min(moderateFacilityReviewResponseReportCountMin),
+  "reports": zod.array(zod.object({
+  "id": zod.string(),
+  "reason": zod.enum(['abusive', 'personal_information', 'misleading', 'other']),
+  "details": zod.string().max(moderateFacilityReviewResponseReportsItemDetailsMax).nullable(),
+  "status": zod.enum(['open', 'reviewed']),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+export const RespondToFacilityReviewParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const respondToFacilityReviewBodyResponseMin = 5;
+export const respondToFacilityReviewBodyResponseMax = 2000;
+
+
+
+export const RespondToFacilityReviewBody = zod.object({
+  "response": zod.string().min(respondToFacilityReviewBodyResponseMin).max(respondToFacilityReviewBodyResponseMax)
+})
+
+export const respondToFacilityReviewResponseOverallRatingMax = 5;
+
+export const respondToFacilityReviewResponseCategoryRatingsCleanlinessMax = 5;
+
+export const respondToFacilityReviewResponseCategoryRatingsStaffMax = 5;
+
+export const respondToFacilityReviewResponseCategoryRatingsEquipmentMax = 5;
+
+export const respondToFacilityReviewResponseCategoryRatingsInstructorMax = 5;
+
+export const respondToFacilityReviewResponseCategoryRatingsFacilitiesMax = 5;
+
+export const respondToFacilityReviewResponseCategoryRatingsInformationAccuracyMax = 5;
+
+export const respondToFacilityReviewResponseContentMax = 2000;
+
+export const respondToFacilityReviewResponseModerationReasonMax = 500;
+
+export const respondToFacilityReviewResponsePartnerResponseMax = 2000;
+
+export const respondToFacilityReviewResponseReportCountMin = 0;
+
+export const respondToFacilityReviewResponseReportsItemDetailsMax = 500;
+
+
+
+export const RespondToFacilityReviewResponse = zod.object({
+  "id": zod.string(),
+  "facilityId": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "reviewerUserId": zod.string().nullable(),
+  "reviewPrivilegeSuspended": zod.boolean(),
+  "overallRating": zod.number().int().min(1).max(respondToFacilityReviewResponseOverallRatingMax),
+  "categoryRatings": zod.object({
+  "cleanliness": zod.number().int().min(1).max(respondToFacilityReviewResponseCategoryRatingsCleanlinessMax).nullable(),
+  "staff": zod.number().int().min(1).max(respondToFacilityReviewResponseCategoryRatingsStaffMax).nullable(),
+  "equipment": zod.number().int().min(1).max(respondToFacilityReviewResponseCategoryRatingsEquipmentMax).nullable(),
+  "instructor": zod.number().int().min(1).max(respondToFacilityReviewResponseCategoryRatingsInstructorMax).nullable(),
+  "facilities": zod.number().int().min(1).max(respondToFacilityReviewResponseCategoryRatingsFacilitiesMax).nullable(),
+  "informationAccuracy": zod.number().int().min(1).max(respondToFacilityReviewResponseCategoryRatingsInformationAccuracyMax).nullable()
+}),
+  "content": zod.string().max(respondToFacilityReviewResponseContentMax).nullable(),
+  "status": zod.enum(['published', 'hidden', 'removed']),
+  "moderationReason": zod.string().max(respondToFacilityReviewResponseModerationReasonMax).nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "partnerResponse": zod.string().max(respondToFacilityReviewResponsePartnerResponseMax).nullable(),
+  "reportCount": zod.number().int().min(respondToFacilityReviewResponseReportCountMin),
+  "reports": zod.array(zod.object({
+  "id": zod.string(),
+  "reason": zod.enum(['abusive', 'personal_information', 'misleading', 'other']),
+  "details": zod.string().max(respondToFacilityReviewResponseReportsItemDetailsMax).nullable(),
+  "status": zod.enum(['open', 'reviewed']),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+export const SetFacilityReviewPrivilegeParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const setFacilityReviewPrivilegeBodyReasonMin = 5;
+export const setFacilityReviewPrivilegeBodyReasonMax = 500;
+
+
+
+export const SetFacilityReviewPrivilegeBody = zod.object({
+  "suspended": zod.boolean(),
+  "reason": zod.string().min(setFacilityReviewPrivilegeBodyReasonMin).max(setFacilityReviewPrivilegeBodyReasonMax)
+})
+
+export const setFacilityReviewPrivilegeResponseReasonMax = 500;
+
+
+
+export const SetFacilityReviewPrivilegeResponse = zod.object({
+  "userId": zod.string(),
+  "suspended": zod.boolean(),
+  "reason": zod.string().max(setFacilityReviewPrivilegeResponseReasonMax).nullable(),
+  "suspendedAt": zod.coerce.date().nullable()
+})
+
+
 export const getLiveCatalogResponseOneLocalizedTitleOneEnMax = 240;
 
 export const getLiveCatalogResponseOneLocalizedTitleOneArMax = 240;
@@ -5606,6 +6057,202 @@ export const CancelMemberBookingResponse = zod.object({
  */
 export const HealthCheckResponse = zod.object({
   "status": zod.string()
+})
+
+
+export const GetPublicFacilityReviewsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getPublicFacilityReviewsResponseReviewCountMin = 0;
+
+export const getPublicFacilityReviewsResponseAverageRatingMax = 5;
+
+export const getPublicFacilityReviewsResponseReviewsItemOverallRatingMax = 5;
+
+export const getPublicFacilityReviewsResponseReviewsItemCategoryRatingsCleanlinessMax = 5;
+
+export const getPublicFacilityReviewsResponseReviewsItemCategoryRatingsStaffMax = 5;
+
+export const getPublicFacilityReviewsResponseReviewsItemCategoryRatingsEquipmentMax = 5;
+
+export const getPublicFacilityReviewsResponseReviewsItemCategoryRatingsInstructorMax = 5;
+
+export const getPublicFacilityReviewsResponseReviewsItemCategoryRatingsFacilitiesMax = 5;
+
+export const getPublicFacilityReviewsResponseReviewsItemCategoryRatingsInformationAccuracyMax = 5;
+
+export const getPublicFacilityReviewsResponseReviewsItemContentMax = 2000;
+
+export const getPublicFacilityReviewsResponseReviewsItemPartnerResponseMax = 2000;
+
+
+
+export const GetPublicFacilityReviewsResponse = zod.object({
+  "facilityId": zod.string(),
+  "reviewCount": zod.number().int().min(getPublicFacilityReviewsResponseReviewCountMin),
+  "averageRating": zod.number().min(1).max(getPublicFacilityReviewsResponseAverageRatingMax).nullable(),
+  "reviews": zod.array(zod.object({
+  "id": zod.string(),
+  "overallRating": zod.number().int().min(1).max(getPublicFacilityReviewsResponseReviewsItemOverallRatingMax),
+  "categoryRatings": zod.object({
+  "cleanliness": zod.number().int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsCleanlinessMax).nullable(),
+  "staff": zod.number().int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsStaffMax).nullable(),
+  "equipment": zod.number().int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsEquipmentMax).nullable(),
+  "instructor": zod.number().int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsInstructorMax).nullable(),
+  "facilities": zod.number().int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsFacilitiesMax).nullable(),
+  "informationAccuracy": zod.number().int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsInformationAccuracyMax).nullable()
+}),
+  "content": zod.string().max(getPublicFacilityReviewsResponseReviewsItemContentMax).nullable(),
+  "createdAt": zod.coerce.date(),
+  "partnerResponse": zod.string().max(getPublicFacilityReviewsResponseReviewsItemPartnerResponseMax).nullable()
+}))
+})
+
+
+export const getMemberFacilityReviewsResponseReviewsItemOverallRatingMax = 5;
+
+export const getMemberFacilityReviewsResponseReviewsItemCategoryRatingsCleanlinessMax = 5;
+
+export const getMemberFacilityReviewsResponseReviewsItemCategoryRatingsStaffMax = 5;
+
+export const getMemberFacilityReviewsResponseReviewsItemCategoryRatingsEquipmentMax = 5;
+
+export const getMemberFacilityReviewsResponseReviewsItemCategoryRatingsInstructorMax = 5;
+
+export const getMemberFacilityReviewsResponseReviewsItemCategoryRatingsFacilitiesMax = 5;
+
+export const getMemberFacilityReviewsResponseReviewsItemCategoryRatingsInformationAccuracyMax = 5;
+
+export const getMemberFacilityReviewsResponseReviewsItemContentMax = 2000;
+
+export const getMemberFacilityReviewsResponseReviewsItemPartnerResponseMax = 2000;
+
+
+
+export const GetMemberFacilityReviewsResponse = zod.object({
+  "eligibleVisits": zod.array(zod.object({
+  "reservationId": zod.string(),
+  "facilityId": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "offeringTitle": zod.string(),
+  "attendedAt": zod.coerce.date()
+})),
+  "reviews": zod.array(zod.object({
+  "id": zod.string(),
+  "facilityId": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "overallRating": zod.number().int().min(1).max(getMemberFacilityReviewsResponseReviewsItemOverallRatingMax),
+  "categoryRatings": zod.object({
+  "cleanliness": zod.number().int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsCleanlinessMax).nullable(),
+  "staff": zod.number().int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsStaffMax).nullable(),
+  "equipment": zod.number().int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsEquipmentMax).nullable(),
+  "instructor": zod.number().int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsInstructorMax).nullable(),
+  "facilities": zod.number().int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsFacilitiesMax).nullable(),
+  "informationAccuracy": zod.number().int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsInformationAccuracyMax).nullable()
+}),
+  "content": zod.string().max(getMemberFacilityReviewsResponseReviewsItemContentMax).nullable(),
+  "status": zod.enum(['published', 'hidden', 'removed']),
+  "createdAt": zod.coerce.date(),
+  "partnerResponse": zod.string().max(getMemberFacilityReviewsResponseReviewsItemPartnerResponseMax).nullable()
+}))
+})
+
+
+export const createMemberFacilityReviewBodyReservationIdMax = 160;
+
+export const createMemberFacilityReviewBodyOverallRatingMax = 5;
+
+export const createMemberFacilityReviewBodyCategoryRatingsCleanlinessMax = 5;
+
+export const createMemberFacilityReviewBodyCategoryRatingsStaffMax = 5;
+
+export const createMemberFacilityReviewBodyCategoryRatingsEquipmentMax = 5;
+
+export const createMemberFacilityReviewBodyCategoryRatingsInstructorMax = 5;
+
+export const createMemberFacilityReviewBodyCategoryRatingsFacilitiesMax = 5;
+
+export const createMemberFacilityReviewBodyCategoryRatingsInformationAccuracyMax = 5;
+
+export const createMemberFacilityReviewBodyContentMax = 2000;
+
+
+
+export const CreateMemberFacilityReviewBody = zod.object({
+  "reservationId": zod.string().min(1).max(createMemberFacilityReviewBodyReservationIdMax),
+  "overallRating": zod.number().int().min(1).max(createMemberFacilityReviewBodyOverallRatingMax),
+  "categoryRatings": zod.object({
+  "cleanliness": zod.number().int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsCleanlinessMax).nullable(),
+  "staff": zod.number().int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsStaffMax).nullable(),
+  "equipment": zod.number().int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsEquipmentMax).nullable(),
+  "instructor": zod.number().int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsInstructorMax).nullable(),
+  "facilities": zod.number().int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsFacilitiesMax).nullable(),
+  "informationAccuracy": zod.number().int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsInformationAccuracyMax).nullable()
+}),
+  "content": zod.string().max(createMemberFacilityReviewBodyContentMax).nullable()
+})
+
+export const createMemberFacilityReviewResponseOverallRatingMax = 5;
+
+export const createMemberFacilityReviewResponseCategoryRatingsCleanlinessMax = 5;
+
+export const createMemberFacilityReviewResponseCategoryRatingsStaffMax = 5;
+
+export const createMemberFacilityReviewResponseCategoryRatingsEquipmentMax = 5;
+
+export const createMemberFacilityReviewResponseCategoryRatingsInstructorMax = 5;
+
+export const createMemberFacilityReviewResponseCategoryRatingsFacilitiesMax = 5;
+
+export const createMemberFacilityReviewResponseCategoryRatingsInformationAccuracyMax = 5;
+
+export const createMemberFacilityReviewResponseContentMax = 2000;
+
+export const createMemberFacilityReviewResponsePartnerResponseMax = 2000;
+
+
+
+export const CreateMemberFacilityReviewResponse = zod.object({
+  "id": zod.string(),
+  "facilityId": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "overallRating": zod.number().int().min(1).max(createMemberFacilityReviewResponseOverallRatingMax),
+  "categoryRatings": zod.object({
+  "cleanliness": zod.number().int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsCleanlinessMax).nullable(),
+  "staff": zod.number().int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsStaffMax).nullable(),
+  "equipment": zod.number().int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsEquipmentMax).nullable(),
+  "instructor": zod.number().int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsInstructorMax).nullable(),
+  "facilities": zod.number().int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsFacilitiesMax).nullable(),
+  "informationAccuracy": zod.number().int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsInformationAccuracyMax).nullable()
+}),
+  "content": zod.string().max(createMemberFacilityReviewResponseContentMax).nullable(),
+  "status": zod.enum(['published', 'hidden', 'removed']),
+  "createdAt": zod.coerce.date(),
+  "partnerResponse": zod.string().max(createMemberFacilityReviewResponsePartnerResponseMax).nullable()
+})
+
+
+export const ReportFacilityReviewParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const reportFacilityReviewBodyDetailsMax = 500;
+
+
+
+export const ReportFacilityReviewBody = zod.object({
+  "reason": zod.enum(['abusive', 'personal_information', 'misleading', 'other']),
+  "details": zod.string().max(reportFacilityReviewBodyDetailsMax).nullable()
+})
+
+export const ReportFacilityReviewResponse = zod.object({
+  "id": zod.string(),
+  "status": zod.enum(['open', 'reviewed']),
+  "createdAt": zod.coerce.date()
 })
 
 

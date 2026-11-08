@@ -61,6 +61,7 @@ function RootLayoutNav() {
         <Stack.Screen name="checkin" options={{ headerShown: false, presentation: 'modal' }} />
         <Stack.Screen name="membership" options={{ headerShown: false }} />
         <Stack.Screen name="account" options={{ headerShown: false }} />
+        <Stack.Screen name="reviews" options={{ headerShown: false }} />
         <Stack.Screen name="device-security" options={{ headerShown: false }} />
         <Stack.Screen name="support/index" options={{ headerShown: false }} />
         <Stack.Screen name="support/[id]" options={{ headerShown: false }} />

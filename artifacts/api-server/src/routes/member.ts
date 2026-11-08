@@ -9,6 +9,7 @@ import {
 } from "../lib/reservations";
 import learningRouter from "./learning";
 import { memberSupportRouter } from "./support";
+import memberReviewsRouter from "./member-reviews";
 import { sendMemberNotification } from "../lib/notifications";
 import { PaymentError } from "../lib/payment-config";
 import { cancelMemberSubscription, createMemberCheckout, listMemberPlans, memberSubscription } from "../lib/payments-paytabs";
@@ -42,6 +43,7 @@ router.delete("/device/change", async (req, res) => {
 router.use(requirePrimaryMemberDevice);
 router.use(learningRouter);
 router.use(memberSupportRouter);
+router.use(memberReviewsRouter);
 router.get("/", async (req, res) => { res.json(await memberState(getAuth(req).userId!)); });
 router.get("/plans", async (_req, res) => { res.json(await listMemberPlans()); });
 router.post("/checkout", async (req, res) => {

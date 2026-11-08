@@ -8,6 +8,7 @@ export const partners = pgTable("partners", {
   groupId: text("group_id").notNull(),
   ownerUserId: text("owner_user_id").notNull(),
   approved: boolean("approved").notNull().default(false),
+  logoUrl: text("logo_url"),
 });
 // Provisioned by a trusted operator, never from profile/client metadata.
 export const operators = pgTable("operators", {

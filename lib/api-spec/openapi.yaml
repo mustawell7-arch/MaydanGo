@@ -318,6 +318,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations"
   /operations/partners:
     $ref: "./operations.yaml#/paths/~1operations~1partners"
+  /operations/marketing-profile:
+    $ref: "./operations.yaml#/paths/~1operations~1marketing-profile"
+  /operations/analytics:
+    $ref: "./operations.yaml#/paths/~1operations~1analytics"
   /operations/partners/{id}:
     $ref: "./operations.yaml#/paths/~1operations~1partners~1{id}"
   /operations/offerings:
@@ -394,6 +398,14 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1quality~1incidents"
   /operations/quality/incidents/{id}:
     $ref: "./operations.yaml#/paths/~1operations~1quality~1incidents~1{id}"
+  /operations/reviews:
+    $ref: "./operations.yaml#/paths/~1operations~1reviews"
+  /operations/reviews/{id}/moderation:
+    $ref: "./operations.yaml#/paths/~1operations~1reviews~1{id}~1moderation"
+  /operations/reviews/{id}/response:
+    $ref: "./operations.yaml#/paths/~1operations~1reviews~1{id}~1response"
+  /operations/review-privileges/{userId}:
+    $ref: "./operations.yaml#/paths/~1operations~1review-privileges~1{userId}"
   /member/live-catalog:
     $ref: "./operations.yaml#/paths/~1member~1live-catalog"
   /member/device:
@@ -592,6 +604,63 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /public/facilities/{id}/reviews:
+    get:
+      operationId: getPublicFacilityReviews
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Published reviews and aggregate rating for an approved facility
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicFacilityReviews" }
+        "404": { description: Facility not found }
+  /member/reviews:
+    get:
+      operationId: getMemberFacilityReviews
+      responses:
+        "200":
+          description: Verified visits eligible for review and the member's review history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberFacilityReviews" }
+    post:
+      operationId: createMemberFacilityReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FacilityReviewInput" }
+      responses:
+        "201":
+          description: Review submitted for a verified visit
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacilityReview" }
+        "400": { description: Invalid review details }
+        "403": { description: Review privileges are suspended }
+        "404": { description: Verified visit not found }
+        "409": { description: A review already exists for this visit }
+  /member/reviews/{id}/reports:
+    post:
+      operationId: reportFacilityReview
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FacilityReviewReportInput" }
+      responses:
+        "201":
+          description: Review report submitted for administrator review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacilityReviewReport" }
+        "400": { description: Invalid report details }
+        "404": { description: Review not found }
+        "409": { description: Review has already been reported by this member }
 components:
   schemas:
     PartnerSettlementSummary:

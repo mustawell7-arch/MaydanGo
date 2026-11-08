@@ -992,6 +992,260 @@ export interface PartnerApproval {
   approved: boolean;
 }
 
+export interface PartnerMarketingProfile {
+  partnerId: string;
+  partnerName: string;
+  /** @nullable */
+  logoUrl: string | null;
+}
+
+export interface PartnerMarketingProfileUpdate {
+  /**
+     * @maxLength 2048
+     * @nullable
+     */
+  logoUrl: string | null;
+}
+
+export type OperationsAnalyticsResponseRole = typeof OperationsAnalyticsResponseRole[keyof typeof OperationsAnalyticsResponseRole];
+
+
+export const OperationsAnalyticsResponseRole = {
+  admin: 'admin',
+  partner: 'partner',
+} as const;
+
+export type OperationsAnalyticsResponsePeriodTimeZone = typeof OperationsAnalyticsResponsePeriodTimeZone[keyof typeof OperationsAnalyticsResponsePeriodTimeZone];
+
+
+export const OperationsAnalyticsResponsePeriodTimeZone = {
+  'Asia/Baghdad': 'Asia/Baghdad',
+} as const;
+
+export type OperationsAnalyticsResponsePeriod = {
+  from: string;
+  to: string;
+  timeZone: OperationsAnalyticsResponsePeriodTimeZone;
+};
+
+export type OperationsAnalyticsResponseSummary = {
+  /** @minimum 0 */
+  visits: number;
+  /** @minimum 0 */
+  physicalCheckIns: number;
+  /** @minimum 0 */
+  premiumCheckIns: number;
+  /** @minimum 0 */
+  liveClassBookings: number;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  courseEnrollments: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  courseCompletions: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  activeSubscriptions: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  corporateActiveMembers: number | null;
+  /** @minimum 0 */
+  dailyVisits: number;
+  /** @minimum 0 */
+  monthlyVisits: number;
+  /** @minimum 0 */
+  uniqueCustomers: number;
+  /** @minimum 0 */
+  repeatCustomers: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  retentionRate: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  noShowRate: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  cancellationRate: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  occupancyRate: number | null;
+  /**
+     * @minimum 0
+     * @maximum 5
+     * @nullable
+     */
+  averageRating: number | null;
+  /** @minimum 0 */
+  ratingCount: number;
+};
+
+export type OperationsAnalyticsResponseTrendItem = {
+  date: string;
+  /** @minimum 0 */
+  visits: number;
+  /** @minimum 0 */
+  liveBookings: number;
+  /** @minimum 0 */
+  courseEnrollments: number;
+  /** @minimum 0 */
+  courseCompletions: number;
+};
+
+export type OperationsAnalyticsResponseFacilityPerformanceItem = {
+  facility: string;
+  city: string;
+  /** @minimum 0 */
+  visits: number;
+  /** @minimum 0 */
+  uniqueCustomers: number;
+  /** @minimum 0 */
+  bookings: number;
+  /** @minimum 0 */
+  cancellations: number;
+  /** @minimum 0 */
+  noShows: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  occupancyRate: number | null;
+  /**
+     * @minimum 0
+     * @maximum 5
+     * @nullable
+     */
+  averageRating: number | null;
+  /** @minimum 0 */
+  ratingCount: number;
+};
+
+export type OperationsAnalyticsResponsePopularClassesItem = {
+  title: string;
+  facility: string;
+  city: string;
+  /** @minimum 0 */
+  bookings: number;
+  /** @minimum 0 */
+  visits: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  occupancyRate: number | null;
+};
+
+export type OperationsAnalyticsResponseCoursePerformanceItem = {
+  title: string;
+  /** @minimum 0 */
+  enrollments: number;
+  /** @minimum 0 */
+  completions: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  completionRate: number | null;
+};
+
+export type OperationsAnalyticsResponsePartnerPerformanceItem = {
+  partnerName: string;
+  /** @minimum 0 */
+  visits: number;
+  /** @minimum 0 */
+  uniqueCustomers: number;
+  /** @minimum 0 */
+  noShows: number;
+  /** @minimum 0 */
+  bookings: number;
+  /** @minimum 0 */
+  cancellations: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  occupancyRate: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  noShowRate: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  cancellationRate: number | null;
+  /**
+     * @minimum 0
+     * @maximum 5
+     * @nullable
+     */
+  averageRating: number | null;
+  /** @minimum 0 */
+  ratingCount: number;
+};
+
+export type OperationsAnalyticsResponseUnavailableMetricsItem = typeof OperationsAnalyticsResponseUnavailableMetricsItem[keyof typeof OperationsAnalyticsResponseUnavailableMetricsItem];
+
+
+export const OperationsAnalyticsResponseUnavailableMetricsItem = {
+  membership_sales: 'membership_sales',
+  renewals: 'renewals',
+  membership_cancellations: 'membership_cancellations',
+  churn: 'churn',
+  revenue: 'revenue',
+  failed_payments: 'failed_payments',
+  partner_cost: 'partner_cost',
+  gross_margin: 'gross_margin',
+  event_revenue: 'event_revenue',
+  instructor_performance: 'instructor_performance',
+  referral_performance: 'referral_performance',
+  promotion_performance: 'promotion_performance',
+  fraud_alerts: 'fraud_alerts',
+  refund_rate: 'refund_rate',
+  chargeback_rate: 'chargeback_rate',
+  estimated_earnings: 'estimated_earnings',
+  accounting_export: 'accounting_export',
+} as const;
+
+export interface OperationsAnalyticsResponse {
+  role: OperationsAnalyticsResponseRole;
+  scopeName: string;
+  period: OperationsAnalyticsResponsePeriod;
+  summary: OperationsAnalyticsResponseSummary;
+  trend: OperationsAnalyticsResponseTrendItem[];
+  facilityPerformance: OperationsAnalyticsResponseFacilityPerformanceItem[];
+  popularClasses: OperationsAnalyticsResponsePopularClassesItem[];
+  coursePerformance: OperationsAnalyticsResponseCoursePerformanceItem[];
+  partnerPerformance: OperationsAnalyticsResponsePartnerPerformanceItem[];
+  unavailableMetrics: OperationsAnalyticsResponseUnavailableMetricsItem[];
+}
+
 export type OfferingInputKind = typeof OfferingInputKind[keyof typeof OfferingInputKind];
 
 
@@ -2092,6 +2346,351 @@ export interface FacilityQualityControl {
   incidents: FacilityQualityIncident[];
 }
 
+export interface ReviewCategoryRatings {
+  /**
+     * @minimum 1
+     * @maximum 5
+     * @nullable
+     */
+  cleanliness: number | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     * @nullable
+     */
+  staff: number | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     * @nullable
+     */
+  equipment: number | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     * @nullable
+     */
+  instructor: number | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     * @nullable
+     */
+  facilities: number | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     * @nullable
+     */
+  informationAccuracy: number | null;
+}
+
+export interface EligibleFacilityVisit {
+  reservationId: string;
+  facilityId: string;
+  facility: string;
+  city: string;
+  offeringTitle: string;
+  attendedAt: string;
+}
+
+export type MemberFacilityReviewStatus = typeof MemberFacilityReviewStatus[keyof typeof MemberFacilityReviewStatus];
+
+
+export const MemberFacilityReviewStatus = {
+  published: 'published',
+  hidden: 'hidden',
+  removed: 'removed',
+} as const;
+
+export interface MemberFacilityReview {
+  id: string;
+  facilityId: string;
+  facility: string;
+  city: string;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  overallRating: number;
+  categoryRatings: ReviewCategoryRatings;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  content: string | null;
+  status: MemberFacilityReviewStatus;
+  createdAt: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  partnerResponse: string | null;
+}
+
+export interface MemberFacilityReviews {
+  eligibleVisits: EligibleFacilityVisit[];
+  reviews: MemberFacilityReview[];
+}
+
+export interface FacilityReviewInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  reservationId: string;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  overallRating: number;
+  categoryRatings: ReviewCategoryRatings;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  content: string | null;
+}
+
+export type FacilityReviewStatus = typeof FacilityReviewStatus[keyof typeof FacilityReviewStatus];
+
+
+export const FacilityReviewStatus = {
+  published: 'published',
+  hidden: 'hidden',
+  removed: 'removed',
+} as const;
+
+export interface FacilityReview {
+  id: string;
+  facilityId: string;
+  facility: string;
+  city: string;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  overallRating: number;
+  categoryRatings: ReviewCategoryRatings;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  content: string | null;
+  status: FacilityReviewStatus;
+  createdAt: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  partnerResponse: string | null;
+}
+
+export type FacilityReviewReportInputReason = typeof FacilityReviewReportInputReason[keyof typeof FacilityReviewReportInputReason];
+
+
+export const FacilityReviewReportInputReason = {
+  abusive: 'abusive',
+  personal_information: 'personal_information',
+  misleading: 'misleading',
+  other: 'other',
+} as const;
+
+export interface FacilityReviewReportInput {
+  reason: FacilityReviewReportInputReason;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  details: string | null;
+}
+
+export type FacilityReviewReportStatus = typeof FacilityReviewReportStatus[keyof typeof FacilityReviewReportStatus];
+
+
+export const FacilityReviewReportStatus = {
+  open: 'open',
+  reviewed: 'reviewed',
+} as const;
+
+export interface FacilityReviewReport {
+  id: string;
+  status: FacilityReviewReportStatus;
+  createdAt: string;
+}
+
+export interface PublicFacilityReview {
+  id: string;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  overallRating: number;
+  categoryRatings: ReviewCategoryRatings;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  content: string | null;
+  createdAt: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  partnerResponse: string | null;
+}
+
+export interface PublicFacilityReviews {
+  facilityId: string;
+  /** @minimum 0 */
+  reviewCount: number;
+  /**
+     * @minimum 1
+     * @maximum 5
+     * @nullable
+     */
+  averageRating: number | null;
+  reviews: PublicFacilityReview[];
+}
+
+export type OperationsReviewReportReason = typeof OperationsReviewReportReason[keyof typeof OperationsReviewReportReason];
+
+
+export const OperationsReviewReportReason = {
+  abusive: 'abusive',
+  personal_information: 'personal_information',
+  misleading: 'misleading',
+  other: 'other',
+} as const;
+
+export type OperationsReviewReportStatus = typeof OperationsReviewReportStatus[keyof typeof OperationsReviewReportStatus];
+
+
+export const OperationsReviewReportStatus = {
+  open: 'open',
+  reviewed: 'reviewed',
+} as const;
+
+export interface OperationsReviewReport {
+  id: string;
+  reason: OperationsReviewReportReason;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  details: string | null;
+  status: OperationsReviewReportStatus;
+  createdAt: string;
+}
+
+export type OperationsFacilityReviewStatus = typeof OperationsFacilityReviewStatus[keyof typeof OperationsFacilityReviewStatus];
+
+
+export const OperationsFacilityReviewStatus = {
+  published: 'published',
+  hidden: 'hidden',
+  removed: 'removed',
+} as const;
+
+export interface OperationsFacilityReview {
+  id: string;
+  facilityId: string;
+  facility: string;
+  city: string;
+  partnerId: string;
+  partnerName: string;
+  /** @nullable */
+  reviewerUserId: string | null;
+  reviewPrivilegeSuspended: boolean;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  overallRating: number;
+  categoryRatings: ReviewCategoryRatings;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  content: string | null;
+  status: OperationsFacilityReviewStatus;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  moderationReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  partnerResponse: string | null;
+  /** @minimum 0 */
+  reportCount: number;
+  reports: OperationsReviewReport[];
+}
+
+export type OperationsFacilityReviewsRole = typeof OperationsFacilityReviewsRole[keyof typeof OperationsFacilityReviewsRole];
+
+
+export const OperationsFacilityReviewsRole = {
+  admin: 'admin',
+  partner: 'partner',
+} as const;
+
+export interface OperationsFacilityReviews {
+  role: OperationsFacilityReviewsRole;
+  reviews: OperationsFacilityReview[];
+}
+
+export type FacilityReviewModerationInputStatus = typeof FacilityReviewModerationInputStatus[keyof typeof FacilityReviewModerationInputStatus];
+
+
+export const FacilityReviewModerationInputStatus = {
+  published: 'published',
+  hidden: 'hidden',
+  removed: 'removed',
+} as const;
+
+export interface FacilityReviewModerationInput {
+  status: FacilityReviewModerationInputStatus;
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason: string;
+}
+
+export interface FacilityReviewResponseInput {
+  /**
+     * @minLength 5
+     * @maxLength 2000
+     */
+  response: string;
+}
+
+export interface FacilityReviewPrivilegeInput {
+  suspended: boolean;
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason: string;
+}
+
+export interface FacilityReviewPrivilege {
+  userId: string;
+  suspended: boolean;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  reason: string | null;
+  /** @nullable */
+  suspendedAt: string | null;
+}
+
 export type GetAttendance200RowsItemEventsItem = {
   action: string;
   reason: string;
@@ -2191,6 +2790,11 @@ export const ReviewAttendanceBodyAction = {
 export type ReviewAttendanceBody = {
   action: ReviewAttendanceBodyAction;
   reason: string;
+};
+
+export type GetOperationsAnalyticsParams = {
+from?: string;
+to?: string;
 };
 
 export type GetPartnerSettlementSummaryParams = {

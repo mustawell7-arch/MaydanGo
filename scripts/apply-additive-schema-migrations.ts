@@ -11,6 +11,8 @@ const migrationPaths = [
   new URL("../lib/db/migrations/0010_urgent_report_escalation.sql", import.meta.url),
   new URL("../lib/db/migrations/0011_urgent_alert_recipients.sql", import.meta.url),
   new URL("../lib/db/migrations/0012_facility_quality_control.sql", import.meta.url),
+  new URL("../lib/db/migrations/0013_facility_reviews_and_ratings.sql", import.meta.url),
+  new URL("../lib/db/migrations/0014_partner_marketing_profile.sql", import.meta.url),
 ];
 
 try {

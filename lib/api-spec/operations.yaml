@@ -385,6 +385,70 @@ paths:
               schema: { $ref: "#/components/schemas/FacilityQualityIncident" }
         "400": { description: Invalid incident status or resolution }
         "404": { description: Incident not found }
+  /operations/reviews:
+    get:
+      operationId: getOperationsFacilityReviews
+      responses:
+        "200":
+          description: Facility reviews and reported content visible to the signed-in operator
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OperationsFacilityReviews" }
+        "403": { description: Administrator or approved partner access is required }
+  /operations/reviews/{id}/moderation:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: moderateFacilityReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FacilityReviewModerationInput" }
+      responses:
+        "200":
+          description: Review moderation decision saved and audited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OperationsFacilityReview" }
+        "400": { description: Invalid moderation decision }
+        "403": { description: Administrator access is required }
+        "404": { description: Review not found }
+  /operations/reviews/{id}/response:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    put:
+      operationId: respondToFacilityReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FacilityReviewResponseInput" }
+      responses:
+        "200":
+          description: Partner response saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OperationsFacilityReview" }
+        "400": { description: Invalid partner response }
+        "403": { description: The review is not owned by this partner }
+        "404": { description: Review not found }
+  /operations/review-privileges/{userId}:
+    put:
+      operationId: setFacilityReviewPrivilege
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FacilityReviewPrivilegeInput" }
+      responses:
+        "200":
+          description: Review privilege decision saved and audited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacilityReviewPrivilege" }
+        "400": { description: Invalid privilege decision }
+        "403": { description: Administrator access is required }
   /operations/partners:
     post:
       operationId: addPartner
@@ -399,6 +463,51 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Partner" }
+  /operations/marketing-profile:
+    get:
+      operationId: getPartnerMarketingProfile
+      responses:
+        "200":
+          description: Authenticated partner's marketing profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerMarketingProfile" }
+        "403": { description: An approved partner account is required }
+    put:
+      operationId: updatePartnerMarketingProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerMarketingProfileUpdate" }
+      responses:
+        "200":
+          description: Partner marketing profile updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerMarketingProfile" }
+        "400": { description: Invalid logo URL }
+        "403": { description: An approved partner account is required }
+  /operations/analytics:
+    get:
+      operationId: getOperationsAnalytics
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Aggregated operations metrics scoped to the administrator or partner
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OperationsAnalyticsResponse" }
+        "400": { description: Invalid or overlong date range }
+        "403": { description: Administrator or approved partner access is required }
   /operations/partners/{id}:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     patch:
@@ -1355,6 +1464,134 @@ components:
       additionalProperties: false
       required: [approved]
       properties: { approved: { type: boolean } }
+    PartnerMarketingProfile:
+      type: object
+      additionalProperties: false
+      required: [partnerId, partnerName, logoUrl]
+      properties:
+        partnerId: { type: string }
+        partnerName: { type: string }
+        logoUrl: { type: ["string", "null"], format: uri }
+    PartnerMarketingProfileUpdate:
+      type: object
+      additionalProperties: false
+      required: [logoUrl]
+      properties:
+        logoUrl: { type: ["string", "null"], format: uri, maxLength: 2048 }
+    OperationsAnalyticsResponse:
+      type: object
+      additionalProperties: false
+      required: [role, scopeName, period, summary, trend, facilityPerformance, popularClasses, coursePerformance, partnerPerformance, unavailableMetrics]
+      properties:
+        role: { type: string, enum: [admin, partner] }
+        scopeName: { type: string }
+        period:
+          type: object
+          additionalProperties: false
+          required: [from, to, timeZone]
+          properties:
+            from: { type: string, format: date }
+            to: { type: string, format: date }
+            timeZone: { type: string, enum: [Asia/Baghdad] }
+        summary:
+          type: object
+          additionalProperties: false
+          required: [visits, physicalCheckIns, premiumCheckIns, liveClassBookings, courseEnrollments, courseCompletions, activeSubscriptions, corporateActiveMembers, dailyVisits, monthlyVisits, uniqueCustomers, repeatCustomers, retentionRate, noShowRate, cancellationRate, occupancyRate, averageRating, ratingCount]
+          properties:
+            visits: { type: integer, minimum: 0 }
+            physicalCheckIns: { type: integer, minimum: 0 }
+            premiumCheckIns: { type: integer, minimum: 0 }
+            liveClassBookings: { type: integer, minimum: 0 }
+            courseEnrollments: { type: ["integer", "null"], minimum: 0 }
+            courseCompletions: { type: ["integer", "null"], minimum: 0 }
+            activeSubscriptions: { type: ["integer", "null"], minimum: 0 }
+            corporateActiveMembers: { type: ["integer", "null"], minimum: 0 }
+            dailyVisits: { type: integer, minimum: 0 }
+            monthlyVisits: { type: integer, minimum: 0 }
+            uniqueCustomers: { type: integer, minimum: 0 }
+            repeatCustomers: { type: integer, minimum: 0 }
+            retentionRate: { type: ["number", "null"], minimum: 0, maximum: 100 }
+            noShowRate: { type: ["number", "null"], minimum: 0, maximum: 100 }
+            cancellationRate: { type: ["number", "null"], minimum: 0, maximum: 100 }
+            occupancyRate: { type: ["number", "null"], minimum: 0, maximum: 100 }
+            averageRating: { type: ["number", "null"], minimum: 0, maximum: 5 }
+            ratingCount: { type: integer, minimum: 0 }
+        trend:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [date, visits, liveBookings, courseEnrollments, courseCompletions]
+            properties:
+              date: { type: string, format: date }
+              visits: { type: integer, minimum: 0 }
+              liveBookings: { type: integer, minimum: 0 }
+              courseEnrollments: { type: integer, minimum: 0 }
+              courseCompletions: { type: integer, minimum: 0 }
+        facilityPerformance:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [facility, city, visits, uniqueCustomers, bookings, cancellations, noShows, occupancyRate, averageRating, ratingCount]
+            properties:
+              facility: { type: string }
+              city: { type: string }
+              visits: { type: integer, minimum: 0 }
+              uniqueCustomers: { type: integer, minimum: 0 }
+              bookings: { type: integer, minimum: 0 }
+              cancellations: { type: integer, minimum: 0 }
+              noShows: { type: integer, minimum: 0 }
+              occupancyRate: { type: ["number", "null"], minimum: 0, maximum: 100 }
+              averageRating: { type: ["number", "null"], minimum: 0, maximum: 5 }
+              ratingCount: { type: integer, minimum: 0 }
+        popularClasses:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [title, facility, city, bookings, visits, occupancyRate]
+            properties:
+              title: { type: string }
+              facility: { type: string }
+              city: { type: string }
+              bookings: { type: integer, minimum: 0 }
+              visits: { type: integer, minimum: 0 }
+              occupancyRate: { type: ["number", "null"], minimum: 0, maximum: 100 }
+        coursePerformance:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [title, enrollments, completions, completionRate]
+            properties:
+              title: { type: string }
+              enrollments: { type: integer, minimum: 0 }
+              completions: { type: integer, minimum: 0 }
+              completionRate: { type: ["number", "null"], minimum: 0, maximum: 100 }
+        partnerPerformance:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [partnerName, visits, uniqueCustomers, noShows, bookings, cancellations, occupancyRate, noShowRate, cancellationRate, averageRating, ratingCount]
+            properties:
+              partnerName: { type: string }
+              visits: { type: integer, minimum: 0 }
+              uniqueCustomers: { type: integer, minimum: 0 }
+              noShows: { type: integer, minimum: 0 }
+              bookings: { type: integer, minimum: 0 }
+              cancellations: { type: integer, minimum: 0 }
+              occupancyRate: { type: ["number", "null"], minimum: 0, maximum: 100 }
+              noShowRate: { type: ["number", "null"], minimum: 0, maximum: 100 }
+              cancellationRate: { type: ["number", "null"], minimum: 0, maximum: 100 }
+              averageRating: { type: ["number", "null"], minimum: 0, maximum: 5 }
+              ratingCount: { type: integer, minimum: 0 }
+        unavailableMetrics:
+          type: array
+          items:
+            type: string
+            enum: [membership_sales, renewals, membership_cancellations, churn, revenue, failed_payments, partner_cost, gross_margin, event_revenue, instructor_performance, referral_performance, promotion_performance, fraud_alerts, refund_rate, chargeback_rate, estimated_earnings, accounting_export]
     OfferingInput:
       type: object
       required: [partnerId, title, kind, city, facility, category, accessType, tiers, startsAt, endsAt, cancellationDeadline, capacity, active]
@@ -2037,3 +2274,175 @@ components:
         facilities: { type: array, items: { $ref: "#/components/schemas/FacilityQualityFacility" } }
         assessments: { type: array, items: { $ref: "#/components/schemas/FacilityQualityAssessment" } }
         incidents: { type: array, items: { $ref: "#/components/schemas/FacilityQualityIncident" } }
+    ReviewCategoryRatings:
+      type: object
+      additionalProperties: false
+      required: [cleanliness, staff, equipment, instructor, facilities, informationAccuracy]
+      properties:
+        cleanliness: { type: ["integer", "null"], minimum: 1, maximum: 5 }
+        staff: { type: ["integer", "null"], minimum: 1, maximum: 5 }
+        equipment: { type: ["integer", "null"], minimum: 1, maximum: 5 }
+        instructor: { type: ["integer", "null"], minimum: 1, maximum: 5 }
+        facilities: { type: ["integer", "null"], minimum: 1, maximum: 5 }
+        informationAccuracy: { type: ["integer", "null"], minimum: 1, maximum: 5 }
+    EligibleFacilityVisit:
+      type: object
+      additionalProperties: false
+      required: [reservationId, facilityId, facility, city, offeringTitle, attendedAt]
+      properties:
+        reservationId: { type: string }
+        facilityId: { type: string }
+        facility: { type: string }
+        city: { type: string }
+        offeringTitle: { type: string }
+        attendedAt: { type: string, format: date-time }
+    MemberFacilityReview:
+      type: object
+      additionalProperties: false
+      required: [id, facilityId, facility, city, overallRating, categoryRatings, content, status, createdAt, partnerResponse]
+      properties:
+        id: { type: string }
+        facilityId: { type: string }
+        facility: { type: string }
+        city: { type: string }
+        overallRating: { type: integer, minimum: 1, maximum: 5 }
+        categoryRatings: { $ref: "#/components/schemas/ReviewCategoryRatings" }
+        content: { type: ["string", "null"], maxLength: 2000 }
+        status: { type: string, enum: [published, hidden, removed] }
+        createdAt: { type: string, format: date-time }
+        partnerResponse: { type: ["string", "null"], maxLength: 2000 }
+    MemberFacilityReviews:
+      type: object
+      additionalProperties: false
+      required: [eligibleVisits, reviews]
+      properties:
+        eligibleVisits: { type: array, items: { $ref: "#/components/schemas/EligibleFacilityVisit" } }
+        reviews: { type: array, items: { $ref: "#/components/schemas/MemberFacilityReview" } }
+    FacilityReviewInput:
+      type: object
+      additionalProperties: false
+      required: [reservationId, overallRating, categoryRatings, content]
+      properties:
+        reservationId: { type: string, minLength: 1, maxLength: 160 }
+        overallRating: { type: integer, minimum: 1, maximum: 5 }
+        categoryRatings: { $ref: "#/components/schemas/ReviewCategoryRatings" }
+        content: { type: ["string", "null"], maxLength: 2000 }
+    FacilityReview:
+      type: object
+      additionalProperties: false
+      required: [id, facilityId, facility, city, overallRating, categoryRatings, content, status, createdAt, partnerResponse]
+      properties:
+        id: { type: string }
+        facilityId: { type: string }
+        facility: { type: string }
+        city: { type: string }
+        overallRating: { type: integer, minimum: 1, maximum: 5 }
+        categoryRatings: { $ref: "#/components/schemas/ReviewCategoryRatings" }
+        content: { type: ["string", "null"], maxLength: 2000 }
+        status: { type: string, enum: [published, hidden, removed] }
+        createdAt: { type: string, format: date-time }
+        partnerResponse: { type: ["string", "null"], maxLength: 2000 }
+    FacilityReviewReportInput:
+      type: object
+      additionalProperties: false
+      required: [reason, details]
+      properties:
+        reason: { type: string, enum: [abusive, personal_information, misleading, other] }
+        details: { type: ["string", "null"], maxLength: 500 }
+    FacilityReviewReport:
+      type: object
+      additionalProperties: false
+      required: [id, status, createdAt]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [open, reviewed] }
+        createdAt: { type: string, format: date-time }
+    PublicFacilityReview:
+      type: object
+      additionalProperties: false
+      required: [id, overallRating, categoryRatings, content, createdAt, partnerResponse]
+      properties:
+        id: { type: string }
+        overallRating: { type: integer, minimum: 1, maximum: 5 }
+        categoryRatings: { $ref: "#/components/schemas/ReviewCategoryRatings" }
+        content: { type: ["string", "null"], maxLength: 2000 }
+        createdAt: { type: string, format: date-time }
+        partnerResponse: { type: ["string", "null"], maxLength: 2000 }
+    PublicFacilityReviews:
+      type: object
+      additionalProperties: false
+      required: [facilityId, reviewCount, averageRating, reviews]
+      properties:
+        facilityId: { type: string }
+        reviewCount: { type: integer, minimum: 0 }
+        averageRating: { type: ["number", "null"], minimum: 1, maximum: 5 }
+        reviews: { type: array, items: { $ref: "#/components/schemas/PublicFacilityReview" } }
+    OperationsReviewReport:
+      type: object
+      additionalProperties: false
+      required: [id, reason, details, status, createdAt]
+      properties:
+        id: { type: string }
+        reason: { type: string, enum: [abusive, personal_information, misleading, other] }
+        details: { type: ["string", "null"], maxLength: 500 }
+        status: { type: string, enum: [open, reviewed] }
+        createdAt: { type: string, format: date-time }
+    OperationsFacilityReview:
+      type: object
+      additionalProperties: false
+      required: [id, facilityId, facility, city, partnerId, partnerName, reviewerUserId, reviewPrivilegeSuspended, overallRating, categoryRatings, content, status, moderationReason, createdAt, updatedAt, partnerResponse, reportCount, reports]
+      properties:
+        id: { type: string }
+        facilityId: { type: string }
+        facility: { type: string }
+        city: { type: string }
+        partnerId: { type: string }
+        partnerName: { type: string }
+        reviewerUserId: { type: ["string", "null"] }
+        reviewPrivilegeSuspended: { type: boolean }
+        overallRating: { type: integer, minimum: 1, maximum: 5 }
+        categoryRatings: { $ref: "#/components/schemas/ReviewCategoryRatings" }
+        content: { type: ["string", "null"], maxLength: 2000 }
+        status: { type: string, enum: [published, hidden, removed] }
+        moderationReason: { type: ["string", "null"], maxLength: 500 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        partnerResponse: { type: ["string", "null"], maxLength: 2000 }
+        reportCount: { type: integer, minimum: 0 }
+        reports: { type: array, items: { $ref: "#/components/schemas/OperationsReviewReport" } }
+    OperationsFacilityReviews:
+      type: object
+      additionalProperties: false
+      required: [role, reviews]
+      properties:
+        role: { type: string, enum: [admin, partner] }
+        reviews: { type: array, items: { $ref: "#/components/schemas/OperationsFacilityReview" } }
+    FacilityReviewModerationInput:
+      type: object
+      additionalProperties: false
+      required: [status, reason]
+      properties:
+        status: { type: string, enum: [published, hidden, removed] }
+        reason: { type: string, minLength: 5, maxLength: 500 }
+    FacilityReviewResponseInput:
+      type: object
+      additionalProperties: false
+      required: [response]
+      properties:
+        response: { type: string, minLength: 5, maxLength: 2000 }
+    FacilityReviewPrivilegeInput:
+      type: object
+      additionalProperties: false
+      required: [suspended, reason]
+      properties:
+        suspended: { type: boolean }
+        reason: { type: string, minLength: 5, maxLength: 500 }
+    FacilityReviewPrivilege:
+      type: object
+      additionalProperties: false
+      required: [userId, suspended, reason, suspendedAt]
+      properties:
+        userId: { type: string }
+        suspended: { type: boolean }
+        reason: { type: ["string", "null"], maxLength: 500 }
+        suspendedAt: { type: ["string", "null"], format: date-time }
