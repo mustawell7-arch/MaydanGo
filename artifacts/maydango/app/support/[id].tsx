@@ -5,9 +5,11 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  getGetMemberSupportTicketAttachmentsQueryKey,
   getGetMemberSupportTicketQueryKey,
   getGetMemberSupportTicketsQueryKey,
   useGetMemberSupportTicket,
+  useGetMemberSupportTicketAttachments,
   useReplyMemberSupportTicket,
 } from '@workspace/api-client-react';
 import { Text, TextInput, Pressable, Ionicons } from '@/components/Localized';
@@ -16,6 +18,8 @@ import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { errorCopy } from '@/lib/content';
 import { translate, type MessageKey } from '@/lib/i18n';
+import { SupportAttachmentPicker } from '@/components/SupportAttachmentPicker';
+import { uploadSupportAttachments, type SupportAttachmentDraft } from '@/lib/support-attachments';
 
 type Status = 'open' | 'in_progress' | 'waiting_member' | 'resolved' | 'closed';
 const statusKeys: Record<Status, MessageKey> = {
@@ -33,20 +37,40 @@ export default function SupportTicketScreen() {
   const id = String(params.id ?? '');
   const align = app.language === 'en' ? 'left' : 'right';
   const [message, setMessage] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState<SupportAttachmentDraft[]>([]);
+  const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const ticket = useGetMemberSupportTicket(id, { query: { enabled: !!id && app.signedIn } });
+  const attachments = useGetMemberSupportTicketAttachments(id, {
+    query: { enabled: !!id && app.signedIn, queryKey: getGetMemberSupportTicketAttachmentsQueryKey(id) },
+  });
   const reply = useReplyMemberSupportTicket();
 
   const sendReply = async () => {
     if (!message.trim()) return;
     setNotice(null);
     try {
-      await reply.mutateAsync({ id, data: { message: message.trim(), language: app.language } });
+      const updated = await reply.mutateAsync({ id, data: { message: message.trim(), language: app.language } });
+      let attachmentFailed = false;
+      const lastMessage = updated.messages[updated.messages.length - 1];
+      if (selectedFiles.length && lastMessage?.id) {
+        setAttachmentBusy(true);
+        try {
+          await uploadSupportAttachments(id, lastMessage.id, selectedFiles);
+        } catch {
+          attachmentFailed = true;
+        } finally {
+          setAttachmentBusy(false);
+        }
+      }
       setMessage('');
+      setSelectedFiles([]);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: getGetMemberSupportTicketQueryKey(id) }),
         queryClient.invalidateQueries({ queryKey: getGetMemberSupportTicketsQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: getGetMemberSupportTicketAttachmentsQueryKey(id) }),
       ]);
+      if (attachmentFailed) setNotice(t('supportAttachmentFailed'));
     } catch (error) {
       setNotice(errorCopy(error));
     }
@@ -87,6 +111,7 @@ export default function SupportTicketScreen() {
             <ScrollView contentContainerStyle={styles.messages} keyboardDismissMode="interactive">
               {ticket.data.messages.map(item => {
                 const mine = item.authorRole === 'member';
+                const messageAttachments = attachments.data?.filter(file => file.messageId === item.id) ?? [];
                 return (
                   <View key={item.id} style={[
                     styles.bubble,
@@ -98,27 +123,36 @@ export default function SupportTicketScreen() {
                     <Text style={[styles.caption, { color: mine ? colors.primaryForeground : colors.mutedForeground, opacity: 0.8 }]}>
                       {mine ? t('supportYou') : 'MaydanGO'} · {new Date(item.createdAt).toLocaleString()}
                     </Text>
+                    {messageAttachments.map(file => (
+                      <View key={file.id} style={styles.attachmentRow}>
+                        <Ionicons name="document-attach-outline" size={15} color={mine ? colors.primaryForeground : colors.primary} />
+                        <Text numberOfLines={1} style={[styles.attachmentName, { color: mine ? colors.primaryForeground : colors.foreground }]}>{file.fileName}</Text>
+                      </View>
+                    ))}
                   </View>
                 );
               })}
               {notice ? <Text accessibilityRole="alert" style={{ color: colors.destructive }}>{notice}</Text> : null}
             </ScrollView>
             <View style={[styles.composer, { borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
-              <TextInput
-                accessibilityLabel={t('supportReply')}
-                value={message}
-                onChangeText={setMessage}
-                placeholder={t('supportReply')}
-                placeholderTextColor={colors.mutedForeground}
-                multiline
-                maxLength={5000}
-                textAlignVertical="center"
-                style={[styles.input, { color: colors.foreground, borderColor: colors.input, backgroundColor: colors.card, textAlign: align }]}
-              />
-              <Pressable accessibilityRole="button" accessibilityLabel={t('supportSendReply')} disabled={!message.trim() || reply.isPending}
-                onPress={() => void sendReply()} style={[styles.send, { backgroundColor: colors.primary, opacity: !message.trim() || reply.isPending ? 0.55 : 1 }]}>
-                <Ionicons name="send" size={18} color={colors.primaryForeground} />
-              </Pressable>
+              <SupportAttachmentPicker language={app.language} files={selectedFiles} onChange={setSelectedFiles} onError={setNotice} />
+              <View style={styles.replyRow}>
+                <TextInput
+                  accessibilityLabel={t('supportReply')}
+                  value={message}
+                  onChangeText={setMessage}
+                  placeholder={t('supportReply')}
+                  placeholderTextColor={colors.mutedForeground}
+                  multiline
+                  maxLength={5000}
+                  textAlignVertical="center"
+                  style={[styles.input, { color: colors.foreground, borderColor: colors.input, backgroundColor: colors.card, textAlign: align }]}
+                />
+                <Pressable accessibilityRole="button" accessibilityLabel={t('supportSendReply')} disabled={!message.trim() || reply.isPending || attachmentBusy}
+                  onPress={() => void sendReply()} style={[styles.send, { backgroundColor: colors.primary, opacity: !message.trim() || reply.isPending || attachmentBusy ? 0.55 : 1 }]}>
+                  <Ionicons name="send" size={18} color={colors.primaryForeground} />
+                </Pressable>
+              </View>
             </View>
           </KeyboardAvoidingView>
         </>
@@ -137,7 +171,10 @@ const styles = StyleSheet.create({
   messages: { padding: 18, gap: 12, flexGrow: 1, justifyContent: 'flex-end' },
   bubble: { maxWidth: '88%', borderRadius: 17, padding: 13, gap: 6 },
   message: { fontSize: 14, lineHeight: 20 },
-  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, borderTopWidth: 1, paddingHorizontal: 16, paddingTop: 12 },
+  composer: { gap: 10, borderTopWidth: 1, paddingHorizontal: 16, paddingTop: 12 },
+  replyRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
+  attachmentRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 5 },
+  attachmentName: { flexShrink: 1, fontSize: 11 },
   input: { flex: 1, minHeight: 45, maxHeight: 120, borderWidth: 1, borderRadius: 16, paddingHorizontal: 13, paddingVertical: 10, fontSize: 14 },
   send: { minWidth: 44, height: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
 });

@@ -480,6 +480,16 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1support~1tickets~1{id}"
   /member/support/tickets/{id}/replies:
     $ref: "./operations.yaml#/paths/~1member~1support~1tickets~1{id}~1replies"
+  /member/support/tickets/{id}/attachments:
+    $ref: "./operations.yaml#/paths/~1member~1support~1tickets~1{id}~1attachments"
+  /member/support/tickets/{id}/attachments/upload-url:
+    $ref: "./operations.yaml#/paths/~1member~1support~1tickets~1{id}~1attachments~1upload-url"
+  /member/support/tickets/{id}/attachments/{attachmentId}/complete:
+    $ref: "./operations.yaml#/paths/~1member~1support~1tickets~1{id}~1attachments~1{attachmentId}~1complete"
+  /member/support/tickets/{id}/attachments/{attachmentId}:
+    $ref: "./operations.yaml#/paths/~1member~1support~1tickets~1{id}~1attachments~1{attachmentId}"
+  /member/support/tickets/{id}/attachments/{attachmentId}/download:
+    $ref: "./operations.yaml#/paths/~1member~1support~1tickets~1{id}~1attachments~1{attachmentId}~1download"
   /member/notifications/settings:
     $ref: "./operations.yaml#/paths/~1member~1notifications~1settings"
   /member/notifications/devices:
@@ -490,6 +500,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}"
   /support/staff/tickets/{id}/replies:
     $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1replies"
+  /support/staff/tickets/{id}/attachments:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1attachments"
+  /support/staff/tickets/{id}/attachments/{attachmentId}/download:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1attachments~1{attachmentId}~1download"
   /support/staff/agents:
     $ref: "./operations.yaml#/paths/~1support~1staff~1agents"
   /support/staff/agents/{userId}:

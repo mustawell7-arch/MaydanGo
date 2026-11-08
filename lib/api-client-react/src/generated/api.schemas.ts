@@ -752,6 +752,70 @@ export interface SupportMessage {
   createdAt: string;
 }
 
+export type SupportAttachmentContentType = typeof SupportAttachmentContentType[keyof typeof SupportAttachmentContentType];
+
+
+export const SupportAttachmentContentType = {
+  'application/pdf': 'application/pdf',
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export type SupportAttachmentUploaderRole = typeof SupportAttachmentUploaderRole[keyof typeof SupportAttachmentUploaderRole];
+
+
+export const SupportAttachmentUploaderRole = {
+  member: 'member',
+  support: 'support',
+  admin: 'admin',
+} as const;
+
+export interface SupportAttachment {
+  id: string;
+  messageId: string;
+  fileName: string;
+  contentType: SupportAttachmentContentType;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+  uploaderRole: SupportAttachmentUploaderRole;
+  createdAt: string;
+}
+
+export type SupportAttachmentUploadInputContentType = typeof SupportAttachmentUploadInputContentType[keyof typeof SupportAttachmentUploadInputContentType];
+
+
+export const SupportAttachmentUploadInputContentType = {
+  'application/pdf': 'application/pdf',
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export interface SupportAttachmentUploadInput {
+  messageId: string;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  fileName: string;
+  contentType: SupportAttachmentUploadInputContentType;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+}
+
+export interface SupportAttachmentUploadResponse {
+  id: string;
+  uploadURL: string;
+  objectPath: string;
+}
+
 export type SupportTicketDetail = SupportTicketSummary & {
   messages: SupportMessage[];
   events: SupportTicketEvent[];

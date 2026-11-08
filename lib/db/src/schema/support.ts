@@ -32,6 +32,23 @@ export const supportMessages = pgTable("support_messages", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("support_messages_ticket_created_idx").on(t.ticketId, t.createdAt)]);
 
+export const supportAttachments = pgTable("support_attachments", {
+  id: text("id").primaryKey(),
+  ticketId: text("ticket_id").notNull().references(() => supportTickets.id, { onDelete: "cascade" }),
+  messageId: text("message_id").notNull().references(() => supportMessages.id, { onDelete: "cascade" }),
+  uploaderId: text("uploader_id").notNull(),
+  uploaderRole: text("uploader_role").notNull().default("member"),
+  fileName: text("file_name").notNull(),
+  contentType: text("content_type").notNull(),
+  size: integer("size").notNull(),
+  objectPath: text("object_path").notNull().unique(),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  index("support_attachments_ticket_created_idx").on(t.ticketId, t.createdAt),
+  index("support_attachments_message_status_idx").on(t.messageId, t.status),
+]);
+
 export const supportTicketEvents = pgTable("support_ticket_events", {
   id: text("id").primaryKey(),
   ticketId: text("ticket_id").notNull().references(() => supportTickets.id, { onDelete: "cascade" }),

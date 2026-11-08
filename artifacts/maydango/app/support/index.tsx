@@ -6,6 +6,7 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import {
+  getGetMemberSupportTicketAttachmentsQueryKey,
   getGetMemberNotificationSettingsQueryKey,
   getGetMemberSupportTicketsQueryKey,
   useCreateMemberSupportTicket,
@@ -22,6 +23,8 @@ import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { errorCopy } from '@/lib/content';
 import { translate, type MessageKey } from '@/lib/i18n';
+import { SupportAttachmentPicker } from '@/components/SupportAttachmentPicker';
+import { uploadSupportAttachments, type SupportAttachmentDraft } from '@/lib/support-attachments';
 
 type Category = 'booking' | 'account' | 'access' | 'safety' | 'other';
 type Status = 'open' | 'in_progress' | 'waiting_member' | 'resolved' | 'closed';
@@ -43,6 +46,8 @@ export default function SupportCenterScreen() {
   const [message, setMessage] = useState('');
   const [category, setCategory] = useState<Category>('other');
   const [urgentSafety, setUrgentSafety] = useState(false);
+  const [attachments, setAttachments] = useState<SupportAttachmentDraft[]>([]);
+  const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [permissionBlocked, setPermissionBlocked] = useState(false);
   const tickets = useGetMemberSupportTickets({ query: { enabled: app.signedIn } });
@@ -68,10 +73,27 @@ export default function SupportCenterScreen() {
       const ticket = await createTicket.mutateAsync({
         data: { subject: subject.trim(), category, urgent: category === 'safety' && urgentSafety, message: message.trim(), language: app.language },
       });
+      let attachmentFailed = false;
+      if (attachments.length && ticket.messages[0]?.id) {
+        setAttachmentBusy(true);
+        try {
+          await uploadSupportAttachments(ticket.id, ticket.messages[0].id, attachments);
+          await queryClient.invalidateQueries({ queryKey: getGetMemberSupportTicketAttachmentsQueryKey(ticket.id) });
+        } catch {
+          attachmentFailed = true;
+        } finally {
+          setAttachmentBusy(false);
+        }
+      }
       await queryClient.invalidateQueries({ queryKey: getGetMemberSupportTicketsQueryKey() });
       setSubject('');
       setMessage('');
       setUrgentSafety(false);
+      setAttachments([]);
+      if (attachmentFailed) {
+        setNotice(t('supportAttachmentFailed'));
+        return;
+      }
       setNotice(t('supportTicketCreated'));
       router.push({ pathname: '/support/[id]', params: { id: ticket.id } });
     } catch (error) {
@@ -227,7 +249,8 @@ export default function SupportCenterScreen() {
                 />
                 <Text style={[styles.caption, { color: colors.mutedForeground, textAlign: align }]}>{message.length}/5000</Text>
               </View>
-              <ActionButton colors={colors} title={t('submitSupportTicket')} onPress={() => void submitTicket()} busy={createTicket.isPending} icon="arrow-up-outline" />
+              <SupportAttachmentPicker language={app.language} files={attachments} onChange={setAttachments} onError={setNotice} />
+              <ActionButton colors={colors} title={t('submitSupportTicket')} onPress={() => void submitTicket()} busy={createTicket.isPending || attachmentBusy} icon="arrow-up-outline" />
               {createTicket.error ? <Text accessibilityRole="alert" style={{ color: colors.destructive }}>{errorCopy(createTicket.error)}</Text> : null}
             </View>
 

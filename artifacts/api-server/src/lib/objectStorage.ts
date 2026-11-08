@@ -64,6 +64,16 @@ export class ObjectStorageService {
     return { uploadURL, documentPath: `/objects/${objectName}` };
   }
 
+  async createSupportAttachmentUpload(ticketId: string, attachmentId: string) {
+    if (!/^[0-9a-f-]{36}$/i.test(ticketId) || !/^[0-9a-f-]{36}$/i.test(attachmentId)) {
+      throw new Error("Invalid support attachment identifier.");
+    }
+    const objectName = `support-attachments/${ticketId}/${attachmentId}`;
+    const { bucketName, objectName: bucketObjectName } = parseObjectPath(`${this.privateDir()}/${objectName}`);
+    const uploadURL = await signUpload(bucketName, bucketObjectName);
+    return { uploadURL, objectPath: `/objects/${objectName}` };
+  }
+
   async getPrivateFile(objectPath: string): Promise<File> {
     if (!objectPath.startsWith("/objects/")) throw new ObjectNotFoundError();
     const entityPath = `${this.privateDir()}/${objectPath.slice("/objects/".length)}`;
@@ -72,5 +82,12 @@ export class ObjectStorageService {
     const [exists] = await file.exists();
     if (!exists) throw new ObjectNotFoundError();
     return file;
+  }
+
+  async deletePrivateFile(objectPath: string): Promise<void> {
+    if (!objectPath.startsWith("/objects/")) throw new ObjectNotFoundError();
+    const entityPath = `${this.privateDir()}/${objectPath.slice("/objects/".length)}`;
+    const { bucketName, objectName } = parseObjectPath(entityPath);
+    await objectStorageClient.bucket(bucketName).file(objectName).delete({ ignoreNotFound: true });
   }
 }

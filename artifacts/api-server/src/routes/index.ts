@@ -5,6 +5,7 @@ import operationsRouter from "./operations";
 import attendanceRouter from "./attendance";
 import publicRouter from "./public";
 import supportRouter from "./support";
+import { memberSupportAttachmentRouter, staffSupportAttachmentRouter } from "./support-attachments";
 import qualityControlRouter from "./quality-control";
 import publicReviewsRouter from "./public-reviews";
 import operationsReviewsRouter from "./operations-reviews";
@@ -29,6 +30,8 @@ router.use("/operations", operationsMarketingRouter);
 router.use("/operations", operationsAnalyticsRouter);
 router.use("/operations", operationsRouter);
 router.use("/attendance", attendanceRouter);
+router.use("/member", memberSupportAttachmentRouter);
+router.use("/support/staff", staffSupportAttachmentRouter);
 router.use("/support/staff", supportRouter);
 
 router.use(healthRouter);

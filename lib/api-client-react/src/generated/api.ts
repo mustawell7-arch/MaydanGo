@@ -159,6 +159,9 @@ import type {
   SupportAgent,
   SupportAgentInput,
   SupportAgentUrgentAlertInput,
+  SupportAttachment,
+  SupportAttachmentUploadInput,
+  SupportAttachmentUploadResponse,
   SupportDeviceChange,
   SupportDeviceChangeReview,
   SupportReplyInput,
@@ -8949,6 +8952,427 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getReplyMemberSupportTicketMutationOptions(options), queryClient);
     }
 
+export const getGetMemberSupportTicketAttachmentsUrl = (id: string,) => {
+
+
+
+
+  return `/api/member/support/tickets/${id}/attachments`
+}
+
+export const getMemberSupportTicketAttachments = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<SupportAttachment[]> => {
+
+  return customFetch<SupportAttachment[]>(getGetMemberSupportTicketAttachmentsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberSupportTicketAttachmentsQueryKey = (id: string,) => {
+    return [
+    `/api/member/support/tickets/${id}/attachments`
+    ] as const;
+    }
+
+
+export const getGetMemberSupportTicketAttachmentsQueryOptions = <TData = Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberSupportTicketAttachmentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>> = ({ signal }) => getMemberSupportTicketAttachments(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberSupportTicketAttachmentsQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>>
+export type GetMemberSupportTicketAttachmentsQueryError = ErrorType<unknown>
+
+
+export function useGetMemberSupportTicketAttachments<TData = Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberSupportTicketAttachments<TData = Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberSupportTicketAttachments<TData = Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberSupportTicketAttachments<TData = Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberSupportTicketAttachments>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberSupportTicketAttachmentsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRequestMemberSupportAttachmentUploadUrlUrl = (id: string,) => {
+
+
+
+
+  return `/api/member/support/tickets/${id}/attachments/upload-url`
+}
+
+export const requestMemberSupportAttachmentUploadUrl = async (id: string,
+    supportAttachmentUploadInput: SupportAttachmentUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportAttachmentUploadResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportAttachmentUploadResponse>(getRequestMemberSupportAttachmentUploadUrlUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportAttachmentUploadInput)
+  }
+);}
+
+
+
+
+
+export const getRequestMemberSupportAttachmentUploadUrlMutationKey = () => ['requestMemberSupportAttachmentUploadUrl'] as const;
+
+export const getRequestMemberSupportAttachmentUploadUrlMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestMemberSupportAttachmentUploadUrl>>, TError,RequestMemberSupportAttachmentUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestMemberSupportAttachmentUploadUrl>>, TError,RequestMemberSupportAttachmentUploadUrlMutationVariables, TContext> => {
+
+const mutationKey = getRequestMemberSupportAttachmentUploadUrlMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestMemberSupportAttachmentUploadUrl>>, RequestMemberSupportAttachmentUploadUrlMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  requestMemberSupportAttachmentUploadUrl(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestMemberSupportAttachmentUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestMemberSupportAttachmentUploadUrl>>>
+    export type RequestMemberSupportAttachmentUploadUrlMutationBody = BodyType<SupportAttachmentUploadInput>
+    export type RequestMemberSupportAttachmentUploadUrlMutationError = ErrorType<unknown>
+    export type RequestMemberSupportAttachmentUploadUrlMutationVariables = {id: string;data: BodyType<SupportAttachmentUploadInput>}
+
+    export const useRequestMemberSupportAttachmentUploadUrl = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestMemberSupportAttachmentUploadUrl>>, TError,RequestMemberSupportAttachmentUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof requestMemberSupportAttachmentUploadUrl>>,
+        TError,
+        RequestMemberSupportAttachmentUploadUrlMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestMemberSupportAttachmentUploadUrlMutationOptions(options), queryClient);
+    }
+
+export const getCompleteMemberSupportAttachmentUrl = (id: string,
+    attachmentId: string,) => {
+
+
+
+
+  return `/api/member/support/tickets/${id}/attachments/${attachmentId}/complete`
+}
+
+export const completeMemberSupportAttachment = async (id: string,
+    attachmentId: string, options?: Parameters<typeof customFetch>[1]): Promise<SupportAttachment> => {
+
+  return customFetch<SupportAttachment>(getCompleteMemberSupportAttachmentUrl(id,attachmentId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCompleteMemberSupportAttachmentMutationKey = () => ['completeMemberSupportAttachment'] as const;
+
+export const getCompleteMemberSupportAttachmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeMemberSupportAttachment>>, TError,CompleteMemberSupportAttachmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeMemberSupportAttachment>>, TError,CompleteMemberSupportAttachmentMutationVariables, TContext> => {
+
+const mutationKey = getCompleteMemberSupportAttachmentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeMemberSupportAttachment>>, CompleteMemberSupportAttachmentMutationVariables> = (props) => {
+          const {id,attachmentId} = props ?? {};
+
+          return  completeMemberSupportAttachment(id,attachmentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteMemberSupportAttachmentMutationResult = NonNullable<Awaited<ReturnType<typeof completeMemberSupportAttachment>>>
+
+    export type CompleteMemberSupportAttachmentMutationError = ErrorType<unknown>
+    export type CompleteMemberSupportAttachmentMutationVariables = {id: string;attachmentId: string}
+
+    export const useCompleteMemberSupportAttachment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeMemberSupportAttachment>>, TError,CompleteMemberSupportAttachmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof completeMemberSupportAttachment>>,
+        TError,
+        CompleteMemberSupportAttachmentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompleteMemberSupportAttachmentMutationOptions(options), queryClient);
+    }
+
+export const getDeletePendingMemberSupportAttachmentUrl = (id: string,
+    attachmentId: string,) => {
+
+
+
+
+  return `/api/member/support/tickets/${id}/attachments/${attachmentId}`
+}
+
+export const deletePendingMemberSupportAttachment = async (id: string,
+    attachmentId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeletePendingMemberSupportAttachmentUrl(id,attachmentId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeletePendingMemberSupportAttachmentMutationKey = () => ['deletePendingMemberSupportAttachment'] as const;
+
+export const getDeletePendingMemberSupportAttachmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePendingMemberSupportAttachment>>, TError,DeletePendingMemberSupportAttachmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deletePendingMemberSupportAttachment>>, TError,DeletePendingMemberSupportAttachmentMutationVariables, TContext> => {
+
+const mutationKey = getDeletePendingMemberSupportAttachmentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePendingMemberSupportAttachment>>, DeletePendingMemberSupportAttachmentMutationVariables> = (props) => {
+          const {id,attachmentId} = props ?? {};
+
+          return  deletePendingMemberSupportAttachment(id,attachmentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeletePendingMemberSupportAttachmentMutationResult = NonNullable<Awaited<ReturnType<typeof deletePendingMemberSupportAttachment>>>
+
+    export type DeletePendingMemberSupportAttachmentMutationError = ErrorType<unknown>
+    export type DeletePendingMemberSupportAttachmentMutationVariables = {id: string;attachmentId: string}
+
+    export const useDeletePendingMemberSupportAttachment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePendingMemberSupportAttachment>>, TError,DeletePendingMemberSupportAttachmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deletePendingMemberSupportAttachment>>,
+        TError,
+        DeletePendingMemberSupportAttachmentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeletePendingMemberSupportAttachmentMutationOptions(options), queryClient);
+    }
+
+export const getDownloadMemberSupportAttachmentUrl = (id: string,
+    attachmentId: string,) => {
+
+
+
+
+  return `/api/member/support/tickets/${id}/attachments/${attachmentId}/download`
+}
+
+export const downloadMemberSupportAttachment = async (id: string,
+    attachmentId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadMemberSupportAttachmentUrl(id,attachmentId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadMemberSupportAttachmentQueryKey = (id: string,
+    attachmentId: string,) => {
+    return [
+    `/api/member/support/tickets/${id}/attachments/${attachmentId}/download`
+    ] as const;
+    }
+
+
+export const getDownloadMemberSupportAttachmentQueryOptions = <TData = Awaited<ReturnType<typeof downloadMemberSupportAttachment>>, TError = ErrorType<unknown>>(id: string,
+    attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMemberSupportAttachment>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadMemberSupportAttachmentQueryKey(id,attachmentId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadMemberSupportAttachment>>> = ({ signal }) => downloadMemberSupportAttachment(id,attachmentId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && attachmentId !== null && attachmentId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadMemberSupportAttachment>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DownloadMemberSupportAttachmentQueryResult = NonNullable<Awaited<ReturnType<typeof downloadMemberSupportAttachment>>>
+export type DownloadMemberSupportAttachmentQueryError = ErrorType<unknown>
+
+
+export function useDownloadMemberSupportAttachment<TData = Awaited<ReturnType<typeof downloadMemberSupportAttachment>>, TError = ErrorType<unknown>>(
+ id: string,
+    attachmentId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMemberSupportAttachment>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadMemberSupportAttachment>>,
+          TError,
+          Awaited<ReturnType<typeof downloadMemberSupportAttachment>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadMemberSupportAttachment<TData = Awaited<ReturnType<typeof downloadMemberSupportAttachment>>, TError = ErrorType<unknown>>(
+ id: string,
+    attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMemberSupportAttachment>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadMemberSupportAttachment>>,
+          TError,
+          Awaited<ReturnType<typeof downloadMemberSupportAttachment>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadMemberSupportAttachment<TData = Awaited<ReturnType<typeof downloadMemberSupportAttachment>>, TError = ErrorType<unknown>>(
+ id: string,
+    attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMemberSupportAttachment>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useDownloadMemberSupportAttachment<TData = Awaited<ReturnType<typeof downloadMemberSupportAttachment>>, TError = ErrorType<unknown>>(
+ id: string,
+    attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMemberSupportAttachment>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDownloadMemberSupportAttachmentQueryOptions(id,attachmentId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetMemberNotificationSettingsUrl = () => {
 
 
@@ -9652,6 +10076,204 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getReplySupportStaffTicketMutationOptions(options), queryClient);
     }
+
+export const getGetSupportStaffTicketAttachmentsUrl = (id: string,) => {
+
+
+
+
+  return `/api/support/staff/tickets/${id}/attachments`
+}
+
+export const getSupportStaffTicketAttachments = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<SupportAttachment[]> => {
+
+  return customFetch<SupportAttachment[]>(getGetSupportStaffTicketAttachmentsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportStaffTicketAttachmentsQueryKey = (id: string,) => {
+    return [
+    `/api/support/staff/tickets/${id}/attachments`
+    ] as const;
+    }
+
+
+export const getGetSupportStaffTicketAttachmentsQueryOptions = <TData = Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportStaffTicketAttachmentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>> = ({ signal }) => getSupportStaffTicketAttachments(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSupportStaffTicketAttachmentsQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>>
+export type GetSupportStaffTicketAttachmentsQueryError = ErrorType<unknown>
+
+
+export function useGetSupportStaffTicketAttachments<TData = Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportStaffTicketAttachments<TData = Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportStaffTicketAttachments<TData = Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSupportStaffTicketAttachments<TData = Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicketAttachments>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSupportStaffTicketAttachmentsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDownloadSupportStaffAttachmentUrl = (id: string,
+    attachmentId: string,) => {
+
+
+
+
+  return `/api/support/staff/tickets/${id}/attachments/${attachmentId}/download`
+}
+
+export const downloadSupportStaffAttachment = async (id: string,
+    attachmentId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadSupportStaffAttachmentUrl(id,attachmentId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadSupportStaffAttachmentQueryKey = (id: string,
+    attachmentId: string,) => {
+    return [
+    `/api/support/staff/tickets/${id}/attachments/${attachmentId}/download`
+    ] as const;
+    }
+
+
+export const getDownloadSupportStaffAttachmentQueryOptions = <TData = Awaited<ReturnType<typeof downloadSupportStaffAttachment>>, TError = ErrorType<unknown>>(id: string,
+    attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadSupportStaffAttachment>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadSupportStaffAttachmentQueryKey(id,attachmentId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadSupportStaffAttachment>>> = ({ signal }) => downloadSupportStaffAttachment(id,attachmentId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && attachmentId !== null && attachmentId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadSupportStaffAttachment>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DownloadSupportStaffAttachmentQueryResult = NonNullable<Awaited<ReturnType<typeof downloadSupportStaffAttachment>>>
+export type DownloadSupportStaffAttachmentQueryError = ErrorType<unknown>
+
+
+export function useDownloadSupportStaffAttachment<TData = Awaited<ReturnType<typeof downloadSupportStaffAttachment>>, TError = ErrorType<unknown>>(
+ id: string,
+    attachmentId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadSupportStaffAttachment>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadSupportStaffAttachment>>,
+          TError,
+          Awaited<ReturnType<typeof downloadSupportStaffAttachment>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadSupportStaffAttachment<TData = Awaited<ReturnType<typeof downloadSupportStaffAttachment>>, TError = ErrorType<unknown>>(
+ id: string,
+    attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadSupportStaffAttachment>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadSupportStaffAttachment>>,
+          TError,
+          Awaited<ReturnType<typeof downloadSupportStaffAttachment>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadSupportStaffAttachment<TData = Awaited<ReturnType<typeof downloadSupportStaffAttachment>>, TError = ErrorType<unknown>>(
+ id: string,
+    attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadSupportStaffAttachment>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useDownloadSupportStaffAttachment<TData = Awaited<ReturnType<typeof downloadSupportStaffAttachment>>, TError = ErrorType<unknown>>(
+ id: string,
+    attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadSupportStaffAttachment>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDownloadSupportStaffAttachmentQueryOptions(id,attachmentId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetSupportStaffAgentsUrl = () => {
 

@@ -15,6 +15,8 @@ import {
   useReplyInstructorSupportTicket,
   useSubmitInstructorAccessRequest,
 } from '@workspace/api-client-react';
+import { getGetMemberSupportTicketAttachmentsQueryKey, useGetMemberSupportTicketAttachments } from '@workspace/api-client-react';
+import { downloadMemberSupportFile, supportAttachmentType, uploadMemberSupportAttachments } from '@/lib/support-attachments';
 import type { PortalLanguage } from '@/pages/partner-operations';
 import { AlertCircle, ArrowUpRight, CalendarDays, Check, Clock3, Dumbbell, LockKeyhole, MessageCircle, Plus, Send, ShieldCheck } from 'lucide-react';
 import { Link } from 'wouter';
@@ -55,6 +57,9 @@ const copy = {
     supportValidation: 'Enter a subject of at least 4 characters and a message of at least 10 characters.',
     supportReplyValidation: 'Write a reply before sending.',
     supportFailure: 'The message could not be sent. Please try again.',
+    supportAddAttachment: 'Add photos or files', supportAttachmentHint: 'Up to 3 files, 10 MB each. PDF, JPEG, PNG, or WebP.',
+    supportAttachmentLimit: 'Attach no more than 3 files to one message.', supportAttachmentFailed: 'Your message was sent, but a file did not upload. Add it again in a reply.',
+    supportRemoveAttachment: 'Remove file', supportDownloadAttachment: 'Download attachment', supportAttachmentDownloadFailed: 'The attachment could not be downloaded.',
     loading: 'Loading your instructor workspace…', errorTitle: 'We could not load your access details.',
     retry: 'Try again', signIn: 'Sign in to continue', signedOut: 'You need to be signed in to view instructor access.',
     requestRequired: 'Please write at least 10 characters about your work.', genericFailure: 'The request could not be completed. Please try again.',
@@ -109,6 +114,9 @@ const copy = {
     supportValidation: 'أدخل موضوعاً من 4 أحرف على الأقل ورسالة من 10 أحرف على الأقل.',
     supportReplyValidation: 'اكتب رداً قبل الإرسال.',
     supportFailure: 'تعذر إرسال الرسالة. حاول مرة أخرى.',
+    supportAddAttachment: 'إضافة صور أو ملفات', supportAttachmentHint: 'حتى 3 ملفات، 10 ميغابايت لكل ملف. PDF أو JPEG أو PNG أو WebP.',
+    supportAttachmentLimit: 'يمكن إرفاق 3 ملفات كحد أقصى بالرسالة الواحدة.', supportAttachmentFailed: 'أُرسلت رسالتك، لكن تعذر رفع أحد الملفات. أرفقه مرة أخرى في رد.',
+    supportRemoveAttachment: 'إزالة الملف', supportDownloadAttachment: 'تنزيل المرفق', supportAttachmentDownloadFailed: 'تعذر تنزيل المرفق.',
     loading: 'جارٍ تحميل مساحة المدرّب…', errorTitle: 'تعذر تحميل تفاصيل صلاحيتك.',
     retry: 'أعد المحاولة', signIn: 'سجّل الدخول للمتابعة', signedOut: 'يجب تسجيل الدخول لعرض صلاحية المدرّب.',
     requestRequired: 'يرجى كتابة 10 أحرف على الأقل عن عملك.', genericFailure: 'تعذر إكمال الطلب. حاول مرة أخرى.',
@@ -163,6 +171,9 @@ const copy = {
     supportValidation: 'بابەتێک بە لانیکەم ٤ پیت و پەیامێک بە لانیکەم ١٠ پیت بنووسە.',
     supportReplyValidation: 'پێش ناردن وەڵامێک بنووسە.',
     supportFailure: 'نەتوانرا پەیامەکە بنێردرێت. تکایە دووبارە هەوڵ بدەوە.',
+    supportAddAttachment: 'زیادکردنی وێنە یان فایل', supportAttachmentHint: 'تا ٣ فایل، هەر یەکە ١٠ مێگابایت. PDF، JPEG، PNG یان WebP.',
+    supportAttachmentLimit: 'تەنها تا ٣ فایل لە پەیامێکدا دەتوانرێت دابنرێت.', supportAttachmentFailed: 'پەیامەکەت نێردرا، بەڵام فایلێک بار نەکرا. دەتوانیت لە وەڵامێکدا دووبارە بیخە ناوەوە.',
+    supportRemoveAttachment: 'سڕینەوەی فایل', supportDownloadAttachment: 'داگرتنی هاوپێچ', supportAttachmentDownloadFailed: 'داگرتنی هاوپێچ سەرکەوتوو نەبوو.',
     loading: 'ناوچەی کاری ڕاهێنەر بار دەکرێت…', errorTitle: 'نەتوانرا وردەکاری دەسەڵاتەکەت بار بکرێت.',
     retry: 'هەوڵدانەوە', signIn: 'بۆ بەردەوامبوون بچۆ ژوورەوە', signedOut: 'بۆ بینینی دەسەڵاتی ڕاهێنەر دەبێت بچیتە ژوورەوە.',
     requestRequired: 'تکایە لانیکەم ١٠ پیت دەربارەی کارت بنووسە.', genericFailure: 'تەواوکردنی داواکە نەکرا. تکایە دووبارە هەوڵ بدەوە.',
@@ -285,6 +296,10 @@ function InstructorSupportPanel({ lang }: { lang: Language }) {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [reply, setReply] = useState('');
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
+  const [attachmentsBusy, setAttachmentsBusy] = useState(false);
+  const [downloadingAttachmentId, setDownloadingAttachmentId] = useState('');
   const [notice, setNotice] = useState('');
   const [formError, setFormError] = useState('');
   const tickets = useGetInstructorSupportTickets({
@@ -293,16 +308,21 @@ function InstructorSupportPanel({ lang }: { lang: Language }) {
   const conversation = useGetInstructorSupportTicket(selectedId, {
     query: { enabled: !!selectedId, queryKey: getGetInstructorSupportTicketQueryKey(selectedId), retry: false },
   });
+  const ticketAttachments = useGetMemberSupportTicketAttachments(selectedId, {
+    query: { enabled: !!selectedId, queryKey: getGetMemberSupportTicketAttachmentsQueryKey(selectedId), retry: false },
+  });
   const createTicket = useCreateInstructorSupportTicket();
   const replyTicket = useReplyInstructorSupportTicket();
 
   const startNew = () => {
     setIsCreating(true);
     setSelectedId('');
+    setAttachmentFiles([]);
+    setReplyFiles([]);
     setNotice('');
     setFormError('');
   };
-  const createConversation = (event: FormEvent<HTMLFormElement>) => {
+  const createConversation = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError('');
     setNotice('');
@@ -310,22 +330,34 @@ function InstructorSupportPanel({ lang }: { lang: Language }) {
       setFormError(t(lang, 'supportValidation'));
       return;
     }
-    createTicket.mutate({
-      data: { subject: subject.trim(), message: message.trim(), language: lang },
-    }, {
-      onSuccess: created => {
-        setSubject('');
-        setMessage('');
-        setIsCreating(false);
-        setSelectedId(created.id);
-        setNotice(t(lang, 'supportCreated'));
-        void queryClient.invalidateQueries({ queryKey: getGetInstructorSupportTicketsQueryKey() });
-        void queryClient.invalidateQueries({ queryKey: getGetInstructorSupportTicketQueryKey(created.id) });
-      },
-      onError: () => setFormError(t(lang, 'supportFailure')),
-    });
+    setAttachmentsBusy(true);
+    try {
+      const created = await createTicket.mutateAsync({
+        data: { subject: subject.trim(), message: message.trim(), language: lang },
+      });
+      let attachmentFailed = false;
+      if (attachmentFiles.length && created.messages[0]?.id) {
+        try { await uploadMemberSupportAttachments(created.id, created.messages[0].id, attachmentFiles); }
+        catch { attachmentFailed = true; }
+      }
+      setSubject('');
+      setMessage('');
+      setAttachmentFiles([]);
+      setIsCreating(false);
+      setSelectedId(created.id);
+      setNotice(t(lang, attachmentFailed ? 'supportAttachmentFailed' : 'supportCreated'));
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetInstructorSupportTicketsQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: getGetInstructorSupportTicketQueryKey(created.id) }),
+        queryClient.invalidateQueries({ queryKey: getGetMemberSupportTicketAttachmentsQueryKey(created.id) }),
+      ]);
+    } catch {
+      setFormError(t(lang, 'supportFailure'));
+    } finally {
+      setAttachmentsBusy(false);
+    }
   };
-  const sendReply = (event: FormEvent<HTMLFormElement>) => {
+  const sendReply = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError('');
     setNotice('');
@@ -333,18 +365,38 @@ function InstructorSupportPanel({ lang }: { lang: Language }) {
       setFormError(t(lang, 'supportReplyValidation'));
       return;
     }
-    replyTicket.mutate({
-      id: selectedId,
-      data: { message: reply.trim(), language: lang },
-    }, {
-      onSuccess: updated => {
-        setReply('');
-        setNotice(t(lang, 'supportReplied'));
-        void queryClient.invalidateQueries({ queryKey: getGetInstructorSupportTicketsQueryKey() });
-        void queryClient.invalidateQueries({ queryKey: getGetInstructorSupportTicketQueryKey(updated.id) });
-      },
-      onError: () => setFormError(t(lang, 'supportFailure')),
-    });
+    setAttachmentsBusy(true);
+    try {
+      const updated = await replyTicket.mutateAsync({
+        id: selectedId,
+        data: { message: reply.trim(), language: lang },
+      });
+      const lastMessage = updated.messages[updated.messages.length - 1];
+      let attachmentFailed = false;
+      if (replyFiles.length && lastMessage?.id) {
+        try { await uploadMemberSupportAttachments(updated.id, lastMessage.id, replyFiles); }
+        catch { attachmentFailed = true; }
+      }
+      setReply('');
+      setReplyFiles([]);
+      setNotice(t(lang, attachmentFailed ? 'supportAttachmentFailed' : 'supportReplied'));
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetInstructorSupportTicketsQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: getGetInstructorSupportTicketQueryKey(updated.id) }),
+        queryClient.invalidateQueries({ queryKey: getGetMemberSupportTicketAttachmentsQueryKey(updated.id) }),
+      ]);
+    } catch {
+      setFormError(t(lang, 'supportFailure'));
+    } finally {
+      setAttachmentsBusy(false);
+    }
+  };
+  const downloadAttachment = async (attachmentId: string, fileName: string) => {
+    if (!selectedId) return;
+    setDownloadingAttachmentId(attachmentId);
+    try { await downloadMemberSupportFile(selectedId, attachmentId, fileName); }
+    catch { setFormError(t(lang, 'supportAttachmentDownloadFailed')); }
+    finally { setDownloadingAttachmentId(''); }
   };
   const statusCopy = (status: string) => {
     if (status === 'in_progress') return t(lang, 'supportStatusProgress');
@@ -383,7 +435,7 @@ function InstructorSupportPanel({ lang }: { lang: Language }) {
               {!tickets.data?.length && !isCreating ? (
                 <div data-testid="empty-instructor-support" className="rounded-2xl border border-dashed border-[#d8d2c4] p-4 text-xs leading-5 text-[#718077]">{t(lang, 'supportEmpty')}</div>
               ) : tickets.data?.map(ticket => (
-                <button key={ticket.id} data-testid={`button-instructor-support-ticket-${ticket.id}`} onClick={() => { setSelectedId(ticket.id); setIsCreating(false); setFormError(''); setNotice(''); }} aria-pressed={selectedId === ticket.id && !isCreating} className={`w-full rounded-xl border p-3 text-start ${selectedId === ticket.id && !isCreating ? 'border-[#174d43] bg-[#edf3ec]' : 'border-[#e3dfd3] bg-[#faf8f0] hover:border-[#b9c8bc]'}`}>
+                <button key={ticket.id} data-testid={`button-instructor-support-ticket-${ticket.id}`} onClick={() => { setSelectedId(ticket.id); setReplyFiles([]); setIsCreating(false); setFormError(''); setNotice(''); }} aria-pressed={selectedId === ticket.id && !isCreating} className={`w-full rounded-xl border p-3 text-start ${selectedId === ticket.id && !isCreating ? 'border-[#174d43] bg-[#edf3ec]' : 'border-[#e3dfd3] bg-[#faf8f0] hover:border-[#b9c8bc]'}`}>
                   <span className="flex items-center justify-between gap-2">
                     <span className="truncate text-xs font-bold" data-testid={`text-instructor-support-subject-${ticket.id}`}>{ticket.subject}</span>
                     <span data-testid={`status-instructor-support-ticket-${ticket.id}`} className="shrink-0 rounded-full bg-[#e9e5d7] px-2 py-1 text-[9px] font-bold text-[#536b61]">{statusCopy(ticket.status)}</span>
@@ -401,8 +453,23 @@ function InstructorSupportPanel({ lang }: { lang: Language }) {
                   <input id="instructor-support-subject" data-testid="input-instructor-support-subject" value={subject} onChange={event => setSubject(event.target.value)} minLength={4} maxLength={100} required placeholder={t(lang, 'supportSubjectHint')} className="w-full rounded-xl border border-[#d8d2c4] bg-[#fffdf7] px-3 py-2.5 text-sm" />
                   <label htmlFor="instructor-support-message" className="mb-1.5 mt-3 block text-xs font-bold">{t(lang, 'supportMessage')}</label>
                   <textarea id="instructor-support-message" data-testid="input-instructor-support-message" value={message} onChange={event => setMessage(event.target.value)} minLength={10} maxLength={5000} required rows={4} placeholder={t(lang, 'supportMessageHint')} className="w-full resize-y rounded-xl border border-[#d8d2c4] bg-[#fffdf7] px-3 py-2.5 text-sm leading-6" />
-                  <button data-testid="button-create-instructor-support" type="submit" disabled={createTicket.isPending} className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#174d43] px-4 py-2.5 text-xs font-bold text-[#fff9e9] disabled:opacity-60">
-                    <Send size={13} aria-hidden="true" />{createTicket.isPending ? t(lang, 'supportSending') : t(lang, 'supportStart')}
+                  <label className="mb-1.5 mt-3 block text-xs font-bold">{t(lang, 'supportAddAttachment')}
+                    <input type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp" data-testid="input-instructor-support-attachments"
+                      onChange={event => {
+                        const chosen = Array.from(event.currentTarget.files ?? []);
+                        event.currentTarget.value = '';
+                        if (attachmentFiles.length + chosen.length > 3) { setFormError(t(lang, 'supportAttachmentLimit')); return; }
+                        if (chosen.some(file => !supportAttachmentType(file) || file.size < 1 || file.size > 10 * 1024 * 1024)) { setFormError(t(lang, 'supportAttachmentHint')); return; }
+                        setAttachmentFiles(current => [...current, ...chosen]);
+                      }} className="mt-1.5 w-full rounded-xl border border-[#d8d2c4] bg-[#fffdf7] p-2 text-xs file:mr-2 file:rounded-full file:border-0 file:bg-[#e9e5d7] file:px-3 file:py-1.5 file:text-xs file:font-bold" />
+                  </label>
+                  <p className="text-[10px] text-[#718077]">{t(lang, 'supportAttachmentHint')}</p>
+                  {attachmentFiles.map((file, index) => <div key={`${file.name}-${index}`} className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-[#e9e5d7] px-3 py-2 text-xs">
+                    <span className="truncate">{file.name}</span>
+                    <button type="button" aria-label={`${t(lang, 'supportRemoveAttachment')}: ${file.name}`} onClick={() => setAttachmentFiles(current => current.filter((_, itemIndex) => itemIndex !== index))} className="shrink-0 font-bold text-[#8f3f32]">{t(lang, 'supportRemoveAttachment')}</button>
+                  </div>)}
+                  <button data-testid="button-create-instructor-support" type="submit" disabled={createTicket.isPending || attachmentsBusy} className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#174d43] px-4 py-2.5 text-xs font-bold text-[#fff9e9] disabled:opacity-60">
+                    <Send size={13} aria-hidden="true" />{createTicket.isPending || attachmentsBusy ? t(lang, 'supportSending') : t(lang, 'supportStart')}
                   </button>
                 </form>
               ) : selectedId ? (
@@ -417,16 +484,36 @@ function InstructorSupportPanel({ lang }: { lang: Language }) {
                     <div className="max-h-80 space-y-3 overflow-y-auto py-4">
                       {conversation.data.messages.map(messageItem => {
                         const isTeam = messageItem.authorRole !== 'member';
+                        const messageFiles = ticketAttachments.data?.filter(file => file.messageId === messageItem.id) ?? [];
                         return <article key={messageItem.id} data-testid={`message-instructor-support-${messageItem.id}`} className={`max-w-[92%] rounded-2xl p-3 text-sm leading-6 ${isTeam ? 'me-auto border border-[#d8d2c4] bg-[#fffdf7]' : 'ms-auto bg-[#174d43] text-[#fff9e9]'}`}>
                           <p className="mb-1 text-[10px] font-bold opacity-75">{isTeam ? t(lang, 'supportTeam') : t(lang, 'supportYou')} · {dateText(messageItem.createdAt, lang)}</p>
                           <p dir="auto" className="whitespace-pre-wrap">{messageItem.message}</p>
+                          {messageFiles.map(file => <button key={file.id} type="button" data-testid={`button-download-instructor-support-attachment-${file.id}`} disabled={downloadingAttachmentId === file.id}
+                            onClick={() => void downloadAttachment(file.id, file.fileName)} className="mt-2 block max-w-full truncate rounded-lg bg-white/70 px-2.5 py-1.5 text-start text-xs font-semibold text-[#28695a] disabled:opacity-50">
+                            {t(lang, 'supportDownloadAttachment')}: {file.fileName}
+                          </button>)}
                         </article>;
                       })}
                     </div>
                     <form onSubmit={sendReply} className="border-t border-[#e3dfd3] pt-3">
                       <label htmlFor="instructor-support-reply" className="mb-1.5 block text-xs font-bold">{t(lang, 'supportMessage')}</label>
                       <textarea id="instructor-support-reply" data-testid="input-instructor-support-reply" value={reply} onChange={event => setReply(event.target.value)} maxLength={5000} required rows={3} placeholder={t(lang, 'supportMessageHint')} className="w-full resize-y rounded-xl border border-[#d8d2c4] bg-[#fffdf7] px-3 py-2.5 text-sm leading-6" />
-                      <button data-testid="button-reply-instructor-support" type="submit" disabled={replyTicket.isPending || !reply.trim()} className="mt-2 inline-flex items-center gap-2 rounded-full bg-[#174d43] px-4 py-2.5 text-xs font-bold text-[#fff9e9] disabled:opacity-50"><Send size={13} aria-hidden="true" />{replyTicket.isPending ? t(lang, 'supportSending') : t(lang, 'supportSend')}</button>
+                      <label className="mb-1.5 mt-3 block text-xs font-bold">{t(lang, 'supportAddAttachment')}
+                        <input type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp" data-testid="input-instructor-support-reply-attachments"
+                          onChange={event => {
+                            const chosen = Array.from(event.currentTarget.files ?? []);
+                            event.currentTarget.value = '';
+                            if (replyFiles.length + chosen.length > 3) { setFormError(t(lang, 'supportAttachmentLimit')); return; }
+                            if (chosen.some(file => !supportAttachmentType(file) || file.size < 1 || file.size > 10 * 1024 * 1024)) { setFormError(t(lang, 'supportAttachmentHint')); return; }
+                            setReplyFiles(current => [...current, ...chosen]);
+                          }} className="mt-1.5 w-full rounded-xl border border-[#d8d2c4] bg-[#fffdf7] p-2 text-xs file:mr-2 file:rounded-full file:border-0 file:bg-[#e9e5d7] file:px-3 file:py-1.5 file:text-xs file:font-bold" />
+                      </label>
+                      <p className="text-[10px] text-[#718077]">{t(lang, 'supportAttachmentHint')}</p>
+                      {replyFiles.map((file, index) => <div key={`${file.name}-${index}`} className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-[#e9e5d7] px-3 py-2 text-xs">
+                        <span className="truncate">{file.name}</span>
+                        <button type="button" aria-label={`${t(lang, 'supportRemoveAttachment')}: ${file.name}`} onClick={() => setReplyFiles(current => current.filter((_, itemIndex) => itemIndex !== index))} className="shrink-0 font-bold text-[#8f3f32]">{t(lang, 'supportRemoveAttachment')}</button>
+                      </div>)}
+                      <button data-testid="button-reply-instructor-support" type="submit" disabled={replyTicket.isPending || attachmentsBusy || !reply.trim()} className="mt-2 inline-flex items-center gap-2 rounded-full bg-[#174d43] px-4 py-2.5 text-xs font-bold text-[#fff9e9] disabled:opacity-50"><Send size={13} aria-hidden="true" />{replyTicket.isPending || attachmentsBusy ? t(lang, 'supportSending') : t(lang, 'supportSend')}</button>
                     </form>
                   </div>
                 ) : null

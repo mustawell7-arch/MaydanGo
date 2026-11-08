@@ -2,6 +2,8 @@ import { Children, cloneElement, isValidElement, useMemo, useState, type FormEve
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetMemberSupportTicketQueryKey, getGetMemberSupportTicketsQueryKey, getGetOperationFacilitiesQueryKey, getGetOperationsQueryKey, useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useCancelRecurringOfferingSeries, useChangeLiveOffering, useChangeRecurringOfferingSeries, useCreateRecurringOfferings, useCreateMemberSupportTicket, useGetAttendance, useGetMemberSupportTicket, useGetMemberSupportTickets, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReplyMemberSupportTicket, useReviewAttendance, useRespondToOfferingCorrection, useReviewOfferingApproval, useSubmitLiveOffering } from '@workspace/api-client-react';
 import type { OfferingApprovalStatus, OfferingInput, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody, RecurringOfferingsInput, RecurringScheduleMode } from '@workspace/api-client-react';
+import { getGetMemberSupportTicketAttachmentsQueryKey, useGetMemberSupportTicketAttachments } from '@workspace/api-client-react';
+import { downloadMemberSupportFile, supportAttachmentType, uploadMemberSupportAttachments } from '@/lib/support-attachments';
 import { useAuth, useClerk } from '@clerk/react';
 import { trackEvent } from '@/lib/analytics';
 import { Link, Redirect } from 'wouter';
@@ -699,6 +701,9 @@ export function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
   const conversation = useGetMemberSupportTicket(selectedTicketId ?? '', {
     query: { enabled: !!selectedTicketId, retry: false, refetchInterval: 30_000 },
   });
+  const ticketAttachments = useGetMemberSupportTicketAttachments(selectedTicketId ?? '', {
+    query: { enabled: !!selectedTicketId, queryKey: getGetMemberSupportTicketAttachmentsQueryKey(selectedTicketId ?? ''), retry: false, refetchInterval: 30_000 },
+  });
   const createTicket = useCreateMemberSupportTicket();
   const replyTicket = useReplyMemberSupportTicket();
   const [category, setCategory] = useState<PartnerSupportCategory>('booking');
@@ -709,48 +714,88 @@ export function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
   const [notice, setNotice] = useState('');
   const [replyText, setReplyText] = useState('');
   const [replyNotice, setReplyNotice] = useState('');
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
+  const [attachmentsBusy, setAttachmentsBusy] = useState(false);
+  const [downloadingAttachmentId, setDownloadingAttachmentId] = useState('');
+  const attachmentCopy = lang === 'ar'
+    ? { add: 'إضافة صور أو ملفات', hint: 'حتى 3 ملفات، 10 ميغابايت لكل ملف. PDF أو JPEG أو PNG أو WebP.', limit: 'يمكن إرفاق 3 ملفات كحد أقصى بالرسالة الواحدة.', failed: 'أُرسل الطلب أو الرد، لكن تعذر رفع أحد الملفات. أرفقه مرة أخرى في رد جديد.', remove: 'إزالة الملف', download: 'تنزيل المرفق' }
+    : lang === 'ku'
+      ? { add: 'زیادکردنی وێنە یان فایل', hint: 'تا ٣ فایل، هەر یەکە ١٠ مێگابایت. PDF، JPEG، PNG یان WebP.', limit: 'تەنها تا ٣ فایل لە پەیامێکدا دەتوانرێت دابنرێت.', failed: 'داواکاری یان وەڵامەکە نێردرا، بەڵام فایلێک بار نەکرا. لە وەڵامێکی نوێدا دووبارە بیخە ناوەوە.', remove: 'سڕینەوەی فایل', download: 'داگرتنی هاوپێچ' }
+      : { add: 'Add photos or files', hint: 'Up to 3 files, 10 MB each. PDF, JPEG, PNG, or WebP.', limit: 'Attach no more than 3 files to one message.', failed: 'The request or reply was sent, but a file did not upload. Add it again in a new reply.', remove: 'Remove file', download: 'Download attachment' };
 
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
     const prefix = category === 'safety' ? 'Partner safety report: ' : 'Partner support: ';
     const referenceDetails = reference.trim() ? `Booking reference: ${reference.trim()}\n\n` : '';
-    createTicket.mutate({
-      data: {
-        subject: `${prefix}${subject.trim()}`,
-        category,
-        urgent: urgentSafety,
-        message: `Partner portal submission\n${referenceDetails}${message.trim()}`,
-        language: lang,
-      },
-    }, {
-      onSuccess: () => {
-        void client.invalidateQueries({ queryKey: getGetMemberSupportTicketsQueryKey() });
-        setCategory('booking');
-        setUrgentSafety(false);
-        setSubject('');
-        setReference('');
-        setMessage('');
-        setNotice('Support request sent.');
-      },
-      onError: () => setNotice('Could not send the request. Please try again.'),
-    });
+    setNotice('');
+    setAttachmentsBusy(true);
+    try {
+      const created = await createTicket.mutateAsync({
+        data: {
+          subject: `${prefix}${subject.trim()}`,
+          category,
+          urgent: urgentSafety,
+          message: `Partner portal submission\n${referenceDetails}${message.trim()}`,
+          language: lang,
+        },
+      });
+      let attachmentFailed = false;
+      if (attachmentFiles.length && created.messages[0]?.id) {
+        try { await uploadMemberSupportAttachments(created.id, created.messages[0].id, attachmentFiles); }
+        catch { attachmentFailed = true; }
+      }
+      await client.invalidateQueries({ queryKey: getGetMemberSupportTicketsQueryKey() });
+      setSelectedTicketId(created.id);
+      setCategory('booking');
+      setUrgentSafety(false);
+      setSubject('');
+      setReference('');
+      setMessage('');
+      setAttachmentFiles([]);
+      setNotice(attachmentFailed ? attachmentCopy.failed : 'Support request sent.');
+    } catch {
+      setNotice('Could not send the request. Please try again.');
+    } finally {
+      setAttachmentsBusy(false);
+    }
   };
 
-  const sendReply = (event: FormEvent) => {
+  const sendReply = async (event: FormEvent) => {
     event.preventDefault();
     const ticketId = selectedTicketId;
     const body = replyText.trim();
     if (!ticketId || !body) return;
     setReplyNotice('');
-    replyTicket.mutate({ id: ticketId, data: { message: body, language: lang } }, {
-      onSuccess: data => {
-        client.setQueryData(getGetMemberSupportTicketQueryKey(ticketId), data);
-        void client.invalidateQueries({ queryKey: getGetMemberSupportTicketsQueryKey() });
-        setReplyText('');
-        setReplyNotice('Reply sent.');
-      },
-      onError: () => setReplyNotice('Could not send the reply. Please try again.'),
-    });
+    setAttachmentsBusy(true);
+    try {
+      const updated = await replyTicket.mutateAsync({ id: ticketId, data: { message: body, language: lang } });
+      const lastMessage = updated.messages[updated.messages.length - 1];
+      let attachmentFailed = false;
+      if (replyFiles.length && lastMessage?.id) {
+        try { await uploadMemberSupportAttachments(ticketId, lastMessage.id, replyFiles); }
+        catch { attachmentFailed = true; }
+      }
+      client.setQueryData(getGetMemberSupportTicketQueryKey(ticketId), updated);
+      await Promise.all([
+        client.invalidateQueries({ queryKey: getGetMemberSupportTicketsQueryKey() }),
+        client.invalidateQueries({ queryKey: getGetMemberSupportTicketAttachmentsQueryKey(ticketId) }),
+      ]);
+      setReplyText('');
+      setReplyFiles([]);
+      setReplyNotice(attachmentFailed ? attachmentCopy.failed : 'Reply sent.');
+    } catch {
+      setReplyNotice('Could not send the reply. Please try again.');
+    } finally {
+      setAttachmentsBusy(false);
+    }
+  };
+  const downloadAttachment = async (attachmentId: string, fileName: string) => {
+    if (!selectedTicketId) return;
+    setDownloadingAttachmentId(attachmentId);
+    try { await downloadMemberSupportFile(selectedTicketId, attachmentId, fileName); }
+    catch { setReplyNotice('Attachment could not be downloaded.'); }
+    finally { setDownloadingAttachmentId(''); }
   };
 
   return <LocalizedContent lang={lang}><section className="grid gap-5 xl:grid-cols-[1.1fr_.9fr]">
@@ -786,12 +831,31 @@ export function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
         <label className="block text-xs font-semibold text-[#51665e]">Describe what happened or how we can help
           <textarea required minLength={10} maxLength={4500} rows={5} value={message} onChange={event => setMessage(event.target.value)} className={`${fieldClass()} resize-y`} data-testid="textarea-partner-support-message" />
         </label>
+        <div className="space-y-2">
+          <label className="block text-xs font-semibold text-[#51665e]">{attachmentCopy.add}
+            <input type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp" data-testid="input-partner-support-attachments"
+              onChange={event => {
+                const chosen = Array.from(event.currentTarget.files ?? []);
+                event.currentTarget.value = '';
+                if (attachmentFiles.length + chosen.length > 3) { setNotice(attachmentCopy.limit); return; }
+                if (chosen.some(file => !supportAttachmentType(file) || file.size < 1 || file.size > 10 * 1024 * 1024)) {
+                  setNotice(attachmentCopy.hint); return;
+                }
+                setAttachmentFiles(current => [...current, ...chosen]);
+              }} className={`${fieldClass()} file:mr-3 file:rounded-full file:border-0 file:bg-[#e7eee4] file:px-3 file:py-1.5 file:text-xs file:font-bold`} />
+          </label>
+          <p className="text-[11px] leading-5 text-[#75847c]">{attachmentCopy.hint}</p>
+          {attachmentFiles.map((file, index) => <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-3 rounded-xl bg-[#f2efe4] px-3 py-2 text-xs">
+            <span className="truncate">{file.name}</span>
+            <button type="button" aria-label={`${attachmentCopy.remove}: ${file.name}`} onClick={() => setAttachmentFiles(current => current.filter((_, itemIndex) => itemIndex !== index))} className="shrink-0 font-bold text-[#8f3f32]">{attachmentCopy.remove}</button>
+          </div>)}
+        </div>
       </div>
       <p className="mt-3 text-[11px] leading-5 text-[#75847c]">Use the reservation reference when available. Include only details needed to review the report.</p>
       {notice && <p role="status" className="mt-3 text-sm text-[#36564b]" data-testid="status-partner-support">{notice}</p>}
       <div className="mt-4 flex justify-end">
-        <Button type="submit" disabled={createTicket.isPending || subject.trim().length < 4 || message.trim().length < 10}>
-          {createTicket.isPending ? 'Sending…' : 'Send to MaydanGo support'}
+        <Button type="submit" disabled={createTicket.isPending || attachmentsBusy || subject.trim().length < 4 || message.trim().length < 10}>
+          {createTicket.isPending || attachmentsBusy ? 'Sending…' : 'Send to MaydanGo support'}
         </Button>
       </div>
     </form>
@@ -806,7 +870,7 @@ export function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
           : tickets.data?.length ? <ul className="mt-4 divide-y divide-[#ece7d9]">
             {tickets.data.slice(0, 8).map(ticket => <li key={ticket.id} data-testid={`partner-support-ticket-${ticket.id}`}>
               <button type="button" aria-expanded={selectedTicketId === ticket.id}
-                onClick={() => { setSelectedTicketId(selectedTicketId === ticket.id ? null : ticket.id); setReplyText(''); setReplyNotice(''); }}
+                onClick={() => { setSelectedTicketId(selectedTicketId === ticket.id ? null : ticket.id); setReplyText(''); setReplyFiles([]); setReplyNotice(''); }}
                 className={`flex w-full items-start justify-between gap-3 rounded-xl py-3 text-left ${selectedTicketId === ticket.id ? 'bg-[#f2ebda] px-3' : ''}`}>
                 <span className="min-w-0">
                   <span className="block break-words text-sm font-semibold text-[#36564b]">{partnerSupportSubject(lang, ticket.subject)}</span>
@@ -840,9 +904,14 @@ export function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
             <ol className="mt-4 max-h-96 space-y-3 overflow-y-auto rounded-2xl bg-[#f7f4eb] p-3 sm:p-4" aria-live="polite">
               {conversation.data.messages.map(item => {
                 const mine = item.authorRole === 'member';
+                const messageFiles = ticketAttachments.data?.filter(file => file.messageId === item.id) ?? [];
                 return <li key={item.id} className={`max-w-[92%] rounded-2xl p-3 ${mine ? 'ml-auto bg-[#e1efdf]' : 'mr-auto bg-white'}`}>
                   <p className="whitespace-pre-wrap break-words text-sm leading-6 text-[#36564b]">{item.message}</p>
                   <p className="mt-2 text-[10px] text-[#75847c]">{portalText(lang, mine ? 'You' : 'MaydanGo support')} · {formatDate(item.createdAt, lang)}</p>
+                  {messageFiles.map(file => <button key={file.id} type="button" data-testid={`button-download-partner-support-attachment-${file.id}`} disabled={downloadingAttachmentId === file.id}
+                    onClick={() => void downloadAttachment(file.id, file.fileName)} className="mt-2 block max-w-full truncate rounded-lg bg-white/70 px-2.5 py-1.5 text-start text-xs font-semibold text-[#28695a] disabled:opacity-50">
+                    {attachmentCopy.download}: {file.fileName}
+                  </button>)}
                 </li>;
               })}
             </ol>
@@ -851,10 +920,27 @@ export function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
                 <textarea required minLength={1} maxLength={5000} rows={3} value={replyText} onChange={event => setReplyText(event.target.value)}
                   className={`${fieldClass()} resize-y`} data-testid="textarea-partner-support-reply" />
               </label>
+              <label className="mt-3 block text-xs font-semibold text-[#51665e]">{attachmentCopy.add}
+                <input type="file" multiple accept="application/pdf,image/jpeg,image/png,image/webp" data-testid="input-partner-support-reply-attachments"
+                  onChange={event => {
+                    const chosen = Array.from(event.currentTarget.files ?? []);
+                    event.currentTarget.value = '';
+                    if (replyFiles.length + chosen.length > 3) { setReplyNotice(attachmentCopy.limit); return; }
+                    if (chosen.some(file => !supportAttachmentType(file) || file.size < 1 || file.size > 10 * 1024 * 1024)) {
+                      setReplyNotice(attachmentCopy.hint); return;
+                    }
+                    setReplyFiles(current => [...current, ...chosen]);
+                  }} className={`${fieldClass()} file:mr-3 file:rounded-full file:border-0 file:bg-[#e7eee4] file:px-3 file:py-1.5 file:text-xs file:font-bold`} />
+              </label>
+              <p className="mt-1 text-[11px] text-[#75847c]">{attachmentCopy.hint}</p>
+              {replyFiles.map((file, index) => <div key={`${file.name}-${index}`} className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-[#f2efe4] px-3 py-2 text-xs">
+                <span className="truncate">{file.name}</span>
+                <button type="button" aria-label={`${attachmentCopy.remove}: ${file.name}`} onClick={() => setReplyFiles(current => current.filter((_, itemIndex) => itemIndex !== index))} className="shrink-0 font-bold text-[#8f3f32]">{attachmentCopy.remove}</button>
+              </div>)}
               {replyNotice && <p role="status" className={`mt-2 text-sm ${replyNotice === 'Reply sent.' ? 'text-[#36564b]' : 'text-[#9a4435]'}`} data-testid="status-partner-support-reply">{replyNotice}</p>}
               <div className="mt-3 flex justify-end">
-                <Button type="submit" disabled={replyTicket.isPending || !replyText.trim()}>
-                  {replyTicket.isPending ? 'Sending…' : 'Send reply'}
+                <Button type="submit" disabled={replyTicket.isPending || attachmentsBusy || !replyText.trim()}>
+                  {replyTicket.isPending || attachmentsBusy ? 'Sending…' : 'Send reply'}
                 </Button>
               </div>
             </form>

@@ -105,6 +105,73 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SupportTicketDetail" }
+  /member/support/tickets/{id}/attachments:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getMemberSupportTicketAttachments
+      responses:
+        "200":
+          description: Private, completed attachments on the signed-in member's ticket
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/SupportAttachment" } }
+  /member/support/tickets/{id}/attachments/upload-url:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: requestMemberSupportAttachmentUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportAttachmentUploadInput" }
+      responses:
+        "201":
+          description: Short-lived upload URL for one private support attachment
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportAttachmentUploadResponse" }
+  /member/support/tickets/{id}/attachments/{attachmentId}/complete:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: attachmentId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: completeMemberSupportAttachment
+      responses:
+        "200":
+          description: Uploaded file verified and attached to the member's message
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportAttachment" }
+  /member/support/tickets/{id}/attachments/{attachmentId}:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: attachmentId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      operationId: deletePendingMemberSupportAttachment
+      responses:
+        "204":
+          description: Pending upload removed
+  /member/support/tickets/{id}/attachments/{attachmentId}/download:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: attachmentId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: downloadMemberSupportAttachment
+      responses:
+        "200":
+          description: Private attachment streamed to its ticket owner
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
   /member/notifications/settings:
     get:
       operationId: getMemberNotificationSettings
@@ -203,6 +270,31 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SupportStaffTicketDetail" }
+  /support/staff/tickets/{id}/attachments:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getSupportStaffTicketAttachments
+      responses:
+        "200":
+          description: Completed private attachments available to authorized support staff
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/SupportAttachment" } }
+  /support/staff/tickets/{id}/attachments/{attachmentId}/download:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: attachmentId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: downloadSupportStaffAttachment
+      responses:
+        "200":
+          description: Private attachment streamed to authorized support staff
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
   /support/staff/agents:
     get:
       operationId: getSupportStaffAgents
@@ -1455,6 +1547,33 @@ components:
         message: { type: string }
         language: { $ref: "#/components/schemas/SupportedLanguage" }
         createdAt: { type: string, format: date-time }
+    SupportAttachment:
+      type: object
+      required: [id, messageId, fileName, contentType, size, uploaderRole, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        messageId: { type: string, format: uuid }
+        fileName: { type: string }
+        contentType: { type: string, enum: [application/pdf, image/jpeg, image/png, image/webp] }
+        size: { type: integer, minimum: 1, maximum: 10485760 }
+        uploaderRole: { type: string, enum: [member, support, admin] }
+        createdAt: { type: string, format: date-time }
+    SupportAttachmentUploadInput:
+      type: object
+      additionalProperties: false
+      required: [messageId, fileName, contentType, size]
+      properties:
+        messageId: { type: string, format: uuid }
+        fileName: { type: string, minLength: 1, maxLength: 180 }
+        contentType: { type: string, enum: [application/pdf, image/jpeg, image/png, image/webp] }
+        size: { type: integer, minimum: 1, maximum: 10485760 }
+    SupportAttachmentUploadResponse:
+      type: object
+      required: [id, uploadURL, objectPath]
+      properties:
+        id: { type: string, format: uuid }
+        uploadURL: { type: string, format: uri }
+        objectPath: { type: string }
     SupportTicketDetail:
       allOf:
         - $ref: "#/components/schemas/SupportTicketSummary"

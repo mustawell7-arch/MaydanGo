@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@clerk/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, ArrowUpRight, Check, Clock3, Headphones, Languages, MessageSquareText, RefreshCw, Shield, UserRound } from 'lucide-react';
+import { AlertTriangle, ArrowUpRight, Check, Clock3, Download, Headphones, Languages, MessageSquareText, Paperclip, RefreshCw, Shield, UserRound } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,9 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Link } from 'wouter';
 import {
   getGetSupportStaffAgentsQueryKey,
+  getGetSupportStaffTicketAttachmentsQueryKey,
   getGetSupportStaffTicketQueryKey,
   getGetSupportStaffTicketsQueryKey,
   useGetSupportStaffAgents,
+  useGetSupportStaffTicketAttachments,
   useGetSupportStaffTicket,
   useGetSupportStaffTickets,
   useReplySupportStaffTicket,
@@ -20,6 +22,7 @@ import {
   type SupportTicketStatus,
   type SupportedLanguage,
 } from '@workspace/api-client-react';
+import { downloadSupportStaffFile } from '@/lib/support-attachments';
 
 type Lang = 'en' | 'ar' | 'ku';
 type StatusFilter = 'all' | SupportTicketStatus;
@@ -32,6 +35,7 @@ const words: Record<Lang, Record<string, string>> = {
     selectTicket: 'Choose a ticket', selectHint: 'Select a request to review its conversation, alert outcome and audit history.',
     conversation: 'Conversation', timeline: 'Activity history', assigned: 'Assigned to', unassigned: 'Unassigned', assign: 'Assign to…', status: 'Status',
     reply: 'Public reply', replyHint: 'This message will be visible to the member or partner.', replyPlaceholder: 'Write a clear, helpful response…', send: 'Send reply', sending: 'Sending…',
+    attachments: 'Attachments', downloadAttachment: 'Download attachment', attachmentDownloadError: 'The attachment could not be downloaded.',
     loading: 'Loading support queue', retry: 'Retry', loadError: 'The support queue could not be loaded.', detailError: 'This ticket could not be loaded.', empty: 'No tickets in this view', emptyHint: 'Try another status filter or check again shortly.',
     denied: 'Access restricted', deniedText: 'Only authorized MaydanGo support staff and administrators can view this work surface.',
     alert: 'Urgent alert outcome', alertPending: 'Push alert is pending.', alertAccepted: 'Push delivery was accepted by the notification service. This does not confirm it was seen.',
@@ -51,6 +55,7 @@ const words: Record<Lang, Record<string, string>> = {
     selectTicket: 'اختر طلباً', selectHint: 'اختر طلباً لمراجعة المحادثة ونتيجة التنبيه وسجل النشاط.',
     conversation: 'المحادثة', timeline: 'سجل النشاط', assigned: 'مسند إلى', unassigned: 'غير مسند', assign: 'إسناد إلى…', status: 'الحالة',
     reply: 'رد علني', replyHint: 'ستظهر هذه الرسالة للعضو أو الشريك.', replyPlaceholder: 'اكتب رداً واضحاً ومفيداً…', send: 'إرسال الرد', sending: 'جارٍ الإرسال…',
+    attachments: 'المرفقات', downloadAttachment: 'تنزيل المرفق', attachmentDownloadError: 'تعذر تنزيل المرفق.',
     loading: 'جارٍ تحميل قائمة الدعم', retry: 'إعادة المحاولة', loadError: 'تعذر تحميل قائمة الدعم.', detailError: 'تعذر تحميل هذا الطلب.', empty: 'لا توجد طلبات في هذا العرض', emptyHint: 'جرّب تصفية حالة أخرى أو أعد التحقق بعد قليل.',
     denied: 'الوصول مقيّد', deniedText: 'يمكن لموظفي دعم ميدان جو المعتمدين والمسؤولين فقط عرض مساحة العمل هذه.',
     alert: 'نتيجة التنبيه العاجل', alertPending: 'التنبيه الفوري قيد الانتظار.', alertAccepted: 'قبلت خدمة الإشعارات إرسال التنبيه. هذا لا يؤكد أن أحداً قد شاهده.',
@@ -70,6 +75,7 @@ const words: Record<Lang, Record<string, string>> = {
     selectTicket: 'داواکارییەک هەڵبژێرە', selectHint: 'داواکارییەک هەڵبژێرە بۆ پێداچوونەوەی گفتوگۆ، ئەنجامی ئاگادارکردنەوە و مێژووی کار.',
     conversation: 'گفتوگۆ', timeline: 'مێژووی چالاکی', assigned: 'سپێردراوە بە', unassigned: 'نەسپێردراوە', assign: 'بسپێرە بە…', status: 'دۆخ',
     reply: 'وەڵامی گشتی', replyHint: 'ئەم نامەیە بۆ ئەندام یان هاوبەش دەردەکەوێت.', replyPlaceholder: 'وەڵامێکی ڕوون و یارمەتیدەر بنووسە…', send: 'ناردنی وەڵام', sending: 'لە ناردندایە…',
+    attachments: 'هاوپێچەکان', downloadAttachment: 'داگرتنی هاوپێچ', attachmentDownloadError: 'داگرتنی هاوپێچ سەرکەوتوو نەبوو.',
     loading: 'بارکردنی ڕیزی پشتگیری', retry: 'هەوڵدانەوە', loadError: 'بارکردنی ڕیزی پشتگیری سەرکەوتوو نەبوو.', detailError: 'بارکردنی ئەم داواکارییە سەرکەوتوو نەبوو.', empty: 'هیچ داواکارییەک لەم بینینەدا نییە', emptyHint: 'پاڵاوتنی دۆخێکی تر تاقی بکەرەوە یان کەمێک دواتر بگەڕێوە.',
     denied: 'دەستگەیشتن سنووردارە', deniedText: 'تەنها تیمی پشتگیری و بەڕێوەبەرانی ڕێگەپێدراوی مەیدان گۆ دەتوانن ئەم شوێنی کارە ببینن.',
     alert: 'ئەنجامی ئاگادارکردنەوەی پەلە', alertPending: 'ئاگادارکردنەوەی پۆش لە چاوەڕوانیدایە.', alertAccepted: 'خزمەتگوزاری ئاگادارکردنەوە ناردنی پەسەند کرد. ئەمە دڵنیایی نادات کە کەسێک بینیبێتی.',
@@ -109,6 +115,7 @@ export function SupportDeskPage() {
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [selectedId, setSelectedId] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [downloadingAttachmentId, setDownloadingAttachmentId] = useState('');
   const replyForm = useForm<ReplyValues>({
     resolver: zodResolver(replySchema),
     defaultValues: { message: '' },
@@ -120,6 +127,9 @@ export function SupportDeskPage() {
   const queue = useGetSupportStaffTickets(params, { query: { queryKey: getGetSupportStaffTicketsQueryKey(params), refetchInterval: 15_000, retry: false, enabled: isLoaded && isSignedIn } });
   const agentsQuery = useGetSupportStaffAgents({ query: { queryKey: getGetSupportStaffAgentsQueryKey(), retry: false, enabled: isLoaded && isSignedIn } });
   const detail = useGetSupportStaffTicket(selectedId, { query: { enabled: !!selectedId && isLoaded && isSignedIn, queryKey: getGetSupportStaffTicketQueryKey(selectedId), refetchInterval: 20_000, retry: false } });
+  const attachmentsQuery = useGetSupportStaffTicketAttachments(selectedId, {
+    query: { enabled: !!selectedId && isLoaded && isSignedIn, queryKey: getGetSupportStaffTicketAttachmentsQueryKey(selectedId), refetchInterval: 20_000, retry: false },
+  });
   const update = useUpdateSupportStaffTicket();
   const reply = useReplySupportStaffTicket();
   const tickets = queue.data ?? [];
@@ -138,6 +148,18 @@ export function SupportDeskPage() {
     return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
   }), [tickets]);
   const refresh = () => void queue.refetch();
+  const downloadAttachment = async (attachmentId: string, fileName: string) => {
+    if (!selectedId) return;
+    setDownloadingAttachmentId(attachmentId);
+    setFeedback('');
+    try {
+      await downloadSupportStaffFile(selectedId, attachmentId, fileName);
+    } catch {
+      setFeedback('attachment-error');
+    } finally {
+      setDownloadingAttachmentId('');
+    }
+  };
   const updateTicket = (data: { status?: SupportTicketStatus; assignedTo?: string | null }) => {
     if (!selectedId) return;
     setFeedback('');
@@ -250,8 +272,15 @@ export function SupportDeskPage() {
                 <ol className="flex-1 space-y-3 overflow-y-auto bg-[#f6f3eb] p-4 sm:p-5" aria-live="polite">
                   {active.messages.length ? active.messages.map(message => {
                     const fromMember = message.authorRole === 'member';
+                    const messageAttachments = attachmentsQuery.data?.filter(file => file.messageId === message.id) ?? [];
                     return <li key={message.id} data-testid={`message-${message.id}`} className={`max-w-[92%] rounded-2xl border px-4 py-3 ${fromMember ? 'me-auto border-[#d8e2d5] bg-[#e9f0e6]' : 'ms-auto border-[#e2dccd] bg-[#fffdf7]'}`}>
                       <p className="whitespace-pre-wrap break-words text-sm leading-6 text-[#29483e]">{message.message}</p><p className="mt-2 text-[10px] text-[#75847c]">{roleLabel(message.authorRole)} · {dateLabel(message.createdAt, language)} · {langName[ticketLanguage(message.language)]}</p>
+                      {messageAttachments.length > 0 && <div className="mt-3 space-y-1.5 border-t border-[#d8e2d5] pt-2">
+                        <p className="text-[10px] font-bold text-[#536b61]">{t.attachments}</p>
+                        {messageAttachments.map(file => <button key={file.id} type="button" data-testid={`button-download-support-attachment-${file.id}`} disabled={downloadingAttachmentId === file.id} onClick={() => void downloadAttachment(file.id, file.fileName)} className="flex max-w-full items-center gap-2 rounded-lg bg-white/70 px-2.5 py-1.5 text-start text-xs font-semibold text-[#28695a] hover:bg-white disabled:opacity-50">
+                          <Paperclip size={13} className="shrink-0" /><span className="truncate">{file.fileName}</span><Download size={13} className="shrink-0" />
+                        </button>)}
+                      </div>}
                     </li>;
                   }) : <li data-testid="support-no-messages" className="py-10 text-center text-sm text-[#75847c]">{t.noMessages}</li>}
                 </ol>

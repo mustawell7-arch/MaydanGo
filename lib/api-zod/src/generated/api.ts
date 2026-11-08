@@ -5633,6 +5633,86 @@ export const ReplyMemberSupportTicketResponse = zod.object({
 }))
 
 
+export const GetMemberSupportTicketAttachmentsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getMemberSupportTicketAttachmentsResponseSizeMax = 10485760;
+
+
+
+export const GetMemberSupportTicketAttachmentsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "messageId": zod.string().uuid(),
+  "fileName": zod.string(),
+  "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
+  "size": zod.number().int().min(1).max(getMemberSupportTicketAttachmentsResponseSizeMax),
+  "uploaderRole": zod.enum(['member', 'support', 'admin']),
+  "createdAt": zod.coerce.date()
+})
+export const GetMemberSupportTicketAttachmentsResponse = zod.array(GetMemberSupportTicketAttachmentsResponseItem)
+
+
+export const RequestMemberSupportAttachmentUploadUrlParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const requestMemberSupportAttachmentUploadUrlBodyFileNameMax = 180;
+
+export const requestMemberSupportAttachmentUploadUrlBodySizeMax = 10485760;
+
+
+
+export const RequestMemberSupportAttachmentUploadUrlBody = zod.object({
+  "messageId": zod.string().uuid(),
+  "fileName": zod.string().min(1).max(requestMemberSupportAttachmentUploadUrlBodyFileNameMax),
+  "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
+  "size": zod.number().int().min(1).max(requestMemberSupportAttachmentUploadUrlBodySizeMax)
+})
+
+export const RequestMemberSupportAttachmentUploadUrlResponse = zod.object({
+  "id": zod.string().uuid(),
+  "uploadURL": zod.string().url(),
+  "objectPath": zod.string()
+})
+
+
+export const CompleteMemberSupportAttachmentParams = zod.object({
+  "id": zod.coerce.string(),
+  "attachmentId": zod.coerce.string().uuid()
+})
+
+export const completeMemberSupportAttachmentResponseSizeMax = 10485760;
+
+
+
+export const CompleteMemberSupportAttachmentResponse = zod.object({
+  "id": zod.string().uuid(),
+  "messageId": zod.string().uuid(),
+  "fileName": zod.string(),
+  "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
+  "size": zod.number().int().min(1).max(completeMemberSupportAttachmentResponseSizeMax),
+  "uploaderRole": zod.enum(['member', 'support', 'admin']),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const DeletePendingMemberSupportAttachmentParams = zod.object({
+  "id": zod.coerce.string(),
+  "attachmentId": zod.coerce.string().uuid()
+})
+
+export const DeletePendingMemberSupportAttachmentResponse = zod.void()
+
+
+export const DownloadMemberSupportAttachmentParams = zod.object({
+  "id": zod.coerce.string(),
+  "attachmentId": zod.coerce.string().uuid()
+})
+
+export const DownloadMemberSupportAttachmentResponse = zod.unknown()
+
+
 export const getMemberNotificationSettingsResponseRegisteredDevicesMin = 0;
 
 
@@ -5868,6 +5948,34 @@ export const ReplySupportStaffTicketResponse = zod.object({
   "detail": zod.string()
 })))
 }))
+
+
+export const GetSupportStaffTicketAttachmentsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getSupportStaffTicketAttachmentsResponseSizeMax = 10485760;
+
+
+
+export const GetSupportStaffTicketAttachmentsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "messageId": zod.string().uuid(),
+  "fileName": zod.string(),
+  "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
+  "size": zod.number().int().min(1).max(getSupportStaffTicketAttachmentsResponseSizeMax),
+  "uploaderRole": zod.enum(['member', 'support', 'admin']),
+  "createdAt": zod.coerce.date()
+})
+export const GetSupportStaffTicketAttachmentsResponse = zod.array(GetSupportStaffTicketAttachmentsResponseItem)
+
+
+export const DownloadSupportStaffAttachmentParams = zod.object({
+  "id": zod.coerce.string(),
+  "attachmentId": zod.coerce.string().uuid()
+})
+
+export const DownloadSupportStaffAttachmentResponse = zod.unknown()
 
 
 export const getSupportStaffAgentsResponseActiveDeviceCountMin = 0;
