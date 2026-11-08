@@ -3,15 +3,22 @@ import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { AddSupportStaffInternalNoteBody } from "@workspace/api-zod";
 import {
+  AddSupportStaffInternalNoteBody,
+  CreateSupportStaffTicketLinkBody,
+} from "@workspace/api-zod";
+import {
+  attendance,
   db,
   memberNotificationPreferences,
+  offerings,
   operationAudit,
   operators,
   pushDeliveries,
   pushDevices,
+  reservations,
   supportMessages,
+  supportTicketLinks,
   supportTicketEvents,
   supportTickets,
 } from "@workspace/db";
@@ -101,6 +108,63 @@ async function staffTicketDetail(id: string) {
       action: e.action, actorId: e.actorId, previousStatus: e.previousStatus, nextStatus: e.nextStatus,
       previousAssignee: e.previousAssignee, nextAssignee: e.nextAssignee, detail: e.detail, createdAt: e.createdAt,
     })),
+  };
+}
+
+async function getStaffRelatedRecords(ticketId: string) {
+  const [ticket] = await db.select({ userId: supportTickets.userId }).from(supportTickets)
+    .where(eq(supportTickets.id, ticketId)).limit(1);
+  if (!ticket) throw new BookingError(404, "Support request not found.");
+
+  const links = await db.select().from(supportTicketLinks)
+    .where(eq(supportTicketLinks.ticketId, ticketId));
+  const linkedBookingIds = links.flatMap(link => link.reservationId ? [link.reservationId] : []);
+  const linkedCheckinIds = links.flatMap(link => link.attendanceId ? [link.attendanceId] : []);
+  const [recentBookings, recentCheckins, linkedBookings, linkedCheckins] = await Promise.all([
+    db.select({
+      id: reservations.id, title: offerings.title, facility: offerings.facility,
+      occurredAt: offerings.startsAt, status: reservations.status,
+    }).from(reservations).innerJoin(offerings, eq(reservations.offeringId, offerings.id))
+      .where(eq(reservations.userId, ticket.userId))
+      .orderBy(desc(offerings.startsAt)).limit(30),
+    db.select({
+      id: attendance.id, title: offerings.title, facility: offerings.facility,
+      occurredAt: attendance.checkedInAt, status: attendance.status,
+    }).from(attendance).innerJoin(offerings, eq(attendance.offeringId, offerings.id))
+      .where(eq(attendance.userId, ticket.userId))
+      .orderBy(desc(attendance.checkedInAt)).limit(30),
+    linkedBookingIds.length ? db.select({
+      id: reservations.id, title: offerings.title, facility: offerings.facility,
+      occurredAt: offerings.startsAt, status: reservations.status,
+    }).from(reservations).innerJoin(offerings, eq(reservations.offeringId, offerings.id))
+      .where(and(eq(reservations.userId, ticket.userId), inArray(reservations.id, linkedBookingIds))) : Promise.resolve([]),
+    linkedCheckinIds.length ? db.select({
+      id: attendance.id, title: offerings.title, facility: offerings.facility,
+      occurredAt: attendance.checkedInAt, status: attendance.status,
+    }).from(attendance).innerJoin(offerings, eq(attendance.offeringId, offerings.id))
+      .where(and(eq(attendance.userId, ticket.userId), inArray(attendance.id, linkedCheckinIds))) : Promise.resolve([]),
+  ]);
+
+  const linkIdByRecord = new Map(links.map(link => [
+    link.reservationId ? `booking:${link.reservationId}` : `checkin:${link.attendanceId}`,
+    link.id,
+  ]));
+  const records = new Map<string, {
+    id: string; recordType: "booking" | "checkin"; title: string; facility: string;
+    occurredAt: Date; status: string; linkId: string | null;
+  }>();
+  for (const row of [...recentBookings, ...linkedBookings]) {
+    records.set(`booking:${row.id}`, {
+      ...row, recordType: "booking", linkId: linkIdByRecord.get(`booking:${row.id}`) ?? null,
+    });
+  }
+  for (const row of [...recentCheckins, ...linkedCheckins]) {
+    records.set(`checkin:${row.id}`, {
+      ...row, recordType: "checkin", linkId: linkIdByRecord.get(`checkin:${row.id}`) ?? null,
+    });
+  }
+  return {
+    records: [...records.values()].sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime()),
   };
 }
 
@@ -442,6 +506,76 @@ staffRouter.post("/tickets/:id/notes", async (req, res): Promise<void> => {
     });
   });
   res.status(201).json(await staffTicketDetail(id));
+});
+
+staffRouter.get("/tickets/:id/related-records", async (req, res): Promise<void> => {
+  res.json(await getStaffRelatedRecords(String(req.params.id)));
+});
+
+staffRouter.post("/tickets/:id/links", async (req, res): Promise<void> => {
+  const parsed = CreateSupportStaffTicketLinkBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Choose a valid booking or check-in to link." });
+    return;
+  }
+  const operator = res.locals.supportOperator as typeof operators.$inferSelect;
+  const ticketId = String(req.params.id);
+  await db.transaction(async tx => {
+    const [ticket] = await tx.select().from(supportTickets)
+      .where(eq(supportTickets.id, ticketId)).for("update");
+    if (!ticket) throw new BookingError(404, "Support request not found.");
+
+    let reservationId: string | null = null;
+    let attendanceId: string | null = null;
+    if (parsed.data.recordType === "booking") {
+      const [booking] = await tx.select({ id: reservations.id }).from(reservations).where(and(
+        eq(reservations.id, parsed.data.recordId),
+        eq(reservations.userId, ticket.userId),
+      )).limit(1);
+      if (!booking) throw new BookingError(404, "Booking not found for this member.");
+      reservationId = booking.id;
+    } else {
+      const [checkin] = await tx.select({ id: attendance.id }).from(attendance).where(and(
+        eq(attendance.id, parsed.data.recordId),
+        eq(attendance.userId, ticket.userId),
+      )).limit(1);
+      if (!checkin) throw new BookingError(404, "Check-in not found for this member.");
+      attendanceId = checkin.id;
+    }
+    const duplicate = await tx.select({ id: supportTicketLinks.id }).from(supportTicketLinks).where(and(
+      eq(supportTicketLinks.ticketId, ticketId),
+      reservationId ? eq(supportTicketLinks.reservationId, reservationId) : eq(supportTicketLinks.attendanceId, attendanceId!),
+    )).limit(1);
+    if (duplicate.length) return;
+
+    await tx.insert(supportTicketLinks).values({
+      id: randomUUID(), ticketId, reservationId, attendanceId, createdBy: operator.userId,
+    });
+    await tx.insert(operationAudit).values({
+      id: randomUUID(), actorId: operator.userId, action: "support.ticket.link_record", targetId: ticketId,
+      detail: `type=${parsed.data.recordType};recordId=${parsed.data.recordId}`,
+    });
+  });
+  res.status(201).json(await getStaffRelatedRecords(ticketId));
+});
+
+staffRouter.delete("/tickets/:id/links/:linkId", async (req, res): Promise<void> => {
+  const operator = res.locals.supportOperator as typeof operators.$inferSelect;
+  const ticketId = String(req.params.id);
+  const linkId = String(req.params.linkId);
+  await db.transaction(async tx => {
+    const [link] = await tx.select().from(supportTicketLinks).where(and(
+      eq(supportTicketLinks.id, linkId),
+      eq(supportTicketLinks.ticketId, ticketId),
+    )).for("update");
+    if (!link) throw new BookingError(404, "Ticket link not found.");
+    await tx.delete(supportTicketLinks).where(eq(supportTicketLinks.id, link.id));
+    await tx.insert(operationAudit).values({
+      id: randomUUID(), actorId: operator.userId, action: "support.ticket.unlink_record", targetId: ticketId,
+      detail: link.reservationId ? `type=booking;recordId=${link.reservationId}` : `type=checkin;recordId=${link.attendanceId}`,
+    });
+  });
+  res.json(await getStaffRelatedRecords(ticketId));
 });
 
 staffRouter.get("/agents", async (_req, res) => {

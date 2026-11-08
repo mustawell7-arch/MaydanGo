@@ -11,16 +11,21 @@ import { Link } from 'wouter';
 import {
   getGetSupportStaffAgentsQueryKey,
   getGetSupportStaffTicketAttachmentsQueryKey,
+  getGetSupportStaffTicketRelatedRecordsQueryKey,
   getGetSupportStaffTicketQueryKey,
   getGetSupportStaffTicketsQueryKey,
   useGetSupportStaffAgents,
   useGetSupportStaffTicketAttachments,
+  useGetSupportStaffTicketRelatedRecords,
   useGetSupportStaffTicket,
   useGetSupportStaffTickets,
+  useCreateSupportStaffTicketLink,
+  useDeleteSupportStaffTicketLink,
   useAddSupportStaffInternalNote,
   useReplySupportStaffTicket,
   useUpdateSupportStaffTicket,
   type SupportTicketStatus,
+  type SupportTicketLinkType,
   type SupportedLanguage,
 } from '@workspace/api-client-react';
 import { downloadSupportStaffFile, supportAttachmentType, uploadSupportStaffAttachments } from '@/lib/support-attachments';
@@ -38,6 +43,10 @@ const words: Record<Lang, Record<string, string>> = {
     reply: 'Public reply', replyHint: 'This message will be visible to the member or partner.', replyPlaceholder: 'Write a clear, helpful response…', send: 'Send reply', sending: 'Sending…',
     internalNote: 'Internal note', internalNoteHint: 'Only authorized staff can see this. It is not sent to the member.', internalNotePlaceholder: 'Write a note for the support team…',
     saveInternalNote: 'Save internal note', savingInternalNote: 'Saving…', internalOnly: 'STAFF ONLY', internalNoteSent: 'Internal note saved.', internalNoteError: 'Internal note could not be saved. Try again.',
+    relatedRecords: 'Related bookings and check-ins', relatedRecordsHint: 'Only records belonging to this member are available.',
+    selectRelatedRecord: 'Select a booking or check-in…', bookingRecord: 'Booking', checkinRecord: 'Check-in',
+    noRelatedRecords: 'No recent bookings or check-ins were found.', linkRecord: 'Link record', linkingRecord: 'Linking…', unlinkRecord: 'Remove link',
+    relatedRecordLinked: 'Record linked to this ticket.', relatedRecordUnlinked: 'Link removed.', relatedRecordError: 'The record link could not be saved.',
     attachments: 'Attachments', downloadAttachment: 'Download attachment', attachmentDownloadError: 'The attachment could not be downloaded.',
     addAttachments: 'Add files to this reply', attachmentHint: 'Up to 3 files, 10 MB each. PDF, JPEG, PNG, or WebP.',
     attachmentLimit: 'Choose no more than 3 files.', attachmentInvalid: 'Choose a supported file up to 10 MB.',
@@ -64,6 +73,10 @@ const words: Record<Lang, Record<string, string>> = {
     reply: 'رد علني', replyHint: 'ستظهر هذه الرسالة للعضو أو الشريك.', replyPlaceholder: 'اكتب رداً واضحاً ومفيداً…', send: 'إرسال الرد', sending: 'جارٍ الإرسال…',
     internalNote: 'ملاحظة داخلية', internalNoteHint: 'يراها فريق الدعم المعتمد فقط، ولا تُرسل إلى العضو.', internalNotePlaceholder: 'اكتب ملاحظة لفريق الدعم…',
     saveInternalNote: 'حفظ الملاحظة الداخلية', savingInternalNote: 'جارٍ الحفظ…', internalOnly: 'للموظفين فقط', internalNoteSent: 'تم حفظ الملاحظة الداخلية.', internalNoteError: 'تعذر حفظ الملاحظة الداخلية. حاول مرة أخرى.',
+    relatedRecords: 'الحجوزات وتسجيلات الحضور المرتبطة', relatedRecordsHint: 'تظهر هنا سجلات هذا العضو فقط.',
+    selectRelatedRecord: 'اختر حجزاً أو تسجيلاً للحضور…', bookingRecord: 'حجز', checkinRecord: 'تسجيل حضور',
+    noRelatedRecords: 'لم يتم العثور على حجوزات أو تسجيلات حضور حديثة.', linkRecord: 'ربط السجل', linkingRecord: 'جارٍ الربط…', unlinkRecord: 'إزالة الربط',
+    relatedRecordLinked: 'تم ربط السجل بهذا الطلب.', relatedRecordUnlinked: 'تمت إزالة الربط.', relatedRecordError: 'تعذر حفظ ربط السجل.',
     attachments: 'المرفقات', downloadAttachment: 'تنزيل المرفق', attachmentDownloadError: 'تعذر تنزيل المرفق.',
     addAttachments: 'إضافة ملفات إلى هذا الرد', attachmentHint: 'حتى 3 ملفات، 10 ميغابايت لكل ملف. PDF أو JPEG أو PNG أو WebP.',
     attachmentLimit: 'اختر 3 ملفات كحد أقصى.', attachmentInvalid: 'اختر ملفاً مدعوماً بحجم لا يتجاوز 10 ميغابايت.',
@@ -90,6 +103,10 @@ const words: Record<Lang, Record<string, string>> = {
     reply: 'وەڵامی گشتی', replyHint: 'ئەم نامەیە بۆ ئەندام یان هاوبەش دەردەکەوێت.', replyPlaceholder: 'وەڵامێکی ڕوون و یارمەتیدەر بنووسە…', send: 'ناردنی وەڵام', sending: 'لە ناردندایە…',
     internalNote: 'تێبینی ناوخۆیی', internalNoteHint: 'تەنها تیمی پشتگیریی ڕێگەپێدراو دەیبینێت و بۆ ئەندام نانێردرێت.', internalNotePlaceholder: 'تێبینییەک بۆ تیمی پشتگیری بنووسە…',
     saveInternalNote: 'پاشەکەوتکردنی تێبینی ناوخۆیی', savingInternalNote: 'لە پاشەکەوتکردندایە…', internalOnly: 'تەنها بۆ کارمەندان', internalNoteSent: 'تێبینی ناوخۆیی پاشەکەوت کرا.', internalNoteError: 'پاشەکەوتکردنی تێبینی سەرکەوتوو نەبوو. دووبارە هەوڵ بدەوە.',
+    relatedRecords: 'حجز و تۆمارەکانی هاتنەژوورەوە', relatedRecordsHint: 'تەنها تۆمارەکانی ئەم ئەندامە لێرە دەردەکەون.',
+    selectRelatedRecord: 'حجز یان تۆماری هاتنەژوورەوە هەڵبژێرە…', bookingRecord: 'حجز', checkinRecord: 'تۆماری هاتنەژوورەوە',
+    noRelatedRecords: 'هیچ حجز یان تۆمارێکی نوێی هاتنەژوورەوە نەدۆزرایەوە.', linkRecord: 'بەستنەوەی تۆمار', linkingRecord: 'لە بەستنەوەدایە…', unlinkRecord: 'لابردنی بەستنەوە',
+    relatedRecordLinked: 'تۆمارەکە بە داواکارییەکەوە بەسترا.', relatedRecordUnlinked: 'بەستنەوەکە لابرا.', relatedRecordError: 'پاشەکەوتکردنی بەستنەوەی تۆمار سەرکەوتوو نەبوو.',
     attachments: 'هاوپێچەکان', downloadAttachment: 'داگرتنی هاوپێچ', attachmentDownloadError: 'داگرتنی هاوپێچ سەرکەوتوو نەبوو.',
     addAttachments: 'زیادکردنی فایل بۆ ئەم وەڵامە', attachmentHint: 'تا ٣ فایل، هەر یەکە ١٠ مێگابایت. PDF، JPEG، PNG یان WebP.',
     attachmentLimit: 'تەنها تا ٣ فایل هەڵبژێرە.', attachmentInvalid: 'فایلێکی پشتگیریکراو تا ١٠ مێگابایت هەڵبژێرە.',
@@ -135,6 +152,7 @@ export function SupportDeskPage() {
   const [selectedId, setSelectedId] = useState('');
   const [feedback, setFeedback] = useState('');
   const [internalNoteText, setInternalNoteText] = useState('');
+  const [relatedRecordChoice, setRelatedRecordChoice] = useState('');
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState('');
   const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
@@ -150,16 +168,22 @@ export function SupportDeskPage() {
   const queue = useGetSupportStaffTickets(params, { query: { queryKey: getGetSupportStaffTicketsQueryKey(params), refetchInterval: 15_000, retry: false, enabled: isLoaded && isSignedIn } });
   const agentsQuery = useGetSupportStaffAgents({ query: { queryKey: getGetSupportStaffAgentsQueryKey(), retry: false, enabled: isLoaded && isSignedIn } });
   const detail = useGetSupportStaffTicket(selectedId, { query: { enabled: !!selectedId && isLoaded && isSignedIn, queryKey: getGetSupportStaffTicketQueryKey(selectedId), refetchInterval: 20_000, retry: false } });
+  const relatedRecordsQuery = useGetSupportStaffTicketRelatedRecords(selectedId, {
+    query: { enabled: !!selectedId && isLoaded && isSignedIn, queryKey: getGetSupportStaffTicketRelatedRecordsQueryKey(selectedId), refetchInterval: 30_000, retry: false },
+  });
   const attachmentsQuery = useGetSupportStaffTicketAttachments(selectedId, {
     query: { enabled: !!selectedId && isLoaded && isSignedIn, queryKey: getGetSupportStaffTicketAttachmentsQueryKey(selectedId), refetchInterval: 20_000, retry: false },
   });
   const update = useUpdateSupportStaffTicket();
   const addInternalNote = useAddSupportStaffInternalNote();
+  const createRelatedRecordLink = useCreateSupportStaffTicketLink();
+  const deleteRelatedRecordLink = useDeleteSupportStaffTicketLink();
   const reply = useReplySupportStaffTicket();
   const tickets = queue.data ?? [];
   const agents = agentsQuery.data ?? [];
   const authorized = !!userId && agents.some(agent => agent.userId === userId && (agent.role === 'admin' || agent.role === 'support'));
   const active = detail.data;
+  const relatedRecords = relatedRecordsQuery.data?.records ?? [];
 
   useEffect(() => {
     if (!queue.isSuccess) return;
@@ -256,6 +280,39 @@ export function SupportDeskPage() {
       setFeedback('note-error');
     }
   };
+  const refreshRelatedRecords = async () => {
+    if (!selectedId) return;
+    await client.invalidateQueries({ queryKey: getGetSupportStaffTicketRelatedRecordsQueryKey(selectedId) });
+  };
+  const linkRelatedRecord = async () => {
+    const record = relatedRecords.find(item => `${item.recordType}:${item.id}` === relatedRecordChoice);
+    if (!selectedId || !record || record.linkId) return;
+    setFeedback('');
+    try {
+      const updated = await createRelatedRecordLink.mutateAsync({
+        id: selectedId,
+        data: { recordType: record.recordType as SupportTicketLinkType, recordId: record.id },
+      });
+      client.setQueryData(getGetSupportStaffTicketRelatedRecordsQueryKey(selectedId), updated);
+      await refreshRelatedRecords();
+      setRelatedRecordChoice('');
+      setFeedback('related-linked');
+    } catch {
+      setFeedback('related-error');
+    }
+  };
+  const unlinkRelatedRecord = async (linkId: string) => {
+    if (!selectedId) return;
+    setFeedback('');
+    try {
+      const updated = await deleteRelatedRecordLink.mutateAsync({ id: selectedId, linkId });
+      client.setQueryData(getGetSupportStaffTicketRelatedRecordsQueryKey(selectedId), updated);
+      await refreshRelatedRecords();
+      setFeedback('related-unlinked');
+    } catch {
+      setFeedback('related-error');
+    }
+  };
   const retryAttachmentUpload = async () => {
     if (!selectedId || !pendingAttachmentMessageId || !attachmentFiles.length) return;
     setAttachmentBusy(true);
@@ -323,7 +380,7 @@ export function SupportDeskPage() {
         </div>
         <div className="max-h-[74vh] overflow-y-auto p-2">
           {queue.isLoading ? <div className="space-y-2 p-2" data-testid="support-queue-skeleton">{[1,2,3,4,5].map(i => <div key={i} className="h-24 animate-pulse rounded-2xl bg-[#eeeadf]" />)}</div>
-            : sortedTickets.length ? sortedTickets.map(ticket => <button type="button" key={ticket.id} data-testid={`ticket-row-${ticket.id}`} aria-current={selectedId === ticket.id ? 'true' : undefined} disabled={attachmentBusy} onClick={() => { setSelectedId(ticket.id); setInternalNoteText(''); setAttachmentFiles([]); setPendingAttachmentMessageId(''); replyForm.reset({ message: '' }); setFeedback(''); }} className={`mb-1 w-full rounded-2xl border p-3.5 text-start transition hover:bg-[#f5f2e9] disabled:cursor-wait disabled:opacity-60 ${selectedId === ticket.id ? 'border-[#9db3a4] bg-[#eef2e9] shadow-[inset_3px_0_0_#28695a]' : 'border-transparent bg-transparent'}`}>
+            : sortedTickets.length ? sortedTickets.map(ticket => <button type="button" key={ticket.id} data-testid={`ticket-row-${ticket.id}`} aria-current={selectedId === ticket.id ? 'true' : undefined} disabled={attachmentBusy} onClick={() => { setSelectedId(ticket.id); setInternalNoteText(''); setRelatedRecordChoice(''); setAttachmentFiles([]); setPendingAttachmentMessageId(''); replyForm.reset({ message: '' }); setFeedback(''); }} className={`mb-1 w-full rounded-2xl border p-3.5 text-start transition hover:bg-[#f5f2e9] disabled:cursor-wait disabled:opacity-60 ${selectedId === ticket.id ? 'border-[#9db3a4] bg-[#eef2e9] shadow-[inset_3px_0_0_#28695a]' : 'border-transparent bg-transparent'}`}>
               <div className="flex items-start justify-between gap-3"><span data-testid={`text-ticket-subject-${ticket.id}`} className="min-w-0 break-words text-sm font-bold leading-5 text-[#29483e]">{ticket.subject}</span>{ticket.urgent && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#f7e7df] px-2 py-1 text-[9px] font-extrabold uppercase tracking-wide text-[#934638]"><AlertTriangle size={11}/>{t.urgent}</span>}</div>
               {ticket.urgentOverdue && <span data-testid={`badge-ticket-overdue-${ticket.id}`} className="mt-2 inline-flex rounded-full bg-[#9a4435] px-2 py-1 text-[9px] font-bold text-white">{t.overdue}</span>}
               <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] text-[#75847c]"><span className="rounded-full bg-[#e9e5d7] px-2 py-1 font-semibold text-[#536b61]">{t[ticket.category] ?? ticket.category}</span><span>{langName[ticketLanguage(ticket.language)]}</span><span className="ms-auto inline-flex items-center gap-1"><Clock3 size={11}/>{dateLabel(ticket.lastMessageAt, language)}</span></div>
@@ -351,8 +408,8 @@ export function SupportDeskPage() {
                 <AlertTriangle size={17} className="mt-0.5 shrink-0"/><div><p className="text-xs font-bold">{t.alert}{active.urgentOverdue ? ` · ${t.overdue}` : ''}</p><p className="mt-1 text-xs leading-5">{active.urgentOverdue ? t.alertOverdue : active.urgentAlertStatus === 'pending' ? t.alertPending : active.urgentAlertStatus === 'accepted' ? t.alertAccepted : active.urgentAlertStatus === 'fallback_required' ? t.alertFallback : t.alertNone}</p><p className="mt-1.5 text-[10px] leading-4 opacity-80">{t.alertNote}</p></div>
               </div>}
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[10px] text-[#75847c]"><span className="inline-flex items-center gap-1.5"><UserRound size={12}/>{t.customerId}: {active.memberUserId}</span><span className="inline-flex items-center gap-1.5"><Clock3 size={12}/>{t.lastActivity}: {dateLabel(active.lastMessageAt, language)}</span></div>
-              {feedback && <p role="status" data-testid="status-ticket-action" className={`mt-3 text-xs font-semibold ${['error', 'reply-error', 'note-error', 'attachment-error', 'attachment-invalid', 'attachment-limit', 'download-error'].includes(feedback) ? 'text-[#9a4435]' : 'text-[#28695a]'}`}>
-                {feedback === 'sent' ? t.replySent : feedback === 'reply-error' ? t.failedReply : feedback === 'error' ? t.updateError : feedback === 'saved' ? <><Check size={12} className="inline"/> {t.event}</> : feedback === 'note-sent' ? t.internalNoteSent : feedback === 'note-error' ? t.internalNoteError : feedback === 'attachment-error' ? t.attachmentUploadError : feedback === 'attachment-invalid' ? t.attachmentInvalid : feedback === 'attachment-limit' ? t.attachmentLimit : feedback === 'attachment-uploaded' ? t.attachmentUploadSuccess : feedback === 'download-error' ? t.attachmentDownloadError : ''}
+              {feedback && <p role="status" data-testid="status-ticket-action" className={`mt-3 text-xs font-semibold ${['error', 'reply-error', 'note-error', 'related-error', 'attachment-error', 'attachment-invalid', 'attachment-limit', 'download-error'].includes(feedback) ? 'text-[#9a4435]' : 'text-[#28695a]'}`}>
+                {feedback === 'sent' ? t.replySent : feedback === 'reply-error' ? t.failedReply : feedback === 'error' ? t.updateError : feedback === 'saved' ? <><Check size={12} className="inline"/> {t.event}</> : feedback === 'note-sent' ? t.internalNoteSent : feedback === 'note-error' ? t.internalNoteError : feedback === 'related-linked' ? t.relatedRecordLinked : feedback === 'related-unlinked' ? t.relatedRecordUnlinked : feedback === 'related-error' ? t.relatedRecordError : feedback === 'attachment-error' ? t.attachmentUploadError : feedback === 'attachment-invalid' ? t.attachmentInvalid : feedback === 'attachment-limit' ? t.attachmentLimit : feedback === 'attachment-uploaded' ? t.attachmentUploadSuccess : feedback === 'download-error' ? t.attachmentDownloadError : ''}
                </p>}
             </div>
 
@@ -431,6 +488,38 @@ export function SupportDeskPage() {
               </section>
 
               <aside className="p-4 sm:p-5" aria-label={t.timeline}>
+                <section className="mb-6 rounded-2xl border border-[#d8e2d5] bg-[#f1f4eb] p-3.5" data-testid="support-related-records">
+                  <h3 className="text-xs font-extrabold text-[#36564b]">{t.relatedRecords}</h3>
+                  <p className="mt-1 text-[10px] leading-4 text-[#75847c]">{t.relatedRecordsHint}</p>
+                  {relatedRecordsQuery.isLoading ? <p className="mt-3 text-[10px] text-[#75847c]">{t.loading}</p>
+                    : relatedRecordsQuery.isError ? <p role="alert" className="mt-3 text-[10px] text-[#9a4435]">{t.relatedRecordError}</p>
+                      : <>
+                        <div className="mt-3 space-y-2">
+                          {relatedRecords.filter(record => record.linkId).map(record => <div key={record.linkId} className="rounded-xl border border-[#d8e2d5] bg-[#fffdf7] p-2.5">
+                            <p className="break-words text-[11px] font-bold text-[#36564b]">{record.recordType === 'booking' ? t.bookingRecord : t.checkinRecord}: {record.title}</p>
+                            <p className="mt-1 text-[10px] leading-4 text-[#75847c]">{record.facility} · {dateLabel(record.occurredAt, language)} · {record.status}</p>
+                            <button type="button" data-testid={`button-unlink-related-record-${record.linkId}`} disabled={deleteRelatedRecordLink.isPending}
+                              onClick={() => void unlinkRelatedRecord(record.linkId!)} className="mt-2 text-[10px] font-bold text-[#8f3f32] underline-offset-2 hover:underline disabled:opacity-50">{t.unlinkRecord}</button>
+                          </div>)}
+                          {!relatedRecords.length && <p className="text-[10px] leading-4 text-[#75847c]">{t.noRelatedRecords}</p>}
+                        </div>
+                        <form onSubmit={event => { event.preventDefault(); void linkRelatedRecord(); }} className="mt-3 border-t border-[#dbe3d7] pt-3">
+                          <label htmlFor="support-related-record-select" className="block text-[10px] font-semibold text-[#536b61]">{t.selectRelatedRecord}</label>
+                          <select id="support-related-record-select" data-testid="select-support-related-record" value={relatedRecordChoice} onChange={event => setRelatedRecordChoice(event.currentTarget.value)}
+                            disabled={createRelatedRecordLink.isPending || relatedRecordsQuery.isLoading}
+                            className={`${field} mt-1.5 w-full px-2.5 py-2 text-[10px]`}>
+                            <option value="">{t.selectRelatedRecord}</option>
+                            {relatedRecords.filter(record => !record.linkId).map(record => <option key={`${record.recordType}:${record.id}`} value={`${record.recordType}:${record.id}`}>
+                              {record.recordType === 'booking' ? t.bookingRecord : t.checkinRecord} · {record.title} · {record.facility} · {dateLabel(record.occurredAt, language)}
+                            </option>)}
+                          </select>
+                          <button type="submit" data-testid="button-link-support-related-record" disabled={!relatedRecordChoice || createRelatedRecordLink.isPending}
+                            className="mt-2 w-full rounded-full bg-[#174d43] px-3 py-2 text-[10px] font-bold text-[#fff9e9] transition hover:bg-[#226556] disabled:cursor-not-allowed disabled:opacity-45">
+                            {createRelatedRecordLink.isPending ? t.linkingRecord : t.linkRecord}
+                          </button>
+                        </form>
+                      </>}
+                </section>
                 <h3 className="text-xs font-extrabold uppercase tracking-[.12em] text-[#536b61]">{t.timeline}</h3>
                 {active.events.length ? <ol className="mt-4 space-y-0" data-testid={`ticket-timeline-${active.id}`}>{active.events.map((event, index) => <li key={`${event.createdAt}-${index}`} data-testid={`ticket-event-${active.id}-${index}`} className="relative border-s border-[#d8d2c4] pb-5 ps-4 last:border-transparent last:pb-0"><span className="absolute -start-[5px] top-1 h-2.5 w-2.5 rounded-full border-2 border-[#fbf9f2] bg-[#6c8877]"/><p className="text-xs font-bold text-[#36564b]">{event.previousStatus !== event.nextStatus ? t.statusEvent : event.previousAssignee !== event.nextAssignee ? t.assignedEvent : event.action || t.event}</p><p className="mt-1 text-[10px] leading-4 text-[#75847c]">{event.detail || event.action}</p><p className="mt-1 text-[9px] text-[#919b93]">{dateLabel(event.createdAt, language)} · {event.actorId}</p></li>)}</ol> : <p data-testid="support-no-events" className="mt-4 text-xs leading-5 text-[#75847c]">{t.noEvents}</p>}
                 <div className="mt-6 rounded-2xl border border-[#e4dfd2] bg-[#f5f2e9] p-3.5"><div className="flex items-center gap-2 text-[#536b61]"><Shield size={14}/><p className="text-[10px] font-extrabold">{t.security}</p></div><p className="mt-2 text-[10px] leading-5 text-[#75847c]">{t.alertNote}</p></div>

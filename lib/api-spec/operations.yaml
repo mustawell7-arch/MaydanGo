@@ -285,6 +285,46 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SupportStaffTicketDetail" }
+  /support/staff/tickets/{id}/related-records:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getSupportStaffTicketRelatedRecords
+      responses:
+        "200":
+          description: Recent bookings and check-ins belonging to the ticket member, with current links
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportStaffRelatedRecords" }
+  /support/staff/tickets/{id}/links:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: createSupportStaffTicketLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportTicketLinkInput" }
+      responses:
+        "201":
+          description: A member-owned booking or check-in was linked to the support ticket
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportStaffRelatedRecords" }
+  /support/staff/tickets/{id}/links/{linkId}:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: linkId
+        in: path
+        required: true
+        schema: { type: string }
+    delete:
+      operationId: deleteSupportStaffTicketLink
+      responses:
+        "200":
+          description: Ticket link removed; refreshed related records returned
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportStaffRelatedRecords" }
   /support/staff/tickets/{id}/attachments:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     get:
@@ -1654,6 +1694,32 @@ components:
           properties:
             authorId: { type: string }
             isInternal: { type: boolean }
+    SupportTicketLinkType:
+      type: string
+      enum: [booking, checkin]
+    SupportStaffRelatedRecord:
+      type: object
+      required: [id, recordType, title, facility, occurredAt, status, linkId]
+      properties:
+        id: { type: string }
+        recordType: { $ref: "#/components/schemas/SupportTicketLinkType" }
+        title: { type: string }
+        facility: { type: string }
+        occurredAt: { type: string, format: date-time }
+        status: { type: string }
+        linkId: { type: [string, "null"] }
+    SupportStaffRelatedRecords:
+      type: object
+      required: [records]
+      properties:
+        records: { type: array, items: { $ref: "#/components/schemas/SupportStaffRelatedRecord" } }
+    SupportTicketLinkInput:
+      type: object
+      additionalProperties: false
+      required: [recordType, recordId]
+      properties:
+        recordType: { $ref: "#/components/schemas/SupportTicketLinkType" }
+        recordId: { type: string, minLength: 1, maxLength: 160 }
     SupportStaffEvent:
       allOf:
         - $ref: "#/components/schemas/SupportTicketEvent"

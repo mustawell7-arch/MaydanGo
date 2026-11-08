@@ -1,4 +1,6 @@
-import { pgTable, text, boolean, timestamp, integer, index, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, timestamp, integer, index, uniqueIndex, jsonb, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { attendance, reservations } from "./bookings";
 
 export const supportTickets = pgTable("support_tickets", {
   id: text("id").primaryKey(),
@@ -62,6 +64,22 @@ export const supportTicketEvents = pgTable("support_ticket_events", {
   detail: text("detail").notNull().default(""),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("support_ticket_events_ticket_created_idx").on(t.ticketId, t.createdAt)]);
+
+export const supportTicketLinks = pgTable("support_ticket_links", {
+  id: text("id").primaryKey(),
+  ticketId: text("ticket_id").notNull().references(() => supportTickets.id, { onDelete: "cascade" }),
+  reservationId: text("reservation_id").references(() => reservations.id, { onDelete: "cascade" }),
+  attendanceId: text("attendance_id").references(() => attendance.id, { onDelete: "cascade" }),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  check("support_ticket_links_one_record_check", sql`num_nonnulls(${t.reservationId}, ${t.attendanceId}) = 1`),
+  index("support_ticket_links_ticket_created_idx").on(t.ticketId, t.createdAt),
+  uniqueIndex("support_ticket_links_booking_unique").on(t.ticketId, t.reservationId)
+    .where(sql`${t.reservationId} IS NOT NULL`),
+  uniqueIndex("support_ticket_links_checkin_unique").on(t.ticketId, t.attendanceId)
+    .where(sql`${t.attendanceId} IS NOT NULL`),
+]);
 
 export const memberNotificationPreferences = pgTable("member_notification_preferences", {
   userId: text("user_id").primaryKey(),

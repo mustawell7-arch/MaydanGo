@@ -6005,6 +6005,67 @@ export const AddSupportStaffInternalNoteResponse = zod.object({
 }))
 
 
+export const GetSupportStaffTicketRelatedRecordsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetSupportStaffTicketRelatedRecordsResponse = zod.object({
+  "records": zod.array(zod.object({
+  "id": zod.string(),
+  "recordType": zod.enum(['booking', 'checkin']),
+  "title": zod.string(),
+  "facility": zod.string(),
+  "occurredAt": zod.coerce.date(),
+  "status": zod.string(),
+  "linkId": zod.string().nullable()
+}))
+})
+
+
+export const CreateSupportStaffTicketLinkParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const createSupportStaffTicketLinkBodyRecordIdMax = 160;
+
+
+
+export const CreateSupportStaffTicketLinkBody = zod.object({
+  "recordType": zod.enum(['booking', 'checkin']),
+  "recordId": zod.string().min(1).max(createSupportStaffTicketLinkBodyRecordIdMax)
+})
+
+export const CreateSupportStaffTicketLinkResponse = zod.object({
+  "records": zod.array(zod.object({
+  "id": zod.string(),
+  "recordType": zod.enum(['booking', 'checkin']),
+  "title": zod.string(),
+  "facility": zod.string(),
+  "occurredAt": zod.coerce.date(),
+  "status": zod.string(),
+  "linkId": zod.string().nullable()
+}))
+})
+
+
+export const DeleteSupportStaffTicketLinkParams = zod.object({
+  "id": zod.coerce.string(),
+  "linkId": zod.coerce.string()
+})
+
+export const DeleteSupportStaffTicketLinkResponse = zod.object({
+  "records": zod.array(zod.object({
+  "id": zod.string(),
+  "recordType": zod.enum(['booking', 'checkin']),
+  "title": zod.string(),
+  "facility": zod.string(),
+  "occurredAt": zod.coerce.date(),
+  "status": zod.string(),
+  "linkId": zod.string().nullable()
+}))
+})
+
+
 export const GetSupportStaffTicketAttachmentsParams = zod.object({
   "id": zod.coerce.string()
 })

@@ -502,6 +502,12 @@ paths:
     $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1replies"
   /support/staff/tickets/{id}/notes:
     $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1notes"
+  /support/staff/tickets/{id}/related-records:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1related-records"
+  /support/staff/tickets/{id}/links:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1links"
+  /support/staff/tickets/{id}/links/{linkId}:
+    $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1links~1{linkId}"
   /support/staff/tickets/{id}/attachments:
     $ref: "./operations.yaml#/paths/~1support~1staff~1tickets~1{id}~1attachments"
   /support/staff/tickets/{id}/attachments/{attachmentId}/complete:

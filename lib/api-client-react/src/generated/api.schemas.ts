@@ -844,6 +844,38 @@ export type SupportStaffMessage = SupportMessage & {
   isInternal: boolean;
 };
 
+export type SupportTicketLinkType = typeof SupportTicketLinkType[keyof typeof SupportTicketLinkType];
+
+
+export const SupportTicketLinkType = {
+  booking: 'booking',
+  checkin: 'checkin',
+} as const;
+
+export interface SupportStaffRelatedRecord {
+  id: string;
+  recordType: SupportTicketLinkType;
+  title: string;
+  facility: string;
+  occurredAt: string;
+  status: string;
+  /** @nullable */
+  linkId: string | null;
+}
+
+export interface SupportStaffRelatedRecords {
+  records: SupportStaffRelatedRecord[];
+}
+
+export interface SupportTicketLinkInput {
+  recordType: SupportTicketLinkType;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  recordId: string;
+}
+
 export type SupportStaffEvent = SupportTicketEvent & ({
   actorId: string;
   /** @nullable */

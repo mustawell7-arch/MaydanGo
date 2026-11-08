@@ -26,6 +26,8 @@ const removableAgentId = `${prefix}-removable-agent`;
 const livePartnerId = `${prefix}-live-partner`;
 const ticketIds: string[] = [];
 const offeringIds: string[] = [];
+const testReservationIds: string[] = [];
+const testAttendanceIds: string[] = [];
 let server: Server | null = null;
 let restoreFetch: (() => void) | null = null;
 
@@ -58,6 +60,15 @@ after(async () => {
   await db.delete(pushDeliveries).where(inArray(pushDeliveries.userId, notificationUsers));
   await db.delete(pushDevices).where(inArray(pushDevices.userId, notificationUsers));
   await db.delete(memberNotificationPreferences).where(inArray(memberNotificationPreferences.userId, notificationUsers));
+  if (testReservationIds.length) {
+    await db.delete(attendanceEvents).where(inArray(attendanceEvents.reservationId, testReservationIds));
+  }
+  if (testAttendanceIds.length) {
+    await db.delete(attendance).where(inArray(attendance.id, testAttendanceIds));
+  }
+  if (testReservationIds.length) {
+    await db.delete(reservations).where(inArray(reservations.id, testReservationIds));
+  }
   await db.delete(reservations).where(eq(reservations.userId, alice));
   await db.delete(memberships).where(eq(memberships.userId, alice));
   if (offeringIds.length) await db.delete(offerings).where(inArray(offerings.id, offeringIds));
@@ -87,6 +98,35 @@ test("support conversations are private, triaged, audited, and replyable", async
   assert.equal((await call(`/member/support/tickets/${created.data.id}`, bob)).status, 404);
   assert.equal((await call(`/member/support/tickets/${created.data.id}`, undefined)).status, 401);
   assert.equal((await call("/support/staff/tickets", partnerId)).status, 403);
+
+  const linkOfferingId = `${prefix}-support-link-offering`;
+  const bookingId = `${prefix}-support-link-booking`;
+  const otherBookingId = `${prefix}-support-link-other-booking`;
+  const checkinId = `${prefix}-support-link-checkin`;
+  offeringIds.push(linkOfferingId);
+  testReservationIds.push(bookingId, otherBookingId);
+  testAttendanceIds.push(checkinId);
+  const sessionStart = new Date(Date.now() - 60 * 60 * 1000);
+  await db.insert(offerings).values({
+    id: linkOfferingId, targetId: linkOfferingId, kind: "session", slot: "", title: "Support link session",
+    scope: "live", accessType: "physical", active: true, city: "baghdad", facility: "Test facility",
+    category: "fitness", tiers: ["M"], startsAt: sessionStart,
+    endsAt: new Date(sessionStart.getTime() + 30 * 60 * 1000),
+    cancellationDeadline: sessionStart, capacity: 4,
+  });
+  await db.insert(reservations).values([
+    { id: bookingId, userId: alice, offeringId: linkOfferingId, status: "confirmed" },
+    { id: otherBookingId, userId: bob, offeringId: linkOfferingId, status: "confirmed" },
+  ]);
+  await db.insert(attendance).values({
+    id: checkinId, userId: alice, offeringId: linkOfferingId, checkedInAt: new Date(sessionStart.getTime() + 5 * 60 * 1000),
+    verifiedBy: supportId, reservationId: bookingId, status: "confirmed", settlementEligible: false,
+  });
+  const availableRelatedRecords = await call(`/support/staff/tickets/${created.data.id}/related-records`, supportId);
+  assert.equal(availableRelatedRecords.status, 200);
+  assert.equal(availableRelatedRecords.data.records.length, 2);
+  assert.ok(availableRelatedRecords.data.records.every((record: { id: string }) => record.id !== otherBookingId));
+  assert.equal((await call(`/support/staff/tickets/${created.data.id}/related-records`, alice)).status, 403);
 
   const supportDeviceId = randomUUID();
   const supportToken = `ExpoPushToken[${randomUUID().replaceAll("-", "")}]`;
@@ -298,6 +338,31 @@ test("support conversations are private, triaged, audited, and replyable", async
   });
   assert.equal(response.status, 201);
   assert.equal(response.data.status, "waiting_member");
+  const linkedBooking = await call(`/support/staff/tickets/${created.data.id}/links`, supportId, "POST", {
+    recordType: "booking", recordId: bookingId,
+  });
+  assert.equal(linkedBooking.status, 201);
+  const bookingLinkId = linkedBooking.data.records.find((record: { id: string; recordType: string }) =>
+    record.id === bookingId && record.recordType === "booking",
+  )?.linkId;
+  assert.ok(bookingLinkId);
+  const linkedCheckin = await call(`/support/staff/tickets/${created.data.id}/links`, supportId, "POST", {
+    recordType: "checkin", recordId: checkinId,
+  });
+  assert.equal(linkedCheckin.status, 201);
+  assert.ok(linkedCheckin.data.records.find((record: { id: string; recordType: string }) =>
+    record.id === checkinId && record.recordType === "checkin",
+  )?.linkId);
+  assert.equal((await call(`/support/staff/tickets/${created.data.id}/links`, supportId, "POST", {
+    recordType: "booking", recordId: otherBookingId,
+  })).status, 404);
+  const unlinkedBooking = await call(
+    `/support/staff/tickets/${created.data.id}/links/${bookingLinkId}`, supportId, "DELETE",
+  );
+  assert.equal(unlinkedBooking.status, 200);
+  assert.equal(unlinkedBooking.data.records.find((record: { id: string; recordType: string }) =>
+    record.id === bookingId && record.recordType === "booking",
+  )?.linkId, null);
   const internalNote = await call(`/support/staff/tickets/${created.data.id}/notes`, supportId, "POST", {
     message: "Confirm the partner schedule before replying.",
   });
@@ -317,6 +382,7 @@ test("support conversations are private, triaged, audited, and replyable", async
     !message.isInternal && !message.message.includes("Confirm the partner schedule"),
   ));
   assert.equal("memberUserId" in memberView.data, false);
+  assert.equal("records" in memberView.data, false);
   assert.equal((await call(`/member/support/tickets/${created.data.id}`, bob)).status, 404);
 
   const memberReply = await call(`/member/support/tickets/${created.data.id}/replies`, alice, "POST", {
@@ -335,6 +401,8 @@ test("support conversations are private, triaged, audited, and replyable", async
   const supportAuditRows = await db.select().from(operationAudit)
     .where(and(eq(operationAudit.actorId, supportId), eq(operationAudit.targetId, created.data.id)));
   assert.ok(supportAuditRows.some(row => row.action === "support.ticket.internal_note"));
+  assert.ok(supportAuditRows.some(row => row.action === "support.ticket.link_record"));
+  assert.ok(supportAuditRows.some(row => row.action === "support.ticket.unlink_record"));
   assert.equal((await call("/support/staff/agents", supportId)).status, 200);
   const newAgent = await call("/support/staff/agents", adminId, "POST", { userId: newAgentId });
   assert.equal(newAgent.status, 201);

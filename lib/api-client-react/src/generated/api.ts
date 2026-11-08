@@ -167,11 +167,13 @@ import type {
   SupportInternalNoteInput,
   SupportReplyInput,
   SupportStaffAccessAuditEvent,
+  SupportStaffRelatedRecords,
   SupportStaffTicketDetail,
   SupportStaffTicketSummary,
   SupportStaffTicketUpdate,
   SupportTicketDetail,
   SupportTicketInput,
+  SupportTicketLinkInput,
   SupportTicketSummary,
   SupportUrgentAlertDeliveryOutcome,
   SupportUrgentAlertRecipientAudit
@@ -10159,6 +10161,254 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getAddSupportStaffInternalNoteMutationOptions(options), queryClient);
+    }
+
+export const getGetSupportStaffTicketRelatedRecordsUrl = (id: string,) => {
+
+
+
+
+  return `/api/support/staff/tickets/${id}/related-records`
+}
+
+export const getSupportStaffTicketRelatedRecords = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<SupportStaffRelatedRecords> => {
+
+  return customFetch<SupportStaffRelatedRecords>(getGetSupportStaffTicketRelatedRecordsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportStaffTicketRelatedRecordsQueryKey = (id: string,) => {
+    return [
+    `/api/support/staff/tickets/${id}/related-records`
+    ] as const;
+    }
+
+
+export const getGetSupportStaffTicketRelatedRecordsQueryOptions = <TData = Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportStaffTicketRelatedRecordsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>> = ({ signal }) => getSupportStaffTicketRelatedRecords(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSupportStaffTicketRelatedRecordsQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>>
+export type GetSupportStaffTicketRelatedRecordsQueryError = ErrorType<unknown>
+
+
+export function useGetSupportStaffTicketRelatedRecords<TData = Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportStaffTicketRelatedRecords<TData = Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportStaffTicketRelatedRecords<TData = Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSupportStaffTicketRelatedRecords<TData = Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffTicketRelatedRecords>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSupportStaffTicketRelatedRecordsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSupportStaffTicketLinkUrl = (id: string,) => {
+
+
+
+
+  return `/api/support/staff/tickets/${id}/links`
+}
+
+export const createSupportStaffTicketLink = async (id: string,
+    supportTicketLinkInput: SupportTicketLinkInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportStaffRelatedRecords> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportStaffRelatedRecords>(getCreateSupportStaffTicketLinkUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportTicketLinkInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSupportStaffTicketLinkMutationKey = () => ['createSupportStaffTicketLink'] as const;
+
+export const getCreateSupportStaffTicketLinkMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportStaffTicketLink>>, TError,CreateSupportStaffTicketLinkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSupportStaffTicketLink>>, TError,CreateSupportStaffTicketLinkMutationVariables, TContext> => {
+
+const mutationKey = getCreateSupportStaffTicketLinkMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSupportStaffTicketLink>>, CreateSupportStaffTicketLinkMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createSupportStaffTicketLink(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSupportStaffTicketLinkMutationResult = NonNullable<Awaited<ReturnType<typeof createSupportStaffTicketLink>>>
+    export type CreateSupportStaffTicketLinkMutationBody = BodyType<SupportTicketLinkInput>
+    export type CreateSupportStaffTicketLinkMutationError = ErrorType<unknown>
+    export type CreateSupportStaffTicketLinkMutationVariables = {id: string;data: BodyType<SupportTicketLinkInput>}
+
+    export const useCreateSupportStaffTicketLink = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportStaffTicketLink>>, TError,CreateSupportStaffTicketLinkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createSupportStaffTicketLink>>,
+        TError,
+        CreateSupportStaffTicketLinkMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateSupportStaffTicketLinkMutationOptions(options), queryClient);
+    }
+
+export const getDeleteSupportStaffTicketLinkUrl = (id: string,
+    linkId: string,) => {
+
+
+
+
+  return `/api/support/staff/tickets/${id}/links/${linkId}`
+}
+
+export const deleteSupportStaffTicketLink = async (id: string,
+    linkId: string, options?: Parameters<typeof customFetch>[1]): Promise<SupportStaffRelatedRecords> => {
+
+  return customFetch<SupportStaffRelatedRecords>(getDeleteSupportStaffTicketLinkUrl(id,linkId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteSupportStaffTicketLinkMutationKey = () => ['deleteSupportStaffTicketLink'] as const;
+
+export const getDeleteSupportStaffTicketLinkMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSupportStaffTicketLink>>, TError,DeleteSupportStaffTicketLinkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSupportStaffTicketLink>>, TError,DeleteSupportStaffTicketLinkMutationVariables, TContext> => {
+
+const mutationKey = getDeleteSupportStaffTicketLinkMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSupportStaffTicketLink>>, DeleteSupportStaffTicketLinkMutationVariables> = (props) => {
+          const {id,linkId} = props ?? {};
+
+          return  deleteSupportStaffTicketLink(id,linkId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSupportStaffTicketLinkMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSupportStaffTicketLink>>>
+
+    export type DeleteSupportStaffTicketLinkMutationError = ErrorType<unknown>
+    export type DeleteSupportStaffTicketLinkMutationVariables = {id: string;linkId: string}
+
+    export const useDeleteSupportStaffTicketLink = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSupportStaffTicketLink>>, TError,DeleteSupportStaffTicketLinkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSupportStaffTicketLink>>,
+        TError,
+        DeleteSupportStaffTicketLinkMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteSupportStaffTicketLinkMutationOptions(options), queryClient);
     }
 
 export const getGetSupportStaffTicketAttachmentsUrl = (id: string,) => {
