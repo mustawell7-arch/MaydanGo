@@ -17,6 +17,7 @@ import {
   useGetSupportStaffTicketAttachments,
   useGetSupportStaffTicket,
   useGetSupportStaffTickets,
+  useAddSupportStaffInternalNote,
   useReplySupportStaffTicket,
   useUpdateSupportStaffTicket,
   type SupportTicketStatus,
@@ -35,6 +36,8 @@ const words: Record<Lang, Record<string, string>> = {
     selectTicket: 'Choose a ticket', selectHint: 'Select a request to review its conversation, alert outcome and audit history.',
     conversation: 'Conversation', timeline: 'Activity history', assigned: 'Assigned to', unassigned: 'Unassigned', assign: 'Assign to…', status: 'Status',
     reply: 'Public reply', replyHint: 'This message will be visible to the member or partner.', replyPlaceholder: 'Write a clear, helpful response…', send: 'Send reply', sending: 'Sending…',
+    internalNote: 'Internal note', internalNoteHint: 'Only authorized staff can see this. It is not sent to the member.', internalNotePlaceholder: 'Write a note for the support team…',
+    saveInternalNote: 'Save internal note', savingInternalNote: 'Saving…', internalOnly: 'STAFF ONLY', internalNoteSent: 'Internal note saved.', internalNoteError: 'Internal note could not be saved. Try again.',
     attachments: 'Attachments', downloadAttachment: 'Download attachment', attachmentDownloadError: 'The attachment could not be downloaded.',
     addAttachments: 'Add files to this reply', attachmentHint: 'Up to 3 files, 10 MB each. PDF, JPEG, PNG, or WebP.',
     attachmentLimit: 'Choose no more than 3 files.', attachmentInvalid: 'Choose a supported file up to 10 MB.',
@@ -59,6 +62,8 @@ const words: Record<Lang, Record<string, string>> = {
     selectTicket: 'اختر طلباً', selectHint: 'اختر طلباً لمراجعة المحادثة ونتيجة التنبيه وسجل النشاط.',
     conversation: 'المحادثة', timeline: 'سجل النشاط', assigned: 'مسند إلى', unassigned: 'غير مسند', assign: 'إسناد إلى…', status: 'الحالة',
     reply: 'رد علني', replyHint: 'ستظهر هذه الرسالة للعضو أو الشريك.', replyPlaceholder: 'اكتب رداً واضحاً ومفيداً…', send: 'إرسال الرد', sending: 'جارٍ الإرسال…',
+    internalNote: 'ملاحظة داخلية', internalNoteHint: 'يراها فريق الدعم المعتمد فقط، ولا تُرسل إلى العضو.', internalNotePlaceholder: 'اكتب ملاحظة لفريق الدعم…',
+    saveInternalNote: 'حفظ الملاحظة الداخلية', savingInternalNote: 'جارٍ الحفظ…', internalOnly: 'للموظفين فقط', internalNoteSent: 'تم حفظ الملاحظة الداخلية.', internalNoteError: 'تعذر حفظ الملاحظة الداخلية. حاول مرة أخرى.',
     attachments: 'المرفقات', downloadAttachment: 'تنزيل المرفق', attachmentDownloadError: 'تعذر تنزيل المرفق.',
     addAttachments: 'إضافة ملفات إلى هذا الرد', attachmentHint: 'حتى 3 ملفات، 10 ميغابايت لكل ملف. PDF أو JPEG أو PNG أو WebP.',
     attachmentLimit: 'اختر 3 ملفات كحد أقصى.', attachmentInvalid: 'اختر ملفاً مدعوماً بحجم لا يتجاوز 10 ميغابايت.',
@@ -83,6 +88,8 @@ const words: Record<Lang, Record<string, string>> = {
     selectTicket: 'داواکارییەک هەڵبژێرە', selectHint: 'داواکارییەک هەڵبژێرە بۆ پێداچوونەوەی گفتوگۆ، ئەنجامی ئاگادارکردنەوە و مێژووی کار.',
     conversation: 'گفتوگۆ', timeline: 'مێژووی چالاکی', assigned: 'سپێردراوە بە', unassigned: 'نەسپێردراوە', assign: 'بسپێرە بە…', status: 'دۆخ',
     reply: 'وەڵامی گشتی', replyHint: 'ئەم نامەیە بۆ ئەندام یان هاوبەش دەردەکەوێت.', replyPlaceholder: 'وەڵامێکی ڕوون و یارمەتیدەر بنووسە…', send: 'ناردنی وەڵام', sending: 'لە ناردندایە…',
+    internalNote: 'تێبینی ناوخۆیی', internalNoteHint: 'تەنها تیمی پشتگیریی ڕێگەپێدراو دەیبینێت و بۆ ئەندام نانێردرێت.', internalNotePlaceholder: 'تێبینییەک بۆ تیمی پشتگیری بنووسە…',
+    saveInternalNote: 'پاشەکەوتکردنی تێبینی ناوخۆیی', savingInternalNote: 'لە پاشەکەوتکردندایە…', internalOnly: 'تەنها بۆ کارمەندان', internalNoteSent: 'تێبینی ناوخۆیی پاشەکەوت کرا.', internalNoteError: 'پاشەکەوتکردنی تێبینی سەرکەوتوو نەبوو. دووبارە هەوڵ بدەوە.',
     attachments: 'هاوپێچەکان', downloadAttachment: 'داگرتنی هاوپێچ', attachmentDownloadError: 'داگرتنی هاوپێچ سەرکەوتوو نەبوو.',
     addAttachments: 'زیادکردنی فایل بۆ ئەم وەڵامە', attachmentHint: 'تا ٣ فایل، هەر یەکە ١٠ مێگابایت. PDF، JPEG، PNG یان WebP.',
     attachmentLimit: 'تەنها تا ٣ فایل هەڵبژێرە.', attachmentInvalid: 'فایلێکی پشتگیریکراو تا ١٠ مێگابایت هەڵبژێرە.',
@@ -127,6 +134,7 @@ export function SupportDeskPage() {
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [selectedId, setSelectedId] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [internalNoteText, setInternalNoteText] = useState('');
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState('');
   const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
@@ -146,6 +154,7 @@ export function SupportDeskPage() {
     query: { enabled: !!selectedId && isLoaded && isSignedIn, queryKey: getGetSupportStaffTicketAttachmentsQueryKey(selectedId), refetchInterval: 20_000, retry: false },
   });
   const update = useUpdateSupportStaffTicket();
+  const addInternalNote = useAddSupportStaffInternalNote();
   const reply = useReplySupportStaffTicket();
   const tickets = queue.data ?? [];
   const agents = agentsQuery.data ?? [];
@@ -198,7 +207,9 @@ export function SupportDeskPage() {
         id: selectedId,
         data: { message: values.message.trim(), language: (active?.language ?? language) as SupportedLanguage },
       });
-      const latestMessage = updated.messages[updated.messages.length - 1];
+      const latestMessage = [...updated.messages].reverse().find(message =>
+        !message.isInternal && message.authorId === userId && message.authorRole !== 'member',
+      );
       let attachmentFailed = false;
       if (attachmentFiles.length && latestMessage?.id) {
         const filesRemaining = [...attachmentFiles];
@@ -229,6 +240,20 @@ export function SupportDeskPage() {
       setFeedback('reply-error');
     } finally {
       setAttachmentBusy(false);
+    }
+  };
+  const saveInternalNote = async () => {
+    const message = internalNoteText.trim();
+    if (!selectedId || !message) return;
+    setFeedback('');
+    try {
+      const updated = await addInternalNote.mutateAsync({ id: selectedId, data: { message } });
+      client.setQueryData(getGetSupportStaffTicketQueryKey(selectedId), updated);
+      await client.invalidateQueries({ queryKey: getGetSupportStaffTicketQueryKey(selectedId) });
+      setInternalNoteText('');
+      setFeedback('note-sent');
+    } catch {
+      setFeedback('note-error');
     }
   };
   const retryAttachmentUpload = async () => {
@@ -298,7 +323,7 @@ export function SupportDeskPage() {
         </div>
         <div className="max-h-[74vh] overflow-y-auto p-2">
           {queue.isLoading ? <div className="space-y-2 p-2" data-testid="support-queue-skeleton">{[1,2,3,4,5].map(i => <div key={i} className="h-24 animate-pulse rounded-2xl bg-[#eeeadf]" />)}</div>
-            : sortedTickets.length ? sortedTickets.map(ticket => <button type="button" key={ticket.id} data-testid={`ticket-row-${ticket.id}`} aria-current={selectedId === ticket.id ? 'true' : undefined} disabled={attachmentBusy} onClick={() => { setSelectedId(ticket.id); setAttachmentFiles([]); setPendingAttachmentMessageId(''); replyForm.reset({ message: '' }); setFeedback(''); }} className={`mb-1 w-full rounded-2xl border p-3.5 text-start transition hover:bg-[#f5f2e9] disabled:cursor-wait disabled:opacity-60 ${selectedId === ticket.id ? 'border-[#9db3a4] bg-[#eef2e9] shadow-[inset_3px_0_0_#28695a]' : 'border-transparent bg-transparent'}`}>
+            : sortedTickets.length ? sortedTickets.map(ticket => <button type="button" key={ticket.id} data-testid={`ticket-row-${ticket.id}`} aria-current={selectedId === ticket.id ? 'true' : undefined} disabled={attachmentBusy} onClick={() => { setSelectedId(ticket.id); setInternalNoteText(''); setAttachmentFiles([]); setPendingAttachmentMessageId(''); replyForm.reset({ message: '' }); setFeedback(''); }} className={`mb-1 w-full rounded-2xl border p-3.5 text-start transition hover:bg-[#f5f2e9] disabled:cursor-wait disabled:opacity-60 ${selectedId === ticket.id ? 'border-[#9db3a4] bg-[#eef2e9] shadow-[inset_3px_0_0_#28695a]' : 'border-transparent bg-transparent'}`}>
               <div className="flex items-start justify-between gap-3"><span data-testid={`text-ticket-subject-${ticket.id}`} className="min-w-0 break-words text-sm font-bold leading-5 text-[#29483e]">{ticket.subject}</span>{ticket.urgent && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#f7e7df] px-2 py-1 text-[9px] font-extrabold uppercase tracking-wide text-[#934638]"><AlertTriangle size={11}/>{t.urgent}</span>}</div>
               {ticket.urgentOverdue && <span data-testid={`badge-ticket-overdue-${ticket.id}`} className="mt-2 inline-flex rounded-full bg-[#9a4435] px-2 py-1 text-[9px] font-bold text-white">{t.overdue}</span>}
               <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] text-[#75847c]"><span className="rounded-full bg-[#e9e5d7] px-2 py-1 font-semibold text-[#536b61]">{t[ticket.category] ?? ticket.category}</span><span>{langName[ticketLanguage(ticket.language)]}</span><span className="ms-auto inline-flex items-center gap-1"><Clock3 size={11}/>{dateLabel(ticket.lastMessageAt, language)}</span></div>
@@ -326,8 +351,8 @@ export function SupportDeskPage() {
                 <AlertTriangle size={17} className="mt-0.5 shrink-0"/><div><p className="text-xs font-bold">{t.alert}{active.urgentOverdue ? ` · ${t.overdue}` : ''}</p><p className="mt-1 text-xs leading-5">{active.urgentOverdue ? t.alertOverdue : active.urgentAlertStatus === 'pending' ? t.alertPending : active.urgentAlertStatus === 'accepted' ? t.alertAccepted : active.urgentAlertStatus === 'fallback_required' ? t.alertFallback : t.alertNone}</p><p className="mt-1.5 text-[10px] leading-4 opacity-80">{t.alertNote}</p></div>
               </div>}
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[10px] text-[#75847c]"><span className="inline-flex items-center gap-1.5"><UserRound size={12}/>{t.customerId}: {active.memberUserId}</span><span className="inline-flex items-center gap-1.5"><Clock3 size={12}/>{t.lastActivity}: {dateLabel(active.lastMessageAt, language)}</span></div>
-               {feedback && <p role="status" data-testid="status-ticket-action" className={`mt-3 text-xs font-semibold ${['error', 'reply-error', 'attachment-error', 'attachment-invalid', 'attachment-limit', 'download-error'].includes(feedback) ? 'text-[#9a4435]' : 'text-[#28695a]'}`}>
-                 {feedback === 'sent' ? t.replySent : feedback === 'reply-error' ? t.failedReply : feedback === 'error' ? t.updateError : feedback === 'saved' ? <><Check size={12} className="inline"/> {t.event}</> : feedback === 'attachment-error' ? t.attachmentUploadError : feedback === 'attachment-invalid' ? t.attachmentInvalid : feedback === 'attachment-limit' ? t.attachmentLimit : feedback === 'attachment-uploaded' ? t.attachmentUploadSuccess : feedback === 'download-error' ? t.attachmentDownloadError : ''}
+              {feedback && <p role="status" data-testid="status-ticket-action" className={`mt-3 text-xs font-semibold ${['error', 'reply-error', 'note-error', 'attachment-error', 'attachment-invalid', 'attachment-limit', 'download-error'].includes(feedback) ? 'text-[#9a4435]' : 'text-[#28695a]'}`}>
+                {feedback === 'sent' ? t.replySent : feedback === 'reply-error' ? t.failedReply : feedback === 'error' ? t.updateError : feedback === 'saved' ? <><Check size={12} className="inline"/> {t.event}</> : feedback === 'note-sent' ? t.internalNoteSent : feedback === 'note-error' ? t.internalNoteError : feedback === 'attachment-error' ? t.attachmentUploadError : feedback === 'attachment-invalid' ? t.attachmentInvalid : feedback === 'attachment-limit' ? t.attachmentLimit : feedback === 'attachment-uploaded' ? t.attachmentUploadSuccess : feedback === 'download-error' ? t.attachmentDownloadError : ''}
                </p>}
             </div>
 
@@ -337,8 +362,10 @@ export function SupportDeskPage() {
                 <ol className="flex-1 space-y-3 overflow-y-auto bg-[#f6f3eb] p-4 sm:p-5" aria-live="polite">
                   {active.messages.length ? active.messages.map(message => {
                     const fromMember = message.authorRole === 'member';
+                    const internal = message.isInternal;
                     const messageAttachments = attachmentsQuery.data?.filter(file => file.messageId === message.id) ?? [];
-                    return <li key={message.id} data-testid={`message-${message.id}`} className={`max-w-[92%] rounded-2xl border px-4 py-3 ${fromMember ? 'me-auto border-[#d8e2d5] bg-[#e9f0e6]' : 'ms-auto border-[#e2dccd] bg-[#fffdf7]'}`}>
+                    return <li key={message.id} data-testid={`message-${message.id}`} className={`max-w-[92%] rounded-2xl border px-4 py-3 ${internal ? 'mx-auto w-full border-[#e5d29a] bg-[#fff8df]' : fromMember ? 'me-auto border-[#d8e2d5] bg-[#e9f0e6]' : 'ms-auto border-[#e2dccd] bg-[#fffdf7]'}`}>
+                      {internal && <p className="mb-2 flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wide text-[#8a6721]"><Shield size={12}/>{t.internalOnly}</p>}
                       <p className="whitespace-pre-wrap break-words text-sm leading-6 text-[#29483e]">{message.message}</p><p className="mt-2 text-[10px] text-[#75847c]">{roleLabel(message.authorRole)} · {dateLabel(message.createdAt, language)} · {langName[ticketLanguage(message.language)]}</p>
                       {messageAttachments.length > 0 && <div className="mt-3 space-y-1.5 border-t border-[#d8e2d5] pt-2">
                         <p className="text-[10px] font-bold text-[#536b61]">{t.attachments}</p>
@@ -386,6 +413,21 @@ export function SupportDeskPage() {
                    </div>
                    <div className="mt-3 flex items-center justify-between gap-3"><span className="text-[10px] text-[#75847c]">{langName[ticketLanguage(active.language)]}</span><button type="submit" data-testid="button-send-support-reply" disabled={reply.isPending || attachmentBusy || !!pendingAttachmentMessageId || !replyText.trim()} className="inline-flex items-center gap-2 rounded-full bg-[#174d43] px-4 py-2.5 text-xs font-bold text-[#fff9e9] transition hover:bg-[#226556] disabled:cursor-not-allowed disabled:opacity-45">{reply.isPending || attachmentBusy ? t.sending : t.send}<ArrowUpRight size={14}/></button></div>
                 </form></Form>
+                <form onSubmit={event => { event.preventDefault(); void saveInternalNote(); }} className="border-t border-[#eadcb7] bg-[#fff9e8] p-4 sm:p-5">
+                  <div className="mb-2 flex items-end justify-between gap-3">
+                    <div><h3 className="text-xs font-extrabold text-[#795d23]">{t.internalNote}</h3><p className="mt-1 text-[10px] leading-4 text-[#87754f]">{t.internalNoteHint}</p></div>
+                    <span className="text-[10px] tabular-nums text-[#9a895f]">{internalNoteText.length}/5000</span>
+                  </div>
+                  <Textarea aria-label={t.internalNote} value={internalNoteText} onChange={event => setInternalNoteText(event.currentTarget.value)} data-testid="textarea-support-internal-note"
+                    disabled={addInternalNote.isPending} maxLength={5000} rows={2} placeholder={t.internalNotePlaceholder}
+                    className="w-full resize-y rounded-xl border border-[#e5d29a] bg-[#fffdf7] px-3 py-2.5 text-sm leading-6 text-[#4d442e] outline-none transition focus:border-[#b18a37] focus:ring-2 focus:ring-[#b18a37]/15 placeholder:text-[#9a8d6d] disabled:opacity-60" />
+                  <div className="mt-3 flex justify-end">
+                    <button type="submit" data-testid="button-save-support-internal-note" disabled={addInternalNote.isPending || !internalNoteText.trim()}
+                      className="inline-flex items-center gap-2 rounded-full border border-[#b18a37] bg-[#f4e9c8] px-4 py-2.5 text-xs font-bold text-[#674f1d] transition hover:bg-[#eddfb7] disabled:cursor-not-allowed disabled:opacity-45">
+                      {addInternalNote.isPending ? t.savingInternalNote : t.saveInternalNote}<Check size={14}/>
+                    </button>
+                  </div>
+                </form>
               </section>
 
               <aside className="p-4 sm:p-5" aria-label={t.timeline}>

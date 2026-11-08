@@ -3,6 +3,7 @@ import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod";
+import { AddSupportStaffInternalNoteBody } from "@workspace/api-zod";
 import {
   db,
   memberNotificationPreferences,
@@ -64,7 +65,10 @@ async function memberTicketDetail(ownerId: string, id: string) {
     .where(and(eq(supportTickets.id, id), eq(supportTickets.userId, ownerId))).limit(1);
   if (!ticket) throw new BookingError(404, "Support request not found.");
   const [messages, events] = await Promise.all([
-    db.select().from(supportMessages).where(eq(supportMessages.ticketId, id)).orderBy(asc(supportMessages.createdAt)),
+    db.select().from(supportMessages).where(and(
+      eq(supportMessages.ticketId, id),
+      eq(supportMessages.isInternal, false),
+    )).orderBy(asc(supportMessages.createdAt)),
     db.select().from(supportTicketEvents).where(eq(supportTicketEvents.ticketId, id)).orderBy(asc(supportTicketEvents.createdAt)),
   ]);
   return {
@@ -90,7 +94,8 @@ async function staffTicketDetail(id: string) {
     language: ticket.language, createdAt: ticket.createdAt, updatedAt: ticket.updatedAt, lastMessageAt: ticket.lastMessageAt,
     memberUserId: ticket.userId, assignedTo: ticket.assignedTo,
     messages: messages.map(m => ({
-      id: m.id, authorId: m.authorId, authorRole: m.authorRole, message: m.body, language: m.language, createdAt: m.createdAt,
+      id: m.id, authorId: m.authorId, authorRole: m.authorRole, message: m.body,
+      language: m.language, createdAt: m.createdAt, isInternal: m.isInternal,
     })),
     events: events.map(e => ({
       action: e.action, actorId: e.actorId, previousStatus: e.previousStatus, nextStatus: e.nextStatus,
@@ -408,6 +413,34 @@ staffRouter.post("/tickets/:id/replies", async (req, res) => {
     });
   });
   void sendMemberNotification(memberId, "support_reply");
+  res.status(201).json(await staffTicketDetail(id));
+});
+
+staffRouter.post("/tickets/:id/notes", async (req, res): Promise<void> => {
+  const parsed = AddSupportStaffInternalNoteBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Write an internal note before saving." });
+    return;
+  }
+  const operator = res.locals.supportOperator as typeof operators.$inferSelect;
+  const id = String(req.params.id);
+  const message = parsed.data.message.trim();
+  if (!message) {
+    res.status(400).json({ message: "Write an internal note before saving." });
+    return;
+  }
+  await db.transaction(async tx => {
+    const [ticket] = await tx.select().from(supportTickets).where(eq(supportTickets.id, id)).for("update");
+    if (!ticket) throw new BookingError(404, "Support request not found.");
+    await tx.insert(supportMessages).values({
+      id: randomUUID(), ticketId: id, authorId: operator.userId, authorRole: operator.role,
+      body: message, language: ticket.language, isInternal: true, createdAt: new Date(),
+    });
+    await tx.insert(operationAudit).values({
+      id: randomUUID(), actorId: operator.userId, action: "support.ticket.internal_note", targetId: id,
+      detail: "Internal support note added.",
+    });
+  });
   res.status(201).json(await staffTicketDetail(id));
 });
 

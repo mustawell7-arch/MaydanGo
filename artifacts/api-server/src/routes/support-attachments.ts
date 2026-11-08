@@ -101,17 +101,21 @@ async function authoredMessage(ticketId: string, messageId: string, userId: stri
     eq(supportMessages.ticketId, ticketId),
     eq(supportMessages.authorId, userId),
     eq(supportMessages.authorRole, role),
+    eq(supportMessages.isInternal, false),
   )).limit(1);
   if (!message) throw new BookingError(404, "Your support message was not found.");
   return message;
 }
 
 async function readReadyAttachments(ticketId: string) {
-  const rows = await db.select().from(supportAttachments).where(and(
-    eq(supportAttachments.ticketId, ticketId),
-    eq(supportAttachments.status, "ready"),
-  )).orderBy(asc(supportAttachments.createdAt));
-  return GetMemberSupportTicketAttachmentsResponse.parse(rows.map(asAttachment));
+  const rows = await db.select({ attachment: supportAttachments }).from(supportAttachments)
+    .innerJoin(supportMessages, eq(supportMessages.id, supportAttachments.messageId))
+    .where(and(
+      eq(supportAttachments.ticketId, ticketId),
+      eq(supportAttachments.status, "ready"),
+      eq(supportMessages.isInternal, false),
+    )).orderBy(asc(supportAttachments.createdAt));
+  return GetMemberSupportTicketAttachmentsResponse.parse(rows.map(row => asAttachment(row.attachment)));
 }
 
 async function requestUpload(
@@ -243,11 +247,15 @@ async function downloadAttachment(
   ticketId: string,
   attachmentId: string,
 ) {
-  const [row] = await db.select().from(supportAttachments).where(and(
-    eq(supportAttachments.id, attachmentId),
-    eq(supportAttachments.ticketId, ticketId),
-    eq(supportAttachments.status, "ready"),
-  )).limit(1);
+  const [result] = await db.select({ attachment: supportAttachments }).from(supportAttachments)
+    .innerJoin(supportMessages, eq(supportMessages.id, supportAttachments.messageId))
+    .where(and(
+      eq(supportAttachments.id, attachmentId),
+      eq(supportAttachments.ticketId, ticketId),
+      eq(supportAttachments.status, "ready"),
+      eq(supportMessages.isInternal, false),
+    )).limit(1);
+  const row = result?.attachment;
   if (!row) throw new BookingError(404, "Support attachment not found.");
   const file = await supportAttachmentStorage.getPrivateFile(row.objectPath);
   const [metadata] = await file.getMetadata();

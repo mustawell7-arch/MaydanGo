@@ -298,10 +298,24 @@ test("support conversations are private, triaged, audited, and replyable", async
   });
   assert.equal(response.status, 201);
   assert.equal(response.data.status, "waiting_member");
+  const internalNote = await call(`/support/staff/tickets/${created.data.id}/notes`, supportId, "POST", {
+    message: "Confirm the partner schedule before replying.",
+  });
+  assert.equal(internalNote.status, 201);
+  assert.equal(internalNote.data.status, response.data.status);
+  assert.equal(internalNote.data.lastMessageAt, response.data.lastMessageAt);
+  assert.equal(internalNote.data.messages.at(-1).isInternal, true);
+  assert.equal(internalNote.data.messages.at(-1).message, "Confirm the partner schedule before replying.");
+  assert.equal((await call(`/support/staff/tickets/${created.data.id}/notes`, partnerId, "POST", {
+    message: "This should be rejected.",
+  })).status, 403);
   const memberView = await call(`/member/support/tickets/${created.data.id}`, alice);
   assert.equal(memberView.status, 200);
   assert.equal(memberView.data.messages.length, 2);
   assert.equal(memberView.data.messages[1].authorRole, "support");
+  assert.ok(memberView.data.messages.every((message: { message: string; isInternal?: boolean }) =>
+    !message.isInternal && !message.message.includes("Confirm the partner schedule"),
+  ));
   assert.equal("memberUserId" in memberView.data, false);
   assert.equal((await call(`/member/support/tickets/${created.data.id}`, bob)).status, 404);
 
@@ -318,6 +332,9 @@ test("support conversations are private, triaged, audited, and replyable", async
   const auditRows = await db.select().from(operationAudit)
     .where(and(eq(operationAudit.actorId, adminId), eq(operationAudit.targetId, created.data.id)));
   assert.ok(auditRows.some(row => row.action === "support.ticket.update"));
+  const supportAuditRows = await db.select().from(operationAudit)
+    .where(and(eq(operationAudit.actorId, supportId), eq(operationAudit.targetId, created.data.id)));
+  assert.ok(supportAuditRows.some(row => row.action === "support.ticket.internal_note"));
   assert.equal((await call("/support/staff/agents", supportId)).status, 200);
   const newAgent = await call("/support/staff/agents", adminId, "POST", { userId: newAgentId });
   assert.equal(newAgent.status, 201);

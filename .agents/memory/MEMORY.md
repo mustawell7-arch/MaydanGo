@@ -1,4 +1,5 @@
 - [MaydanGo Iraq scope](maydango-iraq-scope.md) — Build for all Iraqi regions, including Kurdistan, the south, and the west, with Arabic, Kurdish, and English.
+- [MaydanGo PDF sequencing](maydango-pdf-sequencing.md) — Continue with the next unfinished item in the uploaded product PDF; do not replace it with invented follow-ups.
 - [MaydanGo visual assets](maydango-visual-assets.md) — The user will source imagery; do not generate or search for photos.
 - [Account booking boundary](account-booking-boundary.md) — Explicit sample-only access; never convert local plan choices or old preview reservations into live entitlements.
 - [Workspace type compatibility](workspace-type-generation.md) — Avoid duplicate React declaration versions and conflicting Orval validator/model barrels.
