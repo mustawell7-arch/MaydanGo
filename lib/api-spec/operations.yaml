@@ -270,6 +270,21 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SupportStaffTicketDetail" }
+  /support/staff/tickets/{id}/notes:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: addSupportStaffInternalNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportInternalNoteInput" }
+      responses:
+        "201":
+          description: Internal note saved for authorized support staff only
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportStaffTicketDetail" }
   /support/staff/tickets/{id}/attachments:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     get:
@@ -1635,8 +1650,10 @@ components:
       allOf:
         - $ref: "#/components/schemas/SupportMessage"
         - type: object
-          required: [authorId]
-          properties: { authorId: { type: string } }
+          required: [authorId, isInternal]
+          properties:
+            authorId: { type: string }
+            isInternal: { type: boolean }
     SupportStaffEvent:
       allOf:
         - $ref: "#/components/schemas/SupportTicketEvent"
@@ -1665,6 +1682,12 @@ components:
           anyOf:
             - type: string
             - type: "null"
+    SupportInternalNoteInput:
+      type: object
+      additionalProperties: false
+      required: [message]
+      properties:
+        message: { type: string, minLength: 1, maxLength: 5000 }
     SupportAgent:
       type: object
       required: [userId, role, receiveUrgentAlerts]

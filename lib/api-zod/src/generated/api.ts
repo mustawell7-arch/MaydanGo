@@ -5834,7 +5834,8 @@ export const GetSupportStaffTicketResponse = zod.object({
   "language": zod.enum(['en', 'ar', 'ku']),
   "createdAt": zod.coerce.date()
 }).and(zod.object({
-  "authorId": zod.string()
+  "authorId": zod.string(),
+  "isInternal": zod.boolean()
 }))),
   "events": zod.array(zod.object({
   "action": zod.string(),
@@ -5882,7 +5883,8 @@ export const UpdateSupportStaffTicketResponse = zod.object({
   "language": zod.enum(['en', 'ar', 'ku']),
   "createdAt": zod.coerce.date()
 }).and(zod.object({
-  "authorId": zod.string()
+  "authorId": zod.string(),
+  "isInternal": zod.boolean()
 }))),
   "events": zod.array(zod.object({
   "action": zod.string(),
@@ -5934,7 +5936,60 @@ export const ReplySupportStaffTicketResponse = zod.object({
   "language": zod.enum(['en', 'ar', 'ku']),
   "createdAt": zod.coerce.date()
 }).and(zod.object({
-  "authorId": zod.string()
+  "authorId": zod.string(),
+  "isInternal": zod.boolean()
+}))),
+  "events": zod.array(zod.object({
+  "action": zod.string(),
+  "previousStatus": zod.string().nullish(),
+  "nextStatus": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}).and(zod.object({
+  "actorId": zod.string(),
+  "previousAssignee": zod.string().nullable(),
+  "nextAssignee": zod.string().nullable(),
+  "detail": zod.string()
+})))
+}))
+
+
+export const AddSupportStaffInternalNoteParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const addSupportStaffInternalNoteBodyMessageMax = 5000;
+
+
+
+export const AddSupportStaffInternalNoteBody = zod.object({
+  "message": zod.string().min(1).max(addSupportStaffInternalNoteBodyMessageMax)
+})
+
+export const AddSupportStaffInternalNoteResponse = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "urgent": zod.boolean(),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastMessageAt": zod.coerce.date()
+}).and(zod.object({
+  "memberUserId": zod.string(),
+  "assignedTo": zod.string().nullable(),
+  "urgentAlertStatus": zod.enum(['not_applicable', 'pending', 'accepted', 'fallback_required']),
+  "urgentOverdue": zod.boolean()
+})).and(zod.object({
+  "messages": zod.array(zod.object({
+  "id": zod.string(),
+  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "message": zod.string(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date()
+}).and(zod.object({
+  "authorId": zod.string(),
+  "isInternal": zod.boolean()
 }))),
   "events": zod.array(zod.object({
   "action": zod.string(),

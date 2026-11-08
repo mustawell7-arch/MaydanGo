@@ -28,6 +28,7 @@ export const supportMessages = pgTable("support_messages", {
   authorId: text("author_id").notNull(),
   authorRole: text("author_role").notNull(),
   body: text("body").notNull(),
+  isInternal: boolean("is_internal").notNull().default(false),
   language: text("language").notNull().default("en"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("support_messages_ticket_created_idx").on(t.ticketId, t.createdAt)]);

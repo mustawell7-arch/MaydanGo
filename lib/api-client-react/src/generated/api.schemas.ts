@@ -841,6 +841,7 @@ export type SupportStaffTicketSummary = SupportTicketSummary & ({
 
 export type SupportStaffMessage = SupportMessage & {
   authorId: string;
+  isInternal: boolean;
 };
 
 export type SupportStaffEvent = SupportTicketEvent & ({
@@ -860,6 +861,14 @@ export type SupportStaffTicketDetail = SupportStaffTicketSummary & {
 export interface SupportStaffTicketUpdate {
   status?: SupportTicketStatus;
   assignedTo?: string | null;
+}
+
+export interface SupportInternalNoteInput {
+  /**
+     * @minLength 1
+     * @maxLength 5000
+     */
+  message: string;
 }
 
 export type SupportAgentRole = typeof SupportAgentRole[keyof typeof SupportAgentRole];
