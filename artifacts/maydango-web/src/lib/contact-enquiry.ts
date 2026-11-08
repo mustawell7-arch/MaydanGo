@@ -1,4 +1,4 @@
-export type ContactTopic = "membership" | "partner" | "corporate" | "other";
+export type ContactTopic = "membership" | "partner" | "instructor" | "corporate" | "other";
 
 export type ContactSubmission = {
   topic: ContactTopic;
@@ -21,7 +21,7 @@ export function verifiedContactEmail(value: string | undefined): string {
 
 export function initialContactTopic(search: string): ContactTopic {
   const topic = new URLSearchParams(search).get("topic");
-  return topic === "partner" || topic === "corporate" || topic === "other" || topic === "membership"
+  return topic === "partner" || topic === "instructor" || topic === "corporate" || topic === "other" || topic === "membership"
     ? topic
     : "membership";
 }

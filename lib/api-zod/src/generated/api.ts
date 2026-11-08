@@ -1036,6 +1036,33 @@ export const GetPublicPlansResponseItem = zod.object({
 export const GetPublicPlansResponse = zod.array(GetPublicPlansResponseItem)
 
 
+
+
+
+export const GetPublicCoursesResponseItem = zod.object({
+  "id": zod.string(),
+  "localizedTitle": zod.object({
+  "en": zod.string(),
+  "ar": zod.string(),
+  "ku": zod.string()
+}),
+  "localizedSummary": zod.object({
+  "en": zod.string(),
+  "ar": zod.string(),
+  "ku": zod.string()
+}),
+  "localizedInstructor": zod.object({
+  "en": zod.string(),
+  "ar": zod.string(),
+  "ku": zod.string()
+}),
+  "category": zod.string(),
+  "level": zod.string(),
+  "durationMinutes": zod.number().int().min(1)
+})
+export const GetPublicCoursesResponse = zod.array(GetPublicCoursesResponseItem)
+
+
 export const GetAttendanceResponse = zod.object({
   "role": zod.string(),
   "rows": zod.array(zod.object({

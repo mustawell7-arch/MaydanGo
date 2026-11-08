@@ -117,6 +117,7 @@ import type {
   PartnerMarketingProfileUpdate,
   PartnerSettlementSummary,
   PlanInput,
+  PublicCourse,
   PublicFacility,
   PublicFacilityReviews,
   PublicOffering,
@@ -1028,6 +1029,101 @@ export function useGetPublicPlans<TData = Awaited<ReturnType<typeof getPublicPla
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetPublicPlansQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicCoursesUrl = () => {
+
+
+
+
+  return `/api/public/courses`
+}
+
+export const getPublicCourses = async ( options?: Parameters<typeof customFetch>[1]): Promise<PublicCourse[]> => {
+
+  return customFetch<PublicCourse[]>(getGetPublicCoursesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicCoursesQueryKey = () => {
+    return [
+    `/api/public/courses`
+    ] as const;
+    }
+
+
+export const getGetPublicCoursesQueryOptions = <TData = Awaited<ReturnType<typeof getPublicCourses>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCourses>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicCoursesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicCourses>>> = ({ signal }) => getPublicCourses({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicCourses>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPublicCoursesQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicCourses>>>
+export type GetPublicCoursesQueryError = ErrorType<unknown>
+
+
+export function useGetPublicCourses<TData = Awaited<ReturnType<typeof getPublicCourses>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCourses>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicCourses>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicCourses>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicCourses<TData = Awaited<ReturnType<typeof getPublicCourses>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCourses>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicCourses>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicCourses>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicCourses<TData = Awaited<ReturnType<typeof getPublicCourses>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCourses>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPublicCourses<TData = Awaited<ReturnType<typeof getPublicCourses>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCourses>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPublicCoursesQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

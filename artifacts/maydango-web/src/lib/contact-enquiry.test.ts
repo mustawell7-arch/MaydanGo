@@ -15,6 +15,7 @@ const labels: ContactDraftLabels = {
   topicLabels: {
     membership: "Membership availability",
     partner: "Partner enquiry",
+    instructor: "Instructor enquiry",
     corporate: "Organisation enquiry",
     other: "Other",
   },
@@ -35,8 +36,9 @@ test("only a valid configured inbox is enabled", () => {
   assert.equal(createContactEmailDraft("", submission, labels), null);
 });
 
-test("partner and corporate links preselect their matching enquiry topics", () => {
+test("partner, instructor, and corporate links preselect their matching enquiry topics", () => {
   assert.equal(initialContactTopic("?topic=partner"), "partner");
+  assert.equal(initialContactTopic("?topic=instructor"), "instructor");
   assert.equal(initialContactTopic("?topic=corporate"), "corporate");
   assert.equal(initialContactTopic("?topic=other"), "other");
   assert.equal(initialContactTopic(""), "membership");
@@ -44,7 +46,7 @@ test("partner and corporate links preselect their matching enquiry topics", () =
 });
 
 test("email drafts use the configured inbox and include submitted details for every enquiry topic", () => {
-  for (const topic of ["membership", "partner", "corporate", "other"] as const) {
+  for (const topic of ["membership", "partner", "instructor", "corporate", "other"] as const) {
     const draft = createContactEmailDraft("maydangoing@gmail.com", { ...submission, topic }, labels);
     assert.ok(draft);
     const parsed = new URL(draft);

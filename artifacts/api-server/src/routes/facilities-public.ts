@@ -58,6 +58,7 @@ async function publishedFacilities(id?: string) {
       eq(offerings.scope, "live"),
       eq(offerings.active, true),
       isNull(offerings.cancelledAt),
+      eq(offerings.additionalPayment, false),
       eq(partners.approved, true),
       gt(offerings.startsAt, now),
       inArray(offerings.partnerId, partnerIds),

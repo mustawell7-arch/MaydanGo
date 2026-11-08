@@ -144,6 +144,18 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PublicPlan"
+  /public/courses:
+    get:
+      operationId: getPublicCourses
+      responses:
+        "200":
+          description: Published course summaries only; lesson media and playback links are never public
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PublicCourse"
   /attendance:
     get:
       operationId: getAttendance
@@ -909,6 +921,39 @@ components:
         tier: { type: string }
         kind: { type: string, enum: [paid, trial, corporate] }
         durationDays: { type: integer, minimum: 1 }
+    PublicCourse:
+      type: object
+      additionalProperties: false
+      required: [id, localizedTitle, localizedSummary, localizedInstructor, category, level, durationMinutes]
+      properties:
+        id: { type: string }
+        localizedTitle:
+          type: object
+          additionalProperties: false
+          required: [en, ar, ku]
+          properties:
+            en: { type: string }
+            ar: { type: string }
+            ku: { type: string }
+        localizedSummary:
+          type: object
+          additionalProperties: false
+          required: [en, ar, ku]
+          properties:
+            en: { type: string }
+            ar: { type: string }
+            ku: { type: string }
+        localizedInstructor:
+          type: object
+          additionalProperties: false
+          required: [en, ar, ku]
+          properties:
+            en: { type: string }
+            ar: { type: string }
+            ku: { type: string }
+        category: { type: string }
+        level: { type: string }
+        durationMinutes: { type: integer, minimum: 1 }
     CheckinPolicy:
       type: object
       required: [latitude, longitude, radius, opensAt, closesAt, correctionEndsAt]

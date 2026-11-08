@@ -446,6 +446,35 @@ export interface PublicPlan {
   durationDays: number;
 }
 
+export type PublicCourseLocalizedTitle = {
+  en: string;
+  ar: string;
+  ku: string;
+};
+
+export type PublicCourseLocalizedSummary = {
+  en: string;
+  ar: string;
+  ku: string;
+};
+
+export type PublicCourseLocalizedInstructor = {
+  en: string;
+  ar: string;
+  ku: string;
+};
+
+export interface PublicCourse {
+  id: string;
+  localizedTitle: PublicCourseLocalizedTitle;
+  localizedSummary: PublicCourseLocalizedSummary;
+  localizedInstructor: PublicCourseLocalizedInstructor;
+  category: string;
+  level: string;
+  /** @minimum 1 */
+  durationMinutes: number;
+}
+
 export interface CheckinPolicy {
   latitude: number;
   longitude: number;
