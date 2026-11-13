@@ -3279,7 +3279,7 @@ export const CreateInstructorSupportTicketResponse = zod.object({
 }).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
-  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "authorRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical messages only.'),
   "message": zod.string(),
   "language": zod.enum(['en', 'ar', 'ku']),
   "createdAt": zod.coerce.date()
@@ -3310,7 +3310,7 @@ export const GetInstructorSupportTicketResponse = zod.object({
 }).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
-  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "authorRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical messages only.'),
   "message": zod.string(),
   "language": zod.enum(['en', 'ar', 'ku']),
   "createdAt": zod.coerce.date()
@@ -3350,7 +3350,7 @@ export const ReplyInstructorSupportTicketResponse = zod.object({
 }).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
-  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "authorRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical messages only.'),
   "message": zod.string(),
   "language": zod.enum(['en', 'ar', 'ku']),
   "createdAt": zod.coerce.date()
@@ -5548,7 +5548,7 @@ export const CreateMemberSupportTicketResponse = zod.object({
 }).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
-  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "authorRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical messages only.'),
   "message": zod.string(),
   "language": zod.enum(['en', 'ar', 'ku']),
   "createdAt": zod.coerce.date()
@@ -5579,7 +5579,7 @@ export const GetMemberSupportTicketResponse = zod.object({
 }).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
-  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "authorRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical messages only.'),
   "message": zod.string(),
   "language": zod.enum(['en', 'ar', 'ku']),
   "createdAt": zod.coerce.date()
@@ -5619,7 +5619,7 @@ export const ReplyMemberSupportTicketResponse = zod.object({
 }).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
-  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "authorRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical messages only.'),
   "message": zod.string(),
   "language": zod.enum(['en', 'ar', 'ku']),
   "createdAt": zod.coerce.date()
@@ -5647,7 +5647,7 @@ export const GetMemberSupportTicketAttachmentsResponseItem = zod.object({
   "fileName": zod.string(),
   "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
   "size": zod.number().int().min(1).max(getMemberSupportTicketAttachmentsResponseSizeMax),
-  "uploaderRole": zod.enum(['member', 'support', 'admin']),
+  "uploaderRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical attachments only.'),
   "createdAt": zod.coerce.date()
 })
 export const GetMemberSupportTicketAttachmentsResponse = zod.array(GetMemberSupportTicketAttachmentsResponseItem)
@@ -5692,7 +5692,7 @@ export const CompleteMemberSupportAttachmentResponse = zod.object({
   "fileName": zod.string(),
   "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
   "size": zod.number().int().min(1).max(completeMemberSupportAttachmentResponseSizeMax),
-  "uploaderRole": zod.enum(['member', 'support', 'admin']),
+  "uploaderRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical attachments only.'),
   "createdAt": zod.coerce.date()
 })
 
@@ -5831,7 +5831,7 @@ export const GetSupportStaffTicketResponse = zod.object({
 })).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
-  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "authorRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical messages only.'),
   "message": zod.string(),
   "language": zod.enum(['en', 'ar', 'ku']),
   "createdAt": zod.coerce.date()
@@ -5881,7 +5881,7 @@ export const UpdateSupportStaffTicketResponse = zod.object({
 })).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
-  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "authorRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical messages only.'),
   "message": zod.string(),
   "language": zod.enum(['en', 'ar', 'ku']),
   "createdAt": zod.coerce.date()
@@ -5935,7 +5935,7 @@ export const ReplySupportStaffTicketResponse = zod.object({
 })).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
-  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "authorRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical messages only.'),
   "message": zod.string(),
   "language": zod.enum(['en', 'ar', 'ku']),
   "createdAt": zod.coerce.date()
@@ -6222,7 +6222,7 @@ export const AddSupportStaffInternalNoteResponse = zod.object({
 })).and(zod.object({
   "messages": zod.array(zod.object({
   "id": zod.string(),
-  "authorRole": zod.enum(['member', 'support', 'admin']),
+  "authorRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical messages only.'),
   "message": zod.string(),
   "language": zod.enum(['en', 'ar', 'ku']),
   "createdAt": zod.coerce.date()
@@ -6395,7 +6395,7 @@ export const GetSupportStaffTicketAttachmentsResponseItem = zod.object({
   "fileName": zod.string(),
   "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
   "size": zod.number().int().min(1).max(getSupportStaffTicketAttachmentsResponseSizeMax),
-  "uploaderRole": zod.enum(['member', 'support', 'admin']),
+  "uploaderRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical attachments only.'),
   "createdAt": zod.coerce.date()
 })
 export const GetSupportStaffTicketAttachmentsResponse = zod.array(GetSupportStaffTicketAttachmentsResponseItem)
@@ -6440,7 +6440,7 @@ export const CompleteSupportStaffAttachmentResponse = zod.object({
   "fileName": zod.string(),
   "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
   "size": zod.number().int().min(1).max(completeSupportStaffAttachmentResponseSizeMax),
-  "uploaderRole": zod.enum(['member', 'support', 'admin']),
+  "uploaderRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical attachments only.'),
   "createdAt": zod.coerce.date()
 })
 

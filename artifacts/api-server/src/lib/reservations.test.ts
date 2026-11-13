@@ -570,7 +570,8 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       const enrolled = await call(`/member/courses/${created.data.id}/enroll`, alice, "POST", {});
       assert.equal(enrolled.status, 200);
       assert.equal(enrolled.data.accessState, "ready");
-      assert.equal(enrolled.data.lessons[0].mediaUrl, "https://example.test/lesson-1");
+      assert.equal(enrolled.data.lessons[0].mediaUrl, null, "private recordings do not expose storage URLs");
+      assert.equal(enrolled.data.lessons[0].hasRecording, true);
       assert.equal(enrolled.data.lessons[0].localizedContent.ku, "بە خێرایی خۆت بجوڵێ.");
       const progress = await call(`/member/courses/${created.data.id}/progress`, alice, "PUT", {
         lessonId: enrolled.data.lessons[0].id, completed: true,
@@ -670,7 +671,7 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       const publicCatalog = await fetch(`http://127.0.0.1:${port}/public/catalog`).then(r => r.json()) as any[];
       assert.ok(!publicCatalog.some((x: any) => x.id === o.data.id));
       const activeId = ids.at(-1)!;
-      assert.equal((await call("/member/bookings", bob, "POST", input(activeId))).status, 403);
+      assert.equal((await call("/member/bookings", bob, "POST", input(activeId))).status, 404);
     });
   } finally {
     await new Promise<void>(r => server.close(() => r()));

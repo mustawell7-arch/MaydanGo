@@ -771,17 +771,22 @@ export interface SupportTicketEvent {
   createdAt: string;
 }
 
+/**
+ * The legacy admin value is retained for historical messages only.
+ */
 export type SupportMessageAuthorRole = typeof SupportMessageAuthorRole[keyof typeof SupportMessageAuthorRole];
 
 
 export const SupportMessageAuthorRole = {
   member: 'member',
   support: 'support',
+  customer_support_admin: 'customer_support_admin',
   admin: 'admin',
 } as const;
 
 export interface SupportMessage {
   id: string;
+  /** The legacy admin value is retained for historical messages only. */
   authorRole: SupportMessageAuthorRole;
   message: string;
   language: SupportedLanguage;
@@ -798,12 +803,16 @@ export const SupportAttachmentContentType = {
   'image/webp': 'image/webp',
 } as const;
 
+/**
+ * The legacy admin value is retained for historical attachments only.
+ */
 export type SupportAttachmentUploaderRole = typeof SupportAttachmentUploaderRole[keyof typeof SupportAttachmentUploaderRole];
 
 
 export const SupportAttachmentUploaderRole = {
   member: 'member',
   support: 'support',
+  customer_support_admin: 'customer_support_admin',
   admin: 'admin',
 } as const;
 
@@ -817,6 +826,7 @@ export interface SupportAttachment {
      * @maximum 10485760
      */
   size: number;
+  /** The legacy admin value is retained for historical attachments only. */
   uploaderRole: SupportAttachmentUploaderRole;
   createdAt: string;
 }

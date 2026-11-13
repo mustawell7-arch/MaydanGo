@@ -15,13 +15,14 @@ const prefix = `quality-control-${randomUUID()}`;
 const partnerA = `${prefix}-partner-a`;
 const partnerB = `${prefix}-partner-b`;
 const adminUser = `${prefix}-admin`;
+const partnerOperationsAdmin = `${prefix}-partner-operations-admin`;
 const partnerUserA = `${prefix}-user-a`;
 const partnerUserB = `${prefix}-user-b`;
 const financeUser = `${prefix}-finance`;
 const supportUser = `${prefix}-support`;
 const facilityA = `${prefix}-facility-a`;
 const facilityB = `${prefix}-facility-b`;
-const userIds = [adminUser, partnerUserA, partnerUserB, financeUser, supportUser];
+const userIds = [adminUser, partnerOperationsAdmin, partnerUserA, partnerUserB, financeUser, supportUser];
 const facilityIds = [facilityA, facilityB];
 const assessmentIds: string[] = [];
 const incidentIds: string[] = [];
@@ -87,6 +88,7 @@ test("facility quality records are scoped, validated, and audited", async () => 
   ]);
   await db.insert(operators).values([
     { userId: adminUser, role: "fraud_compliance_admin", partnerId: null },
+    { userId: partnerOperationsAdmin, role: "partner_operations_admin", partnerId: null },
     { userId: partnerUserA, role: "partner", partnerId: partnerA },
     { userId: partnerUserB, role: "partner", partnerId: partnerB },
     { userId: financeUser, role: "finance", partnerId: null },
@@ -158,7 +160,7 @@ test("facility quality records are scoped, validated, and audited", async () => 
   const incident = createdIncident.data as { id: string; status: string };
   incidentIds.push(incident.id);
   assert.equal(incident.status, "open");
-  assert.equal((await call(`/operations/facilities/${facilityA}`, adminUser, "DELETE")).status, 409);
+  assert.equal((await call(`/operations/facilities/${facilityA}`, partnerOperationsAdmin, "DELETE")).status, 409);
   assert.equal((await call(`/operations/quality/incidents/${incident.id}`, partnerUserA, "PATCH", {
     status: "resolved", resolution: "Fixed.",
   })).status, 403);
