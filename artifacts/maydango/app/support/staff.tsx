@@ -85,7 +85,9 @@ export default function SupportStaffScreen() {
   const [notice, setNotice] = useState<string | null>(null);
   const tickets = useGetSupportStaffTickets(undefined, { query: { enabled: app.signedIn, refetchInterval: 30_000 } });
   const agents = useGetSupportStaffAgents({ query: { enabled: app.signedIn } });
-  const isAdmin = agents.data?.some(agent => agent.userId === userId && agent.role === 'admin') ?? false;
+  const isAdmin = agents.data?.some(agent =>
+    agent.userId === userId && (agent.role === 'customer_support_admin' || agent.role === 'super_admin'),
+  ) ?? false;
   const recipientHistory = useGetSupportUrgentAlertRecipientHistory({
     query: { enabled: app.signedIn && isAdmin, staleTime: 30_000 },
   });
@@ -323,7 +325,8 @@ export default function SupportStaffScreen() {
                     <View style={styles.teamAgentIdentity}>
                       <Text raw style={[styles.label, { color: colors.foreground }]}>{agent.userId}</Text>
                       <Text style={[styles.caption, { color: colors.mutedForeground }]}>
-                        {agent.role === 'admin' ? t('supportAdminRoleLabel') : t('supportRoleLabel')}
+                        {agent.role === 'customer_support_admin' || agent.role === 'super_admin'
+                          ? t('supportAdminRoleLabel') : t('supportRoleLabel')}
                       </Text>
                     </View>
                     {agent.role === 'support' && pendingRemovalId !== agent.userId ? (

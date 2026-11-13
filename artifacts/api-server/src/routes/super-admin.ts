@@ -2,12 +2,15 @@ import { Router, type IRouter } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { desc, eq, inArray, or } from "drizzle-orm";
-import { db, adminRolePermissions, operationAudit, operators } from "@workspace/db";
+import { db, adminRolePermissions, operationAudit, operators, platformSafetyRules } from "@workspace/db";
 import {
+  GetSuperAdminPlatformRulesResponse,
   GetSuperAdminRolePermissionsResponse,
   GetSuperAdminAccountsResponse,
   GetSuperAdminAuditLogsQueryParams,
   GetSuperAdminAuditLogsResponse,
+  UpdateSuperAdminPlatformRulesBody,
+  UpdateSuperAdminPlatformRulesResponse,
   UpdateSuperAdminRolePermissionsBody,
   UpdateSuperAdminRolePermissionsParams,
   UpdateSuperAdminRolePermissionsResponse,
@@ -21,6 +24,7 @@ import {
   type AdminAction,
   type AdminRole,
 } from "../lib/admin-roles";
+import { DEFAULT_PLATFORM_SAFETY_RULES, platformSafetyRulesSchema } from "../lib/platform-rules";
 
 type ClerkAccount = { userId: string; email: string };
 type ClerkDirectory = {
@@ -196,6 +200,80 @@ export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirector
     });
 
     res.json(UpdateSuperAdminRolePermissionsResponse.parse(saved));
+  });
+
+  router.get("/platform-rules", async (_req, res): Promise<void> => {
+    const [row] = await db.select().from(platformSafetyRules)
+      .where(eq(platformSafetyRules.id, "global")).limit(1);
+    res.json(GetSuperAdminPlatformRulesResponse.parse({
+      settings: row ? platformSafetyRulesSchema.parse(row.settings) : DEFAULT_PLATFORM_SAFETY_RULES,
+      isCustom: !!row,
+      updatedAt: row?.updatedAt.toISOString() ?? null,
+    }));
+  });
+
+  router.put("/platform-rules", async (req, res): Promise<void> => {
+    const parsed = UpdateSuperAdminPlatformRulesBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.message });
+      return;
+    }
+    const validated = platformSafetyRulesSchema.safeParse(parsed.data.settings);
+    if (!validated.success) {
+      res.status(400).json({ message: validated.error.message });
+      return;
+    }
+
+    const actorId = res.locals.superAdminUserId as string;
+    const saved = await db.transaction(async tx => {
+      const [previous] = await tx.select().from(platformSafetyRules)
+        .where(eq(platformSafetyRules.id, "global")).for("update").limit(1);
+      const before = previous
+        ? platformSafetyRulesSchema.parse(previous.settings)
+        : DEFAULT_PLATFORM_SAFETY_RULES;
+      const next = validated.data;
+      const changedFields = (Object.keys(next) as (keyof typeof next)[])
+        .filter(key => next[key] !== before[key]);
+
+      if (!changedFields.length) {
+        return {
+          settings: before,
+          isCustom: !!previous,
+          updatedAt: previous?.updatedAt.toISOString() ?? null,
+        };
+      }
+
+      const now = new Date();
+      const [updated] = await tx.insert(platformSafetyRules).values({
+        id: "global",
+        settings: next,
+        updatedBy: actorId,
+        updatedAt: now,
+      }).onConflictDoUpdate({
+        target: platformSafetyRules.id,
+        set: { settings: next, updatedBy: actorId, updatedAt: now },
+      }).returning();
+
+      await tx.insert(operationAudit).values({
+        id: randomUUID(),
+        actorId,
+        action: "super_admin.platform_safety_rules.updated",
+        targetId: "platform:global",
+        detail: JSON.stringify({
+          changedFields,
+          before: Object.fromEntries(changedFields.map(key => [key, before[key]])),
+          after: Object.fromEntries(changedFields.map(key => [key, next[key]])),
+        }),
+      });
+
+      return {
+        settings: updated.settings,
+        isCustom: true,
+        updatedAt: updated.updatedAt.toISOString(),
+      };
+    });
+
+    res.json(UpdateSuperAdminPlatformRulesResponse.parse(saved));
   });
 
   router.put("/admin-accounts", async (req, res): Promise<void> => {

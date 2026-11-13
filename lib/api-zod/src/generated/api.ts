@@ -4329,6 +4329,123 @@ export const GetSuperAdminRolePermissionsResponseItem = zod.object({
 export const GetSuperAdminRolePermissionsResponse = zod.array(GetSuperAdminRolePermissionsResponseItem)
 
 
+export const getSuperAdminPlatformRulesResponseSettingsDeviceChangeWaitHoursMax = 168;
+
+export const getSuperAdminPlatformRulesResponseSettingsDeviceChangeRiskWindowDaysMax = 90;
+
+export const getSuperAdminPlatformRulesResponseSettingsRepeatedDeviceChangeThresholdMax = 10;
+
+export const getSuperAdminPlatformRulesResponseSettingsMaxCheckinAccuracyMetersMax = 100;
+
+export const getSuperAdminPlatformRulesResponseSettingsRapidCheckinBlockSecondsMax = 600;
+
+export const getSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMin = 60;
+export const getSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMax = 21600;
+
+export const getSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMin = 0;
+export const getSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMax = 5000;
+
+export const getSuperAdminPlatformRulesResponseSettingsImpossibleTravelMetersPerSecondMax = 200;
+
+export const getSuperAdminPlatformRulesResponseSettingsMaxDailyVisitsPerPlanMax = 100000;
+
+
+
+export const GetSuperAdminPlatformRulesResponse = zod.object({
+  "settings": zod.object({
+  "deviceChangeWaitHours": zod.number().int().min(1).max(getSuperAdminPlatformRulesResponseSettingsDeviceChangeWaitHoursMax),
+  "deviceChangeRiskWindowDays": zod.number().int().min(1).max(getSuperAdminPlatformRulesResponseSettingsDeviceChangeRiskWindowDaysMax),
+  "repeatedDeviceChangeThreshold": zod.number().int().min(1).max(getSuperAdminPlatformRulesResponseSettingsRepeatedDeviceChangeThresholdMax),
+  "maxCheckinAccuracyMeters": zod.number().int().min(1).max(getSuperAdminPlatformRulesResponseSettingsMaxCheckinAccuracyMetersMax),
+  "rapidCheckinBlockSeconds": zod.number().int().min(1).max(getSuperAdminPlatformRulesResponseSettingsRapidCheckinBlockSecondsMax),
+  "impossibleTravelWindowSeconds": zod.number().int().min(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMin).max(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMax),
+  "impossibleTravelBaseMeters": zod.number().int().min(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMin).max(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMax),
+  "impossibleTravelMetersPerSecond": zod.number().int().min(1).max(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelMetersPerSecondMax),
+  "maxDailyVisitsPerPlan": zod.number().int().min(1).max(getSuperAdminPlatformRulesResponseSettingsMaxDailyVisitsPerPlanMax),
+  "offeringApprovalRequired": zod.boolean()
+}),
+  "isCustom": zod.boolean(),
+  "updatedAt": zod.coerce.date().nullable()
+})
+
+
+export const updateSuperAdminPlatformRulesBodySettingsDeviceChangeWaitHoursMax = 168;
+
+export const updateSuperAdminPlatformRulesBodySettingsDeviceChangeRiskWindowDaysMax = 90;
+
+export const updateSuperAdminPlatformRulesBodySettingsRepeatedDeviceChangeThresholdMax = 10;
+
+export const updateSuperAdminPlatformRulesBodySettingsMaxCheckinAccuracyMetersMax = 100;
+
+export const updateSuperAdminPlatformRulesBodySettingsRapidCheckinBlockSecondsMax = 600;
+
+export const updateSuperAdminPlatformRulesBodySettingsImpossibleTravelWindowSecondsMin = 60;
+export const updateSuperAdminPlatformRulesBodySettingsImpossibleTravelWindowSecondsMax = 21600;
+
+export const updateSuperAdminPlatformRulesBodySettingsImpossibleTravelBaseMetersMin = 0;
+export const updateSuperAdminPlatformRulesBodySettingsImpossibleTravelBaseMetersMax = 5000;
+
+export const updateSuperAdminPlatformRulesBodySettingsImpossibleTravelMetersPerSecondMax = 200;
+
+export const updateSuperAdminPlatformRulesBodySettingsMaxDailyVisitsPerPlanMax = 100000;
+
+
+
+export const UpdateSuperAdminPlatformRulesBody = zod.object({
+  "settings": zod.object({
+  "deviceChangeWaitHours": zod.number().int().min(1).max(updateSuperAdminPlatformRulesBodySettingsDeviceChangeWaitHoursMax),
+  "deviceChangeRiskWindowDays": zod.number().int().min(1).max(updateSuperAdminPlatformRulesBodySettingsDeviceChangeRiskWindowDaysMax),
+  "repeatedDeviceChangeThreshold": zod.number().int().min(1).max(updateSuperAdminPlatformRulesBodySettingsRepeatedDeviceChangeThresholdMax),
+  "maxCheckinAccuracyMeters": zod.number().int().min(1).max(updateSuperAdminPlatformRulesBodySettingsMaxCheckinAccuracyMetersMax),
+  "rapidCheckinBlockSeconds": zod.number().int().min(1).max(updateSuperAdminPlatformRulesBodySettingsRapidCheckinBlockSecondsMax),
+  "impossibleTravelWindowSeconds": zod.number().int().min(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelWindowSecondsMin).max(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelWindowSecondsMax),
+  "impossibleTravelBaseMeters": zod.number().int().min(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelBaseMetersMin).max(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelBaseMetersMax),
+  "impossibleTravelMetersPerSecond": zod.number().int().min(1).max(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelMetersPerSecondMax),
+  "maxDailyVisitsPerPlan": zod.number().int().min(1).max(updateSuperAdminPlatformRulesBodySettingsMaxDailyVisitsPerPlanMax),
+  "offeringApprovalRequired": zod.boolean()
+})
+})
+
+export const updateSuperAdminPlatformRulesResponseSettingsDeviceChangeWaitHoursMax = 168;
+
+export const updateSuperAdminPlatformRulesResponseSettingsDeviceChangeRiskWindowDaysMax = 90;
+
+export const updateSuperAdminPlatformRulesResponseSettingsRepeatedDeviceChangeThresholdMax = 10;
+
+export const updateSuperAdminPlatformRulesResponseSettingsMaxCheckinAccuracyMetersMax = 100;
+
+export const updateSuperAdminPlatformRulesResponseSettingsRapidCheckinBlockSecondsMax = 600;
+
+export const updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMin = 60;
+export const updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMax = 21600;
+
+export const updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMin = 0;
+export const updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMax = 5000;
+
+export const updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelMetersPerSecondMax = 200;
+
+export const updateSuperAdminPlatformRulesResponseSettingsMaxDailyVisitsPerPlanMax = 100000;
+
+
+
+export const UpdateSuperAdminPlatformRulesResponse = zod.object({
+  "settings": zod.object({
+  "deviceChangeWaitHours": zod.number().int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsDeviceChangeWaitHoursMax),
+  "deviceChangeRiskWindowDays": zod.number().int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsDeviceChangeRiskWindowDaysMax),
+  "repeatedDeviceChangeThreshold": zod.number().int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsRepeatedDeviceChangeThresholdMax),
+  "maxCheckinAccuracyMeters": zod.number().int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsMaxCheckinAccuracyMetersMax),
+  "rapidCheckinBlockSeconds": zod.number().int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsRapidCheckinBlockSecondsMax),
+  "impossibleTravelWindowSeconds": zod.number().int().min(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMin).max(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMax),
+  "impossibleTravelBaseMeters": zod.number().int().min(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMin).max(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMax),
+  "impossibleTravelMetersPerSecond": zod.number().int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelMetersPerSecondMax),
+  "maxDailyVisitsPerPlan": zod.number().int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsMaxDailyVisitsPerPlanMax),
+  "offeringApprovalRequired": zod.boolean()
+}),
+  "isCustom": zod.boolean(),
+  "updatedAt": zod.coerce.date().nullable()
+})
+
+
 export const UpdateSuperAdminRolePermissionsParams = zod.object({
   "role": zod.enum(['customer_support_admin', 'partner_operations_admin', 'finance_admin', 'content_admin', 'marketing_admin', 'corporate_admin', 'fraud_compliance_admin', 'technical_admin', 'super_admin'])
 })
@@ -4937,13 +5054,17 @@ export const GetLiveCatalogResponseItem = zod.object({
 export const GetLiveCatalogResponse = zod.array(GetLiveCatalogResponseItem)
 
 
+export const getMemberDeviceStatusResponseWaitHoursMax = 168;
+
+
+
 export const GetMemberDeviceStatusResponse = zod.object({
   "status": zod.enum(['primary', 'pending', 'revoked']),
   "currentPlatform": zod.union([zod.enum(['ios', 'android', 'unknown']),zod.null()]),
   "pendingActivationAt": zod.coerce.date().nullable(),
   "pendingPlatform": zod.union([zod.enum(['ios', 'android', 'unknown']),zod.null()]),
   "pendingRiskFlag": zod.boolean(),
-  "waitHours": zod.literal(24)
+  "waitHours": zod.number().int().min(1).max(getMemberDeviceStatusResponseWaitHoursMax)
 })
 
 
@@ -4951,14 +5072,22 @@ export const RegisterMemberDeviceBody = zod.object({
   "platform": zod.enum(['ios', 'android'])
 })
 
+export const registerMemberDeviceResponseWaitHoursMax = 168;
+
+
+
 export const RegisterMemberDeviceResponse = zod.object({
   "status": zod.enum(['primary', 'pending', 'revoked']),
   "currentPlatform": zod.union([zod.enum(['ios', 'android', 'unknown']),zod.null()]),
   "pendingActivationAt": zod.coerce.date().nullable(),
   "pendingPlatform": zod.union([zod.enum(['ios', 'android', 'unknown']),zod.null()]),
   "pendingRiskFlag": zod.boolean(),
-  "waitHours": zod.literal(24)
+  "waitHours": zod.number().int().min(1).max(registerMemberDeviceResponseWaitHoursMax)
 })
+
+
+export const cancelMemberDeviceChangeResponseWaitHoursMax = 168;
+
 
 
 export const CancelMemberDeviceChangeResponse = zod.object({
@@ -4967,7 +5096,7 @@ export const CancelMemberDeviceChangeResponse = zod.object({
   "pendingActivationAt": zod.coerce.date().nullable(),
   "pendingPlatform": zod.union([zod.enum(['ios', 'android', 'unknown']),zod.null()]),
   "pendingRiskFlag": zod.boolean(),
-  "waitHours": zod.literal(24)
+  "waitHours": zod.number().int().min(1).max(cancelMemberDeviceChangeResponseWaitHoursMax)
 })
 
 

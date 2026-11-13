@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
 import { eq, inArray } from "drizzle-orm";
 import express from "express";
-import { db, adminRolePermissions, operationAudit, operators, pool } from "@workspace/db";
+import { db, adminRolePermissions, operationAudit, operators, platformSafetyRules, pool } from "@workspace/db";
 import { createSuperAdminRouter } from "./super-admin";
 import { DEFAULT_ADMIN_ACTIONS } from "../lib/admin-roles";
 
@@ -17,6 +17,7 @@ const targetEmail = `operator-${prefix}@example.com`;
 const partnerEmail = `partner-${prefix}@example.com`;
 let server: Server | null = null;
 let originalFinancePolicy: typeof adminRolePermissions.$inferSelect | null = null;
+let originalPlatformRules: typeof platformSafetyRules.$inferSelect | null = null;
 
 const identities = new Map([
   [superAdminEmail, { userId: superAdminId, email: superAdminEmail }],
@@ -73,12 +74,27 @@ after(async () => {
   } else {
     await db.delete(adminRolePermissions).where(eq(adminRolePermissions.role, "finance_admin"));
   }
+  if (originalPlatformRules) {
+    await db.insert(platformSafetyRules).values(originalPlatformRules).onConflictDoUpdate({
+      target: platformSafetyRules.id,
+      set: {
+        settings: originalPlatformRules.settings,
+        updatedBy: originalPlatformRules.updatedBy,
+        updatedAt: originalPlatformRules.updatedAt,
+      },
+    });
+  } else {
+    await db.delete(platformSafetyRules).where(eq(platformSafetyRules.id, "global"));
+  }
   await db.delete(operators).where(inArray(operators.userId, [superAdminId, targetId, partnerId]));
   // Audit history is append-only; randomized test events are intentionally retained.
   await pool.end();
 });
 
 test("Super Admin role management is protected, auditable, and preserves other staff roles", async () => {
+  const [originalPlatformRulesRow] = await db.select().from(platformSafetyRules)
+    .where(eq(platformSafetyRules.id, "global")).limit(1);
+  originalPlatformRules = originalPlatformRulesRow ?? null;
   const [originalFinancePolicyRow] = await db.select().from(adminRolePermissions)
     .where(eq(adminRolePermissions.role, "finance_admin")).limit(1);
   originalFinancePolicy = originalFinancePolicyRow ?? null;
@@ -104,6 +120,34 @@ test("Super Admin role management is protected, auditable, and preserves other s
   assert.deepEqual(financePolicy?.actions, originalFinancePolicy?.actions ?? DEFAULT_ADMIN_ACTIONS.finance_admin);
   assert.equal((rolePolicies.data as Array<{ role: string; locked: boolean }>)
     .find(row => row.role === "super_admin")?.locked, true);
+
+  assert.equal((await call("/super-admin/platform-rules")).status, 401);
+  assert.equal((await call("/super-admin/platform-rules", "GET", partnerId)).status, 403);
+  const rulesBefore = await call("/super-admin/platform-rules", "GET", superAdminId);
+  assert.equal(rulesBefore.status, 200);
+  const ruleRecord = rulesBefore.data as {
+    settings: { repeatedDeviceChangeThreshold: number; rapidCheckinBlockSeconds: number; impossibleTravelWindowSeconds: number };
+    isCustom: boolean;
+    updatedAt: string | null;
+  };
+  const nextThreshold = ruleRecord.settings.repeatedDeviceChangeThreshold === 10
+    ? 9 : ruleRecord.settings.repeatedDeviceChangeThreshold + 1;
+  const updatedRules = await call("/super-admin/platform-rules", "PUT", superAdminId, {
+    settings: { ...ruleRecord.settings, repeatedDeviceChangeThreshold: nextThreshold },
+  });
+  assert.equal(updatedRules.status, 200);
+  assert.equal((updatedRules.data as typeof ruleRecord).settings.repeatedDeviceChangeThreshold, nextThreshold);
+  assert.equal((updatedRules.data as typeof ruleRecord).isCustom, true);
+  assert.deepEqual(Object.keys(updatedRules.data as object).sort(), ["isCustom", "settings", "updatedAt"]);
+  assert.equal((await call("/super-admin/platform-rules", "PUT", superAdminId, {
+    settings: {
+      ...(updatedRules.data as typeof ruleRecord).settings,
+      rapidCheckinBlockSeconds: 600,
+      impossibleTravelWindowSeconds: 60,
+    },
+  })).status, 400);
+  const [ruleAudit] = await db.select().from(operationAudit).where(eq(operationAudit.action, "super_admin.platform_safety_rules.updated"));
+  assert.equal(ruleAudit?.targetId, "platform:global");
 
   const updatedPolicy = await call("/super-admin/role-permissions/finance_admin", "PUT", superAdminId, {
     actions: ["view", "refund", "view_sensitive_data"],

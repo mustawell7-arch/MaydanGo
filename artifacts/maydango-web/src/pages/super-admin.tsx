@@ -3,16 +3,20 @@ import { useAuth } from "@clerk/react";
 import {
   getGetSuperAdminAccountsQueryKey,
   getGetSuperAdminAuditLogsQueryKey,
+  getGetSuperAdminPlatformRulesQueryKey,
   getGetSuperAdminRolePermissionsQueryKey,
   useGetSuperAdminAccounts,
   useGetSuperAdminAuditLogs,
+  useGetSuperAdminPlatformRules,
   useGetSuperAdminRolePermissions,
+  useUpdateSuperAdminPlatformRules,
   useUpsertSuperAdminAccount,
   useUpdateSuperAdminRolePermissions,
   type AdminAction,
   type AdminAccount,
   type AdminRole,
   type AdminRolePermission,
+  type PlatformSafetyRulesRecord,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -48,6 +52,21 @@ const actionLabels: Record<AdminAction, string> = {
 };
 
 const permissionActions = Object.keys(actionLabels) as AdminAction[];
+type PlatformRules = PlatformSafetyRulesRecord["settings"];
+type NumericRuleKey = {
+  [Key in keyof PlatformRules]: PlatformRules[Key] extends number ? Key : never
+}[keyof PlatformRules];
+const numericRuleFields: { key: NumericRuleKey; title: string; help: string; min: number; max: number }[] = [
+  { key: "deviceChangeWaitHours", title: "Device-change waiting period (hours)", help: "Applies to new device-change requests; existing requests keep their scheduled time.", min: 1, max: 168 },
+  { key: "deviceChangeRiskWindowDays", title: "Repeated device-change review window (days)", help: "How far back to count changes when flagging repeated requests.", min: 1, max: 90 },
+  { key: "repeatedDeviceChangeThreshold", title: "Requests before support review", help: "Flag the next request once this many earlier changes are in the review window.", min: 1, max: 10 },
+  { key: "maxCheckinAccuracyMeters", title: "Maximum GPS uncertainty (meters)", help: "Less accurate scans are rejected. Partner confirmation remains required.", min: 1, max: 100 },
+  { key: "rapidCheckinBlockSeconds", title: "Rapid repeat check-in block (seconds)", help: "Blocks check-ins made sooner than this after another verified visit.", min: 1, max: 600 },
+  { key: "impossibleTravelWindowSeconds", title: "Travel-fraud evaluation window (seconds)", help: "Only recent visits inside this time window are checked for impossible travel.", min: 60, max: 21600 },
+  { key: "impossibleTravelBaseMeters", title: "Travel distance allowance (meters)", help: "Base distance allowed before adding the per-second travel allowance.", min: 0, max: 5000 },
+  { key: "impossibleTravelMetersPerSecond", title: "Travel allowance per second (meters)", help: "Higher values are more permissive when comparing recent facility visits.", min: 1, max: 200 },
+  { key: "maxDailyVisitsPerPlan", title: "Maximum daily visits on new or changed plans", help: "Existing plan rules and membership access are not rewritten by this cap.", min: 1, max: 100000 },
+];
 
 const workspaceLinks = [
   { href: "/partner-portal", title: "Partners and facilities", description: "Review partners, facilities, sessions and bookings." },
@@ -72,6 +91,12 @@ export default function SuperAdminPage() {
       queryKey: getGetSuperAdminRolePermissionsQueryKey(),
     },
   });
+  const platformRulesQuery = useGetSuperAdminPlatformRules({
+    query: {
+      enabled: isLoaded && !!isSignedIn,
+      queryKey: getGetSuperAdminPlatformRulesQueryKey(),
+    },
+  });
   const [auditPage, setAuditPage] = useState(0);
   const auditParams = { limit: 100, offset: auditPage * 100 };
   const auditQuery = useGetSuperAdminAuditLogs(auditParams, {
@@ -82,11 +107,15 @@ export default function SuperAdminPage() {
   });
   const saveAccount = useUpsertSuperAdminAccount();
   const saveRolePermissions = useUpdateSuperAdminRolePermissions();
+  const savePlatformRules = useUpdateSuperAdminPlatformRules();
   const [email, setEmail] = useState("");
   const [newRole, setNewRole] = useState<AdminRole>("customer_support_admin");
   const [roleChoices, setRoleChoices] = useState<Record<string, AdminRole>>({});
   const [permissionChoices, setPermissionChoices] = useState<Record<string, AdminAction[]>>({});
+  const [platformRuleDraft, setPlatformRuleDraft] = useState<PlatformRules | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [permissionFeedback, setPermissionFeedback] = useState("");
+  const [platformRulesFeedback, setPlatformRulesFeedback] = useState("");
   const [busyId, setBusyId] = useState("");
 
   const refresh = async () => {
@@ -94,6 +123,7 @@ export default function SuperAdminPage() {
       queryClient.invalidateQueries({ queryKey: getGetSuperAdminAccountsQueryKey() }),
       queryClient.invalidateQueries({ queryKey: getGetSuperAdminAuditLogsQueryKey(auditParams) }),
       queryClient.invalidateQueries({ queryKey: getGetSuperAdminRolePermissionsQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: getGetSuperAdminPlatformRulesQueryKey() }),
     ]);
   };
 
@@ -132,12 +162,12 @@ export default function SuperAdminPage() {
   const updatePermissions = (policy: AdminRolePermission, actions: AdminAction[] | null) => {
     if (policy.locked) return;
     setBusyId(`permissions-${policy.role}`);
-    setFeedback("");
+    setPermissionFeedback("");
     saveRolePermissions.mutate(
       { role: policy.role, data: { actions } },
       {
         onSuccess: async () => {
-          setFeedback(`Permissions for ${roleLabels[policy.role]} were updated and recorded in the audit log.`);
+          setPermissionFeedback(`Permissions for ${roleLabels[policy.role]} were updated and recorded in the audit log.`);
           setPermissionChoices(previous => {
             const next = { ...previous };
             delete next[policy.role];
@@ -147,7 +177,34 @@ export default function SuperAdminPage() {
           setBusyId("");
         },
         onError: () => {
-          setFeedback("Role permissions could not be updated. Check your access and try again.");
+          setPermissionFeedback("Role permissions could not be updated. Check your access and try again.");
+          setBusyId("");
+        },
+      },
+    );
+  };
+
+  const updateNumericRule = (key: NumericRuleKey, value: number) => {
+    const current = platformRuleDraft ?? platformRulesQuery.data?.settings;
+    if (current) setPlatformRuleDraft({ ...current, [key]: value });
+  };
+
+  const submitPlatformRules = () => {
+    if (!platformRuleDraft) return;
+    setBusyId("platform-rules");
+    setPlatformRulesFeedback("");
+    savePlatformRules.mutate(
+      { data: { settings: platformRuleDraft } },
+      {
+        onSuccess: async () => {
+          setPlatformRulesFeedback("Safety and access rules were saved and recorded in the audit log.");
+          setPlatformRuleDraft(null);
+          setAuditPage(0);
+          await refresh();
+          setBusyId("");
+        },
+        onError: () => {
+          setPlatformRulesFeedback("The rules were not saved. Review the values and try again.");
           setBusyId("");
         },
       },
@@ -169,6 +226,9 @@ export default function SuperAdminPage() {
   const accounts = accountsQuery.data ?? [];
   const auditLogs = auditQuery.data ?? [];
   const rolePolicies = rolePermissionsQuery.data ?? [];
+  const platformRules = platformRuleDraft ?? platformRulesQuery.data?.settings ?? null;
+  const platformRulesChanged = !!platformRuleDraft
+    && JSON.stringify(platformRuleDraft) !== JSON.stringify(platformRulesQuery.data?.settings);
 
   return (
     <main className="min-h-screen bg-[#f5f2e9] px-4 py-8 text-[#173d35] sm:px-7 sm:py-12" data-testid="page-super-admin">
@@ -193,6 +253,56 @@ export default function SuperAdminPage() {
           </div>
         </section>
 
+        <section className="mb-8 rounded-3xl border border-[#e1dccf] bg-[#fffdf7] p-5 sm:p-6" aria-labelledby="platform-rules-title" data-testid="section-platform-safety-rules">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 id="platform-rules-title" className="font-display text-xl font-bold">Safety and access rules</h2>
+              <p className="mt-1 max-w-3xl text-sm leading-5 text-[#60756b]">Adjust supported device, check-in fraud, membership visit-limit, and partner publishing rules. These controls never display or store API credentials.</p>
+            </div>
+            <button type="button" onClick={() => void platformRulesQuery.refetch()} className="rounded-lg border border-[#d8d2c4] px-3 py-2 text-xs font-bold text-[#36564b]" data-testid="button-refresh-platform-rules">Refresh rules</button>
+          </div>
+          {platformRulesFeedback && <p className={`mb-4 rounded-xl border px-4 py-3 text-sm ${platformRulesFeedback.startsWith("The rules were not") ? "border-[#e8c5ba] bg-[#fff5f1] text-[#9a4435]" : "border-[#c8d9ca] bg-[#edf5ec] text-[#315e42]"}`} role={platformRulesFeedback.startsWith("The rules were not") ? "alert" : "status"} data-testid="status-platform-rules-feedback">{platformRulesFeedback}</p>}
+          {platformRulesQuery.isLoading
+            ? <p className="py-5 text-center text-sm text-[#748279]" role="status" data-testid="status-platform-rules-loading">Loading safety rules…</p>
+            : platformRulesQuery.isError
+              ? <p className="rounded-xl border border-[#e8c5ba] bg-[#fff5f1] p-4 text-sm text-[#9a4435]" role="alert" data-testid="error-platform-rules">Safety rules could not be loaded. Retry before changing them.</p>
+              : platformRules && <div className="space-y-5">
+                <div className="grid gap-4 md:grid-cols-2">
+                  {numericRuleFields.map(field => <label key={field.key} className="rounded-2xl border border-[#e5dfd1] bg-[#faf8f1] p-4 text-xs font-semibold text-[#36564b]">
+                    <span>{field.title}</span>
+                    <input
+                      type="number"
+                      min={field.min}
+                      max={field.max}
+                      step={1}
+                      value={platformRules[field.key]}
+                      onChange={event => updateNumericRule(field.key, Number(event.target.value))}
+                      disabled={!!busyId}
+                      className="mt-2 w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm text-[#173d35] outline-none focus:border-[#6b9382] disabled:opacity-60"
+                      data-testid={`input-platform-rule-${field.key}`}
+                    />
+                    <span className="mt-2 block font-normal leading-5 text-[#748279]">{field.help}</span>
+                  </label>)}
+                </div>
+                <label className="flex items-start gap-3 rounded-2xl border border-[#e5dfd1] bg-[#faf8f1] p-4 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={platformRules.offeringApprovalRequired}
+                    onChange={event => setPlatformRuleDraft({ ...platformRules, offeringApprovalRequired: event.target.checked })}
+                    disabled={!!busyId}
+                    className="mt-0.5"
+                    data-testid="checkbox-platform-rule-offering-approval"
+                  />
+                  <span><strong>Require admin approval before partner activities are published</strong><span className="mt-1 block text-xs font-normal leading-5 text-[#748279]">When disabled, approved partners can publish complete drafts themselves. Existing activities are not changed; administrator publishing remains governed by role permissions.</span></span>
+                </label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button type="button" disabled={!platformRulesChanged || !!busyId} onClick={submitPlatformRules} className="rounded-lg bg-[#174d43] px-4 py-2.5 text-sm font-bold text-[#fff9e9] disabled:cursor-not-allowed disabled:opacity-40" data-testid="button-save-platform-rules">{busyId === "platform-rules" ? "Saving…" : "Save safety rules"}</button>
+                  <button type="button" disabled={!platformRuleDraft || !!busyId} onClick={() => setPlatformRuleDraft(null)} className="rounded-lg border border-[#d8d2c4] px-4 py-2.5 text-sm font-bold text-[#36564b] disabled:cursor-not-allowed disabled:opacity-40" data-testid="button-discard-platform-rules">Discard changes</button>
+                  <span className="text-xs text-[#748279]" data-testid="text-platform-rules-source">{platformRulesQuery.data?.isCustom ? "Custom rules" : "Current safe defaults"}{platformRulesQuery.data?.updatedAt ? ` · Updated ${new Date(platformRulesQuery.data.updatedAt).toLocaleString()}` : ""}</span>
+                </div>
+              </div>}
+        </section>
+
         <section className="mb-8 rounded-3xl border border-[#e1dccf] bg-[#fffdf7] p-5 sm:p-6" aria-labelledby="role-permissions-title" data-testid="section-role-permissions">
           <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -201,6 +311,7 @@ export default function SuperAdminPage() {
             </div>
             <button type="button" onClick={() => void rolePermissionsQuery.refetch()} className="rounded-lg border border-[#d8d2c4] px-3 py-2 text-xs font-bold text-[#36564b]" data-testid="button-refresh-role-permissions">Refresh permissions</button>
           </div>
+          {permissionFeedback && <p className={`mb-4 rounded-xl border px-4 py-3 text-sm ${permissionFeedback.startsWith("Role permissions could not") ? "border-[#e8c5ba] bg-[#fff5f1] text-[#9a4435]" : "border-[#c8d9ca] bg-[#edf5ec] text-[#315e42]"}`} role={permissionFeedback.startsWith("Role permissions could not") ? "alert" : "status"} data-testid="status-role-permission-feedback">{permissionFeedback}</p>}
           {rolePermissionsQuery.isLoading
             ? <p className="py-5 text-center text-sm text-[#748279]" role="status" data-testid="status-role-permissions-loading">Loading role permissions…</p>
             : rolePermissionsQuery.isError

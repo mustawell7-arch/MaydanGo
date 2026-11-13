@@ -143,6 +143,8 @@ import type {
   PartnerMarketingProfileUpdate,
   PartnerSettlementSummary,
   PlanInput,
+  PlatformSafetyRulesRecord,
+  PlatformSafetyRulesUpdateInput,
   PublicCourse,
   PublicFacility,
   PublicFacilityReviews,
@@ -6895,6 +6897,183 @@ export function useGetSuperAdminRolePermissions<TData = Awaited<ReturnType<typeo
 
 
 
+
+export const getGetSuperAdminPlatformRulesUrl = () => {
+
+
+
+
+  return `/api/super-admin/platform-rules`
+}
+
+export const getSuperAdminPlatformRules = async ( options?: Parameters<typeof customFetch>[1]): Promise<PlatformSafetyRulesRecord> => {
+
+  return customFetch<PlatformSafetyRulesRecord>(getGetSuperAdminPlatformRulesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSuperAdminPlatformRulesQueryKey = () => {
+    return [
+    `/api/super-admin/platform-rules`
+    ] as const;
+    }
+
+
+export const getGetSuperAdminPlatformRulesQueryOptions = <TData = Awaited<ReturnType<typeof getSuperAdminPlatformRules>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminPlatformRules>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSuperAdminPlatformRulesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSuperAdminPlatformRules>>> = ({ signal }) => getSuperAdminPlatformRules({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminPlatformRules>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSuperAdminPlatformRulesQueryResult = NonNullable<Awaited<ReturnType<typeof getSuperAdminPlatformRules>>>
+export type GetSuperAdminPlatformRulesQueryError = ErrorType<unknown>
+
+
+export function useGetSuperAdminPlatformRules<TData = Awaited<ReturnType<typeof getSuperAdminPlatformRules>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminPlatformRules>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminPlatformRules>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminPlatformRules>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminPlatformRules<TData = Awaited<ReturnType<typeof getSuperAdminPlatformRules>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminPlatformRules>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminPlatformRules>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminPlatformRules>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminPlatformRules<TData = Awaited<ReturnType<typeof getSuperAdminPlatformRules>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminPlatformRules>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSuperAdminPlatformRules<TData = Awaited<ReturnType<typeof getSuperAdminPlatformRules>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminPlatformRules>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSuperAdminPlatformRulesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateSuperAdminPlatformRulesUrl = () => {
+
+
+
+
+  return `/api/super-admin/platform-rules`
+}
+
+export const updateSuperAdminPlatformRules = async (platformSafetyRulesUpdateInput: PlatformSafetyRulesUpdateInput, options?: Parameters<typeof customFetch>[1]): Promise<PlatformSafetyRulesRecord> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PlatformSafetyRulesRecord>(getUpdateSuperAdminPlatformRulesUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(platformSafetyRulesUpdateInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateSuperAdminPlatformRulesMutationKey = () => ['updateSuperAdminPlatformRules'] as const;
+
+export const getUpdateSuperAdminPlatformRulesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSuperAdminPlatformRules>>, TError,UpdateSuperAdminPlatformRulesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSuperAdminPlatformRules>>, TError,UpdateSuperAdminPlatformRulesMutationVariables, TContext> => {
+
+const mutationKey = getUpdateSuperAdminPlatformRulesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSuperAdminPlatformRules>>, UpdateSuperAdminPlatformRulesMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateSuperAdminPlatformRules(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSuperAdminPlatformRulesMutationResult = NonNullable<Awaited<ReturnType<typeof updateSuperAdminPlatformRules>>>
+    export type UpdateSuperAdminPlatformRulesMutationBody = BodyType<PlatformSafetyRulesUpdateInput>
+    export type UpdateSuperAdminPlatformRulesMutationError = ErrorType<unknown>
+    export type UpdateSuperAdminPlatformRulesMutationVariables = {data: BodyType<PlatformSafetyRulesUpdateInput>}
+
+    export const useUpdateSuperAdminPlatformRules = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSuperAdminPlatformRules>>, TError,UpdateSuperAdminPlatformRulesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateSuperAdminPlatformRules>>,
+        TError,
+        UpdateSuperAdminPlatformRulesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateSuperAdminPlatformRulesMutationOptions(options), queryClient);
+    }
 
 export const getUpdateSuperAdminRolePermissionsUrl = (role: AdminRole,) => {
 

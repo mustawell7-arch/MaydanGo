@@ -6,7 +6,7 @@ paths:
       operationId: getMemberDeviceStatus
       responses:
         "200":
-          description: Current installation status and any active 24-hour change request
+          description: Current installation status and configured device-change wait
           content:
             application/json:
               schema: { $ref: "#/components/schemas/MemberDeviceStatus" }
@@ -1656,6 +1656,28 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/AdminRolePermission" }
+  /super-admin/platform-rules:
+    get:
+      operationId: getSuperAdminPlatformRules
+      responses:
+        "200":
+          description: Effective non-secret platform safety and access rules
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PlatformSafetyRulesRecord" }
+    put:
+      operationId: updateSuperAdminPlatformRules
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PlatformSafetyRulesUpdateInput" }
+      responses:
+        "200":
+          description: Validated platform rules saved and added to audit history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PlatformSafetyRulesRecord" }
   /super-admin/role-permissions/{role}:
     parameters:
       - name: role
@@ -1713,7 +1735,7 @@ components:
         pendingActivationAt: { type: ["string", "null"], format: date-time }
         pendingPlatform: { anyOf: [{ $ref: "#/components/schemas/MemberDevicePlatform" }, { type: "null" }] }
         pendingRiskFlag: { type: boolean }
-        waitHours: { type: integer, const: 24 }
+        waitHours: { type: integer, minimum: 1, maximum: 168 }
     MemberDeviceRegistration:
       type: object
       additionalProperties: false
@@ -3405,6 +3427,35 @@ components:
               uniqueItems: true
               items: { $ref: "#/components/schemas/AdminAction" }
             - type: "null"
+    PlatformSafetyRulesValues:
+      type: object
+      additionalProperties: false
+      required: [deviceChangeWaitHours, deviceChangeRiskWindowDays, repeatedDeviceChangeThreshold, maxCheckinAccuracyMeters, rapidCheckinBlockSeconds, impossibleTravelWindowSeconds, impossibleTravelBaseMeters, impossibleTravelMetersPerSecond, maxDailyVisitsPerPlan, offeringApprovalRequired]
+      properties:
+        deviceChangeWaitHours: { type: integer, minimum: 1, maximum: 168 }
+        deviceChangeRiskWindowDays: { type: integer, minimum: 1, maximum: 90 }
+        repeatedDeviceChangeThreshold: { type: integer, minimum: 1, maximum: 10 }
+        maxCheckinAccuracyMeters: { type: integer, minimum: 1, maximum: 100 }
+        rapidCheckinBlockSeconds: { type: integer, minimum: 1, maximum: 600 }
+        impossibleTravelWindowSeconds: { type: integer, minimum: 60, maximum: 21600 }
+        impossibleTravelBaseMeters: { type: integer, minimum: 0, maximum: 5000 }
+        impossibleTravelMetersPerSecond: { type: integer, minimum: 1, maximum: 200 }
+        maxDailyVisitsPerPlan: { type: integer, minimum: 1, maximum: 100000 }
+        offeringApprovalRequired: { type: boolean }
+    PlatformSafetyRulesUpdateInput:
+      type: object
+      additionalProperties: false
+      required: [settings]
+      properties:
+        settings: { $ref: "#/components/schemas/PlatformSafetyRulesValues" }
+    PlatformSafetyRulesRecord:
+      type: object
+      additionalProperties: false
+      required: [settings, isCustom, updatedAt]
+      properties:
+        settings: { $ref: "#/components/schemas/PlatformSafetyRulesValues" }
+        isCustom: { type: boolean }
+        updatedAt: { type: ["string", "null"], format: date-time }
     SuperAdminAuditLog:
       type: object
       additionalProperties: false

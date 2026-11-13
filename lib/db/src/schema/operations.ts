@@ -26,6 +26,24 @@ export const adminRolePermissions = pgTable("admin_role_permissions", {
   updatedBy: text("updated_by").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+export type PlatformSafetyRules = {
+  deviceChangeWaitHours: number;
+  deviceChangeRiskWindowDays: number;
+  repeatedDeviceChangeThreshold: number;
+  maxCheckinAccuracyMeters: number;
+  rapidCheckinBlockSeconds: number;
+  impossibleTravelWindowSeconds: number;
+  impossibleTravelBaseMeters: number;
+  impossibleTravelMetersPerSecond: number;
+  maxDailyVisitsPerPlan: number;
+  offeringApprovalRequired: boolean;
+};
+export const platformSafetyRules = pgTable("platform_safety_rules", {
+  id: text("id").primaryKey(),
+  settings: jsonb("settings").$type<PlatformSafetyRules>().notNull(),
+  updatedBy: text("updated_by").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 export const membershipPlans = pgTable("membership_plans", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),

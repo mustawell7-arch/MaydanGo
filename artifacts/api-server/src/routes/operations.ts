@@ -23,6 +23,11 @@ import {
 import { sendMemberNotification } from "../lib/notifications";
 import { expandRecurringOffering } from "../lib/recurring-offerings";
 import { iraqCalendarDate } from "../lib/facility-hours";
+import {
+  exceedsPlatformDailyVisitLimit,
+  getPlatformSafetyRules,
+  partnerSubmissionOutcome,
+} from "../lib/platform-rules";
 
 import { PaymentError, paymentsEnabled, payTabsTestModeEnabled } from "../lib/payment-config";
 
@@ -484,6 +489,7 @@ function serializeOffering(row: OfferingRow) {
 
 router.post("/offerings/:id/submit", async (req, res) => {
   const partnerId = partnerOnly(res);
+  const rules = await getPlatformSafetyRules();
   const row = await db.transaction(async tx => {
     const [current] = await tx.select().from(offerings).where(and(
       eq(offerings.id, String(req.params.id)), eq(offerings.scope, "live"),
@@ -495,13 +501,26 @@ router.post("/offerings/:id/submit", async (req, res) => {
       throw new BookingError(409, "Only an inactive draft can be submitted. Use the correction response for requested changes.");
     }
     await assertOfferingReadyForReview(tx, current);
+    const now = new Date();
+    const outcome = partnerSubmissionOutcome(rules.offeringApprovalRequired);
     const [updated] = await tx.update(offerings).set({
-      approvalStatus: "submitted",
-      submittedAt: new Date(),
+      approvalStatus: outcome.approvalStatus,
+      active: outcome.active,
+      submittedAt: now,
+      reviewedAt: rules.offeringApprovalRequired ? null : now,
+      reviewedBy: null,
       approvalReason: null,
       partnerResponse: null,
     }).where(eq(offerings.id, current.id)).returning();
-    await audit(tx, res.locals.operator.userId, "offering.approval.submit", current.id, "from=draft;to=submitted");
+    await audit(
+      tx,
+      res.locals.operator.userId,
+      rules.offeringApprovalRequired ? "offering.approval.submit" : "offering.approval.self_publish",
+      current.id,
+      rules.offeringApprovalRequired
+        ? "from=draft;to=submitted"
+        : "from=draft;to=published;admin_approval_required=false",
+    );
     return updated;
   });
   res.json(serializeOffering(row));
@@ -1743,6 +1762,10 @@ router.post("/courses/:id/lessons", async (req, res) => {
 router.post("/plans", async (req, res) => {
   admin(res, "partner_operations");
   const data = planInput.parse(req.body);
+  const rules = await getPlatformSafetyRules();
+  if (exceedsPlatformDailyVisitLimit(null, data.rules.dailyLimit, rules.maxDailyVisitsPerPlan)) {
+    throw new BookingError(400, `A new plan cannot exceed the platform limit of ${rules.maxDailyVisitsPerPlan} visits per day.`);
+  }
   if (data.kind === "paid") validatePaidPlan(data.priceIqd);
   const row = await db.transaction(async tx => {
     const [p] = await tx.insert(membershipPlans).values({ ...data, id: randomUUID() }).returning();
@@ -1754,10 +1777,21 @@ router.post("/plans", async (req, res) => {
 router.put("/plans/:id", async (req, res) => {
   admin(res, "partner_operations");
   const data = planInput.parse(req.body);
+  const rules = await getPlatformSafetyRules();
   if (data.kind === "paid") validatePaidPlan(data.priceIqd);
   const row = await db.transaction(async tx => {
-    const [p] = await tx.update(membershipPlans).set(data).where(eq(membershipPlans.id, String(req.params.id))).returning();
-    if (!p) throw new BookingError(404, "Plan not found.");
+    const [current] = await tx.select().from(membershipPlans)
+      .where(eq(membershipPlans.id, String(req.params.id))).for("update").limit(1);
+    if (!current) throw new BookingError(404, "Plan not found.");
+    if (exceedsPlatformDailyVisitLimit(
+      current.rules.dailyLimit,
+      data.rules.dailyLimit,
+      rules.maxDailyVisitsPerPlan,
+    )) {
+      throw new BookingError(400, `A changed plan cannot exceed the platform limit of ${rules.maxDailyVisitsPerPlan} visits per day.`);
+    }
+    const [p] = await tx.update(membershipPlans).set(data)
+      .where(eq(membershipPlans.id, current.id)).returning();
     await audit(tx, res.locals.operator.userId, "plan.update", p.id);
     return p;
   });

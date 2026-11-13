@@ -5,6 +5,8 @@ import { z } from "zod";
 import { BookingError, membershipCanAccess, processWaitlistQueue } from "./reservations";
 import { hasAdminPermission, type AdminPermission } from "./admin-roles";
 import { iraqCalendarDate, openingState, previousIraqCalendarDate } from "./facility-hours";
+import { getPlatformSafetyRules } from "./platform-rules";
+import type { PlatformSafetyRules } from "@workspace/db";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const digest = (token: string) => createHash("sha256").update(token).digest("hex");
@@ -32,6 +34,18 @@ export function distance(a: number, b: number, c: number, d: number) {
   const rad = (x: number) => x * Math.PI / 180;
   return 6371000 * 2 * Math.asin(Math.min(1, Math.sqrt(Math.sin(rad(c - a) / 2) ** 2 +
     Math.cos(rad(a)) * Math.cos(rad(c)) * Math.sin(rad(d - b) / 2) ** 2)));
+}
+export function isCheckinTravelViolation(
+  secondsSincePrevious: number,
+  distanceMeters: number,
+  rules: PlatformSafetyRules,
+) {
+  return secondsSincePrevious >= 0 && (
+    secondsSincePrevious < rules.rapidCheckinBlockSeconds
+    || (secondsSincePrevious < rules.impossibleTravelWindowSeconds
+      && distanceMeters > rules.impossibleTravelBaseMeters
+        + secondsSincePrevious * rules.impossibleTravelMetersPerSecond)
+  );
 }
 async function event(tx: Tx, reservationId: string, actorId: string, action: string, before: string, after: string, reason: string) {
   await tx.insert(attendanceEvents).values({ id: randomUUID(), reservationId, actorId, action, before, after, reason });
@@ -220,6 +234,7 @@ export async function recordManualCheckin(actor: string, id: string, input: z.in
   });
 }
 export async function scanQr(actor: string, input: z.infer<typeof scanInput>) {
+  const rules = await getPlatformSafetyRules();
   return db.transaction(async tx => {
     const [challenge] = await tx.select().from(checkinChallenges).where(eq(checkinChallenges.digest, digest(input.token)));
     if (!challenge) throw new BookingError(400, "Invalid QR code.");
@@ -231,7 +246,8 @@ export async function scanQr(actor: string, input: z.infer<typeof scanInput>) {
     await eligible(tx, c);
     if (!c.p || now < c.p.opensAt || now >= c.p.closesAt) throw new BookingError(409, "Outside the check-in window.");
     await requireFacilityOpen(tx, c, now);
-    if (input.mocked || Math.abs(now.getTime() - new Date(input.capturedAt).getTime()) > 60000 ||
+    if (input.mocked || input.accuracy > rules.maxCheckinAccuracyMeters
+        || Math.abs(now.getTime() - new Date(input.capturedAt).getTime()) > 60000 ||
         distance(input.latitude, input.longitude, c.p.latitude, c.p.longitude) + input.accuracy > c.p.radius)
       throw new BookingError(403, "A fresh, accurate location inside the facility radius is required.");
     const recent = await tx.select({ a: attendance, p: checkinPolicies }).from(attendance)
@@ -239,7 +255,11 @@ export async function scanQr(actor: string, input: z.infer<typeof scanInput>) {
     if (recent.some(({ a, p }) => {
       if (!a.verifiedBy || !["pending", "confirmed", "disputed"].includes(a.status)) return false;
       const seconds = (now.getTime() - a.checkedInAt.getTime()) / 1000;
-      return seconds >= 0 && (seconds < 60 || (seconds < 3600 && distance(p.latitude, p.longitude, input.latitude, input.longitude) > 500 + seconds * 80));
+      return isCheckinTravelViolation(
+        seconds,
+        distance(p.latitude, p.longitude, input.latitude, input.longitude),
+        rules,
+      );
     })) throw new BookingError(409, "Rapid check-in or impossible travel detected. Contact staff.");
     const reference = randomUUID();
     await tx.insert(attendance).values({ id: reference, reservationId: c.r.id, userId: actor, offeringId: c.o.id,

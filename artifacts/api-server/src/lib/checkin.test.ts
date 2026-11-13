@@ -3,9 +3,27 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import { db, pool, partners, operators, offerings, facilityProfiles, memberships, reservations, attendance, checkinPolicies, checkinChallenges, manualCheckinChallenges, attendanceEvents } from "@workspace/db";
-import { savePolicy, issueQr, scanQr, review, roster, scanInput, issueManualCheckinCode, recordManualCheckin, manualCheckinInput } from "./checkin";
+import { savePolicy, issueQr, scanQr, review, roster, scanInput, issueManualCheckinCode, recordManualCheckin, manualCheckinInput, isCheckinTravelViolation } from "./checkin";
 import { BookingError, createReservation } from "./reservations";
 import app from "../app";
+import { DEFAULT_PLATFORM_SAFETY_RULES } from "./platform-rules";
+
+test("check-in fraud thresholds are configurable without weakening partner confirmation", () => {
+  assert.equal(isCheckinTravelViolation(59, 100, DEFAULT_PLATFORM_SAFETY_RULES), true);
+  assert.equal(isCheckinTravelViolation(60, 5300, DEFAULT_PLATFORM_SAFETY_RULES), false);
+  assert.equal(isCheckinTravelViolation(60, 5301, DEFAULT_PLATFORM_SAFETY_RULES), true);
+  assert.equal(isCheckinTravelViolation(3600, 50000, DEFAULT_PLATFORM_SAFETY_RULES), false);
+  assert.equal(isCheckinTravelViolation(-1, 50000, DEFAULT_PLATFORM_SAFETY_RULES), false);
+
+  const stricterRules = {
+    ...DEFAULT_PLATFORM_SAFETY_RULES,
+    rapidCheckinBlockSeconds: 90,
+    impossibleTravelBaseMeters: 100,
+    impossibleTravelMetersPerSecond: 10,
+  };
+  assert.equal(isCheckinTravelViolation(89, 10, stricterRules), true);
+  assert.equal(isCheckinTravelViolation(90, 1001, stricterRules), true);
+});
 
 const prefix = `checkin-test-${randomUUID()}`;
 const member = `${prefix}-member`, staff = `${prefix}-staff`, secondStaff = `${prefix}-second-staff`,

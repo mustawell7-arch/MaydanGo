@@ -32,6 +32,10 @@ test("device changes become eligible exactly 24 hours after request", () => {
     getDeviceChangeActivationAt(requestedAt).toISOString(),
     "2026-11-01T12:00:00.000Z",
   );
+  assert.equal(
+    getDeviceChangeActivationAt(requestedAt, 48).toISOString(),
+    "2026-11-02T12:00:00.000Z",
+  );
 });
 
 test("the third device change within the rolling window is flagged for support", () => {
@@ -39,4 +43,6 @@ test("the third device change within the rolling window is flagged for support",
   assert.equal(shouldFlagDeviceChange(1), false);
   assert.equal(shouldFlagDeviceChange(2), true);
   assert.equal(shouldFlagDeviceChange(3), true);
+  assert.equal(shouldFlagDeviceChange(2, 3), false);
+  assert.equal(shouldFlagDeviceChange(3, 3), true);
 });

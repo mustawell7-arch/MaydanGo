@@ -28,7 +28,8 @@ export function DeviceSecurityGate() {
     : pending ? t("devicePendingTitle")
       : device.status?.status === "revoked" ? t("deviceRevokedTitle")
         : t("deviceSecurity");
-  const body = pending ? t("devicePendingText")
+  const body = pending
+    ? t("devicePendingText").replace("{hours}", String(device.status?.waitHours ?? 24))
     : device.status?.status === "revoked" ? t("deviceRevokedText")
       : t("deviceSecurityUnavailable");
   const activation = device.status?.pendingActivationAt;

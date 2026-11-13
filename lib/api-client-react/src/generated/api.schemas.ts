@@ -613,7 +613,11 @@ export interface MemberDeviceStatus {
   pendingActivationAt: string | null;
   pendingPlatform: MemberDevicePlatform | null;
   pendingRiskFlag: boolean;
-  waitHours: 24;
+  /**
+     * @minimum 1
+     * @maximum 168
+     */
+  waitHours: number;
 }
 
 export type MemberDeviceRegistrationPlatform = typeof MemberDeviceRegistrationPlatform[keyof typeof MemberDeviceRegistrationPlatform];
@@ -3341,6 +3345,66 @@ export interface AdminRolePermission {
 
 export interface AdminRolePermissionsUpdateInput {
   actions: AdminAction[] | null;
+}
+
+export interface PlatformSafetyRulesValues {
+  /**
+     * @minimum 1
+     * @maximum 168
+     */
+  deviceChangeWaitHours: number;
+  /**
+     * @minimum 1
+     * @maximum 90
+     */
+  deviceChangeRiskWindowDays: number;
+  /**
+     * @minimum 1
+     * @maximum 10
+     */
+  repeatedDeviceChangeThreshold: number;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  maxCheckinAccuracyMeters: number;
+  /**
+     * @minimum 1
+     * @maximum 600
+     */
+  rapidCheckinBlockSeconds: number;
+  /**
+     * @minimum 60
+     * @maximum 21600
+     */
+  impossibleTravelWindowSeconds: number;
+  /**
+     * @minimum 0
+     * @maximum 5000
+     */
+  impossibleTravelBaseMeters: number;
+  /**
+     * @minimum 1
+     * @maximum 200
+     */
+  impossibleTravelMetersPerSecond: number;
+  /**
+     * @minimum 1
+     * @maximum 100000
+     */
+  maxDailyVisitsPerPlan: number;
+  offeringApprovalRequired: boolean;
+}
+
+export interface PlatformSafetyRulesUpdateInput {
+  settings: PlatformSafetyRulesValues;
+}
+
+export interface PlatformSafetyRulesRecord {
+  settings: PlatformSafetyRulesValues;
+  isCustom: boolean;
+  /** @nullable */
+  updatedAt: string | null;
 }
 
 export interface SuperAdminAuditLog {

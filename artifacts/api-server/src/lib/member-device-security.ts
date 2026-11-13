@@ -9,17 +9,17 @@ import {
   memberDevices,
   operationAudit,
 } from "@workspace/db";
+import { getPlatformSafetyRules } from "./platform-rules";
 
-const CHANGE_WAIT_MS = 24 * 60 * 60 * 1000;
-const RISK_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
 const DEVICE_TOKEN_PATTERN = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 
-export function getDeviceChangeActivationAt(now: Date) {
-  return new Date(now.getTime() + CHANGE_WAIT_MS);
+export function getDeviceChangeActivationAt(now: Date, waitHours = 24) {
+  return new Date(now.getTime() + waitHours * HOUR_MS);
 }
 
-export function shouldFlagDeviceChange(recentChangeCount: number) {
-  return recentChangeCount >= 2;
+export function shouldFlagDeviceChange(recentChangeCount: number, threshold = 2) {
+  return recentChangeCount >= threshold;
 }
 
 export type MemberDevicePlatform = "ios" | "android" | "unknown";
@@ -30,7 +30,7 @@ export type MemberDeviceStatus = {
   pendingActivationAt: Date | null;
   pendingPlatform: MemberDevicePlatform | null;
   pendingRiskFlag: boolean;
-  waitHours: 24;
+  waitHours: number;
 };
 type DeviceRegistrationResult =
   | { conflict: true }
@@ -98,7 +98,9 @@ async function promotePendingChange(
   await tx.update(memberDeviceChanges).set({ status: "activated", resolvedAt: now })
     .where(eq(memberDeviceChanges.id, change.id));
   await writeEvent(tx, {
-    userId, kind: "cooldown_completed", detail: "Pending device change activated after the 24-hour wait.",
+    userId,
+    kind: "cooldown_completed",
+    detail: `Pending device change activated after the ${Math.max(1, Math.ceil((change.activateAt.getTime() - change.requestedAt.getTime()) / HOUR_MS))}-hour wait.`,
     changeId: change.id, deviceId: change.newDeviceId, createdAt: now,
   });
 }
@@ -108,6 +110,7 @@ async function readStatus(
   userId: string,
   installationHash: string,
   now: Date,
+  configuredWaitHours: number,
 ): Promise<MemberDeviceStatus> {
   await promotePendingChange(tx, userId, now);
   const [device] = await tx.select().from(memberDevices)
@@ -132,7 +135,9 @@ async function readStatus(
     pendingActivationAt: change?.activateAt ?? null,
     pendingPlatform,
     pendingRiskFlag: change?.riskFlag ?? false,
-    waitHours: 24,
+    waitHours: change
+      ? Math.max(1, Math.ceil((change.activateAt.getTime() - change.requestedAt.getTime()) / HOUR_MS))
+      : configuredWaitHours,
   };
 }
 
@@ -153,6 +158,7 @@ export async function getMemberDeviceStatus(
     throw new DeviceSecurityError(400, "INVALID_DEVICE_PLATFORM", "Choose a supported device platform.");
   }
 
+  const rules = await getPlatformSafetyRules();
   const installationHash = tokenHash(token.toLowerCase());
   let result: DeviceRegistrationResult | null = null;
   try {
@@ -176,7 +182,7 @@ export async function getMemberDeviceStatus(
       } else {
         await tx.update(memberDevices).set({ lastSeenAt: now }).where(eq(memberDevices.id, existing.id));
       }
-      return { status: await readStatus(tx, userId, installationHash, now) };
+      return { status: await readStatus(tx, userId, installationHash, now, rules.deviceChangeWaitHours) };
     }
 
     const [pendingChange] = await tx.select({ id: memberDeviceChanges.id }).from(memberDeviceChanges)
@@ -204,17 +210,21 @@ export async function getMemberDeviceStatus(
         userId, kind: "primary_device_registered", detail: "Initial primary installation registered.",
         deviceId: newDeviceId, createdAt: now,
       });
-      return { status: await readStatus(tx, userId, installationHash, now) };
+      return { status: await readStatus(tx, userId, installationHash, now, rules.deviceChangeWaitHours) };
     }
 
     const [recentChanges] = await tx.select({ count: sql<number>`count(*)::int` }).from(memberDeviceChanges)
       .where(and(
         eq(memberDeviceChanges.userId, userId),
-        gte(memberDeviceChanges.requestedAt, new Date(now.getTime() - RISK_WINDOW_MS)),
+         gte(memberDeviceChanges.requestedAt,
+           new Date(now.getTime() - rules.deviceChangeRiskWindowDays * 24 * HOUR_MS)),
       ));
-    const riskFlag = shouldFlagDeviceChange(Number(recentChanges?.count ?? 0));
+    const riskFlag = shouldFlagDeviceChange(
+      Number(recentChanges?.count ?? 0),
+      rules.repeatedDeviceChangeThreshold,
+    );
     const changeId = randomUUID();
-    const activateAt = getDeviceChangeActivationAt(now);
+    const activateAt = getDeviceChangeActivationAt(now, rules.deviceChangeWaitHours);
     await tx.insert(memberDevices).values({
       id: newDeviceId, userId, tokenHash: installationHash, platform,
       status: "pending", createdAt: now, lastSeenAt: now,
@@ -226,11 +236,11 @@ export async function getMemberDeviceStatus(
     await writeEvent(tx, {
       userId, kind: riskFlag ? "repeated_change_flagged" : "device_change_requested",
       detail: riskFlag
-        ? "Repeated device changes in the last 30 days were flagged for support review."
-        : "A 24-hour device change wait started; the previous primary installation remains active.",
+        ? `Repeated device changes in the last ${rules.deviceChangeRiskWindowDays} days were flagged for support review.`
+        : `A ${rules.deviceChangeWaitHours}-hour device change wait started; the previous primary installation remains active.`,
       changeId, deviceId: newDeviceId, createdAt: now,
     });
-    return { status: await readStatus(tx, userId, installationHash, now) };
+    return { status: await readStatus(tx, userId, installationHash, now, rules.deviceChangeWaitHours) };
     });
   } catch (cause) {
     const dbError = cause as { code?: string; constraint?: string };
@@ -256,6 +266,7 @@ export async function getMemberDeviceStatus(
 }
 
 export async function cancelMemberDeviceChange(userId: string, token: string) {
+  const rules = await getPlatformSafetyRules();
   const installationHash = tokenHash(token.toLowerCase());
   return db.transaction(async tx => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
@@ -280,7 +291,7 @@ export async function cancelMemberDeviceChange(userId: string, token: string) {
         changeId: change.id, deviceId: device.id, actorId: userId, createdAt: new Date(),
       });
     }
-    return readStatus(tx, userId, installationHash, new Date());
+    return readStatus(tx, userId, installationHash, new Date(), rules.deviceChangeWaitHours);
   });
 }
 
@@ -372,7 +383,7 @@ export function requirePrimaryMemberDevice(req: Request, res: Response, next: Ne
       status: status.status,
       pendingActivationAt: status.pendingActivationAt,
       message: pending
-        ? "This phone is waiting for the 24-hour device change period to end."
+        ? `This phone is waiting for the ${status.waitHours}-hour device change period to end.`
         : "This phone is no longer the primary device for this account.",
     });
   }).catch(next);
