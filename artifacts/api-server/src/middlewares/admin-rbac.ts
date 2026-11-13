@@ -1,7 +1,8 @@
 import { getAuth } from "@clerk/express";
+import { randomUUID } from "node:crypto";
 import type { RequestHandler } from "express";
 import { eq } from "drizzle-orm";
-import { db, adminRolePermissions, operators } from "@workspace/db";
+import { db, adminRolePermissions, operationAudit, operators } from "@workspace/db";
 import {
   ADMIN_ACTIONS,
   DEFAULT_ADMIN_ACTIONS,
@@ -12,6 +13,16 @@ import {
 type AccessDependencies = {
   getRole(userId: string): Promise<string | null>;
   getConfiguredActions(role: AdminRole): Promise<AdminAction[] | null>;
+  recordMutation?(event: MutationAuditEvent): Promise<void>;
+};
+
+type MutationAuditEvent = {
+  actorId: string;
+  method: string;
+  path: string;
+  status: number;
+  ipAddress: string;
+  userAgent: string;
 };
 
 const isAdminRole = (role: string): role is AdminRole =>
@@ -29,6 +40,20 @@ const databaseAccess: AccessDependencies = {
     if (!policy) return null;
     return policy.actions.filter((action): action is AdminAction =>
       (ADMIN_ACTIONS as readonly string[]).includes(action));
+  },
+  async recordMutation(event) {
+    await db.insert(operationAudit).values({
+      id: randomUUID(),
+      actorId: event.actorId,
+      action: "admin.api_mutation",
+      targetId: event.path,
+      detail: [
+        `method=${event.method}`,
+        `status=${event.status}`,
+        `ip=${event.ipAddress}`,
+        `user_agent=${event.userAgent}`,
+      ].join("; "),
+    });
   },
 };
 
@@ -129,22 +154,40 @@ export function createAdminRbacMiddleware(
     }
 
     const role = await access.getRole(userId);
-    if (!role || !isAdminRole(role) || role === "super_admin") {
+    if (!role || !isAdminRole(role)) {
       next();
       return;
     }
 
-    const configured = await access.getConfiguredActions(role);
-    const grants = new Set(configured ?? DEFAULT_ADMIN_ACTIONS[role]);
-    const missing = requiredAdminActions(req.method, req.path, req.body)
-      .filter(action => !grants.has(action));
+    if (role !== "super_admin") {
+      const configured = await access.getConfiguredActions(role);
+      const grants = new Set(configured ?? DEFAULT_ADMIN_ACTIONS[role]);
+      const missing = requiredAdminActions(req.method, req.path, req.body)
+        .filter(action => !grants.has(action));
 
-    if (missing.length) {
-      res.status(403).json({
-        message: "Your administrator role does not include the permission required for this action.",
-        missingPermissions: missing,
+      if (missing.length) {
+        res.status(403).json({
+          message: "Your administrator role does not include the permission required for this action.",
+          missingPermissions: missing,
+        });
+        return;
+      }
+    }
+
+    if (!["GET", "HEAD", "OPTIONS"].includes(req.method.toUpperCase()) && access.recordMutation) {
+      const event = {
+        actorId: userId,
+        method: req.method.toUpperCase(),
+        path: req.path.slice(0, 500),
+        ipAddress: (req.ip || "unknown").slice(0, 100),
+        userAgent: (req.get("user-agent") || "unknown").slice(0, 300),
+      };
+      res.once("finish", () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) return;
+        void access.recordMutation!({ ...event, status: res.statusCode }).catch(error => {
+          console.error("Unable to record admin mutation audit event", error);
+        });
       });
-      return;
     }
     next();
   };

@@ -6,6 +6,18 @@ import { createAdminRbacMiddleware, requiredAdminActions } from "./admin-rbac";
 import type { AdminAction } from "../lib/admin-roles";
 
 let server: Server | null = null;
+type CapturedAudit = {
+  actorId: string;
+  method: string;
+  path: string;
+  status: number;
+  ipAddress: string;
+  userAgent: string;
+};
+let capturedAudit: CapturedAudit | null = null;
+let resolveAudit: (() => void) | null = null;
+let auditWritten: Promise<void> = new Promise(resolve => { resolveAudit = resolve; });
+const readCapturedAudit = (): CapturedAudit | null => capturedAudit;
 
 const app = express();
 app.use(express.json());
@@ -26,6 +38,10 @@ app.use(createAdminRbacMiddleware({
   },
   async getConfiguredActions(role) {
     return role === "finance_admin" ? financeActions : null;
+  },
+  async recordMutation(event) {
+    capturedAudit = event;
+    resolveAudit?.();
   },
 }));
 app.post("/api/operations/finance/refunds/:billingId", (_req, res) => {
@@ -61,10 +77,20 @@ test("configured role permissions block sensitive actions until explicitly grant
   const endpoint = `http://127.0.0.1:${(server.address() as { port: number }).port}/api/operations/finance/refunds/test-billing`;
   const request = () => fetch(endpoint, {
     method: "POST",
-    headers: { "x-test-user": "finance-test-user" },
+    headers: { "x-test-user": "finance-test-user", "user-agent": "MaydanGo-Test/1" },
   });
 
   assert.equal((await request()).status, 403);
+  assert.equal(capturedAudit, null, "denied mutations should not be recorded as successful changes");
   financeActions = ["view", "refund", "view_sensitive_data"];
   assert.equal((await request()).status, 204);
+  await auditWritten;
+  const audit = readCapturedAudit();
+  assert.ok(audit);
+  assert.equal(audit.actorId, "finance-test-user");
+  assert.equal(audit.method, "POST");
+  assert.equal(audit.path, "/api/operations/finance/refunds/test-billing");
+  assert.equal(audit.status, 204);
+  assert.ok(audit.ipAddress);
+  assert.equal(audit.userAgent, "MaydanGo-Test/1");
 });
