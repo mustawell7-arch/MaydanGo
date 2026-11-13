@@ -3,6 +3,7 @@ import { getAuth } from "@clerk/express";
 import { eq } from "drizzle-orm";
 import { db, operators, partners, pool } from "@workspace/db";
 import { GetOperationsAnalyticsResponse } from "@workspace/api-zod";
+import { hasAdminPermission } from "../lib/admin-roles";
 
 const router = Router();
 const IRAQ_TIME_ZONE = "Asia/Baghdad";
@@ -89,7 +90,7 @@ router.use(async (req, res, next) => {
       return;
     }
     const [operator] = await db.select().from(operators).where(eq(operators.userId, userId)).limit(1);
-    if (!operator || !["admin", "partner"].includes(operator.role)) {
+    if (!operator || (!hasAdminPermission(operator.role, "partner_operations") && operator.role !== "partner")) {
       res.status(403).json({ message: "Administrator or approved partner access is required." });
       return;
     }
@@ -119,7 +120,8 @@ router.use(async (req, res, next) => {
 router.get("/analytics", async (req, res, next) => {
   try {
     const operator = res.locals.analyticsOperator as Operator;
-    const role: "admin" | "partner" = operator.role === "admin" ? "admin" : "partner";
+    const role: "partner_operations_admin" | "partner" =
+      hasAdminPermission(operator.role, "partner_operations") ? "partner_operations_admin" : "partner";
     const partner = res.locals.analyticsPartner as { id: string; name: string } | undefined;
     const today = baghdadDate();
     const fromInput = req.query.from;
@@ -208,7 +210,7 @@ router.get("/analytics", async (req, res, next) => {
           AND ($3::text IS NULL OR o.partner_id = $3)
         GROUP BY 1 ORDER BY 1
       `, params),
-      role === "admin" ? pool.query(`
+      role === "partner_operations_admin" ? pool.query(`
         WITH enrollment_progress AS (
           SELECT ce.id, ce.enrolled_at, lc.title,
             COUNT(DISTINCT ll.id) AS lesson_count,
@@ -328,7 +330,7 @@ router.get("/analytics", async (req, res, next) => {
         ORDER BY SUM(v.visits) DESC NULLS LAST, SUM(b.bookings) DESC NULLS LAST, s.title
         LIMIT 12
       `, params),
-      role === "admin" ? pool.query(`
+      role === "partner_operations_admin" ? pool.query(`
         WITH enrollment_progress AS (
           SELECT ce.id, ce.course_id, lc.title,
             COUNT(DISTINCT ll.id) AS lesson_count,
@@ -361,14 +363,14 @@ router.get("/analytics", async (req, res, next) => {
           AND o.scope = 'live' AND o.cancelled_at IS NULL
           AND ($3::text IS NULL OR o.partner_id = $3)
       `, [dayStartInBaghdad(today), dayStartInBaghdad(addCalendarDays(today, 1)), partnerId]),
-      role === "admin" ? pool.query(`
+      role === "partner_operations_admin" ? pool.query(`
         SELECT
           COUNT(*) FILTER (WHERE status = 'active' AND ends_at > NOW())::int AS active_subscriptions,
           COUNT(DISTINCT user_id) FILTER (WHERE corporate_id IS NOT NULL AND status = 'active' AND ends_at > NOW())::int AS corporate_active_members
         FROM memberships
         WHERE scope = 'live'
       `) : Promise.resolve({ rows: [] }),
-      role === "admin" ? pool.query(`
+      role === "partner_operations_admin" ? pool.query(`
         WITH slots AS (
           SELECT o.id, o.partner_id, o.capacity
           FROM booking_offerings o
@@ -466,17 +468,17 @@ router.get("/analytics", async (req, res, next) => {
     }), { enrollments: 0, completions: 0 });
     const response = GetOperationsAnalyticsResponse.parse({
       role,
-      scopeName: role === "admin" ? "MaydanGo operations" : (partner?.name ?? "Partner operations"),
+      scopeName: role === "partner_operations_admin" ? "MaydanGo operations" : (partner?.name ?? "Partner operations"),
       period: { from, to, timeZone: IRAQ_TIME_ZONE },
       summary: {
         visits: count(visit.visits),
         physicalCheckIns: count(visit.physical_check_ins),
         premiumCheckIns: count(visit.premium_check_ins),
         liveClassBookings: count(bookings.live_bookings),
-        courseEnrollments: role === "admin" ? completionTotals.enrollments : null,
-        courseCompletions: role === "admin" ? completionTotals.completions : null,
-        activeSubscriptions: role === "admin" ? count(activeMemberships.rows[0]?.active_subscriptions) : null,
-        corporateActiveMembers: role === "admin" ? count(activeMemberships.rows[0]?.corporate_active_members) : null,
+        courseEnrollments: role === "partner_operations_admin" ? completionTotals.enrollments : null,
+        courseCompletions: role === "partner_operations_admin" ? completionTotals.completions : null,
+        activeSubscriptions: role === "partner_operations_admin" ? count(activeMemberships.rows[0]?.active_subscriptions) : null,
+        corporateActiveMembers: role === "partner_operations_admin" ? count(activeMemberships.rows[0]?.corporate_active_members) : null,
         dailyVisits: count(current.daily_visits),
         monthlyVisits: count(monthVisitsResult.rows[0]?.monthly_visits),
         uniqueCustomers,
@@ -526,7 +528,7 @@ router.get("/analytics", async (req, res, next) => {
         averageRating: rating(row.average_rating),
         ratingCount: count(row.rating_count),
       })),
-      unavailableMetrics: role === "admin" ? [...ADMIN_UNAVAILABLE] : [...PARTNER_UNAVAILABLE],
+      unavailableMetrics: role === "partner_operations_admin" ? [...ADMIN_UNAVAILABLE] : [...PARTNER_UNAVAILABLE],
     });
     res.json(response);
   } catch (error) {

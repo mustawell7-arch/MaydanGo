@@ -85,7 +85,7 @@ after(async () => {
 
 test("support conversations are private, triaged, audited, and replyable", async () => {
   await db.insert(operators).values([
-    { userId: adminId, role: "admin", partnerId: null },
+    { userId: adminId, role: "customer_support_admin", partnerId: null },
     { userId: supportId, role: "support", partnerId: null, receiveUrgentAlerts: true },
     { userId: partnerId, role: "partner", partnerId: null },
   ]);

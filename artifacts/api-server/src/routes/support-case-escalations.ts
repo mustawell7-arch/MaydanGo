@@ -4,6 +4,7 @@ import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { CreateSupportCaseEscalationBody, ResolveSupportCaseEscalationBody } from "@workspace/api-zod";
 import { db, operationAudit, operators, supportCaseEscalations, supportTickets } from "@workspace/db";
 import { BookingError } from "../lib/reservations";
+import { isSupportAdministrator } from "../lib/admin-roles";
 
 // Mounted after the parent support router's admin/support authorization middleware.
 const router = Router();
@@ -33,7 +34,7 @@ router.post("/tickets/:id/escalations", async (req, res): Promise<void> => {
     if (!ticket) throw new BookingError(404, "Support request not found.");
     if (["closed", "resolved"].includes(ticket.status)) throw new BookingError(409, "Reopen the ticket before escalating it.");
     const [target] = await tx.select().from(operators).where(and(
-      eq(operators.userId, parsed.data.targetUserId), inArray(operators.role, ["admin", "support"]),
+      eq(operators.userId, parsed.data.targetUserId), inArray(operators.role, ["customer_support_admin", "support"]),
     )).for("share");
     if (!target) throw new BookingError(400, "Choose an authorized support staff member or administrator.");
     const [active] = await tx.select({ id: supportCaseEscalations.id }).from(supportCaseEscalations)
@@ -67,8 +68,8 @@ router.post("/tickets/:id/escalations/:escalationId/resolve", async (req, res): 
       eq(supportCaseEscalations.ticketId, ticketId),
     )).for("update");
     if (!escalation) throw new BookingError(404, "Case escalation not found.");
-    if (actor.role !== "admin" && escalation.targetUserId !== actor.userId) {
-      throw new BookingError(403, "Only the receiving staff member or an administrator can resolve this escalation.");
+    if (!isSupportAdministrator(actor.role) && escalation.targetUserId !== actor.userId) {
+      throw new BookingError(403, "Only the receiving staff member or a Customer Support Admin can resolve this escalation.");
     }
     if (escalation.resolvedAt) throw new BookingError(409, "This escalation has already been resolved.");
     await tx.update(supportCaseEscalations).set({

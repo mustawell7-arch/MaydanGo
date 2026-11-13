@@ -91,7 +91,7 @@ test("finance access is role-restricted and refund reviews enforce replay, separ
   await db.insert(operators).values([
     { userId: requesterId, role: "finance", partnerId: null },
     { userId: reviewerId, role: "finance", partnerId: null },
-    { userId: adminId, role: "admin", partnerId: null },
+    { userId: adminId, role: "customer_support_admin", partnerId: null },
     { userId: partnerUserId, role: "partner", partnerId },
   ]);
   await db.insert(membershipPlans).values({

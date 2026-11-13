@@ -7,13 +7,14 @@ import {
 } from "@workspace/api-zod";
 import { db, operationAudit, operators, supportResponseTemplates } from "@workspace/db";
 import { BookingError } from "../lib/reservations";
+import { isSupportAdministrator } from "../lib/admin-roles";
 
 const router = Router();
 type Operator = typeof operators.$inferSelect;
 
 function requireAdmin(operator: Operator) {
-  if (operator.role !== "admin") {
-    throw new BookingError(403, "Administrator access is required to manage approved support replies.");
+  if (!isSupportAdministrator(operator.role)) {
+    throw new BookingError(403, "Customer Support Admin access is required to manage approved support replies.");
   }
 }
 

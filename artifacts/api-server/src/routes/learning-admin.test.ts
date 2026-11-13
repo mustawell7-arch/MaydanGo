@@ -80,7 +80,7 @@ test("only administrators can list, edit, publish, or add lessons to courses", a
     approved: true,
   });
   await db.insert(operators).values([
-    { userId: adminUserId, role: "admin", partnerId: null },
+    { userId: adminUserId, role: "content_admin", partnerId: null },
     { userId: financeUserId, role: "finance", partnerId: null },
     { userId: partnerUserId, role: "partner", partnerId },
   ]);

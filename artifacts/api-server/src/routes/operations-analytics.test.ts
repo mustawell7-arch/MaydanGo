@@ -68,7 +68,7 @@ test("analytics are aggregated, date-bounded, and scoped to each approved partne
   await db.insert(operators).values([
     { userId: partnerUser, role: "partner", partnerId },
     { userId: otherPartnerUser, role: "partner", partnerId: otherPartnerId },
-    { userId: adminUser, role: "admin", partnerId: null },
+    { userId: adminUser, role: "partner_operations_admin", partnerId: null },
     { userId: financeUser, role: "finance", partnerId: null },
   ]);
 
@@ -132,7 +132,7 @@ test("analytics are aggregated, date-bounded, and scoped to each approved partne
 
   const adminResult = await call(adminUser);
   assert.equal(adminResult.status, 200);
-  assert.equal(adminResult.data.role, "admin");
+  assert.equal(adminResult.data.role, "partner_operations_admin");
   assert.equal(adminResult.data.summary.visits, 3);
   assert.equal(adminResult.data.summary.activeSubscriptions >= 0, true);
   assert.ok(adminResult.data.unavailableMetrics.includes("revenue"));

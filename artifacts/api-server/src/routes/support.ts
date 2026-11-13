@@ -24,6 +24,7 @@ import {
   supportTickets,
 } from "@workspace/db";
 import { BookingError } from "../lib/reservations";
+import { isSupportAdministrator, isSupportStaff } from "../lib/admin-roles";
 import caseEscalationRouter from "./support-case-escalations";
 import responseTemplateRouter from "./support-response-templates";
 import {
@@ -230,7 +231,7 @@ memberSupportRouter.post("/support/tickets", async (req, res) => {
     void (async () => {
       const staff = await db.select({ userId: operators.userId }).from(operators)
         .where(and(
-          inArray(operators.role, ["admin", "support"]),
+          inArray(operators.role, ["customer_support_admin", "support"]),
           eq(operators.receiveUrgentAlerts, true),
         ));
       const outcomes = await Promise.all(staff.map(member => sendMemberNotification(member.userId, "support_urgent", {
@@ -362,7 +363,7 @@ staffRouter.use(async (req, res, next) => {
   const id = getAuth(req).userId;
   if (!id) { res.status(401).json({ message: "Sign in to access support tools." }); return; }
   const [operator] = await db.select().from(operators).where(eq(operators.userId, id)).limit(1);
-  if (!operator || !["admin", "support"].includes(operator.role)) {
+  if (!operator || !isSupportStaff(operator.role)) {
     res.status(403).json({ message: "Authorized support staff access is required." }); return;
   }
   res.locals.supportOperator = operator;
@@ -427,7 +428,7 @@ staffRouter.patch("/tickets/:id", async (req, res) => {
     if (!ticket) throw new BookingError(404, "Support request not found.");
     if (parsed.data.assignedTo) {
       const [agent] = await tx.select({ userId: operators.userId }).from(operators)
-        .where(and(eq(operators.userId, parsed.data.assignedTo), inArray(operators.role, ["admin", "support"]))).limit(1);
+        .where(and(eq(operators.userId, parsed.data.assignedTo), inArray(operators.role, ["customer_support_admin", "support"]))).limit(1);
       if (!agent) throw new BookingError(400, "Assign the ticket to an authorized support agent.");
     }
     const nextStatus = parsed.data.status ?? ticket.status;
@@ -605,9 +606,9 @@ staffRouter.get("/agents", async (_req, res) => {
     role: operators.role,
     receiveUrgentAlerts: operators.receiveUrgentAlerts,
   }).from(operators)
-    .where(inArray(operators.role, ["admin", "support"]));
+    .where(inArray(operators.role, ["customer_support_admin", "support"]));
   const viewer = res.locals.supportOperator as typeof operators.$inferSelect;
-  if (viewer.role !== "admin" || !rows.length) {
+  if (!isSupportAdministrator(viewer.role) || !rows.length) {
     res.json(rows);
     return;
   }
@@ -641,7 +642,7 @@ staffRouter.post("/agents", async (req, res) => {
   }).strict().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ message: "Enter a valid account ID." }); return; }
   const operator = res.locals.supportOperator as typeof operators.$inferSelect;
-  if (operator.role !== "admin") throw new BookingError(403, "Administrator access is required to grant support access.");
+  if (!isSupportAdministrator(operator.role)) throw new BookingError(403, "Customer Support Admin access is required to grant support access.");
   const [agent] = await db.transaction(async tx => {
     const [created] = await tx.insert(operators)
       .values({ userId: parsed.data.userId, role: "support", partnerId: null })
@@ -663,7 +664,7 @@ staffRouter.post("/agents", async (req, res) => {
 
 staffRouter.patch("/agents/:userId/urgent-alerts", async (req, res) => {
   const operator = res.locals.supportOperator as typeof operators.$inferSelect;
-  if (operator.role !== "admin") {
+  if (!isSupportAdministrator(operator.role)) {
     throw new BookingError(403, "Administrator access is required to change urgent alert recipients.");
   }
   const parsed = z.object({ receiveUrgentAlerts: z.boolean() }).strict().safeParse(req.body);
@@ -678,11 +679,11 @@ staffRouter.patch("/agents/:userId/urgent-alerts", async (req, res) => {
 
   const updatedAgent = await db.transaction(async tx => {
     const staff = await tx.select().from(operators)
-      .where(inArray(operators.role, ["admin", "support"]))
+      .where(inArray(operators.role, ["customer_support_admin", "support"]))
       .orderBy(asc(operators.userId))
       .for("update");
     const currentAdmin = staff.find(agent => agent.userId === operator.userId);
-    if (!currentAdmin || currentAdmin.role !== "admin") {
+    if (!currentAdmin || !isSupportAdministrator(currentAdmin.role)) {
       throw new BookingError(403, "Administrator access is required to change urgent alert recipients.");
     }
     const agent = staff.find(candidate => candidate.userId === targetId);
@@ -713,7 +714,7 @@ staffRouter.patch("/agents/:userId/urgent-alerts", async (req, res) => {
 
 staffRouter.get("/urgent-alert-recipient-history", async (_req, res) => {
   const operator = res.locals.supportOperator as typeof operators.$inferSelect;
-  if (operator.role !== "admin") {
+  if (!isSupportAdministrator(operator.role)) {
     throw new BookingError(403, "Administrator access is required to review urgent alert recipient history.");
   }
   const rows = await db.select({
@@ -740,7 +741,7 @@ staffRouter.get("/urgent-alert-recipient-history", async (_req, res) => {
 
 staffRouter.delete("/agents/:userId", async (req, res) => {
   const operator = res.locals.supportOperator as typeof operators.$inferSelect;
-  if (operator.role !== "admin") {
+  if (!isSupportAdministrator(operator.role)) {
     throw new BookingError(403, "Administrator access is required to remove support access.");
   }
   const targetId = String(req.params.userId);
@@ -750,7 +751,7 @@ staffRouter.delete("/agents/:userId", async (req, res) => {
 
   const removedAgent = await db.transaction(async tx => {
     const staff = await tx.select().from(operators)
-      .where(inArray(operators.role, ["admin", "support"]))
+      .where(inArray(operators.role, ["customer_support_admin", "support"]))
       .orderBy(asc(operators.userId))
       .for("update");
     const agent = staff.find(candidate => candidate.userId === targetId);
@@ -778,7 +779,7 @@ staffRouter.delete("/agents/:userId", async (req, res) => {
 
 staffRouter.get("/access-history", async (_req, res) => {
   const operator = res.locals.supportOperator as typeof operators.$inferSelect;
-  if (operator.role !== "admin") {
+  if (!isSupportAdministrator(operator.role)) {
     throw new BookingError(403, "Administrator access is required to review support access history.");
   }
   const rows = await db.select({
@@ -820,7 +821,7 @@ staffRouter.get("/notification-failures", async (_req, res) => {
 
 staffRouter.get("/urgent-alert-delivery-outcomes", async (_req, res) => {
   const operator = res.locals.supportOperator as typeof operators.$inferSelect;
-  if (operator.role !== "admin") {
+  if (!isSupportAdministrator(operator.role)) {
     throw new BookingError(403, "Administrator access is required to review urgent alert delivery outcomes.");
   }
   const rows = await db.select({

@@ -981,7 +981,7 @@ export default function PartnerPortal() {
   const { signOut } = useClerk();
   const client = useQueryClient();
   const operations = useGetOperations({ query: { retry: false, enabled: isLoaded && isSignedIn, refetchInterval: 30_000 } });
-  const attendance = useGetAttendance({ query: { retry: false, enabled: isLoaded && isSignedIn && operations.data?.role !== 'finance' } });
+  const attendance = useGetAttendance({ query: { retry: false, enabled: isLoaded && isSignedIn } });
   const addPartner = useAddPartner();
   const approvePartner = useApprovePartner();
   const updateOffering = useChangeLiveOffering();
@@ -1023,13 +1023,12 @@ export default function PartnerPortal() {
 
   if (!isLoaded) return <main className="min-h-[100dvh] bg-[#f3f0e5] p-6"><div className="mx-auto max-w-6xl animate-pulse"><div className="h-16 w-64 rounded-xl bg-[#e2dece]" /><div className="mt-8 h-64 rounded-3xl bg-[#e2dece]" /></div></main>;
   if (!isSignedIn) return <Redirect to="/" />;
-  if (operations.data?.role === 'finance') return <Redirect to="/finance" />;
   const apiStatus = (operations.error as { status?: number } | null)?.status;
   if (operations.isError && (apiStatus === 401 || apiStatus === 403)) return <LocalizedContent lang={language}><main className="grid min-h-[100dvh] place-items-center bg-[#f3f0e5] p-5"><section className="max-w-lg rounded-[2rem] border border-[#ddd7c6] bg-[#fffdf7] p-8 text-center shadow-sm"><div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[#f2dfd5] text-[#9a4435]"><ShieldCheck /></div><h1 className="mt-5 font-display text-3xl font-bold text-[#173d35]">Portal access is not enabled</h1><p className="mt-3 text-sm leading-6 text-[#61736b]">Your MaydanGo account is signed in, but it does not have an approved partner or administrator role. No partner or attendance information is available for this account.</p><div className="mt-6 flex justify-center gap-3"><Link href="/" className="rounded-xl border border-[#d8d2c4] px-4 py-2.5 text-sm font-semibold text-[#36564b]">Public website</Link><Button onClick={() => signOut({ redirectUrl: '/' })}><LogOut size={15} />Sign out</Button></div></section></main></LocalizedContent>;
   if (operations.isError) return <LocalizedContent lang={language}><main className="grid min-h-[100dvh] place-items-center bg-[#f3f0e5] p-5"><section className="max-w-md rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-8 text-center"><CircleAlert className="mx-auto text-[#a76445]" size={30} /><h1 className="mt-4 font-display text-2xl font-bold text-[#173d35]">Could not load operations</h1><p className="mt-2 text-sm text-[#61736b]">The MaydanGo operations service did not respond. Your partner scope has not been loaded.</p><Button onClick={() => { void operations.refetch(); }}><RefreshCw size={15} />Try again</Button></section></main></LocalizedContent>;
   if (operations.isLoading || !operations.data) return <main className="min-h-[100dvh] bg-[#f3f0e5] p-6"><div className="mx-auto max-w-6xl animate-pulse"><div className="h-16 w-64 rounded-xl bg-[#e2dece]" /><div className="mt-8 h-64 rounded-3xl bg-[#e2dece]" /></div></main>;
 
-  const isAdmin = role === 'admin';
+  const isAdmin = role === 'partner_operations_admin';
   const partner = operations.data.partners.find(item => item.id === operations.data.partnerId);
   const title = isAdmin ? 'Operations desk' : partner?.name ?? 'Partner workspace';
   const mutationError = (label: string) => setNotice(formatPartnerPortalSentence(language, 'mutationFailed', { action: portalText(language, label) }));
@@ -1264,7 +1263,7 @@ export default function PartnerPortal() {
           {tab === 'attendance' && <section><div className="mb-5 flex items-end justify-between"><p className="max-w-2xl text-sm leading-6 text-[#687a71]">Review reservations in the server-scoped roster. Member names are not returned or displayed; each decision requires a reason and is recorded by the service.</p><Button kind="quiet" onClick={() => void attendance.refetch()}><RefreshCw size={15} />Refresh</Button></div>{attendance.isLoading ? <div className="h-48 animate-pulse rounded-3xl bg-[#e5e0d1]" /> : attendance.isError ? <div role="alert" className="rounded-3xl border border-[#e0c4b9] bg-[#fff7f3] p-7"><p className="font-semibold">Attendance roster unavailable</p><Button onClick={() => void attendance.refetch()}>Retry</Button></div> : rows.length ? <div className="grid gap-4">{rows.map(row => {
             const state = `${row.status} ${row.bookingStatus}`.toLowerCase();
              const actions: ReviewAction[] = state.includes('disput')
-               ? role === 'admin' ? ['resolve_confirm', 'resolve_void'] : []
+               ? role === 'partner_operations_admin' ? ['resolve_confirm', 'resolve_void'] : []
                : row.bookingStatus === 'requested' ? ['accept_request', 'reject_request']
                : row.bookingStatus !== 'reserved' ? []
                : row.status === 'pending' ? ['confirm', 'dispute']

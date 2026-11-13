@@ -194,7 +194,7 @@ const downloadExcel = (data: OperationsAnalyticsResponse) => {
     ['Facility performance', data.facilityPerformance],
     ['Popular classes', data.popularClasses],
     ['Course performance', data.coursePerformance],
-    ...(data.role === 'admin' ? [['Partner performance', data.partnerPerformance] as [string, Record<string, unknown>[]]] : []),
+    ...(data.role === 'partner_operations_admin' ? [['Partner performance', data.partnerPerformance] as [string, Record<string, unknown>[]]] : []),
   ];
   const escapeHtml = (value: unknown) => {
     let text = String(value ?? '');
@@ -346,7 +346,7 @@ export function OperationsAnalytics({ language = 'en' }: { language?: Language }
             <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-[#c5d8cc]"><ShieldCheck className="mt-0.5 shrink-0" size={15} />{t('privacy')}</p>
             {data && <div className="mt-4 flex flex-wrap gap-2 text-[10px]">
               <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5">{t('scope')}: {data.scopeName}</span>
-              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5">{data.role === 'admin' ? t('admin') : t('partnerView')}</span>
+              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5">{data.role === 'partner_operations_admin' ? t('admin') : t('partnerView')}</span>
               <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5" dir="ltr">{data.period.from} — {data.period.to} · {data.period.timeZone}</span>
             </div>}
             {lastUpdated && <p className="mt-3 text-[10px] text-[#b5cabe]">{t('lastUpdated')}: {lastUpdated}</p>}
@@ -417,10 +417,10 @@ export function OperationsAnalytics({ language = 'en' }: { language?: Language }
                {metric('monthlyVisits', summary.monthlyVisits, t('monthBaghdad'))}
               {metric('unique', summary.uniqueCustomers)}
               {metric('repeat', summary.repeatCustomers)}
-               {data?.role === 'admin' && metric('enrollments', summary.courseEnrollments)}
-               {data?.role === 'admin' && metric('completions', summary.courseCompletions)}
-              {data?.role === 'admin' && summary.activeSubscriptions !== null && metric('activeSubs', summary.activeSubscriptions)}
-              {data?.role === 'admin' && summary.corporateActiveMembers !== null && metric('corporateMembers', summary.corporateActiveMembers)}
+               {data?.role === 'partner_operations_admin' && metric('enrollments', summary.courseEnrollments)}
+               {data?.role === 'partner_operations_admin' && metric('completions', summary.courseCompletions)}
+              {data?.role === 'partner_operations_admin' && summary.activeSubscriptions !== null && metric('activeSubs', summary.activeSubscriptions)}
+              {data?.role === 'partner_operations_admin' && summary.corporateActiveMembers !== null && metric('corporateMembers', summary.corporateActiveMembers)}
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
               {rateMetric('retention', summary.retentionRate, t('repeatDefinition'))}
@@ -484,14 +484,14 @@ export function OperationsAnalytics({ language = 'en' }: { language?: Language }
           </article>
         </section>
 
-        {data?.role === 'admin' && <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        {data?.role === 'partner_operations_admin' && <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <article className={card}>
             {sectionHeader('courseTitle', 'courseActivity', data && csvButton('course-performance', data.coursePerformance))}
             {data ? renderTable([t('course'), t('enrollments'), t('completions'), t('completionRate')], data.coursePerformance.map(row => [
               row.title, numberFormat(row.enrollments, language), numberFormat(row.completions, language), pctFormat(row.completionRate, language),
             ]), 'course') : stateSkeleton(220)}
           </article>
-          {data?.role === 'admin' && <article className={card}>
+          {data?.role === 'partner_operations_admin' && <article className={card}>
             {sectionHeader('partnerTitle', undefined, csvButton('partner-performance', data.partnerPerformance))}
             {renderTable([t('partner'), t('visits'), t('customers'), t('bookings'), t('cancellations'), t('noShows'), t('occupancy'), t('rating')], data.partnerPerformance.map(row => [
               row.partnerName, numberFormat(row.visits, language), numberFormat(row.uniqueCustomers, language), numberFormat(row.bookings, language),

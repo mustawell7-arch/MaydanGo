@@ -6,6 +6,7 @@ import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lte, lt } from "driz
 import { z } from "zod";
 import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, facilityProfiles, facilityHoursOverrides, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents, instructorPortalRequests, instructorCourseAssignments, instructorOfferingAssignments } from "@workspace/db";
 import { BookingError, effectiveMembershipStatus, processWaitlistQueue } from "../lib/reservations";
+import { hasAdminPermission, isOperationsPortalRole, type AdminPermission } from "../lib/admin-roles";
 import { createFacilityProfileInput, facilityHoursOverrideInput, facilityProfileFields, offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
 import {
   AddLearningLessonBody, AddLearningLessonResponse, ChangeLiveOfferingBody,
@@ -39,7 +40,7 @@ router.use(async (req, res, next) => {
   const userId = getAuth(req).userId;
   if (!userId) { res.status(401).json({ message: "Sign in first." }); return; }
   const [operator] = await db.select().from(operators).where(eq(operators.userId, userId));
-  if (!operator || !["admin", "finance", "partner"].includes(operator.role)) {
+  if (!operator || !isOperationsPortalRole(operator.role)) {
     res.status(403).json({ message: "Authorized staff access is required." }); return;
   }
   if (operator.role === "partner") {
@@ -49,8 +50,9 @@ router.use(async (req, res, next) => {
   }
   res.locals.operator = operator; next();
 });
-const admin = (res: import("express").Response) => {
-  if (res.locals.operator.role !== "admin") throw new BookingError(403, "Administrator access is required.");
+const admin = (res: import("express").Response, permission: AdminPermission) => {
+  if (!hasAdminPermission(res.locals.operator.role, permission))
+    throw new BookingError(403, "Your assigned administrator role does not allow this action.");
 };
 const offeringApprovalStatus = z.enum([
   "draft", "submitted", "under_review", "changes_requested", "approved", "published", "rejected", "archived",
@@ -68,7 +70,7 @@ const offeringPartnerResponseBody = z.object({
 }).strict();
 const strictOfferingUpdateBody = ChangeLiveOfferingBody.strict();
 const financeStaff = (res: import("express").Response) => {
-  if (!["admin", "finance"].includes(res.locals.operator.role))
+  if (!hasAdminPermission(res.locals.operator.role, "finance") && res.locals.operator.role !== "finance")
     throw new BookingError(403, "Finance staff access is required.");
 };
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -98,7 +100,7 @@ function summarizePauseEvents(events: PauseEvent[], now = new Date()) {
   return { pausedAt: openPause, usedMs, pauseUsedDays: Math.ceil(visibleUsedMs / 86400000) };
 }
 function own(res: import("express").Response, partnerId: string | null) {
-  if (res.locals.operator.role !== "admin" && res.locals.operator.partnerId !== partnerId)
+  if (!hasAdminPermission(res.locals.operator.role, "partner_operations") && res.locals.operator.partnerId !== partnerId)
     throw new BookingError(403, "This partner is not assigned to your account.");
 }
 function partnerOnly(res: import("express").Response) {
@@ -112,7 +114,8 @@ const invoiceDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {
 });
 router.get("/", async (_req, res) => {
   const op = res.locals.operator;
-  const isStaff = op.role !== "partner";
+  const isStaff = hasAdminPermission(op.role, "partner_operations");
+  if (!isStaff && op.role !== "partner") throw new BookingError(403, "This operations view requires a partner operations role.");
   const [partnerRows, offeringRows, plans, queueRows] = await Promise.all([
     db.select().from(partners).where(isStaff ? undefined : eq(partners.id, op.partnerId ?? "")),
     db.select().from(offerings).where(and(eq(offerings.scope, "live"), isStaff ? undefined : eq(offerings.partnerId, op.partnerId ?? ""))),
@@ -145,7 +148,7 @@ router.get("/", async (_req, res) => {
   });
 });
 router.post("/partners", async (req, res) => {
-  admin(res);
+  admin(res, "partner_operations");
   const data = partnerInput.parse(req.body);
   const result = await db.transaction(async tx => {
     // Do not overwrite an existing admin or another partner's operator assignment.
@@ -159,7 +162,7 @@ router.post("/partners", async (req, res) => {
   res.status(201).json(result);
 });
 router.patch("/partners/:id", async (req, res) => {
-  admin(res);
+  admin(res, "partner_operations");
   const data = z.object({ approved: z.boolean() }).strict().parse(req.body);
   const id = String(req.params.id);
   const row = await db.transaction(async tx => {
@@ -173,7 +176,7 @@ router.patch("/partners/:id", async (req, res) => {
 router.get("/facilities", async (_req, res) => {
   const op = res.locals.operator;
   const rows = await db.select().from(facilityProfiles)
-    .where(op.role === "admin" ? undefined : eq(facilityProfiles.partnerId, op.partnerId ?? ""))
+    .where(hasAdminPermission(op.role, "partner_operations") ? undefined : eq(facilityProfiles.partnerId, op.partnerId ?? ""))
     .orderBy(asc(facilityProfiles.city), asc(facilityProfiles.facility));
   const hoursOverrides = rows.length ? await db.select().from(facilityHoursOverrides)
     .where(and(
@@ -531,7 +534,7 @@ router.post("/offerings/:id/respond", async (req, res) => {
 });
 
 router.patch("/offerings/:id/review", async (req, res) => {
-  admin(res);
+  admin(res, "partner_operations");
   const decision = offeringReviewBody.parse(req.body);
   const row = await db.transaction(async tx => {
     const [current] = await tx.select().from(offerings).where(and(
@@ -1169,7 +1172,7 @@ router.get("/finance", async (_req, res) => {
 });
 
 router.post("/bookings/:id/cancel", async (req, res) => {
-  admin(res);
+  admin(res, "membership_support");
   const input = z.object({ reason: z.string().trim().min(5).max(500) }).strict().parse(req.body);
   const id = String(req.params.id);
   const now = new Date();
@@ -1487,7 +1490,7 @@ router.get("/finance/audit", async (_req, res) => {
 });
 
 router.get("/instructor-access-requests", async (_req, res) => {
-  admin(res);
+  admin(res, "content");
   const now = new Date();
   const [requests, courses, upcomingOfferings] = await Promise.all([
     db.select({
@@ -1527,7 +1530,7 @@ router.get("/instructor-access-requests", async (_req, res) => {
 });
 
 router.post("/instructor-access-requests/:id/decision", async (req, res) => {
-  admin(res);
+  admin(res, "content");
   const parsed = DecideInstructorAccessRequestBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ message: "Choose a valid decision and, when declining, give a reason." });
@@ -1614,7 +1617,7 @@ router.post("/instructor-access-requests/:id/decision", async (req, res) => {
 });
 
 router.get("/courses", async (_req, res) => {
-  admin(res);
+  admin(res, "content");
   const courses = await db.select().from(learningCourses).orderBy(desc(learningCourses.updatedAt));
   const lessonCounts = courses.length
     ? await db.select({
@@ -1634,7 +1637,7 @@ router.get("/courses", async (_req, res) => {
 });
 
 router.post("/courses", async (req, res) => {
-  admin(res);
+  admin(res, "content");
   const parsed = CreateLearningCourseBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ message: "Check the course details and lesson content." }); return; }
   const data = parsed.data;
@@ -1676,7 +1679,7 @@ router.post("/courses", async (req, res) => {
 });
 
 router.put("/courses/:id", async (req, res) => {
-  admin(res);
+  admin(res, "content");
   const parsed = UpdateLearningCourseBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ message: "Check the course details." }); return; }
   const data = parsed.data;
@@ -1707,7 +1710,7 @@ router.put("/courses/:id", async (req, res) => {
 });
 
 router.post("/courses/:id/lessons", async (req, res) => {
-  admin(res);
+  admin(res, "content");
   const parsed = AddLearningLessonBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ message: "Check the lesson details." }); return; }
   const data = parsed.data;
@@ -1738,7 +1741,7 @@ router.post("/courses/:id/lessons", async (req, res) => {
 });
 
 router.post("/plans", async (req, res) => {
-  admin(res);
+  admin(res, "partner_operations");
   const data = planInput.parse(req.body);
   if (data.kind === "paid") validatePaidPlan(data.priceIqd);
   const row = await db.transaction(async tx => {
@@ -1749,7 +1752,7 @@ router.post("/plans", async (req, res) => {
   res.status(201).json(row);
 });
 router.put("/plans/:id", async (req, res) => {
-  admin(res);
+  admin(res, "partner_operations");
   const data = planInput.parse(req.body);
   if (data.kind === "paid") validatePaidPlan(data.priceIqd);
   const row = await db.transaction(async tx => {
@@ -1761,7 +1764,7 @@ router.put("/plans/:id", async (req, res) => {
   res.json(row);
 });
 router.post("/grants", async (req, res) => {
-  admin(res);
+  admin(res, "membership_support");
   const input = z.object({ userId: z.string().min(1).max(160), planId: z.string().uuid(),
     corporateId: z.string().max(160).optional(), startsOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     reason: z.string().trim().min(5).max(500) }).strict().parse(req.body);
@@ -1799,12 +1802,13 @@ router.post("/grants", async (req, res) => {
   res.status(201).json({ ok: true });
 });
 router.post("/memberships/lifecycle", async (req, res) => {
-  admin(res);
   const input = z.object({
     userId: z.string().trim().min(1).max(160),
     action: z.enum(["schedule_cancel", "cancel_now", "reactivate", "pause", "resume", "suspend", "terminate"]),
     reason: z.string().trim().min(5).max(500),
   }).strict().parse(req.body);
+  const lifecyclePermission = ["suspend", "terminate"].includes(input.action) ? "fraud_compliance" : "membership_support";
+  admin(res, lifecyclePermission);
   const now = new Date();
   const result = await db.transaction(async tx => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${input.userId}))`);
@@ -1895,7 +1899,7 @@ router.post("/memberships/lifecycle", async (req, res) => {
   res.json({ ok: true });
 });
 router.post("/revoke", async (req, res) => {
-  admin(res);
+  admin(res, "finance");
   const input = z.object({ userId: z.string().min(1).max(160), reason: z.string().trim().min(5).max(500) }).strict().parse(req.body);
   const hadBookingsBeforeProviderCancel = (await db.select({ id: reservations.id }).from(reservations)
     .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
@@ -1923,7 +1927,7 @@ router.post("/revoke", async (req, res) => {
   res.json({ ok: true });
 });
 router.post("/refunds", async (req, res) => {
-  admin(res);
+  admin(res, "finance");
   const input = z.object({
     userId: z.string().trim().min(1).max(160),
     reason: z.string().trim().min(5).max(500),

@@ -3,6 +3,7 @@ import { and, desc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, manualCheckinChallenges, memberships, offerings, operators, partners, reservations, memberProfiles } from "@workspace/db";
 import { z } from "zod";
 import { BookingError, membershipCanAccess, processWaitlistQueue } from "./reservations";
+import { hasAdminPermission, type AdminPermission } from "./admin-roles";
 import { iraqCalendarDate, openingState, previousIraqCalendarDate } from "./facility-hours";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -47,9 +48,10 @@ async function context(tx: Tx, id: string) {
   const [a] = await tx.select().from(attendance).where(eq(attendance.reservationId, id));
   return { r, o, p, a };
 }
-async function staff(tx: Tx, actor: string, partnerId: string | null) {
+async function staff(tx: Tx, actor: string, partnerId: string | null, permissions: AdminPermission[] = ["partner_operations"]) {
   const [op] = await tx.select().from(operators).where(eq(operators.userId, actor)).for("share");
-  if (!op || (op.role !== "admin" && !(op.role === "partner" && partnerId && op.partnerId === partnerId)))
+  const hasRequiredPermission = !!op && permissions.some(permission => hasAdminPermission(op.role, permission));
+  if (!op || (!hasRequiredPermission && !(op.role === "partner" && partnerId && op.partnerId === partnerId)))
     throw new BookingError(403, "Authorized staff for this partner are required.");
   return op;
 }
@@ -252,7 +254,8 @@ export async function review(actor: string, id: string, input: z.infer<typeof re
     const c = await context(tx, id), { action, reason } = input;
     const now = new Date();
     const ownDispute = action === "dispute" && c.r.userId === actor;
-    const op = ownDispute ? null : await staff(tx, actor, c.o.partnerId);
+    const requiredPermission = action.startsWith("resolve_") ? "fraud_compliance" : "partner_operations";
+    const op = ownDispute ? null : await staff(tx, actor, c.o.partnerId, [requiredPermission]);
     if (action === "reject_request") {
       if (c.r.status !== "requested" || c.o.startsAt <= now || !c.o.active || c.o.cancelledAt)
         throw new BookingError(409, "Only upcoming active booking requests may be rejected.");
@@ -271,12 +274,12 @@ export async function review(actor: string, id: string, input: z.infer<typeof re
     // No settlement-close override is exposed: a separate super-admin workflow is required.
     if (locked) throw new BookingError(409, "Attendance is locked. Contact administration.");
     if (action === "lock") {
-      if (op?.role !== "admin" || !c.a || c.a.status === "disputed" || now < c.o.endsAt)
+      if (!op || !hasAdminPermission(op.role, "partner_operations") || !c.a || c.a.status === "disputed" || now < c.o.endsAt)
         throw new BookingError(403, "Only administrators can lock reconciled attendance after the session.");
       await tx.update(attendance).set({ lockedAt: now }).where(eq(attendance.id, c.a.id));
       await event(tx, id, actor, action, c.a.status, c.a.status, reason); return null;
     }
-    if (action.startsWith("resolve_") && (op?.role !== "admin" || c.a?.status !== "disputed"))
+    if (action.startsWith("resolve_") && (!op || !hasAdminPermission(op.role, "fraud_compliance") || c.a?.status !== "disputed"))
       throw new BookingError(403, "Disputes require administrator review.");
     if (c.a?.status === "disputed" && !action.startsWith("resolve_"))
       throw new BookingError(409, "Attendance is on hold for administrator review.");
@@ -320,13 +323,16 @@ export async function review(actor: string, id: string, input: z.infer<typeof re
 }
 export async function roster(actor: string) {
   const [op] = await db.select().from(operators).where(eq(operators.userId, actor));
-  const isStaff = op && ["admin", "partner"].includes(op.role);
+  const isGlobalStaff = !!op && (
+    hasAdminPermission(op.role, "partner_operations") || hasAdminPermission(op.role, "fraud_compliance")
+  );
+  const isStaff = isGlobalStaff || op?.role === "partner";
   const rows = await db.select({ r: reservations, o: offerings, a: attendance, p: checkinPolicies }).from(reservations)
     .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
     .leftJoin(attendance, eq(attendance.reservationId, reservations.id))
     .leftJoin(checkinPolicies, eq(checkinPolicies.offeringId, offerings.id))
     .where(and(eq(offerings.scope, "live"), isStaff
-      ? op.role === "admin" ? undefined : eq(offerings.partnerId, op.partnerId ?? "")
+      ? isGlobalStaff ? undefined : eq(offerings.partnerId, op?.partnerId ?? "")
       : eq(reservations.userId, actor)));
   const events = rows.length ? await db.select().from(attendanceEvents).where(inArray(attendanceEvents.reservationId, rows.map(x => x.r.id))) : [];
   const userIds = [...new Set(rows.map(({ r }) => r.userId))];

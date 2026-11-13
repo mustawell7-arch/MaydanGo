@@ -2,6 +2,7 @@ import { Router, type Response } from "express";
 import { getAuth } from "@clerk/express";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
+import { hasAdminPermission } from "../lib/admin-roles";
 import {
   db, facilityProfiles, facilityQualityAssessments, facilityQualityIncidents,
   operationAudit, operators, partners,
@@ -26,7 +27,7 @@ router.use(async (req, res, next) => {
     return;
   }
   const [operator] = await db.select().from(operators).where(eq(operators.userId, userId)).limit(1);
-  if (!operator || !["admin", "partner"].includes(operator.role)) {
+  if (!operator || (!hasAdminPermission(operator.role, "fraud_compliance") && operator.role !== "partner")) {
     res.status(403).json({ message: "Administrator or approved partner access is required." });
     return;
   }
@@ -224,7 +225,7 @@ router.get("/", async (_req, res): Promise<void> => {
 
 router.post("/assessments", async (req, res): Promise<void> => {
   const operator = operatorFor(res);
-  if (operator.role !== "admin") {
+  if (!hasAdminPermission(operator.role, "fraud_compliance")) {
     res.status(403).json({ message: "Only administrators can record facility inspections." });
     return;
   }
@@ -292,7 +293,7 @@ router.post("/assessments", async (req, res): Promise<void> => {
 
 router.patch("/assessments/:id", async (req, res): Promise<void> => {
   const operator = operatorFor(res);
-  if (operator.role !== "admin") {
+  if (!hasAdminPermission(operator.role, "fraud_compliance")) {
     res.status(403).json({ message: "Only administrators can update inspection follow-up." });
     return;
   }
@@ -415,7 +416,7 @@ router.post("/incidents", async (req, res): Promise<void> => {
 
 router.patch("/incidents/:id", async (req, res): Promise<void> => {
   const operator = operatorFor(res);
-  if (operator.role !== "admin") {
+  if (!hasAdminPermission(operator.role, "fraud_compliance")) {
     res.status(403).json({ message: "Only administrators can review incident reports." });
     return;
   }

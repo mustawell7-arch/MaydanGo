@@ -94,7 +94,7 @@ test("facility records stay partner-scoped and public listings require partner a
   await db.insert(operators).values([
     { userId: userA, role: "partner", partnerId: partnerA },
     { userId: userB, role: "partner", partnerId: partnerB },
-    { userId: adminUser, role: "admin", partnerId: null },
+    { userId: adminUser, role: "partner_operations_admin", partnerId: null },
   ]);
   await db.insert(facilityProfiles).values([
     { id: profileA, partnerId: partnerA, ...profileContent(`${prefix} facility A`, "Original A") },

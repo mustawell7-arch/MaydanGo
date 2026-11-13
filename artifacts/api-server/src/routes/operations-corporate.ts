@@ -19,6 +19,7 @@ import {
   operationAudit,
   operators,
 } from "@workspace/db";
+import { hasAdminPermission } from "../lib/admin-roles";
 
 const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
@@ -85,7 +86,7 @@ router.use(async (req, res, next) => {
   }
   const [operator] = await db.select({ userId: operators.userId, role: operators.role })
     .from(operators).where(eq(operators.userId, userId)).limit(1);
-  if (operator?.role !== "admin") {
+  if (!operator || !hasAdminPermission(operator.role, "corporate")) {
     res.status(403).json({ message: "Administrator access is required." });
     return;
   }

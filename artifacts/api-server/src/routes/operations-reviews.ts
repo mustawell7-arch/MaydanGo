@@ -6,6 +6,7 @@ import {
   db, facilityProfiles, facilityReviewPrivileges, facilityReviewReports,
   facilityReviewResponses, facilityReviews, operationAudit, operators, partners,
 } from "@workspace/db";
+import { hasAdminPermission } from "../lib/admin-roles";
 import {
   GetOperationsFacilityReviewsResponse, ModerateFacilityReviewBody,
   ModerateFacilityReviewParams, ModerateFacilityReviewResponse,
@@ -24,7 +25,7 @@ router.use(async (req, res, next) => {
     return;
   }
   const [operator] = await db.select().from(operators).where(eq(operators.userId, userId)).limit(1);
-  if (!operator || !["admin", "partner"].includes(operator.role)) {
+  if (!operator || (!hasAdminPermission(operator.role, "fraud_compliance") && operator.role !== "partner")) {
     res.status(403).json({ message: "Administrator or approved partner access is required." });
     return;
   }
@@ -79,7 +80,7 @@ async function reviewRows(ids?: string[], operator?: Operator) {
 
   const reviewIds = rows.map(row => row.id);
   const [reports, privileges] = await Promise.all([
-    operator?.role === "admin" && reviewIds.length
+    operator && hasAdminPermission(operator.role, "fraud_compliance") && reviewIds.length
       ? db.select({
         id: facilityReviewReports.id,
         reviewId: facilityReviewReports.reviewId,
@@ -91,7 +92,7 @@ async function reviewRows(ids?: string[], operator?: Operator) {
         .where(inArray(facilityReviewReports.reviewId, reviewIds))
         .orderBy(desc(facilityReviewReports.createdAt))
       : Promise.resolve([]),
-    operator?.role === "admin" && rows.length
+    operator && hasAdminPermission(operator.role, "fraud_compliance") && rows.length
       ? db.select({ userId: facilityReviewPrivileges.userId })
         .from(facilityReviewPrivileges)
         .where(inArray(facilityReviewPrivileges.userId, rows.map(row => row.reviewerUserId)))
@@ -113,8 +114,8 @@ async function reviewRows(ids?: string[], operator?: Operator) {
       city: row.city,
       partnerId: row.partnerId,
       partnerName: row.partnerName,
-      reviewerUserId: operator?.role === "admin" ? row.reviewerUserId : null,
-      reviewPrivilegeSuspended: operator?.role === "admin" && suspendedUsers.has(row.reviewerUserId),
+      reviewerUserId: operator && hasAdminPermission(operator.role, "fraud_compliance") ? row.reviewerUserId : null,
+      reviewPrivilegeSuspended: !!operator && hasAdminPermission(operator.role, "fraud_compliance") && suspendedUsers.has(row.reviewerUserId),
       overallRating: row.overallRating,
       categoryRatings: row.categoryRatings,
       content: row.content,
@@ -123,8 +124,8 @@ async function reviewRows(ids?: string[], operator?: Operator) {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       partnerResponse: row.partnerResponse,
-      reportCount: operator?.role === "admin" ? reviewReports.length : 0,
-      reports: operator?.role === "admin" ? reviewReports.map(({ reviewId: _reviewId, ...report }) => report) : [],
+      reportCount: operator && hasAdminPermission(operator.role, "fraud_compliance") ? reviewReports.length : 0,
+      reports: operator && hasAdminPermission(operator.role, "fraud_compliance") ? reviewReports.map(({ reviewId: _reviewId, ...report }) => report) : [],
     };
   });
 }
@@ -145,7 +146,7 @@ router.get("/reviews", async (_req, res): Promise<void> => {
 
 router.patch("/reviews/:id/moderation", async (req, res): Promise<void> => {
   const operator = operatorFor(res);
-  if (operator.role !== "admin") {
+  if (!hasAdminPermission(operator.role, "fraud_compliance")) {
     res.status(403).json({ message: "Only administrators can moderate reviews." });
     return;
   }
@@ -242,7 +243,7 @@ router.put("/reviews/:id/response", async (req, res): Promise<void> => {
 
 router.put("/review-privileges/:userId", async (req, res): Promise<void> => {
   const operator = operatorFor(res);
-  if (operator.role !== "admin") {
+  if (!hasAdminPermission(operator.role, "fraud_compliance")) {
     res.status(403).json({ message: "Only administrators can change review privileges." });
     return;
   }

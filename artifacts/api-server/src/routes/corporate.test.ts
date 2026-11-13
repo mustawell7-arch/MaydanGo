@@ -67,7 +67,7 @@ after(async () => {
 
 test("corporate invitations are admin-provisioned, email-verified, and company-scoped", async () => {
   await db.insert(operators).values([
-    { userId: adminUserId, role: "admin", partnerId: null },
+    { userId: adminUserId, role: "corporate_admin", partnerId: null },
     { userId: financeUserId, role: "finance", partnerId: null },
   ]);
   server = app.listen(0);

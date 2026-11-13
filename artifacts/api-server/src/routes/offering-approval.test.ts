@@ -80,7 +80,7 @@ test("activity review is scoped, audited, and cannot bypass booking safeguards",
   await db.insert(operators).values([
     { userId: partnerUserId, role: "partner", partnerId },
     { userId: otherPartnerUserId, role: "partner", partnerId: otherPartnerId },
-    { userId: adminUserId, role: "admin", partnerId: null },
+    { userId: adminUserId, role: "partner_operations_admin", partnerId: null },
   ]);
   await db.insert(facilityProfiles).values([
     facilityValues(facilityId, partnerId),

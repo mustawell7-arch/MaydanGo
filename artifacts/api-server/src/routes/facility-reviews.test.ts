@@ -120,7 +120,7 @@ test("reviews require confirmed visits and support reporting, moderation, and pa
     { id: partnerB, name: `${prefix} Partner B`, groupId: prefix, ownerUserId: partnerUserB, approved: true },
   ]);
   await db.insert(operators).values([
-    { userId: adminUser, role: "admin", partnerId: null },
+    { userId: adminUser, role: "fraud_compliance_admin", partnerId: null },
     { userId: partnerUserA, role: "partner", partnerId: partnerA },
     { userId: partnerUserB, role: "partner", partnerId: partnerB },
     { userId: financeUser, role: "finance", partnerId: null },

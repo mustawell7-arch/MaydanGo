@@ -245,7 +245,7 @@ export default function FinanceConsole() {
   const overviewQuery = useGetFinanceOverview({ query: { queryKey: getGetFinanceOverviewQueryKey(), refetchOnMount: 'always', enabled: isLoaded && isSignedIn } });
   const settlementsQuery = useGetFinanceSettlements(settlementPeriod, { query: { queryKey: getGetFinanceSettlementsQueryKey(settlementPeriod), refetchOnMount: 'always', enabled: isLoaded && isSignedIn } });
   const auditQuery = useGetFinanceAudit({ query: { queryKey: getGetFinanceAuditQueryKey(), refetchOnMount: 'always', enabled: isLoaded && isSignedIn } });
-  const operationsQuery = useGetOperations({ query: { enabled: isLoaded && isSignedIn && overviewQuery.data?.role === 'admin', refetchOnMount: 'always', retry: false } });
+  const operationsQuery = useGetOperations({ query: { enabled: false, refetchOnMount: 'always', retry: false } });
   const refundMutation = useRequestFinanceRefund();
   const payoutMutation = useRequestFinancePayoutTracking();
   const decideMutation = useDecideFinanceReview();
@@ -263,8 +263,7 @@ export default function FinanceConsole() {
     ]);
   };
   const data = overviewQuery.data as FinanceOverview | undefined;
-  const role = data?.role;
-  const allowed = role === 'admin' || role === 'finance';
+  const role = String(data?.role ?? '');
   const locale = language === 'ar' ? 'ar-IQ' : language === 'ku' ? 'ku-IQ' : 'en-IQ';
   const members = (data?.customers ?? []).map(row => asRecord(row) as unknown as MemberRow);
   const bookings = (data?.bookings ?? []).map(row => asRecord(row) as unknown as BookingRow);
@@ -379,7 +378,7 @@ export default function FinanceConsole() {
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   if (overviewQuery.isLoading) return <LoadingState label={t('loading')} />;
   if (overviewQuery.isError) return <div className="min-h-[70vh] bg-[#f5f2e9] px-5 py-16" data-testid="finance-error"><div className="mx-auto max-w-xl rounded-3xl border border-[#e5c2b6] bg-[#fff9f4] p-8 text-center"><CircleAlert className="mx-auto text-[#a64d3a]" /><h1 className="mt-3 font-display text-2xl font-bold text-[#173d35]">{t('errorTitle')}</h1><button onClick={() => overviewQuery.refetch()} data-testid="button-retry-finance" className="mt-5 rounded-xl bg-[#174d43] px-4 py-2.5 text-sm font-bold text-[#fff9e9]">{t('retry')}</button></div></div>;
-  if (!data || !allowed) return <div className="min-h-[70vh] bg-[#f5f2e9] px-5 py-16" data-testid="finance-denied"><div className="mx-auto max-w-xl rounded-3xl border border-[#ded8c9] bg-[#fffdf7] p-8 text-center"><LockKeyhole className="mx-auto text-[#a76445]" /><h1 className="mt-3 font-display text-2xl font-bold text-[#173d35]">{t('deniedTitle')}</h1><p className="mt-2 text-sm leading-relaxed text-[#6d7b72]">{t('deniedCopy')}</p></div></div>;
+  if (!data || !['finance_admin', 'finance'].includes(data.role)) return <div className="min-h-[70vh] bg-[#f5f2e9] px-5 py-16" data-testid="finance-denied"><div className="mx-auto max-w-xl rounded-3xl border border-[#ded8c9] bg-[#fffdf7] p-8 text-center"><LockKeyhole className="mx-auto text-[#a76445]" /><h1 className="mt-3 font-display text-2xl font-bold text-[#173d35]">{t('deniedTitle')}</h1><p className="mt-2 text-sm leading-relaxed text-[#6d7b72]">{t('deniedCopy')}</p></div></div>;
 
   const nav: { key: Tab; label: string; icon: ReactNode }[] = [
     { key: 'overview', label: t('overview'), icon: <Activity size={16} /> }, { key: 'members', label: t('members'), icon: <Users size={16} /> },

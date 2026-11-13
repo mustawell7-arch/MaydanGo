@@ -1908,10 +1908,10 @@ components:
       required: [userId, role, receiveUrgentAlerts]
       properties:
         userId: { type: string }
-        role: { type: string, enum: [admin, support] }
+        role: { type: string, enum: [customer_support_admin, support] }
         receiveUrgentAlerts: { type: boolean }
-        pushEnabled: { type: boolean, description: Present only to administrators. }
-        activeDeviceCount: { type: integer, minimum: 0, description: Present only to administrators; never includes device tokens. }
+        pushEnabled: { type: boolean, description: Present only to Customer Support Admins. }
+        activeDeviceCount: { type: integer, minimum: 0, description: Present only to Customer Support Admins; never includes device tokens. }
     SupportAgentInput:
       type: object
       additionalProperties: false
@@ -2072,7 +2072,7 @@ components:
       additionalProperties: false
       required: [role, scopeName, period, summary, trend, facilityPerformance, popularClasses, coursePerformance, partnerPerformance, unavailableMetrics]
       properties:
-        role: { type: string, enum: [admin, partner] }
+        role: { type: string, enum: [partner_operations_admin, partner] }
         scopeName: { type: string }
         period:
           type: object
@@ -2851,7 +2851,7 @@ components:
       type: object
       required: [role, partnerId, partners, offerings, waitlist, plans]
       properties:
-        role: { type: string, enum: [admin, finance, partner] }
+        role: { type: string, enum: [partner_operations_admin, partner] }
         partnerId: { type: [string, "null"] }
         partners: { type: array, items: { $ref: "#/components/schemas/Partner" } }
         offerings: { type: array, items: { $ref: "#/components/schemas/LiveOffering" } }
@@ -2928,7 +2928,7 @@ components:
       type: object
       required: [role, paymentGateEnabled, livePayoutGateEnabled, partners, facilities, customers, bookings, customerInvoices, partnerInvoices, reconciliation, reviewItems, reviewEvents, audit]
       properties:
-        role: { type: string, enum: [admin, finance] }
+        role: { type: string, enum: [finance_admin, finance] }
         paymentGateEnabled: { type: boolean }
         livePayoutGateEnabled: { type: boolean }
         partners: { type: array, items: { $ref: "#/components/schemas/Partner" } }
@@ -3110,7 +3110,7 @@ components:
       additionalProperties: false
       required: [role, facilities, assessments, incidents]
       properties:
-        role: { type: string, enum: [admin, partner] }
+        role: { type: string, enum: [fraud_compliance_admin, partner] }
         facilities: { type: array, items: { $ref: "#/components/schemas/FacilityQualityFacility" } }
         assessments: { type: array, items: { $ref: "#/components/schemas/FacilityQualityAssessment" } }
         incidents: { type: array, items: { $ref: "#/components/schemas/FacilityQualityIncident" } }
@@ -3255,7 +3255,7 @@ components:
       additionalProperties: false
       required: [role, reviews]
       properties:
-        role: { type: string, enum: [admin, partner] }
+        role: { type: string, enum: [fraud_compliance_admin, partner] }
         reviews: { type: array, items: { $ref: "#/components/schemas/OperationsFacilityReview" } }
     FacilityReviewModerationInput:
       type: object

@@ -980,7 +980,7 @@ export type SupportAgentRole = typeof SupportAgentRole[keyof typeof SupportAgent
 
 
 export const SupportAgentRole = {
-  admin: 'admin',
+  customer_support_admin: 'customer_support_admin',
   support: 'support',
 } as const;
 
@@ -988,10 +988,10 @@ export interface SupportAgent {
   userId: string;
   role: SupportAgentRole;
   receiveUrgentAlerts: boolean;
-  /** Present only to administrators. */
+  /** Present only to Customer Support Admins. */
   pushEnabled?: boolean;
   /**
-     * Present only to administrators; never includes device tokens.
+     * Present only to Customer Support Admins; never includes device tokens.
      * @minimum 0
      */
   activeDeviceCount?: number;
@@ -1230,7 +1230,7 @@ export type OperationsAnalyticsResponseRole = typeof OperationsAnalyticsResponse
 
 
 export const OperationsAnalyticsResponseRole = {
-  admin: 'admin',
+  partner_operations_admin: 'partner_operations_admin',
   partner: 'partner',
 } as const;
 
@@ -2426,8 +2426,7 @@ export type OperationsStateRole = typeof OperationsStateRole[keyof typeof Operat
 
 
 export const OperationsStateRole = {
-  admin: 'admin',
-  finance: 'finance',
+  partner_operations_admin: 'partner_operations_admin',
   partner: 'partner',
 } as const;
 
@@ -2571,7 +2570,7 @@ export type FinanceOverviewRole = typeof FinanceOverviewRole[keyof typeof Financ
 
 
 export const FinanceOverviewRole = {
-  admin: 'admin',
+  finance_admin: 'finance_admin',
   finance: 'finance',
 } as const;
 
@@ -2895,7 +2894,7 @@ export type FacilityQualityControlRole = typeof FacilityQualityControlRole[keyof
 
 
 export const FacilityQualityControlRole = {
-  admin: 'admin',
+  fraud_compliance_admin: 'fraud_compliance_admin',
   partner: 'partner',
 } as const;
 
@@ -3195,7 +3194,7 @@ export type OperationsFacilityReviewsRole = typeof OperationsFacilityReviewsRole
 
 
 export const OperationsFacilityReviewsRole = {
-  admin: 'admin',
+  fraud_compliance_admin: 'fraud_compliance_admin',
   partner: 'partner',
 } as const;
 

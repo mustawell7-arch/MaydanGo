@@ -86,7 +86,7 @@ test("facility quality records are scoped, validated, and audited", async () => 
     { id: partnerB, name: `${prefix} partner B`, groupId: prefix, ownerUserId: partnerUserB, approved: true },
   ]);
   await db.insert(operators).values([
-    { userId: adminUser, role: "admin", partnerId: null },
+    { userId: adminUser, role: "fraud_compliance_admin", partnerId: null },
     { userId: partnerUserA, role: "partner", partnerId: partnerA },
     { userId: partnerUserB, role: "partner", partnerId: partnerB },
     { userId: financeUser, role: "finance", partnerId: null },

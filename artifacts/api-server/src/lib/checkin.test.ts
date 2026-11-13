@@ -8,14 +8,15 @@ import { BookingError, createReservation } from "./reservations";
 import app from "../app";
 
 const prefix = `checkin-test-${randomUUID()}`;
-const member = `${prefix}-member`, staff = `${prefix}-staff`, secondStaff = `${prefix}-second-staff`, admin = `${prefix}-admin`, stranger = `${prefix}-stranger`;
+const member = `${prefix}-member`, staff = `${prefix}-staff`, secondStaff = `${prefix}-second-staff`,
+  admin = `${prefix}-admin`, complianceAdmin = `${prefix}-compliance-admin`, stranger = `${prefix}-stranger`;
 const p = `${prefix}-partner`, o = `${prefix}-offering`, r = `${prefix}-reservation`;
 const nextOffering = `${prefix}-next`;
 const requestReservation = `${prefix}-request-reservation`;
 const manualReservation = `${prefix}-manual-reservation`;
 const fraudOffering = `${prefix}-fraud-offering`, fraudReservation = `${prefix}-fraud-reservation`;
 const mainFacilityProfile = `${prefix}-facility-profile`, otherFacilityProfile = `${prefix}-other-facility-profile`;
-const users = [member, staff, secondStaff, admin, stranger];
+const users = [member, staff, secondStaff, admin, complianceAdmin, stranger];
 const now = Date.now();
 const reject = (f: () => Promise<unknown>, status: number) => assert.rejects(f, e => e instanceof BookingError && e.status === status);
 const location = () => ({ latitude: 33.3, longitude: 44.4, accuracy: 5, capturedAt: new Date().toISOString() });
@@ -40,7 +41,8 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
   await db.insert(operators).values([
     { userId: staff, role: "partner", partnerId: p },
     { userId: secondStaff, role: "partner", partnerId: p },
-    { userId: admin, role: "admin" },
+    { userId: admin, role: "partner_operations_admin" },
+    { userId: complianceAdmin, role: "fraud_compliance_admin" },
   ]);
   await db.insert(facilityProfiles).values([
     {
@@ -229,7 +231,7 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     await review(member, r, { action: "dispute", reason: "Attendance needs review" });
     assert.equal((await roster(member)).rows[0].settlementEligible, false);
     await reject(() => review(staff, r, { action: "resolve_confirm", reason: "Not an administrator" }), 403);
-    await review(admin, r, { action: "resolve_confirm", reason: "Verified evidence with partner" });
+    await review(complianceAdmin, r, { action: "resolve_confirm", reason: "Verified evidence with partner" });
     await db.update(memberships).set({ endsAt: new Date(now + 86400000),
       rules: { quota: 1, dailyLimit: 1, trialAllowedTypes: ["physical"] } }).where(eq(memberships.userId, member));
     await reject(() => createReservation(member, { kind: "session", targetId: nextOffering, slot: "" }), 403);
@@ -254,8 +256,8 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     assert.equal((await roster(member)).rows[0].status, "no_show");
     await reject(() => createReservation(member, { kind: "session", targetId: nextOffering, slot: "" }), 403);
     await review(member, r, { action: "dispute", reason: "I was present at the session" });
-    await reject(() => review(admin, r, { action: "resolve_confirm", reason: "No arrival evidence exists" }), 409);
-    await review(admin, r, { action: "resolve_void", reason: "No-show charge waived" });
+    await reject(() => review(complianceAdmin, r, { action: "resolve_confirm", reason: "No arrival evidence exists" }), 409);
+    await review(complianceAdmin, r, { action: "resolve_void", reason: "No-show charge waived" });
     const replacement = await createReservation(member, { kind: "session", targetId: nextOffering, slot: "" });
     assert.equal(replacement.status, "reserved", "Waiving a disputed no-show must release its reserved allowance");
   });

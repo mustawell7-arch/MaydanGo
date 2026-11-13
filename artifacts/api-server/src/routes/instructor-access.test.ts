@@ -67,7 +67,7 @@ after(async () => {
 
 test("instructor access is requested, reviewed by admin, and limited to assigned courses", async () => {
   await db.insert(operators).values([
-    { userId: adminUserId, role: "admin", partnerId: null },
+    { userId: adminUserId, role: "content_admin", partnerId: null },
     { userId: financeUserId, role: "finance", partnerId: null },
   ]);
   await db.insert(learningCourses).values({

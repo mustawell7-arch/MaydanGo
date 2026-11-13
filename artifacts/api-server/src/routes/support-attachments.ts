@@ -17,6 +17,7 @@ import {
   RequestSupportStaffAttachmentUploadUrlBody,
 } from "@workspace/api-zod";
 import { BookingError } from "../lib/reservations";
+import { isSupportStaff } from "../lib/admin-roles";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 
 export const memberSupportAttachmentRouter = Router();
@@ -87,7 +88,7 @@ async function ownedTicket(ticketId: string, ownerId: string) {
   return ticket;
 }
 
-async function accessibleTicket(ticketId: string, userId: string, role: "member" | "support" | "admin") {
+async function accessibleTicket(ticketId: string, userId: string, role: "member" | "support" | "customer_support_admin") {
   if (role === "member") return ownedTicket(ticketId, userId);
   const [ticket] = await db.select({ id: supportTickets.id }).from(supportTickets)
     .where(eq(supportTickets.id, ticketId)).limit(1);
@@ -95,7 +96,7 @@ async function accessibleTicket(ticketId: string, userId: string, role: "member"
   return ticket;
 }
 
-async function authoredMessage(ticketId: string, messageId: string, userId: string, role: "member" | "support" | "admin") {
+async function authoredMessage(ticketId: string, messageId: string, userId: string, role: "member" | "support" | "customer_support_admin") {
   const [message] = await db.select({ id: supportMessages.id }).from(supportMessages).where(and(
     eq(supportMessages.id, messageId),
     eq(supportMessages.ticketId, ticketId),
@@ -122,7 +123,7 @@ async function requestUpload(
   req: Request,
   res: Response,
   uploaderId: string,
-  uploaderRole: "member" | "support" | "admin",
+  uploaderRole: "member" | "support" | "customer_support_admin",
   bodySchema: typeof RequestMemberSupportAttachmentUploadUrlBody = RequestMemberSupportAttachmentUploadUrlBody,
 ): Promise<void> {
   const parsed = bodySchema.safeParse(req.body);
@@ -165,7 +166,7 @@ async function completeUpload(
   req: Request,
   res: Response,
   uploaderId: string,
-  uploaderRole: "member" | "support" | "admin",
+  uploaderRole: "member" | "support" | "customer_support_admin",
   attachmentId: string,
 ): Promise<void> {
   const ticketId = String(req.params.id);
@@ -222,7 +223,7 @@ async function deletePendingUpload(
   req: Request,
   res: Response,
   uploaderId: string,
-  uploaderRole: "member" | "support" | "admin",
+  uploaderRole: "member" | "support" | "customer_support_admin",
   attachmentId: string,
 ): Promise<void> {
   const ticketId = String(req.params.id);
@@ -307,7 +308,7 @@ staffSupportAttachmentRouter.use(async (req, res, next: NextFunction): Promise<v
   if (!userId) { res.status(401).json({ message: "Sign in to continue." }); return; }
   const [operator] = await db.select({ userId: operators.userId, role: operators.role }).from(operators)
     .where(eq(operators.userId, userId)).limit(1);
-  if (operator?.role !== "admin" && operator?.role !== "support") {
+  if (!operator || !isSupportStaff(operator.role)) {
     res.status(403).json({ message: "Authorized support staff access is required." });
     return;
   }
@@ -324,21 +325,21 @@ staffSupportAttachmentRouter.get("/tickets/:id/attachments", async (req, res): P
 });
 
 staffSupportAttachmentRouter.post("/tickets/:id/attachments/upload-url", async (req, res): Promise<void> => {
-  const staff = res.locals.supportAttachmentStaff as { userId: string; role: "admin" | "support" };
+  const staff = res.locals.supportAttachmentStaff as { userId: string; role: "customer_support_admin" | "support" };
   await requestUpload(req, res, staff.userId, staff.role, RequestSupportStaffAttachmentUploadUrlBody);
 });
 
 staffSupportAttachmentRouter.post("/tickets/:id/attachments/:attachmentId/complete", async (req, res): Promise<void> => {
   const params = CompleteSupportStaffAttachmentParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ message: "Invalid support attachment identifier." }); return; }
-  const staff = res.locals.supportAttachmentStaff as { userId: string; role: "admin" | "support" };
+  const staff = res.locals.supportAttachmentStaff as { userId: string; role: "customer_support_admin" | "support" };
   await completeUpload(req, res, staff.userId, staff.role, params.data.attachmentId);
 });
 
 staffSupportAttachmentRouter.delete("/tickets/:id/attachments/:attachmentId", async (req, res): Promise<void> => {
   const params = DeletePendingSupportStaffAttachmentParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ message: "Invalid support attachment identifier." }); return; }
-  const staff = res.locals.supportAttachmentStaff as { userId: string; role: "admin" | "support" };
+  const staff = res.locals.supportAttachmentStaff as { userId: string; role: "customer_support_admin" | "support" };
   await deletePendingUpload(req, res, staff.userId, staff.role, params.data.attachmentId);
 });
 

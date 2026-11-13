@@ -52,7 +52,7 @@ export function SupportCaseEscalations({ ticketId, ticketStatus, agents, userId,
   const raise = useCreateSupportCaseEscalation();
   const resolve = useResolveSupportCaseEscalation();
   const active = query.data?.find(item => !item.resolvedAt);
-  const isAdmin = agents.some(agent => agent.userId === userId && agent.role === 'admin');
+  const isAdmin = agents.some(agent => agent.userId === userId && agent.role === 'customer_support_admin');
   const targets = agents.filter(agent => agent.userId !== userId);
   const busy = raise.isPending || resolve.isPending;
   const date = (value: string) => new Intl.DateTimeFormat(
