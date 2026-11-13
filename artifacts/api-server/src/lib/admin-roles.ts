@@ -7,6 +7,17 @@ export const ADMIN_ROLE_PERMISSIONS = {
   corporate_admin: ["corporate"],
   fraud_compliance_admin: ["fraud_compliance"],
   technical_admin: ["technical"],
+  super_admin: [
+    "support",
+    "membership_support",
+    "partner_operations",
+    "finance",
+    "content",
+    "marketing",
+    "corporate",
+    "fraud_compliance",
+    "technical",
+  ],
 } as const;
 
 export type AdminRole = keyof typeof ADMIN_ROLE_PERMISSIONS;
@@ -30,6 +41,7 @@ export const ADMIN_ROLE_LABELS: Record<AdminRole, string> = {
   corporate_admin: "Corporate Admin",
   fraud_compliance_admin: "Fraud and Compliance Admin",
   technical_admin: "Technical Admin",
+  super_admin: "Super Admin",
 };
 
 export function hasAdminPermission(role: string, permission: AdminPermission): boolean {

@@ -14,6 +14,9 @@ export const partners = pgTable("partners", {
 export const operators = pgTable("operators", {
   userId: text("user_id").primaryKey(),
   role: text("role").notNull(),
+  // Suspended administrators retain their assigned role here while the active
+  // role is changed to admin_suspended, which all existing guards deny.
+  suspendedRole: text("suspended_role"),
   partnerId: text("partner_id").references(() => partners.id),
   receiveUrgentAlerts: boolean("receive_urgent_alerts").notNull().default(false),
 });

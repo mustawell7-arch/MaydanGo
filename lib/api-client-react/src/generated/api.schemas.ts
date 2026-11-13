@@ -992,6 +992,7 @@ export type SupportAgentRole = typeof SupportAgentRole[keyof typeof SupportAgent
 export const SupportAgentRole = {
   customer_support_admin: 'customer_support_admin',
   support: 'support',
+  super_admin: 'super_admin',
 } as const;
 
 export interface SupportAgent {
@@ -2438,6 +2439,7 @@ export type OperationsStateRole = typeof OperationsStateRole[keyof typeof Operat
 export const OperationsStateRole = {
   partner_operations_admin: 'partner_operations_admin',
   partner: 'partner',
+  super_admin: 'super_admin',
 } as const;
 
 export interface PartnerWaitlistEntry {
@@ -2582,6 +2584,7 @@ export type FinanceOverviewRole = typeof FinanceOverviewRole[keyof typeof Financ
 export const FinanceOverviewRole = {
   finance_admin: 'finance_admin',
   finance: 'finance',
+  super_admin: 'super_admin',
 } as const;
 
 export type FinanceOverviewFacilitiesItem = { [key: string]: unknown };
@@ -2906,6 +2909,7 @@ export type FacilityQualityControlRole = typeof FacilityQualityControlRole[keyof
 export const FacilityQualityControlRole = {
   fraud_compliance_admin: 'fraud_compliance_admin',
   partner: 'partner',
+  super_admin: 'super_admin',
 } as const;
 
 export interface FacilityQualityControl {
@@ -3206,6 +3210,7 @@ export type OperationsFacilityReviewsRole = typeof OperationsFacilityReviewsRole
 export const OperationsFacilityReviewsRole = {
   fraud_compliance_admin: 'fraud_compliance_admin',
   partner: 'partner',
+  super_admin: 'super_admin',
 } as const;
 
 export interface OperationsFacilityReviews {
@@ -3259,6 +3264,73 @@ export interface FacilityReviewPrivilege {
   /** @nullable */
   suspendedAt: string | null;
 }
+
+export type AdminRole = typeof AdminRole[keyof typeof AdminRole];
+
+
+export const AdminRole = {
+  customer_support_admin: 'customer_support_admin',
+  partner_operations_admin: 'partner_operations_admin',
+  finance_admin: 'finance_admin',
+  content_admin: 'content_admin',
+  marketing_admin: 'marketing_admin',
+  corporate_admin: 'corporate_admin',
+  fraud_compliance_admin: 'fraud_compliance_admin',
+  technical_admin: 'technical_admin',
+  super_admin: 'super_admin',
+} as const;
+
+export type AdminAccountInputStatus = typeof AdminAccountInputStatus[keyof typeof AdminAccountInputStatus];
+
+
+export const AdminAccountInputStatus = {
+  active: 'active',
+  suspended: 'suspended',
+} as const;
+
+export interface AdminAccountInput {
+  /** @maxLength 320 */
+  email: string;
+  role: AdminRole;
+  status: AdminAccountInputStatus;
+}
+
+export type AdminAccountStatus = typeof AdminAccountStatus[keyof typeof AdminAccountStatus];
+
+
+export const AdminAccountStatus = {
+  active: 'active',
+  suspended: 'suspended',
+} as const;
+
+export interface AdminAccount {
+  userId: string;
+  /** @nullable */
+  email: string | null;
+  role: AdminRole;
+  status: AdminAccountStatus;
+}
+
+export interface SuperAdminAuditLog {
+  id: string;
+  actorId: string;
+  action: string;
+  targetId: string;
+  detail: string;
+  createdAt: string;
+}
+
+/**
+ * @minimum 1
+ * @maximum 500
+ */
+export type SuperAdminAuditLimit = number;
+
+/**
+ * @minimum 0
+ * @maximum 1000000
+ */
+export type SuperAdminAuditOffset = number;
 
 export type GetAttendance200RowsItemEventsItem = {
   action: string;
@@ -3374,6 +3446,11 @@ to: string;
 export type GetFinanceSettlementsParams = {
 from: string;
 to: string;
+};
+
+export type GetSuperAdminAuditLogsParams = {
+limit?: SuperAdminAuditLimit;
+offset?: SuperAdminAuditOffset;
 };
 
 export type StreamMemberCoursePlaybackParams = {

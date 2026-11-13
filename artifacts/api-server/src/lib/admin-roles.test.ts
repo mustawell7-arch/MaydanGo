@@ -34,14 +34,23 @@ test("each administrator role receives only its declared permissions", () => {
   }
 });
 
-test("legacy and unknown roles receive no implicit administrator access", () => {
-  for (const role of ["admin", "super_admin", "unknown"]) {
+test("legacy, suspended, and unknown roles receive no implicit administrator access", () => {
+  for (const role of ["admin", "admin_suspended", "unknown"]) {
     for (const permission of permissions) {
       assert.equal(hasAdminPermission(role, permission), false);
     }
     assert.equal(isOperationsPortalRole(role), false);
     assert.equal(isSupportAdministrator(role), false);
   }
+});
+
+test("Super Admin receives the full set of existing admin permissions", () => {
+  for (const permission of permissions) {
+    assert.equal(hasAdminPermission("super_admin", permission), true);
+  }
+  assert.equal(isOperationsPortalRole("super_admin"), true);
+  assert.equal(isSupportAdministrator("super_admin"), true);
+  assert.equal(isFinanceStaff("super_admin"), true);
 });
 
 test("existing support and finance staff retain only their own scoped access", () => {

@@ -231,7 +231,7 @@ memberSupportRouter.post("/support/tickets", async (req, res) => {
     void (async () => {
       const staff = await db.select({ userId: operators.userId }).from(operators)
         .where(and(
-          inArray(operators.role, ["customer_support_admin", "support"]),
+          inArray(operators.role, ["customer_support_admin", "support", "super_admin"]),
           eq(operators.receiveUrgentAlerts, true),
         ));
       const outcomes = await Promise.all(staff.map(member => sendMemberNotification(member.userId, "support_urgent", {
@@ -428,7 +428,7 @@ staffRouter.patch("/tickets/:id", async (req, res) => {
     if (!ticket) throw new BookingError(404, "Support request not found.");
     if (parsed.data.assignedTo) {
       const [agent] = await tx.select({ userId: operators.userId }).from(operators)
-        .where(and(eq(operators.userId, parsed.data.assignedTo), inArray(operators.role, ["customer_support_admin", "support"]))).limit(1);
+        .where(and(eq(operators.userId, parsed.data.assignedTo), inArray(operators.role, ["customer_support_admin", "support", "super_admin"]))).limit(1);
       if (!agent) throw new BookingError(400, "Assign the ticket to an authorized support agent.");
     }
     const nextStatus = parsed.data.status ?? ticket.status;
@@ -606,7 +606,7 @@ staffRouter.get("/agents", async (_req, res) => {
     role: operators.role,
     receiveUrgentAlerts: operators.receiveUrgentAlerts,
   }).from(operators)
-    .where(inArray(operators.role, ["customer_support_admin", "support"]));
+    .where(inArray(operators.role, ["customer_support_admin", "support", "super_admin"]));
   const viewer = res.locals.supportOperator as typeof operators.$inferSelect;
   if (!isSupportAdministrator(viewer.role) || !rows.length) {
     res.json(rows);
@@ -679,7 +679,7 @@ staffRouter.patch("/agents/:userId/urgent-alerts", async (req, res) => {
 
   const updatedAgent = await db.transaction(async tx => {
     const staff = await tx.select().from(operators)
-      .where(inArray(operators.role, ["customer_support_admin", "support"]))
+      .where(inArray(operators.role, ["customer_support_admin", "support", "super_admin"]))
       .orderBy(asc(operators.userId))
       .for("update");
     const currentAdmin = staff.find(agent => agent.userId === operator.userId);
@@ -751,7 +751,7 @@ staffRouter.delete("/agents/:userId", async (req, res) => {
 
   const removedAgent = await db.transaction(async tx => {
     const staff = await tx.select().from(operators)
-      .where(inArray(operators.role, ["customer_support_admin", "support"]))
+      .where(inArray(operators.role, ["customer_support_admin", "support", "super_admin"]))
       .orderBy(asc(operators.userId))
       .for("update");
     const agent = staff.find(candidate => candidate.userId === targetId);

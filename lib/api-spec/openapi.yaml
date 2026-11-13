@@ -428,6 +428,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1finance~1invoices~1{id}~1document"
   /operations/finance/audit:
     $ref: "./operations.yaml#/paths/~1operations~1finance~1audit"
+  /super-admin/admin-accounts:
+    $ref: "./operations.yaml#/paths/~1super-admin~1admin-accounts"
+  /super-admin/audit-logs:
+    $ref: "./operations.yaml#/paths/~1super-admin~1audit-logs"
   /operations/quality:
     $ref: "./operations.yaml#/paths/~1operations~1quality"
   /operations/quality/assessments:

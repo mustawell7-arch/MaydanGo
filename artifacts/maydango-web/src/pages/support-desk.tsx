@@ -186,8 +186,8 @@ export function SupportDeskPage() {
   const reply = useReplySupportStaffTicket();
   const tickets = queue.data ?? [];
   const agents = agentsQuery.data ?? [];
-  const authorized = !!userId && agents.some(agent => agent.userId === userId && (agent.role === 'customer_support_admin' || agent.role === 'support'));
-  const isAdmin = !!userId && agents.some(agent => agent.userId === userId && agent.role === 'customer_support_admin');
+  const authorized = !!userId && agents.some(agent => agent.userId === userId && (agent.role === 'customer_support_admin' || agent.role === 'support' || agent.role === 'super_admin'));
+  const isAdmin = !!userId && agents.some(agent => agent.userId === userId && (agent.role === 'customer_support_admin' || agent.role === 'super_admin'));
   const active = detail.data;
   const hasActiveEscalation = tickets.some(ticket => ticket.id === selectedId && ticket.hasActiveEscalation);
   const relatedRecords = relatedRecordsQuery.data?.records ?? [];
@@ -342,7 +342,7 @@ export function SupportDeskPage() {
       setAttachmentBusy(false);
     }
   };
-  const roleLabel = (role: string) => role === 'member' ? t.memberLabel : role === 'customer_support_admin' ? t.adminLabel : t.supportLabel;
+  const roleLabel = (role: string) => role === 'member' ? t.memberLabel : role === 'customer_support_admin' || role === 'super_admin' ? t.adminLabel : t.supportLabel;
   const statusLabel = (status: string) => t[status] ?? status;
 
   if (!isLoaded) return <main className="min-h-[100dvh] bg-[#f4f1e8] p-5" data-testid="support-loading"><div className="mx-auto max-w-7xl animate-pulse space-y-5"><div className="h-5 w-36 rounded bg-[#e3dece]" /><div className="h-12 w-64 rounded bg-[#e3dece]" /><div className="h-[65vh] rounded-3xl bg-[#e9e4d7]" /></div></main>;

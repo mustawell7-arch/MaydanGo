@@ -27,6 +27,8 @@ import type {
 import type {
   AccessGrantInput,
   AccessRevokeInput,
+  AdminAccount,
+  AdminAccountInput,
   BookingCancellationRequest,
   CancelRecurringOfferingSeriesResponse,
   CheckinPolicy,
@@ -88,6 +90,7 @@ import type {
   GetOperationCoursesResponse,
   GetOperationsAnalyticsParams,
   GetPartnerSettlementSummaryParams,
+  GetSuperAdminAuditLogsParams,
   GetSupportStaffTicketsParams,
   HealthStatus,
   InstructorAccessDecisionInput,
@@ -156,6 +159,7 @@ import type {
   ScanCheckinQr200,
   ScanCheckinQrBody,
   StreamMemberCoursePlaybackParams,
+  SuperAdminAuditLog,
   SupportAgent,
   SupportAgentInput,
   SupportAgentUrgentAlertInput,
@@ -6605,6 +6609,285 @@ export function useGetFinanceAudit<TData = Awaited<ReturnType<typeof getFinanceA
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetFinanceAuditQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetSuperAdminAccountsUrl = () => {
+
+
+
+
+  return `/api/super-admin/admin-accounts`
+}
+
+export const getSuperAdminAccounts = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminAccount[]> => {
+
+  return customFetch<AdminAccount[]>(getGetSuperAdminAccountsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSuperAdminAccountsQueryKey = () => {
+    return [
+    `/api/super-admin/admin-accounts`
+    ] as const;
+    }
+
+
+export const getGetSuperAdminAccountsQueryOptions = <TData = Awaited<ReturnType<typeof getSuperAdminAccounts>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminAccounts>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSuperAdminAccountsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSuperAdminAccounts>>> = ({ signal }) => getSuperAdminAccounts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminAccounts>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSuperAdminAccountsQueryResult = NonNullable<Awaited<ReturnType<typeof getSuperAdminAccounts>>>
+export type GetSuperAdminAccountsQueryError = ErrorType<unknown>
+
+
+export function useGetSuperAdminAccounts<TData = Awaited<ReturnType<typeof getSuperAdminAccounts>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminAccounts>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminAccounts>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminAccounts>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminAccounts<TData = Awaited<ReturnType<typeof getSuperAdminAccounts>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminAccounts>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminAccounts>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminAccounts>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminAccounts<TData = Awaited<ReturnType<typeof getSuperAdminAccounts>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminAccounts>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSuperAdminAccounts<TData = Awaited<ReturnType<typeof getSuperAdminAccounts>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminAccounts>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSuperAdminAccountsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpsertSuperAdminAccountUrl = () => {
+
+
+
+
+  return `/api/super-admin/admin-accounts`
+}
+
+export const upsertSuperAdminAccount = async (adminAccountInput: AdminAccountInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminAccount> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminAccount>(getUpsertSuperAdminAccountUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminAccountInput)
+  }
+);}
+
+
+
+
+
+export const getUpsertSuperAdminAccountMutationKey = () => ['upsertSuperAdminAccount'] as const;
+
+export const getUpsertSuperAdminAccountMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertSuperAdminAccount>>, TError,UpsertSuperAdminAccountMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof upsertSuperAdminAccount>>, TError,UpsertSuperAdminAccountMutationVariables, TContext> => {
+
+const mutationKey = getUpsertSuperAdminAccountMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof upsertSuperAdminAccount>>, UpsertSuperAdminAccountMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  upsertSuperAdminAccount(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpsertSuperAdminAccountMutationResult = NonNullable<Awaited<ReturnType<typeof upsertSuperAdminAccount>>>
+    export type UpsertSuperAdminAccountMutationBody = BodyType<AdminAccountInput>
+    export type UpsertSuperAdminAccountMutationError = ErrorType<unknown>
+    export type UpsertSuperAdminAccountMutationVariables = {data: BodyType<AdminAccountInput>}
+
+    export const useUpsertSuperAdminAccount = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertSuperAdminAccount>>, TError,UpsertSuperAdminAccountMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof upsertSuperAdminAccount>>,
+        TError,
+        UpsertSuperAdminAccountMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpsertSuperAdminAccountMutationOptions(options), queryClient);
+    }
+
+export const getGetSuperAdminAuditLogsUrl = (params?: GetSuperAdminAuditLogsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/super-admin/audit-logs?${stringifiedParams}` : `/api/super-admin/audit-logs`
+}
+
+export const getSuperAdminAuditLogs = async (params?: GetSuperAdminAuditLogsParams, options?: Parameters<typeof customFetch>[1]): Promise<SuperAdminAuditLog[]> => {
+
+  return customFetch<SuperAdminAuditLog[]>(getGetSuperAdminAuditLogsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSuperAdminAuditLogsQueryKey = (params?: GetSuperAdminAuditLogsParams,) => {
+    return [
+    `/api/super-admin/audit-logs`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetSuperAdminAuditLogsQueryOptions = <TData = Awaited<ReturnType<typeof getSuperAdminAuditLogs>>, TError = ErrorType<unknown>>(params?: GetSuperAdminAuditLogsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminAuditLogs>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSuperAdminAuditLogsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSuperAdminAuditLogs>>> = ({ signal }) => getSuperAdminAuditLogs(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminAuditLogs>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSuperAdminAuditLogsQueryResult = NonNullable<Awaited<ReturnType<typeof getSuperAdminAuditLogs>>>
+export type GetSuperAdminAuditLogsQueryError = ErrorType<unknown>
+
+
+export function useGetSuperAdminAuditLogs<TData = Awaited<ReturnType<typeof getSuperAdminAuditLogs>>, TError = ErrorType<unknown>>(
+ params: undefined |  GetSuperAdminAuditLogsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminAuditLogs>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminAuditLogs>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminAuditLogs>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminAuditLogs<TData = Awaited<ReturnType<typeof getSuperAdminAuditLogs>>, TError = ErrorType<unknown>>(
+ params?: GetSuperAdminAuditLogsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminAuditLogs>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminAuditLogs>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminAuditLogs>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminAuditLogs<TData = Awaited<ReturnType<typeof getSuperAdminAuditLogs>>, TError = ErrorType<unknown>>(
+ params?: GetSuperAdminAuditLogsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminAuditLogs>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSuperAdminAuditLogs<TData = Awaited<ReturnType<typeof getSuperAdminAuditLogs>>, TError = ErrorType<unknown>>(
+ params?: GetSuperAdminAuditLogsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminAuditLogs>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSuperAdminAuditLogsQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

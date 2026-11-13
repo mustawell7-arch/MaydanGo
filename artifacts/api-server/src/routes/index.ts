@@ -15,6 +15,7 @@ import publicLearningRouter from "./public-learning";
 import instructorRouter from "./instructor";
 import corporateRouter from "./corporate";
 import operationsCorporateRouter from "./operations-corporate";
+import superAdminRouter from "./super-admin";
 
 const router: IRouter = Router();
 router.use("/public", publicReviewsRouter);
@@ -33,6 +34,7 @@ router.use("/attendance", attendanceRouter);
 router.use("/member", memberSupportAttachmentRouter);
 router.use("/support/staff", staffSupportAttachmentRouter);
 router.use("/support/staff", supportRouter);
+router.use("/super-admin", superAdminRouter);
 
 router.use(healthRouter);
 

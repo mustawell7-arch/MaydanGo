@@ -1288,7 +1288,7 @@ export const getOperationsResponsePlansItemOnePriceIqdMax = 1000000000;
 
 
 export const GetOperationsResponse = zod.object({
-  "role": zod.enum(['partner_operations_admin', 'partner']),
+  "role": zod.enum(['partner_operations_admin', 'partner', 'super_admin']),
   "partnerId": zod.string().nullable(),
   "partners": zod.array(zod.object({
   "name": zod.string(),
@@ -4043,7 +4043,7 @@ export const getFinanceOverviewResponseCustomersItemPauseUsedDaysMin = 0;
 
 
 export const GetFinanceOverviewResponse = zod.object({
-  "role": zod.enum(['finance_admin', 'finance']),
+  "role": zod.enum(['finance_admin', 'finance', 'super_admin']),
   "paymentGateEnabled": zod.boolean(),
   "livePayoutGateEnabled": zod.boolean(),
   "partners": zod.array(zod.object({
@@ -4292,8 +4292,58 @@ export const GetFinanceAuditResponse = zod.object({
 })
 
 
+export const GetSuperAdminAccountsResponseItem = zod.object({
+  "userId": zod.string(),
+  "email": zod.string().email().nullable(),
+  "role": zod.enum(['customer_support_admin', 'partner_operations_admin', 'finance_admin', 'content_admin', 'marketing_admin', 'corporate_admin', 'fraud_compliance_admin', 'technical_admin', 'super_admin']),
+  "status": zod.enum(['active', 'suspended'])
+})
+export const GetSuperAdminAccountsResponse = zod.array(GetSuperAdminAccountsResponseItem)
+
+
+export const upsertSuperAdminAccountBodyEmailMax = 320;
+
+
+
+export const UpsertSuperAdminAccountBody = zod.object({
+  "email": zod.string().email().max(upsertSuperAdminAccountBodyEmailMax),
+  "role": zod.enum(['customer_support_admin', 'partner_operations_admin', 'finance_admin', 'content_admin', 'marketing_admin', 'corporate_admin', 'fraud_compliance_admin', 'technical_admin', 'super_admin']),
+  "status": zod.enum(['active', 'suspended'])
+})
+
+export const UpsertSuperAdminAccountResponse = zod.object({
+  "userId": zod.string(),
+  "email": zod.string().email().nullable(),
+  "role": zod.enum(['customer_support_admin', 'partner_operations_admin', 'finance_admin', 'content_admin', 'marketing_admin', 'corporate_admin', 'fraud_compliance_admin', 'technical_admin', 'super_admin']),
+  "status": zod.enum(['active', 'suspended'])
+})
+
+
+export const getSuperAdminAuditLogsQueryLimitMax = 500;
+
+export const getSuperAdminAuditLogsQueryOffsetMin = 0;
+export const getSuperAdminAuditLogsQueryOffsetMax = 1000000;
+
+
+
+export const GetSuperAdminAuditLogsQueryParams = zod.object({
+  "limit": zod.coerce.number().int().min(1).max(getSuperAdminAuditLogsQueryLimitMax).optional(),
+  "offset": zod.coerce.number().int().min(getSuperAdminAuditLogsQueryOffsetMin).max(getSuperAdminAuditLogsQueryOffsetMax).optional()
+})
+
+export const GetSuperAdminAuditLogsResponseItem = zod.object({
+  "id": zod.string(),
+  "actorId": zod.string(),
+  "action": zod.string(),
+  "targetId": zod.string(),
+  "detail": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const GetSuperAdminAuditLogsResponse = zod.array(GetSuperAdminAuditLogsResponseItem)
+
+
 export const GetFacilityQualityControlResponse = zod.object({
-  "role": zod.enum(['fraud_compliance_admin', 'partner']),
+  "role": zod.enum(['fraud_compliance_admin', 'partner', 'super_admin']),
   "facilities": zod.array(zod.object({
   "id": zod.string(),
   "partnerId": zod.string(),
@@ -4560,7 +4610,7 @@ export const getOperationsFacilityReviewsResponseReviewsItemReportsItemDetailsMa
 
 
 export const GetOperationsFacilityReviewsResponse = zod.object({
-  "role": zod.enum(['fraud_compliance_admin', 'partner']),
+  "role": zod.enum(['fraud_compliance_admin', 'partner', 'super_admin']),
   "reviews": zod.array(zod.object({
   "id": zod.string(),
   "facilityId": zod.string(),
@@ -6467,7 +6517,7 @@ export const getSupportStaffAgentsResponseActiveDeviceCountMin = 0;
 
 export const GetSupportStaffAgentsResponseItem = zod.object({
   "userId": zod.string(),
-  "role": zod.enum(['customer_support_admin', 'support']),
+  "role": zod.enum(['customer_support_admin', 'support', 'super_admin']),
   "receiveUrgentAlerts": zod.boolean(),
   "pushEnabled": zod.boolean().optional().describe('Present only to Customer Support Admins.'),
   "activeDeviceCount": zod.number().int().min(getSupportStaffAgentsResponseActiveDeviceCountMin).optional().describe('Present only to Customer Support Admins; never includes device tokens.')
@@ -6491,7 +6541,7 @@ export const addSupportStaffAgentResponseActiveDeviceCountMin = 0;
 
 export const AddSupportStaffAgentResponse = zod.object({
   "userId": zod.string(),
-  "role": zod.enum(['customer_support_admin', 'support']),
+  "role": zod.enum(['customer_support_admin', 'support', 'super_admin']),
   "receiveUrgentAlerts": zod.boolean(),
   "pushEnabled": zod.boolean().optional().describe('Present only to Customer Support Admins.'),
   "activeDeviceCount": zod.number().int().min(addSupportStaffAgentResponseActiveDeviceCountMin).optional().describe('Present only to Customer Support Admins; never includes device tokens.')
@@ -6514,7 +6564,7 @@ export const removeSupportStaffAgentResponseActiveDeviceCountMin = 0;
 
 export const RemoveSupportStaffAgentResponse = zod.object({
   "userId": zod.string(),
-  "role": zod.enum(['customer_support_admin', 'support']),
+  "role": zod.enum(['customer_support_admin', 'support', 'super_admin']),
   "receiveUrgentAlerts": zod.boolean(),
   "pushEnabled": zod.boolean().optional().describe('Present only to Customer Support Admins.'),
   "activeDeviceCount": zod.number().int().min(removeSupportStaffAgentResponseActiveDeviceCountMin).optional().describe('Present only to Customer Support Admins; never includes device tokens.')
@@ -6541,7 +6591,7 @@ export const updateSupportStaffAgentUrgentAlertsResponseActiveDeviceCountMin = 0
 
 export const UpdateSupportStaffAgentUrgentAlertsResponse = zod.object({
   "userId": zod.string(),
-  "role": zod.enum(['customer_support_admin', 'support']),
+  "role": zod.enum(['customer_support_admin', 'support', 'super_admin']),
   "receiveUrgentAlerts": zod.boolean(),
   "pushEnabled": zod.boolean().optional().describe('Present only to Customer Support Admins.'),
   "activeDeviceCount": zod.number().int().min(updateSupportStaffAgentUrgentAlertsResponseActiveDeviceCountMin).optional().describe('Present only to Customer Support Admins; never includes device tokens.')

@@ -1621,6 +1621,50 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/MemberCancellationResult" }
+  /super-admin/admin-accounts:
+    get:
+      operationId: getSuperAdminAccounts
+      responses:
+        "200":
+          description: Administrator accounts and their current role status
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminAccount" }
+    put:
+      operationId: upsertSuperAdminAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminAccountInput" }
+      responses:
+        "200":
+          description: Administrator role assignment updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminAccount" }
+  /super-admin/audit-logs:
+    get:
+      operationId: getSuperAdminAuditLogs
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/SuperAdminAuditLimit", default: 100 }
+        - name: offset
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/SuperAdminAuditOffset", default: 0 }
+      responses:
+        "200":
+          description: Latest append-only platform audit entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SuperAdminAuditLog" }
 components:
   parameters:
     Id: { name: id, in: path, required: true, schema: { type: string } }
@@ -1908,7 +1952,7 @@ components:
       required: [userId, role, receiveUrgentAlerts]
       properties:
         userId: { type: string }
-        role: { type: string, enum: [customer_support_admin, support] }
+        role: { type: string, enum: [customer_support_admin, support, super_admin] }
         receiveUrgentAlerts: { type: boolean }
         pushEnabled: { type: boolean, description: Present only to Customer Support Admins. }
         activeDeviceCount: { type: integer, minimum: 0, description: Present only to Customer Support Admins; never includes device tokens. }
@@ -2851,7 +2895,7 @@ components:
       type: object
       required: [role, partnerId, partners, offerings, waitlist, plans]
       properties:
-        role: { type: string, enum: [partner_operations_admin, partner] }
+        role: { type: string, enum: [partner_operations_admin, partner, super_admin] }
         partnerId: { type: [string, "null"] }
         partners: { type: array, items: { $ref: "#/components/schemas/Partner" } }
         offerings: { type: array, items: { $ref: "#/components/schemas/LiveOffering" } }
@@ -2928,7 +2972,7 @@ components:
       type: object
       required: [role, paymentGateEnabled, livePayoutGateEnabled, partners, facilities, customers, bookings, customerInvoices, partnerInvoices, reconciliation, reviewItems, reviewEvents, audit]
       properties:
-        role: { type: string, enum: [finance_admin, finance] }
+        role: { type: string, enum: [finance_admin, finance, super_admin] }
         paymentGateEnabled: { type: boolean }
         livePayoutGateEnabled: { type: boolean }
         partners: { type: array, items: { $ref: "#/components/schemas/Partner" } }
@@ -3110,7 +3154,7 @@ components:
       additionalProperties: false
       required: [role, facilities, assessments, incidents]
       properties:
-        role: { type: string, enum: [fraud_compliance_admin, partner] }
+        role: { type: string, enum: [fraud_compliance_admin, partner, super_admin] }
         facilities: { type: array, items: { $ref: "#/components/schemas/FacilityQualityFacility" } }
         assessments: { type: array, items: { $ref: "#/components/schemas/FacilityQualityAssessment" } }
         incidents: { type: array, items: { $ref: "#/components/schemas/FacilityQualityIncident" } }
@@ -3255,7 +3299,7 @@ components:
       additionalProperties: false
       required: [role, reviews]
       properties:
-        role: { type: string, enum: [fraud_compliance_admin, partner] }
+        role: { type: string, enum: [fraud_compliance_admin, partner, super_admin] }
         reviews: { type: array, items: { $ref: "#/components/schemas/OperationsFacilityReview" } }
     FacilityReviewModerationInput:
       type: object
@@ -3286,3 +3330,42 @@ components:
         suspended: { type: boolean }
         reason: { type: ["string", "null"], maxLength: 500 }
         suspendedAt: { type: ["string", "null"], format: date-time }
+    AdminRole:
+      type: string
+      enum: [customer_support_admin, partner_operations_admin, finance_admin, content_admin, marketing_admin, corporate_admin, fraud_compliance_admin, technical_admin, super_admin]
+    AdminAccountInput:
+      type: object
+      additionalProperties: false
+      required: [email, role, status]
+      properties:
+        email: { type: string, format: email, maxLength: 320 }
+        role: { $ref: "#/components/schemas/AdminRole" }
+        status: { type: string, enum: [active, suspended] }
+    AdminAccount:
+      type: object
+      additionalProperties: false
+      required: [userId, email, role, status]
+      properties:
+        userId: { type: string }
+        email: { type: ["string", "null"], format: email }
+        role: { $ref: "#/components/schemas/AdminRole" }
+        status: { type: string, enum: [active, suspended] }
+    SuperAdminAuditLog:
+      type: object
+      additionalProperties: false
+      required: [id, actorId, action, targetId, detail, createdAt]
+      properties:
+        id: { type: string }
+        actorId: { type: string }
+        action: { type: string }
+        targetId: { type: string }
+        detail: { type: string }
+        createdAt: { type: string, format: date-time }
+    SuperAdminAuditLimit:
+      type: integer
+      minimum: 1
+      maximum: 500
+    SuperAdminAuditOffset:
+      type: integer
+      minimum: 0
+      maximum: 1000000

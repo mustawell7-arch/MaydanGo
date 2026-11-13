@@ -34,7 +34,7 @@ router.post("/tickets/:id/escalations", async (req, res): Promise<void> => {
     if (!ticket) throw new BookingError(404, "Support request not found.");
     if (["closed", "resolved"].includes(ticket.status)) throw new BookingError(409, "Reopen the ticket before escalating it.");
     const [target] = await tx.select().from(operators).where(and(
-      eq(operators.userId, parsed.data.targetUserId), inArray(operators.role, ["customer_support_admin", "support"]),
+      eq(operators.userId, parsed.data.targetUserId), inArray(operators.role, ["customer_support_admin", "support", "super_admin"]),
     )).for("share");
     if (!target) throw new BookingError(400, "Choose an authorized support staff member or administrator.");
     const [active] = await tx.select({ id: supportCaseEscalations.id }).from(supportCaseEscalations)

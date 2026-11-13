@@ -24,6 +24,7 @@ import { PublicCourseBrowser, PublicFacilityBrowser, PublicHomeShowcase } from '
 import MemberAccountPage from '@/pages/member-account';
 import { AdminInstructorAccessPage, InstructorPortalPage } from '@/pages/instructor-access';
 import SupportDeskPage from '@/pages/support-desk';
+import SuperAdminPage from '@/pages/super-admin';
 import { createContactEmailDraft, initialContactTopic, verifiedContactEmail } from '@/lib/contact-enquiry';
 import { CorporateAdminPage, CorporateInvitePage, CorporatePortalPage } from '@/pages/corporate-workspace';
 import './index.css';
@@ -1039,6 +1040,7 @@ function ContentRouter() {
 
 function Router() {
   return <Switch>
+    <Route path="/super-admin" component={SuperAdminPage} />
     <Route path="/admin/corporate" component={CorporateAdminPage} />
     <Route path="/corporate-portal" component={CorporatePortalPage} />
     <Route path="/corporate-invite" component={CorporateInvitePage} />
