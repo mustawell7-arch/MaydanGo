@@ -29,6 +29,9 @@ import type {
   AccessRevokeInput,
   AdminAccount,
   AdminAccountInput,
+  AdminRole,
+  AdminRolePermission,
+  AdminRolePermissionsUpdateInput,
   BookingCancellationRequest,
   CancelRecurringOfferingSeriesResponse,
   CheckinPolicy,
@@ -6796,6 +6799,184 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getUpsertSuperAdminAccountMutationOptions(options), queryClient);
+    }
+
+export const getGetSuperAdminRolePermissionsUrl = () => {
+
+
+
+
+  return `/api/super-admin/role-permissions`
+}
+
+export const getSuperAdminRolePermissions = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminRolePermission[]> => {
+
+  return customFetch<AdminRolePermission[]>(getGetSuperAdminRolePermissionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSuperAdminRolePermissionsQueryKey = () => {
+    return [
+    `/api/super-admin/role-permissions`
+    ] as const;
+    }
+
+
+export const getGetSuperAdminRolePermissionsQueryOptions = <TData = Awaited<ReturnType<typeof getSuperAdminRolePermissions>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminRolePermissions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSuperAdminRolePermissionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSuperAdminRolePermissions>>> = ({ signal }) => getSuperAdminRolePermissions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminRolePermissions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSuperAdminRolePermissionsQueryResult = NonNullable<Awaited<ReturnType<typeof getSuperAdminRolePermissions>>>
+export type GetSuperAdminRolePermissionsQueryError = ErrorType<unknown>
+
+
+export function useGetSuperAdminRolePermissions<TData = Awaited<ReturnType<typeof getSuperAdminRolePermissions>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminRolePermissions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminRolePermissions>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminRolePermissions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminRolePermissions<TData = Awaited<ReturnType<typeof getSuperAdminRolePermissions>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminRolePermissions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminRolePermissions>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminRolePermissions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminRolePermissions<TData = Awaited<ReturnType<typeof getSuperAdminRolePermissions>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminRolePermissions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSuperAdminRolePermissions<TData = Awaited<ReturnType<typeof getSuperAdminRolePermissions>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminRolePermissions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSuperAdminRolePermissionsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateSuperAdminRolePermissionsUrl = (role: AdminRole,) => {
+
+
+
+
+  return `/api/super-admin/role-permissions/${role}`
+}
+
+export const updateSuperAdminRolePermissions = async (role: AdminRole,
+    adminRolePermissionsUpdateInput: AdminRolePermissionsUpdateInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminRolePermission> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminRolePermission>(getUpdateSuperAdminRolePermissionsUrl(role),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminRolePermissionsUpdateInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateSuperAdminRolePermissionsMutationKey = () => ['updateSuperAdminRolePermissions'] as const;
+
+export const getUpdateSuperAdminRolePermissionsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSuperAdminRolePermissions>>, TError,UpdateSuperAdminRolePermissionsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSuperAdminRolePermissions>>, TError,UpdateSuperAdminRolePermissionsMutationVariables, TContext> => {
+
+const mutationKey = getUpdateSuperAdminRolePermissionsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSuperAdminRolePermissions>>, UpdateSuperAdminRolePermissionsMutationVariables> = (props) => {
+          const {role,data} = props ?? {};
+
+          return  updateSuperAdminRolePermissions(role,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSuperAdminRolePermissionsMutationResult = NonNullable<Awaited<ReturnType<typeof updateSuperAdminRolePermissions>>>
+    export type UpdateSuperAdminRolePermissionsMutationBody = BodyType<AdminRolePermissionsUpdateInput>
+    export type UpdateSuperAdminRolePermissionsMutationError = ErrorType<void>
+    export type UpdateSuperAdminRolePermissionsMutationVariables = {role: AdminRole;data: BodyType<AdminRolePermissionsUpdateInput>}
+
+    export const useUpdateSuperAdminRolePermissions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSuperAdminRolePermissions>>, TError,UpdateSuperAdminRolePermissionsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateSuperAdminRolePermissions>>,
+        TError,
+        UpdateSuperAdminRolePermissionsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateSuperAdminRolePermissionsMutationOptions(options), queryClient);
     }
 
 export const getGetSuperAdminAuditLogsUrl = (params?: GetSuperAdminAuditLogsParams,) => {

@@ -32,6 +32,45 @@ export type AdminPermission =
   | "fraud_compliance"
   | "technical";
 
+export const ADMIN_ACTIONS = [
+  "view",
+  "create",
+  "edit",
+  "approve",
+  "reject",
+  "suspend",
+  "refund",
+  "export",
+  "delete",
+  "publish",
+  "manage_payments",
+  "manage_users",
+  "view_sensitive_data",
+] as const;
+
+export type AdminAction = typeof ADMIN_ACTIONS[number];
+
+export const DEFAULT_ADMIN_ACTIONS: Record<AdminRole, readonly AdminAction[]> = {
+  customer_support_admin: [
+    "view", "create", "edit", "approve", "reject", "suspend", "manage_users", "view_sensitive_data",
+  ],
+  partner_operations_admin: [
+    "view", "create", "edit", "approve", "reject", "suspend", "delete", "publish", "export",
+    "view_sensitive_data",
+  ],
+  finance_admin: [
+    "view", "edit", "approve", "reject", "refund", "export", "manage_payments", "view_sensitive_data",
+  ],
+  content_admin: ["view", "create", "edit", "approve", "reject", "publish", "manage_users"],
+  marketing_admin: ["view", "create", "edit", "publish", "export"],
+  corporate_admin: ["view", "create", "edit", "suspend", "manage_users"],
+  fraud_compliance_admin: [
+    "view", "create", "edit", "approve", "reject", "suspend", "delete", "export", "view_sensitive_data",
+  ],
+  technical_admin: ["view", "edit", "manage_users", "manage_payments", "view_sensitive_data"],
+  super_admin: ADMIN_ACTIONS,
+};
+
 export const ADMIN_ROLE_LABELS: Record<AdminRole, string> = {
   customer_support_admin: "Customer Support Admin",
   partner_operations_admin: "Partner Operations Admin",

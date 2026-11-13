@@ -2,15 +2,25 @@ import { Router, type IRouter } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { desc, eq, inArray, or } from "drizzle-orm";
-import { db, operationAudit, operators } from "@workspace/db";
+import { db, adminRolePermissions, operationAudit, operators } from "@workspace/db";
 import {
+  GetSuperAdminRolePermissionsResponse,
   GetSuperAdminAccountsResponse,
   GetSuperAdminAuditLogsQueryParams,
   GetSuperAdminAuditLogsResponse,
+  UpdateSuperAdminRolePermissionsBody,
+  UpdateSuperAdminRolePermissionsParams,
+  UpdateSuperAdminRolePermissionsResponse,
   UpsertSuperAdminAccountBody,
   UpsertSuperAdminAccountResponse,
 } from "@workspace/api-zod";
-import { ADMIN_ROLE_PERMISSIONS, type AdminRole } from "../lib/admin-roles";
+import {
+  ADMIN_ACTIONS,
+  ADMIN_ROLE_PERMISSIONS,
+  DEFAULT_ADMIN_ACTIONS,
+  type AdminAction,
+  type AdminRole,
+} from "../lib/admin-roles";
 
 type ClerkAccount = { userId: string; email: string };
 type ClerkDirectory = {
@@ -93,6 +103,99 @@ export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirector
     })));
 
     res.json(GetSuperAdminAccountsResponse.parse(accounts));
+  });
+
+  router.get("/role-permissions", async (_req, res): Promise<void> => {
+    const rows = await db.select().from(adminRolePermissions);
+    const policies = new Map(rows.map(row => [row.role, row]));
+    const result = adminRoles.map(role => {
+      const policy = policies.get(role);
+      return {
+        role,
+        actions: policy
+          ? policy.actions.filter((action): action is AdminAction =>
+              (ADMIN_ACTIONS as readonly string[]).includes(action))
+          : DEFAULT_ADMIN_ACTIONS[role],
+        isCustom: !!policy,
+        locked: role === "super_admin",
+        updatedAt: policy?.updatedAt ?? null,
+      };
+    });
+    res.json(GetSuperAdminRolePermissionsResponse.parse(result));
+  });
+
+  router.put("/role-permissions/:role", async (req, res): Promise<void> => {
+    const params = UpdateSuperAdminRolePermissionsParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ message: "Choose a valid administrator role." });
+      return;
+    }
+    const parsed = UpdateSuperAdminRolePermissionsBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.message });
+      return;
+    }
+    const { role } = params.data;
+    if (role === "super_admin") {
+      res.status(409).json({ message: "Super Admin permissions remain locked to protect platform access." });
+      return;
+    }
+    const requestedActions = parsed.data.actions;
+    if (requestedActions && new Set(requestedActions).size !== requestedActions.length) {
+      res.status(400).json({ message: "Each permission can only be selected once." });
+      return;
+    }
+
+    const actorId = res.locals.superAdminUserId as string;
+    const saved = await db.transaction(async tx => {
+      const [previous] = await tx.select().from(adminRolePermissions)
+        .where(eq(adminRolePermissions.role, role)).for("update");
+      const before: readonly string[] = previous?.actions ?? DEFAULT_ADMIN_ACTIONS[role];
+      const nextActions: AdminAction[] = requestedActions === null
+        ? [...DEFAULT_ADMIN_ACTIONS[role]]
+        : ADMIN_ACTIONS.filter(action => requestedActions.includes(action));
+      const changed = previous
+        ? requestedActions === null || before.length !== nextActions.length
+          || !nextActions.every(action => before.includes(action))
+        : requestedActions !== null;
+
+      let updatedAt: Date | null = previous?.updatedAt ?? null;
+      if (requestedActions === null) {
+        if (previous) await tx.delete(adminRolePermissions).where(eq(adminRolePermissions.role, role));
+      } else {
+        const [policy] = await tx.insert(adminRolePermissions).values({
+          role,
+          actions: [...nextActions],
+          updatedBy: actorId,
+        }).onConflictDoUpdate({
+          target: adminRolePermissions.role,
+          set: { actions: [...nextActions], updatedBy: actorId, updatedAt: new Date() },
+        }).returning();
+        updatedAt = policy.updatedAt;
+      }
+
+      if (changed) {
+        await tx.insert(operationAudit).values({
+          id: randomUUID(),
+          actorId,
+          action: "super_admin.role_permissions.updated",
+          targetId: `role:${role}`,
+          detail: requestedActions === null
+            ? `reset_to_defaults; previous=${before.join(",")}`
+            : `actions=${nextActions.join(",")}`,
+        });
+      }
+
+      return {
+        role,
+        actions: nextActions,
+        isCustom: requestedActions !== null,
+        locked: false,
+        updatedAt,
+      };
+    });
+
+    res.json(UpdateSuperAdminRolePermissionsResponse.parse(saved));
   });
 
   router.put("/admin-accounts", async (req, res): Promise<void> => {

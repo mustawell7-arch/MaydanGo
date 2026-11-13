@@ -3311,6 +3311,38 @@ export interface AdminAccount {
   status: AdminAccountStatus;
 }
 
+export type AdminAction = typeof AdminAction[keyof typeof AdminAction];
+
+
+export const AdminAction = {
+  view: 'view',
+  create: 'create',
+  edit: 'edit',
+  approve: 'approve',
+  reject: 'reject',
+  suspend: 'suspend',
+  refund: 'refund',
+  export: 'export',
+  delete: 'delete',
+  publish: 'publish',
+  manage_payments: 'manage_payments',
+  manage_users: 'manage_users',
+  view_sensitive_data: 'view_sensitive_data',
+} as const;
+
+export interface AdminRolePermission {
+  role: AdminRole;
+  actions: AdminAction[];
+  isCustom: boolean;
+  locked: boolean;
+  /** @nullable */
+  updatedAt: string | null;
+}
+
+export interface AdminRolePermissionsUpdateInput {
+  actions: AdminAction[] | null;
+}
+
 export interface SuperAdminAuditLog {
   id: string;
   actorId: string;

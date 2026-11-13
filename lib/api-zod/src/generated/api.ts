@@ -4319,6 +4319,33 @@ export const UpsertSuperAdminAccountResponse = zod.object({
 })
 
 
+export const GetSuperAdminRolePermissionsResponseItem = zod.object({
+  "role": zod.enum(['customer_support_admin', 'partner_operations_admin', 'finance_admin', 'content_admin', 'marketing_admin', 'corporate_admin', 'fraud_compliance_admin', 'technical_admin', 'super_admin']),
+  "actions": zod.array(zod.enum(['view', 'create', 'edit', 'approve', 'reject', 'suspend', 'refund', 'export', 'delete', 'publish', 'manage_payments', 'manage_users', 'view_sensitive_data'])),
+  "isCustom": zod.boolean(),
+  "locked": zod.boolean(),
+  "updatedAt": zod.coerce.date().nullable()
+})
+export const GetSuperAdminRolePermissionsResponse = zod.array(GetSuperAdminRolePermissionsResponseItem)
+
+
+export const UpdateSuperAdminRolePermissionsParams = zod.object({
+  "role": zod.enum(['customer_support_admin', 'partner_operations_admin', 'finance_admin', 'content_admin', 'marketing_admin', 'corporate_admin', 'fraud_compliance_admin', 'technical_admin', 'super_admin'])
+})
+
+export const UpdateSuperAdminRolePermissionsBody = zod.object({
+  "actions": zod.union([zod.array(zod.enum(['view', 'create', 'edit', 'approve', 'reject', 'suspend', 'refund', 'export', 'delete', 'publish', 'manage_payments', 'manage_users', 'view_sensitive_data'])),zod.null()])
+})
+
+export const UpdateSuperAdminRolePermissionsResponse = zod.object({
+  "role": zod.enum(['customer_support_admin', 'partner_operations_admin', 'finance_admin', 'content_admin', 'marketing_admin', 'corporate_admin', 'fraud_compliance_admin', 'technical_admin', 'super_admin']),
+  "actions": zod.array(zod.enum(['view', 'create', 'edit', 'approve', 'reject', 'suspend', 'refund', 'export', 'delete', 'publish', 'manage_payments', 'manage_users', 'view_sensitive_data'])),
+  "isCustom": zod.boolean(),
+  "locked": zod.boolean(),
+  "updatedAt": zod.coerce.date().nullable()
+})
+
+
 export const getSuperAdminAuditLogsQueryLimitMax = 500;
 
 export const getSuperAdminAuditLogsQueryOffsetMin = 0;

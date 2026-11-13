@@ -20,6 +20,12 @@ export const operators = pgTable("operators", {
   partnerId: text("partner_id").references(() => partners.id),
   receiveUrgentAlerts: boolean("receive_urgent_alerts").notNull().default(false),
 });
+export const adminRolePermissions = pgTable("admin_role_permissions", {
+  role: text("role").primaryKey(),
+  actions: text("actions").array().notNull(),
+  updatedBy: text("updated_by").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 export const membershipPlans = pgTable("membership_plans", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),

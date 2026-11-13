@@ -3,11 +3,16 @@ import { useAuth } from "@clerk/react";
 import {
   getGetSuperAdminAccountsQueryKey,
   getGetSuperAdminAuditLogsQueryKey,
+  getGetSuperAdminRolePermissionsQueryKey,
   useGetSuperAdminAccounts,
   useGetSuperAdminAuditLogs,
+  useGetSuperAdminRolePermissions,
   useUpsertSuperAdminAccount,
+  useUpdateSuperAdminRolePermissions,
+  type AdminAction,
   type AdminAccount,
   type AdminRole,
+  type AdminRolePermission,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -26,6 +31,24 @@ const roleLabels: Record<AdminRole, string> = {
 
 const roles = Object.keys(roleLabels) as AdminRole[];
 
+const actionLabels: Record<AdminAction, string> = {
+  view: "View",
+  create: "Create",
+  edit: "Edit",
+  approve: "Approve",
+  reject: "Reject",
+  suspend: "Suspend",
+  refund: "Refund",
+  export: "Export",
+  delete: "Delete",
+  publish: "Publish",
+  manage_payments: "Manage payments",
+  manage_users: "Manage users",
+  view_sensitive_data: "View sensitive data",
+};
+
+const permissionActions = Object.keys(actionLabels) as AdminAction[];
+
 const workspaceLinks = [
   { href: "/partner-portal", title: "Partners and facilities", description: "Review partners, facilities, sessions and bookings." },
   { href: "/finance", title: "Finance and memberships", description: "Review memberships, invoices and gated finance actions." },
@@ -43,6 +66,12 @@ export default function SuperAdminPage() {
       queryKey: getGetSuperAdminAccountsQueryKey(),
     },
   });
+  const rolePermissionsQuery = useGetSuperAdminRolePermissions({
+    query: {
+      enabled: isLoaded && !!isSignedIn,
+      queryKey: getGetSuperAdminRolePermissionsQueryKey(),
+    },
+  });
   const [auditPage, setAuditPage] = useState(0);
   const auditParams = { limit: 100, offset: auditPage * 100 };
   const auditQuery = useGetSuperAdminAuditLogs(auditParams, {
@@ -52,9 +81,11 @@ export default function SuperAdminPage() {
     },
   });
   const saveAccount = useUpsertSuperAdminAccount();
+  const saveRolePermissions = useUpdateSuperAdminRolePermissions();
   const [email, setEmail] = useState("");
   const [newRole, setNewRole] = useState<AdminRole>("customer_support_admin");
   const [roleChoices, setRoleChoices] = useState<Record<string, AdminRole>>({});
+  const [permissionChoices, setPermissionChoices] = useState<Record<string, AdminAction[]>>({});
   const [feedback, setFeedback] = useState("");
   const [busyId, setBusyId] = useState("");
 
@@ -62,6 +93,7 @@ export default function SuperAdminPage() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: getGetSuperAdminAccountsQueryKey() }),
       queryClient.invalidateQueries({ queryKey: getGetSuperAdminAuditLogsQueryKey(auditParams) }),
+      queryClient.invalidateQueries({ queryKey: getGetSuperAdminRolePermissionsQueryKey() }),
     ]);
   };
 
@@ -97,6 +129,31 @@ export default function SuperAdminPage() {
     submitAccount({ email: email.trim(), role: newRole }, "active", "new-account", () => setEmail(""));
   };
 
+  const updatePermissions = (policy: AdminRolePermission, actions: AdminAction[] | null) => {
+    if (policy.locked) return;
+    setBusyId(`permissions-${policy.role}`);
+    setFeedback("");
+    saveRolePermissions.mutate(
+      { role: policy.role, data: { actions } },
+      {
+        onSuccess: async () => {
+          setFeedback(`Permissions for ${roleLabels[policy.role]} were updated and recorded in the audit log.`);
+          setPermissionChoices(previous => {
+            const next = { ...previous };
+            delete next[policy.role];
+            return next;
+          });
+          await refresh();
+          setBusyId("");
+        },
+        onError: () => {
+          setFeedback("Role permissions could not be updated. Check your access and try again.");
+          setBusyId("");
+        },
+      },
+    );
+  };
+
   if (!isLoaded || accountsQuery.isLoading) {
     return <main className="min-h-screen bg-[#f5f2e9] px-5 py-16"><p className="mx-auto max-w-5xl text-sm text-[#536b61]" role="status" data-testid="status-super-admin-loading">Loading Super Admin controls…</p></main>;
   }
@@ -111,6 +168,7 @@ export default function SuperAdminPage() {
 
   const accounts = accountsQuery.data ?? [];
   const auditLogs = auditQuery.data ?? [];
+  const rolePolicies = rolePermissionsQuery.data ?? [];
 
   return (
     <main className="min-h-screen bg-[#f5f2e9] px-4 py-8 text-[#173d35] sm:px-7 sm:py-12" data-testid="page-super-admin">
@@ -133,6 +191,55 @@ export default function SuperAdminPage() {
               <h3 className="font-bold">{item.title}</h3><p className="mt-2 text-sm leading-5 text-[#60756b]">{item.description}</p>
             </Link>)}
           </div>
+        </section>
+
+        <section className="mb-8 rounded-3xl border border-[#e1dccf] bg-[#fffdf7] p-5 sm:p-6" aria-labelledby="role-permissions-title" data-testid="section-role-permissions">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 id="role-permissions-title" className="font-display text-xl font-bold">Role permissions</h2>
+              <p className="mt-1 max-w-3xl text-sm leading-5 text-[#60756b]">Control which actions each administrator role can perform. A role must also have access to the relevant workspace. Super Admin permissions stay locked to protect platform access.</p>
+            </div>
+            <button type="button" onClick={() => void rolePermissionsQuery.refetch()} className="rounded-lg border border-[#d8d2c4] px-3 py-2 text-xs font-bold text-[#36564b]" data-testid="button-refresh-role-permissions">Refresh permissions</button>
+          </div>
+          {rolePermissionsQuery.isLoading
+            ? <p className="py-5 text-center text-sm text-[#748279]" role="status" data-testid="status-role-permissions-loading">Loading role permissions…</p>
+            : rolePermissionsQuery.isError
+              ? <p className="rounded-xl border border-[#e8c5ba] bg-[#fff5f1] p-4 text-sm text-[#9a4435]" role="alert" data-testid="error-role-permissions">Role permissions could not be loaded. Retry to see the current settings.</p>
+              : <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {rolePolicies.map(policy => {
+                  const selected = permissionChoices[policy.role] ?? policy.actions;
+                  const isChanged = selected.length !== policy.actions.length
+                    || selected.some(action => !policy.actions.includes(action));
+                  return <article key={policy.role} className="rounded-2xl border border-[#e5dfd1] bg-[#faf8f1] p-4" data-testid={`card-role-permissions-${policy.role}`}>
+                    <div className="mb-3 flex items-start justify-between gap-2">
+                      <div><h3 className="font-bold">{roleLabels[policy.role]}</h3><p className="mt-1 text-[11px] text-[#748279]">{policy.isCustom ? "Custom permissions" : "Default permissions"}</p></div>
+                      {policy.locked && <span className="rounded-full bg-[#e4f0e6] px-2.5 py-1 text-[10px] font-bold text-[#315e42]">Locked</span>}
+                    </div>
+                    <fieldset disabled={policy.locked || !!busyId} className="grid grid-cols-2 gap-x-3 gap-y-2">
+                      <legend className="sr-only">Actions for {roleLabels[policy.role]}</legend>
+                      {permissionActions.map(action => <label key={action} className="flex items-center gap-2 text-xs text-[#536b61]">
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(action)}
+                          onChange={event => setPermissionChoices(previous => {
+                            const current = previous[policy.role] ?? policy.actions;
+                            const next = event.target.checked
+                              ? [...current, action]
+                              : current.filter(item => item !== action);
+                            return { ...previous, [policy.role]: next };
+                          })}
+                          data-testid={`checkbox-permission-${policy.role}-${action}`}
+                        />
+                        {actionLabels[action]}
+                      </label>)}
+                    </fieldset>
+                    {!policy.locked && <div className="mt-4 flex flex-wrap gap-2">
+                      <button type="button" disabled={!isChanged || !!busyId} onClick={() => updatePermissions(policy, selected)} className="rounded-lg bg-[#174d43] px-3 py-2 text-xs font-bold text-[#fff9e9] disabled:cursor-not-allowed disabled:opacity-40" data-testid={`button-save-permissions-${policy.role}`}>{busyId === `permissions-${policy.role}` ? "Saving…" : "Save permissions"}</button>
+                      <button type="button" disabled={!policy.isCustom || !!busyId} onClick={() => updatePermissions(policy, null)} className="rounded-lg border border-[#d8d2c4] px-3 py-2 text-xs font-bold text-[#36564b] disabled:cursor-not-allowed disabled:opacity-40" data-testid={`button-reset-permissions-${policy.role}`}>Restore defaults</button>
+                    </div>}
+                  </article>;
+                })}
+              </div>}
         </section>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,.8fr)]">

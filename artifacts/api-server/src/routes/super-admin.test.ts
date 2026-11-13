@@ -4,8 +4,9 @@ import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
 import { eq, inArray } from "drizzle-orm";
 import express from "express";
-import { db, operationAudit, operators, pool } from "@workspace/db";
+import { db, adminRolePermissions, operationAudit, operators, pool } from "@workspace/db";
 import { createSuperAdminRouter } from "./super-admin";
+import { DEFAULT_ADMIN_ACTIONS } from "../lib/admin-roles";
 
 const prefix = `super-admin-${randomUUID()}`;
 const superAdminId = `${prefix}-root`;
@@ -15,6 +16,7 @@ const superAdminEmail = `${prefix}@example.com`;
 const targetEmail = `operator-${prefix}@example.com`;
 const partnerEmail = `partner-${prefix}@example.com`;
 let server: Server | null = null;
+let originalFinancePolicy: typeof adminRolePermissions.$inferSelect | null = null;
 
 const identities = new Map([
   [superAdminEmail, { userId: superAdminId, email: superAdminEmail }],
@@ -59,12 +61,27 @@ async function call(path: string, method = "GET", userId?: string, body?: unknow
 
 after(async () => {
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
+  if (originalFinancePolicy) {
+    await db.insert(adminRolePermissions).values(originalFinancePolicy).onConflictDoUpdate({
+      target: adminRolePermissions.role,
+      set: {
+        actions: originalFinancePolicy.actions,
+        updatedBy: originalFinancePolicy.updatedBy,
+        updatedAt: originalFinancePolicy.updatedAt,
+      },
+    });
+  } else {
+    await db.delete(adminRolePermissions).where(eq(adminRolePermissions.role, "finance_admin"));
+  }
   await db.delete(operators).where(inArray(operators.userId, [superAdminId, targetId, partnerId]));
   // Audit history is append-only; randomized test events are intentionally retained.
   await pool.end();
 });
 
 test("Super Admin role management is protected, auditable, and preserves other staff roles", async () => {
+  const [originalFinancePolicyRow] = await db.select().from(adminRolePermissions)
+    .where(eq(adminRolePermissions.role, "finance_admin")).limit(1);
+  originalFinancePolicy = originalFinancePolicyRow ?? null;
   await db.insert(operators).values([
     { userId: superAdminId, role: "super_admin", partnerId: null },
     { userId: partnerId, role: "partner", partnerId: null },
@@ -79,6 +96,29 @@ test("Super Admin role management is protected, auditable, and preserves other s
   assert.equal(initial.status, 200);
   assert.ok(Array.isArray(initial.data));
   assert.equal((initial.data as Array<{ email: string }>).some(row => row.email === superAdminEmail), true);
+
+  const rolePolicies = await call("/super-admin/role-permissions", "GET", superAdminId);
+  assert.equal(rolePolicies.status, 200);
+  const financePolicy = (rolePolicies.data as Array<{ role: string; actions: string[]; locked: boolean }>)
+    .find(row => row.role === "finance_admin");
+  assert.deepEqual(financePolicy?.actions, originalFinancePolicy?.actions ?? DEFAULT_ADMIN_ACTIONS.finance_admin);
+  assert.equal((rolePolicies.data as Array<{ role: string; locked: boolean }>)
+    .find(row => row.role === "super_admin")?.locked, true);
+
+  const updatedPolicy = await call("/super-admin/role-permissions/finance_admin", "PUT", superAdminId, {
+    actions: ["view", "refund", "view_sensitive_data"],
+  });
+  assert.equal(updatedPolicy.status, 200);
+  assert.deepEqual((updatedPolicy.data as { actions: string[] }).actions,
+    ["view", "refund", "view_sensitive_data"]);
+  assert.equal((await call("/super-admin/role-permissions/super_admin", "PUT", superAdminId, {
+    actions: [],
+  })).status, 409);
+  const resetPolicy = await call("/super-admin/role-permissions/finance_admin", "PUT", superAdminId, {
+    actions: null,
+  });
+  assert.equal(resetPolicy.status, 200);
+  assert.equal((resetPolicy.data as { isCustom: boolean }).isCustom, false);
 
   const assigned = await call("/super-admin/admin-accounts", "PUT", superAdminId, {
     email: targetEmail,

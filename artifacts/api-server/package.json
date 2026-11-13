@@ -14,7 +14,7 @@
     "test:facilities": "tsx --test src/lib/facility-hours.test.ts",
     "test:support": "tsx --test src/lib/support.test.ts",
     "test:finance": "tsx --test src/routes/finance.test.ts",
-    "test:super-admin": "tsx --test src/lib/admin-roles.test.ts src/routes/super-admin.test.ts",
+    "test:super-admin": "tsx --test src/lib/admin-roles.test.ts src/middlewares/admin-rbac.test.ts src/routes/super-admin.test.ts",
     "test:waitlist": "tsx --test src/lib/waitlist-schema-migration.test.ts && tsx --test src/lib/waitlist.test.ts && tsx --test src/lib/reservations.test.ts",
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
