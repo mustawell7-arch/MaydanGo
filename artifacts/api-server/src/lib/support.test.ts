@@ -7,6 +7,7 @@ import express from "express";
 import {
   attendance, attendanceEvents, db, pool, memberNotificationPreferences, memberships, offerings,
   operationAudit, operators, partners, pushDeliveries, pushDevices, reservations, supportTickets,
+  supportResponseTemplates,
 } from "@workspace/db";
 import memberRouter from "../routes/member";
 import staffSupportRouter from "../routes/support";
@@ -25,6 +26,7 @@ const newAgentId = `${prefix}-new-agent`;
 const removableAgentId = `${prefix}-removable-agent`;
 const livePartnerId = `${prefix}-live-partner`;
 const ticketIds: string[] = [];
+const responseTemplateIds: string[] = [];
 const offeringIds: string[] = [];
 const testReservationIds: string[] = [];
 const testAttendanceIds: string[] = [];
@@ -56,6 +58,9 @@ after(async () => {
   restoreFetch?.();
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
   if (ticketIds.length) await db.delete(supportTickets).where(inArray(supportTickets.id, ticketIds));
+  if (responseTemplateIds.length) {
+    await db.delete(supportResponseTemplates).where(inArray(supportResponseTemplates.id, responseTemplateIds));
+  }
   const notificationUsers = [alice, adminId, supportId, partnerId];
   await db.delete(pushDeliveries).where(inArray(pushDeliveries.userId, notificationUsers));
   await db.delete(pushDevices).where(inArray(pushDevices.userId, notificationUsers));
@@ -98,6 +103,47 @@ test("support conversations are private, triaged, audited, and replyable", async
   assert.equal((await call(`/member/support/tickets/${created.data.id}`, bob)).status, 404);
   assert.equal((await call(`/member/support/tickets/${created.data.id}`, undefined)).status, 401);
   assert.equal((await call("/support/staff/tickets", partnerId)).status, 403);
+  const templatesPath = "/support/staff/response-templates";
+  const translations = {
+    en: { title: "Booking update", body: "We are checking your booking and will update you shortly." },
+    ar: { title: "تحديث الحجز", body: "نتحقق من حجزك وسنوافيك بالتحديث قريباً." },
+    ku: { title: "نوێکاریی حجز", body: "ئێستا حجزەکەت دەپشکنین و بەزوویی ئاگادارت دەکەینەوە." },
+  };
+  assert.equal((await call(templatesPath, alice)).status, 403);
+  assert.equal((await call(templatesPath, supportId, "POST", { translations })).status, 403);
+  assert.equal((await call(templatesPath, adminId, "POST", { translations: {
+    ...translations, ku: { title: "", body: "" },
+  } })).status, 400);
+  const createdTemplate = await call(templatesPath, adminId, "POST", { translations });
+  assert.equal(createdTemplate.status, 201);
+  responseTemplateIds.push(createdTemplate.data.id);
+  assert.equal(createdTemplate.data.active, true);
+  assert.equal(createdTemplate.data.translations.ku.body, translations.ku.body);
+  assert.equal((await call(templatesPath, supportId)).data.some(
+    (template: { id: string }) => template.id === createdTemplate.data.id,
+  ), true);
+  const changedTranslations = {
+    ...translations,
+    en: { ...translations.en, body: "We are reviewing your booking details and will reply shortly." },
+  };
+  const updatedTemplate = await call(`${templatesPath}/${createdTemplate.data.id}`, adminId, "PATCH", {
+    translations: changedTranslations, active: true,
+  });
+  assert.equal(updatedTemplate.status, 200);
+  assert.equal(updatedTemplate.data.translations.en.body, changedTranslations.en.body);
+  assert.equal((await call(`${templatesPath}/${createdTemplate.data.id}`, supportId, "PATCH", {
+    translations, active: true,
+  })).status, 403);
+  const archivedTemplate = await call(`${templatesPath}/${createdTemplate.data.id}`, adminId, "DELETE");
+  assert.equal(archivedTemplate.status, 200);
+  assert.equal(archivedTemplate.data.active, false);
+  assert.equal((await call(templatesPath, supportId)).data.find(
+    (template: { id: string }) => template.id === createdTemplate.data.id,
+  ).active, false);
+  const reactivatedTemplate = await call(`${templatesPath}/${createdTemplate.data.id}`, adminId, "PATCH", {
+    translations, active: true,
+  });
+  assert.equal(reactivatedTemplate.data.active, true);
 
   const linkOfferingId = `${prefix}-support-link-offering`;
   const bookingId = `${prefix}-support-link-booking`;

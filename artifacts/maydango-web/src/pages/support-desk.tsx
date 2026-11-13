@@ -30,6 +30,7 @@ import {
 } from '@workspace/api-client-react';
 import { downloadSupportStaffFile, supportAttachmentType, uploadSupportStaffAttachments } from '@/lib/support-attachments';
 import { SupportCaseEscalations } from '@/components/support-case-escalations';
+import { SupportResponseTemplateManager, SupportResponseTemplatePicker } from '@/components/support-response-templates';
 
 type Lang = 'en' | 'ar' | 'ku';
 type StatusFilter = 'all' | SupportTicketStatus;
@@ -186,6 +187,7 @@ export function SupportDeskPage() {
   const tickets = queue.data ?? [];
   const agents = agentsQuery.data ?? [];
   const authorized = !!userId && agents.some(agent => agent.userId === userId && (agent.role === 'admin' || agent.role === 'support'));
+  const isAdmin = !!userId && agents.some(agent => agent.userId === userId && agent.role === 'admin');
   const active = detail.data;
   const hasActiveEscalation = tickets.some(ticket => ticket.id === selectedId && ticket.hasActiveEscalation);
   const relatedRecords = relatedRecordsQuery.data?.records ?? [];
@@ -376,6 +378,7 @@ export function SupportDeskPage() {
       <div className="mx-auto max-w-[1600px] px-4 pb-5 sm:px-7 lg:px-10"><p className="text-sm text-[#687a71]">{t.subtitle}</p></div>
     </header>
 
+    {isAdmin && <SupportResponseTemplateManager language={language}/>}
     <div className="mx-auto grid max-w-[1600px] gap-5 px-3 py-5 sm:px-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10 lg:py-7">
       <aside className="overflow-hidden rounded-3xl border border-[#ded8c9] bg-[#fbf9f2] shadow-[0_12px_36px_rgba(48,63,53,.04)]" aria-label={t.queue}>
         <div className="border-b border-[#e4dfd2] p-5">
@@ -442,6 +445,14 @@ export function SupportDeskPage() {
                 </ol>
                 <Form {...replyForm}><form onSubmit={replyForm.handleSubmit(sendReply)} className="border-t border-[#e4dfd2] bg-[#fbf9f2] p-4 sm:p-5">
                   <div className="mb-2 flex items-end justify-between gap-3"><div><h3 className="text-xs font-extrabold text-[#36564b]">{t.reply}</h3><p className="mt-1 text-[10px] text-[#75847c]">{t.replyHint}</p></div><span className="text-[10px] tabular-nums text-[#8a958d]">{replyText.length}/5000</span></div>
+                  <SupportResponseTemplatePicker language={ticketLanguage(active.language)} disabled={attachmentBusy || !!pendingAttachmentMessageId}
+                    onInsert={body => {
+                      const draft = replyForm.getValues('message').trim();
+                      const next = draft ? `${draft}\n\n${body}` : body;
+                      if (next.length > 5000) return false;
+                      replyForm.setValue('message', next, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+                      return true;
+                    }}/>
                   <FormField control={replyForm.control} name="message" render={({ field: replyField }) => <FormItem>
                     <FormLabel className="sr-only">{t.reply}</FormLabel>
                      <FormControl><Textarea {...replyField} data-testid="textarea-support-reply" disabled={attachmentBusy || !!pendingAttachmentMessageId} maxLength={5000} rows={3} placeholder={t.replyPlaceholder} className={`${field} w-full resize-y leading-6 placeholder:text-[#9a9f96]`} /></FormControl>

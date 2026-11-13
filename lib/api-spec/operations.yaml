@@ -270,6 +270,51 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SupportStaffTicketDetail" }
+  /support/staff/response-templates:
+    get:
+      operationId: getSupportStaffResponseTemplates
+      responses:
+        "200":
+          description: Staff-visible multilingual support response templates
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/SupportResponseTemplate" } }
+    post:
+      operationId: createSupportStaffResponseTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportResponseTemplateInput" }
+      responses:
+        "201":
+          description: Admin-created response template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportResponseTemplate" }
+  /support/staff/response-templates/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: updateSupportStaffResponseTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupportResponseTemplateUpdateInput" }
+      responses:
+        "200":
+          description: Updated response template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportResponseTemplate" }
+    delete:
+      operationId: archiveSupportStaffResponseTemplate
+      responses:
+        "200":
+          description: Template archived for future replies
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportResponseTemplate" }
   /support/staff/tickets/{id}/notes:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     post:
@@ -1651,6 +1696,43 @@ components:
       properties:
         message: { type: string, minLength: 1, maxLength: 5000 }
         language: { $ref: "#/components/schemas/SupportedLanguage" }
+    SupportResponseTranslation:
+      type: object
+      additionalProperties: false
+      required: [title, body]
+      properties:
+        title: { type: string, minLength: 2, maxLength: 100 }
+        body: { type: string, minLength: 1, maxLength: 5000 }
+    SupportResponseTranslations:
+      type: object
+      additionalProperties: false
+      required: [en, ar, ku]
+      properties:
+        en: { $ref: "#/components/schemas/SupportResponseTranslation" }
+        ar: { $ref: "#/components/schemas/SupportResponseTranslation" }
+        ku: { $ref: "#/components/schemas/SupportResponseTranslation" }
+    SupportResponseTemplateInput:
+      type: object
+      additionalProperties: false
+      required: [translations]
+      properties:
+        translations: { $ref: "#/components/schemas/SupportResponseTranslations" }
+    SupportResponseTemplateUpdateInput:
+      type: object
+      additionalProperties: false
+      required: [translations]
+      properties:
+        translations: { $ref: "#/components/schemas/SupportResponseTranslations" }
+        active: { type: boolean }
+    SupportResponseTemplate:
+      type: object
+      required: [id, translations, active, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        translations: { $ref: "#/components/schemas/SupportResponseTranslations" }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
     SupportTicketSummary:
       type: object
       required: [id, subject, category, urgent, status, language, createdAt, updatedAt, lastMessageAt]

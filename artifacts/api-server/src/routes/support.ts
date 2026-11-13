@@ -25,6 +25,7 @@ import {
 } from "@workspace/db";
 import { BookingError } from "../lib/reservations";
 import caseEscalationRouter from "./support-case-escalations";
+import responseTemplateRouter from "./support-response-templates";
 import {
   sendMemberNotification,
   URGENT_UNASSIGNED_ESCALATION_DELAY_MS,
@@ -958,6 +959,7 @@ function handleError(error: unknown, _req: Request, res: Response, next: NextFun
   next(error);
 }
 staffRouter.use(caseEscalationRouter);
+staffRouter.use("/response-templates", responseTemplateRouter);
 memberSupportRouter.use(handleError);
 staffRouter.use(handleError);
 

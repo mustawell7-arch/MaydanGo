@@ -714,6 +714,42 @@ export interface SupportReplyInput {
   language: SupportedLanguage;
 }
 
+export interface SupportResponseTranslation {
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
+  title: string;
+  /**
+     * @minLength 1
+     * @maxLength 5000
+     */
+  body: string;
+}
+
+export interface SupportResponseTranslations {
+  en: SupportResponseTranslation;
+  ar: SupportResponseTranslation;
+  ku: SupportResponseTranslation;
+}
+
+export interface SupportResponseTemplateInput {
+  translations: SupportResponseTranslations;
+}
+
+export interface SupportResponseTemplateUpdateInput {
+  translations: SupportResponseTranslations;
+  active?: boolean;
+}
+
+export interface SupportResponseTemplate {
+  id: string;
+  translations: SupportResponseTranslations;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SupportTicketSummary {
   id: string;
   subject: string;

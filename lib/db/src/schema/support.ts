@@ -96,6 +96,22 @@ export const supportCaseEscalations = pgTable("support_case_escalations", {
   index("support_case_escalation_target_idx").on(t.targetUserId, t.resolvedAt),
 ]);
 
+export const supportResponseTemplates = pgTable("support_response_templates", {
+  id: text("id").primaryKey(),
+  translations: jsonb("translations").notNull().$type<{
+    en: { title: string; body: string };
+    ar: { title: string; body: string };
+    ku: { title: string; body: string };
+  }>(),
+  active: boolean("active").notNull().default(true),
+  createdBy: text("created_by").notNull(),
+  updatedBy: text("updated_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  index("support_response_templates_active_updated_idx").on(t.active, t.updatedAt),
+]);
+
 export const memberNotificationPreferences = pgTable("member_notification_preferences", {
   userId: text("user_id").primaryKey(),
   pushEnabled: boolean("push_enabled").notNull().default(false),

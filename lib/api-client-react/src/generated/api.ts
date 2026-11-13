@@ -169,6 +169,9 @@ import type {
   SupportDeviceChangeReview,
   SupportInternalNoteInput,
   SupportReplyInput,
+  SupportResponseTemplate,
+  SupportResponseTemplateInput,
+  SupportResponseTemplateUpdateInput,
   SupportStaffAccessAuditEvent,
   SupportStaffRelatedRecords,
   SupportStaffTicketDetail,
@@ -10081,6 +10084,334 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getReplySupportStaffTicketMutationOptions(options), queryClient);
+    }
+
+export const getGetSupportStaffResponseTemplatesUrl = () => {
+
+
+
+
+  return `/api/support/staff/response-templates`
+}
+
+export const getSupportStaffResponseTemplates = async ( options?: Parameters<typeof customFetch>[1]): Promise<SupportResponseTemplate[]> => {
+
+  return customFetch<SupportResponseTemplate[]>(getGetSupportStaffResponseTemplatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportStaffResponseTemplatesQueryKey = () => {
+    return [
+    `/api/support/staff/response-templates`
+    ] as const;
+    }
+
+
+export const getGetSupportStaffResponseTemplatesQueryOptions = <TData = Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportStaffResponseTemplatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>> = ({ signal }) => getSupportStaffResponseTemplates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSupportStaffResponseTemplatesQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>>
+export type GetSupportStaffResponseTemplatesQueryError = ErrorType<unknown>
+
+
+export function useGetSupportStaffResponseTemplates<TData = Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportStaffResponseTemplates<TData = Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>,
+          TError,
+          Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupportStaffResponseTemplates<TData = Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSupportStaffResponseTemplates<TData = Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupportStaffResponseTemplates>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSupportStaffResponseTemplatesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSupportStaffResponseTemplateUrl = () => {
+
+
+
+
+  return `/api/support/staff/response-templates`
+}
+
+export const createSupportStaffResponseTemplate = async (supportResponseTemplateInput: SupportResponseTemplateInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportResponseTemplate> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportResponseTemplate>(getCreateSupportStaffResponseTemplateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportResponseTemplateInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSupportStaffResponseTemplateMutationKey = () => ['createSupportStaffResponseTemplate'] as const;
+
+export const getCreateSupportStaffResponseTemplateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportStaffResponseTemplate>>, TError,CreateSupportStaffResponseTemplateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSupportStaffResponseTemplate>>, TError,CreateSupportStaffResponseTemplateMutationVariables, TContext> => {
+
+const mutationKey = getCreateSupportStaffResponseTemplateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSupportStaffResponseTemplate>>, CreateSupportStaffResponseTemplateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSupportStaffResponseTemplate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSupportStaffResponseTemplateMutationResult = NonNullable<Awaited<ReturnType<typeof createSupportStaffResponseTemplate>>>
+    export type CreateSupportStaffResponseTemplateMutationBody = BodyType<SupportResponseTemplateInput>
+    export type CreateSupportStaffResponseTemplateMutationError = ErrorType<unknown>
+    export type CreateSupportStaffResponseTemplateMutationVariables = {data: BodyType<SupportResponseTemplateInput>}
+
+    export const useCreateSupportStaffResponseTemplate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportStaffResponseTemplate>>, TError,CreateSupportStaffResponseTemplateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createSupportStaffResponseTemplate>>,
+        TError,
+        CreateSupportStaffResponseTemplateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateSupportStaffResponseTemplateMutationOptions(options), queryClient);
+    }
+
+export const getUpdateSupportStaffResponseTemplateUrl = (id: string,) => {
+
+
+
+
+  return `/api/support/staff/response-templates/${id}`
+}
+
+export const updateSupportStaffResponseTemplate = async (id: string,
+    supportResponseTemplateUpdateInput: SupportResponseTemplateUpdateInput, options?: Parameters<typeof customFetch>[1]): Promise<SupportResponseTemplate> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SupportResponseTemplate>(getUpdateSupportStaffResponseTemplateUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(supportResponseTemplateUpdateInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateSupportStaffResponseTemplateMutationKey = () => ['updateSupportStaffResponseTemplate'] as const;
+
+export const getUpdateSupportStaffResponseTemplateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSupportStaffResponseTemplate>>, TError,UpdateSupportStaffResponseTemplateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSupportStaffResponseTemplate>>, TError,UpdateSupportStaffResponseTemplateMutationVariables, TContext> => {
+
+const mutationKey = getUpdateSupportStaffResponseTemplateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSupportStaffResponseTemplate>>, UpdateSupportStaffResponseTemplateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSupportStaffResponseTemplate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSupportStaffResponseTemplateMutationResult = NonNullable<Awaited<ReturnType<typeof updateSupportStaffResponseTemplate>>>
+    export type UpdateSupportStaffResponseTemplateMutationBody = BodyType<SupportResponseTemplateUpdateInput>
+    export type UpdateSupportStaffResponseTemplateMutationError = ErrorType<unknown>
+    export type UpdateSupportStaffResponseTemplateMutationVariables = {id: string;data: BodyType<SupportResponseTemplateUpdateInput>}
+
+    export const useUpdateSupportStaffResponseTemplate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSupportStaffResponseTemplate>>, TError,UpdateSupportStaffResponseTemplateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateSupportStaffResponseTemplate>>,
+        TError,
+        UpdateSupportStaffResponseTemplateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateSupportStaffResponseTemplateMutationOptions(options), queryClient);
+    }
+
+export const getArchiveSupportStaffResponseTemplateUrl = (id: string,) => {
+
+
+
+
+  return `/api/support/staff/response-templates/${id}`
+}
+
+export const archiveSupportStaffResponseTemplate = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<SupportResponseTemplate> => {
+
+  return customFetch<SupportResponseTemplate>(getArchiveSupportStaffResponseTemplateUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getArchiveSupportStaffResponseTemplateMutationKey = () => ['archiveSupportStaffResponseTemplate'] as const;
+
+export const getArchiveSupportStaffResponseTemplateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveSupportStaffResponseTemplate>>, TError,ArchiveSupportStaffResponseTemplateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof archiveSupportStaffResponseTemplate>>, TError,ArchiveSupportStaffResponseTemplateMutationVariables, TContext> => {
+
+const mutationKey = getArchiveSupportStaffResponseTemplateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof archiveSupportStaffResponseTemplate>>, ArchiveSupportStaffResponseTemplateMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  archiveSupportStaffResponseTemplate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ArchiveSupportStaffResponseTemplateMutationResult = NonNullable<Awaited<ReturnType<typeof archiveSupportStaffResponseTemplate>>>
+
+    export type ArchiveSupportStaffResponseTemplateMutationError = ErrorType<unknown>
+    export type ArchiveSupportStaffResponseTemplateMutationVariables = {id: string}
+
+    export const useArchiveSupportStaffResponseTemplate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveSupportStaffResponseTemplate>>, TError,ArchiveSupportStaffResponseTemplateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof archiveSupportStaffResponseTemplate>>,
+        TError,
+        ArchiveSupportStaffResponseTemplateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getArchiveSupportStaffResponseTemplateMutationOptions(options), queryClient);
     }
 
 export const getAddSupportStaffInternalNoteUrl = (id: string,) => {

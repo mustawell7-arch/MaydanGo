@@ -5957,6 +5957,240 @@ export const ReplySupportStaffTicketResponse = zod.object({
 }))
 
 
+export const getSupportStaffResponseTemplatesResponseTranslationsEnTitleMin = 2;
+export const getSupportStaffResponseTemplatesResponseTranslationsEnTitleMax = 100;
+
+export const getSupportStaffResponseTemplatesResponseTranslationsEnBodyMax = 5000;
+
+export const getSupportStaffResponseTemplatesResponseTranslationsArTitleMin = 2;
+export const getSupportStaffResponseTemplatesResponseTranslationsArTitleMax = 100;
+
+export const getSupportStaffResponseTemplatesResponseTranslationsArBodyMax = 5000;
+
+export const getSupportStaffResponseTemplatesResponseTranslationsKuTitleMin = 2;
+export const getSupportStaffResponseTemplatesResponseTranslationsKuTitleMax = 100;
+
+export const getSupportStaffResponseTemplatesResponseTranslationsKuBodyMax = 5000;
+
+
+
+export const GetSupportStaffResponseTemplatesResponseItem = zod.object({
+  "id": zod.string(),
+  "translations": zod.object({
+  "en": zod.object({
+  "title": zod.string().min(getSupportStaffResponseTemplatesResponseTranslationsEnTitleMin).max(getSupportStaffResponseTemplatesResponseTranslationsEnTitleMax),
+  "body": zod.string().min(1).max(getSupportStaffResponseTemplatesResponseTranslationsEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().min(getSupportStaffResponseTemplatesResponseTranslationsArTitleMin).max(getSupportStaffResponseTemplatesResponseTranslationsArTitleMax),
+  "body": zod.string().min(1).max(getSupportStaffResponseTemplatesResponseTranslationsArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().min(getSupportStaffResponseTemplatesResponseTranslationsKuTitleMin).max(getSupportStaffResponseTemplatesResponseTranslationsKuTitleMax),
+  "body": zod.string().min(1).max(getSupportStaffResponseTemplatesResponseTranslationsKuBodyMax)
+})
+}),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const GetSupportStaffResponseTemplatesResponse = zod.array(GetSupportStaffResponseTemplatesResponseItem)
+
+
+export const createSupportStaffResponseTemplateBodyTranslationsEnTitleMin = 2;
+export const createSupportStaffResponseTemplateBodyTranslationsEnTitleMax = 100;
+
+export const createSupportStaffResponseTemplateBodyTranslationsEnBodyMax = 5000;
+
+export const createSupportStaffResponseTemplateBodyTranslationsArTitleMin = 2;
+export const createSupportStaffResponseTemplateBodyTranslationsArTitleMax = 100;
+
+export const createSupportStaffResponseTemplateBodyTranslationsArBodyMax = 5000;
+
+export const createSupportStaffResponseTemplateBodyTranslationsKuTitleMin = 2;
+export const createSupportStaffResponseTemplateBodyTranslationsKuTitleMax = 100;
+
+export const createSupportStaffResponseTemplateBodyTranslationsKuBodyMax = 5000;
+
+
+
+export const CreateSupportStaffResponseTemplateBody = zod.object({
+  "translations": zod.object({
+  "en": zod.object({
+  "title": zod.string().min(createSupportStaffResponseTemplateBodyTranslationsEnTitleMin).max(createSupportStaffResponseTemplateBodyTranslationsEnTitleMax),
+  "body": zod.string().min(1).max(createSupportStaffResponseTemplateBodyTranslationsEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().min(createSupportStaffResponseTemplateBodyTranslationsArTitleMin).max(createSupportStaffResponseTemplateBodyTranslationsArTitleMax),
+  "body": zod.string().min(1).max(createSupportStaffResponseTemplateBodyTranslationsArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().min(createSupportStaffResponseTemplateBodyTranslationsKuTitleMin).max(createSupportStaffResponseTemplateBodyTranslationsKuTitleMax),
+  "body": zod.string().min(1).max(createSupportStaffResponseTemplateBodyTranslationsKuBodyMax)
+})
+})
+})
+
+export const createSupportStaffResponseTemplateResponseTranslationsEnTitleMin = 2;
+export const createSupportStaffResponseTemplateResponseTranslationsEnTitleMax = 100;
+
+export const createSupportStaffResponseTemplateResponseTranslationsEnBodyMax = 5000;
+
+export const createSupportStaffResponseTemplateResponseTranslationsArTitleMin = 2;
+export const createSupportStaffResponseTemplateResponseTranslationsArTitleMax = 100;
+
+export const createSupportStaffResponseTemplateResponseTranslationsArBodyMax = 5000;
+
+export const createSupportStaffResponseTemplateResponseTranslationsKuTitleMin = 2;
+export const createSupportStaffResponseTemplateResponseTranslationsKuTitleMax = 100;
+
+export const createSupportStaffResponseTemplateResponseTranslationsKuBodyMax = 5000;
+
+
+
+export const CreateSupportStaffResponseTemplateResponse = zod.object({
+  "id": zod.string(),
+  "translations": zod.object({
+  "en": zod.object({
+  "title": zod.string().min(createSupportStaffResponseTemplateResponseTranslationsEnTitleMin).max(createSupportStaffResponseTemplateResponseTranslationsEnTitleMax),
+  "body": zod.string().min(1).max(createSupportStaffResponseTemplateResponseTranslationsEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().min(createSupportStaffResponseTemplateResponseTranslationsArTitleMin).max(createSupportStaffResponseTemplateResponseTranslationsArTitleMax),
+  "body": zod.string().min(1).max(createSupportStaffResponseTemplateResponseTranslationsArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().min(createSupportStaffResponseTemplateResponseTranslationsKuTitleMin).max(createSupportStaffResponseTemplateResponseTranslationsKuTitleMax),
+  "body": zod.string().min(1).max(createSupportStaffResponseTemplateResponseTranslationsKuBodyMax)
+})
+}),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const UpdateSupportStaffResponseTemplateParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updateSupportStaffResponseTemplateBodyTranslationsEnTitleMin = 2;
+export const updateSupportStaffResponseTemplateBodyTranslationsEnTitleMax = 100;
+
+export const updateSupportStaffResponseTemplateBodyTranslationsEnBodyMax = 5000;
+
+export const updateSupportStaffResponseTemplateBodyTranslationsArTitleMin = 2;
+export const updateSupportStaffResponseTemplateBodyTranslationsArTitleMax = 100;
+
+export const updateSupportStaffResponseTemplateBodyTranslationsArBodyMax = 5000;
+
+export const updateSupportStaffResponseTemplateBodyTranslationsKuTitleMin = 2;
+export const updateSupportStaffResponseTemplateBodyTranslationsKuTitleMax = 100;
+
+export const updateSupportStaffResponseTemplateBodyTranslationsKuBodyMax = 5000;
+
+
+
+export const UpdateSupportStaffResponseTemplateBody = zod.object({
+  "translations": zod.object({
+  "en": zod.object({
+  "title": zod.string().min(updateSupportStaffResponseTemplateBodyTranslationsEnTitleMin).max(updateSupportStaffResponseTemplateBodyTranslationsEnTitleMax),
+  "body": zod.string().min(1).max(updateSupportStaffResponseTemplateBodyTranslationsEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().min(updateSupportStaffResponseTemplateBodyTranslationsArTitleMin).max(updateSupportStaffResponseTemplateBodyTranslationsArTitleMax),
+  "body": zod.string().min(1).max(updateSupportStaffResponseTemplateBodyTranslationsArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().min(updateSupportStaffResponseTemplateBodyTranslationsKuTitleMin).max(updateSupportStaffResponseTemplateBodyTranslationsKuTitleMax),
+  "body": zod.string().min(1).max(updateSupportStaffResponseTemplateBodyTranslationsKuBodyMax)
+})
+}),
+  "active": zod.boolean().optional()
+})
+
+export const updateSupportStaffResponseTemplateResponseTranslationsEnTitleMin = 2;
+export const updateSupportStaffResponseTemplateResponseTranslationsEnTitleMax = 100;
+
+export const updateSupportStaffResponseTemplateResponseTranslationsEnBodyMax = 5000;
+
+export const updateSupportStaffResponseTemplateResponseTranslationsArTitleMin = 2;
+export const updateSupportStaffResponseTemplateResponseTranslationsArTitleMax = 100;
+
+export const updateSupportStaffResponseTemplateResponseTranslationsArBodyMax = 5000;
+
+export const updateSupportStaffResponseTemplateResponseTranslationsKuTitleMin = 2;
+export const updateSupportStaffResponseTemplateResponseTranslationsKuTitleMax = 100;
+
+export const updateSupportStaffResponseTemplateResponseTranslationsKuBodyMax = 5000;
+
+
+
+export const UpdateSupportStaffResponseTemplateResponse = zod.object({
+  "id": zod.string(),
+  "translations": zod.object({
+  "en": zod.object({
+  "title": zod.string().min(updateSupportStaffResponseTemplateResponseTranslationsEnTitleMin).max(updateSupportStaffResponseTemplateResponseTranslationsEnTitleMax),
+  "body": zod.string().min(1).max(updateSupportStaffResponseTemplateResponseTranslationsEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().min(updateSupportStaffResponseTemplateResponseTranslationsArTitleMin).max(updateSupportStaffResponseTemplateResponseTranslationsArTitleMax),
+  "body": zod.string().min(1).max(updateSupportStaffResponseTemplateResponseTranslationsArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().min(updateSupportStaffResponseTemplateResponseTranslationsKuTitleMin).max(updateSupportStaffResponseTemplateResponseTranslationsKuTitleMax),
+  "body": zod.string().min(1).max(updateSupportStaffResponseTemplateResponseTranslationsKuBodyMax)
+})
+}),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const ArchiveSupportStaffResponseTemplateParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const archiveSupportStaffResponseTemplateResponseTranslationsEnTitleMin = 2;
+export const archiveSupportStaffResponseTemplateResponseTranslationsEnTitleMax = 100;
+
+export const archiveSupportStaffResponseTemplateResponseTranslationsEnBodyMax = 5000;
+
+export const archiveSupportStaffResponseTemplateResponseTranslationsArTitleMin = 2;
+export const archiveSupportStaffResponseTemplateResponseTranslationsArTitleMax = 100;
+
+export const archiveSupportStaffResponseTemplateResponseTranslationsArBodyMax = 5000;
+
+export const archiveSupportStaffResponseTemplateResponseTranslationsKuTitleMin = 2;
+export const archiveSupportStaffResponseTemplateResponseTranslationsKuTitleMax = 100;
+
+export const archiveSupportStaffResponseTemplateResponseTranslationsKuBodyMax = 5000;
+
+
+
+export const ArchiveSupportStaffResponseTemplateResponse = zod.object({
+  "id": zod.string(),
+  "translations": zod.object({
+  "en": zod.object({
+  "title": zod.string().min(archiveSupportStaffResponseTemplateResponseTranslationsEnTitleMin).max(archiveSupportStaffResponseTemplateResponseTranslationsEnTitleMax),
+  "body": zod.string().min(1).max(archiveSupportStaffResponseTemplateResponseTranslationsEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().min(archiveSupportStaffResponseTemplateResponseTranslationsArTitleMin).max(archiveSupportStaffResponseTemplateResponseTranslationsArTitleMax),
+  "body": zod.string().min(1).max(archiveSupportStaffResponseTemplateResponseTranslationsArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().min(archiveSupportStaffResponseTemplateResponseTranslationsKuTitleMin).max(archiveSupportStaffResponseTemplateResponseTranslationsKuTitleMax),
+  "body": zod.string().min(1).max(archiveSupportStaffResponseTemplateResponseTranslationsKuBodyMax)
+})
+}),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
 export const AddSupportStaffInternalNoteParams = zod.object({
   "id": zod.coerce.string()
 })
