@@ -36,6 +36,14 @@ import {
   DeviceSecurityError,
   listPendingMemberDeviceChanges,
 } from "../lib/member-device-security";
+import {
+  getPrivacyExportReadyMessage,
+  getPrivacyRequestKind,
+  parsePrivacyExportExpiry,
+  privacyRequestSubjects,
+  PRIVACY_EXPORT_WINDOW_MS,
+  type PrivacyRequestLanguage,
+} from "../lib/privacy-requests";
 
 export const memberSupportRouter = Router();
 const staffRouter = Router();
@@ -99,11 +107,17 @@ async function staffTicketDetail(id: string) {
     db.select().from(supportMessages).where(eq(supportMessages.ticketId, id)).orderBy(asc(supportMessages.createdAt)),
     db.select().from(supportTicketEvents).where(eq(supportTicketEvents.ticketId, id)).orderBy(asc(supportTicketEvents.createdAt)),
   ]);
+  const latestPrivacyExport = [...events].reverse().find(event => event.action === "privacy_export_ready");
   return {
     id: ticket.id, subject: ticket.subject, category: ticket.category, urgent: ticket.urgent,
     urgentAlertStatus: ticket.urgentAlertStatus, urgentOverdue: isUrgentOverdue(ticket), status: ticket.status,
     language: ticket.language, createdAt: ticket.createdAt, updatedAt: ticket.updatedAt, lastMessageAt: ticket.lastMessageAt,
     memberUserId: ticket.userId, assignedTo: ticket.assignedTo,
+    privacyRequestKind: ticket.category === "account" && privacyRequestSubjects.includes(ticket.subject)
+      ? getPrivacyRequestKind(ticket.subject) : null,
+    privacyExportAvailableUntil: latestPrivacyExport
+      ? parsePrivacyExportExpiry(latestPrivacyExport.detail)?.toISOString() ?? null
+      : null,
     messages: messages.map(m => ({
       id: m.id, authorId: m.authorId, authorRole: m.authorRole, message: m.body,
       language: m.language, createdAt: m.createdAt, isInternal: m.isInternal,
@@ -469,6 +483,89 @@ staffRouter.patch("/tickets/:id", async (req, res) => {
   });
   if (notifyStatus) void sendMemberNotification(memberId, "support_status");
   res.json(await staffTicketDetail(id));
+});
+
+staffRouter.post("/tickets/:id/privacy-export", async (req, res) => {
+  const parsed = z.object({ identityVerified: z.literal(true) }).strict().safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Confirm that you verified the member's identity before preparing this export." });
+    return;
+  }
+  const operator = res.locals.supportOperator as typeof operators.$inferSelect;
+  const id = String(req.params.id);
+  const now = new Date();
+  const exportAvailableUntil = new Date(now.getTime() + PRIVACY_EXPORT_WINDOW_MS);
+  let memberId = "";
+
+  await db.transaction(async tx => {
+    const [ticket] = await tx.select().from(supportTickets).where(eq(supportTickets.id, id)).for("update");
+    if (!ticket) throw new BookingError(404, "Privacy request not found.");
+    if (
+      ticket.category !== "account"
+      || !privacyRequestSubjects.includes(ticket.subject)
+      || getPrivacyRequestKind(ticket.subject) !== "data_export"
+    ) {
+      throw new BookingError(409, "This support request is not a member data-copy request.");
+    }
+    const [activeEscalation] = await tx.select({ id: supportCaseEscalations.id }).from(supportCaseEscalations)
+      .where(and(eq(supportCaseEscalations.ticketId, id), isNull(supportCaseEscalations.resolvedAt))).limit(1);
+    if (activeEscalation) {
+      throw new BookingError(409, "Resolve the active case escalation before preparing this export.");
+    }
+
+    memberId = ticket.userId;
+    await tx.insert(supportTicketEvents).values({
+      id: randomUUID(),
+      ticketId: id,
+      actorId: operator.userId,
+      action: "privacy_export_ready",
+      detail: `identityVerified=true;expiresAt=${exportAvailableUntil.toISOString()}`,
+      createdAt: now,
+    });
+    await tx.insert(supportMessages).values({
+      id: randomUUID(),
+      ticketId: id,
+      authorId: operator.userId,
+      authorRole: operator.role,
+      body: getPrivacyExportReadyMessage(ticket.language as PrivacyRequestLanguage),
+      language: ticket.language,
+      isInternal: false,
+      createdAt: now,
+    });
+
+    if (ticket.status !== "resolved") {
+      await tx.update(supportTickets).set({
+        status: "resolved",
+        updatedAt: now,
+        lastMessageAt: now,
+        closedAt: now,
+      }).where(eq(supportTickets.id, id));
+      await tx.insert(supportTicketEvents).values({
+        id: randomUUID(),
+        ticketId: id,
+        actorId: operator.userId,
+        action: "status_changed",
+        previousStatus: ticket.status,
+        nextStatus: "resolved",
+        detail: "Support request resolved after preparing the member data export.",
+        createdAt: now,
+      });
+    } else {
+      await tx.update(supportTickets).set({ updatedAt: now, lastMessageAt: now })
+        .where(eq(supportTickets.id, id));
+    }
+
+    await tx.insert(operationAudit).values({
+      id: randomUUID(),
+      actorId: operator.userId,
+      action: "support.privacy_export.prepare",
+      targetId: id,
+      detail: `identityVerified=true;expiresAt=${exportAvailableUntil.toISOString()}`,
+    });
+  });
+
+  void sendMemberNotification(memberId, "support_reply");
+  res.json({ ticketId: id, exportAvailableUntil });
 });
 
 staffRouter.post("/tickets/:id/replies", async (req, res) => {

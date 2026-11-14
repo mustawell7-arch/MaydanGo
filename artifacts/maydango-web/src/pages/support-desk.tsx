@@ -23,6 +23,7 @@ import {
   useDeleteSupportStaffTicketLink,
   useAddSupportStaffInternalNote,
   useReplySupportStaffTicket,
+  usePrepareSupportStaffPrivacyExport,
   useUpdateSupportStaffTicket,
   type SupportTicketStatus,
   type SupportTicketLinkType,
@@ -66,6 +67,11 @@ const words: Record<Lang, Record<string, string>> = {
     alertNote: 'Push notifications can fail or remain unconfirmed. There is no external email fallback. Follow the established safety process for urgent reports.',
     security: 'Staff access only', refresh: 'Refresh queue', lastActivity: 'Last activity', noAgent: 'Unassigned',
     signIn: 'Sign in to open the support desk', signInHint: 'This workspace is limited to authorized MaydanGo support staff.',
+    privacyExportTitle: 'Secure account data export', privacyExportVerify: 'I verified this member’s identity in the private support conversation.',
+    privacyExportHelp: 'Once approved, the member can download their own data for 24 hours.',
+    privacyExportPrepare: 'Approve download for 24 hours', privacyExportPreparing: 'Preparing…',
+    privacyExportApproved: 'Download approved until', privacyExportPrepared: 'The secure data copy is ready for 24 hours.',
+    privacyExportError: 'The export could not be prepared. Resolve any active escalation and retry.',
   },
   ar: {
     eyebrow: 'ميدان جو · العمليات', title: 'مكتب الدعم', subtitle: 'عرض واضح لطلبات الأعضاء والشركاء في أنحاء العراق.',
@@ -97,6 +103,11 @@ const words: Record<Lang, Record<string, string>> = {
     alertNote: 'قد تفشل الإشعارات الفورية أو تبقى دون تأكيد. لا يوجد بديل عبر البريد الإلكتروني الخارجي. اتبع إجراءات السلامة المعتمدة للبلاغات العاجلة.',
     security: 'للموظفين المعتمدين فقط', refresh: 'تحديث القائمة', lastActivity: 'آخر نشاط', noAgent: 'غير مسند',
     signIn: 'سجّل الدخول لفتح مكتب الدعم', signInHint: 'مساحة العمل هذه مخصصة لموظفي دعم ميدان جو المعتمدين.',
+    privacyExportTitle: 'نسخة آمنة من بيانات الحساب', privacyExportVerify: 'تحققت من هوية هذا العضو في محادثة الدعم الخاصة.',
+    privacyExportHelp: 'بعد الموافقة، يستطيع العضو تنزيل بياناته خلال 24 ساعة.',
+    privacyExportPrepare: 'الموافقة على التنزيل لمدة 24 ساعة', privacyExportPreparing: 'جارٍ التجهيز…',
+    privacyExportApproved: 'التنزيل معتمد حتى', privacyExportPrepared: 'أصبحت نسخة البيانات الآمنة جاهزة لمدة 24 ساعة.',
+    privacyExportError: 'تعذر تجهيز النسخة. عالج أي تصعيد نشط ثم حاول مرة أخرى.',
   },
   ku: {
     eyebrow: 'مەیدان گۆ · کارگێڕی', title: 'مێزی پشتگیری', subtitle: 'بینینێکی ڕوون بۆ داواکاریی ئەندامان و هاوبەشان لە سەرانسەری عێراق.',
@@ -128,6 +139,11 @@ const words: Record<Lang, Record<string, string>> = {
     alertNote: 'ئاگادارکردنەوەی پۆش دەکرێت سەرنەکەوێت یان پشتڕاست نەکرێتەوە. هیچ جێگرەوەی ئیمەیڵی دەرەکی نییە. بۆ ڕاپۆرتی پەلە ڕێکاری سەلامەتی جێبەجێ بکە.',
     security: 'تەنها بۆ کارمەندانی ڕێگەپێدراو', refresh: 'نوێکردنەوەی ڕیز', lastActivity: 'دوایین چالاکی', noAgent: 'نەسپێردراو',
     signIn: 'بچۆ ژوورەوە بۆ کردنەوەی مێزی پشتگیری', signInHint: 'ئەم شوێنی کارە تەنها بۆ تیمی ڕێگەپێدراوی پشتگیریی MaydanGo ـە.',
+    privacyExportTitle: 'کۆپیی پارێزراوی داتای هەژمار', privacyExportVerify: 'ناسنامەی ئەم ئەندامەم لە گفتوگۆی تایبەتی پشتگیری پشتڕاست کردووەتەوە.',
+    privacyExportHelp: 'دوای پەسەندکردن، ئەندام دەتوانێت داتاکانی خۆی بۆ ٢٤ کاتژمێر دابگرێت.',
+    privacyExportPrepare: 'پەسەندکردنی داگرتن بۆ ٢٤ کاتژمێر', privacyExportPreparing: 'ئامادە دەکرێت…',
+    privacyExportApproved: 'داگرتن پەسەندکراوە تا', privacyExportPrepared: 'کۆپیی پارێزراوی داتا بۆ ٢٤ کاتژمێر ئامادەیە.',
+    privacyExportError: 'ئامادەکردنی کۆپییەکە سەرکەوتوو نەبوو. هەر ئاستبەرزکردنەوەیەکی چالاک چارەسەر بکە و دووبارە هەوڵ بدەوە.',
   },
 };
 
@@ -157,6 +173,7 @@ export function SupportDeskPage() {
   const [selectedId, setSelectedId] = useState('');
   const [feedback, setFeedback] = useState('');
   const [internalNoteText, setInternalNoteText] = useState('');
+  const [identityVerified, setIdentityVerified] = useState(false);
   const [relatedRecordChoice, setRelatedRecordChoice] = useState('');
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState('');
   const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
@@ -184,6 +201,7 @@ export function SupportDeskPage() {
   const createRelatedRecordLink = useCreateSupportStaffTicketLink();
   const deleteRelatedRecordLink = useDeleteSupportStaffTicketLink();
   const reply = useReplySupportStaffTicket();
+  const preparePrivacyExportMutation = usePrepareSupportStaffPrivacyExport();
   const tickets = queue.data ?? [];
   const agents = agentsQuery.data ?? [];
   const authorized = !!userId && agents.some(agent => agent.userId === userId && (agent.role === 'customer_support_admin' || agent.role === 'support' || agent.role === 'super_admin'));
@@ -191,6 +209,12 @@ export function SupportDeskPage() {
   const active = detail.data;
   const hasActiveEscalation = tickets.some(ticket => ticket.id === selectedId && ticket.hasActiveEscalation);
   const relatedRecords = relatedRecordsQuery.data?.records ?? [];
+  const privacyExportExpiry = active?.privacyExportAvailableUntil
+    ? new Date(String(active.privacyExportAvailableUntil))
+    : null;
+  const privacyExportIsReady = !!privacyExportExpiry
+    && Number.isFinite(privacyExportExpiry.getTime())
+    && privacyExportExpiry.getTime() > Date.now();
 
   useEffect(() => {
     if (!queue.isSuccess) return;
@@ -229,6 +253,24 @@ export function SupportDeskPage() {
       },
       onError: () => setFeedback('error'),
     });
+  };
+  const approvePrivacyExport = async () => {
+    if (!selectedId || !identityVerified) return;
+    setFeedback('');
+    try {
+      await preparePrivacyExportMutation.mutateAsync({
+        id: selectedId,
+        data: { identityVerified: true },
+      });
+      await Promise.all([
+        client.invalidateQueries({ queryKey: getGetSupportStaffTicketsQueryKey() }),
+        client.invalidateQueries({ queryKey: getGetSupportStaffTicketQueryKey(selectedId) }),
+      ]);
+      setIdentityVerified(false);
+      setFeedback('privacy-export-prepared');
+    } catch {
+      setFeedback('privacy-export-error');
+    }
   };
   const sendReply = async (values: ReplyValues) => {
     if (!selectedId || !values.message.trim()) return;
@@ -389,7 +431,7 @@ export function SupportDeskPage() {
         </div>
         <div className="max-h-[74vh] overflow-y-auto p-2">
           {queue.isLoading ? <div className="space-y-2 p-2" data-testid="support-queue-skeleton">{[1,2,3,4,5].map(i => <div key={i} className="h-24 animate-pulse rounded-2xl bg-[#eeeadf]" />)}</div>
-            : sortedTickets.length ? sortedTickets.map(ticket => <button type="button" key={ticket.id} data-testid={`ticket-row-${ticket.id}`} aria-current={selectedId === ticket.id ? 'true' : undefined} disabled={attachmentBusy} onClick={() => { setSelectedId(ticket.id); setInternalNoteText(''); setRelatedRecordChoice(''); setAttachmentFiles([]); setPendingAttachmentMessageId(''); replyForm.reset({ message: '' }); setFeedback(''); }} className={`mb-1 w-full rounded-2xl border p-3.5 text-start transition hover:bg-[#f5f2e9] disabled:cursor-wait disabled:opacity-60 ${selectedId === ticket.id ? 'border-[#9db3a4] bg-[#eef2e9] shadow-[inset_3px_0_0_#28695a]' : 'border-transparent bg-transparent'}`}>
+            : sortedTickets.length ? sortedTickets.map(ticket => <button type="button" key={ticket.id} data-testid={`ticket-row-${ticket.id}`} aria-current={selectedId === ticket.id ? 'true' : undefined} disabled={attachmentBusy} onClick={() => { setSelectedId(ticket.id); setIdentityVerified(false); setInternalNoteText(''); setRelatedRecordChoice(''); setAttachmentFiles([]); setPendingAttachmentMessageId(''); replyForm.reset({ message: '' }); setFeedback(''); }} className={`mb-1 w-full rounded-2xl border p-3.5 text-start transition hover:bg-[#f5f2e9] disabled:cursor-wait disabled:opacity-60 ${selectedId === ticket.id ? 'border-[#9db3a4] bg-[#eef2e9] shadow-[inset_3px_0_0_#28695a]' : 'border-transparent bg-transparent'}`}>
               <div className="flex items-start justify-between gap-3"><span data-testid={`text-ticket-subject-${ticket.id}`} className="min-w-0 break-words text-sm font-bold leading-5 text-[#29483e]">{ticket.subject}</span>{ticket.urgent && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#f7e7df] px-2 py-1 text-[9px] font-extrabold uppercase tracking-wide text-[#934638]"><AlertTriangle size={11}/>{t.urgent}</span>}</div>
               {ticket.urgentOverdue && <span data-testid={`badge-ticket-overdue-${ticket.id}`} className="mt-2 inline-flex rounded-full bg-[#9a4435] px-2 py-1 text-[9px] font-bold text-white">{t.overdue}</span>}
               {ticket.hasActiveEscalation && <span data-testid={`badge-case-escalated-${ticket.id}`} className="mt-2 inline-flex rounded-full bg-[#f4ddc6] px-2 py-1 text-[9px] font-bold text-[#80533e]">{t.escalated}</span>}
@@ -418,8 +460,8 @@ export function SupportDeskPage() {
                 <AlertTriangle size={17} className="mt-0.5 shrink-0"/><div><p className="text-xs font-bold">{t.alert}{active.urgentOverdue ? ` · ${t.overdue}` : ''}</p><p className="mt-1 text-xs leading-5">{active.urgentOverdue ? t.alertOverdue : active.urgentAlertStatus === 'pending' ? t.alertPending : active.urgentAlertStatus === 'accepted' ? t.alertAccepted : active.urgentAlertStatus === 'fallback_required' ? t.alertFallback : t.alertNone}</p><p className="mt-1.5 text-[10px] leading-4 opacity-80">{t.alertNote}</p></div>
               </div>}
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[10px] text-[#75847c]"><span className="inline-flex items-center gap-1.5"><UserRound size={12}/>{t.customerId}: {active.memberUserId}</span><span className="inline-flex items-center gap-1.5"><Clock3 size={12}/>{t.lastActivity}: {dateLabel(active.lastMessageAt, language)}</span></div>
-              {feedback && <p role="status" data-testid="status-ticket-action" className={`mt-3 text-xs font-semibold ${['error', 'reply-error', 'note-error', 'related-error', 'attachment-error', 'attachment-invalid', 'attachment-limit', 'download-error'].includes(feedback) ? 'text-[#9a4435]' : 'text-[#28695a]'}`}>
-                {feedback === 'sent' ? t.replySent : feedback === 'reply-error' ? t.failedReply : feedback === 'error' ? t.updateError : feedback === 'saved' ? <><Check size={12} className="inline"/> {t.event}</> : feedback === 'note-sent' ? t.internalNoteSent : feedback === 'note-error' ? t.internalNoteError : feedback === 'related-linked' ? t.relatedRecordLinked : feedback === 'related-unlinked' ? t.relatedRecordUnlinked : feedback === 'related-error' ? t.relatedRecordError : feedback === 'attachment-error' ? t.attachmentUploadError : feedback === 'attachment-invalid' ? t.attachmentInvalid : feedback === 'attachment-limit' ? t.attachmentLimit : feedback === 'attachment-uploaded' ? t.attachmentUploadSuccess : feedback === 'download-error' ? t.attachmentDownloadError : ''}
+              {feedback && <p role="status" data-testid="status-ticket-action" className={`mt-3 text-xs font-semibold ${['error', 'reply-error', 'note-error', 'related-error', 'attachment-error', 'attachment-invalid', 'attachment-limit', 'download-error', 'privacy-export-error'].includes(feedback) ? 'text-[#9a4435]' : 'text-[#28695a]'}`}>
+                {feedback === 'sent' ? t.replySent : feedback === 'reply-error' ? t.failedReply : feedback === 'error' ? t.updateError : feedback === 'saved' ? <><Check size={12} className="inline"/> {t.event}</> : feedback === 'note-sent' ? t.internalNoteSent : feedback === 'note-error' ? t.internalNoteError : feedback === 'related-linked' ? t.relatedRecordLinked : feedback === 'related-unlinked' ? t.relatedRecordUnlinked : feedback === 'related-error' ? t.relatedRecordError : feedback === 'attachment-error' ? t.attachmentUploadError : feedback === 'attachment-invalid' ? t.attachmentInvalid : feedback === 'attachment-limit' ? t.attachmentLimit : feedback === 'attachment-uploaded' ? t.attachmentUploadSuccess : feedback === 'download-error' ? t.attachmentDownloadError : feedback === 'privacy-export-prepared' ? t.privacyExportPrepared : feedback === 'privacy-export-error' ? t.privacyExportError : ''}
                </p>}
             </div>
 
@@ -506,6 +548,23 @@ export function SupportDeskPage() {
               </section>
 
               <aside className="p-4 sm:p-5" aria-label={t.timeline}>
+                {active.privacyRequestKind === 'data_export' && <section className="mb-6 rounded-2xl border border-[#d8e2d5] bg-[#f1f4eb] p-3.5" data-testid="support-privacy-export">
+                  <h3 className="text-xs font-extrabold text-[#36564b]">{t.privacyExportTitle}</h3>
+                  {privacyExportIsReady && privacyExportExpiry ? <p className="mt-2 text-[10px] leading-5 text-[#536b61]" role="status">
+                    {t.privacyExportApproved}: {dateLabel(privacyExportExpiry.toISOString(), language)}
+                  </p> : <>
+                    <p className="mt-2 text-[10px] leading-5 text-[#75847c]">{t.privacyExportHelp}</p>
+                    <label className="mt-3 flex items-start gap-2 text-[10px] leading-5 text-[#536b61]">
+                      <input type="checkbox" checked={identityVerified} onChange={event => setIdentityVerified(event.currentTarget.checked)} />
+                      <span>{t.privacyExportVerify}</span>
+                    </label>
+                    <button type="button" data-testid="button-prepare-privacy-export" disabled={!identityVerified || preparePrivacyExportMutation.isPending || hasActiveEscalation}
+                      onClick={() => void approvePrivacyExport()}
+                      className="mt-3 w-full rounded-full bg-[#174d43] px-3 py-2 text-[10px] font-bold text-[#fff9e9] disabled:cursor-not-allowed disabled:opacity-45">
+                      {preparePrivacyExportMutation.isPending ? t.privacyExportPreparing : t.privacyExportPrepare}
+                    </button>
+                  </>}
+                </section>}
                 <SupportCaseEscalations key={active.id} ticketId={active.id} ticketStatus={active.status} agents={agents} userId={userId!} language={language}/>
                 <section className="mb-6 rounded-2xl border border-[#d8e2d5] bg-[#f1f4eb] p-3.5" data-testid="support-related-records">
                   <h3 className="text-xs font-extrabold text-[#36564b]">{t.relatedRecords}</h3>

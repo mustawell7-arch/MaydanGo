@@ -113,6 +113,7 @@ import type {
   MemberCancellationResult,
   MemberCheckoutInput,
   MemberCheckoutResult,
+  MemberDataExport,
   MemberDeviceRegistration,
   MemberDeviceStatus,
   MemberFacilityReviews,
@@ -147,6 +148,8 @@ import type {
   PlanInput,
   PlatformSafetyRulesRecord,
   PlatformSafetyRulesUpdateInput,
+  PrivacyExportApprovalInput,
+  PrivacyExportReadyResponse,
   PrivacyRequest,
   PrivacyRequestInput,
   PublicCourse,
@@ -8654,6 +8657,101 @@ export function useGetLiveCatalog<TData = Awaited<ReturnType<typeof getLiveCatal
 
 
 
+export const getGetMemberPrivacyRequestExportUrl = (id: string,) => {
+
+
+
+
+  return `/api/member/privacy-requests/${id}/export`
+}
+
+export const getMemberPrivacyRequestExport = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<MemberDataExport> => {
+
+  return customFetch<MemberDataExport>(getGetMemberPrivacyRequestExportUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberPrivacyRequestExportQueryKey = (id: string,) => {
+    return [
+    `/api/member/privacy-requests/${id}/export`
+    ] as const;
+    }
+
+
+export const getGetMemberPrivacyRequestExportQueryOptions = <TData = Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>, TError = ErrorType<void>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberPrivacyRequestExportQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>> = ({ signal }) => getMemberPrivacyRequestExport(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberPrivacyRequestExportQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>>
+export type GetMemberPrivacyRequestExportQueryError = ErrorType<void>
+
+
+export function useGetMemberPrivacyRequestExport<TData = Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>, TError = ErrorType<void>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberPrivacyRequestExport<TData = Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberPrivacyRequestExport<TData = Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberPrivacyRequestExport<TData = Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberPrivacyRequestExport>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberPrivacyRequestExportQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetMemberDeviceStatusUrl = () => {
 
 
@@ -11351,6 +11449,89 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getUpdateSupportStaffTicketMutationOptions(options), queryClient);
+    }
+
+export const getPrepareSupportStaffPrivacyExportUrl = (id: string,) => {
+
+
+
+
+  return `/api/support/staff/tickets/${id}/privacy-export`
+}
+
+export const prepareSupportStaffPrivacyExport = async (id: string,
+    privacyExportApprovalInput: PrivacyExportApprovalInput, options?: Parameters<typeof customFetch>[1]): Promise<PrivacyExportReadyResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PrivacyExportReadyResponse>(getPrepareSupportStaffPrivacyExportUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(privacyExportApprovalInput)
+  }
+);}
+
+
+
+
+
+export const getPrepareSupportStaffPrivacyExportMutationKey = () => ['prepareSupportStaffPrivacyExport'] as const;
+
+export const getPrepareSupportStaffPrivacyExportMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof prepareSupportStaffPrivacyExport>>, TError,PrepareSupportStaffPrivacyExportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof prepareSupportStaffPrivacyExport>>, TError,PrepareSupportStaffPrivacyExportMutationVariables, TContext> => {
+
+const mutationKey = getPrepareSupportStaffPrivacyExportMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof prepareSupportStaffPrivacyExport>>, PrepareSupportStaffPrivacyExportMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  prepareSupportStaffPrivacyExport(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PrepareSupportStaffPrivacyExportMutationResult = NonNullable<Awaited<ReturnType<typeof prepareSupportStaffPrivacyExport>>>
+    export type PrepareSupportStaffPrivacyExportMutationBody = BodyType<PrivacyExportApprovalInput>
+    export type PrepareSupportStaffPrivacyExportMutationError = ErrorType<void>
+    export type PrepareSupportStaffPrivacyExportMutationVariables = {id: string;data: BodyType<PrivacyExportApprovalInput>}
+
+    export const usePrepareSupportStaffPrivacyExport = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof prepareSupportStaffPrivacyExport>>, TError,PrepareSupportStaffPrivacyExportMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof prepareSupportStaffPrivacyExport>>,
+        TError,
+        PrepareSupportStaffPrivacyExportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPrepareSupportStaffPrivacyExportMutationOptions(options), queryClient);
     }
 
 export const getReplySupportStaffTicketUrl = (id: string,) => {

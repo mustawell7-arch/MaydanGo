@@ -74,8 +74,8 @@ const privacyCopy: Record<Language, {
         id: 'rights',
         title: 'Your privacy requests',
         paragraphs: [
-          'If you have an account, use Account → Privacy requests to ask for a copy of your information or request an account-deletion review. You may also email MaydanGo. Requests are reviewed by authorized support staff; submitting one does not automatically export information or delete an account.',
-          'MaydanGo may need to verify that a request relates to your account before acting. Some records may need to be retained for service safety, security, or other applicable requirements.',
+          'If you have an account, use Account → Privacy requests to request a copy of your information or an account-deletion review. Authorized support staff verify your identity before approving a data copy. After approval, only the signed-in account holder can download it, for 24 hours. The export excludes payment instrument details, login credentials, device tokens, private class links, support messages, and staff-only notes.',
+          'Account-deletion requests are reviewed by authorized support staff and are not immediate. MaydanGo may need to verify that a request relates to your account before acting. Some records may need to be retained for service safety, security, or other applicable requirements.',
           'Specific retention periods and procedures for guardian-consent copies need review before this draft is treated as final.',
         ],
       },
@@ -160,8 +160,8 @@ const privacyCopy: Record<Language, {
         id: 'rights',
         title: 'طلبات الخصوصية',
         paragraphs: [
-          'إذا كان لديك حساب، استخدم الحساب ← طلبات الخصوصية لطلب نسخة من معلوماتك أو طلب مراجعة حذف الحساب. ويمكنك أيضاً مراسلة MaydanGo. يراجع فريق الدعم المخوّل الطلبات؛ وإرسال الطلب لا يصدّر المعلومات ولا يحذف الحساب تلقائياً.',
-          'قد تحتاج MaydanGo إلى التحقق من أن الطلب يخص حسابك قبل اتخاذ إجراء. وقد يلزم الاحتفاظ ببعض السجلات لأغراض سلامة الخدمة أو أمنها أو لمتطلبات أخرى واجبة التطبيق.',
+          'إذا كان لديك حساب، استخدم الحساب ← طلبات الخصوصية لطلب نسخة من معلوماتك أو مراجعة حذف الحساب. يتحقق فريق الدعم المخوّل من هويتك قبل الموافقة على نسخة البيانات. بعد الموافقة، يستطيع صاحب الحساب المسجّل فقط تنزيلها خلال 24 ساعة. لا تتضمن النسخة تفاصيل أدوات الدفع أو بيانات الدخول أو رموز الأجهزة أو روابط الصفوف الخاصة أو رسائل الدعم أو ملاحظات الموظفين الداخلية.',
+          'يراجع فريق الدعم المخوّل طلبات حذف الحساب، ولا يتم الحذف فوراً. قد تحتاج MaydanGo إلى التحقق من أن الطلب يخص حسابك قبل اتخاذ إجراء. وقد يلزم الاحتفاظ ببعض السجلات لأغراض سلامة الخدمة أو أمنها أو لمتطلبات أخرى واجبة التطبيق.',
           'يجب مراجعة مدد الاحتفاظ وإجراءات نسخ موافقة ولي الأمر قبل اعتماد هذه المسودة كسياسة نهائية.',
         ],
       },
@@ -246,8 +246,8 @@ const privacyCopy: Record<Language, {
         id: 'rights',
         title: 'داواکارییەکانی تایبەتمەندی',
         paragraphs: [
-          'ئەگەر هەژمارت هەیە، لە هەژمار ← داواکارییەکانی تایبەتمەندی داوای کۆپیی زانیارییەکانت یان پێداچوونەوە بۆ سڕینەوەی هەژمار بکە. دەتوانیت ئیمەیڵیش بۆ MaydanGo بنێریت. تیمی پشتگیریی ڕێگەپێدراو پێداچوونەوە بە داواکارییەکاندا دەکات؛ ناردنیان بە شێوەی ئۆتۆماتیکی زانیاری ناگوازێتەوە و هەژمار ناسڕێتەوە.',
-          'لەوانەیە MaydanGo پێش هەر کارێک پشتڕاستی بکاتەوە کە داواکارییەکە پەیوەندی بە هەژمارەکەتەوە هەیە. لەوانەیە پێویست بێت هەندێک تۆمار بۆ سەلامەتی و پاراستنی خزمەتگوزاری یان داواکارییەکانی تر بپارێزرێن.',
+          'ئەگەر هەژمارت هەیە، لە هەژمار ← داواکارییەکانی تایبەتمەندی داوای کۆپیی زانیارییەکانت یان پێداچوونەوە بۆ سڕینەوەی هەژمار بکە. تیمی پشتگیریی ڕێگەپێدراو پێش پەسەندکردنی کۆپیی داتا ناسنامەکەت پشتڕاست دەکاتەوە. دوای پەسەندکردن، تەنها خاوەنی هەژماری چوونەژوورەوە دەتوانێت لە ماوەی ٢٤ کاتژمێردا دایبگرێت. کۆپییەکە وردەکاریی پارەدان، زانیاریی چوونەژوورەوە، تۆکنی ئامێر، بەستەری وانەی تایبەت، پەیامەکانی پشتگیری و تێبینیی ناوخۆی کارمەندان ناگرێتەوە.',
+          'تیمی پشتگیریی ڕێگەپێدراو داواکاریی سڕینەوەی هەژمار پێداچوونەوەی بۆ دەکات و سڕینەوە دەستبەجێ نییە. لەوانەیە MaydanGo پێش هەر کارێک پشتڕاستی بکاتەوە کە داواکارییەکە پەیوەندی بە هەژمارەکەتەوە هەیە. هەندێک تۆمار لەوانەیە بۆ پاراستنی سەلامەتی و ئاسایشی خزمەتگوزاری یان داواکارییەکانی تر پێویست بێت بهێڵدرێنەوە.',
           'ماوەی دیاریکراوی هەڵگرتن و ڕێکاری پاراستنی وێنەی ڕەزامەندیی سەرپەرشتیار پێویستی بە پێداچوونەوە هەیە پێش ئەوەی ئەم ڕەشنووسە ببێتە سیاسەتی کۆتایی.',
         ],
       },

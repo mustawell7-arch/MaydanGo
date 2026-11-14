@@ -5280,6 +5280,101 @@ export const GetLiveCatalogResponseItem = zod.object({
 export const GetLiveCatalogResponse = zod.array(GetLiveCatalogResponseItem)
 
 
+export const GetMemberPrivacyRequestExportParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetMemberPrivacyRequestExportResponse = zod.object({
+  "formatVersion": zod.enum(['1.0']),
+  "generatedAt": zod.coerce.date(),
+  "account": zod.object({
+  "email": zod.string().nullable(),
+  "firstName": zod.string().nullable(),
+  "lastName": zod.string().nullable(),
+  "createdAt": zod.coerce.date().nullable(),
+  "profile": zod.union([zod.object({
+  "gender": zod.string(),
+  "birthDate": zod.coerce.date()
+}),zod.null()])
+}),
+  "memberships": zod.array(zod.object({
+  "scope": zod.string(),
+  "status": zod.string(),
+  "tier": zod.string(),
+  "source": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date()
+})),
+  "bookings": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.string(),
+  "title": zod.string(),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "category": zod.string(),
+  "scope": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "status": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "cancelledAt": zod.coerce.date().nullable()
+})),
+  "waitlist": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "queuePosition": zod.int(),
+  "status": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "offerExpiresAt": zod.coerce.date().nullable(),
+  "respondedAt": zod.coerce.date().nullable()
+})),
+  "attendance": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "city": zod.string(),
+  "facility": zod.string(),
+  "checkedInAt": zod.coerce.date(),
+  "status": zod.string()
+})),
+  "courses": zod.array(zod.object({
+  "title": zod.string(),
+  "enrolledAt": zod.coerce.date(),
+  "completedLessons": zod.array(zod.object({
+  "title": zod.string(),
+  "completedAt": zod.coerce.date()
+}))
+})),
+  "reviews": zod.array(zod.object({
+  "overallRating": zod.int(),
+  "categoryRatings": zod.object({
+  "cleanliness": zod.int().nullable(),
+  "staff": zod.int().nullable(),
+  "equipment": zod.int().nullable(),
+  "instructor": zod.int().nullable(),
+  "facilities": zod.int().nullable(),
+  "informationAccuracy": zod.int().nullable()
+}),
+  "content": zod.string().nullable(),
+  "status": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "privacyRequests": zod.array(zod.object({
+  "kind": zod.enum(['data_export', 'account_deletion']),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "createdAt": zod.coerce.date()
+})),
+  "notificationPreferences": zod.union([zod.object({
+  "pushEnabled": zod.boolean(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "updatedAt": zod.coerce.date()
+}),zod.null()]),
+  "excludedData": zod.array(zod.enum(['payment_instrument_details', 'login_credentials', 'push_tokens', 'private_class_links', 'support_conversation_messages', 'internal_support_notes']))
+})
+
+
 export const getMemberDeviceStatusResponseWaitHoursMax = 168;
 
 
@@ -6147,9 +6242,11 @@ export const DownloadMemberSupportAttachmentResponse = zod.unknown()
 
 export const GetMemberPrivacyRequestsResponseItem = zod.object({
   "id": zod.string(),
+  "kind": zod.enum(['data_export', 'account_deletion']),
   "subject": zod.string(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "exportAvailableUntil": zod.coerce.date().nullable()
 })
 export const GetMemberPrivacyRequestsResponse = zod.array(GetMemberPrivacyRequestsResponseItem)
 
@@ -6161,9 +6258,11 @@ export const CreateMemberPrivacyRequestBody = zod.object({
 
 export const CreateMemberPrivacyRequestResponse = zod.object({
   "id": zod.string(),
+  "kind": zod.enum(['data_export', 'account_deletion']),
   "subject": zod.string(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "exportAvailableUntil": zod.coerce.date().nullable()
 })
 
 
@@ -6303,7 +6402,9 @@ export const GetSupportStaffTicketResponse = zod.object({
   "previousAssignee": zod.string().nullable(),
   "nextAssignee": zod.string().nullable(),
   "detail": zod.string()
-})))
+}))),
+  "privacyRequestKind": zod.union([zod.enum(['data_export', 'account_deletion']),zod.null()]),
+  "privacyExportAvailableUntil": zod.coerce.date().nullable()
 }))
 
 
@@ -6353,8 +6454,24 @@ export const UpdateSupportStaffTicketResponse = zod.object({
   "previousAssignee": zod.string().nullable(),
   "nextAssignee": zod.string().nullable(),
   "detail": zod.string()
-})))
+}))),
+  "privacyRequestKind": zod.union([zod.enum(['data_export', 'account_deletion']),zod.null()]),
+  "privacyExportAvailableUntil": zod.coerce.date().nullable()
 }))
+
+
+export const PrepareSupportStaffPrivacyExportParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const PrepareSupportStaffPrivacyExportBody = zod.object({
+  "identityVerified": zod.literal(true)
+})
+
+export const PrepareSupportStaffPrivacyExportResponse = zod.object({
+  "ticketId": zod.string(),
+  "exportAvailableUntil": zod.coerce.date()
+})
 
 
 export const ReplySupportStaffTicketParams = zod.object({
@@ -6407,7 +6524,9 @@ export const ReplySupportStaffTicketResponse = zod.object({
   "previousAssignee": zod.string().nullable(),
   "nextAssignee": zod.string().nullable(),
   "detail": zod.string()
-})))
+}))),
+  "privacyRequestKind": zod.union([zod.enum(['data_export', 'account_deletion']),zod.null()]),
+  "privacyExportAvailableUntil": zod.coerce.date().nullable()
 }))
 
 
@@ -6694,7 +6813,9 @@ export const AddSupportStaffInternalNoteResponse = zod.object({
   "previousAssignee": zod.string().nullable(),
   "nextAssignee": zod.string().nullable(),
   "detail": zod.string()
-})))
+}))),
+  "privacyRequestKind": zod.union([zod.enum(['data_export', 'account_deletion']),zod.null()]),
+  "privacyExportAvailableUntil": zod.coerce.date().nullable()
 }))
 
 

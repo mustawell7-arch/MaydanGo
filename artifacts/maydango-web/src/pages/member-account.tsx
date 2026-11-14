@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useAuth, useUser } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  getMemberPrivacyRequestExport,
   getGetMemberPrivacyRequestsQueryKey,
   useCreateMemberPrivacyRequest,
   useGetMemberAccountSummary,
@@ -44,11 +45,18 @@ const copy: Record<Language, Record<string, string>> = {
     mobileTitle: "Use the mobile app for member experiences",
     mobileNote: "The mobile app remains the intended place for QR scanning, GPS check-in, push notifications, live-class participation, and your membership card.",
     privacyTitle: "Privacy requests",
-    privacyIntro: "Request a copy of your account information or ask MaydanGo to review account deletion.",
-    privacyNotice: "Requests are reviewed by authorized support staff. Sending one does not download your data or delete your account. Identity verification and record-retention review may be needed.",
+    privacyIntro: "Request a copy of your account information, or ask MaydanGo to review account deletion.",
+    privacyNotice: "Support staff verify your identity first. Once approved, the download is available for 24 hours. It excludes payment details, passwords, device tokens, private class links, support messages, and staff-only notes.",
     privacyExport: "Request a copy of my data",
+    privacyExporting: "Sending request…",
+    privacyExportReady: "Your data copy is downloading.",
+    privacyExportError: "We could not download your data copy. It may not be approved or its 24-hour window may have expired.",
+    privacyDataActive: "You already have an open data-copy request.",
+    privacyDownload: "Download copy",
+    privacyDownloadUntil: "Available until",
     privacyDelete: "Request account deletion",
-    privacyActive: "You already have an open privacy request. A new request can be sent after it is resolved.",
+    privacyDeleteNotice: "Account deletion requests are reviewed by authorized support staff. They are not immediate; identity verification and record-retention review may be needed.",
+    privacyActive: "You already have an open account-deletion request.",
     privacyHistory: "Request history",
     privacyNone: "No privacy requests yet.",
     privacySent: "Your request was sent to MaydanGo support.",
@@ -91,11 +99,18 @@ const copy: Record<Language, Record<string, string>> = {
     mobileTitle: "تجارب الأعضاء في تطبيق الهاتف",
     mobileNote: "يبقى تطبيق الهاتف المكان المقصود لمسح رمز QR وتسجيل الحضور عبر GPS والإشعارات الفورية والمشاركة في الصفوف المباشرة وبطاقة العضوية.",
     privacyTitle: "طلبات الخصوصية",
-    privacyIntro: "يمكنك طلب نسخة من معلومات حسابك أو مطالبة MaydanGo بمراجعة حذف الحساب.",
-    privacyNotice: "يراجع فريق الدعم المخوّل الطلبات. إرسال الطلب لا ينزّل بياناتك ولا يحذف حسابك. قد نحتاج إلى التحقق من هويتك ومراجعة السجلات التي يجب الاحتفاظ بها.",
+    privacyIntro: "اطلب نسخة من معلومات حسابك، أو اطلب من MaydanGo مراجعة حذف الحساب.",
+    privacyNotice: "يتحقق فريق الدعم من هويتك أولاً. بعد الموافقة، يتاح التنزيل لمدة 24 ساعة. لا تتضمن النسخة تفاصيل الدفع أو كلمات المرور أو رموز الأجهزة أو روابط الصفوف الخاصة أو رسائل الدعم أو ملاحظات الموظفين الداخلية.",
     privacyExport: "طلب نسخة من بياناتي",
+    privacyExporting: "جارٍ إرسال الطلب…",
+    privacyExportReady: "جارٍ تنزيل نسخة بياناتك.",
+    privacyExportError: "تعذر تنزيل نسخة البيانات. قد لا يكون الطلب قد اعتُمد أو ربما انتهت مهلة الـ24 ساعة.",
+    privacyDataActive: "لديك طلب مفتوح للحصول على نسخة من البيانات.",
+    privacyDownload: "تنزيل النسخة",
+    privacyDownloadUntil: "متاحة حتى",
     privacyDelete: "طلب حذف الحساب",
-    privacyActive: "لديك طلب خصوصية مفتوح بالفعل. يمكنك إرسال طلب جديد بعد حل الطلب الحالي.",
+    privacyDeleteNotice: "يراجع فريق الدعم المخوّل طلبات حذف الحساب. لا يتم الحذف فوراً؛ وقد يلزم التحقق من الهوية ومراجعة السجلات التي يجب الاحتفاظ بها.",
+    privacyActive: "لديك طلب مفتوح لمراجعة حذف الحساب.",
     privacyHistory: "سجل الطلبات",
     privacyNone: "لا توجد طلبات خصوصية حتى الآن.",
     privacySent: "تم إرسال طلبك إلى دعم MaydanGo.",
@@ -138,11 +153,18 @@ const copy: Record<Language, Record<string, string>> = {
     mobileTitle: "ئەزموونی ئەندامان لە ئەپی مۆبایل",
     mobileNote: "ئەپی مۆبایل شوێنی سەرەکیی پێشنیارکراوە بۆ سکانی QR، حزووری GPS، ئاگادارکردنەوە، بەشداری لە وانەی ڕاستەوخۆ و کارتی ئەندامێتی.",
     privacyTitle: "داواکارییەکانی تایبەتمەندی",
-    privacyIntro: "دەتوانیت داوای کۆپیی زانیاریی هەژمارەکەت بکەیت یان داوای پێداچوونەوە بۆ سڕینەوەی هەژمارەکەت بکەیت.",
-    privacyNotice: "تیمی پشتگیریی ڕێگەپێدراو داواکارییەکان پێداچوونەوەیان بۆ دەکات. ناردنی داواکارییەکە داتاکانت ناداتەوە و هەژمارەکەت ناسڕێتەوە. لەوانەیە پشتڕاستکردنەوەی ناسنامە و پێداچوونەوەی تۆمارەکان پێویست بێت.",
+    privacyIntro: "داوای کۆپیی زانیاریی هەژمارەکەت بکە، یان داوای پێداچوونەوە بۆ سڕینەوەی هەژمارەکەت بکە.",
+    privacyNotice: "تیمی پشتگیری سەرەتا ناسنامەکەت پشتڕاست دەکاتەوە. دوای پەسەندکردن، داگرتنەکە بۆ ٢٤ کاتژمێر بەردەستە. وردەکاریی پارەدان، وشەی نهێنی، تۆکنی ئامێر، بەستەری وانەی تایبەت، پەیامەکانی پشتگیری و تێبینیی ناوخۆی کارمەندان تێدا نییە.",
     privacyExport: "داوای کۆپیی داتاکەم بکە",
+    privacyExporting: "داواکاری دەنێردرێت…",
+    privacyExportReady: "کۆپیی داتاکەت دادەبەزێت.",
+    privacyExportError: "داگرتنی کۆپیی داتاکەت سەرکەوتوو نەبوو. لەوانەیە پەسەند نەکرابێت یان ماوەی ٢٤ کاتژمێرەکە تەواو بووبێت.",
+    privacyDataActive: "داواکارییەکی کراوەتەوەت هەیە بۆ کۆپیی داتا.",
+    privacyDownload: "داگرتنی کۆپی",
+    privacyDownloadUntil: "بەردەستە تا",
     privacyDelete: "داوای سڕینەوەی هەژمار بکە",
-    privacyActive: "پێشتر داواکارییەکی تایبەتمەندیی کراوەتەوەت هەیە. دوای چارەسەرکردنی ئەوە دەتوانیت داواکارییەکی نوێ بنێریت.",
+    privacyDeleteNotice: "تیمی پشتگیریی ڕێگەپێدراو داواکاریی سڕینەوەی هەژمار پێداچوونەوەی بۆ دەکات. سڕینەوە دەستبەجێ نییە؛ لەوانەیە پشتڕاستکردنەوەی ناسنامە و پێداچوونەوەی تۆمارە پێویستەکان بکرێت.",
+    privacyActive: "داواکاریی پێداچوونەوەی سڕینەوەی هەژمارێکی کراوەتەوەت هەیە.",
     privacyHistory: "مێژووی داواکارییەکان",
     privacyNone: "هێشتا هیچ داواکارییەکی تایبەتمەندی نییە.",
     privacySent: "داواکارییەکەت بۆ تیمی پشتگیریی MaydanGo نێردرا.",
@@ -173,14 +195,14 @@ function formatIraqDate(value: string, language: Language) {
 }
 
 export default function MemberAccountPage({ language }: { language: Language }) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, getToken } = useAuth();
   const { isLoaded: userLoaded, user } = useUser();
   const queryClient = useQueryClient();
   const summary = useGetMemberAccountSummary({
     query: { enabled: isLoaded && isSignedIn === true },
   });
   const privacyRequests = useGetMemberPrivacyRequests({
-    query: { enabled: isLoaded && isSignedIn === true, retry: false },
+    query: { enabled: isLoaded && isSignedIn === true, retry: false, refetchInterval: 30_000 },
   });
   const createPrivacyRequest = useCreateMemberPrivacyRequest();
   const t = copy[language];
@@ -191,7 +213,14 @@ export default function MemberAccountPage({ language }: { language: Language }) 
   const [profileMessage, setProfileMessage] = useState("");
   const [profileError, setProfileError] = useState(false);
   const [privacyMessage, setPrivacyMessage] = useState("");
+  const [privacyExportMessage, setPrivacyExportMessage] = useState("");
+  const [exportingData, setExportingData] = useState(false);
   const activePrivacyRequest = privacyRequests.data?.find(request =>
+    request.kind === "account_deletion" &&
+    ["open", "in_progress", "waiting_member"].includes(request.status)
+  );
+  const activeDataRequest = privacyRequests.data?.find(request =>
+    request.kind === "data_export" &&
     ["open", "in_progress", "waiting_member"].includes(request.status)
   );
 
@@ -240,6 +269,34 @@ export default function MemberAccountPage({ language }: { language: Language }) 
     } catch {
       await queryClient.invalidateQueries({ queryKey: getGetMemberPrivacyRequestsQueryKey() });
       setPrivacyMessage(t.privacyError);
+    }
+  }
+
+  async function downloadAccountData(requestId: string) {
+    setPrivacyExportMessage("");
+    setExportingData(true);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Sign in again to download your data.");
+      const data = await getMemberPrivacyRequestExport(requestId, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `maydango-account-data-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setPrivacyExportMessage(t.privacyExportReady);
+    } catch {
+      setPrivacyExportMessage(t.privacyExportError);
+    } finally {
+      setExportingData(false);
     }
   }
 
@@ -336,21 +393,28 @@ export default function MemberAccountPage({ language }: { language: Language }) 
             <h2 id="account-privacy-heading" className="font-display text-xl font-bold">{t.privacyTitle}</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">{t.privacyIntro}</p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">{t.privacyNotice}</p>
+            <button
+              type="button"
+              disabled={createPrivacyRequest.isPending || privacyRequests.isLoading || !!activeDataRequest}
+              onClick={() => void submitPrivacyRequest("data_export")}
+              className="mt-4 rounded-full bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+              data-testid="privacy-request-export"
+            >
+              {createPrivacyRequest.isPending ? t.privacyExporting : t.privacyExport}
+            </button>
+            {activeDataRequest && (
+              <p className="mt-3 rounded-xl bg-muted p-3 text-sm" role="status">
+                {t.privacyDataActive} <span className="font-semibold">{privacyStatusLabel[language][activeDataRequest.status] ?? activeDataRequest.status}</span>
+              </p>
+            )}
+            {privacyExportMessage && <p className="mt-3 text-sm text-primary" role="status">{privacyExportMessage}</p>}
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">{t.privacyDeleteNotice}</p>
             {activePrivacyRequest ? (
               <p className="mt-4 rounded-xl bg-muted p-3 text-sm" role="status">
                 {t.privacyActive} <span className="font-semibold">{privacyStatusLabel[language][activePrivacyRequest.status] ?? activePrivacyRequest.status}</span>
               </p>
             ) : (
               <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={createPrivacyRequest.isPending || privacyRequests.isLoading}
-                  onClick={() => void submitPrivacyRequest("data_export")}
-                  className="rounded-full bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
-                  data-testid="privacy-request-export"
-                >
-                  {t.privacyExport}
-                </button>
                 <button
                   type="button"
                   disabled={createPrivacyRequest.isPending || privacyRequests.isLoading}
@@ -372,6 +436,17 @@ export default function MemberAccountPage({ language }: { language: Language }) 
                       <li key={request.id} className="flex flex-wrap items-start justify-between gap-2 rounded-xl border border-border p-3 text-sm">
                         <span className="font-medium">{request.subject}</span>
                         <span className="text-muted-foreground">{privacyStatusLabel[language][request.status] ?? request.status} · {formatIraqDate(request.createdAt, language)}</span>
+                        {request.kind === "data_export" && request.exportAvailableUntil
+                          && new Date(String(request.exportAvailableUntil)).getTime() > Date.now() && (
+                          <div className="flex w-full flex-wrap items-center justify-between gap-2 border-t border-border pt-2">
+                            <span className="text-xs text-muted-foreground">{t.privacyDownloadUntil} {formatIraqDate(String(request.exportAvailableUntil), language)}</span>
+                            <button type="button" disabled={exportingData} onClick={() => void downloadAccountData(request.id)}
+                              className="rounded-full border border-border px-3 py-1.5 text-xs font-bold disabled:opacity-60"
+                              data-testid={`privacy-download-data-${request.id}`}>
+                              {exportingData ? t.privacyExporting : t.privacyDownload}
+                            </button>
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul> : <p className="mt-2 text-sm text-muted-foreground">{t.privacyNone}</p>}

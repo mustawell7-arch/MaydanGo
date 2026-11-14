@@ -706,11 +706,170 @@ export interface PrivacyRequestInput {
   language: SupportedLanguage;
 }
 
-export interface PrivacyRequest {
+export interface PrivacyExportApprovalInput {
+  identityVerified: true;
+}
+
+export interface PrivacyExportReadyResponse {
+  ticketId: string;
+  exportAvailableUntil: string;
+}
+
+export interface MemberDataExportProfile {
+  gender: string;
+  birthDate: string;
+}
+
+export interface MemberDataExportAccount {
+  /** @nullable */
+  email: string | null;
+  /** @nullable */
+  firstName: string | null;
+  /** @nullable */
+  lastName: string | null;
+  /** @nullable */
+  createdAt: string | null;
+  profile: MemberDataExportProfile | null;
+}
+
+export interface MemberDataExportMembership {
+  scope: string;
+  status: string;
+  tier: string;
+  source: string;
+  startsAt: string;
+  endsAt: string;
+}
+
+export interface MemberDataExportBooking {
   id: string;
+  kind: string;
+  title: string;
+  city: string;
+  facility: string;
+  category: string;
+  scope: string;
+  startsAt: string;
+  endsAt: string;
+  status: string;
+  createdAt: string;
+  /** @nullable */
+  cancelledAt: string | null;
+}
+
+export interface MemberDataExportWaitlistEntry {
+  id: string;
+  title: string;
+  startsAt: string;
+  queuePosition: number;
+  status: string;
+  createdAt: string;
+  /** @nullable */
+  offerExpiresAt: string | null;
+  /** @nullable */
+  respondedAt: string | null;
+}
+
+export interface MemberDataExportAttendance {
+  id: string;
+  title: string;
+  city: string;
+  facility: string;
+  checkedInAt: string;
+  status: string;
+}
+
+export interface MemberDataExportCompletedLesson {
+  title: string;
+  completedAt: string;
+}
+
+export interface MemberDataExportCourse {
+  title: string;
+  enrolledAt: string;
+  completedLessons: MemberDataExportCompletedLesson[];
+}
+
+export interface MemberDataExportReviewRatings {
+  /** @nullable */
+  cleanliness: number | null;
+  /** @nullable */
+  staff: number | null;
+  /** @nullable */
+  equipment: number | null;
+  /** @nullable */
+  instructor: number | null;
+  /** @nullable */
+  facilities: number | null;
+  /** @nullable */
+  informationAccuracy: number | null;
+}
+
+export interface MemberDataExportReview {
+  overallRating: number;
+  categoryRatings: MemberDataExportReviewRatings;
+  /** @nullable */
+  content: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MemberDataExportNotificationPreferences {
+  pushEnabled: boolean;
+  language: SupportedLanguage;
+  updatedAt: string;
+}
+
+export interface MemberDataExportPrivacyRequest {
+  kind: PrivacyRequestKind;
   subject: string;
   status: SupportTicketStatus;
   createdAt: string;
+}
+
+export type MemberDataExportFormatVersion = typeof MemberDataExportFormatVersion[keyof typeof MemberDataExportFormatVersion];
+
+
+export const MemberDataExportFormatVersion = {
+  '10': '1.0',
+} as const;
+
+export type MemberDataExportExcludedDataItem = typeof MemberDataExportExcludedDataItem[keyof typeof MemberDataExportExcludedDataItem];
+
+
+export const MemberDataExportExcludedDataItem = {
+  payment_instrument_details: 'payment_instrument_details',
+  login_credentials: 'login_credentials',
+  push_tokens: 'push_tokens',
+  private_class_links: 'private_class_links',
+  support_conversation_messages: 'support_conversation_messages',
+  internal_support_notes: 'internal_support_notes',
+} as const;
+
+export interface MemberDataExport {
+  formatVersion: MemberDataExportFormatVersion;
+  generatedAt: string;
+  account: MemberDataExportAccount;
+  memberships: MemberDataExportMembership[];
+  bookings: MemberDataExportBooking[];
+  waitlist: MemberDataExportWaitlistEntry[];
+  attendance: MemberDataExportAttendance[];
+  courses: MemberDataExportCourse[];
+  reviews: MemberDataExportReview[];
+  privacyRequests: MemberDataExportPrivacyRequest[];
+  notificationPreferences: MemberDataExportNotificationPreferences | null;
+  excludedData: MemberDataExportExcludedDataItem[];
+}
+
+export interface PrivacyRequest {
+  id: string;
+  kind: PrivacyRequestKind;
+  subject: string;
+  status: SupportTicketStatus;
+  createdAt: string;
+  /** @nullable */
+  exportAvailableUntil: string | null;
 }
 
 export interface SupportTicketInput {
@@ -992,10 +1151,13 @@ export type SupportStaffEvent = SupportTicketEvent & ({
   detail: string;
 });
 
-export type SupportStaffTicketDetail = SupportStaffTicketSummary & {
+export type SupportStaffTicketDetail = SupportStaffTicketSummary & ({
   messages: SupportStaffMessage[];
   events: SupportStaffEvent[];
-};
+  privacyRequestKind: PrivacyRequestKind | null;
+  /** @nullable */
+  privacyExportAvailableUntil: string | null;
+});
 
 export interface SupportStaffTicketUpdate {
   status?: SupportTicketStatus;

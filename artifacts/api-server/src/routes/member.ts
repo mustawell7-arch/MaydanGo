@@ -15,8 +15,11 @@ import {
 import {
   ActivePrivacyRequestError,
   createMemberPrivacyRequest,
+  getMemberPrivacyExportAccess,
   listMemberPrivacyRequests,
+  recordMemberPrivacyExportDownload,
 } from "../lib/privacy-requests";
+import { createMemberDataExport } from "../lib/member-data-export";
 import learningRouter from "./learning";
 import { memberSupportRouter } from "./support";
 import memberReviewsRouter from "./member-reviews";
@@ -39,6 +42,29 @@ router.get("/account", async (req, res) => {
 router.get("/privacy-requests", async (req, res) => {
   const ownerId = getAuth(req).userId!;
   res.json(GetMemberPrivacyRequestsResponse.parse(await listMemberPrivacyRequests(ownerId)));
+});
+router.get("/privacy-requests/:id/export", async (req, res) => {
+  const ownerId = getAuth(req).userId!;
+  const requestId = String(req.params.id);
+  const access = await getMemberPrivacyExportAccess(ownerId, requestId);
+  if (!access) {
+    res.status(404).json({ message: "Privacy request not found." });
+    return;
+  }
+  if (!access.exportAvailableUntil || access.exportAvailableUntil.getTime() <= Date.now()) {
+    res.status(410).json({ message: "This data export is not ready or its download window has expired." });
+    return;
+  }
+  const exportData = await createMemberDataExport(ownerId);
+  await recordMemberPrivacyExportDownload(ownerId, requestId);
+  req.log.info({ formatVersion: exportData.formatVersion }, "Member data export generated");
+  res.set({
+    "Cache-Control": "private, no-store, max-age=0",
+    "Pragma": "no-cache",
+    "X-Content-Type-Options": "nosniff",
+    "Content-Disposition": 'attachment; filename="MaydanGo-account-data.json"',
+  });
+  res.json(exportData);
 });
 router.post("/privacy-requests", async (req, res) => {
   const parsed = CreateMemberPrivacyRequestBody.safeParse(req.body);

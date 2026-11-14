@@ -104,6 +104,22 @@ paths:
               schema: { $ref: "#/components/schemas/PrivacyRequest" }
         "409":
           description: An active privacy request already exists
+  /member/privacy-requests/{id}/export:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getMemberPrivacyRequestExport
+      responses:
+        "200":
+          description: A no-store export for the signed-in member after staff verification
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberDataExport" }
+        "401":
+          description: Sign-in is required
+        "404":
+          description: Privacy request not found
+        "410":
+          description: Export is not ready or its download window expired
   /member/support/tickets/{id}:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     get:
@@ -279,6 +295,27 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SupportStaffTicketDetail" }
+  /support/staff/tickets/{id}/privacy-export:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: prepareSupportStaffPrivacyExport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PrivacyExportApprovalInput" }
+      responses:
+        "200":
+          description: Export access approved after staff identity verification and audited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PrivacyExportReadyResponse" }
+        "403":
+          description: Authorized support access is required
+        "404":
+          description: Privacy request not found
+        "409":
+          description: Ticket is not a data-copy request or cannot be resolved
   /support/staff/tickets/{id}/replies:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     post:
@@ -1890,15 +1927,196 @@ components:
       properties:
         kind: { $ref: "#/components/schemas/PrivacyRequestKind" }
         language: { $ref: "#/components/schemas/SupportedLanguage" }
-    PrivacyRequest:
+    PrivacyExportApprovalInput:
       type: object
       additionalProperties: false
-      required: [id, subject, status, createdAt]
+      required: [identityVerified]
+      properties:
+        identityVerified: { type: boolean, enum: [true] }
+    PrivacyExportReadyResponse:
+      type: object
+      additionalProperties: false
+      required: [ticketId, exportAvailableUntil]
+      properties:
+        ticketId: { type: string }
+        exportAvailableUntil: { type: string, format: date-time }
+    MemberDataExportProfile:
+      type: object
+      additionalProperties: false
+      required: [gender, birthDate]
+      properties:
+        gender: { type: string }
+        birthDate: { type: string, format: date }
+    MemberDataExportAccount:
+      type: object
+      additionalProperties: false
+      required: [email, firstName, lastName, createdAt, profile]
+      properties:
+        email: { type: ["string", "null"] }
+        firstName: { type: ["string", "null"] }
+        lastName: { type: ["string", "null"] }
+        createdAt: { type: ["string", "null"], format: date-time }
+        profile:
+          anyOf:
+            - { $ref: "#/components/schemas/MemberDataExportProfile" }
+            - { type: "null" }
+    MemberDataExportMembership:
+      type: object
+      additionalProperties: false
+      required: [scope, status, tier, source, startsAt, endsAt]
+      properties:
+        scope: { type: string }
+        status: { type: string }
+        tier: { type: string }
+        source: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+    MemberDataExportBooking:
+      type: object
+      additionalProperties: false
+      required: [id, kind, title, city, facility, category, scope, startsAt, endsAt, status, createdAt, cancelledAt]
       properties:
         id: { type: string }
+        kind: { type: string }
+        title: { type: string }
+        city: { type: string }
+        facility: { type: string }
+        category: { type: string }
+        scope: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+        cancelledAt: { type: ["string", "null"], format: date-time }
+    MemberDataExportWaitlistEntry:
+      type: object
+      additionalProperties: false
+      required: [id, title, startsAt, queuePosition, status, createdAt, offerExpiresAt, respondedAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        startsAt: { type: string, format: date-time }
+        queuePosition: { type: integer }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+        offerExpiresAt: { type: ["string", "null"], format: date-time }
+        respondedAt: { type: ["string", "null"], format: date-time }
+    MemberDataExportAttendance:
+      type: object
+      additionalProperties: false
+      required: [id, title, city, facility, checkedInAt, status]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        city: { type: string }
+        facility: { type: string }
+        checkedInAt: { type: string, format: date-time }
+        status: { type: string }
+    MemberDataExportCompletedLesson:
+      type: object
+      additionalProperties: false
+      required: [title, completedAt]
+      properties:
+        title: { type: string }
+        completedAt: { type: string, format: date-time }
+    MemberDataExportCourse:
+      type: object
+      additionalProperties: false
+      required: [title, enrolledAt, completedLessons]
+      properties:
+        title: { type: string }
+        enrolledAt: { type: string, format: date-time }
+        completedLessons:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportCompletedLesson" }
+    MemberDataExportReviewRatings:
+      type: object
+      additionalProperties: false
+      required: [cleanliness, staff, equipment, instructor, facilities, informationAccuracy]
+      properties:
+        cleanliness: { type: ["integer", "null"] }
+        staff: { type: ["integer", "null"] }
+        equipment: { type: ["integer", "null"] }
+        instructor: { type: ["integer", "null"] }
+        facilities: { type: ["integer", "null"] }
+        informationAccuracy: { type: ["integer", "null"] }
+    MemberDataExportReview:
+      type: object
+      additionalProperties: false
+      required: [overallRating, categoryRatings, content, status, createdAt, updatedAt]
+      properties:
+        overallRating: { type: integer }
+        categoryRatings: { $ref: "#/components/schemas/MemberDataExportReviewRatings" }
+        content: { type: ["string", "null"] }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    MemberDataExportNotificationPreferences:
+      type: object
+      additionalProperties: false
+      required: [pushEnabled, language, updatedAt]
+      properties:
+        pushEnabled: { type: boolean }
+        language: { $ref: "#/components/schemas/SupportedLanguage" }
+        updatedAt: { type: string, format: date-time }
+    MemberDataExportPrivacyRequest:
+      type: object
+      additionalProperties: false
+      required: [kind, subject, status, createdAt]
+      properties:
+        kind: { $ref: "#/components/schemas/PrivacyRequestKind" }
         subject: { type: string }
         status: { $ref: "#/components/schemas/SupportTicketStatus" }
         createdAt: { type: string, format: date-time }
+    MemberDataExport:
+      type: object
+      additionalProperties: false
+      required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, reviews, privacyRequests, notificationPreferences, excludedData]
+      properties:
+        formatVersion: { type: string, enum: ["1.0"] }
+        generatedAt: { type: string, format: date-time }
+        account: { $ref: "#/components/schemas/MemberDataExportAccount" }
+        memberships:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportMembership" }
+        bookings:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportBooking" }
+        waitlist:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportWaitlistEntry" }
+        attendance:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportAttendance" }
+        courses:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportCourse" }
+        reviews:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportReview" }
+        privacyRequests:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportPrivacyRequest" }
+        notificationPreferences:
+          anyOf:
+            - { $ref: "#/components/schemas/MemberDataExportNotificationPreferences" }
+            - { type: "null" }
+        excludedData:
+          type: array
+          items:
+            type: string
+            enum: [payment_instrument_details, login_credentials, push_tokens, private_class_links, support_conversation_messages, internal_support_notes]
+    PrivacyRequest:
+      type: object
+      additionalProperties: false
+      required: [id, kind, subject, status, createdAt, exportAvailableUntil]
+      properties:
+        id: { type: string }
+        kind: { $ref: "#/components/schemas/PrivacyRequestKind" }
+        subject: { type: string }
+        status: { $ref: "#/components/schemas/SupportTicketStatus" }
+        createdAt: { type: string, format: date-time }
+        exportAvailableUntil: { type: ["string", "null"], format: date-time }
     SupportedLanguage:
       type: string
       enum: [en, ar, ku]
@@ -2106,10 +2324,15 @@ components:
       allOf:
         - $ref: "#/components/schemas/SupportStaffTicketSummary"
         - type: object
-          required: [messages, events]
+          required: [messages, events, privacyRequestKind, privacyExportAvailableUntil]
           properties:
             messages: { type: array, items: { $ref: "#/components/schemas/SupportStaffMessage" } }
             events: { type: array, items: { $ref: "#/components/schemas/SupportStaffEvent" } }
+            privacyRequestKind:
+              anyOf:
+                - { $ref: "#/components/schemas/PrivacyRequestKind" }
+                - { type: "null" }
+            privacyExportAvailableUntil: { type: ["string", "null"], format: date-time }
     SupportStaffTicketUpdate:
       type: object
       additionalProperties: false

@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { Platform, View, StyleSheet } from 'react-native';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  getMemberPrivacyRequestExport,
   getGetMemberPrivacyRequestsQueryKey,
   useCreateMemberPrivacyRequest,
   useGetMemberPrivacyRequests,
@@ -23,14 +26,14 @@ WebBrowser.maybeCompleteAuthSession();
 export default function AccountScreen() {
   const c = useColors();
   const app = useApp();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, getToken } = useAuth();
   const { user } = useUser();
   const { signOut } = useClerk();
   const { signIn } = useSignIn();
   const { signUp } = useSignUp();
   const { startSSOFlow } = useSSO();
   const queryClient = useQueryClient();
-  const privacyRequests = useGetMemberPrivacyRequests({ query: { enabled: isSignedIn === true } });
+  const privacyRequests = useGetMemberPrivacyRequests({ query: { enabled: isSignedIn === true, refetchInterval: 30_000 } });
   const createPrivacyRequest = useCreateMemberPrivacyRequest();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -41,6 +44,7 @@ export default function AccountScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [privacyNotice, setPrivacyNotice] = useState('');
+  const [exportingData, setExportingData] = useState(false);
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState<'female' | 'male' | 'unspecified'>('unspecified');
   const run = async (fn: () => Promise<void>) => {
@@ -83,7 +87,14 @@ export default function AccountScreen() {
     }
   });
   const button = (title: string, onPress: () => void, id?: string) => <Pressable testID={id} accessibilityRole="button" disabled={busy || app.memberLoading} onPress={onPress} style={[styles.button, { backgroundColor: c.primary, opacity: busy ? .6 : 1 }]}><Text style={{ color: c.primaryForeground, fontWeight: '700' }}>{title}</Text></Pressable>;
-  const openPrivacyRequest = privacyRequests.data?.find(request => ['open', 'in_progress', 'waiting_member'].includes(request.status));
+  const openPrivacyRequest = privacyRequests.data?.find(request =>
+    request.kind === 'account_deletion' &&
+    ['open', 'in_progress', 'waiting_member'].includes(request.status)
+  );
+  const openDataExportRequest = privacyRequests.data?.find(request =>
+    request.kind === 'data_export' &&
+    ['open', 'in_progress', 'waiting_member'].includes(request.status)
+  );
   const privacyStatusKey: Record<string, MessageKey> = {
     open: 'supportStatusOpen',
     in_progress: 'supportStatusInProgress',
@@ -101,6 +112,44 @@ export default function AccountScreen() {
     } catch {
       await queryClient.invalidateQueries({ queryKey: getGetMemberPrivacyRequestsQueryKey() });
       setPrivacyNotice(translate(app.language, 'privacyRequestError'));
+    }
+  };
+  const downloadAccountData = async (requestId: string) => {
+    setPrivacyNotice('');
+    setExportingData(true);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Sign in again to download your data.');
+      const data = await getMemberPrivacyRequestExport(requestId, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const filename = `maydango-account-data-${new Date().toISOString().slice(0, 10)}.json`;
+      const contents = JSON.stringify(data, null, 2);
+      if (Platform.OS === 'web') {
+        const url = URL.createObjectURL(new Blob([contents], { type: 'application/json;charset=utf-8' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } else {
+        const file = new File(Paths.cache, filename);
+        file.create({ overwrite: true });
+        try {
+          file.write(contents);
+          if (!await Sharing.isAvailableAsync()) throw new Error('File sharing is not available on this device.');
+          await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: translate(app.language, 'privacyRequestsTitle') });
+        } finally {
+          if (file.exists) file.delete();
+        }
+      }
+      setPrivacyNotice(translate(app.language, 'privacyRequestExportReady'));
+    } catch {
+      setPrivacyNotice(translate(app.language, 'privacyRequestExportError'));
+    } finally {
+      setExportingData(false);
     }
   };
   return <ScreenShell>
@@ -126,6 +175,27 @@ export default function AccountScreen() {
           <Text style={{ color: c.foreground, fontWeight: '800', fontSize: 18 }}>{translate(app.language, 'privacyRequestsTitle')}</Text>
           <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'privacyRequestsIntro')}</Text>
           <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'privacyRequestsNoAutomatic')}</Text>
+          <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'privacyRequestDeleteNotice')}</Text>
+          <Pressable
+            testID="privacy-request-export"
+            accessibilityRole="button"
+            disabled={createPrivacyRequest.isPending || privacyRequests.isLoading || !!openDataExportRequest}
+            onPress={() => void submitPrivacyRequest('data_export')}
+            style={[styles.button, { backgroundColor: c.primary, opacity: createPrivacyRequest.isPending || openDataExportRequest ? .6 : 1 }]}
+          >
+            <Text style={{ color: c.primaryForeground, fontWeight: '700' }}>
+              {translate(app.language, createPrivacyRequest.isPending ? 'privacyRequestExporting' : 'privacyRequestCopyData')}
+            </Text>
+          </Pressable>
+          {openDataExportRequest ? <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: '/support/[id]', params: { id: openDataExportRequest.id } })}
+            style={[styles.button, { backgroundColor: c.secondary }]}
+          >
+            <Text style={{ color: c.secondaryForeground, fontWeight: '700' }}>
+              {translate(app.language, 'privacyRequestExportActive')} · {translate(app.language, privacyStatusKey[openDataExportRequest.status] ?? 'supportStatusOpen')}
+            </Text>
+          </Pressable> : null}
           {openPrivacyRequest ? <Pressable
             accessibilityRole="button"
             onPress={() => router.push({ pathname: '/support/[id]', params: { id: openPrivacyRequest.id } })}
@@ -135,15 +205,6 @@ export default function AccountScreen() {
               {translate(app.language, 'privacyRequestActive')} · {translate(app.language, privacyStatusKey[openPrivacyRequest.status] ?? 'supportStatusOpen')}
             </Text>
           </Pressable> : <>
-            <Pressable
-              testID="privacy-request-export"
-              accessibilityRole="button"
-              disabled={createPrivacyRequest.isPending || privacyRequests.isLoading}
-              onPress={() => void submitPrivacyRequest('data_export')}
-              style={[styles.button, { backgroundColor: c.primary, opacity: createPrivacyRequest.isPending ? .6 : 1 }]}
-            >
-              <Text style={{ color: c.primaryForeground, fontWeight: '700' }}>{translate(app.language, 'privacyRequestCopyData')}</Text>
-            </Pressable>
             <Pressable
               testID="privacy-request-delete"
               accessibilityRole="button"
@@ -157,15 +218,29 @@ export default function AccountScreen() {
           <Text style={{ color: c.foreground, fontWeight: '700', marginTop: 4 }}>{translate(app.language, 'privacyRequestHistory')}</Text>
           {privacyRequests.isError ? <Text accessibilityRole="alert" style={{ color: c.destructive }}>{translate(app.language, 'privacyRequestLoadError')}</Text>
             : privacyRequests.data?.length ? privacyRequests.data.map(request => (
-              <Pressable
-                key={request.id}
-                accessibilityRole="button"
-                onPress={() => router.push({ pathname: '/support/[id]', params: { id: request.id } })}
-                style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, paddingTop: 8 }}
-              >
-                <Text style={{ color: c.primary, fontWeight: '700' }}>{request.subject}</Text>
-                <Text style={{ color: c.mutedForeground }}>{translate(app.language, privacyStatusKey[request.status] ?? 'supportStatusOpen')} · {dateTime(request.createdAt, app.language, true)}</Text>
-              </Pressable>
+              <View key={request.id} style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, paddingTop: 8 }}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push({ pathname: '/support/[id]', params: { id: request.id } })}
+                >
+                  <Text style={{ color: c.primary, fontWeight: '700' }}>{request.subject}</Text>
+                  <Text style={{ color: c.mutedForeground }}>{translate(app.language, privacyStatusKey[request.status] ?? 'supportStatusOpen')} · {dateTime(request.createdAt, app.language, true)}</Text>
+                </Pressable>
+                {request.kind === 'data_export' && request.exportAvailableUntil
+                  && new Date(String(request.exportAvailableUntil)).getTime() > Date.now() ? (
+                  <Pressable
+                    testID={`privacy-download-data-${request.id}`}
+                    accessibilityRole="button"
+                    disabled={exportingData}
+                    onPress={() => void downloadAccountData(request.id)}
+                    style={[styles.button, { backgroundColor: c.primary, opacity: exportingData ? .6 : 1, marginTop: 8 }]}
+                  >
+                    <Text style={{ color: c.primaryForeground, fontWeight: '700' }}>
+                      {translate(app.language, 'privacyRequestDownloadCopy')} · {translate(app.language, 'privacyRequestAvailableUntil')} {dateTime(String(request.exportAvailableUntil), app.language, true)}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
             )) : <Text style={{ color: c.mutedForeground }}>{translate(app.language, 'privacyRequestNoHistory')}</Text>}
           {privacyNotice ? <Text accessibilityRole="alert" style={{ color: c.primary }}>{privacyNotice}</Text> : null}
         </View>
