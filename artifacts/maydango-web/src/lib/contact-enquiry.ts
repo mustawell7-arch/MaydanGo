@@ -5,6 +5,9 @@ export type ContactSubmission = {
   name: string;
   replyEmail: string;
   message: string;
+  partnerOrganization?: string;
+  partnerCity?: string;
+  partnerServices?: string;
 };
 
 export type ContactDraftLabels = {
@@ -12,6 +15,9 @@ export type ContactDraftLabels = {
   nameLabel: string;
   emailLabel: string;
   topicLabels: Record<ContactTopic, string>;
+  partnerOrganizationLabel?: string;
+  partnerCityLabel?: string;
+  partnerServicesLabel?: string;
 };
 
 export function verifiedContactEmail(value: string | undefined): string {
@@ -35,10 +41,22 @@ export function createContactEmailDraft(
   if (!email) return null;
 
   const subject = labels.topicLabels[values.topic] ?? labels.topicLabels.other;
+  const partnerDetails = [
+    values.partnerOrganization?.trim() && labels.partnerOrganizationLabel
+      ? `${labels.partnerOrganizationLabel}: ${values.partnerOrganization.trim()}`
+      : "",
+    values.partnerCity?.trim() && labels.partnerCityLabel
+      ? `${labels.partnerCityLabel}: ${values.partnerCity.trim()}`
+      : "",
+    values.partnerServices?.trim() && labels.partnerServicesLabel
+      ? `${labels.partnerServicesLabel}: ${values.partnerServices.trim()}`
+      : "",
+  ].filter(Boolean);
   const body = [
     `${labels.contactTopic}: ${subject}`,
     `${labels.nameLabel}: ${values.name || "-"}`,
     `${labels.emailLabel}: ${values.replyEmail || "-"}`,
+    ...partnerDetails,
     "",
     values.message,
   ].join("\n");

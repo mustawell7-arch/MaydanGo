@@ -19,6 +19,9 @@ const labels: ContactDraftLabels = {
     corporate: "Organisation enquiry",
     other: "Other",
   },
+  partnerOrganizationLabel: "Organisation",
+  partnerCityLabel: "City or governorate",
+  partnerServicesLabel: "Services",
 };
 
 const submission: ContactSubmission = {
@@ -71,4 +74,17 @@ test("email draft encoding preserves punctuation and line breaks", () => {
   assert.ok(draft);
   const parsed = new URL(draft);
   assert.equal(parsed.searchParams.get("body"), "Enquiry topic: Partner enquiry\nName: Samira Hassan\nReply email: samira@example.com\n\nFirst line & details?\nSecond line.");
+});
+
+test("partner email drafts include supplied facility details", () => {
+  const draft = createContactEmailDraft("maydangoing@gmail.com", {
+    ...submission,
+    topic: "partner",
+    partnerOrganization: "MaydanGo Demo Gym",
+    partnerCity: "Erbil",
+    partnerServices: "Fitness and pool",
+  }, labels);
+  assert.ok(draft);
+  const parsed = new URL(draft);
+  assert.equal(parsed.searchParams.get("body"), "Enquiry topic: Partner enquiry\nName: Samira Hassan\nReply email: samira@example.com\nOrganisation: MaydanGo Demo Gym\nCity or governorate: Erbil\nServices: Fitness and pool\n\nPlease tell me about upcoming classes.");
 });

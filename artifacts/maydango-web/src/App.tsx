@@ -167,8 +167,8 @@ const legacyTranslations: Record<Language, Copy> = {
     homeFirst: 'A studio nearby or a corner at home.', homeFirstD: 'Wellbeing is not one-size-fits-all. Choose the setting that feels right today.',
     footerNote: 'A wellbeing membership made in Iraq, for everyday life.',
     noDestination: 'This destination is not configured yet. Please check back for verified contact details.',
-    send: 'Send an enquiry', formNote: 'We’ll prepare an email draft for you. This site does not send or store it.',
-    learnMore: 'Learn more', availabilityTitle: 'Ask us what is available', availabilityD: 'Tell us what you are looking for and we will help you understand the current options.',
+    send: 'Enquiry form', formNote: 'This form prepares an email draft for your review. The message is sent only when you send it from your email app; this website does not store enquiries.',
+    learnMore: 'Learn more', availabilityTitle: 'Information and enquiries', availabilityD: 'Contact the MaydanGo team for current information about membership, activities, and partnership options.',
     faq1: 'Is MaydanGo available in my city?', faq1d: 'Our public catalogue shows future offerings from active, approved partners. If your area is not listed today, availability may change.',
     faq2: 'Can I train from home?', faq2d: 'Yes. Online and live options may be listed alongside in-person sessions when partners publish them.',
     faq3: 'Can I buy or activate a membership here?', faq3d: 'No. Checkout and activation are not enabled on this website. You can ask about availability or request updates.',
@@ -192,9 +192,9 @@ const legacyTranslations: Record<Language, Copy> = {
     'page_description:/account': 'Privately review your membership and bookings and update your basic account details.',
     'page_title:/privacy': 'Privacy information | MaydanGo',
     'page_description:/privacy': 'Plain-language draft explaining how MaydanGo handles account, booking, attendance, support and browser information.',
-    contactTitle: 'Let’s find the right next step.', partnerTitle: 'Make your space part of the movement.',
+    contactTitle: 'Contact the MaydanGo team.', partnerTitle: 'Bring your facility to more people across Iraq.',
     corporateTitle: 'More room for wellbeing at work.', instructorTitle: 'Share what you teach.',
-    partnerIntro: 'MaydanGo connects people with places and coaches that make wellbeing feel closer to everyday life. Tell us about your work and we can explore a fit together.',
+    partnerIntro: 'MaydanGo helps people across Iraq discover approved sports, fitness, and wellbeing providers. Contact our team to learn about listing requirements, partner operations, and commercial terms.',
     corporateIntro: 'Explore ways to make local movement and at-home options easier to discover for your people. We can discuss what may fit your organisation and location.',
     instructorIntro: 'Tell us about your coaching or teaching work. Ask about courses or live sessions; rates and payout terms must be confirmed before any agreement.',
     partnerBullet1: 'Share upcoming sessions with a wider local community.',
@@ -206,9 +206,9 @@ const legacyTranslations: Record<Language, Copy> = {
     instructorBullet1: 'Introduce your training approach and the people you serve.',
     instructorBullet2: 'Ask about creating a course or hosting a live session.',
     instructorBullet3: 'Rates, eligibility and payout details are not published here; confirm the terms before agreeing.',
-    partnerDetail1: 'Publish approved facility and session information for members to discover.',
-    partnerDetail2: 'Use partner tools to manage sessions and confirm attendance after an in-person visit.',
-    partnerDetail3: 'Ask about participation and payout terms; this page does not publish rates or guarantee revenue.',
+    partnerDetail1: 'Publish approved facility and session information for local members to discover.',
+    partnerDetail2: 'Manage published sessions and confirm attendance through the partner portal.',
+    partnerDetail3: 'Participation and partner compensation terms are confirmed separately; no revenue is guaranteed.',
     corporateDetail1: 'Discuss options for employees, including local facilities and online sessions where available.',
     corporateDetail2: 'Ask about company contributions, HR administration, and reporting needs.',
     corporateDetail3: 'Availability, contributions, and reporting arrangements need confirmation; this enquiry does not activate a plan.',
@@ -217,6 +217,11 @@ const legacyTranslations: Record<Language, Copy> = {
     verifiedContinue: 'Continue to the verified enquiry destination.',
     contactTopic: 'What is your enquiry about?', topicMembership: 'Membership availability',
     topicPartner: 'Partner enquiry', topicInstructor: 'Instructor enquiry', topicCorporate: 'Organisation enquiry', topicOther: 'Something else',
+    partnerCta: 'Begin a partnership enquiry',
+    partnerOrganizationLabel: 'Facility or organisation name (optional)',
+    partnerCityLabel: 'City or governorate (optional)',
+    partnerServicesLabel: 'Services and activities offered (optional)',
+    partnerApplicationNote: 'Use this form to prepare a partnership enquiry email. Review and send the draft from your email app. MaydanGo reviews each enquiry separately; an enquiry does not guarantee approval.',
     previewEnquiry: 'Prepare an email draft', localFormNotice: 'Nothing was sent or stored. Use the verified contact route on this page if available.',
     emailMaydanGo: 'Email MaydanGo',
     nameLabel: 'Your name', emailLabel: 'Your email', messageLabel: 'Your message',
@@ -299,8 +304,8 @@ const legacyTranslations: Record<Language, Copy> = {
     homeFirst: 'استوديو قريب أو مساحة في المنزل.', homeFirstD: 'العافية ليست قالباً واحداً. اختر المكان الذي يلائمك اليوم.',
     footerNote: 'عضوية للعافية من العراق، للحياة اليومية.',
     noDestination: 'لم يتم إعداد وجهة التواصل بعد. تحقق لاحقاً من بيانات التواصل المعتمدة.',
-    send: 'أرسل استفساراً', formNote: 'سنجهز مسودة بريد إلكتروني لتراجعها. هذا الموقع لا يرسلها ولا يخزنها.',
-    learnMore: 'اعرف المزيد', availabilityTitle: 'اسألنا عمّا هو متاح', availabilityD: 'أخبرنا بما تبحث عنه وسنساعدك على فهم الخيارات الحالية.',
+    send: 'نموذج الاستفسار', formNote: 'يُعد هذا النموذج مسودة بريد إلكتروني لمراجعتها. لا تُرسل الرسالة إلا بعد اختيارك إرسالها من تطبيق البريد، ولا يحفظ الموقع الاستفسارات.',
+    learnMore: 'اعرف المزيد', availabilityTitle: 'المعلومات والاستفسارات', availabilityD: 'تواصل مع فريق MaydanGo للحصول على معلومات محدثة عن العضوية والأنشطة وفرص الشراكة.',
     faq1: 'هل MaydanGo متاحة في مدينتي؟', faq1d: 'يعرض دليلنا العام الفرص المستقبلية من الشركاء النشطين والمعتمدين. قد يتغير التوفر إذا لم تظهر منطقتك الآن.',
     faq2: 'هل يمكنني التدريب من المنزل؟', faq2d: 'نعم. قد تظهر الخيارات المباشرة وعبر الإنترنت إلى جانب الجلسات الحضورية عندما ينشرها الشركاء.',
     faq3: 'هل يمكنني شراء عضوية أو تفعيلها هنا؟', faq3d: 'لا. الدفع والتفعيل غير متاحين على هذا الموقع. يمكنك الاستفسار عن التوفر أو طلب التحديثات.',
@@ -319,9 +324,9 @@ const legacyTranslations: Record<Language, Copy> = {
     'page_description:/account': 'راجع عضويتك وحجوزاتك وحدّث تفاصيل حسابك الأساسية بشكل خاص.',
     'page_title:/privacy': 'معلومات الخصوصية | MaydanGo',
     'page_description:/privacy': 'مسودة مبسطة تشرح تعامل MaydanGo مع معلومات الحساب والحجوزات والحضور والدعم والمتصفح.',
-    contactTitle: 'لنجد الخطوة التالية المناسبة.', partnerTitle: 'اجعل مكانك جزءاً من الحركة.',
+    contactTitle: 'تواصل مع فريق MaydanGo.', partnerTitle: 'عرّف المزيد من الناس بمنشأتك عبر MaydanGo.',
     corporateTitle: 'مساحة أكبر للعافية في العمل.', instructorTitle: 'شاركنا ما تقدمه.',
-    partnerIntro: 'تربط MaydanGo الناس بأماكن ومدربين يجعلون العافية أقرب للحياة اليومية. أخبرنا عن عملك لنستكشف فرص التعاون.',
+    partnerIntro: 'تساعد MaydanGo الناس في أنحاء العراق على اكتشاف الجهات المعتمدة في الرياضة واللياقة والعافية. تواصل مع فريقنا لمعرفة متطلبات الإدراج وإدارة الشراكة والشروط التجارية.',
     corporateIntro: 'استكشف طرقاً تساعد فريقك على اكتشاف الحركة المحلية وخيارات المنزل. يمكننا مناقشة ما يناسب مؤسستكم وموقعكم.',
     instructorIntro: 'أخبرنا عن عملك في التدريب أو التعليم. يمكنك الاستفسار عن الدورات أو الجلسات المباشرة؛ ويجب تأكيد الأجور وشروط الدفع قبل أي اتفاق.',
     partnerBullet1: 'شارك جلساتك القادمة مع مجتمع محلي أوسع.',
@@ -333,9 +338,9 @@ const legacyTranslations: Record<Language, Copy> = {
     instructorBullet1: 'عرّفنا بأسلوبك التدريبي والأشخاص الذين تخدمهم.',
     instructorBullet2: 'استفسر عن إعداد دورة أو تقديم جلسة مباشرة.',
     instructorBullet3: 'الأجور والأهلية وتفاصيل الدفع غير منشورة هنا؛ أكّد الشروط قبل الاتفاق.',
-    partnerDetail1: 'انشر معلومات المرافق والجلسات المعتمدة ليكتشفها الأعضاء.',
-    partnerDetail2: 'استخدم أدوات الشريك لإدارة الجلسات وتأكيد الحضور بعد الزيارة.',
-    partnerDetail3: 'استفسر عن شروط المشاركة والمدفوعات؛ لا تُنشر هنا أسعار أو ضمانات إيراد.',
+    partnerDetail1: 'انشر معلومات منشأتك وجلساتك المعتمدة ليطّلع عليها الأعضاء المحليون.',
+    partnerDetail2: 'أدر الجلسات المنشورة وأكد الحضور من خلال بوابة الشريك.',
+    partnerDetail3: 'تُحدد شروط المشاركة وتعويضات الشريك بشكل منفصل؛ ولا تُضمن أي إيرادات.',
     corporateDetail1: 'ناقش خيارات للموظفين، بما فيها المرافق المحلية والجلسات عبر الإنترنت عند توفرها.',
     corporateDetail2: 'استفسر عن مساهمة الشركة وإدارة الموارد البشرية واحتياجات التقارير.',
     corporateDetail3: 'يجب تأكيد التوفر والمساهمات وترتيبات التقارير؛ لا يؤدي الاستفسار إلى تفعيل خطة.',
@@ -344,6 +349,11 @@ const legacyTranslations: Record<Language, Copy> = {
     verifiedContinue: 'تابع إلى وجهة الاستفسار المعتمدة.',
     contactTopic: 'ما موضوع استفسارك؟', topicMembership: 'التوفر للعضوية',
     topicPartner: 'استفسار شراكة', topicInstructor: 'استفسار مدرب', topicCorporate: 'استفسار مؤسسة', topicOther: 'موضوع آخر',
+    partnerCta: 'بدء استفسار عن الشراكة',
+    partnerOrganizationLabel: 'اسم المنشأة أو المؤسسة (اختياري)',
+    partnerCityLabel: 'المدينة أو المحافظة (اختياري)',
+    partnerServicesLabel: 'الخدمات والأنشطة المقدمة (اختياري)',
+    partnerApplicationNote: 'يُعد هذا النموذج مسودة بريد لاستفسار الشراكة. راجعها وأرسلها من تطبيق البريد. تراجع MaydanGo كل استفسار على حدة، ولا يضمن تقديمه الموافقة.',
     previewEnquiry: 'جهّز مسودة بريد إلكتروني', localFormNotice: 'لم يتم إرسال المعلومات أو تخزينها. استخدم وسيلة التواصل المعتمدة في الصفحة إن توفرت.',
     emailMaydanGo: 'راسل MaydanGo',
     nameLabel: 'اسمك', emailLabel: 'بريدك الإلكتروني', messageLabel: 'رسالتك',
@@ -426,8 +436,8 @@ const legacyTranslations: Record<Language, Copy> = {
     homeFirst: 'ستۆدیۆیەکی نزیک یان گوشەیەک لە ماڵەوە.', homeFirstD: 'تەندروستی یەک شێوە نییە. ئەو شوێنە هەڵبژێرە کە ئەمڕۆ گونجاوە.',
     footerNote: 'ئەندامێتی تەندروستی لە عێراق بۆ ژیانی ڕۆژانە.',
     noDestination: 'ئەم شوێنەی پەیوەندی هێشتا ڕێکنەخراوە. دواتر زانیاری پەیوەندی پەسەندکراو ببینە.',
-    send: 'پرسیارێک بنێرە', formNote: 'ئێمە ڕەشنووسی ئیمەیڵێک بۆت ئامادە دەکەین تا پێداچوونەوەی بۆ بکەیت. ئەم ماڵپەڕە نایەنێرێت و هەڵیناگرێت.',
-    learnMore: 'زیاتر بزانە', availabilityTitle: 'لە بەردەستبوون بپرسە', availabilityD: 'بڵێ چی دەگەڕێیت و یارمەتیت دەدەین هەڵبژاردەکانی ئێستا تێبگەیت.',
+    send: 'فۆڕمی پرسیار', formNote: 'ئەم فۆڕمە ڕەشنووسی ئیمەیڵ بۆ پێداچوونەوە ئامادە دەکات. پەیامەکە تەنها دوای ناردنی لە ئەپی ئیمەیڵ دەگات؛ ماڵپەڕەکە پرسیارەکان هەڵناگرێت.',
+    learnMore: 'زیاتر بزانە', availabilityTitle: 'زانیاری و پرسیارەکان', availabilityD: 'بۆ زانیاریی نوێ لەبارەی ئەندامێتی، چالاکی و هەڵبژاردەکانی هاوبەشی، پەیوەندی بە تیمی MaydanGo بکە.',
     faq1: 'MaydanGo لە شارەکەم بەردەستە؟', faq1d: 'کاتالۆگی گشتیی ئێمە هەڵبژاردە داهاتووەکانی هاوبەشانی چالاک و پەسەندکراو پیشان دەدات. بەردەستبوون دەگۆڕێت.',
     faq2: 'دەتوانم لە ماڵەوە ڕاهێنان بکەم؟', faq2d: 'بەڵێ. هەڵبژاردە ئۆنلاین و ڕاستەوخۆکان لەگەڵ وانەی ڕووبەڕوو دەردەکەون کاتێک هاوبەشەکان بڵاویان دەکەنەوە.',
     faq3: 'دەتوانم لێرە ئەندامێتی بکڕم یان چالاکی بکەم؟', faq3d: 'نەخێر. پارەدان و چالاککردن لەم ماڵپەڕەدا چالاک نییە. دەتوانیت لە بەردەستبوون بپرسیت یان نوێکاری داوا بکەیت.',
@@ -446,9 +456,9 @@ const legacyTranslations: Record<Language, Copy> = {
     'page_description:/account': 'ئەندامێتی و حجزەکانت ببینە و وردەکاریی سەرەکیی هەژمارەکەت بە شێوەی تایبەت نوێ بکەرەوە.',
     'page_title:/privacy': 'زانیاریی تایبەتمەندی | MaydanGo',
     'page_description:/privacy': 'ڕەشنووسێکی ئاسان لەبارەی مامەڵەکردنی MaydanGo لەگەڵ زانیاریی هەژمار، حجز، حزوور، پشتگیری و وێبگەڕ.',
-    contactTitle: 'با هەنگاوی داهاتوو بدۆزینەوە.', partnerTitle: 'شوێنەکەت ببە بەشێک لە جووڵە.',
+    contactTitle: 'پەیوەندی بە تیمی MaydanGo بکە.', partnerTitle: 'خزمەتگوزارییەکانت بە خەڵکی زیاتر لە عێراق بناسێنە.',
     corporateTitle: 'شوێنێکی زیاتر بۆ تەندروستی لە کاردا.', instructorTitle: 'باسی ئەوە بکە فێری چی دەکەیت.',
-    partnerIntro: 'MaydanGo خەڵک دەبەستێتەوە بە شوێن و ڕاهێنەر کە تەندروستی دەهێنێتە نزیک ژیانی ڕۆژانە. باسی کارەکەت بکە تا گونجاوی هاوکاری ببینین.',
+    partnerIntro: 'MaydanGo یارمەتی خەڵکی سەرانسەری عێراق دەدات دابینکەرانی پەسەندکراوی وەرزش و تەندروستی بدۆزنەوە. بۆ زانیاری لەسەر مەرجی بڵاوکردنەوە، بەڕێوەبردنی هاوبەشی و مەرجە بازرگانییەکان، پەیوەندی بە تیمەکەمان بکە.',
     corporateIntro: 'ڕێگا بدۆزەرەوە بۆ ئەوەی جووڵەی خۆجێیی و هەڵبژاردەی ماڵەوە بۆ تیمەکەت ئاسانتر بێت. دەتوانین لەسەر گونجاوی دامەزراوە و شوێنەکەت گفتوگۆ بکەین.',
     instructorIntro: 'باسی کاری ڕاهێنان یان وانەوتنەوەکەت بکە. دەتوانیت لەبارەی کۆرس یان وانەی ڕاستەوخۆ بپرسی؛ پێش هەر ڕێککەوتنێک دەبێت کرێ و مەرجی پارەدان پشتڕاست بکرێنەوە.',
     partnerBullet1: 'وانە داهاتووەکانت لەگەڵ کۆمەڵگەیەکی خۆجێی فراوانتر هاوبەش بکە.',
@@ -460,9 +470,9 @@ const legacyTranslations: Record<Language, Copy> = {
     instructorBullet1: 'ڕێگای ڕاهێنان و ئەو کەسانە بناسێنە کە خزمەتیان دەکەیت.',
     instructorBullet2: 'لەبارەی دروستکردنی کۆرس یان پێشکەشکردنی وانەیەکی ڕاستەوخۆ بپرسە.',
     instructorBullet3: 'کرێ، شایستەیی و وردەکاریی پارەدان لێرە بڵاونەکراونەتەوە؛ پێش ڕێککەوتن مەرجەکان پشتڕاست بکەوە.',
-    partnerDetail1: 'زانیاریی شوێن و وانەی پەسەندکراو بڵاو بکەرەوە تا ئەندامان بیبینن.',
-    partnerDetail2: 'ئامرازەکانی هاوبەش بەکاربهێنە بۆ بەڕێوەبردنی وانە و پشتڕاستکردنەوەی حزوور دوای سەردان.',
-    partnerDetail3: 'لەبارەی مەرجی بەشداری و پارەدان بپرسە؛ نرخ یان داهاتی دڵنیایی لەم پەڕەیەدا بڵاونەکراوەتەوە.',
+    partnerDetail1: 'زانیاریی شوێن و وانە پەسەندکراوەکانت بڵاو بکەرەوە بۆ ئەندامانی ناوچەکەت.',
+    partnerDetail2: 'وانە بڵاوکراوەکان بەڕێوەببە و ئامادەبوون لە پۆرتاڵی هاوبەش پشتڕاست بکەرەوە.',
+    partnerDetail3: 'مەرجی بەشداری و قەرەبووی هاوبەش بە جیاوازی پشتڕاست دەکرێنەوە؛ هیچ داهاتێک گەرەنتی ناکرێت.',
     corporateDetail1: 'لەبارەی هەڵبژاردە بۆ کارمەندان گفتوگۆ بکە، لەوانە شوێنی خۆجێیی و وانەی ئۆنلاین کاتێک بەردەستە.',
     corporateDetail2: 'لەبارەی بەشداریی کۆمپانیا، بەڕێوەبردنی HR و پێویستییەکانی ڕاپۆرت بپرسە.',
     corporateDetail3: 'بەردەستبوون، بەشداری و ڕێککەوتنی ڕاپۆرت پێویستی بە پشتڕاستکردنەوە هەیە؛ پرسیارکردن پلان چالاک ناکات.',
@@ -471,6 +481,11 @@ const legacyTranslations: Record<Language, Copy> = {
     verifiedContinue: 'بەردەوامبە بۆ شوێنی پرسیاری پەسەندکراو.',
     contactTopic: 'پرسیارەکەت لەسەر چییە؟', topicMembership: 'بەردەستبوونی ئەندامێتی',
     topicPartner: 'پرسیاری هاوبەشی', topicInstructor: 'پرسیاری ڕاهێنەر', topicCorporate: 'پرسیاری دامەزراوە', topicOther: 'شتێکی تر',
+    partnerCta: 'دەستپێکردنی پرسیاری هاوبەشی',
+    partnerOrganizationLabel: 'ناوی شوێن یان دامەزراوە (ئارەزوومەندانە)',
+    partnerCityLabel: 'شار یان پارێزگا (ئارەزوومەندانە)',
+    partnerServicesLabel: 'خزمەتگوزاری و چالاکییە پێشکەشکراوەکان (ئارەزوومەندانە)',
+    partnerApplicationNote: 'ئەم فۆڕمە ڕەشنووسی ئیمەیڵ بۆ پرسیاری هاوبەشی ئامادە دەکات. پێداچوونەوەی بکە و لە ئەپی ئیمەیڵ بینێرە. MaydanGo هەر پرسیارێک بە جیاوازی هەڵدەسەنگێنێت؛ ناردنی پرسیار گەرەنتی پەسەندکردن نییە.',
     previewEnquiry: 'ڕەشنووسی ئیمەیڵێک ئامادە بکە', localFormNotice: 'هیچ زانیارییەک نەنێردرا و هەڵنەگیرا. ئەگەر هەیە، ڕێگای پەیوەندی پەسەندکراوی ئەم پەڕەیە بەکاربهێنە.',
     emailMaydanGo: 'ئیمەیڵ بۆ MaydanGo',
     nameLabel: 'ناوت', emailLabel: 'ئیمەیڵەکەت', messageLabel: 'پەیامەکەت',
@@ -993,6 +1008,9 @@ function EventsPage({ t, language }: { t: Copy; language: Language }) {
           <h2 className="font-display text-2xl font-bold tracking-[-.04em]">{t.eventsAccessTitle}</h2>
           <p className="mt-3 text-sm leading-6 text-foreground/65">{t.eventsAccessText}</p>
           <p className="mt-4 rounded-xl bg-muted px-4 py-3 text-xs leading-5 text-foreground/65">{t.eventsRules}</p>
+          <Link href="/contact?topic=other" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-event-app-help">
+            {t.eventsAppHelp}<ArrowRight size={15} />
+          </Link>
         </aside>
       </section>
       <p className="mt-7 text-xs leading-5 text-muted-foreground">{t.eventsNoReservation}</p>
@@ -1030,7 +1048,7 @@ function OnlinePage({ t, language }: { t: Copy; language: Language }) {
 }
 
 const landingCopy: Record<string, { kicker: string; title: string; intro: string; bullets: string[]; topic: 'partner' | 'instructor' | 'corporate'; cta: string }> = {
-  partner: { kicker: 'partner', title: 'partnerTitle', intro: 'partnerIntro', bullets: ['partnerDetail1', 'partnerDetail2', 'partnerDetail3'], topic: 'partner', cta: 'topicPartner' },
+  partner: { kicker: 'partner', title: 'partnerTitle', intro: 'partnerIntro', bullets: ['partnerDetail1', 'partnerDetail2', 'partnerDetail3'], topic: 'partner', cta: 'partnerCta' },
   instructor: { kicker: 'instructor', title: 'instructorTitle', intro: 'instructorIntro', bullets: ['instructorBullet1', 'instructorBullet2', 'instructorBullet3'], topic: 'instructor', cta: 'topicInstructor' },
   corporate: { kicker: 'corporate', title: 'corporateTitle', intro: 'corporateIntro', bullets: ['corporateDetail1', 'corporateDetail2', 'corporateDetail3'], topic: 'corporate', cta: 'topicCorporate' },
 };
@@ -1071,8 +1089,9 @@ function ContactPage({ t }: { t: Copy }) {
   const initialTopic = initialContactTopic(window.location.search);
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
-    defaultValues: { topic: initialTopic, name: '', replyEmail: '', message: '' },
+    defaultValues: { topic: initialTopic, name: '', replyEmail: '', message: '', partnerOrganization: '', partnerCity: '', partnerServices: '' },
   });
+  const selectedTopic = form.watch('topic');
   const handleSubmit = (values: ContactFormValues) => {
     const href = createContactEmailDraft(email, values, {
       contactTopic: t.contactTopic,
@@ -1085,6 +1104,9 @@ function ContactPage({ t }: { t: Copy }) {
         corporate: t.topicCorporate,
         other: t.topicOther,
       },
+      partnerOrganizationLabel: t.partnerOrganizationLabel,
+      partnerCityLabel: t.partnerCityLabel,
+      partnerServicesLabel: t.partnerServicesLabel,
     });
     if (!href) return;
     setDraftHref(href);
@@ -1105,6 +1127,18 @@ function ContactPage({ t }: { t: Copy }) {
                   <option value="membership">{t.topicMembership}</option><option value="partner">{t.topicPartner}</option><option value="instructor">{t.topicInstructor}</option><option value="corporate">{t.topicCorporate}</option><option value="other">{t.topicOther}</option>
                 </select></FormControl><FormMessage />
               </FormItem>} />
+              {selectedTopic === 'partner' ? <div className="grid gap-4 rounded-xl border border-border bg-muted/30 p-4" data-testid="group-partner-application-fields">
+                <p className="text-xs leading-5 text-muted-foreground">{t.partnerApplicationNote}</p>
+                <FormField control={form.control} name="partnerOrganization" render={({ field }) => <FormItem>
+                  <FormLabel>{t.partnerOrganizationLabel}</FormLabel><FormControl><Input autoComplete="organization" maxLength={120} {...field} data-testid="input-partner-organization" /></FormControl><FormMessage />
+                </FormItem>} />
+                <FormField control={form.control} name="partnerCity" render={({ field }) => <FormItem>
+                  <FormLabel>{t.partnerCityLabel}</FormLabel><FormControl><Input maxLength={100} {...field} data-testid="input-partner-city" /></FormControl><FormMessage />
+                </FormItem>} />
+                <FormField control={form.control} name="partnerServices" render={({ field }) => <FormItem>
+                  <FormLabel>{t.partnerServicesLabel}</FormLabel><FormControl><Input maxLength={160} {...field} data-testid="input-partner-services" /></FormControl><FormMessage />
+                </FormItem>} />
+              </div> : null}
               <FormField control={form.control} name="name" render={({ field }) => <FormItem>
                 <FormLabel>{t.nameLabel}</FormLabel><FormControl><Input autoComplete="name" maxLength={100} {...field} data-testid="input-contact-name" /></FormControl><FormMessage />
               </FormItem>} />
@@ -1129,6 +1163,9 @@ const contactSchema = z.object({
   topic: z.enum(['membership', 'partner', 'instructor', 'corporate', 'other']),
   name: z.string().trim().max(100),
   replyEmail: z.string().trim().max(254).refine(value => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)),
+  partnerOrganization: z.string().trim().max(120),
+  partnerCity: z.string().trim().max(100),
+  partnerServices: z.string().trim().max(160),
   message: z.string().trim().min(5).max(1500),
 });
 type ContactFormValues = z.infer<typeof contactSchema>;
