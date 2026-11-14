@@ -18,6 +18,27 @@ const courseId = `${prefix}-course`;
 const lessonId = `${prefix}-lesson`;
 const enrollmentId = `${prefix}-enrollment`;
 const recordingPath = "/objects/course-recordings/test-recording.mp4";
+const courseRules = (digitalContentAccess: boolean) => ({
+  quota: 12,
+  dailyLimit: 2,
+  trialAllowedTypes: ["live"],
+  planTerms: {
+    description: { en: "Test plan", ar: "خطة اختبار", ku: "پلانی تاقیکردنەوە" },
+    trialPeriodDays: 0,
+    minimumContractMonths: 0,
+    renewalPeriodDays: 30,
+    cancellationPeriodDays: 0,
+    automaticRenewal: false,
+    pauseAllowanceDays: 0,
+    priceProtectionMonths: 0,
+    promotionalPriceIqd: null,
+    corporatePriceIqd: null,
+    digitalContentAccess,
+    guestPasses: 0,
+    eventAccess: false,
+    additionalPaymentAllowed: false,
+  },
+});
 const app = express();
 let server: Server | null = null;
 const originalSecret = process.env.SESSION_SECRET;
@@ -105,7 +126,7 @@ test("private course recordings require current membership and enrollment", asyn
     tier: "M",
     startsAt: new Date(Date.now() - 60_000),
     endsAt: new Date(Date.now() + 60 * 60_000),
-    rules: { quota: 12, dailyLimit: 2, trialAllowedTypes: ["live"] },
+    rules: courseRules(false),
   });
 
   server = app.listen(0, "127.0.0.1");
@@ -114,8 +135,18 @@ test("private course recordings require current membership and enrollment", asyn
   assert.equal((await call(path, userId, "POST")).response.status, 403);
 
   await db.insert(courseEnrollments).values({ id: enrollmentId, userId, courseId });
+  const restrictedDetails = await call(`/api/member/courses/${courseId}`, userId);
+  assert.equal(restrictedDetails.response.status, 200);
+  assert.equal((restrictedDetails.data as { accessState: string }).accessState, "membership_required");
+  const restrictedLesson = (restrictedDetails.data as { lessons: Array<{ localizedContent: unknown; hasRecording: boolean }> }).lessons[0];
+  assert.equal(restrictedLesson.localizedContent, null);
+  assert.equal(restrictedLesson.hasRecording, false);
+  assert.equal((await call(path, userId, "POST")).response.status, 403);
+
+  await db.update(memberships).set({ rules: courseRules(true) }).where(eq(memberships.userId, userId));
   const details = await call(`/api/member/courses/${courseId}`, userId);
   assert.equal(details.response.status, 200);
+  assert.equal((details.data as { accessState: string }).accessState, "ready");
   const lesson = (details.data as { lessons: Array<{ mediaUrl: string | null; hasRecording: boolean }> }).lessons[0];
   assert.equal(lesson.mediaUrl, null);
   assert.equal(lesson.hasRecording, true);
@@ -131,8 +162,12 @@ test("private course recordings require current membership and enrollment", asyn
   assert.equal(ranged.headers.get("cache-control"), "private, no-store");
   assert.equal(await ranged.text(), "eco");
 
-  await db.update(memberships).set({ endsAt: new Date(Date.now() - 1000) })
-    .where(eq(memberships.userId, userId));
+  await db.update(memberships).set({ rules: courseRules(false) }).where(eq(memberships.userId, userId));
+  assert.equal((await fetch(playbackUrl)).status, 403, "revoking course access blocks previously issued playback links");
+  await db.update(memberships).set({
+    rules: courseRules(true),
+    endsAt: new Date(Date.now() - 1000),
+  }).where(eq(memberships.userId, userId));
   assert.equal((await call(path, userId, "POST")).response.status, 403);
   assert.equal((await fetch(playbackUrl)).status, 403);
 });

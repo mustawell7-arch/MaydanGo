@@ -1046,6 +1046,24 @@ export const GetPublicCatalogResponse = zod.array(GetPublicCatalogResponseItem)
 
 
 
+export const getPublicPlansResponseAccessDailyLimitMin = 0;
+
+export const getPublicPlansResponseAccessSharedVisitsMin = 0;
+
+export const getPublicPlansResponseAccessPhysicalVisitsMin = 0;
+
+export const getPublicPlansResponseAccessPremiumVisitsMin = 0;
+
+export const getPublicPlansResponseAccessLiveClassVisitsMin = 0;
+
+export const getPublicPlansResponseAccessCancellationPeriodDaysMin = 0;
+
+export const getPublicPlansResponseAccessLocalizedDescriptionEnMax = 1000;
+
+export const getPublicPlansResponseAccessLocalizedDescriptionArMax = 1000;
+
+export const getPublicPlansResponseAccessLocalizedDescriptionKuMax = 1000;
+
 
 
 export const GetPublicPlansResponseItem = zod.object({
@@ -1053,7 +1071,26 @@ export const GetPublicPlansResponseItem = zod.object({
   "name": zod.string(),
   "tier": zod.string(),
   "kind": zod.enum(['paid', 'trial', 'corporate']),
-  "durationDays": zod.int().min(1)
+  "durationDays": zod.int().min(1),
+  "access": zod.object({
+  "quotaMode": zod.enum(['shared', 'separate']),
+  "dailyLimit": zod.int().min(getPublicPlansResponseAccessDailyLimitMin),
+  "sharedVisits": zod.int().min(getPublicPlansResponseAccessSharedVisitsMin).nullable(),
+  "physicalVisits": zod.int().min(getPublicPlansResponseAccessPhysicalVisitsMin).nullable(),
+  "premiumVisits": zod.int().min(getPublicPlansResponseAccessPremiumVisitsMin).nullable(),
+  "liveClassVisits": zod.int().min(getPublicPlansResponseAccessLiveClassVisitsMin).nullable(),
+  "physicalAccess": zod.boolean(),
+  "premiumAccess": zod.boolean(),
+  "liveClassAccess": zod.boolean(),
+  "digitalCourseAccess": zod.boolean(),
+  "eventAccess": zod.boolean(),
+  "cancellationPeriodDays": zod.int().min(getPublicPlansResponseAccessCancellationPeriodDaysMin).nullable(),
+  "localizedDescription": zod.object({
+  "en": zod.string().max(getPublicPlansResponseAccessLocalizedDescriptionEnMax),
+  "ar": zod.string().max(getPublicPlansResponseAccessLocalizedDescriptionArMax),
+  "ku": zod.string().max(getPublicPlansResponseAccessLocalizedDescriptionKuMax)
+}).nullable()
+})
 })
 export const GetPublicPlansResponse = zod.array(GetPublicPlansResponseItem)
 

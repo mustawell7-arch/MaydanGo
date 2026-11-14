@@ -142,6 +142,26 @@ const legacyTranslations: Record<Language, Copy> = {
     sessionType: 'Class', eventType: 'Event', coachType: 'Coaching',
     physicalType: 'In person', premiumType: 'Premium', liveType: 'Online',
     paidPlan: 'Paid plan', trialPlan: 'Trial plan', corporatePlan: 'Organisation plan',
+    planCompareTitle: 'Compare membership access',
+    planCompareIntro: 'See the visit limits and activities each active plan includes. Prices and online purchase remain unavailable until payment setup and terms are confirmed.',
+    planPriceDeferred: 'Prices are intentionally not shown yet. Payment and online activation stay closed until the final payment milestone.',
+    planSharedVisits: 'Shared visit allowance', planVisitsByType: 'Visit allowances by type',
+    planAccess: 'Included access',
+    planPhysicalAccess: 'In-person access', planPremiumAccess: 'Premium access',
+    planLiveAccess: 'Live online classes', planDigitalAccess: 'Recorded digital courses',
+    planEventAccess: 'Free event access', planDailyLimit: 'Daily visit limit',
+    planVisits: 'visits', planCancellation: 'Cancellation notice', planDays: 'days',
+    planIncluded: 'Included', planNotIncluded: 'Not included', planConfirm: 'Confirm with MaydanGo',
+    planFaqs: 'Membership questions', planEmptyTitle: 'No active membership plans yet',
+    planEmptyBody: 'The team has not published a plan for public comparison. Ask MaydanGo about availability; this will not activate a membership.',
+    planFaqPriceTitle: 'Why are prices not shown?',
+    planFaqPriceBody: 'Online checkout is not available yet. MaydanGo will publish confirmed prices before membership purchase is enabled.',
+    planFaqAccessTitle: 'Does every plan include every activity?',
+    planFaqAccessBody: 'No. Included activity types and visit limits are listed on each plan; availability also depends on your city and provider.',
+    planFaqCancelTitle: 'What if cancellation terms are missing?',
+    planFaqCancelBody: 'Ask the MaydanGo team to confirm the applicable terms before booking or making a commitment.',
+    planFaqPurchaseTitle: 'Can I buy or activate a plan here?',
+    planFaqPurchaseBody: 'No. This page is for information and enquiries; it does not take payment or activate membership.',
     directions: 'Local partners, shared purpose', directionsD: 'We welcome spaces and instructors who help people feel at home in movement.',
     onlineTitle: 'A way to move from home, too', onlineD: 'Follow live online sessions when available, or find a pace that fits your own space and day.',
     homeFirst: 'A studio nearby or a corner at home.', homeFirstD: 'Wellbeing is not one-size-fits-all. Choose the setting that feels right today.',
@@ -254,6 +274,26 @@ const legacyTranslations: Record<Language, Copy> = {
     sessionType: 'حصة', eventType: 'فعالية', coachType: 'تدريب',
     physicalType: 'حضوري', premiumType: 'مميز', liveType: 'عبر الإنترنت',
     paidPlan: 'خطة مدفوعة', trialPlan: 'خطة تجريبية', corporatePlan: 'خطة للمؤسسات',
+    planCompareTitle: 'قارن ما تتضمنه خطط العضوية',
+    planCompareIntro: 'اطلع على حدود الزيارات والأنشطة التي تشملها كل خطة فعالة. لن تُتاح الأسعار أو المشتريات عبر الإنترنت قبل تأكيد إعداد الدفع والشروط.',
+    planPriceDeferred: 'الأسعار غير معروضة حالياً. سيظل الدفع والتفعيل عبر الإنترنت مغلقين حتى مرحلة الدفع الأخيرة.',
+    planSharedVisits: 'حد الزيارات المشترك', planVisitsByType: 'حدود الزيارات حسب النوع',
+    planAccess: 'الوصول المشمول',
+    planPhysicalAccess: 'الأنشطة الحضورية', planPremiumAccess: 'الأنشطة المميزة',
+    planLiveAccess: 'الحصص المباشرة عبر الإنترنت', planDigitalAccess: 'الدورات الرقمية المسجلة',
+    planEventAccess: 'دخول الفعاليات المجانية', planDailyLimit: 'الحد اليومي للزيارات',
+    planVisits: 'زيارة', planCancellation: 'مهلة الإلغاء', planDays: 'أيام',
+    planIncluded: 'مشمول', planNotIncluded: 'غير مشمول', planConfirm: 'يرجى التأكيد مع MaydanGo',
+    planFaqs: 'أسئلة العضوية', planEmptyTitle: 'لا توجد خطط عضوية فعالة حالياً',
+    planEmptyBody: 'لم ينشر الفريق خطة للمقارنة العامة بعد. اسأل MaydanGo عن التوفر؛ ولن يؤدي ذلك إلى تفعيل عضوية.',
+    planFaqPriceTitle: 'لماذا لا تظهر الأسعار؟',
+    planFaqPriceBody: 'الشراء عبر الإنترنت غير متاح حالياً. ستنشر MaydanGo الأسعار المؤكدة قبل تفعيل شراء العضوية.',
+    planFaqAccessTitle: 'هل تشمل كل خطة جميع الأنشطة؟',
+    planFaqAccessBody: 'لا. تظهر الأنشطة وحدود الزيارات المشمولة في كل خطة؛ كما يعتمد التوفر على المدينة والجهة المقدمة للخدمة.',
+    planFaqCancelTitle: 'ماذا أفعل إذا لم تُذكر شروط الإلغاء؟',
+    planFaqCancelBody: 'اطلب من فريق MaydanGo تأكيد الشروط المطبقة قبل الحجز أو الالتزام.',
+    planFaqPurchaseTitle: 'هل يمكنني شراء الخطة أو تفعيلها هنا؟',
+    planFaqPurchaseBody: 'لا. هذه الصفحة للمعلومات والاستفسار فقط؛ ولا تستقبل المدفوعات أو تفعّل العضوية.',
     directions: 'شركاء محليون وهدف مشترك', directionsD: 'نرحب بالأماكن والمدربين الذين يجعلون الحركة مساحة مريحة للجميع.',
     onlineTitle: 'مساحة للحركة من المنزل أيضاً', onlineD: 'تابع الجلسات المباشرة المتاحة عبر الإنترنت، أو اختر إيقاعاً يناسب يومك ومساحتك.',
     homeFirst: 'استوديو قريب أو مساحة في المنزل.', homeFirstD: 'العافية ليست قالباً واحداً. اختر المكان الذي يلائمك اليوم.',
@@ -361,6 +401,26 @@ const legacyTranslations: Record<Language, Copy> = {
     sessionType: 'وانە', eventType: 'بۆنە', coachType: 'ڕاهێنان',
     physicalType: 'ڕووبەڕوو', premiumType: 'تایبەت', liveType: 'ئۆنلاین',
     paidPlan: 'پلانی پارەدان', trialPlan: 'پلانی تاقیکردنەوە', corporatePlan: 'پلانی دامەزراوە',
+    planCompareTitle: 'بەراوردی دەستگەیشتنی پلانەکانی ئەندامێتی',
+    planCompareIntro: 'سنووری سەردان و چالاکییەکانی هەر پلانێکی چالاک ببینە. نرخ و کڕینی ئۆنلاین تا پشتڕاستکردنەوەی پارەدان و مەرجەکان بەردەست نابن.',
+    planPriceDeferred: 'نرخەکان ئێستا بڵاوناکرێنەوە. پارەدان و چالاککردنی ئۆنلاین تا قۆناغی کۆتایی پارەدان داخراو دەمێنن.',
+    planSharedVisits: 'سنووری سەردانی هاوبەش', planVisitsByType: 'سنووری سەردان بەپێی جۆر',
+    planAccess: 'دەستگەیشتنی لەخۆگیراو',
+    planPhysicalAccess: 'دەستگەیشتنی ڕووبەڕوو', planPremiumAccess: 'دەستگەیشتنی تایبەت',
+    planLiveAccess: 'وانەی ئۆنلاین بەراستەوخۆ', planDigitalAccess: 'کۆرسی دیجیتاڵی تۆمارکراو',
+    planEventAccess: 'دەستگەیشتن بە بۆنەی بەخۆڕایی', planDailyLimit: 'سنووری ڕۆژانەی سەردان',
+    planVisits: 'سەردان', planCancellation: 'ماوەی ئاگادارکردنەوەی هەڵوەشاندنەوە', planDays: 'ڕۆژ',
+    planIncluded: 'لەخۆگیراوە', planNotIncluded: 'لەخۆنەگیراوە', planConfirm: 'لەگەڵ MaydanGo پشتڕاستی بکەرەوە',
+    planFaqs: 'پرسیارەکانی ئەندامێتی', planEmptyTitle: 'هێشتا هیچ پلانی ئەندامێتییەکی چالاک نییە',
+    planEmptyBody: 'تیمەکە هێشتا پلانێکی بۆ بەراوردی گشتی بڵاونەکردووەتەوە. لە MaydanGo لە بەردەستبوون بپرسە؛ ئەمە ئەندامێتی چالاک ناکات.',
+    planFaqPriceTitle: 'بۆچی نرخەکان نیشان نادرێن؟',
+    planFaqPriceBody: 'کڕینی ئۆنلاین هێشتا بەردەست نییە. MaydanGo نرخە پشتڕاستکراوەکان بڵاودەکاتەوە پێش چالاککردنی کڕینی ئەندامێتی.',
+    planFaqAccessTitle: 'ئایا هەموو پلانێک هەموو چالاکییەکان لەخۆدەگرێت؟',
+    planFaqAccessBody: 'نەخێر. چالاکی و سنووری سەردانی هەر پلانێک لەسەر کارتەکەی نووسراوە؛ بەردەستبوونیش بە شار و دابینکەرەوە پەیوەستە.',
+    planFaqCancelTitle: 'ئەگەر مەرجی هەڵوەشاندنەوە نەنووسرابوو چی بکەم؟',
+    planFaqCancelBody: 'پێش حجزکردن یان پابەندبوون، لە تیمی MaydanGo داوای پشتڕاستکردنەوەی مەرجەکان بکە.',
+    planFaqPurchaseTitle: 'دەتوانم لێرە پلانێک بکڕم یان چالاکی بکەم؟',
+    planFaqPurchaseBody: 'نەخێر. ئەم پەڕەیە بۆ زانیاری و پرسیارە؛ پارە وەرناگرێت و ئەندامێتی چالاک ناکات.',
     directions: 'هاوبەشانی خۆجێیی، ئامانجی هاوبەش', directionsD: 'پێشوازی لە شوێن و ڕاهێنەر دەکەین کە جووڵە بۆ خەڵک دڵخواز دەکەن.',
     onlineTitle: 'ڕێگایەک بۆ جووڵە لە ماڵەوەش', onlineD: 'بەشداری وانەی ئۆنلاین بکە کاتێک بەردەستە، یان ڕێتمێکی گونجاو بۆ شوێن و ڕۆژەکەت هەڵبژێرە.',
     homeFirst: 'ستۆدیۆیەکی نزیک یان گوشەیەک لە ماڵەوە.', homeFirstD: 'تەندروستی یەک شێوە نییە. ئەو شوێنە هەڵبژێرە کە ئەمڕۆ گونجاوە.',
@@ -741,15 +801,94 @@ function HowPage({ t }: { t: Copy }) {
 
 function PlansPage({ t, language }: { t: Copy; language: Language }) {
   const plansQuery = useGetPublicPlans({ query: { queryKey: getGetPublicPlansQueryKey() } });
-  const plans = plansQuery.data || [];
+  const plans = useMemo(() => [...(plansQuery.data || [])].sort((a, b) => {
+    const order: Record<string, number> = { M: 0, L: 1, XL: 2 };
+    return (order[a.tier] ?? 3) - (order[b.tier] ?? 3) || a.name.localeCompare(b.name);
+  }), [plansQuery.data]);
+  const number = (value: number) => new Intl.NumberFormat(language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ').format(value);
   return <>
-    <PageHero kicker={t.plans} title={t.availabilityTitle} description={t.availabilityD} />
+    <PageHero kicker={t.plans} title={t.planCompareTitle} description={t.planCompareIntro} />
     <PageWrap className="py-14 md:py-20">
-      <div className="mb-8 flex items-start gap-3 rounded-2xl border border-[#dcaf82]/50 bg-[#f1e6d6] p-5 text-sm leading-6 text-foreground/75"><CircleHelp className="mt-0.5 shrink-0 text-primary" size={19} /><p>{t.notCheckout}</p></div>
+      <div className="mb-8 flex items-start gap-3 rounded-2xl border border-[#dcaf82]/50 bg-[#f1e6d6] p-5 text-sm leading-6 text-foreground/75">
+        <CircleHelp className="mt-0.5 shrink-0 text-primary" size={19} />
+        <div><p>{t.notCheckout}</p><p className="mt-1 font-semibold">{t.planPriceDeferred}</p></div>
+      </div>
       {plansQuery.isLoading ? <div className="grid gap-4 md:grid-cols-3" aria-label={t.loading}>{[1,2,3].map(i => <div key={i} className="h-64 animate-pulse rounded-2xl bg-muted" />)}</div>
         : plansQuery.isError ? <ErrorState text={t.error} retry={() => plansQuery.refetch()} t={t} />
-           : plans.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{plans.map((plan: PublicPlan) => <article key={plan.id} className="rounded-2xl border border-border bg-card p-6" data-testid={`card-plan-${plan.id}`}><span className="rounded-full bg-[#e7efe8] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-primary">{plan.kind === 'paid' ? t.paidPlan : plan.kind === 'trial' ? t.trialPlan : t.corporatePlan} · {plan.tier}</span><h2 className="mt-7 font-display text-3xl font-bold tracking-[-.05em]">{plan.name}</h2><p className="mt-2 text-sm text-foreground/60">{plan.durationDays} {countUnit(plan.durationDays, 'days', language, t)}</p><Link href="/contact" className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid={`link-plan-enquiry-${plan.id}`}>{t.ask}<ArrowUpRight size={15} /></Link></article>)}</div>
-          : <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted text-primary"><Dumbbell size={20} /></div><h2 className="mt-4 font-display text-2xl font-bold">{t.noInventory}</h2><p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">{t.noInventoryText}</p></div>}
+           : plans.length ? <section aria-label={t.planCompareTitle} data-testid="section-membership-plan-comparison" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+               {plans.map((plan: PublicPlan) => {
+                 const access = plan.access;
+                 const allowances = access.quotaMode === 'shared'
+                   ? [{ key: 'shared', label: t.planSharedVisits, count: access.sharedVisits }]
+                   : [
+                       { key: 'physical', label: t.planPhysicalAccess, count: access.physicalVisits },
+                       { key: 'premium', label: t.planPremiumAccess, count: access.premiumVisits },
+                       { key: 'live', label: t.planLiveAccess, count: access.liveClassVisits },
+                     ];
+                 const features = [
+                   { key: 'physical', label: t.planPhysicalAccess, included: access.physicalAccess },
+                   { key: 'premium', label: t.planPremiumAccess, included: access.premiumAccess },
+                   { key: 'live', label: t.planLiveAccess, included: access.liveClassAccess },
+                   { key: 'courses', label: t.planDigitalAccess, included: access.digitalCourseAccess },
+                   { key: 'events', label: t.planEventAccess, included: access.eventAccess },
+                 ];
+                 const description = access.localizedDescription?.[language]?.trim();
+                 return <article key={plan.id} className="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm" data-testid={`card-plan-${plan.id}`}>
+                   <span className="w-fit rounded-full bg-[#e7efe8] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-primary">{plan.kind === 'paid' ? t.paidPlan : plan.kind === 'trial' ? t.trialPlan : t.corporatePlan} · {plan.tier}</span>
+                   <h2 className="mt-5 font-display text-3xl font-bold tracking-[-.05em]" data-testid={`text-plan-name-${plan.id}`}>{plan.name}</h2>
+                   <p className="mt-2 text-sm text-foreground/60">{plan.durationDays} {countUnit(plan.durationDays, 'days', language, t)}</p>
+                   {description ? <p className="mt-4 text-sm leading-6 text-foreground/70">{description}</p> : null}
+
+                   <div className="mt-6 rounded-xl bg-[#f7f4eb] p-4">
+                     <p className="text-xs font-bold uppercase tracking-[.12em] text-primary">{t.planVisitsByType}</p>
+                     <dl className="mt-3 space-y-2">
+                       {allowances.map(({ key, label, count }) => count === null ? null : <div key={key} className="flex items-baseline justify-between gap-3 text-sm" data-testid={`row-plan-allowance-${plan.id}-${key}`}>
+                         <dt className="text-foreground/70">{label}</dt>
+                         <dd className="font-bold text-foreground">{number(count)} {t.planVisits}</dd>
+                       </div>)}
+                       <div className="flex items-baseline justify-between gap-3 border-t border-border/70 pt-2 text-sm" data-testid={`row-plan-daily-limit-${plan.id}`}>
+                         <dt className="text-foreground/70">{t.planDailyLimit}</dt>
+                         <dd className="font-bold text-foreground">{number(access.dailyLimit)} {t.planVisits}</dd>
+                       </div>
+                     </dl>
+                   </div>
+
+                   <ul className="mt-5 space-y-3" aria-label={t.planAccess}>
+                     {features.map(feature => <li key={feature.key} className="flex items-start justify-between gap-3 text-sm" data-testid={`row-plan-feature-${plan.id}-${feature.key}`}>
+                       <span className="text-foreground/75">{feature.label}</span>
+                       <span className={`shrink-0 text-xs font-bold ${feature.included ? 'text-primary' : 'text-foreground/45'}`}>{feature.included ? t.planIncluded : t.planNotIncluded}</span>
+                     </li>)}
+                   </ul>
+
+                   <div className="mt-5 border-t border-border pt-4 text-sm">
+                     <p className="font-semibold">{t.planCancellation}</p>
+                     <p className="mt-1 text-foreground/65" data-testid={`text-plan-cancellation-${plan.id}`}>
+                       {access.cancellationPeriodDays === null
+                         ? t.planConfirm
+                         : `${number(access.cancellationPeriodDays)} ${t.planDays}`}
+                     </p>
+                   </div>
+                   <Link href="/contact" className="mt-auto inline-flex items-center gap-2 pt-6 text-sm font-bold text-primary" data-testid={`link-plan-enquiry-${plan.id}`}>{t.ask}<ArrowUpRight size={15} /></Link>
+                 </article>;
+               })}
+             </section>
+           : <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center" data-testid="empty-membership-plans"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted text-primary"><Dumbbell size={20} /></div><h2 className="mt-4 font-display text-2xl font-bold">{t.planEmptyTitle}</h2><p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">{t.planEmptyBody}</p><Link href="/contact" className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-empty-plans-contact">{t.ask}<ArrowUpRight size={15} /></Link></div>}
+      <section className="mt-14" aria-labelledby="membership-plan-faqs">
+        <div className="mb-5"><SectionKicker>{t.plans}</SectionKicker><h2 id="membership-plan-faqs" className="font-display text-3xl font-bold tracking-[-.04em]">{t.planFaqs}</h2></div>
+        <div className="divide-y divide-border rounded-2xl border border-border bg-card px-5">
+          {[
+            [t.planFaqPriceTitle, t.planFaqPriceBody],
+            [t.planFaqAccessTitle, t.planFaqAccessBody],
+            [t.planFaqCancelTitle, t.planFaqCancelBody],
+            [t.planFaqPurchaseTitle, t.planFaqPurchaseBody],
+          ].map(([question, answer], index) => <details key={question} className="group py-4" data-testid={`details-plan-faq-${index + 1}`}>
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-bold [&::-webkit-details-marker]:hidden">
+              {question}<ChevronDown size={16} className="shrink-0 transition group-open:rotate-180" />
+            </summary>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-foreground/65">{answer}</p>
+          </details>)}
+        </div>
+      </section>
       <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-7"><p className="max-w-xl text-sm text-foreground/60">{t.notCheckout}</p><ActionLink href="/contact" testId="link-plans-contact">{t.getUpdates}</ActionLink></div>
     </PageWrap>
   </>;

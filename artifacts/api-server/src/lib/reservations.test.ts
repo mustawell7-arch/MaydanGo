@@ -398,7 +398,7 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       description: { en: "Isolated trial", ar: "تجربة معزولة", ku: "تاقیکردنەوەی جیاواز" },
       trialPeriodDays: 7, minimumContractMonths: 0, renewalPeriodDays: 30, cancellationPeriodDays: 0,
       automaticRenewal: false, pauseAllowanceDays: 3, priceProtectionMonths: 0,
-      promotionalPriceIqd: null, corporatePriceIqd: null, digitalContentAccess: false,
+      promotionalPriceIqd: null, corporatePriceIqd: null, digitalContentAccess: true,
       guestPasses: 0, eventAccess: true, additionalPaymentAllowed: false,
     };
     const planBody = { name: "Isolated trial", tier: "M", kind: "trial", durationDays: 7, active: true, priceIqd: null, rules: { ...rules, planTerms } };
@@ -432,7 +432,24 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       const publicPlan = plans.find((x: any) => x.id === plan.data.id);
       assert.deepEqual(publicPlan, {
         id: plan.data.id, name: "Isolated trial", tier: "M", kind: "trial", durationDays: 7,
+        access: {
+          quotaMode: "separate",
+          dailyLimit: 10,
+          sharedVisits: null,
+          physicalVisits: 1,
+          premiumVisits: 1,
+          liveClassVisits: 1,
+          physicalAccess: true,
+          premiumAccess: true,
+          liveClassAccess: true,
+          digitalCourseAccess: true,
+          eventAccess: true,
+          cancellationPeriodDays: 0,
+          localizedDescription: planTerms.description,
+        },
       });
+      assert.equal(Object.hasOwn(publicPlan, "priceIqd"), false, "draft prices stay unpublished until payment is ready");
+      assert.equal(Object.hasOwn(publicPlan, "rules"), false, "internal membership rules are not exposed publicly");
     });
     await t.test("sample access cannot book live; approved future offerings are discoverable", async () => {
       await call("/member/preview-membership", alice, "POST", { acknowledgeSampleData: true });
@@ -461,6 +478,42 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       assert.equal((await call("/operations/grants", partnerUser, "POST", { userId: alice, planId: plan.data.id, reason: "Test grant" })).status, 403);
       assert.equal((await call("/operations/grants", supportAdminId, "POST", { userId: alice, planId: plan.data.id, reason: "Test grant" })).status, 201);
       assert.equal((await call("/member/bookings", alice, "POST", { ...input(o.data.id), tier: "XL" })).status, 400);
+      const [aliceMembership] = await db.select().from(memberships).where(and(
+        eq(memberships.userId, alice), eq(memberships.scope, "live"),
+      ));
+      assert.ok(aliceMembership);
+      assert.ok(aliceMembership?.rules.planTerms);
+      const originalRules = aliceMembership.rules;
+      const originalPlanTerms = aliceMembership.rules.planTerms!;
+      const expandedRules = {
+        ...originalRules,
+        quota: 8,
+        physicalQuota: 8,
+        premiumQuota: 8,
+        liveQuota: 8,
+      };
+      const eventInput = {
+        kind: "event",
+        targetId: freeEventOffer.data.targetId,
+        slot: freeEventOffer.data.slot,
+      };
+      await db.update(memberships).set({
+        rules: { ...expandedRules, planTerms: { ...originalPlanTerms, eventAccess: false } },
+      }).where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
+      assert.equal((await call("/member/bookings", alice, "POST", eventInput)).status, 403);
+      await db.update(memberships).set({
+        rules: { ...expandedRules, planTerms: { ...originalPlanTerms, eventAccess: true } },
+      }).where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
+      const eventBooking = await call("/member/bookings", alice, "POST", eventInput);
+      assert.equal(eventBooking.status, 201);
+      const [savedEventBooking] = await db.select().from(reservations).where(and(
+        eq(reservations.userId, alice), eq(reservations.offeringId, freeEventOffer.data.id),
+      ));
+      assert.ok(savedEventBooking);
+      await db.update(reservations).set({ status: "cancelled", cancelledAt: new Date() })
+        .where(eq(reservations.id, savedEventBooking.id));
+      await db.update(memberships).set({ rules: originalRules })
+        .where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
       assert.equal((await call("/member/bookings", alice, "POST", input(o.data.id))).status, 201);
       assert.equal((await call(`/operations/offerings/${o.data.id}`, partnerUser, "PATCH", { capacity: 0 })).status, 400);
     });

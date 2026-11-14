@@ -10,6 +10,13 @@ export type Rules = {
   cities?: string[]; facilities?: string[]; categories?: string[];
   facilityLimits?: Record<string, number>; categoryLimits?: Record<string, number>; partnerGroupLimits?: Record<string, number>;
   trialAllowedTypes?: string[]; corporateId?: string;
+  planTerms?: {
+    description: { en: string; ar: string; ku: string };
+    trialPeriodDays: number; minimumContractMonths: number; renewalPeriodDays: number;
+    cancellationPeriodDays: number; automaticRenewal: boolean; pauseAllowanceDays: number;
+    priceProtectionMonths: number; promotionalPriceIqd: number | null; corporatePriceIqd: number | null;
+    digitalContentAccess: boolean; guestPasses: number; eventAccess: boolean; additionalPaymentAllowed: boolean;
+  };
 };
 export type Partner = { id: string; name: string; groupId: string; approved: boolean; ownerUserId: string };
 export type Offering = {

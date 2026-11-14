@@ -42,6 +42,8 @@ export async function assertMemberEligibleForOffering(tx: BookingTx, userId: str
     throw new BookingError(403, "You need an active membership that covers this class.");
   }
   const rules = m.rules;
+  if (o.kind === "event" && rules.planTerms?.eventAccess === false)
+    throw new BookingError(403, "Your membership doesn’t include event access.");
   if (o.scope === "live" && m.source === "trial" && !rules.trialAllowedTypes?.includes(o.accessType))
     throw new BookingError(403, "This activity is not included in your trial.");
   if (o.scope === "live" && m.source === "corporate" && (!rules.corporateId || m.corporateId !== rules.corporateId))

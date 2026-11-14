@@ -68,11 +68,40 @@ router.get("/plans", async (_req, res) => {
       tier: membershipPlans.tier,
       kind: membershipPlans.kind,
       durationDays: membershipPlans.durationDays,
+      rules: membershipPlans.rules,
     })
     .from(membershipPlans)
     .where(eq(membershipPlans.active, true));
 
-  res.json(rows);
+  res.json(rows.map(({ rules, ...plan }) => {
+    const separate = rules.quotaMode === "separate";
+    const allowedByPlan = (accessType: "physical" | "premium" | "live") =>
+      plan.kind !== "trial" || rules.trialAllowedTypes?.includes(accessType) === true;
+    const physicalVisits = separate ? rules.physicalQuota ?? 0 : null;
+    const premiumVisits = separate ? rules.premiumQuota ?? 0 : null;
+    const liveClassVisits = separate ? rules.liveQuota ?? 0 : null;
+    const sharedVisits = separate ? null : rules.quota;
+
+    return {
+      ...plan,
+      access: {
+        quotaMode: separate ? "separate" as const : "shared" as const,
+        dailyLimit: rules.dailyLimit,
+        sharedVisits,
+        physicalVisits,
+        premiumVisits,
+        liveClassVisits,
+        physicalAccess: allowedByPlan("physical") && (separate ? (physicalVisits ?? 0) > 0 : rules.quota > 0),
+        premiumAccess: allowedByPlan("premium") && (separate ? (premiumVisits ?? 0) > 0 : rules.quota > 0),
+        liveClassAccess: allowedByPlan("live") && (separate ? (liveClassVisits ?? 0) > 0 : rules.quota > 0),
+        digitalCourseAccess: rules.planTerms?.digitalContentAccess === true,
+        // Older memberships retain their prior event access when no explicit plan term was saved.
+        eventAccess: rules.planTerms?.eventAccess !== false,
+        cancellationPeriodDays: rules.planTerms?.cancellationPeriodDays ?? null,
+        localizedDescription: rules.planTerms?.description ?? null,
+      },
+    };
+  }));
 });
 
 export default router;

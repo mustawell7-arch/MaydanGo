@@ -1037,13 +1037,54 @@ components:
         partnerName: { type: string }
     PublicPlan:
       type: object
-      required: [id, name, tier, kind, durationDays]
+      additionalProperties: false
+      required: [id, name, tier, kind, durationDays, access]
       properties:
         id: { type: string }
         name: { type: string }
         tier: { type: string }
         kind: { type: string, enum: [paid, trial, corporate] }
         durationDays: { type: integer, minimum: 1 }
+        access:
+          $ref: "#/components/schemas/PublicPlanAccess"
+    PublicPlanAccess:
+      type: object
+      additionalProperties: false
+      required:
+        - quotaMode
+        - dailyLimit
+        - sharedVisits
+        - physicalVisits
+        - premiumVisits
+        - liveClassVisits
+        - physicalAccess
+        - premiumAccess
+        - liveClassAccess
+        - digitalCourseAccess
+        - eventAccess
+        - cancellationPeriodDays
+        - localizedDescription
+      properties:
+        quotaMode: { type: string, enum: [shared, separate] }
+        dailyLimit: { type: integer, minimum: 0 }
+        sharedVisits: { type: ["integer", "null"], minimum: 0 }
+        physicalVisits: { type: ["integer", "null"], minimum: 0 }
+        premiumVisits: { type: ["integer", "null"], minimum: 0 }
+        liveClassVisits: { type: ["integer", "null"], minimum: 0 }
+        physicalAccess: { type: boolean }
+        premiumAccess: { type: boolean }
+        liveClassAccess: { type: boolean }
+        digitalCourseAccess: { type: boolean }
+        eventAccess: { type: boolean }
+        cancellationPeriodDays: { type: ["integer", "null"], minimum: 0 }
+        localizedDescription:
+          type: ["object", "null"]
+          additionalProperties: false
+          required: [en, ar, ku]
+          properties:
+            en: { type: string, maxLength: 1000 }
+            ar: { type: string, maxLength: 1000 }
+            ku: { type: string, maxLength: 1000 }
     PublicCourse:
       type: object
       additionalProperties: false

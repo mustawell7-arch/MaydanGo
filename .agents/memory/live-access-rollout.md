@@ -31,3 +31,9 @@ Free event RSVPs consume one standard membership visit; there is no separate eve
 **Why:** The user explicitly chose to treat each event RSVP like a normal class reservation rather than add an event fee.
 
 **How to apply:** Use standard membership eligibility, quota, capacity, and cancellation rules for free events. Keep separately paid events out of the free RSVP flow.
+
+Membership access settings are snapshots: event booking follows the saved `eventAccess` rule, while digital courses require explicit `digitalContentAccess: true`. Keep paid offerings blocked even if a plan allows additional payments; older membership snapshots without `eventAccess` retain their prior event behavior.
+
+**Why:** Plan access must control bookings and course playback without silently changing existing grants or opening checkout before the final payment milestone.
+
+**How to apply:** Enforce saved rules for every booking and course endpoint, including playback. Do not use current plan edits to rewrite existing memberships, and do not treat `additionalPaymentAllowed` as payment authorization.

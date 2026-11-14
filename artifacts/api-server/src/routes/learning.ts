@@ -21,7 +21,7 @@ const router = Router();
 export const learningObjectStorage = new ObjectStorageService();
 const joinLeadMs = 15 * 60 * 1000;
 
-async function currentLiveMembership(userId: string) {
+async function currentEligibleMembership(userId: string) {
   const [membership] = await db.select().from(memberships).where(
     and(eq(memberships.userId, userId), eq(memberships.scope, "live")),
   );
@@ -29,9 +29,21 @@ async function currentLiveMembership(userId: string) {
   if (!membership || !membershipCanAccess(membership, now)) return null;
   // Match existing booking policy. Preview memberships and unpaid activation never grant content access.
   if (!((["trial", "corporate"].includes(membership.source)) && membership.paymentStatus === "not_required")) return null;
-  if (membership.source === "trial" && !membership.rules.trialAllowedTypes?.includes("live")) return null;
   if (membership.source === "corporate" &&
       (!membership.rules.corporateId || membership.corporateId !== membership.rules.corporateId)) return null;
+  return membership;
+}
+
+async function currentLiveMembership(userId: string) {
+  const membership = await currentEligibleMembership(userId);
+  if (!membership) return null;
+  if (membership.source === "trial" && !membership.rules.trialAllowedTypes?.includes("live")) return null;
+  return membership;
+}
+
+async function currentDigitalCourseMembership(userId: string) {
+  const membership = await currentEligibleMembership(userId);
+  if (!membership || membership.rules.planTerms?.digitalContentAccess !== true) return null;
   return membership;
 }
 
@@ -60,7 +72,7 @@ async function getCourseDetail(userId: string, id: string) {
   if (!course) throw new BookingError(404, "This course is not available.");
 
   const [membership, enrollment] = await Promise.all([
-    currentLiveMembership(userId),
+    currentDigitalCourseMembership(userId),
     db.select().from(courseEnrollments).where(and(
       eq(courseEnrollments.userId, userId), eq(courseEnrollments.courseId, id),
     )),
@@ -126,8 +138,8 @@ router.get("/courses/:id", async (req, res): Promise<void> => {
 router.post("/courses/:id/enroll", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) { res.status(401).json({ message: "Sign in to enroll." }); return; }
-  if (!await currentLiveMembership(userId)) {
-    throw new BookingError(403, "An eligible live membership is required to enroll in courses.");
+  if (!await currentDigitalCourseMembership(userId)) {
+    throw new BookingError(403, "An eligible membership with digital course access is required to enroll.");
   }
   const courseId = String(req.params.id);
   const [course] = await db.select({ id: learningCourses.id }).from(learningCourses)
@@ -143,8 +155,8 @@ router.put("/courses/:id/progress", async (req, res): Promise<void> => {
   const parsed = UpdateCourseProgressBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ message: "Choose a valid lesson and completion state." }); return; }
   const courseId = String(req.params.id);
-  if (!await currentLiveMembership(userId)) {
-    throw new BookingError(403, "An eligible live membership is required to access course lessons.");
+  if (!await currentDigitalCourseMembership(userId)) {
+    throw new BookingError(403, "An eligible membership with digital course access is required to access course lessons.");
   }
   const [enrollment] = await db.select().from(courseEnrollments).where(and(
     eq(courseEnrollments.userId, userId), eq(courseEnrollments.courseId, courseId),
@@ -176,8 +188,8 @@ router.post("/courses/:id/lessons/:lessonId/playback-link", async (req, res): Pr
     eq(learningCourses.id, courseId), eq(learningCourses.published, true),
   ));
   if (!course) throw new BookingError(404, "This course is not available.");
-  if (!await currentLiveMembership(userId)) {
-    throw new BookingError(403, "An eligible live membership is required to play course recordings.");
+  if (!await currentDigitalCourseMembership(userId)) {
+    throw new BookingError(403, "An eligible membership with digital course access is required to play course recordings.");
   }
   const [enrollment] = await db.select({ id: courseEnrollments.id }).from(courseEnrollments).where(and(
     eq(courseEnrollments.userId, userId), eq(courseEnrollments.courseId, courseId),
@@ -222,7 +234,7 @@ router.get("/course-playback", async (req, res): Promise<void> => {
     eq(learningLessons.id, claims.lessonId), eq(learningLessons.courseId, claims.courseId),
   ));
   if (!course || !enrollment || !lesson || !isPrivateCourseRecordingPath(lesson.mediaUrl)
-      || !await currentLiveMembership(claims.userId)) {
+      || !await currentDigitalCourseMembership(claims.userId)) {
     res.status(403).json({ message: "Course recording access is no longer available." }); return;
   }
 

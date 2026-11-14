@@ -205,13 +205,30 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
   </View>;
 }
 
-const blankRules: Rules = { quota: 8, dailyLimit: 1, quotaMode: 'shared', physicalQuota: 8, premiumQuota: 0, liveQuota: 0 };
+const blankPlanTerms: NonNullable<Rules['planTerms']> = {
+  description: { en: '', ar: '', ku: '' },
+  trialPeriodDays: 0,
+  minimumContractMonths: 0,
+  renewalPeriodDays: 30,
+  cancellationPeriodDays: 0,
+  automaticRenewal: false,
+  pauseAllowanceDays: 0,
+  priceProtectionMonths: 0,
+  promotionalPriceIqd: null,
+  corporatePriceIqd: null,
+  digitalContentAccess: false,
+  guestPasses: 0,
+  eventAccess: false,
+  additionalPaymentAllowed: false,
+};
+const blankRules: Rules = { quota: 8, dailyLimit: 1, quotaMode: 'shared', physicalQuota: 8, premiumQuota: 0, liveQuota: 0, planTerms: blankPlanTerms };
 function PlansTab({ c, d, api, refresh }: TabProps) {
   const { language } = useApp();
   const toForm = (p?: Plan) => { const r = p?.rules ?? blankRules; return { id: p?.id ?? null as string | null, name: p?.name ?? '', tier: p?.tier ?? 'M', kind: p?.kind ?? 'trial' as Plan['kind'], durationDays: String(p?.durationDays ?? 30), active: p?.active ?? true, priceIqd: p?.priceIqd == null ? '' : String(p.priceIqd),
     quota: String(r.quota), dailyLimit: String(r.dailyLimit), quotaMode: r.quotaMode, physicalQuota: String(r.physicalQuota), premiumQuota: String(r.premiumQuota), liveQuota: String(r.liveQuota),
     cities: (r.cities ?? []).join(', '), facilities: (r.facilities ?? []).join(', '), categories: (r.categories ?? []).join(', '), facilityLimits: fromLimits(r.facilityLimits), categoryLimits: fromLimits(r.categoryLimits),
-    partnerGroupLimits: fromLimits(r.partnerGroupLimits), trialAllowedTypes: (r.trialAllowedTypes ?? []).join(', '), corporateId: r.corporateId ?? '' }; };
+    partnerGroupLimits: fromLimits(r.partnerGroupLimits), trialAllowedTypes: (r.trialAllowedTypes ?? []).join(', '), corporateId: r.corporateId ?? '',
+    planTerms: r.planTerms ?? blankPlanTerms }; };
   const [f, setF] = useState(toForm());
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -226,7 +243,7 @@ function PlansTab({ c, d, api, refresh }: TabProps) {
       if (secondaryErr) { setMsg({ ok: false, text: secondaryErr }); return; }
     }
     if (err) { setMsg({ ok: false, text: err }); return; }
-    const rules: Rules = { quota: Number(f.quota), dailyLimit: Number(f.dailyLimit), quotaMode: f.quotaMode, physicalQuota: Number(f.physicalQuota), premiumQuota: Number(f.premiumQuota), liveQuota: Number(f.liveQuota) };
+    const rules: Rules = { quota: Number(f.quota), dailyLimit: Number(f.dailyLimit), quotaMode: f.quotaMode, physicalQuota: Number(f.physicalQuota), premiumQuota: Number(f.premiumQuota), liveQuota: Number(f.liveQuota), planTerms: f.planTerms };
     if (csv(f.cities).length) rules.cities = csv(f.cities); if (csv(f.facilities).length) rules.facilities = csv(f.facilities); if (csv(f.categories).length) rules.categories = csv(f.categories);
     if (Object.keys(fl!).length) rules.facilityLimits = fl!; if (Object.keys(cl!).length) rules.categoryLimits = cl!; if (Object.keys(gl!).length) rules.partnerGroupLimits = gl!;
     if (csv(f.trialAllowedTypes).length) rules.trialAllowedTypes = csv(f.trialAllowedTypes); if (f.corporateId.trim()) rules.corporateId = f.corporateId.trim();

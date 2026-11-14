@@ -438,6 +438,64 @@ export const PublicPlanKind = {
   corporate: 'corporate',
 } as const;
 
+export type PublicPlanAccessQuotaMode = typeof PublicPlanAccessQuotaMode[keyof typeof PublicPlanAccessQuotaMode];
+
+
+export const PublicPlanAccessQuotaMode = {
+  shared: 'shared',
+  separate: 'separate',
+} as const;
+
+/**
+ * @nullable
+ */
+export type PublicPlanAccessLocalizedDescription = {
+  /** @maxLength 1000 */
+  en: string;
+  /** @maxLength 1000 */
+  ar: string;
+  /** @maxLength 1000 */
+  ku: string;
+} | null;
+
+export interface PublicPlanAccess {
+  quotaMode: PublicPlanAccessQuotaMode;
+  /** @minimum 0 */
+  dailyLimit: number;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  sharedVisits: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  physicalVisits: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  premiumVisits: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  liveClassVisits: number | null;
+  physicalAccess: boolean;
+  premiumAccess: boolean;
+  liveClassAccess: boolean;
+  digitalCourseAccess: boolean;
+  eventAccess: boolean;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  cancellationPeriodDays: number | null;
+  /** @nullable */
+  localizedDescription: PublicPlanAccessLocalizedDescription;
+}
+
 export interface PublicPlan {
   id: string;
   name: string;
@@ -445,6 +503,7 @@ export interface PublicPlan {
   kind: PublicPlanKind;
   /** @minimum 1 */
   durationDays: number;
+  access: PublicPlanAccess;
 }
 
 export type PublicCourseLocalizedTitle = {
