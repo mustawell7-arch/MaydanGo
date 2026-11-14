@@ -6,7 +6,10 @@ import { eq, and, inArray, sql, gt, asc, isNull, ne, or } from "drizzle-orm";
 import {
   CreateMemberPrivacyRequestBody,
   CreateMemberPrivacyRequestResponse,
+  GetMemberConsentsResponse,
   GetMemberPrivacyRequestsResponse,
+  SaveMemberConsentsBody,
+  SaveMemberConsentsResponse,
 } from "@workspace/api-zod";
 import {
   BookingError, memberState, memberAccountSummary, createReservation, cancelReservation,
@@ -20,6 +23,7 @@ import {
   recordMemberPrivacyExportDownload,
 } from "../lib/privacy-requests";
 import { createMemberDataExport } from "../lib/member-data-export";
+import { getMemberConsentState, saveMemberConsentChoices, RequiredMemberConsentError } from "../lib/member-consents";
 import learningRouter from "./learning";
 import { memberSupportRouter } from "./support";
 import memberReviewsRouter from "./member-reviews";
@@ -38,6 +42,27 @@ router.use((req, res, next) => {
 });
 router.get("/account", async (req, res) => {
   res.json(await memberAccountSummary(getAuth(req).userId!));
+});
+router.get("/consents", async (req, res) => {
+  const state = await getMemberConsentState(getAuth(req).userId!);
+  res.json(GetMemberConsentsResponse.parse(state));
+});
+router.post("/consents", async (req, res) => {
+  const parsed = SaveMemberConsentsBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: parsed.error.message });
+    return;
+  }
+  try {
+    const state = await saveMemberConsentChoices(getAuth(req).userId!, parsed.data);
+    res.json(SaveMemberConsentsResponse.parse(state));
+  } catch (error) {
+    if (error instanceof RequiredMemberConsentError) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+    throw error;
+  }
 });
 router.get("/privacy-requests", async (req, res) => {
   const ownerId = getAuth(req).userId!;

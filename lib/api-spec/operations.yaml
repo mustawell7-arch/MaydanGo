@@ -104,6 +104,28 @@ paths:
               schema: { $ref: "#/components/schemas/PrivacyRequest" }
         "409":
           description: An active privacy request already exists
+  /member/consents:
+    get:
+      operationId: getMemberConsents
+      responses:
+        "200":
+          description: Current policy versions, the member's latest choices, and their immutable consent history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberConsentState" }
+    post:
+      operationId: saveMemberConsents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemberConsentInput" }
+      responses:
+        "200":
+          description: Choices recorded with server-owned policy versions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberConsentState" }
   /member/privacy-requests/{id}/export:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     get:
@@ -1862,6 +1884,30 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/SuperAdminAuditLog" }
+  /super-admin/member-consents:
+    get:
+      operationId: getSuperAdminMemberConsentHistory
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          schema: { type: string, minLength: 1, maxLength: 200 }
+        - name: limit
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/MemberConsentHistoryLimit", default: 100 }
+        - name: offset
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/MemberConsentHistoryOffset", default: 0 }
+      responses:
+        "200":
+          description: Read-only member consent history for authorized Super Admin review
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MemberConsentRecord" }
 components:
   parameters:
     Id: { name: id, in: path, required: true, schema: { type: string } }
@@ -2117,6 +2163,77 @@ components:
         status: { $ref: "#/components/schemas/SupportTicketStatus" }
         createdAt: { type: string, format: date-time }
         exportAvailableUntil: { type: ["string", "null"], format: date-time }
+    MemberConsentPurpose:
+      type: string
+      enum: [terms_of_use, privacy_policy, marketing]
+    MemberConsentChoice:
+      type: string
+      enum: [accepted, declined]
+    MemberConsentRecord:
+      type: object
+      additionalProperties: false
+      required: [id, userId, purpose, policyVersion, choice, recordedAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        purpose: { $ref: "#/components/schemas/MemberConsentPurpose" }
+        policyVersion: { type: string }
+        choice: { $ref: "#/components/schemas/MemberConsentChoice" }
+        recordedAt: { type: string, format: date-time }
+    MemberConsentPolicy:
+      type: object
+      additionalProperties: false
+      required: [purpose, version, required]
+      properties:
+        purpose: { $ref: "#/components/schemas/MemberConsentPurpose" }
+        version: { type: string }
+        required: { type: boolean }
+    MemberConsentCurrentChoices:
+      type: object
+      additionalProperties: false
+      required: [termsOfUse, privacyPolicy, marketing]
+      properties:
+        termsOfUse:
+          anyOf:
+            - { $ref: "#/components/schemas/MemberConsentChoice" }
+            - { type: "null" }
+        privacyPolicy:
+          anyOf:
+            - { $ref: "#/components/schemas/MemberConsentChoice" }
+            - { type: "null" }
+        marketing:
+          anyOf:
+            - { $ref: "#/components/schemas/MemberConsentChoice" }
+            - { type: "null" }
+    MemberConsentState:
+      type: object
+      additionalProperties: false
+      required: [policies, currentChoices, requiredAccepted, history]
+      properties:
+        policies:
+          type: array
+          items: { $ref: "#/components/schemas/MemberConsentPolicy" }
+        currentChoices: { $ref: "#/components/schemas/MemberConsentCurrentChoices" }
+        requiredAccepted: { type: boolean }
+        history:
+          type: array
+          items: { $ref: "#/components/schemas/MemberConsentRecord" }
+    MemberConsentInput:
+      type: object
+      additionalProperties: false
+      required: [termsOfUseAccepted, privacyPolicyAccepted, marketingConsent]
+      properties:
+        termsOfUseAccepted: { type: boolean }
+        privacyPolicyAccepted: { type: boolean }
+        marketingConsent: { type: boolean }
+    MemberConsentHistoryLimit:
+      type: integer
+      minimum: 1
+      maximum: 200
+    MemberConsentHistoryOffset:
+      type: integer
+      minimum: 0
+      maximum: 1000000
     SupportedLanguage:
       type: string
       enum: [en, ar, ku]

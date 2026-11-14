@@ -872,6 +872,69 @@ export interface PrivacyRequest {
   exportAvailableUntil: string | null;
 }
 
+export type MemberConsentPurpose = typeof MemberConsentPurpose[keyof typeof MemberConsentPurpose];
+
+
+export const MemberConsentPurpose = {
+  terms_of_use: 'terms_of_use',
+  privacy_policy: 'privacy_policy',
+  marketing: 'marketing',
+} as const;
+
+export type MemberConsentChoice = typeof MemberConsentChoice[keyof typeof MemberConsentChoice];
+
+
+export const MemberConsentChoice = {
+  accepted: 'accepted',
+  declined: 'declined',
+} as const;
+
+export interface MemberConsentRecord {
+  id: string;
+  userId: string;
+  purpose: MemberConsentPurpose;
+  policyVersion: string;
+  choice: MemberConsentChoice;
+  recordedAt: string;
+}
+
+export interface MemberConsentPolicy {
+  purpose: MemberConsentPurpose;
+  version: string;
+  required: boolean;
+}
+
+export interface MemberConsentCurrentChoices {
+  termsOfUse: MemberConsentChoice | null;
+  privacyPolicy: MemberConsentChoice | null;
+  marketing: MemberConsentChoice | null;
+}
+
+export interface MemberConsentState {
+  policies: MemberConsentPolicy[];
+  currentChoices: MemberConsentCurrentChoices;
+  requiredAccepted: boolean;
+  history: MemberConsentRecord[];
+}
+
+export interface MemberConsentInput {
+  termsOfUseAccepted: boolean;
+  privacyPolicyAccepted: boolean;
+  marketingConsent: boolean;
+}
+
+/**
+ * @minimum 1
+ * @maximum 200
+ */
+export type MemberConsentHistoryLimit = number;
+
+/**
+ * @minimum 0
+ * @maximum 1000000
+ */
+export type MemberConsentHistoryOffset = number;
+
 export interface SupportTicketInput {
   /**
      * @minLength 4
@@ -3922,6 +3985,16 @@ to: string;
 export type GetSuperAdminAuditLogsParams = {
 limit?: SuperAdminAuditLimit;
 offset?: SuperAdminAuditOffset;
+};
+
+export type GetSuperAdminMemberConsentHistoryParams = {
+/**
+ * @minLength 1
+ * @maxLength 200
+ */
+userId?: string;
+limit?: MemberConsentHistoryLimit;
+offset?: MemberConsentHistoryOffset;
 };
 
 export type StreamMemberCoursePlaybackParams = {

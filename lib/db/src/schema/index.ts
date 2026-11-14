@@ -13,6 +13,7 @@ export * from "./sponsored-placements";
 export * from "./reviews";
 export * from "./instructor";
 export * from "./corporate";
+export * from "./member-consents";
 // Export your models here. Add one export per file
 // export * from "./posts";
 //

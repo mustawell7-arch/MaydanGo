@@ -2,13 +2,15 @@ import { Router, type IRouter } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { desc, eq, inArray, or } from "drizzle-orm";
-import { db, adminRolePermissions, operationAudit, operators, platformSafetyRules } from "@workspace/db";
+import { db, adminRolePermissions, memberConsentEvents, operationAudit, operators, platformSafetyRules } from "@workspace/db";
 import {
   GetSuperAdminPlatformRulesResponse,
   GetSuperAdminRolePermissionsResponse,
   GetSuperAdminAccountsResponse,
   GetSuperAdminAuditLogsQueryParams,
   GetSuperAdminAuditLogsResponse,
+  GetSuperAdminMemberConsentHistoryQueryParams,
+  GetSuperAdminMemberConsentHistoryResponse,
   UpdateSuperAdminPlatformRulesBody,
   UpdateSuperAdminPlatformRulesResponse,
   UpdateSuperAdminRolePermissionsBody,
@@ -370,6 +372,38 @@ export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirector
       .offset(parsed.data.offset ?? 0)
       .limit(parsed.data.limit ?? 100);
     res.json(GetSuperAdminAuditLogsResponse.parse(rows));
+  });
+
+  router.get("/member-consents", async (req, res): Promise<void> => {
+    const parsed = GetSuperAdminMemberConsentHistoryQueryParams.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.message });
+      return;
+    }
+    const rows = await db.select({
+      id: memberConsentEvents.id,
+      userId: memberConsentEvents.userId,
+      purpose: memberConsentEvents.purpose,
+      policyVersion: memberConsentEvents.policyVersion,
+      choice: memberConsentEvents.choice,
+      recordedAt: memberConsentEvents.recordedAt,
+    }).from(memberConsentEvents)
+      .where(parsed.data.userId ? eq(memberConsentEvents.userId, parsed.data.userId) : undefined)
+      .orderBy(desc(memberConsentEvents.recordedAt), desc(memberConsentEvents.id))
+      .offset(parsed.data.offset ?? 0)
+      .limit(parsed.data.limit ?? 100);
+    const actorId = res.locals.superAdminUserId as string;
+    await db.insert(operationAudit).values({
+      id: randomUUID(),
+      actorId,
+      action: "super_admin.member_consent_history.viewed",
+      targetId: "member-consent-history",
+      detail: `limit=${parsed.data.limit ?? 100};offset=${parsed.data.offset ?? 0};filtered=${Boolean(parsed.data.userId)}`,
+    });
+    res.json(GetSuperAdminMemberConsentHistoryResponse.parse(rows.map(row => ({
+      ...row,
+      recordedAt: row.recordedAt.toISOString(),
+    }))));
   });
 
   return router;

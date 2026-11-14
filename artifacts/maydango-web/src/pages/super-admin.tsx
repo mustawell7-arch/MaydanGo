@@ -3,10 +3,12 @@ import { useAuth } from "@clerk/react";
 import {
   getGetSuperAdminAccountsQueryKey,
   getGetSuperAdminAuditLogsQueryKey,
+  getGetSuperAdminMemberConsentHistoryQueryKey,
   getGetSuperAdminPlatformRulesQueryKey,
   getGetSuperAdminRolePermissionsQueryKey,
   useGetSuperAdminAccounts,
   useGetSuperAdminAuditLogs,
+  useGetSuperAdminMemberConsentHistory,
   useGetSuperAdminPlatformRules,
   useGetSuperAdminRolePermissions,
   useUpdateSuperAdminPlatformRules,
@@ -103,6 +105,16 @@ export default function SuperAdminPage() {
     query: {
       enabled: isLoaded && !!isSignedIn,
       queryKey: getGetSuperAdminAuditLogsQueryKey(auditParams),
+    },
+  });
+  const [consentPage, setConsentPage] = useState(0);
+  const [consentFilterDraft, setConsentFilterDraft] = useState("");
+  const [consentUserId, setConsentUserId] = useState("");
+  const consentParams = { limit: 100, offset: consentPage * 100, ...(consentUserId ? { userId: consentUserId } : {}) };
+  const consentQuery = useGetSuperAdminMemberConsentHistory(consentParams, {
+    query: {
+      enabled: isLoaded && !!isSignedIn,
+      queryKey: getGetSuperAdminMemberConsentHistoryQueryKey(consentParams),
     },
   });
   const saveAccount = useUpsertSuperAdminAccount();
@@ -225,6 +237,7 @@ export default function SuperAdminPage() {
 
   const accounts = accountsQuery.data ?? [];
   const auditLogs = auditQuery.data ?? [];
+  const consentEvents = consentQuery.data ?? [];
   const rolePolicies = rolePermissionsQuery.data ?? [];
   const platformRules = platformRuleDraft ?? platformRulesQuery.data?.settings ?? null;
   const platformRulesChanged = !!platformRuleDraft
@@ -394,6 +407,50 @@ export default function SuperAdminPage() {
                 </tbody>
               </table>
             </div>
+          </section>
+
+          <section className="rounded-3xl border border-[#e1dccf] bg-[#fffdf7] p-5 sm:p-6" aria-labelledby="member-consent-history-title">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 id="member-consent-history-title" className="font-display text-xl font-bold">Member consent history</h2>
+                <p className="mt-1 text-sm text-[#60756b]">Read-only history. Each lookup is recorded in the platform audit log.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => void consentQuery.refetch()} className="rounded-lg border border-[#d8d2c4] px-3 py-2 text-xs font-bold text-[#36564b]">Refresh</button>
+                <button onClick={() => setConsentPage(page => Math.max(0, page - 1))} disabled={consentPage === 0} className="rounded-lg border border-[#d8d2c4] px-3 py-2 text-xs font-bold text-[#36564b] disabled:opacity-40">Newer</button>
+                <span className="self-center text-xs text-[#748279]">Page {consentPage + 1}</span>
+                <button onClick={() => setConsentPage(page => page + 1)} disabled={consentEvents.length < 100} className="rounded-lg border border-[#d8d2c4] px-3 py-2 text-xs font-bold text-[#36564b] disabled:opacity-40">Older</button>
+              </div>
+            </div>
+            <form onSubmit={event => {
+              event.preventDefault();
+              setConsentPage(0);
+              setConsentUserId(consentFilterDraft.trim());
+            }} className="mb-4 flex flex-wrap gap-2">
+              <label htmlFor="member-consent-user-id" className="sr-only">Filter by member user ID</label>
+              <input id="member-consent-user-id" value={consentFilterDraft} onChange={event => setConsentFilterDraft(event.target.value)} placeholder="Filter by member user ID" className="min-w-64 flex-1 rounded-lg border border-[#d8d2c4] bg-white px-3 py-2 text-sm" />
+              <button type="submit" className="rounded-lg bg-[#36564b] px-4 py-2 text-xs font-bold text-white">Search</button>
+              {consentUserId && <button type="button" onClick={() => { setConsentFilterDraft(""); setConsentUserId(""); setConsentPage(0); }} className="rounded-lg border border-[#d8d2c4] px-4 py-2 text-xs font-bold text-[#36564b]">Clear</button>}
+            </form>
+            {consentQuery.isLoading ? <p className="py-8 text-center text-sm text-[#748279]" role="status">Loading consent history…</p>
+              : consentQuery.isError ? <p className="rounded-xl border border-[#e8c5ba] bg-[#fff5f1] p-4 text-sm text-[#9a4435]" role="alert">Consent history could not be loaded. Retry to see the latest records.</p>
+                : <div className="overflow-x-auto">
+                  <table className="w-full min-w-[720px] text-left text-sm">
+                    <thead className="border-b border-[#eee9de] text-xs uppercase tracking-wide text-[#748279]">
+                      <tr><th className="px-2 py-3">Member ID</th><th className="px-2 py-3">Purpose</th><th className="px-2 py-3">Policy version</th><th className="px-2 py-3">Choice</th><th className="px-2 py-3">Recorded</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#eee9de]">
+                      {consentEvents.map(event => <tr key={event.id}>
+                        <td className="max-w-48 break-all px-2 py-3 font-mono text-xs">{event.userId}</td>
+                        <td className="px-2 py-3">{event.purpose.replaceAll("_", " ")}</td>
+                        <td className="px-2 py-3">{event.policyVersion}</td>
+                        <td className="px-2 py-3">{event.choice}</td>
+                        <td className="px-2 py-3 text-xs text-[#60756b]">{new Date(event.recordedAt).toLocaleString()}</td>
+                      </tr>)}
+                      {!consentEvents.length && <tr><td colSpan={5} className="px-2 py-8 text-center text-sm text-[#748279]">No consent history is recorded for this search.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>}
           </section>
 
           <section className="rounded-3xl border border-[#e1dccf] bg-[#fffdf7] p-5 sm:p-6" aria-labelledby="audit-log-title">

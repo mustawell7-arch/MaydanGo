@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
 import { eq, inArray } from "drizzle-orm";
 import express from "express";
-import { db, adminRolePermissions, operationAudit, operators, platformSafetyRules, pool } from "@workspace/db";
+import { db, adminRolePermissions, memberConsentEvents, operationAudit, operators, platformSafetyRules, pool } from "@workspace/db";
 import { createSuperAdminRouter } from "./super-admin";
 import { DEFAULT_ADMIN_ACTIONS } from "../lib/admin-roles";
 
@@ -229,4 +229,27 @@ test("Super Admin role management is protected, auditable, and preserves other s
   assert.equal(events.filter(event => event.action === "super_admin.admin_account.updated" && event.targetId === targetId).length, 3);
   assert.equal(events.some(event => event.targetId === targetId && event.detail.includes("corporate_admin")), true);
   assert.equal((await call("/super-admin/audit-logs?limit=0", "GET", superAdminId)).status, 400);
+
+  const consentId = randomUUID();
+  await db.insert(memberConsentEvents).values({
+    id: consentId,
+    userId: targetId,
+    purpose: "privacy_policy",
+    policyVersion: "v1-draft",
+    choice: "accepted",
+  });
+  assert.equal((await call(`/super-admin/member-consents?userId=${encodeURIComponent(targetId)}`)).status, 401);
+  assert.equal((await call(`/super-admin/member-consents?userId=${encodeURIComponent(targetId)}`, "GET", partnerId)).status, 403);
+  const consentHistory = await call(`/super-admin/member-consents?userId=${encodeURIComponent(targetId)}`, "GET", superAdminId);
+  assert.equal(consentHistory.status, 200);
+  assert.deepEqual(consentHistory.data, [{
+    id: consentId,
+    userId: targetId,
+    purpose: "privacy_policy",
+    policyVersion: "v1-draft",
+    choice: "accepted",
+    recordedAt: (consentHistory.data as Array<{ recordedAt: string }>)[0].recordedAt,
+  }]);
+  const consentAudit = await call("/super-admin/audit-logs?limit=100", "GET", superAdminId);
+  assert.equal((consentAudit.data as Array<{ action: string }>).some(event => event.action === "super_admin.member_consent_history.viewed"), true);
 });

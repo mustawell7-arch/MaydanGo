@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Platform, View, StyleSheet } from 'react-native';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  getGetMemberConsentsQueryKey,
   getMemberPrivacyRequestExport,
   getGetMemberPrivacyRequestsQueryKey,
   useCreateMemberPrivacyRequest,
+  useGetMemberConsents,
   useGetMemberPrivacyRequests,
+  useSaveMemberConsents,
 } from '@workspace/api-client-react';
 import { Text, TextInput, Pressable } from '@/components/Localized';
 import { dateTime, errorCopy } from '@/lib/content';
@@ -33,8 +36,10 @@ export default function AccountScreen() {
   const { signUp } = useSignUp();
   const { startSSOFlow } = useSSO();
   const queryClient = useQueryClient();
+  const consents = useGetMemberConsents({ query: { enabled: isSignedIn === true, refetchInterval: 30_000 } });
   const privacyRequests = useGetMemberPrivacyRequests({ query: { enabled: isSignedIn === true, refetchInterval: 30_000 } });
   const createPrivacyRequest = useCreateMemberPrivacyRequest();
+  const saveConsents = useSaveMemberConsents();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,6 +50,9 @@ export default function AccountScreen() {
   const [error, setError] = useState('');
   const [privacyNotice, setPrivacyNotice] = useState('');
   const [exportingData, setExportingData] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState<'female' | 'male' | 'unspecified'>('unspecified');
   const run = async (fn: () => Promise<void>) => {
@@ -61,7 +69,7 @@ export default function AccountScreen() {
     if (attempt.status !== 'complete') throw new Error('Additional verification is required. Check your details or use another sign-in method.');
     check(await attempt.finalize({ navigate: ({ session }) => {
       if (session?.currentTask) { setError('Your account requires an additional verification step.'); return; }
-      router.replace('/(tabs)/bookings');
+      router.replace(mode === 'signup' ? '/account' : '/(tabs)/bookings');
     } }));
   };
   const submit = () => run(async () => {
@@ -101,6 +109,39 @@ export default function AccountScreen() {
     waiting_member: 'supportStatusWaiting',
     resolved: 'supportStatusResolved',
     closed: 'supportStatusClosed',
+  };
+  const consentPurposeKey: Record<'terms_of_use' | 'privacy_policy' | 'marketing', MessageKey> = {
+    terms_of_use: 'memberConsentsTermsName',
+    privacy_policy: 'memberConsentsPrivacyName',
+    marketing: 'memberConsentsMarketingName',
+  };
+  useEffect(() => {
+    setTermsAccepted(consents.data?.currentChoices.termsOfUse === 'accepted');
+    setPrivacyAccepted(consents.data?.currentChoices.privacyPolicy === 'accepted');
+    setMarketingConsent(consents.data?.currentChoices.marketing === 'accepted');
+  }, [
+    consents.data?.currentChoices.termsOfUse,
+    consents.data?.currentChoices.privacyPolicy,
+    consents.data?.currentChoices.marketing,
+  ]);
+  const submitConsentChoices = async () => {
+    setPrivacyNotice('');
+    if (!termsAccepted || !privacyAccepted) {
+      setPrivacyNotice(translate(app.language, 'memberConsentsRequiredHint'));
+      return;
+    }
+    try {
+      await saveConsents.mutateAsync({ data: {
+        termsOfUseAccepted: termsAccepted,
+        privacyPolicyAccepted: privacyAccepted,
+        marketingConsent,
+      } });
+      await queryClient.invalidateQueries({ queryKey: getGetMemberConsentsQueryKey() });
+      await app.refreshMember();
+      setPrivacyNotice(translate(app.language, 'memberConsentsSaved'));
+    } catch {
+      setPrivacyNotice(translate(app.language, 'memberConsentsError'));
+    }
   };
   const submitPrivacyRequest = async (kind: 'data_export' | 'account_deletion') => {
     setPrivacyNotice('');
@@ -158,6 +199,48 @@ export default function AccountScreen() {
       <Pressable onPress={() => router.replace('/')}><Text style={{ color: c.primary }}>Back to explore</Text></Pressable>
       {isSignedIn ? <>
         <Text raw style={{ color: c.foreground }}>{user?.primaryEmailAddress?.emailAddress}</Text>
+        <View style={[styles.privacyCard, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={{ color: c.foreground, fontWeight: '800', fontSize: 18 }}>{translate(app.language, 'memberConsentsTitle')}</Text>
+          <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'memberConsentsIntro')}</Text>
+          {consents.isLoading ? <Text style={{ color: c.mutedForeground }}>{translate(app.language, 'memberConsentsLoading')}</Text>
+            : consents.isError ? <Text accessibilityRole="alert" style={{ color: c.destructive }}>{translate(app.language, 'memberConsentsLoadError')}</Text>
+              : <>
+                <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'memberConsentsRequiredHint')}</Text>
+                {consents.data?.policies.map(policy => (
+                  <Text key={policy.purpose} style={{ color: c.mutedForeground }}>
+                    {translate(app.language, consentPurposeKey[policy.purpose])} · {translate(app.language, 'memberConsentsVersion')}: {policy.version}
+                  </Text>
+                ))}
+                <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: termsAccepted, disabled: consents.data?.currentChoices.termsOfUse === 'accepted' }} onPress={() => {
+                  if (consents.data?.currentChoices.termsOfUse !== 'accepted') setTermsAccepted(value => !value);
+                }}>
+                  <Text style={{ color: c.foreground }}>{termsAccepted ? '☑ ' : '☐ '}{translate(app.language, 'memberConsentsTerms')}</Text>
+                </Pressable>
+                <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: privacyAccepted, disabled: consents.data?.currentChoices.privacyPolicy === 'accepted' }} onPress={() => {
+                  if (consents.data?.currentChoices.privacyPolicy !== 'accepted') setPrivacyAccepted(value => !value);
+                }}>
+                  <Text style={{ color: c.foreground }}>{privacyAccepted ? '☑ ' : '☐ '}{translate(app.language, 'memberConsentsPrivacy')}</Text>
+                </Pressable>
+                <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: marketingConsent }} onPress={() => setMarketingConsent(value => !value)}>
+                  <Text style={{ color: c.foreground }}>{marketingConsent ? '☑ ' : '☐ '}{translate(app.language, 'memberConsentsMarketing')}</Text>
+                </Pressable>
+                {button(
+                  translate(app.language, saveConsents.isPending ? 'memberConsentsSaving' : 'memberConsentsSave'),
+                  () => void submitConsentChoices(),
+                  'save-member-consents',
+                )}
+                {consents.data?.history.length ? <>
+                  <Text style={{ color: c.foreground, fontWeight: '700', marginTop: 4 }}>{translate(app.language, 'memberConsentsHistory')}</Text>
+                  {consents.data.history.map(record => (
+                    <View key={record.id} style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, paddingTop: 8 }}>
+                      <Text style={{ color: c.foreground }}>{translate(app.language, consentPurposeKey[record.purpose])} · {record.policyVersion} · {translate(app.language, record.choice === 'accepted' ? 'memberConsentsAccepted' : 'memberConsentsDeclined')}</Text>
+                      <Text style={{ color: c.mutedForeground }}>{dateTime(String(record.recordedAt), app.language, true)}</Text>
+                    </View>
+                  ))}
+                </> : <Text style={{ color: c.mutedForeground }}>{translate(app.language, 'memberConsentsNoHistory')}</Text>}
+              </>}
+          {privacyNotice ? <Text accessibilityRole="alert" style={{ color: c.primary }}>{privacyNotice}</Text> : null}
+        </View>
         <Text style={{ color: c.foreground, fontWeight: '700' }}>Server-verified memberships</Text>
         {app.memberMemberships.length ? app.memberMemberships.map(m => <Text key={m.scope} style={{ color: c.foreground }}>{m.scope === 'preview' ? 'Sample-only trial' : m.source === 'corporate' ? 'Corporate' : m.source === 'trial' ? 'Trial' : 'Real membership'} · {m.tier} · {m.status.replaceAll('_', ' ')} · ends {dateTime(m.endsAt, app.language, true)}</Text>) : <Text style={{ color: c.mutedForeground }}>No active membership. Local plan selections do not grant access.</Text>}
         <MemberNotice />
@@ -266,7 +349,7 @@ export default function AccountScreen() {
           const result = await startSSOFlow({ strategy: 'oauth_google', redirectUrl: AuthSession.makeRedirectUri() });
           if (!result.createdSessionId || !result.setActive) throw new Error('Sign-in was not completed. Try email and password.');
           await result.setActive({ session: result.createdSessionId });
-          router.replace('/(tabs)/bookings');
+          router.replace(mode === 'signup' ? '/account' : '/(tabs)/bookings');
         }))}
         <Pressable onPress={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setVerify(false); setReset('none'); setError(''); signIn.reset(); signUp.reset(); }}>
           <Text style={{ color: c.primary }}>{mode === 'signin' ? 'New here? Create account' : 'Already registered? Sign in'}</Text>

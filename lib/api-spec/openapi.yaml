@@ -446,6 +446,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1super-admin~1role-permissions~1{role}"
   /super-admin/audit-logs:
     $ref: "./operations.yaml#/paths/~1super-admin~1audit-logs"
+  /super-admin/member-consents:
+    $ref: "./operations.yaml#/paths/~1super-admin~1member-consents"
   /operations/quality:
     $ref: "./operations.yaml#/paths/~1operations~1quality"
   /operations/quality/emergency-contacts/{id}:
@@ -514,6 +516,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1support~1tickets~1{id}~1attachments~1{attachmentId}~1download"
   /member/privacy-requests:
     $ref: "./operations.yaml#/paths/~1member~1privacy-requests"
+  /member/consents:
+    $ref: "./operations.yaml#/paths/~1member~1consents"
   /member/notifications/settings:
     $ref: "./operations.yaml#/paths/~1member~1notifications~1settings"
   /member/notifications/devices:

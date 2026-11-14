@@ -2,11 +2,14 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useAuth, useUser } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  getGetMemberConsentsQueryKey,
   getMemberPrivacyRequestExport,
   getGetMemberPrivacyRequestsQueryKey,
   useCreateMemberPrivacyRequest,
+  useGetMemberConsents,
   useGetMemberAccountSummary,
   useGetMemberPrivacyRequests,
+  useSaveMemberConsents,
 } from "@workspace/api-client-react";
 import { Link, Redirect } from "wouter";
 
@@ -63,6 +66,24 @@ const copy: Record<Language, Record<string, string>> = {
     privacyError: "The request could not be sent. Please try again.",
     privacyLoadError: "Privacy requests could not be loaded.",
     privacyFollowUp: "For follow-up, contact MaydanGo at",
+    consentsTitle: "Consent and policy choices",
+    consentsIntro: "Current draft versions are shown below. Required service consent is separate from optional marketing updates.",
+    termsChoice: "I agree to the current MaydanGo Terms of Use (required)",
+    privacyChoice: "I agree to the current MaydanGo Privacy Policy (required)",
+    marketingChoice: "Send me occasional MaydanGo news and offers (optional)",
+    readTerms: "Read terms",
+    readPrivacy: "Read privacy notice",
+    policyVersion: "Current version",
+    consentSave: "Save choices",
+    consentSaving: "Saving choices…",
+    consentSaved: "Your choices were recorded.",
+    consentError: "Your choices could not be saved. Please try again.",
+    consentLoadError: "Consent history could not be loaded.",
+    consentHistory: "Consent history",
+    consentNoHistory: "No consent choices have been recorded yet.",
+    consentAccepted: "Accepted",
+    consentDeclined: "Declined",
+    consentRequiredHint: "Both required choices must be accepted for member services. Marketing updates remain optional.",
     help: "Visit Help",
     backToPlans: "Explore plans",
     signIn: "Sign in to view your account",
@@ -117,6 +138,24 @@ const copy: Record<Language, Record<string, string>> = {
     privacyError: "تعذر إرسال الطلب. حاول مرة أخرى.",
     privacyLoadError: "تعذر تحميل طلبات الخصوصية.",
     privacyFollowUp: "للمتابعة، تواصل مع MaydanGo عبر",
+    consentsTitle: "الموافقة وخيارات السياسات",
+    consentsIntro: "تظهر أدناه إصدارات المسودات الحالية. الموافقة المطلوبة للخدمة منفصلة عن الرسائل التسويقية الاختيارية.",
+    termsChoice: "أوافق على شروط استخدام MaydanGo الحالية (مطلوب)",
+    privacyChoice: "أوافق على سياسة خصوصية MaydanGo الحالية (مطلوب)",
+    marketingChoice: "أرغب في تلقي أخبار وعروض MaydanGo أحياناً (اختياري)",
+    readTerms: "قراءة الشروط",
+    readPrivacy: "قراءة إشعار الخصوصية",
+    policyVersion: "الإصدار الحالي",
+    consentSave: "حفظ الخيارات",
+    consentSaving: "جارٍ حفظ الخيارات…",
+    consentSaved: "تم تسجيل خياراتك.",
+    consentError: "تعذر حفظ خياراتك. حاول مرة أخرى.",
+    consentLoadError: "تعذر تحميل سجل الموافقات.",
+    consentHistory: "سجل الموافقات",
+    consentNoHistory: "لم تُسجل أي خيارات موافقة بعد.",
+    consentAccepted: "موافق عليه",
+    consentDeclined: "غير موافق عليه",
+    consentRequiredHint: "يلزم قبول الخيارين المطلوبين لاستخدام خدمات الأعضاء. تظل الرسائل التسويقية اختيارية.",
     help: "زيارة المساعدة",
     backToPlans: "استكشف الخطط",
     signIn: "سجّل الدخول لعرض حسابك",
@@ -171,6 +210,24 @@ const copy: Record<Language, Record<string, string>> = {
     privacyError: "ناردنی داواکارییەکە سەرکەوتوو نەبوو. دووبارە هەوڵ بدەوە.",
     privacyLoadError: "بارکردنی داواکارییەکانی تایبەتمەندی سەرکەوتوو نەبوو.",
     privacyFollowUp: "بۆ بەدواداچوون، پەیوەندی بە MaydanGo بکە لە ڕێگەی",
+    consentsTitle: "ڕەزامەندی و هەڵبژاردەکانی سیاسەت",
+    consentsIntro: "وەشانی ڕەشنووسی ئێستا لە خوارەوە پیشان دراوە. ڕەزامەندیی پێویستی خزمەتگوزاری جیاوازە لە نوێکاریی بازاڕکردنی ئارەزوومەندانە.",
+    termsChoice: "ڕازیم بە مەرجەکانی بەکارهێنانی ئێستای MaydanGo (پێویستە)",
+    privacyChoice: "ڕازیم بە ئاگاداریی تایبەتمەندیی ئێستای MaydanGo (پێویستە)",
+    marketingChoice: "هەواڵ و پێشکەشکردنی MaydanGo جاروبار بۆم بنێرە (ئارەزوومەندانە)",
+    readTerms: "خوێندنەوەی مەرجەکان",
+    readPrivacy: "خوێندنەوەی ئاگاداریی تایبەتمەندی",
+    policyVersion: "وەشانی ئێستا",
+    consentSave: "پاشەکەوتکردنی هەڵبژاردەکان",
+    consentSaving: "هەڵبژاردەکان پاشەکەوت دەکرێن…",
+    consentSaved: "هەڵبژاردەکانت تۆمار کران.",
+    consentError: "نەتوانرا هەڵبژاردەکانت پاشەکەوت بکرێن. دووبارە هەوڵ بدەوە.",
+    consentLoadError: "نەتوانرا مێژووی ڕەزامەندی باربکرێت.",
+    consentHistory: "مێژووی ڕەزامەندی",
+    consentNoHistory: "هێشتا هیچ هەڵبژاردەیەکی ڕەزامەندی تۆمار نەکراوە.",
+    consentAccepted: "پەسەندکراوە",
+    consentDeclined: "پەسەند نەکراوە",
+    consentRequiredHint: "بۆ بەکارهێنانی خزمەتگوزاریی ئەندامان پێویستە هەردوو هەڵبژاردەی پێویست پەسەند بکرێن. نوێکاریی بازاڕکردن ئارەزوومەندانەیە.",
     help: "سەردانی یارمەتی",
     backToPlans: "پلانەکان ببینە",
     signIn: "بچۆ ژوورەوە بۆ بینینی هەژمارەکەت",
@@ -204,7 +261,11 @@ export default function MemberAccountPage({ language }: { language: Language }) 
   const privacyRequests = useGetMemberPrivacyRequests({
     query: { enabled: isLoaded && isSignedIn === true, retry: false, refetchInterval: 30_000 },
   });
+  const consents = useGetMemberConsents({
+    query: { enabled: isLoaded && isSignedIn === true, retry: false, refetchInterval: 30_000 },
+  });
   const createPrivacyRequest = useCreateMemberPrivacyRequest();
+  const saveConsents = useSaveMemberConsents();
   const t = copy[language];
   const rtl = language !== "en";
   const [firstName, setFirstName] = useState("");
@@ -215,6 +276,11 @@ export default function MemberAccountPage({ language }: { language: Language }) 
   const [privacyMessage, setPrivacyMessage] = useState("");
   const [privacyExportMessage, setPrivacyExportMessage] = useState("");
   const [exportingData, setExportingData] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
+  const [consentMessage, setConsentMessage] = useState("");
+  const [consentError, setConsentError] = useState(false);
   const activePrivacyRequest = privacyRequests.data?.find(request =>
     request.kind === "account_deletion" &&
     ["open", "in_progress", "waiting_member"].includes(request.status)
@@ -228,6 +294,16 @@ export default function MemberAccountPage({ language }: { language: Language }) 
     setFirstName(user?.firstName ?? "");
     setLastName(user?.lastName ?? "");
   }, [user?.id, user?.firstName, user?.lastName]);
+
+  useEffect(() => {
+    setTermsAccepted(consents.data?.currentChoices.termsOfUse === "accepted");
+    setPrivacyAccepted(consents.data?.currentChoices.privacyPolicy === "accepted");
+    setMarketingConsent(consents.data?.currentChoices.marketing === "accepted");
+  }, [
+    consents.data?.currentChoices.termsOfUse,
+    consents.data?.currentChoices.privacyPolicy,
+    consents.data?.currentChoices.marketing,
+  ]);
 
   useEffect(() => {
     const existing = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
@@ -269,6 +345,26 @@ export default function MemberAccountPage({ language }: { language: Language }) 
     } catch {
       await queryClient.invalidateQueries({ queryKey: getGetMemberPrivacyRequestsQueryKey() });
       setPrivacyMessage(t.privacyError);
+    }
+  }
+
+  async function submitConsentChoices(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setConsentMessage("");
+    setConsentError(false);
+    try {
+      await saveConsents.mutateAsync({
+        data: {
+          termsOfUseAccepted: termsAccepted,
+          privacyPolicyAccepted: privacyAccepted,
+          marketingConsent,
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: getGetMemberConsentsQueryKey() });
+      setConsentMessage(t.consentSaved);
+    } catch {
+      setConsentMessage(t.consentError);
+      setConsentError(true);
     }
   }
 
@@ -387,6 +483,57 @@ export default function MemberAccountPage({ language }: { language: Language }) 
           <section className="rounded-2xl border border-border bg-[#f2e8d9] p-5 sm:p-7" aria-labelledby="account-payments-heading">
             <h2 id="account-payments-heading" className="font-display text-xl font-bold">{t.payments}</h2>
             <p className="mt-2 text-sm leading-6">{t.paymentsNote}</p>
+          </section>
+
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7" aria-labelledby="account-consents-heading">
+            <h2 id="account-consents-heading" className="font-display text-xl font-bold">{t.consentsTitle}</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{t.consentsIntro}</p>
+            <div className="mt-3 flex flex-wrap gap-3 text-sm font-semibold">
+              <Link href="/legal" className="text-primary underline underline-offset-2">{t.readTerms}</Link>
+              <Link href="/privacy" className="text-primary underline underline-offset-2">{t.readPrivacy}</Link>
+            </div>
+            {consents.isLoading ? <p className="mt-4 text-sm text-muted-foreground" role="status">{t.loading}</p>
+              : consents.isError ? <p className="mt-4 text-sm text-destructive" role="alert">{t.consentLoadError}</p>
+                : <>
+                  <div className="mt-4 grid gap-2 text-xs text-muted-foreground">
+                    {consents.data?.policies.map(policy => (
+                      <p key={policy.purpose}>{policy.purpose.replaceAll("_", " ")} · {t.policyVersion}: {policy.version}</p>
+                    ))}
+                  </div>
+                  <p className="mt-4 rounded-xl bg-muted p-3 text-sm leading-6">{t.consentRequiredHint}</p>
+                  <form onSubmit={event => void submitConsentChoices(event)} className="mt-4 space-y-3">
+                    <label className="flex items-start gap-3 rounded-xl border border-border p-3 text-sm">
+                      <input type="checkbox" required checked={termsAccepted} disabled={consents.data?.currentChoices.termsOfUse === "accepted"} onChange={event => setTermsAccepted(event.target.checked)} className="mt-1" />
+                      <span>{t.termsChoice}</span>
+                    </label>
+                    <label className="flex items-start gap-3 rounded-xl border border-border p-3 text-sm">
+                      <input type="checkbox" required checked={privacyAccepted} disabled={consents.data?.currentChoices.privacyPolicy === "accepted"} onChange={event => setPrivacyAccepted(event.target.checked)} className="mt-1" />
+                      <span>{t.privacyChoice}</span>
+                    </label>
+                    <label className="flex items-start gap-3 rounded-xl border border-border p-3 text-sm">
+                      <input type="checkbox" checked={marketingConsent} onChange={event => setMarketingConsent(event.target.checked)} className="mt-1" />
+                      <span>{t.marketingChoice}</span>
+                    </label>
+                    <button type="submit" disabled={saveConsents.isPending || consents.isLoading} className="rounded-full bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60">
+                      {saveConsents.isPending ? t.consentSaving : t.consentSave}
+                    </button>
+                    {consentMessage && <p className={`text-sm ${consentError ? "text-destructive" : "text-primary"}`} role={consentError ? "alert" : "status"}>{consentMessage}</p>}
+                  </form>
+                  <div className="mt-5 border-t border-border pt-4">
+                    <h3 className="font-semibold">{t.consentHistory}</h3>
+                    {consents.data?.history.length ? <ul className="mt-3 space-y-2">
+                      {consents.data.history.map(record => (
+                        <li key={record.id} className="rounded-xl border border-border p-3 text-sm">
+                          <div className="flex flex-wrap justify-between gap-2">
+                            <span className="font-medium">{record.purpose.replaceAll("_", " ")} · {record.policyVersion}</span>
+                            <span className="text-muted-foreground">{record.choice === "accepted" ? t.consentAccepted : t.consentDeclined}</span>
+                          </div>
+                          <time className="mt-1 block text-xs text-muted-foreground">{formatIraqDate(record.recordedAt, language)}</time>
+                        </li>
+                      ))}
+                    </ul> : <p className="mt-2 text-sm text-muted-foreground">{t.consentNoHistory}</p>}
+                  </div>
+                </>}
           </section>
 
           <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7" aria-labelledby="account-privacy-heading">

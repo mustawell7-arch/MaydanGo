@@ -4651,6 +4651,32 @@ export const GetSuperAdminAuditLogsResponseItem = zod.object({
 export const GetSuperAdminAuditLogsResponse = zod.array(GetSuperAdminAuditLogsResponseItem)
 
 
+export const getSuperAdminMemberConsentHistoryQueryUserIdMax = 200;
+
+export const getSuperAdminMemberConsentHistoryQueryLimitMax = 200;
+
+export const getSuperAdminMemberConsentHistoryQueryOffsetMin = 0;
+export const getSuperAdminMemberConsentHistoryQueryOffsetMax = 1000000;
+
+
+
+export const GetSuperAdminMemberConsentHistoryQueryParams = zod.object({
+  "userId": zod.coerce.string().min(1).max(getSuperAdminMemberConsentHistoryQueryUserIdMax).optional(),
+  "limit": zod.coerce.number().int().min(1).max(getSuperAdminMemberConsentHistoryQueryLimitMax).optional(),
+  "offset": zod.coerce.number().int().min(getSuperAdminMemberConsentHistoryQueryOffsetMin).max(getSuperAdminMemberConsentHistoryQueryOffsetMax).optional()
+})
+
+export const GetSuperAdminMemberConsentHistoryResponseItem = zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "purpose": zod.enum(['terms_of_use', 'privacy_policy', 'marketing']),
+  "policyVersion": zod.string(),
+  "choice": zod.enum(['accepted', 'declined']),
+  "recordedAt": zod.coerce.date()
+})
+export const GetSuperAdminMemberConsentHistoryResponse = zod.array(GetSuperAdminMemberConsentHistoryResponseItem)
+
+
 export const GetFacilityQualityControlResponse = zod.object({
   "role": zod.enum(['fraud_compliance_admin', 'partner', 'super_admin']),
   "facilities": zod.array(zod.object({
@@ -6263,6 +6289,58 @@ export const CreateMemberPrivacyRequestResponse = zod.object({
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
   "createdAt": zod.coerce.date(),
   "exportAvailableUntil": zod.coerce.date().nullable()
+})
+
+
+export const GetMemberConsentsResponse = zod.object({
+  "policies": zod.array(zod.object({
+  "purpose": zod.enum(['terms_of_use', 'privacy_policy', 'marketing']),
+  "version": zod.string(),
+  "required": zod.boolean()
+})),
+  "currentChoices": zod.object({
+  "termsOfUse": zod.union([zod.enum(['accepted', 'declined']),zod.null()]),
+  "privacyPolicy": zod.union([zod.enum(['accepted', 'declined']),zod.null()]),
+  "marketing": zod.union([zod.enum(['accepted', 'declined']),zod.null()])
+}),
+  "requiredAccepted": zod.boolean(),
+  "history": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "purpose": zod.enum(['terms_of_use', 'privacy_policy', 'marketing']),
+  "policyVersion": zod.string(),
+  "choice": zod.enum(['accepted', 'declined']),
+  "recordedAt": zod.coerce.date()
+}))
+})
+
+
+export const SaveMemberConsentsBody = zod.object({
+  "termsOfUseAccepted": zod.boolean(),
+  "privacyPolicyAccepted": zod.boolean(),
+  "marketingConsent": zod.boolean()
+})
+
+export const SaveMemberConsentsResponse = zod.object({
+  "policies": zod.array(zod.object({
+  "purpose": zod.enum(['terms_of_use', 'privacy_policy', 'marketing']),
+  "version": zod.string(),
+  "required": zod.boolean()
+})),
+  "currentChoices": zod.object({
+  "termsOfUse": zod.union([zod.enum(['accepted', 'declined']),zod.null()]),
+  "privacyPolicy": zod.union([zod.enum(['accepted', 'declined']),zod.null()]),
+  "marketing": zod.union([zod.enum(['accepted', 'declined']),zod.null()])
+}),
+  "requiredAccepted": zod.boolean(),
+  "history": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "purpose": zod.enum(['terms_of_use', 'privacy_policy', 'marketing']),
+  "policyVersion": zod.string(),
+  "choice": zod.enum(['accepted', 'declined']),
+  "recordedAt": zod.coerce.date()
+}))
 })
 
 

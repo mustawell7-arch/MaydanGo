@@ -96,6 +96,7 @@ import type {
   GetOperationsAnalyticsParams,
   GetPartnerSettlementSummaryParams,
   GetSuperAdminAuditLogsParams,
+  GetSuperAdminMemberConsentHistoryParams,
   GetSupportStaffTicketsParams,
   HealthStatus,
   InstructorAccessDecisionInput,
@@ -113,6 +114,9 @@ import type {
   MemberCancellationResult,
   MemberCheckoutInput,
   MemberCheckoutResult,
+  MemberConsentInput,
+  MemberConsentRecord,
+  MemberConsentState,
   MemberDataExport,
   MemberDeviceRegistration,
   MemberDeviceStatus,
@@ -7710,6 +7714,108 @@ export function useGetSuperAdminAuditLogs<TData = Awaited<ReturnType<typeof getS
 
 
 
+export const getGetSuperAdminMemberConsentHistoryUrl = (params?: GetSuperAdminMemberConsentHistoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/super-admin/member-consents?${stringifiedParams}` : `/api/super-admin/member-consents`
+}
+
+export const getSuperAdminMemberConsentHistory = async (params?: GetSuperAdminMemberConsentHistoryParams, options?: Parameters<typeof customFetch>[1]): Promise<MemberConsentRecord[]> => {
+
+  return customFetch<MemberConsentRecord[]>(getGetSuperAdminMemberConsentHistoryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSuperAdminMemberConsentHistoryQueryKey = (params?: GetSuperAdminMemberConsentHistoryParams,) => {
+    return [
+    `/api/super-admin/member-consents`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetSuperAdminMemberConsentHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>, TError = ErrorType<unknown>>(params?: GetSuperAdminMemberConsentHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSuperAdminMemberConsentHistoryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>> = ({ signal }) => getSuperAdminMemberConsentHistory(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSuperAdminMemberConsentHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>>
+export type GetSuperAdminMemberConsentHistoryQueryError = ErrorType<unknown>
+
+
+export function useGetSuperAdminMemberConsentHistory<TData = Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>, TError = ErrorType<unknown>>(
+ params: undefined |  GetSuperAdminMemberConsentHistoryParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminMemberConsentHistory<TData = Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>, TError = ErrorType<unknown>>(
+ params?: GetSuperAdminMemberConsentHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminMemberConsentHistory<TData = Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>, TError = ErrorType<unknown>>(
+ params?: GetSuperAdminMemberConsentHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSuperAdminMemberConsentHistory<TData = Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>, TError = ErrorType<unknown>>(
+ params?: GetSuperAdminMemberConsentHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminMemberConsentHistory>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSuperAdminMemberConsentHistoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetFacilityQualityControlUrl = () => {
 
 
@@ -10828,6 +10934,183 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getCreateMemberPrivacyRequestMutationOptions(options), queryClient);
+    }
+
+export const getGetMemberConsentsUrl = () => {
+
+
+
+
+  return `/api/member/consents`
+}
+
+export const getMemberConsents = async ( options?: Parameters<typeof customFetch>[1]): Promise<MemberConsentState> => {
+
+  return customFetch<MemberConsentState>(getGetMemberConsentsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberConsentsQueryKey = () => {
+    return [
+    `/api/member/consents`
+    ] as const;
+    }
+
+
+export const getGetMemberConsentsQueryOptions = <TData = Awaited<ReturnType<typeof getMemberConsents>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberConsents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberConsentsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberConsents>>> = ({ signal }) => getMemberConsents({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberConsents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberConsentsQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberConsents>>>
+export type GetMemberConsentsQueryError = ErrorType<unknown>
+
+
+export function useGetMemberConsents<TData = Awaited<ReturnType<typeof getMemberConsents>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberConsents>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberConsents>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberConsents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberConsents<TData = Awaited<ReturnType<typeof getMemberConsents>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberConsents>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberConsents>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberConsents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberConsents<TData = Awaited<ReturnType<typeof getMemberConsents>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberConsents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberConsents<TData = Awaited<ReturnType<typeof getMemberConsents>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberConsents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberConsentsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSaveMemberConsentsUrl = () => {
+
+
+
+
+  return `/api/member/consents`
+}
+
+export const saveMemberConsents = async (memberConsentInput: MemberConsentInput, options?: Parameters<typeof customFetch>[1]): Promise<MemberConsentState> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MemberConsentState>(getSaveMemberConsentsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(memberConsentInput)
+  }
+);}
+
+
+
+
+
+export const getSaveMemberConsentsMutationKey = () => ['saveMemberConsents'] as const;
+
+export const getSaveMemberConsentsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveMemberConsents>>, TError,SaveMemberConsentsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveMemberConsents>>, TError,SaveMemberConsentsMutationVariables, TContext> => {
+
+const mutationKey = getSaveMemberConsentsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveMemberConsents>>, SaveMemberConsentsMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  saveMemberConsents(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveMemberConsentsMutationResult = NonNullable<Awaited<ReturnType<typeof saveMemberConsents>>>
+    export type SaveMemberConsentsMutationBody = BodyType<MemberConsentInput>
+    export type SaveMemberConsentsMutationError = ErrorType<unknown>
+    export type SaveMemberConsentsMutationVariables = {data: BodyType<MemberConsentInput>}
+
+    export const useSaveMemberConsents = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveMemberConsents>>, TError,SaveMemberConsentsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof saveMemberConsents>>,
+        TError,
+        SaveMemberConsentsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSaveMemberConsentsMutationOptions(options), queryClient);
     }
 
 export const getGetMemberNotificationSettingsUrl = () => {
