@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
-import { desc, eq, inArray, or } from "drizzle-orm";
-import { db, adminRolePermissions, memberConsentEvents, operationAudit, operators, platformSafetyRules } from "@workspace/db";
+import { and, desc, eq, gt, inArray, or } from "drizzle-orm";
+import { db, adminRolePermissions, attendance, guardianConsentDocuments, memberConsentEvents, operationAudit, operators, offerings, partners, platformSafetyRules } from "@workspace/db";
+import { z } from "zod";
 import {
   GetSuperAdminPlatformRulesResponse,
   GetSuperAdminRolePermissionsResponse,
@@ -27,6 +28,7 @@ import {
   type AdminRole,
 } from "../lib/admin-roles";
 import { DEFAULT_PLATFORM_SAFETY_RULES, platformSafetyRulesSchema } from "../lib/platform-rules";
+import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 
 type ClerkAccount = { userId: string; email: string };
 type ClerkDirectory = {
@@ -35,6 +37,7 @@ type ClerkDirectory = {
 };
 
 const adminRoles = Object.keys(ADMIN_ROLE_PERMISSIONS) as AdminRole[];
+const objectStorage = new ObjectStorageService();
 const isAdminRole = (role: string | null | undefined): role is AdminRole =>
   !!role && Object.hasOwn(ADMIN_ROLE_PERMISSIONS, role);
 
@@ -404,6 +407,90 @@ export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirector
       ...row,
       recordedAt: row.recordedAt.toISOString(),
     }))));
+  });
+
+  router.get("/guardian-consents", async (req, res): Promise<void> => {
+    const paging = z.object({
+      limit: z.coerce.number().int().min(1).max(100).default(100),
+      offset: z.coerce.number().int().min(0).max(100_000).default(0),
+    }).safeParse(req.query);
+    if (!paging.success) {
+      res.status(400).json({ message: paging.error.message });
+      return;
+    }
+    const now = new Date();
+    const items = await db.select({
+      id: guardianConsentDocuments.id,
+      memberUserId: guardianConsentDocuments.memberUserId,
+      partnerName: partners.name,
+      facility: offerings.facility,
+      sessionTitle: offerings.title,
+      visitAt: attendance.checkedInAt,
+      verifiedAt: guardianConsentDocuments.verifiedAt,
+      expiresAt: guardianConsentDocuments.expiresAt,
+    }).from(guardianConsentDocuments)
+      .innerJoin(attendance, eq(guardianConsentDocuments.attendanceId, attendance.id))
+      .innerJoin(offerings, eq(attendance.offeringId, offerings.id))
+      .leftJoin(partners, eq(offerings.partnerId, partners.id))
+      .where(and(
+        eq(guardianConsentDocuments.status, "ready"),
+        gt(guardianConsentDocuments.expiresAt, now),
+      ))
+      .orderBy(desc(guardianConsentDocuments.verifiedAt))
+      .offset(paging.data.offset)
+      .limit(paging.data.limit);
+    await db.insert(operationAudit).values({
+      id: randomUUID(),
+      actorId: res.locals.superAdminUserId as string,
+      action: "guardian_consent.list",
+      targetId: "guardian-consent-documents",
+      detail: `limit=${paging.data.limit};offset=${paging.data.offset}`,
+    });
+    res.json({ items });
+  });
+
+  router.get("/guardian-consents/:id/document", async (req, res): Promise<void> => {
+    const [document] = await db.select().from(guardianConsentDocuments)
+      .where(eq(guardianConsentDocuments.id, req.params.id)).limit(1);
+    if (!document || document.status !== "ready" || !document.objectPath || document.expiresAt <= new Date()) {
+      res.status(404).json({ message: "Guardian-consent document is not available." });
+      return;
+    }
+    let file;
+    try {
+      file = await objectStorage.getPrivateFile(document.objectPath);
+    } catch (error) {
+      if (error instanceof ObjectNotFoundError) {
+        res.status(410).json({ message: "Guardian-consent document is no longer available." });
+        return;
+      }
+      throw error;
+    }
+    const [metadata] = await file.getMetadata();
+    const size = Number(metadata.size);
+    if (!Number.isSafeInteger(size) || size < 1 || size > 10 * 1024 * 1024) {
+      res.status(410).json({ message: "Guardian-consent document is no longer available." });
+      return;
+    }
+    await db.insert(operationAudit).values({
+      id: randomUUID(),
+      actorId: res.locals.superAdminUserId as string,
+      action: "guardian_consent.view",
+      targetId: document.id,
+      detail: "Super Admin viewed a guardian-consent copy.",
+    });
+    const extension = document.contentType === "image/jpeg" ? "jpg" : document.contentType.split("/")[1];
+    res.setHeader("Content-Type", document.contentType);
+    res.setHeader("Content-Length", size);
+    res.setHeader("Content-Disposition", `attachment; filename="guardian-consent-${document.id}.${extension}"`);
+    res.setHeader("Cache-Control", "private, no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    const stream = file.createReadStream();
+    stream.on("error", error => {
+      if (!res.headersSent) res.status(500).json({ message: "The guardian-consent document could not be read." });
+      else res.destroy(error);
+    });
+    stream.pipe(res);
   });
 
   return router;

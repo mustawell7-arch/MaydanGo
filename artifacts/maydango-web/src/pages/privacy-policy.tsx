@@ -66,8 +66,8 @@ const privacyCopy: Record<Language, {
         id: 'children',
         title: 'Age and guardian consent',
         paragraphs: [
-          'The minimum age rule is 18. A person under 18 may participate only with guardian consent. The partner checks the consent at the venue and sends a photographed copy to MaydanGo.',
-          'The secure transfer route, access limits, and retention period for these copies still need to be defined before this draft becomes a live policy. Do not send identity documents or sensitive guardian details through the general website enquiry form.',
+          'The minimum age rule is 18. A person under 18 may participate only with guardian consent. The partner checks the consent at the venue and uploads a photographed copy through a private MaydanGo partner portal. Only Super Admin staff can open the copy; partners cannot download it.',
+          'The copy is scheduled for automatic deletion 90 days after the visit. Do not send guardian-consent copies, identity documents, or sensitive guardian details through the general website enquiry form.',
         ],
       },
       {
@@ -76,7 +76,6 @@ const privacyCopy: Record<Language, {
         paragraphs: [
           'If you have an account, use Account → Privacy requests to request a copy of your information or an account-deletion review. Authorized support staff verify your identity before approving a data copy. After approval, only the signed-in account holder can download it, for 24 hours. The export excludes payment instrument details, login credentials, device tokens, private class links, support messages, and staff-only notes.',
           'Account-deletion requests are reviewed by authorized support staff and are not immediate. MaydanGo may need to verify that a request relates to your account before acting. Some records may need to be retained for service safety, security, or other applicable requirements.',
-          'Specific retention periods and procedures for guardian-consent copies need review before this draft is treated as final.',
         ],
       },
       {
@@ -91,7 +90,7 @@ const privacyCopy: Record<Language, {
         id: 'changes',
         title: 'Changes to this information',
         paragraphs: [
-          'This notice will be updated when MaydanGo changes how information is handled. Before this draft is published as a formal privacy policy, the data-retention periods and guardian-consent process must be reviewed.',
+          'This notice will be updated when MaydanGo changes how information is handled. This is still a working draft and must be reviewed before it is published as a formal privacy policy.',
         ],
       },
     ],
@@ -152,8 +151,8 @@ const privacyCopy: Record<Language, {
         id: 'children',
         title: 'العمر وموافقة ولي الأمر',
         paragraphs: [
-          'الحد الأدنى للعمر هو 18 عاماً. ويجوز لمن هم دون 18 المشاركة بموافقة ولي الأمر فقط. يتحقق الشريك من الموافقة في الموقع ويرسل نسخة مصورة منها إلى MaydanGo.',
-          'ما زالت وسيلة النقل الآمنة لهذه النسخ وصلاحيات الاطلاع عليها ومدة الاحتفاظ بها بحاجة إلى تحديد قبل اعتماد هذه المسودة كسياسة سارية. لا ترسل وثائق الهوية أو تفاصيل ولي الأمر الحساسة عبر نموذج الاستفسار العام.',
+          'الحد الأدنى للعمر هو 18 عاماً. ويجوز لمن هم دون 18 المشاركة بموافقة ولي الأمر فقط. يتحقق الشريك من الموافقة في الموقع ويرفع نسخة مصورة عبر بوابة الشريك الخاصة في MaydanGo. لا يستطيع الاطلاع على النسخة إلا موظفو المدير الأعلى، ولا يستطيع الشريك تنزيلها.',
+          'تُحدد النسخة للحذف التلقائي بعد 90 يوماً من الزيارة. لا ترسل نسخ موافقة ولي الأمر أو وثائق الهوية أو تفاصيل ولي الأمر الحساسة عبر نموذج الاستفسار العام.',
         ],
       },
       {
@@ -162,7 +161,6 @@ const privacyCopy: Record<Language, {
         paragraphs: [
           'إذا كان لديك حساب، استخدم الحساب ← طلبات الخصوصية لطلب نسخة من معلوماتك أو مراجعة حذف الحساب. يتحقق فريق الدعم المخوّل من هويتك قبل الموافقة على نسخة البيانات. بعد الموافقة، يستطيع صاحب الحساب المسجّل فقط تنزيلها خلال 24 ساعة. لا تتضمن النسخة تفاصيل أدوات الدفع أو بيانات الدخول أو رموز الأجهزة أو روابط الصفوف الخاصة أو رسائل الدعم أو ملاحظات الموظفين الداخلية.',
           'يراجع فريق الدعم المخوّل طلبات حذف الحساب، ولا يتم الحذف فوراً. قد تحتاج MaydanGo إلى التحقق من أن الطلب يخص حسابك قبل اتخاذ إجراء. وقد يلزم الاحتفاظ ببعض السجلات لأغراض سلامة الخدمة أو أمنها أو لمتطلبات أخرى واجبة التطبيق.',
-          'يجب مراجعة مدد الاحتفاظ وإجراءات نسخ موافقة ولي الأمر قبل اعتماد هذه المسودة كسياسة نهائية.',
         ],
       },
       {
@@ -177,7 +175,7 @@ const privacyCopy: Record<Language, {
         id: 'changes',
         title: 'تحديث هذه المعلومات',
         paragraphs: [
-          'سيُحدّث هذا الإشعار عند تغيير طريقة التعامل مع المعلومات. وقبل نشر هذه المسودة كسياسة خصوصية رسمية، يجب مراجعة مدد الاحتفاظ وطريقة موافقة ولي الأمر.',
+          'سيُحدّث هذا الإشعار عند تغيير طريقة التعامل مع المعلومات. وما زالت هذه مسودة عمل تحتاج إلى مراجعة قبل نشرها كسياسة خصوصية رسمية.',
         ],
       },
     ],
@@ -238,8 +236,8 @@ const privacyCopy: Record<Language, {
         id: 'children',
         title: 'تەمەن و ڕەزامەندیی سەرپەرشتیار',
         paragraphs: [
-          'کەمترین تەمەن 18 ساڵە. کەسێکی خوار 18 ساڵ تەنها بە ڕەزامەندیی سەرپەرشتیار دەتوانێت بەشداربێت. هاوبەش ڕەزامەندییەکە لە شوێنەکەدا دەپشکنێت و وێنەیەکی لێ دەدات بۆ MaydanGo.',
-          'ڕێگای گواستنەوەی پارێزراو، دەسەڵاتی بینین و ماوەی هەڵگرتنی ئەم وێنانە پێویستی بە دیاریکردن هەیە پێش ئەوەی ئەم ڕەشنووسە ببێتە سیاسەتی کارپێکراو. بەڵگەنامەی ناسنامە یان وردەکاریی هەستیاری سەرپەرشتیار لە فۆرمی گشتیی پرسیارەوە مەبنێرە.',
+          'کەمترین تەمەن 18 ساڵە. کەسێکی خوار 18 ساڵ تەنها بە ڕەزامەندیی سەرپەرشتیار دەتوانێت بەشداربێت. هاوبەش ڕەزامەندییەکە لە شوێنەکەدا دەپشکنێت و وێنەیەک لە ڕێگەی پۆرتاڵی تایبەتی هاوبەشی MaydanGo بار دەکات. تەنها کارمەندانی Super Admin دەتوانن وێنەکە ببینن؛ هاوبەش ناتوانێت دایبگرێت.',
+          'وێنەکە بۆ سڕینەوەی خۆکار 90 ڕۆژ دوای سەردان ڕێکخراوە. وێنەی ڕەزامەندی، بەڵگەنامەی ناسنامە یان وردەکاریی هەستیاری سەرپەرشتیار لە فۆرمی گشتیی پرسیارەوە مەبنێرە.',
         ],
       },
       {
@@ -248,7 +246,6 @@ const privacyCopy: Record<Language, {
         paragraphs: [
           'ئەگەر هەژمارت هەیە، لە هەژمار ← داواکارییەکانی تایبەتمەندی داوای کۆپیی زانیارییەکانت یان پێداچوونەوە بۆ سڕینەوەی هەژمار بکە. تیمی پشتگیریی ڕێگەپێدراو پێش پەسەندکردنی کۆپیی داتا ناسنامەکەت پشتڕاست دەکاتەوە. دوای پەسەندکردن، تەنها خاوەنی هەژماری چوونەژوورەوە دەتوانێت لە ماوەی ٢٤ کاتژمێردا دایبگرێت. کۆپییەکە وردەکاریی پارەدان، زانیاریی چوونەژوورەوە، تۆکنی ئامێر، بەستەری وانەی تایبەت، پەیامەکانی پشتگیری و تێبینیی ناوخۆی کارمەندان ناگرێتەوە.',
           'تیمی پشتگیریی ڕێگەپێدراو داواکاریی سڕینەوەی هەژمار پێداچوونەوەی بۆ دەکات و سڕینەوە دەستبەجێ نییە. لەوانەیە MaydanGo پێش هەر کارێک پشتڕاستی بکاتەوە کە داواکارییەکە پەیوەندی بە هەژمارەکەتەوە هەیە. هەندێک تۆمار لەوانەیە بۆ پاراستنی سەلامەتی و ئاسایشی خزمەتگوزاری یان داواکارییەکانی تر پێویست بێت بهێڵدرێنەوە.',
-          'ماوەی دیاریکراوی هەڵگرتن و ڕێکاری پاراستنی وێنەی ڕەزامەندیی سەرپەرشتیار پێویستی بە پێداچوونەوە هەیە پێش ئەوەی ئەم ڕەشنووسە ببێتە سیاسەتی کۆتایی.',
         ],
       },
       {
@@ -263,7 +260,7 @@ const privacyCopy: Record<Language, {
         id: 'changes',
         title: 'گۆڕانکاریی ئەم زانیارییە',
         paragraphs: [
-          'کاتێک شێوازی مامەڵەکردن لەگەڵ زانیاری دەگۆڕێت، ئەم ئاگادارییە نوێ دەکرێتەوە. پێش بڵاوکردنەوەی ئەم ڕەشنووسە وەک سیاسەتی فەرمیی تایبەتمەندی، پێویستە ماوەی هەڵگرتنی داتا و ڕێکاری ڕەزامەندیی سەرپەرشتیار پێداچوونەوەیان بۆ بکرێت.',
+          'کاتێک شێوازی مامەڵەکردن لەگەڵ زانیاری دەگۆڕێت، ئەم ئاگادارییە نوێ دەکرێتەوە. ئەمە هێشتا ڕەشنووسی کارە و پێویستی بە پێداچوونەوە هەیە پێش بڵاوکردنەوەی وەک سیاسەتی فەرمیی تایبەتمەندی.',
         ],
       },
     ],

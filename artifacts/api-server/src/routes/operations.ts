@@ -34,6 +34,7 @@ import { PaymentError, paymentsEnabled, payTabsTestModeEnabled } from "../lib/pa
 import { cancelPaidSubscriptionImmediately, requestFullRefund, validatePaidPlan } from "../lib/payments-paytabs";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 import { isPrivateCourseRecordingPath } from "../lib/course-recordings";
+import { completeGuardianConsentUpload, requestGuardianConsentUpload } from "../lib/guardian-consents";
 import {
   GetPartnerInvoicesResponse, GetPartnerSettlementSummaryResponse, RequestPartnerInvoiceUploadUrlBody,
   RequestPartnerInvoiceUploadUrlResponse, SubmitPartnerInvoiceBody, SubmitPartnerInvoiceResponse,
@@ -79,6 +80,11 @@ const offeringPartnerResponseBody = z.object({
   response: z.string().trim().min(5).max(1000),
 }).strict();
 const strictOfferingUpdateBody = ChangeLiveOfferingBody.strict();
+const guardianConsentUploadInput = z.object({
+  contentType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  size: z.number().int().min(1).max(10 * 1024 * 1024),
+  onSiteVerified: z.literal(true),
+}).strict();
 const financeStaff = (res: import("express").Response) => {
   if (!hasAdminPermission(res.locals.operator.role, "finance") && res.locals.operator.role !== "finance")
     throw new BookingError(403, "Finance staff access is required.");
@@ -1037,6 +1043,33 @@ router.get("/invoices", async (_req, res) => {
     .orderBy(desc(partnerInvoiceSubmissions.createdAt));
   GetPartnerInvoicesResponse.parse(rows);
   res.json(rows);
+});
+
+router.post("/attendance/:id/guardian-consent/upload-url", async (req, res) => {
+  const partnerId = partnerOnly(res);
+  const parsed = guardianConsentUploadInput.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: parsed.error.message });
+    return;
+  }
+  const result = await requestGuardianConsentUpload(
+    req.params.id,
+    partnerId,
+    res.locals.operator.userId,
+    parsed.data,
+  );
+  res.json(result);
+});
+
+router.post("/attendance/:id/guardian-consent/:documentId/complete", async (req, res) => {
+  const partnerId = partnerOnly(res);
+  await completeGuardianConsentUpload(
+    req.params.id,
+    req.params.documentId,
+    partnerId,
+    res.locals.operator.userId,
+  );
+  res.json({ ok: true });
 });
 
 router.post("/invoices/upload-url", async (req, res) => {

@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { processWaitlistQueue } from "./lib/reservations";
 import { escalateUnassignedUrgentTickets, recoverPushDeliveries } from "./lib/notifications";
+import { expireGuardianConsentDocuments } from "./lib/guardian-consents";
 
 const runPushDeliveryRecovery = async () => {
   try {
@@ -20,6 +21,15 @@ const runUrgentEscalations = async () => {
     if (escalatedCount) logger.info({ escalatedCount }, "Urgent support reports escalated");
   } catch (err) {
     logger.error({ err }, "Urgent support escalation failed");
+  }
+};
+
+const runGuardianConsentRetention = async () => {
+  try {
+    const result = await expireGuardianConsentDocuments();
+    if (result.deleted || result.failed) logger.info(result, "Guardian-consent retention processed");
+  } catch (err) {
+    logger.error({ err }, "Guardian-consent retention failed");
   }
 };
 
@@ -47,6 +57,7 @@ app.listen(port, (err) => {
   void processWaitlistQueue().catch(err => logger.error({ err }, "Initial waitlist processing failed"));
   void runPushDeliveryRecovery();
   void runUrgentEscalations();
+  void runGuardianConsentRetention();
 });
 
 const waitlistExpiryTimer = setInterval(() => {
@@ -63,3 +74,8 @@ const urgentEscalationTimer = setInterval(() => {
   void runUrgentEscalations();
 }, 60_000);
 urgentEscalationTimer.unref();
+
+const guardianConsentRetentionTimer = setInterval(() => {
+  void runGuardianConsentRetention();
+}, 60 * 60 * 1000);
+guardianConsentRetentionTimer.unref();

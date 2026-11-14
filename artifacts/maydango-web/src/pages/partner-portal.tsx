@@ -1,9 +1,10 @@
 import { Children, cloneElement, isValidElement, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetMemberSupportTicketQueryKey, getGetMemberSupportTicketsQueryKey, getGetOperationFacilitiesQueryKey, getGetOperationsQueryKey, useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useCancelRecurringOfferingSeries, useChangeLiveOffering, useChangeRecurringOfferingSeries, useCreateRecurringOfferings, useCreateMemberSupportTicket, useGetAttendance, useGetMemberSupportTicket, useGetMemberSupportTickets, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReplyMemberSupportTicket, useReviewAttendance, useRespondToOfferingCorrection, useReviewOfferingApproval, useSubmitLiveOffering } from '@workspace/api-client-react';
-import type { OfferingApprovalStatus, OfferingInput, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody, RecurringOfferingsInput, RecurringScheduleMode } from '@workspace/api-client-react';
+import type { GetAttendanceQueryResult, OfferingApprovalStatus, OfferingInput, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody, RecurringOfferingsInput, RecurringScheduleMode } from '@workspace/api-client-react';
 import { getGetMemberSupportTicketAttachmentsQueryKey, useGetMemberSupportTicketAttachments } from '@workspace/api-client-react';
 import { downloadMemberSupportFile, supportAttachmentType, uploadMemberSupportAttachments } from '@/lib/support-attachments';
+import { uploadGuardianConsentImage } from '@/lib/guardian-consent-documents';
 import { useAuth, useClerk } from '@clerk/react';
 import { trackEvent } from '@/lib/analytics';
 import { Link, Redirect } from 'wouter';
@@ -59,14 +60,82 @@ const savedPortalLanguage = (): PortalLanguage => {
 const formatDate = (value: string, lang: PortalLanguage = savedPortalLanguage()) => new Intl.DateTimeFormat(portalDateLocale(lang), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Baghdad', numberingSystem: 'latn' }).format(new Date(value));
 const localIso = (value: string) => new Date(`${value}:00+03:00`).toISOString();
 const portalLabels: Record<PortalLanguage, Record<string, string>> = {
-  en: { overview: 'Overview', offerings: 'Offerings', attendance: 'Attendance', waitlist: 'Waiting list', partners: 'Partners', support: 'Help & safety', quality: 'Facility quality', reviews: 'Reviews & ratings', marketing: 'Marketing centre', analytics: 'Analytics', facilities: 'Facilities', bookings: 'Sessions & bookings', settlements: 'Settlements', invoices: 'Invoices', greeting: 'Good to see you.', attendanceTitle: 'Attendance review', approvals: 'Partner approvals', workspace: 'Partner operations', language: 'Language' },
-  ar: { overview: 'نظرة عامة', offerings: 'العروض', attendance: 'الحضور', waitlist: 'قائمة الانتظار', partners: 'الشركاء', support: 'الدعم والسلامة', quality: 'جودة المرافق', reviews: 'التقييمات والمراجعات', marketing: 'مركز التسويق', analytics: 'التحليلات', facilities: 'المرافق', bookings: 'الجلسات والحجوزات', settlements: 'التسويات', invoices: 'الفواتير', greeting: 'سعيدون بعودتك.', attendanceTitle: 'مراجعة الحضور', approvals: 'اعتماد الشركاء', workspace: 'عمليات الشركاء', language: 'اللغة' },
-  ku: { overview: 'پوختە', offerings: 'پێشکەشکراوەکان', attendance: 'ئامادەبوون', waitlist: 'لیستی چاوەڕوانی', partners: 'هاوبەشەکان', support: 'یارمەتی و سەلامەتی', quality: 'کوالێتی شوێنەکان', reviews: 'هەڵسەنگاندن و بۆچوون', marketing: 'ناوەندی بازاڕکردن', analytics: 'شیکاری', facilities: 'شوێنەکان', bookings: 'وانە و حجزەکان', settlements: 'یەکلاکردنەوە', invoices: 'پسووڵەکان', greeting: 'بەخێربێیتەوە.', attendanceTitle: 'پێداچوونەوەی ئامادەبوون', approvals: 'پەسەندکردنی هاوبەش', workspace: 'بەڕێوەبردنی هاوبەش', language: 'زمان' },
+  en: { overview: 'Overview', offerings: 'Offerings', attendance: 'Attendance', waitlist: 'Waiting list', partners: 'Partners', support: 'Help & safety', quality: 'Facility quality', reviews: 'Reviews & ratings', marketing: 'Marketing centre', analytics: 'Analytics', facilities: 'Facilities', bookings: 'Sessions & bookings', settlements: 'Settlements', invoices: 'Invoices', greeting: 'Good to see you.', attendanceTitle: 'Attendance review', approvals: 'Partner approvals', workspace: 'Partner operations', language: 'Language', guardianRequired: 'Guardian consent required', ageUnknown: 'Birth date needs verification', guardianOnSiteCheck: 'I verified guardian consent in person at the venue.', guardianPhoto: 'Consent photo (JPEG, PNG, or WebP; up to 10 MB)', uploadGuardianPhoto: 'Upload consent copy', guardianUploaded: 'Copy uploaded. Only Super Admin can open it; it is deleted 90 days after the visit.', guardianWaiting: 'Upload becomes available after the member checks in.', guardianUploadFailed: 'Could not upload the consent copy. Check the image and try again.', guardianNeedUpload: 'Confirm the on-site check and select an image before uploading.', guardianUploading: 'Uploading…', guardianQueueTitle: 'Guardian consent checks', guardianQueueDescription: 'Check consent at the venue. Copies go through the private partner portal and are deleted 90 days after the visit.' },
+  ar: { overview: 'نظرة عامة', offerings: 'العروض', attendance: 'الحضور', waitlist: 'قائمة الانتظار', partners: 'الشركاء', support: 'الدعم والسلامة', quality: 'جودة المرافق', reviews: 'التقييمات والمراجعات', marketing: 'مركز التسويق', analytics: 'التحليلات', facilities: 'المرافق', bookings: 'الجلسات والحجوزات', settlements: 'التسويات', invoices: 'الفواتير', greeting: 'سعيدون بعودتك.', attendanceTitle: 'مراجعة الحضور', approvals: 'اعتماد الشركاء', workspace: 'عمليات الشركاء', language: 'اللغة', guardianRequired: 'مطلوب موافقة ولي الأمر', ageUnknown: 'يجب التحقق من تاريخ الميلاد', guardianOnSiteCheck: 'تحققت من موافقة ولي الأمر حضورياً في المرفق.', guardianPhoto: 'صورة الموافقة (JPEG أو PNG أو WebP، حتى 10 MB)', uploadGuardianPhoto: 'رفع نسخة الموافقة', guardianUploaded: 'تم رفع النسخة. يستطيع Super Admin فقط الاطلاع عليها، وتُحذف بعد 90 يوماً من الزيارة.', guardianWaiting: 'يصبح الرفع متاحاً بعد تسجيل حضور العضو.', guardianUploadFailed: 'تعذر رفع نسخة الموافقة. تحقق من الصورة وحاول مجدداً.', guardianNeedUpload: 'أكد التحقق في المرفق واختر صورة قبل الرفع.', guardianUploading: 'جارٍ الرفع…', guardianQueueTitle: 'التحقق من موافقة ولي الأمر', guardianQueueDescription: 'تحقق من الموافقة في المرفق. تُرفع النسخة عبر بوابة الشريك الخاصة وتُحذف بعد 90 يوماً من الزيارة.' },
+  ku: { overview: 'پوختە', offerings: 'پێشکەشکراوەکان', attendance: 'ئامادەبوون', waitlist: 'لیستی چاوەڕوانی', partners: 'هاوبەشەکان', support: 'یارمەتی و سەلامەتی', quality: 'کوالێتی شوێنەکان', reviews: 'هەڵسەنگاندن و بۆچوون', marketing: 'ناوەندی بازاڕکردن', analytics: 'شیکاری', facilities: 'شوێنەکان', bookings: 'وانە و حجزەکان', settlements: 'یەکلاکردنەوە', invoices: 'پسووڵەکان', greeting: 'بەخێربێیتەوە.', attendanceTitle: 'پێداچوونەوەی ئامادەبوون', approvals: 'پەسەندکردنی هاوبەش', workspace: 'بەڕێوەبردنی هاوبەش', language: 'زمان', guardianRequired: 'ڕەزامەندیی سەرپەرشتیار پێویستە', ageUnknown: 'پێویستە تەمەنی ئەندام پشتڕاست بکرێتەوە', guardianOnSiteCheck: 'لە شوێنەکەدا ڕەزامەندیی سەرپەرشتیارم بە ڕووی خۆم پشتڕاست کردەوە.', guardianPhoto: 'وێنەی ڕەزامەندی (JPEG، PNG یان WebP؛ تا 10 MB)', uploadGuardianPhoto: 'بارکردنی وێنەی ڕەزامەندی', guardianUploaded: 'وێنەکە بارکرا. تەنها Super Admin دەتوانێت بیبینێت؛ 90 ڕۆژ دوای سەردان دەسڕدرێتەوە.', guardianWaiting: 'دوای تۆمارکردنی حزووری ئەندام دەتوانرێت وێنەکە بار بکرێت.', guardianUploadFailed: 'بارکردنی وێنەی ڕەزامەندی سەرکەوتوو نەبوو. وێنەکە بپشکنە و دووبارە هەوڵ بدە.', guardianNeedUpload: 'پشتڕاستکردنەوەی شوێنەکە بکە و پێش بارکردن وێنەیەک هەڵبژێرە.', guardianUploading: 'وێنەکە بار دەکرێت…', guardianQueueTitle: 'پشکنینی ڕەزامەندیی سەرپەرشتیار', guardianQueueDescription: 'لە شوێنەکەدا ڕەزامەندی بپشکنە. وێنەکە لە ڕێگەی پۆرتاڵی تایبەتی هاوبەش بار دەکرێت و 90 ڕۆژ دوای سەردان دەسڕدرێتەوە.' },
 };
 const portalLabel = (lang: PortalLanguage, key: string) => {
   const source = portalLabels.en[key] ?? key;
   return getPartnerPortalCopy(lang, source) ?? (lang === 'en' ? source : portalLabels[lang][key] ?? key);
 };
+
+type GuardianConsentRow = GetAttendanceQueryResult["rows"][number];
+
+function GuardianConsentQueue({ rows, lang, onUploaded }: {
+  rows: GuardianConsentRow[];
+  lang: PortalLanguage;
+  onUploaded: () => void;
+}) {
+  const relevant = rows.filter(row => row.guardianConsentState && row.guardianConsentState !== "not_required");
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [files, setFiles] = useState<Record<string, File | null>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState("");
+  if (!relevant.length) return null;
+
+  const submit = async (attendanceId: string) => {
+    if (!checked[attendanceId] || !files[attendanceId]) {
+      setFeedback(portalLabel(lang, "guardianNeedUpload"));
+      return;
+    }
+    setBusyId(attendanceId);
+    setFeedback("");
+    try {
+      await uploadGuardianConsentImage(attendanceId, files[attendanceId]!);
+      setFiles(current => ({ ...current, [attendanceId]: null }));
+      setChecked(current => ({ ...current, [attendanceId]: false }));
+      onUploaded();
+      setFeedback(portalLabel(lang, "guardianUploaded"));
+    } catch {
+      setFeedback(portalLabel(lang, "guardianUploadFailed"));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return <section className="mb-5 rounded-3xl border border-[#dfc99e] bg-[#fffaf0] p-5" aria-labelledby="guardian-consent-queue-title">
+    <h2 id="guardian-consent-queue-title" className="font-display text-lg font-bold text-[#173d35]">{portalLabel(lang, "guardianQueueTitle")}</h2>
+    <p className="mt-1 text-xs leading-5 text-[#687a71]">{portalLabel(lang, "guardianQueueDescription")}</p>
+    <div className="mt-4 grid gap-3">
+      {relevant.map(row => {
+        const id = row.reference;
+        return <article key={row.reservationId} className="rounded-2xl border border-[#e8e0cf] bg-white p-4">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-[#a76445]">{row.facility} · {formatDate(row.startsAt, lang)}</p>
+          <p className="mt-1 font-semibold text-[#173d35]">{row.title}</p>
+          {row.guardianConsentState === "age_unknown" && <p className="mt-2 text-xs text-[#9a4435]">{portalLabel(lang, "ageUnknown")}</p>}
+          {row.guardianConsentState === "uploaded" && <p className="mt-2 text-xs leading-5 text-[#315e42]">{portalLabel(lang, "guardianUploaded")}</p>}
+          {row.guardianConsentState === "required" && <>
+            <p className="mt-2 text-xs font-semibold text-[#8a5b20]">{portalLabel(lang, "guardianRequired")}</p>
+            {(!id || row.status !== "pending") ? <p className="mt-2 text-xs text-[#687a71]">{portalLabel(lang, "guardianWaiting")}</p> : <div className="mt-3 grid gap-3">
+              <label className="flex items-start gap-2 text-xs leading-5 text-[#36564b]">
+                <input type="checkbox" checked={!!checked[id]} onChange={event => setChecked(current => ({ ...current, [id]: event.target.checked }))} className="mt-0.5 accent-[#174d43]" />
+                <span>{portalLabel(lang, "guardianOnSiteCheck")}</span>
+              </label>
+              <label className="grid gap-1.5 text-xs font-semibold text-[#51665e]">
+                <span>{portalLabel(lang, "guardianPhoto")}</span>
+                <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={event => setFiles(current => ({ ...current, [id]: event.target.files?.[0] ?? null }))} className="block w-full rounded-xl border border-[#d8d2c4] bg-white p-2 text-xs" />
+              </label>
+              <button type="button" disabled={busyId === id} onClick={() => void submit(id)} className="w-fit rounded-xl bg-[#174d43] px-4 py-2.5 text-xs font-bold text-[#fff9e9] disabled:cursor-wait disabled:opacity-50">
+                {busyId === id ? portalLabel(lang, "guardianUploading") : portalLabel(lang, "uploadGuardianPhoto")}
+              </button>
+            </div>}
+          </>}
+        </article>;
+      })}
+    </div>
+    {feedback && <p className="mt-3 rounded-xl bg-[#edf4ee] p-3 text-xs text-[#36564b]" role="status">{feedback}</p>}
+  </section>;
+}
 const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, string>> = {
   ar: {
     'English': 'الإنجليزية', 'MAYDANGO · IRAQ': 'MaydanGo · العراق',
@@ -1262,6 +1331,7 @@ export default function PartnerPortal() {
             </div>}
           </section>}
           {tab === 'support' && <PartnerSupportPanel lang={language} />}
+          {tab === 'attendance' && role === 'partner' && <GuardianConsentQueue rows={rows} lang={language} onUploaded={() => { void attendance.refetch(); }} />}
           {tab === 'attendance' && <section><div className="mb-5 flex items-end justify-between"><p className="max-w-2xl text-sm leading-6 text-[#687a71]">Review reservations in the server-scoped roster. Member names are not returned or displayed; each decision requires a reason and is recorded by the service.</p><Button kind="quiet" onClick={() => void attendance.refetch()}><RefreshCw size={15} />Refresh</Button></div>{attendance.isLoading ? <div className="h-48 animate-pulse rounded-3xl bg-[#e5e0d1]" /> : attendance.isError ? <div role="alert" className="rounded-3xl border border-[#e0c4b9] bg-[#fff7f3] p-7"><p className="font-semibold">Attendance roster unavailable</p><Button onClick={() => void attendance.refetch()}>Retry</Button></div> : rows.length ? <div className="grid gap-4">{rows.map(row => {
             const state = `${row.status} ${row.bookingStatus}`.toLowerCase();
              const actions: ReviewAction[] = state.includes('disput')

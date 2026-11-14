@@ -1559,6 +1559,38 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PartnerSettlementSummary" }
+  /operations/attendance/{id}/guardian-consent/upload-url:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: requestPartnerGuardianConsentUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GuardianConsentUploadUrlRequest" }
+      responses:
+        "200":
+          description: Short-lived private upload URL for a verified guardian-consent image
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GuardianConsentUploadUrlResponse" }
+  /operations/attendance/{id}/guardian-consent/{documentId}/complete:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - { name: documentId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: completePartnerGuardianConsentUpload
+      responses:
+        "200":
+          description: Uploaded image was validated and added to the restricted review queue
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [ok]
+                properties:
+                  ok: { type: boolean, const: true }
   /operations/invoices:
     get:
       operationId: getPartnerInvoices
@@ -1884,6 +1916,28 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/SuperAdminAuditLog" }
+  /super-admin/guardian-consents:
+    get:
+      operationId: getSuperAdminGuardianConsents
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 100 } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+      responses:
+        "200":
+          description: Unexpired guardian-consent copies visible only to Super Admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetSuperAdminGuardianConsentsResponse" }
+  /super-admin/guardian-consents/{id}/document:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: downloadSuperAdminGuardianConsentDocument
+      responses:
+        "200":
+          description: Private guardian-consent image with no-store caching; access is audited
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
   /super-admin/member-consents:
     get:
       operationId: getSuperAdminMemberConsentHistory
@@ -4045,3 +4099,39 @@ components:
       properties:
         eventType: { type: string, enum: [impression, click] }
         placementType: { $ref: "#/components/schemas/SponsoredPlacementType" }
+    GuardianConsentUploadUrlRequest:
+      type: object
+      additionalProperties: false
+      required: [contentType, size, onSiteVerified]
+      properties:
+        contentType: { type: string, enum: [image/jpeg, image/png, image/webp] }
+        size: { type: integer, minimum: 1, maximum: 10485760 }
+        onSiteVerified: { type: boolean, const: true }
+    GuardianConsentUploadUrlResponse:
+      type: object
+      additionalProperties: false
+      required: [id, uploadURL, expiresAt]
+      properties:
+        id: { type: string, format: uuid }
+        uploadURL: { type: string, format: uri }
+        expiresAt: { type: string, format: date-time }
+    GetSuperAdminGuardianConsentsResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, memberUserId, partnerName, facility, sessionTitle, visitAt, verifiedAt, expiresAt]
+            properties:
+              id: { type: string, format: uuid }
+              memberUserId: { type: string }
+              partnerName: { type: ["string", "null"] }
+              facility: { type: string }
+              sessionTitle: { type: string }
+              visitAt: { type: string, format: date-time }
+              verifiedAt: { type: string, format: date-time }
+              expiresAt: { type: string, format: date-time }

@@ -74,6 +74,34 @@ export class ObjectStorageService {
     return { uploadURL, objectPath: `/objects/${objectName}` };
   }
 
+  async createGuardianConsentUpload(attendanceId: string, documentId: string) {
+    if (!/^[0-9a-f-]{36}$/i.test(attendanceId) || !/^[0-9a-f-]{36}$/i.test(documentId)) {
+      throw new Error("Invalid guardian-consent identifier.");
+    }
+    const objectName = `guardian-consent-uploads/${attendanceId}/${documentId}`;
+    const { bucketName, objectName: bucketObjectName } = parseObjectPath(`${this.privateDir()}/${objectName}`);
+    const uploadURL = await signUpload(bucketName, bucketObjectName);
+    return { uploadURL, objectPath: `/objects/${objectName}` };
+  }
+
+  async promoteGuardianConsentUpload(stagingPath: string) {
+    if (!stagingPath.startsWith("/objects/guardian-consent-uploads/")) throw new ObjectNotFoundError();
+    const source = await this.getPrivateFile(stagingPath);
+    const entityPath = `${this.privateDir()}/${stagingPath.slice("/objects/".length)}`;
+    const { bucketName, objectName } = parseObjectPath(entityPath);
+    const finalObjectName = objectName.replace(/^guardian-consent-uploads\//, "guardian-consents/");
+    const destination = objectStorageClient.bucket(bucketName).file(finalObjectName);
+    await source.copy(destination);
+    let stagingObjectPath: string | null = stagingPath;
+    try {
+      await source.delete({ ignoreNotFound: true });
+      stagingObjectPath = null;
+    } catch {
+      // The verified copy is separate; retention cleanup will retry deleting this staging file.
+    }
+    return { objectPath: `/objects/${finalObjectName}`, stagingObjectPath };
+  }
+
   async getPrivateFile(objectPath: string): Promise<File> {
     if (!objectPath.startsWith("/objects/")) throw new ObjectNotFoundError();
     const entityPath = `${this.privateDir()}/${objectPath.slice("/objects/".length)}`;

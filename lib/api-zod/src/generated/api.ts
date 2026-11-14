@@ -1099,6 +1099,7 @@ export const GetAttendanceResponse = zod.object({
   "settlementEligible": zod.boolean(),
   "manualCheckin": zod.boolean().describe('True when this reservation has a staff-assisted arrival audit event'),
   "manualRepeatUse": zod.boolean().describe('True after the member has more than one staff-assisted arrival'),
+  "guardianConsentState": zod.enum(['not_required', 'age_unknown', 'required', 'uploaded']).optional().describe('Partner-only status; no birth date or guardian details are exposed.'),
   "locked": zod.boolean(),
   "reference": zod.string().optional(),
   "checkedInAt": zod.string().optional(),
@@ -1457,6 +1458,37 @@ export const AddPartnerResponse = zod.object({
   "id": zod.string(),
   "approved": zod.boolean()
 }))
+
+
+export const RequestPartnerGuardianConsentUploadUrlParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const requestPartnerGuardianConsentUploadUrlBodySizeMax = 10485760;
+
+
+
+export const RequestPartnerGuardianConsentUploadUrlBody = zod.object({
+  "contentType": zod.enum(['image/jpeg', 'image/png', 'image/webp']),
+  "size": zod.int().min(1).max(requestPartnerGuardianConsentUploadUrlBodySizeMax),
+  "onSiteVerified": zod.literal(true)
+})
+
+export const RequestPartnerGuardianConsentUploadUrlResponse = zod.object({
+  "id": zod.uuid(),
+  "uploadURL": zod.url(),
+  "expiresAt": zod.coerce.date()
+})
+
+
+export const CompletePartnerGuardianConsentUploadParams = zod.object({
+  "id": zod.coerce.string(),
+  "documentId": zod.uuid()
+})
+
+export const CompletePartnerGuardianConsentUploadResponse = zod.object({
+  "ok": zod.literal(true)
+})
 
 
 export const GetPartnerMarketingProfileResponse = zod.object({
@@ -4675,6 +4707,40 @@ export const GetSuperAdminMemberConsentHistoryResponseItem = zod.object({
   "recordedAt": zod.coerce.date()
 })
 export const GetSuperAdminMemberConsentHistoryResponse = zod.array(GetSuperAdminMemberConsentHistoryResponseItem)
+
+
+export const getSuperAdminGuardianConsentsQueryLimitDefault = 100;
+export const getSuperAdminGuardianConsentsQueryLimitMax = 100;
+
+export const getSuperAdminGuardianConsentsQueryOffsetDefault = 0;
+export const getSuperAdminGuardianConsentsQueryOffsetMin = 0;
+
+
+
+export const GetSuperAdminGuardianConsentsQueryParams = zod.object({
+  "limit": zod.coerce.number().int().min(1).max(getSuperAdminGuardianConsentsQueryLimitMax).default(getSuperAdminGuardianConsentsQueryLimitDefault),
+  "offset": zod.coerce.number().int().min(getSuperAdminGuardianConsentsQueryOffsetMin).default(getSuperAdminGuardianConsentsQueryOffsetDefault)
+})
+
+export const GetSuperAdminGuardianConsentsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.uuid(),
+  "memberUserId": zod.string(),
+  "partnerName": zod.string().nullable(),
+  "facility": zod.string(),
+  "sessionTitle": zod.string(),
+  "visitAt": zod.coerce.date(),
+  "verifiedAt": zod.coerce.date(),
+  "expiresAt": zod.coerce.date()
+}))
+})
+
+
+export const DownloadSuperAdminGuardianConsentDocumentParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DownloadSuperAdminGuardianConsentDocumentResponse = zod.unknown()
 
 
 export const GetFacilityQualityControlResponse = zod.object({

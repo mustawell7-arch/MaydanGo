@@ -35,6 +35,7 @@ import type {
   BookingCancellationRequest,
   CancelRecurringOfferingSeriesResponse,
   CheckinPolicy,
+  CompletePartnerGuardianConsentUpload200,
   CorporateAdministratorInvitationInput,
   CorporateEmployeeInvitationBatch,
   CorporateEmployeeInvitationInput,
@@ -96,8 +97,12 @@ import type {
   GetOperationsAnalyticsParams,
   GetPartnerSettlementSummaryParams,
   GetSuperAdminAuditLogsParams,
+  GetSuperAdminGuardianConsentsParams,
+  GetSuperAdminGuardianConsentsResponse,
   GetSuperAdminMemberConsentHistoryParams,
   GetSupportStaffTicketsParams,
+  GuardianConsentUploadUrlRequest,
+  GuardianConsentUploadUrlResponse,
   HealthStatus,
   InstructorAccessDecisionInput,
   InstructorAccessDecisionResponse,
@@ -2188,6 +2193,159 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getAddPartnerMutationOptions(options), queryClient);
+    }
+
+export const getRequestPartnerGuardianConsentUploadUrlUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/attendance/${id}/guardian-consent/upload-url`
+}
+
+export const requestPartnerGuardianConsentUploadUrl = async (id: string,
+    guardianConsentUploadUrlRequest: GuardianConsentUploadUrlRequest, options?: Parameters<typeof customFetch>[1]): Promise<GuardianConsentUploadUrlResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<GuardianConsentUploadUrlResponse>(getRequestPartnerGuardianConsentUploadUrlUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(guardianConsentUploadUrlRequest)
+  }
+);}
+
+
+
+
+
+export const getRequestPartnerGuardianConsentUploadUrlMutationKey = () => ['requestPartnerGuardianConsentUploadUrl'] as const;
+
+export const getRequestPartnerGuardianConsentUploadUrlMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestPartnerGuardianConsentUploadUrl>>, TError,RequestPartnerGuardianConsentUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestPartnerGuardianConsentUploadUrl>>, TError,RequestPartnerGuardianConsentUploadUrlMutationVariables, TContext> => {
+
+const mutationKey = getRequestPartnerGuardianConsentUploadUrlMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestPartnerGuardianConsentUploadUrl>>, RequestPartnerGuardianConsentUploadUrlMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  requestPartnerGuardianConsentUploadUrl(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestPartnerGuardianConsentUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestPartnerGuardianConsentUploadUrl>>>
+    export type RequestPartnerGuardianConsentUploadUrlMutationBody = BodyType<GuardianConsentUploadUrlRequest>
+    export type RequestPartnerGuardianConsentUploadUrlMutationError = ErrorType<unknown>
+    export type RequestPartnerGuardianConsentUploadUrlMutationVariables = {id: string;data: BodyType<GuardianConsentUploadUrlRequest>}
+
+    export const useRequestPartnerGuardianConsentUploadUrl = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestPartnerGuardianConsentUploadUrl>>, TError,RequestPartnerGuardianConsentUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof requestPartnerGuardianConsentUploadUrl>>,
+        TError,
+        RequestPartnerGuardianConsentUploadUrlMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestPartnerGuardianConsentUploadUrlMutationOptions(options), queryClient);
+    }
+
+export const getCompletePartnerGuardianConsentUploadUrl = (id: string,
+    documentId: string,) => {
+
+
+
+
+  return `/api/operations/attendance/${id}/guardian-consent/${documentId}/complete`
+}
+
+export const completePartnerGuardianConsentUpload = async (id: string,
+    documentId: string, options?: Parameters<typeof customFetch>[1]): Promise<CompletePartnerGuardianConsentUpload200> => {
+
+  return customFetch<CompletePartnerGuardianConsentUpload200>(getCompletePartnerGuardianConsentUploadUrl(id,documentId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCompletePartnerGuardianConsentUploadMutationKey = () => ['completePartnerGuardianConsentUpload'] as const;
+
+export const getCompletePartnerGuardianConsentUploadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completePartnerGuardianConsentUpload>>, TError,CompletePartnerGuardianConsentUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completePartnerGuardianConsentUpload>>, TError,CompletePartnerGuardianConsentUploadMutationVariables, TContext> => {
+
+const mutationKey = getCompletePartnerGuardianConsentUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completePartnerGuardianConsentUpload>>, CompletePartnerGuardianConsentUploadMutationVariables> = (props) => {
+          const {id,documentId} = props ?? {};
+
+          return  completePartnerGuardianConsentUpload(id,documentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompletePartnerGuardianConsentUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completePartnerGuardianConsentUpload>>>
+
+    export type CompletePartnerGuardianConsentUploadMutationError = ErrorType<unknown>
+    export type CompletePartnerGuardianConsentUploadMutationVariables = {id: string;documentId: string}
+
+    export const useCompletePartnerGuardianConsentUpload = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completePartnerGuardianConsentUpload>>, TError,CompletePartnerGuardianConsentUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof completePartnerGuardianConsentUpload>>,
+        TError,
+        CompletePartnerGuardianConsentUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompletePartnerGuardianConsentUploadMutationOptions(options), queryClient);
     }
 
 export const getGetPartnerMarketingProfileUrl = () => {
@@ -7804,6 +7962,203 @@ export function useGetSuperAdminMemberConsentHistory<TData = Awaited<ReturnType<
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetSuperAdminMemberConsentHistoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetSuperAdminGuardianConsentsUrl = (params?: GetSuperAdminGuardianConsentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/super-admin/guardian-consents?${stringifiedParams}` : `/api/super-admin/guardian-consents`
+}
+
+export const getSuperAdminGuardianConsents = async (params?: GetSuperAdminGuardianConsentsParams, options?: Parameters<typeof customFetch>[1]): Promise<GetSuperAdminGuardianConsentsResponse> => {
+
+  return customFetch<GetSuperAdminGuardianConsentsResponse>(getGetSuperAdminGuardianConsentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSuperAdminGuardianConsentsQueryKey = (params?: GetSuperAdminGuardianConsentsParams,) => {
+    return [
+    `/api/super-admin/guardian-consents`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetSuperAdminGuardianConsentsQueryOptions = <TData = Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>, TError = ErrorType<unknown>>(params?: GetSuperAdminGuardianConsentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSuperAdminGuardianConsentsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>> = ({ signal }) => getSuperAdminGuardianConsents(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSuperAdminGuardianConsentsQueryResult = NonNullable<Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>>
+export type GetSuperAdminGuardianConsentsQueryError = ErrorType<unknown>
+
+
+export function useGetSuperAdminGuardianConsents<TData = Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>, TError = ErrorType<unknown>>(
+ params: undefined |  GetSuperAdminGuardianConsentsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminGuardianConsents<TData = Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>, TError = ErrorType<unknown>>(
+ params?: GetSuperAdminGuardianConsentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminGuardianConsents<TData = Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>, TError = ErrorType<unknown>>(
+ params?: GetSuperAdminGuardianConsentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSuperAdminGuardianConsents<TData = Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>, TError = ErrorType<unknown>>(
+ params?: GetSuperAdminGuardianConsentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminGuardianConsents>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSuperAdminGuardianConsentsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDownloadSuperAdminGuardianConsentDocumentUrl = (id: string,) => {
+
+
+
+
+  return `/api/super-admin/guardian-consents/${id}/document`
+}
+
+export const downloadSuperAdminGuardianConsentDocument = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadSuperAdminGuardianConsentDocumentUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadSuperAdminGuardianConsentDocumentQueryKey = (id: string,) => {
+    return [
+    `/api/super-admin/guardian-consents/${id}/document`
+    ] as const;
+    }
+
+
+export const getDownloadSuperAdminGuardianConsentDocumentQueryOptions = <TData = Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadSuperAdminGuardianConsentDocumentQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>> = ({ signal }) => downloadSuperAdminGuardianConsentDocument(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DownloadSuperAdminGuardianConsentDocumentQueryResult = NonNullable<Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>>
+export type DownloadSuperAdminGuardianConsentDocumentQueryError = ErrorType<unknown>
+
+
+export function useDownloadSuperAdminGuardianConsentDocument<TData = Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>,
+          TError,
+          Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadSuperAdminGuardianConsentDocument<TData = Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>,
+          TError,
+          Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadSuperAdminGuardianConsentDocument<TData = Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useDownloadSuperAdminGuardianConsentDocument<TData = Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadSuperAdminGuardianConsentDocument>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDownloadSuperAdminGuardianConsentDocumentQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

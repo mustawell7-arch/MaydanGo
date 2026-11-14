@@ -2,7 +2,7 @@ import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
-import { db, pool, partners, operators, offerings, facilityProfiles, memberships, reservations, attendance, checkinPolicies, checkinChallenges, manualCheckinChallenges, attendanceEvents } from "@workspace/db";
+import { db, pool, partners, operators, offerings, facilityProfiles, guardianConsentDocuments, memberships, memberProfiles, reservations, attendance, checkinPolicies, checkinChallenges, manualCheckinChallenges, attendanceEvents } from "@workspace/db";
 import { savePolicy, issueQr, scanQr, review, roster, scanInput, issueManualCheckinCode, recordManualCheckin, manualCheckinInput, isCheckinTravelViolation } from "./checkin";
 import { BookingError, createReservation } from "./reservations";
 import app from "../app";
@@ -88,6 +88,7 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
   await db.insert(memberships).values({ userId: member, scope: "live", status: "trial", source: "trial", paymentStatus: "not_required", tier: "M",
     startsAt: new Date(now - 86400000), endsAt: new Date(now + 86400000),
     rules: { quota: 2, dailyLimit: 2, trialAllowedTypes: ["physical"] } });
+  await db.insert(memberProfiles).values({ userId: member, gender: "unspecified", birthDate: "1990-01-01" });
   await db.insert(reservations).values({ id: r, userId: member, offeringId: o, status: "reserved" });
   await db.insert(offerings).values({ id: nextOffering, targetId: nextOffering, kind: "session", title: prefix, scope: "live", partnerId: p,
     active: true, city: "baghdad", facility: prefix, category: "gym", tiers: ["M"], capacity: 3,
@@ -243,6 +244,22 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
   });
   await t.test("partner confirmation, member dispute, admin correction and locking are auditable", async () => {
     await reject(() => review(stranger, r, { action: "confirm", reason: "Not authorized" }), 403);
+    await db.update(memberProfiles).set({ birthDate: "2010-01-01" }).where(eq(memberProfiles.userId, member));
+    await reject(() => review(staff, r, { action: "confirm", reason: "Guardian copy is missing" }), 409);
+    const [arrival] = await db.select().from(attendance).where(eq(attendance.reservationId, r));
+    await db.insert(guardianConsentDocuments).values({
+      id: randomUUID(),
+      attendanceId: arrival.id,
+      memberUserId: member,
+      uploadedBy: staff,
+      objectPath: "/objects/guardian-consents-test.jpg",
+      stagingObjectPath: null,
+      contentType: "image/jpeg",
+      size: 3,
+      status: "ready",
+      verifiedAt: new Date(),
+      expiresAt: new Date(Date.now() + 90 * 86400000),
+    });
     await db.update(memberships).set({ endsAt: new Date(now - 1) }).where(eq(memberships.userId, member));
     await review(staff, r, { action: "confirm", reason: "Member present at desk" });
     assert.equal((await roster(member)).rows[0].settlementEligible, true);
@@ -262,6 +279,8 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     await db.update(checkinPolicies).set({ correctionEndsAt: new Date(now - 1) }).where(eq(checkinPolicies.offeringId, o));
     assert.equal((await roster(member)).rows[0].locked, true);
     await reject(() => review(admin, r, { action: "dispute", reason: "Too late to change" }), 409);
+    await db.delete(guardianConsentDocuments).where(eq(guardianConsentDocuments.memberUserId, member));
+    await db.update(memberProfiles).set({ birthDate: "1990-01-01" }).where(eq(memberProfiles.userId, member));
   });
   await t.test("no-show only after window and never for an existing arrival", async () => {
     await db.update(checkinPolicies).set({ correctionEndsAt: new Date(now + 86400000) }).where(eq(checkinPolicies.offeringId, o));
@@ -362,6 +381,7 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
   });
 });
 after(async () => {
+  await db.delete(guardianConsentDocuments).where(eq(guardianConsentDocuments.memberUserId, member));
   await db.delete(attendanceEvents).where(eq(attendanceEvents.reservationId, manualReservation));
   await db.delete(manualCheckinChallenges).where(eq(manualCheckinChallenges.reservationId, manualReservation));
   await db.delete(attendance).where(eq(attendance.reservationId, manualReservation));
@@ -374,6 +394,7 @@ after(async () => {
   await db.delete(offerings).where(inArray(offerings.id, [o, nextOffering]));
   await db.delete(facilityProfiles).where(inArray(facilityProfiles.id, [mainFacilityProfile, otherFacilityProfile]));
   await db.delete(memberships).where(inArray(memberships.userId, users));
+  await db.delete(memberProfiles).where(eq(memberProfiles.userId, member));
   await db.delete(operators).where(inArray(operators.userId, users));
   await db.delete(partners).where(eq(partners.id, p));
   await pool.end();

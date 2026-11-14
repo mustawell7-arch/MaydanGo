@@ -3,11 +3,13 @@ import { useAuth } from "@clerk/react";
 import {
   getGetSuperAdminAccountsQueryKey,
   getGetSuperAdminAuditLogsQueryKey,
+  getGetSuperAdminGuardianConsentsQueryKey,
   getGetSuperAdminMemberConsentHistoryQueryKey,
   getGetSuperAdminPlatformRulesQueryKey,
   getGetSuperAdminRolePermissionsQueryKey,
   useGetSuperAdminAccounts,
   useGetSuperAdminAuditLogs,
+  useGetSuperAdminGuardianConsents,
   useGetSuperAdminMemberConsentHistory,
   useGetSuperAdminPlatformRules,
   useGetSuperAdminRolePermissions,
@@ -22,6 +24,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { downloadGuardianConsentCopy } from "@/lib/guardian-consent-documents";
 
 const roleLabels: Record<AdminRole, string> = {
   customer_support_admin: "Customer Support Admin",
@@ -117,6 +120,14 @@ export default function SuperAdminPage() {
       queryKey: getGetSuperAdminMemberConsentHistoryQueryKey(consentParams),
     },
   });
+  const [guardianPage, setGuardianPage] = useState(0);
+  const guardianParams = { limit: 100, offset: guardianPage * 100 };
+  const guardianQuery = useGetSuperAdminGuardianConsents(guardianParams, {
+    query: {
+      enabled: isLoaded && !!isSignedIn,
+      queryKey: getGetSuperAdminGuardianConsentsQueryKey(guardianParams),
+    },
+  });
   const saveAccount = useUpsertSuperAdminAccount();
   const saveRolePermissions = useUpdateSuperAdminRolePermissions();
   const savePlatformRules = useUpdateSuperAdminPlatformRules();
@@ -128,6 +139,8 @@ export default function SuperAdminPage() {
   const [feedback, setFeedback] = useState("");
   const [permissionFeedback, setPermissionFeedback] = useState("");
   const [platformRulesFeedback, setPlatformRulesFeedback] = useState("");
+  const [guardianDownloadId, setGuardianDownloadId] = useState<string | null>(null);
+  const [guardianFeedback, setGuardianFeedback] = useState("");
   const [busyId, setBusyId] = useState("");
 
   const refresh = async () => {
@@ -238,6 +251,7 @@ export default function SuperAdminPage() {
   const accounts = accountsQuery.data ?? [];
   const auditLogs = auditQuery.data ?? [];
   const consentEvents = consentQuery.data ?? [];
+  const guardianDocuments = guardianQuery.data?.items ?? [];
   const rolePolicies = rolePermissionsQuery.data ?? [];
   const platformRules = platformRuleDraft ?? platformRulesQuery.data?.settings ?? null;
   const platformRulesChanged = !!platformRuleDraft
@@ -448,6 +462,57 @@ export default function SuperAdminPage() {
                         <td className="px-2 py-3 text-xs text-[#60756b]">{new Date(event.recordedAt).toLocaleString()}</td>
                       </tr>)}
                       {!consentEvents.length && <tr><td colSpan={5} className="px-2 py-8 text-center text-sm text-[#748279]">No consent history is recorded for this search.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>}
+          </section>
+
+          <section className="rounded-3xl border border-[#dfc99e] bg-[#fffdf7] p-5 sm:p-6" aria-labelledby="guardian-consent-documents-title">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 id="guardian-consent-documents-title" className="font-display text-xl font-bold">Guardian-consent copies</h2>
+                <p className="mt-1 max-w-3xl text-sm leading-5 text-[#60756b]">Restricted to Super Admin. Partner uploads are private, each document view is audited, and files are removed 90 days after the visit.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => void guardianQuery.refetch()} className="rounded-lg border border-[#d8d2c4] px-3 py-2 text-xs font-bold text-[#36564b]" data-testid="button-refresh-guardian-consents">Refresh</button>
+                <button onClick={() => setGuardianPage(page => Math.max(0, page - 1))} disabled={guardianPage === 0} className="rounded-lg border border-[#d8d2c4] px-3 py-2 text-xs font-bold text-[#36564b] disabled:opacity-40">Newer</button>
+                <span className="self-center text-xs text-[#748279]">Page {guardianPage + 1}</span>
+                <button onClick={() => setGuardianPage(page => page + 1)} disabled={guardianDocuments.length < 100} className="rounded-lg border border-[#d8d2c4] px-3 py-2 text-xs font-bold text-[#36564b] disabled:opacity-40">Older</button>
+              </div>
+            </div>
+            {guardianFeedback && <p className="mb-3 rounded-xl border border-[#c8d9ca] bg-[#edf5ec] px-4 py-3 text-sm text-[#315e42]" role="status">{guardianFeedback}</p>}
+            {guardianQuery.isLoading ? <p className="py-8 text-center text-sm text-[#748279]" role="status">Loading guardian-consent copies…</p>
+              : guardianQuery.isError ? <p className="rounded-xl border border-[#e8c5ba] bg-[#fff5f1] p-4 text-sm text-[#9a4435]" role="alert">Guardian-consent copies could not be loaded. Retry to see the latest records.</p>
+                : <div className="overflow-x-auto">
+                  <table className="w-full min-w-[900px] text-left text-sm">
+                    <thead className="border-b border-[#eee9de] text-xs uppercase tracking-wide text-[#748279]">
+                      <tr><th className="px-2 py-3">Member ID</th><th className="px-2 py-3">Partner</th><th className="px-2 py-3">Facility and session</th><th className="px-2 py-3">Visit</th><th className="px-2 py-3">Delete after</th><th className="px-2 py-3">Private file</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#eee9de]">
+                      {guardianDocuments.map(document => <tr key={document.id} data-testid={`row-guardian-consent-${document.id}`}>
+                        <td className="max-w-48 break-all px-2 py-3 font-mono text-xs">{document.memberUserId}</td>
+                        <td className="px-2 py-3">{document.partnerName ?? "Partner unavailable"}</td>
+                        <td className="px-2 py-3"><p className="font-semibold">{document.facility}</p><p className="mt-1 text-xs text-[#60756b]">{document.sessionTitle}</p></td>
+                        <td className="px-2 py-3 text-xs text-[#60756b]">{new Date(document.visitAt).toLocaleString()}</td>
+                        <td className="px-2 py-3 text-xs text-[#60756b]">{new Date(document.expiresAt).toLocaleString()}</td>
+                        <td className="px-2 py-3">
+                          <button type="button" disabled={guardianDownloadId === document.id} onClick={async () => {
+                            setGuardianDownloadId(document.id);
+                            setGuardianFeedback("");
+                            try {
+                              await downloadGuardianConsentCopy(document.id);
+                              setGuardianFeedback("Private copy downloaded. The access was recorded.");
+                            } catch {
+                              setGuardianFeedback("The copy could not be downloaded. It may have expired.");
+                            } finally {
+                              setGuardianDownloadId(null);
+                            }
+                          }} className="rounded-lg bg-[#174d43] px-3 py-2 text-xs font-bold text-[#fff9e9] disabled:opacity-50" data-testid={`button-download-guardian-consent-${document.id}`}>
+                            {guardianDownloadId === document.id ? "Preparing…" : "Download"}
+                          </button>
+                        </td>
+                      </tr>)}
+                      {!guardianDocuments.length && <tr><td colSpan={6} className="px-2 py-8 text-center text-sm text-[#748279]">No unexpired guardian-consent copies are available.</td></tr>}
                     </tbody>
                   </table>
                 </div>}

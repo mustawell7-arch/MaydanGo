@@ -3866,6 +3866,60 @@ export interface PublicSponsoredFacilityEventInput {
   placementType: SponsoredPlacementType;
 }
 
+export type GuardianConsentUploadUrlRequestContentType = typeof GuardianConsentUploadUrlRequestContentType[keyof typeof GuardianConsentUploadUrlRequestContentType];
+
+
+export const GuardianConsentUploadUrlRequestContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export interface GuardianConsentUploadUrlRequest {
+  contentType: GuardianConsentUploadUrlRequestContentType;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+  onSiteVerified: true;
+}
+
+export interface GuardianConsentUploadUrlResponse {
+  id: string;
+  uploadURL: string;
+  expiresAt: string;
+}
+
+export type GetSuperAdminGuardianConsentsResponseItemsItem = {
+  id: string;
+  memberUserId: string;
+  /** @nullable */
+  partnerName: string | null;
+  facility: string;
+  sessionTitle: string;
+  visitAt: string;
+  verifiedAt: string;
+  expiresAt: string;
+};
+
+export interface GetSuperAdminGuardianConsentsResponse {
+  items: GetSuperAdminGuardianConsentsResponseItemsItem[];
+}
+
+/**
+ * Partner-only status; no birth date or guardian details are exposed.
+ */
+export type GetAttendance200RowsItemGuardianConsentState = typeof GetAttendance200RowsItemGuardianConsentState[keyof typeof GetAttendance200RowsItemGuardianConsentState];
+
+
+export const GetAttendance200RowsItemGuardianConsentState = {
+  not_required: 'not_required',
+  age_unknown: 'age_unknown',
+  required: 'required',
+  uploaded: 'uploaded',
+} as const;
+
 export type GetAttendance200RowsItemEventsItem = {
   action: string;
   reason: string;
@@ -3887,6 +3941,8 @@ export type GetAttendance200RowsItem = {
   manualCheckin: boolean;
   /** True after the member has more than one staff-assisted arrival */
   manualRepeatUse: boolean;
+  /** Partner-only status; no birth date or guardian details are exposed. */
+  guardianConsentState?: GetAttendance200RowsItemGuardianConsentState;
   locked: boolean;
   reference?: string;
   checkedInAt?: string;
@@ -3967,6 +4023,10 @@ export type ReviewAttendanceBody = {
   reason: string;
 };
 
+export type CompletePartnerGuardianConsentUpload200 = {
+  ok: true;
+};
+
 export type GetOperationsAnalyticsParams = {
 from?: string;
 to?: string;
@@ -3995,6 +4055,18 @@ export type GetSuperAdminMemberConsentHistoryParams = {
 userId?: string;
 limit?: MemberConsentHistoryLimit;
 offset?: MemberConsentHistoryOffset;
+};
+
+export type GetSuperAdminGuardianConsentsParams = {
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
 };
 
 export type StreamMemberCoursePlaybackParams = {

@@ -1,8 +1,9 @@
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
-import { and, desc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
-import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, manualCheckinChallenges, memberships, offerings, operators, partners, reservations, memberProfiles } from "@workspace/db";
+import { and, desc, eq, gt, gte, inArray, isNull, lte, sql } from "drizzle-orm";
+import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, guardianConsentDocuments, manualCheckinChallenges, memberships, offerings, operators, partners, reservations, memberProfiles } from "@workspace/db";
 import { z } from "zod";
 import { BookingError, membershipCanAccess, processWaitlistQueue } from "./reservations";
+import { ageOnDate } from "./age";
 import { hasAdminPermission, type AdminPermission } from "./admin-roles";
 import { iraqCalendarDate, openingState, previousIraqCalendarDate } from "./facility-hours";
 import { getPlatformSafetyRules } from "./platform-rules";
@@ -97,10 +98,8 @@ async function eligible(tx: Tx, c: Awaited<ReturnType<typeof context>>) {
     throw new BookingError(403, "Your membership doesn’t include this activity.");
   if (o.gender !== "all" || o.minAge || o.maxAge !== null) {
     const [profile] = await tx.select().from(memberProfiles).where(eq(memberProfiles.userId, r.userId));
-    const birth = new Date(profile?.birthDate ?? "invalid");
-    let age = o.startsAt.getUTCFullYear() - birth.getUTCFullYear();
-    if (o.startsAt.getUTCMonth() < birth.getUTCMonth() || (o.startsAt.getUTCMonth() === birth.getUTCMonth() && o.startsAt.getUTCDate() < birth.getUTCDate())) age--;
-    if (!profile || !Number.isFinite(age) || (o.gender !== "all" && profile.gender !== o.gender) || age < o.minAge || (o.maxAge !== null && age > o.maxAge))
+    const age = ageOnDate(profile?.birthDate, o.startsAt);
+    if (!profile || age === null || (o.gender !== "all" && profile.gender !== o.gender) || age < o.minAge || (o.maxAge !== null && age > o.maxAge))
       throw new BookingError(403, "Your eligibility profile does not match this session.");
   }
   const held = await tx.select({ o: offerings }).from(reservations).innerJoin(offerings, eq(reservations.offeringId, offerings.id))
@@ -317,6 +316,22 @@ export async function review(actor: string, id: string, input: z.infer<typeof re
     if (action === "resolve_confirm") {
       if (!c.a?.verifiedBy || actor === c.r.userId) throw new BookingError(409, "An independent reviewer and verified arrival are required.");
     }
+    if (["confirm", "resolve_confirm"].includes(action)) {
+      const [profile] = await tx.select({ birthDate: memberProfiles.birthDate }).from(memberProfiles)
+        .where(eq(memberProfiles.userId, c.r.userId));
+      const age = ageOnDate(profile?.birthDate, c.o.startsAt);
+      if (age === null) throw new BookingError(409, "A valid member birth date is required before attendance can be confirmed.");
+      if (age < 18) {
+        const [consent] = await tx.select({ id: guardianConsentDocuments.id }).from(guardianConsentDocuments)
+          .where(and(
+            eq(guardianConsentDocuments.attendanceId, c.a!.id),
+            eq(guardianConsentDocuments.status, "ready"),
+            gt(guardianConsentDocuments.expiresAt, now),
+          )).for("share");
+        if (!consent)
+          throw new BookingError(409, "For members under 18, the partner must verify guardian consent on-site and upload its copy before confirming attendance.");
+      }
+    }
     // Eligibility was validated atomically with the arrival. Expiry or a later
     // membership change must not invalidate that historical evidence.
     if (["confirm", "resolve_confirm"].includes(action) && c.o.cancelledAt)
@@ -347,10 +362,19 @@ export async function roster(actor: string) {
     hasAdminPermission(op.role, "partner_operations") || hasAdminPermission(op.role, "fraud_compliance")
   );
   const isStaff = isGlobalStaff || op?.role === "partner";
-  const rows = await db.select({ r: reservations, o: offerings, a: attendance, p: checkinPolicies }).from(reservations)
+  const rows = await db.select({
+    r: reservations,
+    o: offerings,
+    a: attendance,
+    p: checkinPolicies,
+    profile: memberProfiles,
+    guardianConsent: guardianConsentDocuments,
+  }).from(reservations)
     .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
     .leftJoin(attendance, eq(attendance.reservationId, reservations.id))
     .leftJoin(checkinPolicies, eq(checkinPolicies.offeringId, offerings.id))
+    .leftJoin(memberProfiles, eq(memberProfiles.userId, reservations.userId))
+    .leftJoin(guardianConsentDocuments, eq(guardianConsentDocuments.attendanceId, attendance.id))
     .where(and(eq(offerings.scope, "live"), isStaff
       ? isGlobalStaff ? undefined : eq(offerings.partnerId, op?.partnerId ?? "")
       : eq(reservations.userId, actor)));
@@ -363,13 +387,23 @@ export async function roster(actor: string) {
     .where(and(inArray(reservations.userId, userIds), eq(attendanceEvents.action, "manual.checkin")))
     .groupBy(reservations.userId) : [];
   const manualCountByUser = new Map(manualVisitCounts.map(({ userId, count }) => [userId, count]));
-  return { role: isStaff ? op.role : "member", rows: rows.map(({ r, o, a, p }) => ({
+  const now = new Date();
+  return { role: isStaff ? op.role : "member", rows: rows.map(({ r, o, a, p, profile, guardianConsent }) => ({
     reservationId: r.id, userId: r.userId, title: o.title, facility: o.facility, startsAt: o.startsAt, endsAt: o.endsAt,
     bookingStatus: r.status, status: a?.status ?? "not_checked_in", reference: a?.id,
     checkedInAt: a?.verifiedBy ? a.checkedInAt : undefined,
     settlementEligible: a?.settlementEligible ?? false,
     manualCheckin: events.some(e => e.reservationId === r.id && e.action === "manual.checkin"),
     manualRepeatUse: (manualCountByUser.get(r.userId) ?? 0) > 1,
+    guardianConsentState: isStaff
+      ? ageOnDate(profile?.birthDate, o.startsAt) === null
+        ? "age_unknown"
+        : ageOnDate(profile?.birthDate, o.startsAt)! >= 18
+          ? "not_required"
+          : guardianConsent?.status === "ready" && guardianConsent.expiresAt > now
+            ? "uploaded"
+            : "required"
+      : undefined,
     locked: !!a?.lockedAt || (!!p && new Date() >= p.correctionEndsAt), policy: p ?? undefined,
     events: events.filter(e => e.reservationId === r.id).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
   })) };

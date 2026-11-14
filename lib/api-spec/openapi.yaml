@@ -190,6 +190,10 @@ paths:
                         settlementEligible: { type: boolean }
                         manualCheckin: { type: boolean, description: True when this reservation has a staff-assisted arrival audit event }
                         manualRepeatUse: { type: boolean, description: True after the member has more than one staff-assisted arrival }
+                        guardianConsentState:
+                          type: string
+                          enum: [not_required, age_unknown, required, uploaded]
+                          description: Partner-only status; no birth date or guardian details are exposed.
                         locked: { type: boolean }
                         reference: { type: string }
                         checkedInAt: { type: string }
@@ -334,6 +338,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations"
   /operations/partners:
     $ref: "./operations.yaml#/paths/~1operations~1partners"
+  /operations/attendance/{id}/guardian-consent/upload-url:
+    $ref: "./operations.yaml#/paths/~1operations~1attendance~1{id}~1guardian-consent~1upload-url"
+  /operations/attendance/{id}/guardian-consent/{documentId}/complete:
+    $ref: "./operations.yaml#/paths/~1operations~1attendance~1{id}~1guardian-consent~1{documentId}~1complete"
   /operations/marketing-profile:
     $ref: "./operations.yaml#/paths/~1operations~1marketing-profile"
   /operations/sponsored-facilities:
@@ -448,6 +456,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1super-admin~1audit-logs"
   /super-admin/member-consents:
     $ref: "./operations.yaml#/paths/~1super-admin~1member-consents"
+  /super-admin/guardian-consents:
+    $ref: "./operations.yaml#/paths/~1super-admin~1guardian-consents"
+  /super-admin/guardian-consents/{id}/document:
+    $ref: "./operations.yaml#/paths/~1super-admin~1guardian-consents~1{id}~1document"
   /operations/quality:
     $ref: "./operations.yaml#/paths/~1operations~1quality"
   /operations/quality/emergency-contacts/{id}:
