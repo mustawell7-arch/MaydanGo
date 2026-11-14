@@ -24,6 +24,7 @@ import SponsoredPlacementsManagerPage from '@/pages/sponsored-placements-manager
 import FinanceConsole from '@/pages/finance-console';
 import { PublicCourseBrowser, PublicFacilityBrowser, PublicHomeShowcase } from '@/pages/public-catalog-sections';
 import MemberAccountPage from '@/pages/member-account';
+import { PrivacyPolicyPage } from '@/pages/privacy-policy';
 import { AdminInstructorAccessPage, InstructorPortalPage } from '@/pages/instructor-access';
 import SupportDeskPage from '@/pages/support-desk';
 import SuperAdminPage from '@/pages/super-admin';
@@ -112,6 +113,7 @@ type Copy = Record<string, string>;
 const legacyTranslations: Record<Language, Copy> = {
   en: {
     home: 'Home', how: 'How it works', plans: 'Membership', facilities: 'Facilities', online: 'Train online', legal: 'Legal information', account: 'My account',
+    privacyLink: 'Privacy information',
     partner: 'Partner with us', instructor: 'For instructors', corporate: 'For organisations', help: 'Help', contact: 'Contact',
     mainNavigation: 'Main navigation', selectLanguage: 'Select language', openMenu: 'Open menu', closeMenu: 'Close menu',
     accountSignInSubtitle: 'Sign in to view your MaydanGo account.',
@@ -168,6 +170,8 @@ const legacyTranslations: Record<Language, Copy> = {
     'page_description:/instructor': 'Explore instructor enquiries for courses and live sessions. Rates and payout terms must be confirmed before any agreement.',
     'page_title:/account': 'Your MaydanGo account',
     'page_description:/account': 'Privately review your membership and bookings and update your basic account details.',
+    'page_title:/privacy': 'Privacy information | MaydanGo',
+    'page_description:/privacy': 'Plain-language draft explaining how MaydanGo handles account, booking, attendance, support and browser information.',
     contactTitle: 'Let’s find the right next step.', partnerTitle: 'Make your space part of the movement.',
     corporateTitle: 'More room for wellbeing at work.', instructorTitle: 'Share what you teach.',
     partnerIntro: 'MaydanGo connects people with places and coaches that make wellbeing feel closer to everyday life. Tell us about your work and we can explore a fit together.',
@@ -216,6 +220,7 @@ const legacyTranslations: Record<Language, Copy> = {
   },
   ar: {
     home: 'الرئيسية', how: 'كيف تعمل', plans: 'العضوية', facilities: 'المرافق', online: 'تدريب عبر الإنترنت', legal: 'معلومات قانونية', account: 'حسابي',
+    privacyLink: 'معلومات الخصوصية',
     partner: 'كن شريكاً', instructor: 'للمدربين', corporate: 'للمؤسسات', help: 'المساعدة', contact: 'تواصل معنا',
     mainNavigation: 'التنقل الرئيسي', selectLanguage: 'اختر اللغة', openMenu: 'افتح القائمة', closeMenu: 'أغلق القائمة',
     accountSignInSubtitle: 'سجّل الدخول لعرض حسابك في MaydanGo.',
@@ -272,6 +277,8 @@ const legacyTranslations: Record<Language, Copy> = {
     'page_description:/instructor': 'استكشف الاستفسار عن تقديم الدورات والجلسات المباشرة. يجب تأكيد الأجور وشروط الدفع قبل أي اتفاق.',
     'page_title:/account': 'حسابك في MaydanGo',
     'page_description:/account': 'راجع عضويتك وحجوزاتك وحدّث تفاصيل حسابك الأساسية بشكل خاص.',
+    'page_title:/privacy': 'معلومات الخصوصية | MaydanGo',
+    'page_description:/privacy': 'مسودة مبسطة تشرح تعامل MaydanGo مع معلومات الحساب والحجوزات والحضور والدعم والمتصفح.',
     contactTitle: 'لنجد الخطوة التالية المناسبة.', partnerTitle: 'اجعل مكانك جزءاً من الحركة.',
     corporateTitle: 'مساحة أكبر للعافية في العمل.', instructorTitle: 'شاركنا ما تقدمه.',
     partnerIntro: 'تربط MaydanGo الناس بأماكن ومدربين يجعلون العافية أقرب للحياة اليومية. أخبرنا عن عملك لنستكشف فرص التعاون.',
@@ -320,6 +327,7 @@ const legacyTranslations: Record<Language, Copy> = {
   },
   ku: {
     home: 'سەرەتا', how: 'چۆن کار دەکات', plans: 'ئەندامێتی', facilities: 'شوێنەکان', online: 'ڕاهێنانی ئۆنلاین', legal: 'زانیاریی یاسایی', account: 'هەژمارەکەم',
+    privacyLink: 'زانیاریی تایبەتمەندی',
     partner: 'بەشداربە', instructor: 'بۆ ڕاهێنەران', corporate: 'بۆ دامەزراوەکان', help: 'یارمەتی', contact: 'پەیوەندی',
     mainNavigation: 'ڕێنمایی سەرەکی', selectLanguage: 'زمان هەڵبژێرە', openMenu: 'کردنەوەی لیست', closeMenu: 'داخستنی لیست',
     accountSignInSubtitle: 'بچۆ ژوورەوە بۆ بینینی هەژماری MaydanGo ـی خۆت.',
@@ -376,6 +384,8 @@ const legacyTranslations: Record<Language, Copy> = {
     'page_description:/instructor': 'لەبارەی پێشکەشکردنی کۆرس و وانەی ڕاستەوخۆ بپرسە. پێش هەر ڕێککەوتنێک دەبێت کرێ و مەرجی پارەدان پشتڕاست بکرێنەوە.',
     'page_title:/account': 'هەژماری MaydanGo ـی تۆ',
     'page_description:/account': 'ئەندامێتی و حجزەکانت ببینە و وردەکاریی سەرەکیی هەژمارەکەت بە شێوەی تایبەت نوێ بکەرەوە.',
+    'page_title:/privacy': 'زانیاریی تایبەتمەندی | MaydanGo',
+    'page_description:/privacy': 'ڕەشنووسێکی ئاسان لەبارەی مامەڵەکردنی MaydanGo لەگەڵ زانیاریی هەژمار، حجز، حزوور، پشتگیری و وێبگەڕ.',
     contactTitle: 'با هەنگاوی داهاتوو بدۆزینەوە.', partnerTitle: 'شوێنەکەت ببە بەشێک لە جووڵە.',
     corporateTitle: 'شوێنێکی زیاتر بۆ تەندروستی لە کاردا.', instructorTitle: 'باسی ئەوە بکە فێری چی دەکەیت.',
     partnerIntro: 'MaydanGo خەڵک دەبەستێتەوە بە شوێن و ڕاهێنەر کە تەندروستی دەهێنێتە نزیک ژیانی ڕۆژانە. باسی کارەکەت بکە تا گونجاوی هاوکاری ببینین.',
@@ -589,6 +599,7 @@ function Footer({ t }: { t: Copy }) {
         <h2 className="text-[11px] font-bold uppercase tracking-[.16em] text-[#ef9d72]">{t.contact}</h2>
         <div className="mt-4 grid gap-3 text-sm text-[#f4ead6]/80">
           {routes.slice(6).map(([href, key]) => <Link key={href} href={href} className="w-fit hover:text-white" data-testid={`link-footer-${key}`}>{t[key] || key}</Link>)}
+          <Link href="/privacy" className="w-fit hover:text-white" data-testid="link-footer-privacy">{t.privacyLink}</Link>
         </div>
       </div>
     </div>
@@ -993,6 +1004,7 @@ function LegalPage({ t }: { t: Copy }) {
     <PageWrap className="py-14 md:py-20">
       <div className="mx-auto max-w-3xl">
         <div role="note" className="mb-10 rounded-2xl border border-[#dcaf82]/50 bg-[#f1e6d6] p-5 text-sm font-semibold leading-6">{t.legalDisclaimer}</div>
+        <Link href="/privacy" className="mb-8 inline-flex rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground" data-testid="link-legal-privacy-page">{t.privacyLink}</Link>
         <article className="prose prose-stone max-w-none">
           <h2>{t.legalWebsite}</h2><p>{t.legalWebsiteD}</p>
           <h2>{t.legalMembership}</h2><p>{t.legalMembershipD}</p>
@@ -1034,6 +1046,7 @@ function ContentRouter() {
         <Route path="/help" component={() => <HelpPage t={t} />} />
         <Route path="/contact" component={() => <ContactPage t={t} />} />
         <Route path="/legal" component={() => <LegalPage t={t} />} />
+        <Route path="/privacy" component={() => <PrivacyPolicyPage language={language} />} />
         <Route path="/account" component={() => <MemberAccountPage language={language} />} />
         <Route component={() => <NotFound title={t.not_found_title} description={t.not_found_description} />} />
       </Switch>

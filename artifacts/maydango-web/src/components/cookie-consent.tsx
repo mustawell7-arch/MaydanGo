@@ -13,32 +13,32 @@ const copy = {
   en: {
     title: 'Privacy choices',
     intro: 'MaydanGo uses essential storage for sign-in and security. Optional analytics stay off unless you allow them.',
-    details: 'Your choice is saved in this browser. The cookie policy is still a draft and will be reviewed before publication.',
+    details: 'Your choice is saved in this browser. Privacy and cookie information are drafts and will be reviewed before publication.',
     allow: 'Allow optional analytics',
     reject: 'Use essential only',
     settings: 'Privacy settings',
     saved: 'Your privacy choice was saved.',
-    policy: 'Review the draft cookie policy',
+    policy: 'Review privacy information',
   },
   ar: {
     title: 'خيارات الخصوصية',
     intro: 'تستخدم MaydanGo التخزين الضروري لتسجيل الدخول والأمان. تبقى التحليلات الاختيارية متوقفة ما لم تسمح بها.',
-    details: 'يُحفظ اختيارك في هذا المتصفح. سياسة ملفات الارتباط ما زالت مسودة وستُراجع قبل نشرها.',
+    details: 'يُحفظ اختيارك في هذا المتصفح. معلومات الخصوصية وملفات الارتباط مسودة وستُراجع قبل نشرها.',
     allow: 'السماح بالتحليلات الاختيارية',
     reject: 'الضروري فقط',
     settings: 'إعدادات الخصوصية',
     saved: 'تم حفظ اختيار الخصوصية.',
-    policy: 'مراجعة مسودة سياسة ملفات الارتباط',
+    policy: 'مراجعة معلومات الخصوصية',
   },
   ku: {
     title: 'هەڵبژاردەکانی تایبەتمەندی',
     intro: 'MaydanGo بۆ چوونەژوورەوە و پاراستن زانیاریی پێویست بەکاردەهێنێت. شیکاریی ئارەزوومەندانە ناچالاک دەمێنێتەوە تا ڕێگەی پێ بدەیت.',
-    details: 'هەڵبژاردەکەت لەم وێبگەڕەدا پاشەکەوت دەکرێت. سیاسەتی کوکی هێشتا ڕەشنووسە و پێش بڵاوکردنەوە پێداچوونەوەی بۆ دەکرێت.',
+    details: 'هەڵبژاردەکەت لەم وێبگەڕەدا پاشەکەوت دەکرێت. زانیاریی تایبەتمەندی و کوکی ڕەشنووسن و پێش بڵاوکردنەوە پێداچوونەوەیان بۆ دەکرێت.',
     allow: 'ڕێگەدان بە شیکاریی ئارەزوومەندانە',
     reject: 'تەنها زانیاریی پێویست',
     settings: 'ڕێکخستنەکانی تایبەتمەندی',
     saved: 'هەڵبژاردەی تایبەتمەندی پاشەکەوت کرا.',
-    policy: 'پێداچوونەوە بە ڕەشنووسی سیاسەتی کوکی',
+    policy: 'پێداچوونەوە بە زانیاریی تایبەتمەندی',
   },
 } as const;
 
@@ -92,7 +92,7 @@ export function CookieConsent() {
               <h2 className="font-display text-lg font-bold">{text.title}</h2>
               <p className="mt-2 text-sm leading-6 text-[#536b61]">{text.intro}</p>
               <p className="mt-2 text-xs leading-5 text-[#718078]">{text.details}</p>
-              <Link href="/legal" className="mt-2 inline-block text-xs font-semibold text-[#174d43] underline underline-offset-4">
+                <Link href="/privacy" className="mt-2 inline-block text-xs font-semibold text-[#174d43] underline underline-offset-4">
                 {text.policy}
               </Link>
               <div className="mt-4 flex flex-wrap gap-2">

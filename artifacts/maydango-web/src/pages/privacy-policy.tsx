@@ -1,0 +1,315 @@
+import { Link } from 'wouter';
+import { Mail, ShieldCheck } from 'lucide-react';
+
+type Language = 'en' | 'ar' | 'ku';
+type Section = { id: string; title: string; paragraphs: string[] };
+
+const privacyCopy: Record<Language, {
+  title: string;
+  intro: string;
+  draft: string;
+  sections: Section[];
+  contactTitle: string;
+  contactBody: string;
+  contactEmailLabel: string;
+  back: string;
+}> = {
+  en: {
+    title: 'Privacy information',
+    intro: 'A plain-language overview of how MaydanGo handles information across its public website and member services.',
+    draft: 'Working draft for review — not legal advice or a final approved policy. MaydanGo is used here as the service name. No street address is included. Arabic and Sorani translations also need local-speaker review.',
+    sections: [
+      {
+        id: 'information',
+        title: 'Information MaydanGo handles',
+        paragraphs: [
+          'Depending on the features you use, this may include account name and email, basic profile and eligibility details, membership status, reservations, waitlist activity, check-ins, attendance, course enrolment and progress, and support or safety reports you choose to submit.',
+          'The mobile app may use your device location when you start a location-based check-in. It is used to support that check-in, not to continuously follow your movements.',
+          'When you use a feature that needs a device notification, the app may store a device token and notification settings so it can deliver relevant service messages.',
+        ],
+      },
+      {
+        id: 'use',
+        title: 'How information is used',
+        paragraphs: [
+          'MaydanGo uses this information to sign you in, show the services available to your account, manage bookings and waitlists, confirm attendance, provide courses and online sessions, respond to support or safety reports, and protect the service from misuse.',
+          'Information is not used to promise a place, membership access, health outcome, or service availability that has not been confirmed in the app or by the relevant provider.',
+        ],
+      },
+      {
+        id: 'sharing',
+        title: 'Who may receive information',
+        paragraphs: [
+          'MaydanGo staff with authorized access may use information to operate the service and respond to requests. A facility partner may see the booking and attendance details needed to host a session and confirm a visit. Instructors are limited to the courses or sessions assigned to them.',
+          'Company administrators can manage employee enrollment. They are not given members’ individual activity or personal finance records through the company workspace.',
+          'Clerk provides sign-in and account authentication. Replit provides the application hosting and infrastructure used to run MaydanGo, including the configured database and file storage. No additional external data provider has been identified for this draft. Any payment provider and its data use will be described before payment features are enabled.',
+        ],
+      },
+      {
+        id: 'contact-forms',
+        title: 'Website enquiries and payments',
+        paragraphs: [
+          'The public website enquiry form prepares an email draft in your email application. The website does not send or store that draft. If you choose to send the email, your email provider handles its delivery.',
+          'The public website does not currently accept membership payments or card details. Do not send payment-card details by email. Payment-related information will be explained before any payment feature is made available.',
+        ],
+      },
+      {
+        id: 'cookies',
+        title: 'Cookies, browser storage, and analytics',
+        paragraphs: [
+          'Sign-in and security features may use essential browser storage. The privacy-choice control stores your analytics preference in this browser so it can be remembered on later visits.',
+          'Optional analytics are off unless you choose to allow them. The public website does not currently load a third-party analytics tracker. If analytics are enabled later, the choice control and this notice must be updated before that change.',
+        ],
+      },
+      {
+        id: 'children',
+        title: 'Age and guardian consent',
+        paragraphs: [
+          'The minimum age rule is 18. A person under 18 may participate only with guardian consent. The partner checks the consent at the venue and sends a photographed copy to MaydanGo.',
+          'The secure transfer route, access limits, and retention period for these copies still need to be defined before this draft becomes a live policy. Do not send identity documents or sensitive guardian details through the general website enquiry form.',
+        ],
+      },
+      {
+        id: 'rights',
+        title: 'Your privacy requests',
+        paragraphs: [
+          'You may email MaydanGo to ask about personal information associated with your account or to request access, correction, or deletion. MaydanGo may need to verify that the request relates to your account before acting.',
+          'Some records may need to be retained for service safety, security, or other applicable requirements. Specific retention periods and procedures for guardian-consent copies need review before this draft is treated as final.',
+        ],
+      },
+      {
+        id: 'security',
+        title: 'Keeping information safe',
+        paragraphs: [
+          'MaydanGo uses account permissions and role-based access to limit who can view or manage operational information. Do not share your password or send sensitive identity details through a general enquiry.',
+          'No online service can promise that every transmission or system will be risk-free. Contact MaydanGo promptly if you believe your account or information has been accessed improperly.',
+        ],
+      },
+      {
+        id: 'changes',
+        title: 'Changes to this information',
+        paragraphs: [
+          'This notice will be updated when MaydanGo changes how information is handled. Before this draft is published as a formal privacy policy, the data-retention periods and guardian-consent process must be reviewed.',
+        ],
+      },
+    ],
+    contactTitle: 'Privacy questions or requests',
+    contactBody: 'Use this email for privacy questions or requests. Please do not include passwords, payment-card details, or identity documents.',
+    contactEmailLabel: 'Email MaydanGo about privacy',
+    back: 'Back to legal information',
+  },
+  ar: {
+    title: 'معلومات الخصوصية',
+    intro: 'شرح مبسط لكيفية تعامل MaydanGo مع المعلومات عبر الموقع العام وخدمات الأعضاء.',
+    draft: 'مسودة عمل للمراجعة — ليست استشارة قانونية أو سياسة نهائية معتمدة. يُستخدم MaydanGo هنا اسماً للخدمة. لا تتضمن الصفحة عنواناً. وتحتاج الترجمتان العربية والسورانية إلى مراجعة متحدثين محليين.',
+    sections: [
+      {
+        id: 'information',
+        title: 'المعلومات التي تتعامل معها MaydanGo',
+        paragraphs: [
+          'بحسب الميزات التي تستخدمها، قد تشمل المعلومات اسم الحساب والبريد الإلكتروني وتفاصيل الملف الشخصي والأهلية وحالة العضوية والحجوزات وقائمة الانتظار وتسجيلات الحضور والتقدم في الدورات وبلاغات الدعم أو السلامة التي تختار إرسالها.',
+          'قد يستخدم تطبيق الهاتف موقع جهازك عند بدء تسجيل حضور يعتمد على الموقع. يُستخدم ذلك لدعم تسجيل الحضور، وليس لتتبع تحركاتك باستمرار.',
+          'عند استخدام ميزة تحتاج إلى إشعارات، قد يخزّن التطبيق رمز الجهاز وإعدادات الإشعارات لإرسال رسائل الخدمة المناسبة.',
+        ],
+      },
+      {
+        id: 'use',
+        title: 'كيفية استخدام المعلومات',
+        paragraphs: [
+          'تستخدم MaydanGo هذه المعلومات لتسجيل الدخول، وإظهار الخدمات المتاحة لحسابك، وإدارة الحجوزات وقوائم الانتظار، وتأكيد الحضور، وتقديم الدورات والجلسات عبر الإنترنت، والرد على بلاغات الدعم والسلامة، وحماية الخدمة من إساءة الاستخدام.',
+          'لا تُستخدم المعلومات لتأكيد مكان أو دخول عضوية أو نتيجة صحية أو توفر خدمة لم يتم تأكيدها في التطبيق أو من الجهة المقدمة.',
+        ],
+      },
+      {
+        id: 'sharing',
+        title: 'من قد يطّلع على المعلومات',
+        paragraphs: [
+          'قد يستخدم موظفو MaydanGo المخوّلون المعلومات لتشغيل الخدمة والرد على الطلبات. وقد يرى شريك المرفق تفاصيل الحجز والحضور اللازمة لاستضافة الجلسة وتأكيد الزيارة. ويقتصر وصول المدربين على الدورات أو الجلسات المسندة إليهم.',
+          'يستطيع مسؤول الشركة إدارة تسجيل الموظفين، ولا يحصل عبر مساحة الشركة على سجل النشاط الفردي للأعضاء أو سجلاتهم المالية الشخصية.',
+          'تتولى Clerk تسجيل الدخول والتحقق من الحساب. وتوفر Replit استضافة التطبيق والبنية التحتية التي تشغّل MaydanGo، بما فيها قاعدة البيانات وتخزين الملفات المهيآن. لم تُحدد في هذه المسودة جهة خارجية أخرى تتعامل مع البيانات. وسيُشرح استخدام أي مزود للدفع قبل تفعيل ميزات الدفع.',
+        ],
+      },
+      {
+        id: 'contact-forms',
+        title: 'استفسارات الموقع والمدفوعات',
+        paragraphs: [
+          'ينشئ نموذج الاستفسار في الموقع مسودة بريد إلكتروني في تطبيق البريد لديك. لا يرسل الموقع هذه المسودة ولا يخزنها. إذا اخترت إرسال الرسالة، يتولى مزود بريدك إيصالها.',
+          'لا يقبل الموقع العام حالياً مدفوعات العضوية أو بيانات البطاقات. لا ترسل بيانات بطاقتك عبر البريد الإلكتروني. ستُشرح معلومات الدفع قبل إتاحة أي ميزة للدفع.',
+        ],
+      },
+      {
+        id: 'cookies',
+        title: 'ملفات الارتباط وتخزين المتصفح والتحليلات',
+        paragraphs: [
+          'قد تستخدم ميزات تسجيل الدخول والأمان تخزيناً ضرورياً في المتصفح. ويحفظ خيار الخصوصية تفضيلك للتحليلات في هذا المتصفح لتذكره في الزيارات القادمة.',
+          'التحليلات الاختيارية متوقفة ما لم تسمح بها. لا يحمّل الموقع العام حالياً أداة تحليلات خارجية. إذا فُعّلت التحليلات لاحقاً، يجب تحديث خيار الموافقة وهذا الإشعار قبل ذلك.',
+        ],
+      },
+      {
+        id: 'children',
+        title: 'العمر وموافقة ولي الأمر',
+        paragraphs: [
+          'الحد الأدنى للعمر هو 18 عاماً. ويجوز لمن هم دون 18 المشاركة بموافقة ولي الأمر فقط. يتحقق الشريك من الموافقة في الموقع ويرسل نسخة مصورة منها إلى MaydanGo.',
+          'ما زالت وسيلة النقل الآمنة لهذه النسخ وصلاحيات الاطلاع عليها ومدة الاحتفاظ بها بحاجة إلى تحديد قبل اعتماد هذه المسودة كسياسة سارية. لا ترسل وثائق الهوية أو تفاصيل ولي الأمر الحساسة عبر نموذج الاستفسار العام.',
+        ],
+      },
+      {
+        id: 'rights',
+        title: 'طلبات الخصوصية',
+        paragraphs: [
+          'يمكنك مراسلة MaydanGo للسؤال عن المعلومات الشخصية المرتبطة بحسابك أو لطلب الاطلاع عليها أو تصحيحها أو حذفها. وقد تحتاج MaydanGo إلى التحقق من أن الطلب يخص حسابك قبل تنفيذه.',
+          'قد يلزم الاحتفاظ ببعض السجلات لأغراض سلامة الخدمة أو أمنها أو لمتطلبات أخرى واجبة التطبيق. يجب مراجعة مدد الاحتفاظ وإجراءات نسخ موافقة ولي الأمر قبل اعتماد هذه المسودة كسياسة نهائية.',
+        ],
+      },
+      {
+        id: 'security',
+        title: 'حماية المعلومات',
+        paragraphs: [
+          'تستخدم MaydanGo صلاحيات الحسابات والأدوار للحد من الأشخاص الذين يمكنهم الاطلاع على المعلومات التشغيلية أو إدارتها. لا تشارك كلمة المرور ولا ترسل بيانات هوية حساسة عبر استفسار عام.',
+          'لا يمكن لأي خدمة عبر الإنترنت ضمان انعدام المخاطر في كل عملية نقل أو نظام. تواصل مع MaydanGo سريعاً إذا اعتقدت أن حسابك أو معلوماتك استُخدمت دون إذن.',
+        ],
+      },
+      {
+        id: 'changes',
+        title: 'تحديث هذه المعلومات',
+        paragraphs: [
+          'سيُحدّث هذا الإشعار عند تغيير طريقة التعامل مع المعلومات. وقبل نشر هذه المسودة كسياسة خصوصية رسمية، يجب مراجعة مدد الاحتفاظ وطريقة موافقة ولي الأمر.',
+        ],
+      },
+    ],
+    contactTitle: 'أسئلة أو طلبات الخصوصية',
+    contactBody: 'استخدم هذا البريد لأسئلة الخصوصية أو طلباتها. لا ترفق كلمات مرور أو بيانات بطاقات دفع أو وثائق هوية.',
+    contactEmailLabel: 'راسل MaydanGo بشأن الخصوصية',
+    back: 'العودة إلى المعلومات القانونية',
+  },
+  ku: {
+    title: 'زانیاریی تایبەتمەندی',
+    intro: 'ڕوونکردنەوەیەکی ئاسان بۆ چۆنیەتی مامەڵەکردنی MaydanGo لەگەڵ زانیاری لە ماڵپەڕی گشتی و خزمەتگوزاریی ئەنداماندا.',
+    draft: 'ڕەشنووسی کار بۆ پێداچوونەوە — ڕاوێژی یاسایی یان سیاسەتی کۆتایی و پەسەندکراو نییە. MaydanGo لێرەدا ناوی خزمەتگوزارییەکەیە. ناونیشان لەم پەڕەیەدا نییە. وەرگێڕانی عەرەبی و سۆرانی پێویستی بە پێداچوونەوەی قسەکەرانی ناوخۆیی هەیە.',
+    sections: [
+      {
+        id: 'information',
+        title: 'زانیارییەکانی MaydanGo',
+        paragraphs: [
+          'بەپێی ئەو تایبەتمەندییانەی بەکاریان دەهێنیت، زانیارییەکان لەوانەیە ناوی هەژمار و ئیمەیڵ، وردەکاریی پڕۆفایل و شایستەیی، دۆخی ئەندامێتی، حجز، لیستی چاوەڕوانی، تۆماری حزوور، پێشکەوتنی کۆرس، و ڕاپۆرتی پشتگیری یان سەلامەتی بگرێتەوە کە خۆت دەنێریت.',
+          'ئەپی مۆبایل لەوانەیە کاتی دەستپێکردنی حزووری پشتبەستوو بە شوێن، شوێنی ئامێرەکەت بەکاربهێنێت. ئەمە بۆ پشتگیریی تۆمارکردنی حزوورە، نەک بۆ بەدواداچوونی بەردەوامی جووڵەکانت.',
+          'کاتێک تایبەتمەندییەک پێویستی بە ئاگادارکردنەوە هەیە، ئەپەکە لەوانەیە تۆکنی ئامێر و ڕێکخستنەکانی ئاگادارکردنەوە هەڵبگرێت بۆ ناردنی پەیامی پەیوەندیدار بە خزمەتگوزاری.',
+        ],
+      },
+      {
+        id: 'use',
+        title: 'بۆچی زانیاری بەکاردەهێنرێت',
+        paragraphs: [
+          'MaydanGo ئەم زانیارییانە بەکاردەهێنێت بۆ چوونەژوورەوە، پیشاندانی خزمەتگوزارییە بەردەستەکانی هەژمارەکەت، بەڕێوەبردنی حجز و لیستی چاوەڕوانی، پشتڕاستکردنەوەی حزوور، پێشکەشکردنی کۆرس و وانەی ئۆنلاین، وەڵامدانەوەی ڕاپۆرتی پشتگیری یان سەلامەتی، و پاراستنی خزمەتگوزاری لە بەکارهێنانی خراپ.',
+          'زانیاری بەکارناهێنرێت بۆ بەڵێندانی شوێن، دەستگەیشتنی ئەندامێتی، ئەنجامی تەندروستی یان بەردەستبوونی خزمەتگوزارییەک کە لە ئەپ یان لەلایەن دابینکەرەوە پشتڕاست نەکراوەتەوە.',
+        ],
+      },
+      {
+        id: 'sharing',
+        title: 'کێ لەوانەیە زانیاری ببینێت',
+        paragraphs: [
+          'کارمەندانی ڕێگەپێدراوی MaydanGo لەوانەیە زانیاری بەکاربهێنن بۆ بەڕێوەبردنی خزمەتگوزاری و وەڵامدانەوەی داواکاری. هاوبەشی شوێن لەوانەیە وردەکاریی حجز و حزووری پێویستی بۆ پێشکەشکردنی وانە و پشتڕاستکردنەوەی سەردان ببینێت. دەستگەیشتنی ڕاهێنەر سنووردارە بەو کۆرس و وانانەی پێی سپێردراون.',
+          'بەڕێوەبەری کۆمپانیا دەتوانێت تۆمارکردنی کارمەندان بەڕێوەببات. لە ڕێگەی شوێنی کۆمپانیاوە تۆماری چالاکیی تاکەکەسی یان دارایی کەسی ئەندامان نابینێت.',
+          'Clerk چوونەژوورەوە و پشتڕاستکردنەوەی هەژمار بەڕێوەدەبات. Replit میوانداری ئەپ و بنەمای ژێرخانەیی MaydanGo دابین دەکات، لەوانە بنکەدراوە و هەڵگرتنی فایل کە ڕێکخراون. لەم ڕەشنووسەدا دابینکەری دەرەکیی تری مامەڵەکار بە داتا دیاری نەکراوە. بەکارهێنانی هەر دابینکەرێکی پارەدان پێش چالاککردنی پارەدان ڕوون دەکرێتەوە.',
+        ],
+      },
+      {
+        id: 'contact-forms',
+        title: 'پرسیاری ماڵپەڕ و پارەدان',
+        paragraphs: [
+          'فۆرمی پرسیاری ماڵپەڕی گشتی ڕەشنووسی ئیمەیڵێک لە ئەپی ئیمەیڵی تۆ ئامادە دەکات. ماڵپەڕەکە ئەو ڕەشنووسە نانێرێت و هەڵیناگرێت. ئەگەر خۆت ئیمەیڵەکە بنێریت، دابینکەری ئیمەیڵەکەت گەیاندنی بەڕێوەدەبات.',
+          'ماڵپەڕی گشتی ئێستا پارەی ئەندامێتی یان زانیاری کارتی بانکی وەرناگرێت. زانیاریی کارتی پارەدان بە ئیمەیڵ مەبنێرە. زانیاریی پارەدان پێش بەردەستبوونی هەر تایبەتمەندییەکی پارەدان ڕوون دەکرێتەوە.',
+        ],
+      },
+      {
+        id: 'cookies',
+        title: 'کوکی، هەڵگرتنی وێبگەڕ و شیکاری',
+        paragraphs: [
+          'تایبەتمەندیی چوونەژوورەوە و پاراستن لەوانەیە هەڵگرتنی پێویستی وێبگەڕ بەکاربهێنن. هەڵبژاردەی تایبەتمەندیی تۆ پاشەکەوت دەکات بۆ ئەوەی لە سەردانی داهاتوودا لەبیر بێت.',
+          'شیکاریی ئارەزوومەندانە ناچالاکە مەگەر ڕێگەی پێ بدەیت. ماڵپەڕی گشتی ئێستا ئامرازی شیکاریی دەرەکی بارناکات. ئەگەر لە داهاتوودا شیکاری چالاک بکرێت، پێش گۆڕانکاری دەبێت هەڵبژاردە و ئەم ئاگادارییە نوێ بکرێنەوە.',
+        ],
+      },
+      {
+        id: 'children',
+        title: 'تەمەن و ڕەزامەندیی سەرپەرشتیار',
+        paragraphs: [
+          'کەمترین تەمەن 18 ساڵە. کەسێکی خوار 18 ساڵ تەنها بە ڕەزامەندیی سەرپەرشتیار دەتوانێت بەشداربێت. هاوبەش ڕەزامەندییەکە لە شوێنەکەدا دەپشکنێت و وێنەیەکی لێ دەدات بۆ MaydanGo.',
+          'ڕێگای گواستنەوەی پارێزراو، دەسەڵاتی بینین و ماوەی هەڵگرتنی ئەم وێنانە پێویستی بە دیاریکردن هەیە پێش ئەوەی ئەم ڕەشنووسە ببێتە سیاسەتی کارپێکراو. بەڵگەنامەی ناسنامە یان وردەکاریی هەستیاری سەرپەرشتیار لە فۆرمی گشتیی پرسیارەوە مەبنێرە.',
+        ],
+      },
+      {
+        id: 'rights',
+        title: 'داواکارییەکانی تایبەتمەندی',
+        paragraphs: [
+          'دەتوانیت ئیمەیڵ بۆ MaydanGo بنێریت بۆ پرسیارکردن لەبارەی زانیاریی کەسی بەستراو بە هەژمارەکەت، یان داوای بینین، ڕاستکردنەوە یان سڕینەوەی بکەیت. لەوانەیە MaydanGo پێش جێبەجێکردن پشتڕاستی بکاتەوە کە داواکارییەکە پەیوەندی بە هەژمارەکەتەوە هەیە.',
+          'لەوانەیە پێویست بێت هەندێک تۆمار بۆ سەلامەتی و پاراستنی خزمەتگوزاری یان داواکارییەکانی تر بپارێزرێن. ماوەی دیاریکراوی هەڵگرتن و ڕێکاری پاراستنی وێنەی ڕەزامەندیی سەرپەرشتیار پێویستی بە پێداچوونەوە هەیە پێش ئەوەی ئەم ڕەشنووسە ببێتە سیاسەتی کۆتایی.',
+        ],
+      },
+      {
+        id: 'security',
+        title: 'پاراستنی زانیاری',
+        paragraphs: [
+          'MaydanGo ڕێگەپێدان و ڕۆڵی هەژمار بەکاردەهێنێت بۆ سنووردارکردنی ئەو کەسانەی دەتوانن زانیاریی کارگێڕی ببینن یان بەڕێوەی ببەن. وشەی نهێنی هاوبەش مەکە و زانیاریی هەستیاری ناسنامە لە پرسیاری گشتی مەبنێرە.',
+          'هیچ خزمەتگوزاریی ئۆنلاینێک ناتوانێت بێ مەترسیبوونی هەموو گواستنەوە یان سیستەمێک مسۆگەر بکات. ئەگەر پێت وایە هەژمار یان زانیارییەکانت بەبێ ڕێگەپێدان بەکارهاتوون، زوو پەیوەندی بە MaydanGo بکە.',
+        ],
+      },
+      {
+        id: 'changes',
+        title: 'گۆڕانکاریی ئەم زانیارییە',
+        paragraphs: [
+          'کاتێک شێوازی مامەڵەکردن لەگەڵ زانیاری دەگۆڕێت، ئەم ئاگادارییە نوێ دەکرێتەوە. پێش بڵاوکردنەوەی ئەم ڕەشنووسە وەک سیاسەتی فەرمیی تایبەتمەندی، پێویستە ماوەی هەڵگرتنی داتا و ڕێکاری ڕەزامەندیی سەرپەرشتیار پێداچوونەوەیان بۆ بکرێت.',
+        ],
+      },
+    ],
+    contactTitle: 'پرسیار یان داواکاریی تایبەتمەندی',
+    contactBody: 'بۆ پرسیار یان داواکاریی تایبەتمەندی ئیمەیڵ بنێرە. وشەی نهێنی، وردەکاری کارتی پارەدان یان بەڵگەنامەی ناسنامە مەبنێرە.',
+    contactEmailLabel: 'ئیمەیڵ بۆ MaydanGo لەبارەی تایبەتمەندی',
+    back: 'گەڕانەوە بۆ زانیاریی یاسایی',
+  },
+};
+
+const privacyEmail = 'maydangoing@gmail.com';
+
+export function PrivacyPolicyPage({ language }: { language: Language }) {
+  const text = privacyCopy[language];
+  const rtl = language !== 'en';
+
+  return (
+    <main dir={rtl ? 'rtl' : 'ltr'} className="mx-auto max-w-5xl px-5 py-10 text-[#173d35] sm:py-16">
+      <header className="rounded-3xl bg-[#174d43] p-6 text-[#fff9e9] sm:p-10">
+        <p className="text-xs font-bold uppercase tracking-[.16em] text-[#efaa83]">MaydanGo</p>
+        <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight sm:text-5xl">{text.title}</h1>
+        <p className="mt-4 max-w-3xl text-sm leading-7 text-[#e3eee7] sm:text-base">{text.intro}</p>
+      </header>
+
+      <div role="note" className="mt-6 flex items-start gap-3 rounded-2xl border border-[#e1c38f] bg-[#fff5dc] p-4 text-sm leading-6 text-[#694e2e]">
+        <ShieldCheck className="mt-0.5 shrink-0" size={18} />
+        <p>{text.draft}</p>
+      </div>
+
+      <div className="mt-8 space-y-4">
+        {text.sections.map(section => (
+          <section key={section.id} id={section.id} className="scroll-mt-6 rounded-2xl border border-[#dfdacb] bg-[#fffdf7] p-5 sm:p-7">
+            <h2 className="font-display text-xl font-bold sm:text-2xl">{section.title}</h2>
+            <div className="mt-3 space-y-3 text-sm leading-7 text-[#536b61] sm:text-base">
+              {section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      <section className="mt-6 rounded-2xl bg-[#eadfcd] p-5 sm:p-7">
+        <h2 className="font-display text-xl font-bold">{text.contactTitle}</h2>
+        <p className="mt-2 text-sm leading-6 text-[#536b61]">{text.contactBody}</p>
+        <a href={`mailto:${privacyEmail}`} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-[#174d43] px-4 py-2 text-sm font-bold text-[#fff9e9]" data-testid="link-privacy-email">
+          <Mail size={15} />
+          {text.contactEmailLabel}
+        </a>
+      </section>
+
+      <Link href="/legal" className="mt-7 inline-flex text-sm font-bold text-[#174d43] underline underline-offset-4" data-testid="link-privacy-legal">
+        {text.back}
+      </Link>
+    </main>
+  );
+}
