@@ -192,7 +192,12 @@ const legacyTranslations: Record<Language, Copy> = {
     'page_description:/account': 'Privately review your membership and bookings and update your basic account details.',
     'page_title:/privacy': 'Privacy information | MaydanGo',
     'page_description:/privacy': 'Plain-language draft explaining how MaydanGo handles account, booking, attendance, support and browser information.',
-    contactTitle: 'Contact the MaydanGo team.', partnerTitle: 'Bring your facility to more people across Iraq.',
+    contactTitle: 'Contact the MaydanGo team.',
+    contactIntro: 'Choose a topic to contact our team about membership availability, partnership, instructor opportunities, or organisation enquiries.',
+    contactOptionsTitle: 'Contact options',
+    contactOptionsText: 'Email us directly or prepare a message with the form. Nothing is sent until you review and send it from your email app.',
+    contactFormTitle: 'Prepare an enquiry',
+    partnerTitle: 'Bring your facility to more people across Iraq.',
     corporateTitle: 'More room for wellbeing at work.', instructorTitle: 'Share what you teach.',
     partnerIntro: 'MaydanGo helps people across Iraq discover approved sports, fitness, and wellbeing providers. Contact our team to learn about listing requirements, partner operations, and commercial terms.',
     corporateIntro: 'Explore ways to make local movement and at-home options easier to discover for your people. We can discuss what may fit your organisation and location.',
@@ -324,7 +329,12 @@ const legacyTranslations: Record<Language, Copy> = {
     'page_description:/account': 'راجع عضويتك وحجوزاتك وحدّث تفاصيل حسابك الأساسية بشكل خاص.',
     'page_title:/privacy': 'معلومات الخصوصية | MaydanGo',
     'page_description:/privacy': 'مسودة مبسطة تشرح تعامل MaydanGo مع معلومات الحساب والحجوزات والحضور والدعم والمتصفح.',
-    contactTitle: 'تواصل مع فريق MaydanGo.', partnerTitle: 'عرّف المزيد من الناس بمنشأتك عبر MaydanGo.',
+    contactTitle: 'تواصل مع فريق MaydanGo.',
+    contactIntro: 'اختر موضوعاً للتواصل مع فريقنا بشأن توفر العضوية أو الشراكة أو فرص التدريب أو استفسارات المؤسسات.',
+    contactOptionsTitle: 'خيارات التواصل',
+    contactOptionsText: 'يمكنك مراسلتنا مباشرة أو إعداد رسالة باستخدام النموذج. لن تُرسل الرسالة حتى تراجعها وترسلها من تطبيق البريد الإلكتروني.',
+    contactFormTitle: 'إعداد استفسار',
+    partnerTitle: 'عرّف المزيد من الناس بمنشأتك عبر MaydanGo.',
     corporateTitle: 'مساحة أكبر للعافية في العمل.', instructorTitle: 'شاركنا ما تقدمه.',
     partnerIntro: 'تساعد MaydanGo الناس في أنحاء العراق على اكتشاف الجهات المعتمدة في الرياضة واللياقة والعافية. تواصل مع فريقنا لمعرفة متطلبات الإدراج وإدارة الشراكة والشروط التجارية.',
     corporateIntro: 'استكشف طرقاً تساعد فريقك على اكتشاف الحركة المحلية وخيارات المنزل. يمكننا مناقشة ما يناسب مؤسستكم وموقعكم.',
@@ -456,7 +466,12 @@ const legacyTranslations: Record<Language, Copy> = {
     'page_description:/account': 'ئەندامێتی و حجزەکانت ببینە و وردەکاریی سەرەکیی هەژمارەکەت بە شێوەی تایبەت نوێ بکەرەوە.',
     'page_title:/privacy': 'زانیاریی تایبەتمەندی | MaydanGo',
     'page_description:/privacy': 'ڕەشنووسێکی ئاسان لەبارەی مامەڵەکردنی MaydanGo لەگەڵ زانیاریی هەژمار، حجز، حزوور، پشتگیری و وێبگەڕ.',
-    contactTitle: 'پەیوەندی بە تیمی MaydanGo بکە.', partnerTitle: 'خزمەتگوزارییەکانت بە خەڵکی زیاتر لە عێراق بناسێنە.',
+    contactTitle: 'پەیوەندی بە تیمی MaydanGo بکە.',
+    contactIntro: 'بابەتێک هەڵبژێرە بۆ پەیوەندیکردن لەبارەی بەردەستبوونی ئەندامێتی، هاوبەشی، دەرفەتی ڕاهێنان یان پرسیاری دامەزراوەکان.',
+    contactOptionsTitle: 'هەڵبژاردەکانی پەیوەندی',
+    contactOptionsText: 'دەتوانیت ڕاستەوخۆ ئیمەیڵمان بۆ بنێریت یان بە فۆڕمەکە پەیامێک ئامادە بکەیت. پەیامەکە تا لە ئەپی ئیمەیڵەکەتدا پێداچوونەوەی بۆ ناکەیت و ناینێریت، نانێردرێت.',
+    contactFormTitle: 'ئامادەکردنی پرسیار',
+    partnerTitle: 'خزمەتگوزارییەکانت بە خەڵکی زیاتر لە عێراق بناسێنە.',
     corporateTitle: 'شوێنێکی زیاتر بۆ تەندروستی لە کاردا.', instructorTitle: 'باسی ئەوە بکە فێری چی دەکەیت.',
     partnerIntro: 'MaydanGo یارمەتی خەڵکی سەرانسەری عێراق دەدات دابینکەرانی پەسەندکراوی وەرزش و تەندروستی بدۆزنەوە. بۆ زانیاری لەسەر مەرجی بڵاوکردنەوە، بەڕێوەبردنی هاوبەشی و مەرجە بازرگانییەکان، پەیوەندی بە تیمەکەمان بکە.',
     corporateIntro: 'ڕێگا بدۆزەرەوە بۆ ئەوەی جووڵەی خۆجێیی و هەڵبژاردەی ماڵەوە بۆ تیمەکەت ئاسانتر بێت. دەتوانین لەسەر گونجاوی دامەزراوە و شوێنەکەت گفتوگۆ بکەین.',
@@ -1112,13 +1127,13 @@ function ContactPage({ t }: { t: Copy }) {
     setDraftHref(href);
   };
   return <>
-    <PageHero kicker={t.contact} title={t.contactTitle} description={t.availabilityD} />
+    <PageHero kicker={t.contact} title={t.contactTitle} description={t.contactIntro} />
     <PageWrap className="py-14 md:py-20">
       <div className="grid gap-12 md:grid-cols-[.8fr_1fr]">
-        <div><SectionKicker>{t.contact}</SectionKicker><h2 className="font-display text-4xl font-bold tracking-[-.05em]">{t.availabilityTitle}</h2><p className="mt-4 max-w-md leading-7 text-foreground/60">{t.availabilityD}</p>
+        <div><SectionKicker>{t.contact}</SectionKicker><h2 className="font-display text-4xl font-bold tracking-[-.05em]">{t.contactOptionsTitle}</h2><p className="mt-4 max-w-md leading-7 text-foreground/60">{t.contactOptionsText}</p>
           {email ? <a href={`mailto:${email}`} className="mt-7 inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground" data-testid="link-contact-email">{t.emailMaydanGo}<ArrowUpRight size={16} /></a> : <p role="status" className="mt-7 rounded-2xl border border-dashed border-border bg-card p-5 text-sm leading-6 text-foreground/60">{t.noDestination}</p>}
         </div>
-        <div className="rounded-[2rem] border border-border bg-card p-7 md:p-9"><SectionKicker>{t.send}</SectionKicker><h2 className="font-display text-2xl font-bold">{t.availabilityTitle}</h2><p className="mt-3 text-sm leading-6 text-foreground/60">{t.formNote}</p>
+        <div className="rounded-[2rem] border border-border bg-card p-7 md:p-9"><SectionKicker>{t.send}</SectionKicker><h2 className="font-display text-2xl font-bold">{t.contactFormTitle}</h2><p className="mt-3 text-sm leading-6 text-foreground/60">{t.formNote}</p>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="mt-6 grid gap-4">
               <FormField control={form.control} name="topic" render={({ field }) => <FormItem>
