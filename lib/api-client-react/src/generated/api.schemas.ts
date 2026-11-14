@@ -684,6 +684,14 @@ export const SupportTicketCategory = {
   other: 'other',
 } as const;
 
+export type PrivacyRequestKind = typeof PrivacyRequestKind[keyof typeof PrivacyRequestKind];
+
+
+export const PrivacyRequestKind = {
+  data_export: 'data_export',
+  account_deletion: 'account_deletion',
+} as const;
+
 export type SupportedLanguage = typeof SupportedLanguage[keyof typeof SupportedLanguage];
 
 
@@ -692,6 +700,18 @@ export const SupportedLanguage = {
   ar: 'ar',
   ku: 'ku',
 } as const;
+
+export interface PrivacyRequestInput {
+  kind: PrivacyRequestKind;
+  language: SupportedLanguage;
+}
+
+export interface PrivacyRequest {
+  id: string;
+  subject: string;
+  status: SupportTicketStatus;
+  createdAt: string;
+}
 
 export interface SupportTicketInput {
   /**

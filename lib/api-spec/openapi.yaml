@@ -510,6 +510,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1support~1tickets~1{id}~1attachments~1{attachmentId}"
   /member/support/tickets/{id}/attachments/{attachmentId}/download:
     $ref: "./operations.yaml#/paths/~1member~1support~1tickets~1{id}~1attachments~1{attachmentId}~1download"
+  /member/privacy-requests:
+    $ref: "./operations.yaml#/paths/~1member~1privacy-requests"
   /member/notifications/settings:
     $ref: "./operations.yaml#/paths/~1member~1notifications~1settings"
   /member/notifications/devices:

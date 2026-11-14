@@ -147,6 +147,8 @@ import type {
   PlanInput,
   PlatformSafetyRulesRecord,
   PlatformSafetyRulesUpdateInput,
+  PrivacyRequest,
+  PrivacyRequestInput,
   PublicCourse,
   PublicFacility,
   PublicFacilityReviews,
@@ -10552,6 +10554,183 @@ export function useDownloadMemberSupportAttachment<TData = Awaited<ReturnType<ty
 
 
 
+
+export const getGetMemberPrivacyRequestsUrl = () => {
+
+
+
+
+  return `/api/member/privacy-requests`
+}
+
+export const getMemberPrivacyRequests = async ( options?: Parameters<typeof customFetch>[1]): Promise<PrivacyRequest[]> => {
+
+  return customFetch<PrivacyRequest[]>(getGetMemberPrivacyRequestsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberPrivacyRequestsQueryKey = () => {
+    return [
+    `/api/member/privacy-requests`
+    ] as const;
+    }
+
+
+export const getGetMemberPrivacyRequestsQueryOptions = <TData = Awaited<ReturnType<typeof getMemberPrivacyRequests>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberPrivacyRequests>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberPrivacyRequestsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberPrivacyRequests>>> = ({ signal }) => getMemberPrivacyRequests({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberPrivacyRequests>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberPrivacyRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberPrivacyRequests>>>
+export type GetMemberPrivacyRequestsQueryError = ErrorType<unknown>
+
+
+export function useGetMemberPrivacyRequests<TData = Awaited<ReturnType<typeof getMemberPrivacyRequests>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberPrivacyRequests>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberPrivacyRequests>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberPrivacyRequests>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberPrivacyRequests<TData = Awaited<ReturnType<typeof getMemberPrivacyRequests>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberPrivacyRequests>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberPrivacyRequests>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberPrivacyRequests>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberPrivacyRequests<TData = Awaited<ReturnType<typeof getMemberPrivacyRequests>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberPrivacyRequests>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberPrivacyRequests<TData = Awaited<ReturnType<typeof getMemberPrivacyRequests>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberPrivacyRequests>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberPrivacyRequestsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateMemberPrivacyRequestUrl = () => {
+
+
+
+
+  return `/api/member/privacy-requests`
+}
+
+export const createMemberPrivacyRequest = async (privacyRequestInput: PrivacyRequestInput, options?: Parameters<typeof customFetch>[1]): Promise<PrivacyRequest> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PrivacyRequest>(getCreateMemberPrivacyRequestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(privacyRequestInput)
+  }
+);}
+
+
+
+
+
+export const getCreateMemberPrivacyRequestMutationKey = () => ['createMemberPrivacyRequest'] as const;
+
+export const getCreateMemberPrivacyRequestMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMemberPrivacyRequest>>, TError,CreateMemberPrivacyRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createMemberPrivacyRequest>>, TError,CreateMemberPrivacyRequestMutationVariables, TContext> => {
+
+const mutationKey = getCreateMemberPrivacyRequestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMemberPrivacyRequest>>, CreateMemberPrivacyRequestMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createMemberPrivacyRequest(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMemberPrivacyRequestMutationResult = NonNullable<Awaited<ReturnType<typeof createMemberPrivacyRequest>>>
+    export type CreateMemberPrivacyRequestMutationBody = BodyType<PrivacyRequestInput>
+    export type CreateMemberPrivacyRequestMutationError = ErrorType<void>
+    export type CreateMemberPrivacyRequestMutationVariables = {data: BodyType<PrivacyRequestInput>}
+
+    export const useCreateMemberPrivacyRequest = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMemberPrivacyRequest>>, TError,CreateMemberPrivacyRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createMemberPrivacyRequest>>,
+        TError,
+        CreateMemberPrivacyRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateMemberPrivacyRequestMutationOptions(options), queryClient);
+    }
 
 export const getGetMemberNotificationSettingsUrl = () => {
 

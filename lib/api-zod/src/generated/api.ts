@@ -114,13 +114,13 @@ export const GetPublicFacilitiesResponseItem = zod.object({
   "ku": zod.string().min(1).max(getPublicFacilitiesResponseOneAccessibilityItemKuMax)
 })),
   "openingHours": zod.array(zod.object({
-  "day": zod.number().int().min(getPublicFacilitiesResponseOneOpeningHoursItemDayMin).max(getPublicFacilitiesResponseOneOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "day": zod.int().min(getPublicFacilitiesResponseOneOpeningHoursItemDayMin).max(getPublicFacilitiesResponseOneOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
   "closed": zod.boolean(),
   "opensAt": zod.string().regex(getPublicFacilitiesResponseOneOpeningHoursItemOpensAtRegExp).nullable(),
   "closesAt": zod.string().regex(getPublicFacilitiesResponseOneOpeningHoursItemClosesAtRegExp).nullable()
 })),
   "contactPhone": zod.string().nullable(),
-  "websiteUrl": zod.string().url().nullable(),
+  "websiteUrl": zod.url().nullable(),
   "latitude": zod.number().nullable(),
   "longitude": zod.number().nullable(),
   "updatedAt": zod.coerce.date()
@@ -156,8 +156,8 @@ export const GetPublicFacilitiesResponseItem = zod.object({
   "endsAt": zod.coerce.date(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
   "gender": zod.enum(['all', 'female', 'male']),
-  "minAge": zod.number().int().min(getPublicFacilitiesResponseTwoUpcomingSessionsItemMinAgeMin),
-  "maxAge": zod.number().int().min(getPublicFacilitiesResponseTwoUpcomingSessionsItemMaxAgeMin).nullable()
+  "minAge": zod.int().min(getPublicFacilitiesResponseTwoUpcomingSessionsItemMinAgeMin),
+  "maxAge": zod.int().min(getPublicFacilitiesResponseTwoUpcomingSessionsItemMaxAgeMin).nullable()
 }))
 }))
 export const GetPublicFacilitiesResponse = zod.array(GetPublicFacilitiesResponseItem)
@@ -273,13 +273,13 @@ export const GetPublicFacilityResponse = zod.object({
   "ku": zod.string().min(1).max(getPublicFacilityResponseOneAccessibilityItemKuMax)
 })),
   "openingHours": zod.array(zod.object({
-  "day": zod.number().int().min(getPublicFacilityResponseOneOpeningHoursItemDayMin).max(getPublicFacilityResponseOneOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "day": zod.int().min(getPublicFacilityResponseOneOpeningHoursItemDayMin).max(getPublicFacilityResponseOneOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
   "closed": zod.boolean(),
   "opensAt": zod.string().regex(getPublicFacilityResponseOneOpeningHoursItemOpensAtRegExp).nullable(),
   "closesAt": zod.string().regex(getPublicFacilityResponseOneOpeningHoursItemClosesAtRegExp).nullable()
 })),
   "contactPhone": zod.string().nullable(),
-  "websiteUrl": zod.string().url().nullable(),
+  "websiteUrl": zod.url().nullable(),
   "latitude": zod.number().nullable(),
   "longitude": zod.number().nullable(),
   "updatedAt": zod.coerce.date()
@@ -315,8 +315,8 @@ export const GetPublicFacilityResponse = zod.object({
   "endsAt": zod.coerce.date(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
   "gender": zod.enum(['all', 'female', 'male']),
-  "minAge": zod.number().int().min(getPublicFacilityResponseTwoUpcomingSessionsItemMinAgeMin),
-  "maxAge": zod.number().int().min(getPublicFacilityResponseTwoUpcomingSessionsItemMaxAgeMin).nullable()
+  "minAge": zod.int().min(getPublicFacilityResponseTwoUpcomingSessionsItemMinAgeMin),
+  "maxAge": zod.int().min(getPublicFacilityResponseTwoUpcomingSessionsItemMaxAgeMin).nullable()
 }))
 }))
 
@@ -439,13 +439,13 @@ export const GetOperationFacilitiesResponseItem = zod.object({
   "ku": zod.string().min(1).max(getOperationFacilitiesResponseOneAccessibilityItemKuMax)
 })),
   "openingHours": zod.array(zod.object({
-  "day": zod.number().int().min(getOperationFacilitiesResponseOneOpeningHoursItemDayMin).max(getOperationFacilitiesResponseOneOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "day": zod.int().min(getOperationFacilitiesResponseOneOpeningHoursItemDayMin).max(getOperationFacilitiesResponseOneOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
   "closed": zod.boolean(),
   "opensAt": zod.string().regex(getOperationFacilitiesResponseOneOpeningHoursItemOpensAtRegExp).nullable(),
   "closesAt": zod.string().regex(getOperationFacilitiesResponseOneOpeningHoursItemClosesAtRegExp).nullable()
 })),
   "contactPhone": zod.string().nullable(),
-  "websiteUrl": zod.string().url().nullable(),
+  "websiteUrl": zod.url().nullable(),
   "latitude": zod.number().nullable(),
   "longitude": zod.number().nullable(),
   "updatedAt": zod.coerce.date()
@@ -582,13 +582,13 @@ export const CreateFacilityProfileBody = zod.object({
   "ku": zod.string().min(1).max(createFacilityProfileBodyAccessibilityItemKuMax)
 })).max(createFacilityProfileBodyAccessibilityMax),
   "openingHours": zod.array(zod.object({
-  "day": zod.number().int().min(createFacilityProfileBodyOpeningHoursItemDayMin).max(createFacilityProfileBodyOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "day": zod.int().min(createFacilityProfileBodyOpeningHoursItemDayMin).max(createFacilityProfileBodyOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
   "closed": zod.boolean(),
   "opensAt": zod.string().regex(createFacilityProfileBodyOpeningHoursItemOpensAtRegExp).nullable(),
   "closesAt": zod.string().regex(createFacilityProfileBodyOpeningHoursItemClosesAtRegExp).nullable()
 })).max(createFacilityProfileBodyOpeningHoursMax),
   "contactPhone": zod.string().max(createFacilityProfileBodyContactPhoneMax).nullable(),
-  "websiteUrl": zod.string().url().max(createFacilityProfileBodyWebsiteUrlMax).nullable(),
+  "websiteUrl": zod.url().max(createFacilityProfileBodyWebsiteUrlMax).nullable(),
   "latitude": zod.number().min(createFacilityProfileBodyLatitudeMin).max(createFacilityProfileBodyLatitudeMax).nullable(),
   "longitude": zod.number().min(createFacilityProfileBodyLongitudeMin).max(createFacilityProfileBodyLongitudeMax).nullable()
 })
@@ -683,13 +683,13 @@ export const CreateFacilityProfileResponse = zod.object({
   "ku": zod.string().min(1).max(createFacilityProfileResponseAccessibilityItemKuMax)
 })),
   "openingHours": zod.array(zod.object({
-  "day": zod.number().int().min(createFacilityProfileResponseOpeningHoursItemDayMin).max(createFacilityProfileResponseOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "day": zod.int().min(createFacilityProfileResponseOpeningHoursItemDayMin).max(createFacilityProfileResponseOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
   "closed": zod.boolean(),
   "opensAt": zod.string().regex(createFacilityProfileResponseOpeningHoursItemOpensAtRegExp).nullable(),
   "closesAt": zod.string().regex(createFacilityProfileResponseOpeningHoursItemClosesAtRegExp).nullable()
 })),
   "contactPhone": zod.string().nullable(),
-  "websiteUrl": zod.string().url().nullable(),
+  "websiteUrl": zod.url().nullable(),
   "latitude": zod.number().nullable(),
   "longitude": zod.number().nullable(),
   "updatedAt": zod.coerce.date()
@@ -810,13 +810,13 @@ export const UpdateFacilityProfileBody = zod.object({
   "ku": zod.string().min(1).max(updateFacilityProfileBodyAccessibilityItemKuMax)
 })).max(updateFacilityProfileBodyAccessibilityMax),
   "openingHours": zod.array(zod.object({
-  "day": zod.number().int().min(updateFacilityProfileBodyOpeningHoursItemDayMin).max(updateFacilityProfileBodyOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "day": zod.int().min(updateFacilityProfileBodyOpeningHoursItemDayMin).max(updateFacilityProfileBodyOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
   "closed": zod.boolean(),
   "opensAt": zod.string().regex(updateFacilityProfileBodyOpeningHoursItemOpensAtRegExp).nullable(),
   "closesAt": zod.string().regex(updateFacilityProfileBodyOpeningHoursItemClosesAtRegExp).nullable()
 })).max(updateFacilityProfileBodyOpeningHoursMax),
   "contactPhone": zod.string().max(updateFacilityProfileBodyContactPhoneMax).nullable(),
-  "websiteUrl": zod.string().url().max(updateFacilityProfileBodyWebsiteUrlMax).nullable(),
+  "websiteUrl": zod.url().max(updateFacilityProfileBodyWebsiteUrlMax).nullable(),
   "latitude": zod.number().min(updateFacilityProfileBodyLatitudeMin).max(updateFacilityProfileBodyLatitudeMax).nullable(),
   "longitude": zod.number().min(updateFacilityProfileBodyLongitudeMin).max(updateFacilityProfileBodyLongitudeMax).nullable()
 })
@@ -911,13 +911,13 @@ export const UpdateFacilityProfileResponse = zod.object({
   "ku": zod.string().min(1).max(updateFacilityProfileResponseAccessibilityItemKuMax)
 })),
   "openingHours": zod.array(zod.object({
-  "day": zod.number().int().min(updateFacilityProfileResponseOpeningHoursItemDayMin).max(updateFacilityProfileResponseOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
+  "day": zod.int().min(updateFacilityProfileResponseOpeningHoursItemDayMin).max(updateFacilityProfileResponseOpeningHoursItemDayMax).describe('Sunday is 0 and Saturday is 6'),
   "closed": zod.boolean(),
   "opensAt": zod.string().regex(updateFacilityProfileResponseOpeningHoursItemOpensAtRegExp).nullable(),
   "closesAt": zod.string().regex(updateFacilityProfileResponseOpeningHoursItemClosesAtRegExp).nullable()
 })),
   "contactPhone": zod.string().nullable(),
-  "websiteUrl": zod.string().url().nullable(),
+  "websiteUrl": zod.url().nullable(),
   "latitude": zod.number().nullable(),
   "longitude": zod.number().nullable(),
   "updatedAt": zod.coerce.date()
@@ -1036,10 +1036,10 @@ export const GetPublicCatalogResponseItem = zod.object({
   "endsAt": zod.coerce.date(),
   "cancellationDeadline": zod.coerce.date(),
   "gender": zod.enum(['all', 'female', 'male']),
-  "minAge": zod.number().int().min(getPublicCatalogResponseMinAgeMin),
-  "maxAge": zod.number().int().min(getPublicCatalogResponseMaxAgeMin).nullable(),
+  "minAge": zod.int().min(getPublicCatalogResponseMinAgeMin),
+  "maxAge": zod.int().min(getPublicCatalogResponseMaxAgeMin).nullable(),
   "additionalPayment": zod.boolean().describe('Whether this offering requires payment outside membership access'),
-  "remaining": zod.number().int().min(getPublicCatalogResponseRemainingMin),
+  "remaining": zod.int().min(getPublicCatalogResponseRemainingMin),
   "partnerName": zod.string()
 })
 export const GetPublicCatalogResponse = zod.array(GetPublicCatalogResponseItem)
@@ -1053,7 +1053,7 @@ export const GetPublicPlansResponseItem = zod.object({
   "name": zod.string(),
   "tier": zod.string(),
   "kind": zod.enum(['paid', 'trial', 'corporate']),
-  "durationDays": zod.number().int().min(1)
+  "durationDays": zod.int().min(1)
 })
 export const GetPublicPlansResponse = zod.array(GetPublicPlansResponseItem)
 
@@ -1080,7 +1080,7 @@ export const GetPublicCoursesResponseItem = zod.object({
 }),
   "category": zod.string(),
   "level": zod.string(),
-  "durationMinutes": zod.number().int().min(1)
+  "durationMinutes": zod.int().min(1)
 })
 export const GetPublicCoursesResponse = zod.array(GetPublicCoursesResponseItem)
 
@@ -1105,7 +1105,7 @@ export const GetAttendanceResponse = zod.object({
   "policy": zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
-  "radius": zod.number().int(),
+  "radius": zod.int(),
   "opensAt": zod.string(),
   "closesAt": zod.string(),
   "correctionEndsAt": zod.string()
@@ -1127,7 +1127,7 @@ export const SetCheckinPolicyParams = zod.object({
 export const SetCheckinPolicyBody = zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
-  "radius": zod.number().int(),
+  "radius": zod.int(),
   "opensAt": zod.string(),
   "closesAt": zod.string(),
   "correctionEndsAt": zod.string()
@@ -1333,7 +1333,7 @@ export const GetOperationsResponse = zod.object({
   "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
-  "joinUrl": zod.string().url().nullish(),
+  "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
   "city": zod.string(),
   "facility": zod.string(),
@@ -1343,11 +1343,11 @@ export const GetOperationsResponse = zod.object({
   "startsAt": zod.string(),
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
-  "capacity": zod.number().int().min(1),
-  "waitlistOfferMinutes": zod.number().int().min(getOperationsResponseOfferingsItemOneWaitlistOfferMinutesMin).max(getOperationsResponseOfferingsItemOneWaitlistOfferMinutesMax).default(getOperationsResponseOfferingsItemOneWaitlistOfferMinutesDefault),
+  "capacity": zod.int().min(1),
+  "waitlistOfferMinutes": zod.int().min(getOperationsResponseOfferingsItemOneWaitlistOfferMinutesMin).max(getOperationsResponseOfferingsItemOneWaitlistOfferMinutesMax).default(getOperationsResponseOfferingsItemOneWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
-  "minAge": zod.number().int().min(getOperationsResponseOfferingsItemOneMinAgeMin).optional(),
-  "maxAge": zod.number().int().nullish(),
+  "minAge": zod.int().min(getOperationsResponseOfferingsItemOneMinAgeMin).optional(),
+  "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
 }).and(zod.object({
@@ -1364,13 +1364,13 @@ export const GetOperationsResponse = zod.object({
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
-  "remaining": zod.number().int().optional(),
+  "remaining": zod.int().optional(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.number().int().min(getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMin).max(getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMin).max(getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
-  "radius": zod.number().int(),
+  "radius": zod.int(),
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
@@ -1389,27 +1389,27 @@ export const GetOperationsResponse = zod.object({
   "facility": zod.string(),
   "startsAt": zod.coerce.date(),
   "joinedAt": zod.coerce.date(),
-  "position": zod.number().int().min(1)
+  "position": zod.int().min(1)
 })),
   "plans": zod.array(zod.object({
   "name": zod.string(),
   "tier": zod.string(),
   "kind": zod.enum(['paid', 'trial', 'corporate']),
-  "durationDays": zod.number().int().min(1).max(getOperationsResponsePlansItemOneDurationDaysMax),
+  "durationDays": zod.int().min(1).max(getOperationsResponsePlansItemOneDurationDaysMax),
   "active": zod.boolean(),
   "rules": zod.object({
-  "quota": zod.number().int().min(getOperationsResponsePlansItemOneRulesQuotaMin),
-  "dailyLimit": zod.number().int().min(getOperationsResponsePlansItemOneRulesDailyLimitMin),
+  "quota": zod.int().min(getOperationsResponsePlansItemOneRulesQuotaMin),
+  "dailyLimit": zod.int().min(getOperationsResponsePlansItemOneRulesDailyLimitMin),
   "quotaMode": zod.enum(['shared', 'separate']),
-  "physicalQuota": zod.number().int().min(getOperationsResponsePlansItemOneRulesPhysicalQuotaMin),
-  "premiumQuota": zod.number().int().min(getOperationsResponsePlansItemOneRulesPremiumQuotaMin),
-  "liveQuota": zod.number().int().min(getOperationsResponsePlansItemOneRulesLiveQuotaMin),
+  "physicalQuota": zod.int().min(getOperationsResponsePlansItemOneRulesPhysicalQuotaMin),
+  "premiumQuota": zod.int().min(getOperationsResponsePlansItemOneRulesPremiumQuotaMin),
+  "liveQuota": zod.int().min(getOperationsResponsePlansItemOneRulesLiveQuotaMin),
   "cities": zod.array(zod.string()).optional(),
   "facilities": zod.array(zod.string()).optional(),
   "categories": zod.array(zod.string()).optional(),
-  "facilityLimits": zod.record(zod.string(), zod.number().int().min(getOperationsResponsePlansItemOneRulesFacilityLimitsMinOne)).optional(),
-  "categoryLimits": zod.record(zod.string(), zod.number().int().min(getOperationsResponsePlansItemOneRulesCategoryLimitsMinOne)).optional(),
-  "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(getOperationsResponsePlansItemOneRulesPartnerGroupLimitsMinOne)).optional(),
+  "facilityLimits": zod.record(zod.string(), zod.int().min(getOperationsResponsePlansItemOneRulesFacilityLimitsMinOne)).optional(),
+  "categoryLimits": zod.record(zod.string(), zod.int().min(getOperationsResponsePlansItemOneRulesCategoryLimitsMinOne)).optional(),
+  "partnerGroupLimits": zod.record(zod.string(), zod.int().min(getOperationsResponsePlansItemOneRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
   "corporateId": zod.string().optional(),
   "planTerms": zod.object({
@@ -1418,22 +1418,22 @@ export const GetOperationsResponse = zod.object({
   "ar": zod.string().max(getOperationsResponsePlansItemOneRulesPlanTermsDescriptionArMax),
   "ku": zod.string().max(getOperationsResponsePlansItemOneRulesPlanTermsDescriptionKuMax)
 }),
-  "trialPeriodDays": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsTrialPeriodDaysMin).max(getOperationsResponsePlansItemOneRulesPlanTermsTrialPeriodDaysMax),
-  "minimumContractMonths": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsMinimumContractMonthsMin).max(getOperationsResponsePlansItemOneRulesPlanTermsMinimumContractMonthsMax),
-  "renewalPeriodDays": zod.number().int().min(1).max(getOperationsResponsePlansItemOneRulesPlanTermsRenewalPeriodDaysMax),
-  "cancellationPeriodDays": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsCancellationPeriodDaysMin).max(getOperationsResponsePlansItemOneRulesPlanTermsCancellationPeriodDaysMax),
+  "trialPeriodDays": zod.int().min(getOperationsResponsePlansItemOneRulesPlanTermsTrialPeriodDaysMin).max(getOperationsResponsePlansItemOneRulesPlanTermsTrialPeriodDaysMax),
+  "minimumContractMonths": zod.int().min(getOperationsResponsePlansItemOneRulesPlanTermsMinimumContractMonthsMin).max(getOperationsResponsePlansItemOneRulesPlanTermsMinimumContractMonthsMax),
+  "renewalPeriodDays": zod.int().min(1).max(getOperationsResponsePlansItemOneRulesPlanTermsRenewalPeriodDaysMax),
+  "cancellationPeriodDays": zod.int().min(getOperationsResponsePlansItemOneRulesPlanTermsCancellationPeriodDaysMin).max(getOperationsResponsePlansItemOneRulesPlanTermsCancellationPeriodDaysMax),
   "automaticRenewal": zod.boolean(),
-  "pauseAllowanceDays": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsPauseAllowanceDaysMin).max(getOperationsResponsePlansItemOneRulesPlanTermsPauseAllowanceDaysMax),
-  "priceProtectionMonths": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsPriceProtectionMonthsMin).max(getOperationsResponsePlansItemOneRulesPlanTermsPriceProtectionMonthsMax),
-  "promotionalPriceIqd": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsPromotionalPriceIqdMin).max(getOperationsResponsePlansItemOneRulesPlanTermsPromotionalPriceIqdMax).nullable(),
-  "corporatePriceIqd": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsCorporatePriceIqdMin).max(getOperationsResponsePlansItemOneRulesPlanTermsCorporatePriceIqdMax).nullable(),
+  "pauseAllowanceDays": zod.int().min(getOperationsResponsePlansItemOneRulesPlanTermsPauseAllowanceDaysMin).max(getOperationsResponsePlansItemOneRulesPlanTermsPauseAllowanceDaysMax),
+  "priceProtectionMonths": zod.int().min(getOperationsResponsePlansItemOneRulesPlanTermsPriceProtectionMonthsMin).max(getOperationsResponsePlansItemOneRulesPlanTermsPriceProtectionMonthsMax),
+  "promotionalPriceIqd": zod.int().min(getOperationsResponsePlansItemOneRulesPlanTermsPromotionalPriceIqdMin).max(getOperationsResponsePlansItemOneRulesPlanTermsPromotionalPriceIqdMax).nullable(),
+  "corporatePriceIqd": zod.int().min(getOperationsResponsePlansItemOneRulesPlanTermsCorporatePriceIqdMin).max(getOperationsResponsePlansItemOneRulesPlanTermsCorporatePriceIqdMax).nullable(),
   "digitalContentAccess": zod.boolean(),
-  "guestPasses": zod.number().int().min(getOperationsResponsePlansItemOneRulesPlanTermsGuestPassesMin).max(getOperationsResponsePlansItemOneRulesPlanTermsGuestPassesMax),
+  "guestPasses": zod.int().min(getOperationsResponsePlansItemOneRulesPlanTermsGuestPassesMin).max(getOperationsResponsePlansItemOneRulesPlanTermsGuestPassesMax),
   "eventAccess": zod.boolean(),
   "additionalPaymentAllowed": zod.boolean()
 }).optional()
 }),
-  "priceIqd": zod.number().int().min(1).max(getOperationsResponsePlansItemOnePriceIqdMax).nullable()
+  "priceIqd": zod.int().min(1).max(getOperationsResponsePlansItemOnePriceIqdMax).nullable()
 }).and(zod.object({
   "id": zod.string(),
   "purchasable": zod.boolean().optional(),
@@ -1462,7 +1462,7 @@ export const AddPartnerResponse = zod.object({
 export const GetPartnerMarketingProfileResponse = zod.object({
   "partnerId": zod.string(),
   "partnerName": zod.string(),
-  "logoUrl": zod.string().url().nullable()
+  "logoUrl": zod.url().nullable()
 })
 
 
@@ -1471,13 +1471,13 @@ export const updatePartnerMarketingProfileBodyLogoUrlMax = 2048;
 
 
 export const UpdatePartnerMarketingProfileBody = zod.object({
-  "logoUrl": zod.string().url().max(updatePartnerMarketingProfileBodyLogoUrlMax).nullable()
+  "logoUrl": zod.url().max(updatePartnerMarketingProfileBodyLogoUrlMax).nullable()
 })
 
 export const UpdatePartnerMarketingProfileResponse = zod.object({
   "partnerId": zod.string(),
   "partnerName": zod.string(),
-  "logoUrl": zod.string().url().nullable()
+  "logoUrl": zod.url().nullable()
 })
 
 
@@ -1503,8 +1503,8 @@ export const GetSponsoredFacilityCampaignsResponseItem = zod.object({
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
   "status": zod.enum(['draft', 'active', 'paused']),
-  "impressions": zod.number().int().min(getSponsoredFacilityCampaignsResponseImpressionsMin),
-  "clicks": zod.number().int().min(getSponsoredFacilityCampaignsResponseClicksMin),
+  "impressions": zod.int().min(getSponsoredFacilityCampaignsResponseImpressionsMin),
+  "clicks": zod.int().min(getSponsoredFacilityCampaignsResponseClicksMin),
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1558,8 +1558,8 @@ export const CreateSponsoredFacilityCampaignResponse = zod.object({
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
   "status": zod.enum(['draft', 'active', 'paused']),
-  "impressions": zod.number().int().min(createSponsoredFacilityCampaignResponseImpressionsMin),
-  "clicks": zod.number().int().min(createSponsoredFacilityCampaignResponseClicksMin),
+  "impressions": zod.int().min(createSponsoredFacilityCampaignResponseImpressionsMin),
+  "clicks": zod.int().min(createSponsoredFacilityCampaignResponseClicksMin),
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1616,8 +1616,8 @@ export const UpdateSponsoredFacilityCampaignResponse = zod.object({
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
   "status": zod.enum(['draft', 'active', 'paused']),
-  "impressions": zod.number().int().min(updateSponsoredFacilityCampaignResponseImpressionsMin),
-  "clicks": zod.number().int().min(updateSponsoredFacilityCampaignResponseClicksMin),
+  "impressions": zod.int().min(updateSponsoredFacilityCampaignResponseImpressionsMin),
+  "clicks": zod.int().min(updateSponsoredFacilityCampaignResponseClicksMin),
   "createdBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1745,70 +1745,70 @@ export const GetOperationsAnalyticsResponse = zod.object({
   "timeZone": zod.enum(['Asia/Baghdad'])
 }),
   "summary": zod.object({
-  "visits": zod.number().int().min(getOperationsAnalyticsResponseSummaryVisitsMin),
-  "physicalCheckIns": zod.number().int().min(getOperationsAnalyticsResponseSummaryPhysicalCheckInsMin),
-  "premiumCheckIns": zod.number().int().min(getOperationsAnalyticsResponseSummaryPremiumCheckInsMin),
-  "liveClassBookings": zod.number().int().min(getOperationsAnalyticsResponseSummaryLiveClassBookingsMin),
-  "courseEnrollments": zod.number().int().min(getOperationsAnalyticsResponseSummaryCourseEnrollmentsMin).nullable(),
-  "courseCompletions": zod.number().int().min(getOperationsAnalyticsResponseSummaryCourseCompletionsMin).nullable(),
-  "activeSubscriptions": zod.number().int().min(getOperationsAnalyticsResponseSummaryActiveSubscriptionsMin).nullable(),
-  "corporateActiveMembers": zod.number().int().min(getOperationsAnalyticsResponseSummaryCorporateActiveMembersMin).nullable(),
-  "dailyVisits": zod.number().int().min(getOperationsAnalyticsResponseSummaryDailyVisitsMin),
-  "monthlyVisits": zod.number().int().min(getOperationsAnalyticsResponseSummaryMonthlyVisitsMin),
-  "uniqueCustomers": zod.number().int().min(getOperationsAnalyticsResponseSummaryUniqueCustomersMin),
-  "repeatCustomers": zod.number().int().min(getOperationsAnalyticsResponseSummaryRepeatCustomersMin),
+  "visits": zod.int().min(getOperationsAnalyticsResponseSummaryVisitsMin),
+  "physicalCheckIns": zod.int().min(getOperationsAnalyticsResponseSummaryPhysicalCheckInsMin),
+  "premiumCheckIns": zod.int().min(getOperationsAnalyticsResponseSummaryPremiumCheckInsMin),
+  "liveClassBookings": zod.int().min(getOperationsAnalyticsResponseSummaryLiveClassBookingsMin),
+  "courseEnrollments": zod.int().min(getOperationsAnalyticsResponseSummaryCourseEnrollmentsMin).nullable(),
+  "courseCompletions": zod.int().min(getOperationsAnalyticsResponseSummaryCourseCompletionsMin).nullable(),
+  "activeSubscriptions": zod.int().min(getOperationsAnalyticsResponseSummaryActiveSubscriptionsMin).nullable(),
+  "corporateActiveMembers": zod.int().min(getOperationsAnalyticsResponseSummaryCorporateActiveMembersMin).nullable(),
+  "dailyVisits": zod.int().min(getOperationsAnalyticsResponseSummaryDailyVisitsMin),
+  "monthlyVisits": zod.int().min(getOperationsAnalyticsResponseSummaryMonthlyVisitsMin),
+  "uniqueCustomers": zod.int().min(getOperationsAnalyticsResponseSummaryUniqueCustomersMin),
+  "repeatCustomers": zod.int().min(getOperationsAnalyticsResponseSummaryRepeatCustomersMin),
   "retentionRate": zod.number().min(getOperationsAnalyticsResponseSummaryRetentionRateMin).max(getOperationsAnalyticsResponseSummaryRetentionRateMax).nullable(),
   "noShowRate": zod.number().min(getOperationsAnalyticsResponseSummaryNoShowRateMin).max(getOperationsAnalyticsResponseSummaryNoShowRateMax).nullable(),
   "cancellationRate": zod.number().min(getOperationsAnalyticsResponseSummaryCancellationRateMin).max(getOperationsAnalyticsResponseSummaryCancellationRateMax).nullable(),
   "occupancyRate": zod.number().min(getOperationsAnalyticsResponseSummaryOccupancyRateMin).max(getOperationsAnalyticsResponseSummaryOccupancyRateMax).nullable(),
   "averageRating": zod.number().min(getOperationsAnalyticsResponseSummaryAverageRatingMin).max(getOperationsAnalyticsResponseSummaryAverageRatingMax).nullable(),
-  "ratingCount": zod.number().int().min(getOperationsAnalyticsResponseSummaryRatingCountMin)
+  "ratingCount": zod.int().min(getOperationsAnalyticsResponseSummaryRatingCountMin)
 }),
   "trend": zod.array(zod.object({
   "date": zod.coerce.date(),
-  "visits": zod.number().int().min(getOperationsAnalyticsResponseTrendItemVisitsMin),
-  "liveBookings": zod.number().int().min(getOperationsAnalyticsResponseTrendItemLiveBookingsMin),
-  "courseEnrollments": zod.number().int().min(getOperationsAnalyticsResponseTrendItemCourseEnrollmentsMin),
-  "courseCompletions": zod.number().int().min(getOperationsAnalyticsResponseTrendItemCourseCompletionsMin)
+  "visits": zod.int().min(getOperationsAnalyticsResponseTrendItemVisitsMin),
+  "liveBookings": zod.int().min(getOperationsAnalyticsResponseTrendItemLiveBookingsMin),
+  "courseEnrollments": zod.int().min(getOperationsAnalyticsResponseTrendItemCourseEnrollmentsMin),
+  "courseCompletions": zod.int().min(getOperationsAnalyticsResponseTrendItemCourseCompletionsMin)
 })),
   "facilityPerformance": zod.array(zod.object({
   "facility": zod.string(),
   "city": zod.string(),
-  "visits": zod.number().int().min(getOperationsAnalyticsResponseFacilityPerformanceItemVisitsMin),
-  "uniqueCustomers": zod.number().int().min(getOperationsAnalyticsResponseFacilityPerformanceItemUniqueCustomersMin),
-  "bookings": zod.number().int().min(getOperationsAnalyticsResponseFacilityPerformanceItemBookingsMin),
-  "cancellations": zod.number().int().min(getOperationsAnalyticsResponseFacilityPerformanceItemCancellationsMin),
-  "noShows": zod.number().int().min(getOperationsAnalyticsResponseFacilityPerformanceItemNoShowsMin),
+  "visits": zod.int().min(getOperationsAnalyticsResponseFacilityPerformanceItemVisitsMin),
+  "uniqueCustomers": zod.int().min(getOperationsAnalyticsResponseFacilityPerformanceItemUniqueCustomersMin),
+  "bookings": zod.int().min(getOperationsAnalyticsResponseFacilityPerformanceItemBookingsMin),
+  "cancellations": zod.int().min(getOperationsAnalyticsResponseFacilityPerformanceItemCancellationsMin),
+  "noShows": zod.int().min(getOperationsAnalyticsResponseFacilityPerformanceItemNoShowsMin),
   "occupancyRate": zod.number().min(getOperationsAnalyticsResponseFacilityPerformanceItemOccupancyRateMin).max(getOperationsAnalyticsResponseFacilityPerformanceItemOccupancyRateMax).nullable(),
   "averageRating": zod.number().min(getOperationsAnalyticsResponseFacilityPerformanceItemAverageRatingMin).max(getOperationsAnalyticsResponseFacilityPerformanceItemAverageRatingMax).nullable(),
-  "ratingCount": zod.number().int().min(getOperationsAnalyticsResponseFacilityPerformanceItemRatingCountMin)
+  "ratingCount": zod.int().min(getOperationsAnalyticsResponseFacilityPerformanceItemRatingCountMin)
 })),
   "popularClasses": zod.array(zod.object({
   "title": zod.string(),
   "facility": zod.string(),
   "city": zod.string(),
-  "bookings": zod.number().int().min(getOperationsAnalyticsResponsePopularClassesItemBookingsMin),
-  "visits": zod.number().int().min(getOperationsAnalyticsResponsePopularClassesItemVisitsMin),
+  "bookings": zod.int().min(getOperationsAnalyticsResponsePopularClassesItemBookingsMin),
+  "visits": zod.int().min(getOperationsAnalyticsResponsePopularClassesItemVisitsMin),
   "occupancyRate": zod.number().min(getOperationsAnalyticsResponsePopularClassesItemOccupancyRateMin).max(getOperationsAnalyticsResponsePopularClassesItemOccupancyRateMax).nullable()
 })),
   "coursePerformance": zod.array(zod.object({
   "title": zod.string(),
-  "enrollments": zod.number().int().min(getOperationsAnalyticsResponseCoursePerformanceItemEnrollmentsMin),
-  "completions": zod.number().int().min(getOperationsAnalyticsResponseCoursePerformanceItemCompletionsMin),
+  "enrollments": zod.int().min(getOperationsAnalyticsResponseCoursePerformanceItemEnrollmentsMin),
+  "completions": zod.int().min(getOperationsAnalyticsResponseCoursePerformanceItemCompletionsMin),
   "completionRate": zod.number().min(getOperationsAnalyticsResponseCoursePerformanceItemCompletionRateMin).max(getOperationsAnalyticsResponseCoursePerformanceItemCompletionRateMax).nullable()
 })),
   "partnerPerformance": zod.array(zod.object({
   "partnerName": zod.string(),
-  "visits": zod.number().int().min(getOperationsAnalyticsResponsePartnerPerformanceItemVisitsMin),
-  "uniqueCustomers": zod.number().int().min(getOperationsAnalyticsResponsePartnerPerformanceItemUniqueCustomersMin),
-  "noShows": zod.number().int().min(getOperationsAnalyticsResponsePartnerPerformanceItemNoShowsMin),
-  "bookings": zod.number().int().min(getOperationsAnalyticsResponsePartnerPerformanceItemBookingsMin),
-  "cancellations": zod.number().int().min(getOperationsAnalyticsResponsePartnerPerformanceItemCancellationsMin),
+  "visits": zod.int().min(getOperationsAnalyticsResponsePartnerPerformanceItemVisitsMin),
+  "uniqueCustomers": zod.int().min(getOperationsAnalyticsResponsePartnerPerformanceItemUniqueCustomersMin),
+  "noShows": zod.int().min(getOperationsAnalyticsResponsePartnerPerformanceItemNoShowsMin),
+  "bookings": zod.int().min(getOperationsAnalyticsResponsePartnerPerformanceItemBookingsMin),
+  "cancellations": zod.int().min(getOperationsAnalyticsResponsePartnerPerformanceItemCancellationsMin),
   "occupancyRate": zod.number().min(getOperationsAnalyticsResponsePartnerPerformanceItemOccupancyRateMin).max(getOperationsAnalyticsResponsePartnerPerformanceItemOccupancyRateMax).nullable(),
   "noShowRate": zod.number().min(getOperationsAnalyticsResponsePartnerPerformanceItemNoShowRateMin).max(getOperationsAnalyticsResponsePartnerPerformanceItemNoShowRateMax).nullable(),
   "cancellationRate": zod.number().min(getOperationsAnalyticsResponsePartnerPerformanceItemCancellationRateMin).max(getOperationsAnalyticsResponsePartnerPerformanceItemCancellationRateMax).nullable(),
   "averageRating": zod.number().min(getOperationsAnalyticsResponsePartnerPerformanceItemAverageRatingMin).max(getOperationsAnalyticsResponsePartnerPerformanceItemAverageRatingMax).nullable(),
-  "ratingCount": zod.number().int().min(getOperationsAnalyticsResponsePartnerPerformanceItemRatingCountMin)
+  "ratingCount": zod.int().min(getOperationsAnalyticsResponsePartnerPerformanceItemRatingCountMin)
 })),
   "unavailableMetrics": zod.array(zod.enum(['membership_sales', 'renewals', 'membership_cancellations', 'churn', 'revenue', 'failed_payments', 'partner_cost', 'gross_margin', 'event_revenue', 'instructor_performance', 'referral_performance', 'promotion_performance', 'fraud_alerts', 'refund_rate', 'chargeback_rate', 'estimated_earnings', 'accounting_export']))
 })
@@ -1867,7 +1867,7 @@ export const AddLiveOfferingBody = zod.object({
   "ar": zod.string().min(1).max(addLiveOfferingBodyLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(addLiveOfferingBodyLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
-  "joinUrl": zod.string().url().nullish(),
+  "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
   "city": zod.string(),
   "facility": zod.string(),
@@ -1877,11 +1877,11 @@ export const AddLiveOfferingBody = zod.object({
   "startsAt": zod.string(),
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
-  "capacity": zod.number().int().min(1),
-  "waitlistOfferMinutes": zod.number().int().min(addLiveOfferingBodyWaitlistOfferMinutesMin).max(addLiveOfferingBodyWaitlistOfferMinutesMax).default(addLiveOfferingBodyWaitlistOfferMinutesDefault),
+  "capacity": zod.int().min(1),
+  "waitlistOfferMinutes": zod.int().min(addLiveOfferingBodyWaitlistOfferMinutesMin).max(addLiveOfferingBodyWaitlistOfferMinutesMax).default(addLiveOfferingBodyWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
-  "minAge": zod.number().int().min(addLiveOfferingBodyMinAgeMin).optional(),
-  "maxAge": zod.number().int().nullish(),
+  "minAge": zod.int().min(addLiveOfferingBodyMinAgeMin).optional(),
+  "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
 })
@@ -1928,7 +1928,7 @@ export const AddLiveOfferingResponse = zod.object({
   "ar": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
-  "joinUrl": zod.string().url().nullish(),
+  "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
   "city": zod.string(),
   "facility": zod.string(),
@@ -1938,11 +1938,11 @@ export const AddLiveOfferingResponse = zod.object({
   "startsAt": zod.string(),
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
-  "capacity": zod.number().int().min(1),
-  "waitlistOfferMinutes": zod.number().int().min(addLiveOfferingResponseOneWaitlistOfferMinutesMin).max(addLiveOfferingResponseOneWaitlistOfferMinutesMax).default(addLiveOfferingResponseOneWaitlistOfferMinutesDefault),
+  "capacity": zod.int().min(1),
+  "waitlistOfferMinutes": zod.int().min(addLiveOfferingResponseOneWaitlistOfferMinutesMin).max(addLiveOfferingResponseOneWaitlistOfferMinutesMax).default(addLiveOfferingResponseOneWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
-  "minAge": zod.number().int().min(addLiveOfferingResponseOneMinAgeMin).optional(),
-  "maxAge": zod.number().int().nullish(),
+  "minAge": zod.int().min(addLiveOfferingResponseOneMinAgeMin).optional(),
+  "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
 }).and(zod.object({
@@ -1959,13 +1959,13 @@ export const AddLiveOfferingResponse = zod.object({
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
-  "remaining": zod.number().int().optional(),
+  "remaining": zod.int().optional(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.number().int().min(addLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(addLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(addLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(addLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
-  "radius": zod.number().int(),
+  "radius": zod.int(),
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
@@ -2022,7 +2022,7 @@ export const CreateRecurringOfferingsBody = zod.object({
   "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
-  "joinUrl": zod.string().url().nullish(),
+  "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
   "city": zod.string(),
   "facility": zod.string(),
@@ -2032,19 +2032,19 @@ export const CreateRecurringOfferingsBody = zod.object({
   "startsAt": zod.string(),
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
-  "capacity": zod.number().int().min(1),
-  "waitlistOfferMinutes": zod.number().int().min(createRecurringOfferingsBodyTemplateWaitlistOfferMinutesMin).max(createRecurringOfferingsBodyTemplateWaitlistOfferMinutesMax).default(createRecurringOfferingsBodyTemplateWaitlistOfferMinutesDefault),
+  "capacity": zod.int().min(1),
+  "waitlistOfferMinutes": zod.int().min(createRecurringOfferingsBodyTemplateWaitlistOfferMinutesMin).max(createRecurringOfferingsBodyTemplateWaitlistOfferMinutesMax).default(createRecurringOfferingsBodyTemplateWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
-  "minAge": zod.number().int().min(createRecurringOfferingsBodyTemplateMinAgeMin).optional(),
-  "maxAge": zod.number().int().nullish(),
+  "minAge": zod.int().min(createRecurringOfferingsBodyTemplateMinAgeMin).optional(),
+  "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
 }),
   "schedule": zod.object({
   "mode": zod.enum(['daily', 'weekly', 'custom', 'dates']).default(createRecurringOfferingsBodyScheduleModeDefault),
   "repeatUntil": zod.coerce.date().describe('Last local date to include, no more than 90 days after the first date.'),
-  "interval": zod.number().int().min(1).max(createRecurringOfferingsBodyScheduleIntervalMax).default(createRecurringOfferingsBodyScheduleIntervalDefault).describe('Days for daily schedules; weeks for custom schedules.'),
-  "weekdays": zod.array(zod.number().int().min(createRecurringOfferingsBodyScheduleWeekdaysItemMin).max(createRecurringOfferingsBodyScheduleWeekdaysItemMax).describe('Sunday is 0 and Saturday is 6.')).min(1).max(createRecurringOfferingsBodyScheduleWeekdaysMax).optional(),
+  "interval": zod.int().min(1).max(createRecurringOfferingsBodyScheduleIntervalMax).default(createRecurringOfferingsBodyScheduleIntervalDefault).describe('Days for daily schedules; weeks for custom schedules.'),
+  "weekdays": zod.array(zod.int().min(createRecurringOfferingsBodyScheduleWeekdaysItemMin).max(createRecurringOfferingsBodyScheduleWeekdaysItemMax).describe('Sunday is 0 and Saturday is 6.')).min(1).max(createRecurringOfferingsBodyScheduleWeekdaysMax).optional(),
   "dates": zod.array(zod.coerce.date().describe('Additional local session date; the template\'s first date is included automatically.')).max(createRecurringOfferingsBodyScheduleDatesMax).optional(),
   "excludedDates": zod.array(zod.coerce.date().describe('Date to skip, such as a local holiday.')).max(createRecurringOfferingsBodyScheduleExcludedDatesMax).optional()
 })
@@ -2092,7 +2092,7 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
-  "joinUrl": zod.string().url().nullish(),
+  "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
   "city": zod.string(),
   "facility": zod.string(),
@@ -2102,11 +2102,11 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "startsAt": zod.string(),
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
-  "capacity": zod.number().int().min(1),
-  "waitlistOfferMinutes": zod.number().int().min(createRecurringOfferingsResponseOneWaitlistOfferMinutesMin).max(createRecurringOfferingsResponseOneWaitlistOfferMinutesMax).default(createRecurringOfferingsResponseOneWaitlistOfferMinutesDefault),
+  "capacity": zod.int().min(1),
+  "waitlistOfferMinutes": zod.int().min(createRecurringOfferingsResponseOneWaitlistOfferMinutesMin).max(createRecurringOfferingsResponseOneWaitlistOfferMinutesMax).default(createRecurringOfferingsResponseOneWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
-  "minAge": zod.number().int().min(createRecurringOfferingsResponseOneMinAgeMin).optional(),
-  "maxAge": zod.number().int().nullish(),
+  "minAge": zod.int().min(createRecurringOfferingsResponseOneMinAgeMin).optional(),
+  "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
 }).and(zod.object({
@@ -2123,13 +2123,13 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
-  "remaining": zod.number().int().optional(),
+  "remaining": zod.int().optional(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.number().int().min(createRecurringOfferingsResponseTwoWaitlistOfferMinutesMin).max(createRecurringOfferingsResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(createRecurringOfferingsResponseTwoWaitlistOfferMinutesMin).max(createRecurringOfferingsResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
-  "radius": zod.number().int(),
+  "radius": zod.int(),
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
@@ -2161,8 +2161,8 @@ export const changeLiveOfferingBodyLocalizedDescriptionKuMax = 240;
 
 
 export const ChangeLiveOfferingBody = zod.object({
-  "capacity": zod.number().int().min(1),
-  "waitlistOfferMinutes": zod.number().int().min(changeLiveOfferingBodyWaitlistOfferMinutesMin).max(changeLiveOfferingBodyWaitlistOfferMinutesMax).optional(),
+  "capacity": zod.int().min(1),
+  "waitlistOfferMinutes": zod.int().min(changeLiveOfferingBodyWaitlistOfferMinutesMin).max(changeLiveOfferingBodyWaitlistOfferMinutesMax).optional(),
   "localizedTitle": zod.object({
   "en": zod.string().min(1).max(changeLiveOfferingBodyLocalizedTitleEnMax),
   "ar": zod.string().min(1).max(changeLiveOfferingBodyLocalizedTitleArMax),
@@ -2173,7 +2173,7 @@ export const ChangeLiveOfferingBody = zod.object({
   "ar": zod.string().min(1).max(changeLiveOfferingBodyLocalizedDescriptionArMax),
   "ku": zod.string().min(1).max(changeLiveOfferingBodyLocalizedDescriptionKuMax)
 }).optional(),
-  "joinUrl": zod.string().url().nullish(),
+  "joinUrl": zod.url().nullish(),
   "startsAt": zod.coerce.date().optional(),
   "endsAt": zod.coerce.date().optional(),
   "cancellationDeadline": zod.coerce.date().optional()
@@ -2221,7 +2221,7 @@ export const ChangeLiveOfferingResponse = zod.object({
   "ar": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
-  "joinUrl": zod.string().url().nullish(),
+  "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
   "city": zod.string(),
   "facility": zod.string(),
@@ -2231,11 +2231,11 @@ export const ChangeLiveOfferingResponse = zod.object({
   "startsAt": zod.string(),
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
-  "capacity": zod.number().int().min(1),
-  "waitlistOfferMinutes": zod.number().int().min(changeLiveOfferingResponseOneWaitlistOfferMinutesMin).max(changeLiveOfferingResponseOneWaitlistOfferMinutesMax).default(changeLiveOfferingResponseOneWaitlistOfferMinutesDefault),
+  "capacity": zod.int().min(1),
+  "waitlistOfferMinutes": zod.int().min(changeLiveOfferingResponseOneWaitlistOfferMinutesMin).max(changeLiveOfferingResponseOneWaitlistOfferMinutesMax).default(changeLiveOfferingResponseOneWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
-  "minAge": zod.number().int().min(changeLiveOfferingResponseOneMinAgeMin).optional(),
-  "maxAge": zod.number().int().nullish(),
+  "minAge": zod.int().min(changeLiveOfferingResponseOneMinAgeMin).optional(),
+  "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
 }).and(zod.object({
@@ -2252,13 +2252,13 @@ export const ChangeLiveOfferingResponse = zod.object({
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
-  "remaining": zod.number().int().optional(),
+  "remaining": zod.int().optional(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.number().int().min(changeLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(changeLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(changeLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(changeLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
-  "radius": zod.number().int(),
+  "radius": zod.int(),
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
@@ -2275,7 +2275,7 @@ export const GetOfferingWaitlistParams = zod.object({
 
 export const GetOfferingWaitlistResponseItem = zod.object({
   "id": zod.string(),
-  "queuePosition": zod.number().int().min(1),
+  "queuePosition": zod.int().min(1),
   "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
@@ -2316,8 +2316,8 @@ export const changeRecurringOfferingSeriesBodyLocalizedDescriptionKuMax = 240;
 
 
 export const ChangeRecurringOfferingSeriesBody = zod.object({
-  "capacity": zod.number().int().min(1),
-  "waitlistOfferMinutes": zod.number().int().min(changeRecurringOfferingSeriesBodyWaitlistOfferMinutesMin).max(changeRecurringOfferingSeriesBodyWaitlistOfferMinutesMax).optional(),
+  "capacity": zod.int().min(1),
+  "waitlistOfferMinutes": zod.int().min(changeRecurringOfferingSeriesBodyWaitlistOfferMinutesMin).max(changeRecurringOfferingSeriesBodyWaitlistOfferMinutesMax).optional(),
   "localizedTitle": zod.object({
   "en": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedTitleEnMax),
   "ar": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedTitleArMax),
@@ -2328,7 +2328,7 @@ export const ChangeRecurringOfferingSeriesBody = zod.object({
   "ar": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedDescriptionArMax),
   "ku": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedDescriptionKuMax)
 }).optional(),
-  "joinUrl": zod.string().url().nullish(),
+  "joinUrl": zod.url().nullish(),
   "startsAt": zod.coerce.date().optional(),
   "endsAt": zod.coerce.date().optional(),
   "cancellationDeadline": zod.coerce.date().optional()
@@ -2376,7 +2376,7 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
   "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
-  "joinUrl": zod.string().url().nullish(),
+  "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
   "city": zod.string(),
   "facility": zod.string(),
@@ -2386,11 +2386,11 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
   "startsAt": zod.string(),
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
-  "capacity": zod.number().int().min(1),
-  "waitlistOfferMinutes": zod.number().int().min(changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesMin).max(changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesMax).default(changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesDefault),
+  "capacity": zod.int().min(1),
+  "waitlistOfferMinutes": zod.int().min(changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesMin).max(changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesMax).default(changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
-  "minAge": zod.number().int().min(changeRecurringOfferingSeriesResponseOneMinAgeMin).optional(),
-  "maxAge": zod.number().int().nullish(),
+  "minAge": zod.int().min(changeRecurringOfferingSeriesResponseOneMinAgeMin).optional(),
+  "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
 }).and(zod.object({
@@ -2407,13 +2407,13 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
-  "remaining": zod.number().int().optional(),
+  "remaining": zod.int().optional(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.number().int().min(changeRecurringOfferingSeriesResponseTwoWaitlistOfferMinutesMin).max(changeRecurringOfferingSeriesResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(changeRecurringOfferingSeriesResponseTwoWaitlistOfferMinutesMin).max(changeRecurringOfferingSeriesResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
-  "radius": zod.number().int(),
+  "radius": zod.int(),
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
@@ -2479,7 +2479,7 @@ export const SubmitLiveOfferingResponse = zod.object({
   "ar": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
-  "joinUrl": zod.string().url().nullish(),
+  "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
   "city": zod.string(),
   "facility": zod.string(),
@@ -2489,11 +2489,11 @@ export const SubmitLiveOfferingResponse = zod.object({
   "startsAt": zod.string(),
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
-  "capacity": zod.number().int().min(1),
-  "waitlistOfferMinutes": zod.number().int().min(submitLiveOfferingResponseOneWaitlistOfferMinutesMin).max(submitLiveOfferingResponseOneWaitlistOfferMinutesMax).default(submitLiveOfferingResponseOneWaitlistOfferMinutesDefault),
+  "capacity": zod.int().min(1),
+  "waitlistOfferMinutes": zod.int().min(submitLiveOfferingResponseOneWaitlistOfferMinutesMin).max(submitLiveOfferingResponseOneWaitlistOfferMinutesMax).default(submitLiveOfferingResponseOneWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
-  "minAge": zod.number().int().min(submitLiveOfferingResponseOneMinAgeMin).optional(),
-  "maxAge": zod.number().int().nullish(),
+  "minAge": zod.int().min(submitLiveOfferingResponseOneMinAgeMin).optional(),
+  "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
 }).and(zod.object({
@@ -2510,13 +2510,13 @@ export const SubmitLiveOfferingResponse = zod.object({
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
-  "remaining": zod.number().int().optional(),
+  "remaining": zod.int().optional(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.number().int().min(submitLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(submitLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(submitLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(submitLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
-  "radius": zod.number().int(),
+  "radius": zod.int(),
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
@@ -2579,7 +2579,7 @@ export const RespondToOfferingCorrectionResponse = zod.object({
   "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
-  "joinUrl": zod.string().url().nullish(),
+  "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
   "city": zod.string(),
   "facility": zod.string(),
@@ -2589,11 +2589,11 @@ export const RespondToOfferingCorrectionResponse = zod.object({
   "startsAt": zod.string(),
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
-  "capacity": zod.number().int().min(1),
-  "waitlistOfferMinutes": zod.number().int().min(respondToOfferingCorrectionResponseOneWaitlistOfferMinutesMin).max(respondToOfferingCorrectionResponseOneWaitlistOfferMinutesMax).default(respondToOfferingCorrectionResponseOneWaitlistOfferMinutesDefault),
+  "capacity": zod.int().min(1),
+  "waitlistOfferMinutes": zod.int().min(respondToOfferingCorrectionResponseOneWaitlistOfferMinutesMin).max(respondToOfferingCorrectionResponseOneWaitlistOfferMinutesMax).default(respondToOfferingCorrectionResponseOneWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
-  "minAge": zod.number().int().min(respondToOfferingCorrectionResponseOneMinAgeMin).optional(),
-  "maxAge": zod.number().int().nullish(),
+  "minAge": zod.int().min(respondToOfferingCorrectionResponseOneMinAgeMin).optional(),
+  "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
 }).and(zod.object({
@@ -2610,13 +2610,13 @@ export const RespondToOfferingCorrectionResponse = zod.object({
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
-  "remaining": zod.number().int().optional(),
+  "remaining": zod.int().optional(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.number().int().min(respondToOfferingCorrectionResponseTwoWaitlistOfferMinutesMin).max(respondToOfferingCorrectionResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(respondToOfferingCorrectionResponseTwoWaitlistOfferMinutesMin).max(respondToOfferingCorrectionResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
-  "radius": zod.number().int(),
+  "radius": zod.int(),
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
@@ -2680,7 +2680,7 @@ export const ReviewOfferingApprovalResponse = zod.object({
   "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
-  "joinUrl": zod.string().url().nullish(),
+  "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
   "city": zod.string(),
   "facility": zod.string(),
@@ -2690,11 +2690,11 @@ export const ReviewOfferingApprovalResponse = zod.object({
   "startsAt": zod.string(),
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
-  "capacity": zod.number().int().min(1),
-  "waitlistOfferMinutes": zod.number().int().min(reviewOfferingApprovalResponseOneWaitlistOfferMinutesMin).max(reviewOfferingApprovalResponseOneWaitlistOfferMinutesMax).default(reviewOfferingApprovalResponseOneWaitlistOfferMinutesDefault),
+  "capacity": zod.int().min(1),
+  "waitlistOfferMinutes": zod.int().min(reviewOfferingApprovalResponseOneWaitlistOfferMinutesMin).max(reviewOfferingApprovalResponseOneWaitlistOfferMinutesMax).default(reviewOfferingApprovalResponseOneWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
-  "minAge": zod.number().int().min(reviewOfferingApprovalResponseOneMinAgeMin).optional(),
-  "maxAge": zod.number().int().nullish(),
+  "minAge": zod.int().min(reviewOfferingApprovalResponseOneMinAgeMin).optional(),
+  "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
 }).and(zod.object({
@@ -2711,13 +2711,13 @@ export const ReviewOfferingApprovalResponse = zod.object({
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
-  "remaining": zod.number().int().optional(),
+  "remaining": zod.int().optional(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.number().int().min(reviewOfferingApprovalResponseTwoWaitlistOfferMinutesMin).max(reviewOfferingApprovalResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(reviewOfferingApprovalResponseTwoWaitlistOfferMinutesMin).max(reviewOfferingApprovalResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
-  "radius": zod.number().int(),
+  "radius": zod.int(),
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
@@ -2766,17 +2766,17 @@ export const GetPartnerSettlementSummaryResponse = zod.object({
   "partnerId": zod.string(),
   "from": zod.coerce.date(),
   "to": zod.coerce.date(),
-  "verifiedVisits": zod.number().int().min(getPartnerSettlementSummaryResponseVerifiedVisitsMin),
-  "rejectedVisits": zod.number().int().min(getPartnerSettlementSummaryResponseRejectedVisitsMin),
-  "onHoldVisits": zod.number().int().min(getPartnerSettlementSummaryResponseOnHoldVisitsMin),
+  "verifiedVisits": zod.int().min(getPartnerSettlementSummaryResponseVerifiedVisitsMin),
+  "rejectedVisits": zod.int().min(getPartnerSettlementSummaryResponseRejectedVisitsMin),
+  "onHoldVisits": zod.int().min(getPartnerSettlementSummaryResponseOnHoldVisitsMin),
   "groups": zod.array(zod.object({
   "facility": zod.string(),
   "city": zod.string(),
   "category": zod.string(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
-  "verifiedVisits": zod.number().int().min(getPartnerSettlementSummaryResponseGroupsItemVerifiedVisitsMin),
-  "rejectedVisits": zod.number().int().min(getPartnerSettlementSummaryResponseGroupsItemRejectedVisitsMin),
-  "onHoldVisits": zod.number().int().min(getPartnerSettlementSummaryResponseGroupsItemOnHoldVisitsMin)
+  "verifiedVisits": zod.int().min(getPartnerSettlementSummaryResponseGroupsItemVerifiedVisitsMin),
+  "rejectedVisits": zod.int().min(getPartnerSettlementSummaryResponseGroupsItemRejectedVisitsMin),
+  "onHoldVisits": zod.int().min(getPartnerSettlementSummaryResponseGroupsItemOnHoldVisitsMin)
 }))
 })
 
@@ -2787,7 +2787,7 @@ export const GetPartnerSettlementSummaryResponse = zod.object({
 export const GetPartnerInvoicesResponseItem = zod.object({
   "id": zod.string(),
   "invoiceNumber": zod.string(),
-  "amountIqd": zod.number().int().min(1),
+  "amountIqd": zod.int().min(1),
   "issuedAt": zod.coerce.date(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date(),
@@ -2813,7 +2813,7 @@ export const submitPartnerInvoiceBodyDocumentNameMax = 180;
 
 export const SubmitPartnerInvoiceBody = zod.object({
   "invoiceNumber": zod.string().min(1).max(submitPartnerInvoiceBodyInvoiceNumberMax),
-  "amountIqd": zod.number().int().min(1).max(submitPartnerInvoiceBodyAmountIqdMax),
+  "amountIqd": zod.int().min(1).max(submitPartnerInvoiceBodyAmountIqdMax),
   "issuedAt": zod.coerce.date(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date(),
@@ -2828,7 +2828,7 @@ export const SubmitPartnerInvoiceBody = zod.object({
 export const SubmitPartnerInvoiceResponse = zod.object({
   "id": zod.string(),
   "invoiceNumber": zod.string(),
-  "amountIqd": zod.number().int().min(1),
+  "amountIqd": zod.int().min(1),
   "issuedAt": zod.coerce.date(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date(),
@@ -2847,11 +2847,11 @@ export const requestPartnerInvoiceUploadUrlBodySizeMax = 10485760;
 
 export const RequestPartnerInvoiceUploadUrlBody = zod.object({
   "fileName": zod.string().min(1).max(requestPartnerInvoiceUploadUrlBodyFileNameMax),
-  "size": zod.number().int().min(1).max(requestPartnerInvoiceUploadUrlBodySizeMax)
+  "size": zod.int().min(1).max(requestPartnerInvoiceUploadUrlBodySizeMax)
 })
 
 export const RequestPartnerInvoiceUploadUrlResponse = zod.object({
-  "uploadURL": zod.string().url(),
+  "uploadURL": zod.url(),
   "documentPath": zod.string()
 })
 
@@ -2906,13 +2906,13 @@ export const GetOperationCoursesResponse = zod.object({
 }),
   "category": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneCategoryMax),
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
-  "durationMinutes": zod.number().int().min(1).max(getOperationCoursesResponseCoursesItemOneDurationMinutesMax),
-  "thumbnailUrl": zod.string().url().nullable(),
+  "durationMinutes": zod.int().min(1).max(getOperationCoursesResponseCoursesItemOneDurationMinutesMax),
+  "thumbnailUrl": zod.url().nullable(),
   "published": zod.boolean()
 }).and(zod.object({
   "id": zod.string(),
   "title": zod.string(),
-  "lessonCount": zod.number().int(),
+  "lessonCount": zod.int(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })))
@@ -2978,12 +2978,12 @@ export const CreateLearningCourseBody = zod.object({
 }),
   "category": zod.string().min(1).max(createLearningCourseBodyOneCategoryMax),
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
-  "durationMinutes": zod.number().int().min(1).max(createLearningCourseBodyOneDurationMinutesMax),
-  "thumbnailUrl": zod.string().url().nullable(),
+  "durationMinutes": zod.int().min(1).max(createLearningCourseBodyOneDurationMinutesMax),
+  "thumbnailUrl": zod.url().nullable(),
   "published": zod.boolean()
 }).and(zod.object({
   "lessons": zod.array(zod.object({
-  "position": zod.number().int().min(1),
+  "position": zod.int().min(1),
   "localizedTitle": zod.object({
   "en": zod.string().min(1).max(createLearningCourseBodyTwoLessonsItemLocalizedTitleEnMax),
   "ar": zod.string().min(1).max(createLearningCourseBodyTwoLessonsItemLocalizedTitleArMax),
@@ -2994,7 +2994,7 @@ export const CreateLearningCourseBody = zod.object({
   "ar": zod.string().min(1).max(createLearningCourseBodyTwoLessonsItemLocalizedContentArMax),
   "ku": zod.string().min(1).max(createLearningCourseBodyTwoLessonsItemLocalizedContentKuMax)
 }),
-  "durationMinutes": zod.number().int().min(1).max(createLearningCourseBodyTwoLessonsItemDurationMinutesMax),
+  "durationMinutes": zod.int().min(1).max(createLearningCourseBodyTwoLessonsItemDurationMinutesMax),
   "mediaUrl": zod.string().regex(createLearningCourseBodyTwoLessonsItemMediaUrlRegExp)
 })).min(1)
 }))
@@ -3041,13 +3041,13 @@ export const CreateLearningCourseResponse = zod.object({
 }),
   "category": zod.string().min(1).max(createLearningCourseResponseOneCategoryMax),
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
-  "durationMinutes": zod.number().int().min(1).max(createLearningCourseResponseOneDurationMinutesMax),
-  "thumbnailUrl": zod.string().url().nullable(),
+  "durationMinutes": zod.int().min(1).max(createLearningCourseResponseOneDurationMinutesMax),
+  "thumbnailUrl": zod.url().nullable(),
   "published": zod.boolean()
 }).and(zod.object({
   "id": zod.string(),
   "title": zod.string(),
-  "lessonCount": zod.number().int(),
+  "lessonCount": zod.int(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 }))
@@ -3099,8 +3099,8 @@ export const UpdateLearningCourseBody = zod.object({
 }),
   "category": zod.string().min(1).max(updateLearningCourseBodyCategoryMax),
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
-  "durationMinutes": zod.number().int().min(1).max(updateLearningCourseBodyDurationMinutesMax),
-  "thumbnailUrl": zod.string().url().nullable(),
+  "durationMinutes": zod.int().min(1).max(updateLearningCourseBodyDurationMinutesMax),
+  "thumbnailUrl": zod.url().nullable(),
   "published": zod.boolean()
 })
 
@@ -3146,13 +3146,13 @@ export const UpdateLearningCourseResponse = zod.object({
 }),
   "category": zod.string().min(1).max(updateLearningCourseResponseOneCategoryMax),
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
-  "durationMinutes": zod.number().int().min(1).max(updateLearningCourseResponseOneDurationMinutesMax),
-  "thumbnailUrl": zod.string().url().nullable(),
+  "durationMinutes": zod.int().min(1).max(updateLearningCourseResponseOneDurationMinutesMax),
+  "thumbnailUrl": zod.url().nullable(),
   "published": zod.boolean()
 }).and(zod.object({
   "id": zod.string(),
   "title": zod.string(),
-  "lessonCount": zod.number().int(),
+  "lessonCount": zod.int(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 }))
@@ -3181,7 +3181,7 @@ export const addLearningLessonBodyMediaUrlRegExp = new RegExp('^/objects/course-
 
 
 export const AddLearningLessonBody = zod.object({
-  "position": zod.number().int().min(1),
+  "position": zod.int().min(1),
   "localizedTitle": zod.object({
   "en": zod.string().min(1).max(addLearningLessonBodyLocalizedTitleEnMax),
   "ar": zod.string().min(1).max(addLearningLessonBodyLocalizedTitleArMax),
@@ -3192,7 +3192,7 @@ export const AddLearningLessonBody = zod.object({
   "ar": zod.string().min(1).max(addLearningLessonBodyLocalizedContentArMax),
   "ku": zod.string().min(1).max(addLearningLessonBodyLocalizedContentKuMax)
 }),
-  "durationMinutes": zod.number().int().min(1).max(addLearningLessonBodyDurationMinutesMax),
+  "durationMinutes": zod.int().min(1).max(addLearningLessonBodyDurationMinutesMax),
   "mediaUrl": zod.string().regex(addLearningLessonBodyMediaUrlRegExp)
 })
 
@@ -3212,7 +3212,7 @@ export const addLearningLessonResponseLocalizedContentOneKuMax = 240;
 
 export const AddLearningLessonResponse = zod.object({
   "id": zod.string(),
-  "position": zod.number().int(),
+  "position": zod.int(),
   "localizedTitle": zod.object({
   "en": zod.string().min(1).max(addLearningLessonResponseLocalizedTitleEnMax),
   "ar": zod.string().min(1).max(addLearningLessonResponseLocalizedTitleArMax),
@@ -3223,7 +3223,7 @@ export const AddLearningLessonResponse = zod.object({
   "ar": zod.string().min(1).max(addLearningLessonResponseLocalizedContentOneArMax),
   "ku": zod.string().min(1).max(addLearningLessonResponseLocalizedContentOneKuMax)
 }),zod.null()]),
-  "durationMinutes": zod.number().int(),
+  "durationMinutes": zod.int(),
   "mediaUrl": zod.string().nullable(),
   "hasRecording": zod.boolean(),
   "completed": zod.boolean()
@@ -3305,8 +3305,8 @@ export const DecideInstructorAccessRequestBody = zod.object({
 export const DecideInstructorAccessRequestResponse = zod.object({
   "id": zod.string(),
   "status": zod.enum(['approved', 'rejected']),
-  "courseCount": zod.number().int(),
-  "offeringCount": zod.number().int()
+  "courseCount": zod.int(),
+  "offeringCount": zod.int()
 })
 
 
@@ -3365,7 +3365,7 @@ export const GetInstructorPortalResponse = zod.object({
 }),
   "category": zod.string(),
   "level": zod.string(),
-  "durationMinutes": zod.number().int(),
+  "durationMinutes": zod.int(),
   "published": zod.boolean()
 })),
   "upcomingSessions": zod.array(zod.object({
@@ -3540,8 +3540,8 @@ export const GetCorporateOrganizationsResponseItem = zod.object({
   "name": zod.string(),
   "status": zod.enum(['active', 'suspended']),
   "createdAt": zod.coerce.date(),
-  "administratorCount": zod.number().int().min(getCorporateOrganizationsResponseAdministratorCountMin),
-  "employeeCount": zod.number().int().min(getCorporateOrganizationsResponseEmployeeCountMin)
+  "administratorCount": zod.int().min(getCorporateOrganizationsResponseAdministratorCountMin),
+  "employeeCount": zod.int().min(getCorporateOrganizationsResponseEmployeeCountMin)
 })
 export const GetCorporateOrganizationsResponse = zod.array(GetCorporateOrganizationsResponseItem)
 
@@ -3555,7 +3555,7 @@ export const createCorporateOrganizationBodyAdministratorEmailMax = 320;
 
 export const CreateCorporateOrganizationBody = zod.object({
   "name": zod.string().min(createCorporateOrganizationBodyNameMin).max(createCorporateOrganizationBodyNameMax),
-  "administratorEmail": zod.string().email().max(createCorporateOrganizationBodyAdministratorEmailMax)
+  "administratorEmail": zod.email().max(createCorporateOrganizationBodyAdministratorEmailMax)
 })
 
 export const createCorporateOrganizationResponseOrganizationAdministratorCountMin = 0;
@@ -3570,12 +3570,12 @@ export const CreateCorporateOrganizationResponse = zod.object({
   "name": zod.string(),
   "status": zod.enum(['active', 'suspended']),
   "createdAt": zod.coerce.date(),
-  "administratorCount": zod.number().int().min(createCorporateOrganizationResponseOrganizationAdministratorCountMin),
-  "employeeCount": zod.number().int().min(createCorporateOrganizationResponseOrganizationEmployeeCountMin)
+  "administratorCount": zod.int().min(createCorporateOrganizationResponseOrganizationAdministratorCountMin),
+  "employeeCount": zod.int().min(createCorporateOrganizationResponseOrganizationEmployeeCountMin)
 }),
   "administratorInvitation": zod.object({
   "id": zod.string(),
-  "email": zod.string().email(),
+  "email": zod.email(),
   "role": zod.enum(['hr_admin', 'employee']),
   "token": zod.string(),
   "expiresAt": zod.coerce.date()
@@ -3592,12 +3592,12 @@ export const inviteCorporateAdministratorBodyEmailMax = 320;
 
 
 export const InviteCorporateAdministratorBody = zod.object({
-  "email": zod.string().email().max(inviteCorporateAdministratorBodyEmailMax)
+  "email": zod.email().max(inviteCorporateAdministratorBodyEmailMax)
 })
 
 export const InviteCorporateAdministratorResponse = zod.object({
   "id": zod.string(),
-  "email": zod.string().email(),
+  "email": zod.email(),
   "role": zod.enum(['hr_admin', 'employee']),
   "token": zod.string(),
   "expiresAt": zod.coerce.date()
@@ -3611,7 +3611,7 @@ export const GetCorporatePortalResponse = zod.object({
   "employees": zod.array(zod.object({
   "id": zod.string(),
   "pendingInvitationId": zod.string().nullable(),
-  "email": zod.string().email(),
+  "email": zod.email(),
   "status": zod.enum(['invited', 'active', 'removed']),
   "invitedAt": zod.coerce.date(),
   "inviteExpiresAt": zod.coerce.date().nullable(),
@@ -3658,14 +3658,14 @@ export const inviteCorporateEmployeesBodyEmailsMax = 100;
 
 export const InviteCorporateEmployeesBody = zod.object({
   "organizationId": zod.string().min(1),
-  "emails": zod.array(zod.string().email().max(inviteCorporateEmployeesBodyEmailsItemMax)).min(1).max(inviteCorporateEmployeesBodyEmailsMax)
+  "emails": zod.array(zod.email().max(inviteCorporateEmployeesBodyEmailsItemMax)).min(1).max(inviteCorporateEmployeesBodyEmailsMax)
 })
 
 export const InviteCorporateEmployeesResponse = zod.object({
   "invitations": zod.array(zod.object({
   "employeeId": zod.string(),
   "id": zod.string(),
-  "email": zod.string().email(),
+  "email": zod.email(),
   "token": zod.string(),
   "expiresAt": zod.coerce.date()
 }))
@@ -3678,7 +3678,7 @@ export const ReissueCorporateEmployeeInvitationParams = zod.object({
 
 export const ReissueCorporateEmployeeInvitationResponse = zod.object({
   "id": zod.string(),
-  "email": zod.string().email(),
+  "email": zod.email(),
   "role": zod.enum(['hr_admin', 'employee']),
   "token": zod.string(),
   "expiresAt": zod.coerce.date()
@@ -3762,21 +3762,21 @@ export const AddMembershipPlanBody = zod.object({
   "name": zod.string(),
   "tier": zod.string(),
   "kind": zod.enum(['paid', 'trial', 'corporate']),
-  "durationDays": zod.number().int().min(1).max(addMembershipPlanBodyDurationDaysMax),
+  "durationDays": zod.int().min(1).max(addMembershipPlanBodyDurationDaysMax),
   "active": zod.boolean(),
   "rules": zod.object({
-  "quota": zod.number().int().min(addMembershipPlanBodyRulesQuotaMin),
-  "dailyLimit": zod.number().int().min(addMembershipPlanBodyRulesDailyLimitMin),
+  "quota": zod.int().min(addMembershipPlanBodyRulesQuotaMin),
+  "dailyLimit": zod.int().min(addMembershipPlanBodyRulesDailyLimitMin),
   "quotaMode": zod.enum(['shared', 'separate']),
-  "physicalQuota": zod.number().int().min(addMembershipPlanBodyRulesPhysicalQuotaMin),
-  "premiumQuota": zod.number().int().min(addMembershipPlanBodyRulesPremiumQuotaMin),
-  "liveQuota": zod.number().int().min(addMembershipPlanBodyRulesLiveQuotaMin),
+  "physicalQuota": zod.int().min(addMembershipPlanBodyRulesPhysicalQuotaMin),
+  "premiumQuota": zod.int().min(addMembershipPlanBodyRulesPremiumQuotaMin),
+  "liveQuota": zod.int().min(addMembershipPlanBodyRulesLiveQuotaMin),
   "cities": zod.array(zod.string()).optional(),
   "facilities": zod.array(zod.string()).optional(),
   "categories": zod.array(zod.string()).optional(),
-  "facilityLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanBodyRulesFacilityLimitsMinOne)).optional(),
-  "categoryLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanBodyRulesCategoryLimitsMinOne)).optional(),
-  "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanBodyRulesPartnerGroupLimitsMinOne)).optional(),
+  "facilityLimits": zod.record(zod.string(), zod.int().min(addMembershipPlanBodyRulesFacilityLimitsMinOne)).optional(),
+  "categoryLimits": zod.record(zod.string(), zod.int().min(addMembershipPlanBodyRulesCategoryLimitsMinOne)).optional(),
+  "partnerGroupLimits": zod.record(zod.string(), zod.int().min(addMembershipPlanBodyRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
   "corporateId": zod.string().optional(),
   "planTerms": zod.object({
@@ -3785,22 +3785,22 @@ export const AddMembershipPlanBody = zod.object({
   "ar": zod.string().max(addMembershipPlanBodyRulesPlanTermsDescriptionArMax),
   "ku": zod.string().max(addMembershipPlanBodyRulesPlanTermsDescriptionKuMax)
 }),
-  "trialPeriodDays": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMin).max(addMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMax),
-  "minimumContractMonths": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMin).max(addMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMax),
-  "renewalPeriodDays": zod.number().int().min(1).max(addMembershipPlanBodyRulesPlanTermsRenewalPeriodDaysMax),
-  "cancellationPeriodDays": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMin).max(addMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMax),
+  "trialPeriodDays": zod.int().min(addMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMin).max(addMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMax),
+  "minimumContractMonths": zod.int().min(addMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMin).max(addMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMax),
+  "renewalPeriodDays": zod.int().min(1).max(addMembershipPlanBodyRulesPlanTermsRenewalPeriodDaysMax),
+  "cancellationPeriodDays": zod.int().min(addMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMin).max(addMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMax),
   "automaticRenewal": zod.boolean(),
-  "pauseAllowanceDays": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMin).max(addMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMax),
-  "priceProtectionMonths": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMin).max(addMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMax),
-  "promotionalPriceIqd": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMin).max(addMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMax).nullable(),
-  "corporatePriceIqd": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMin).max(addMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMax).nullable(),
+  "pauseAllowanceDays": zod.int().min(addMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMin).max(addMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMax),
+  "priceProtectionMonths": zod.int().min(addMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMin).max(addMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMax),
+  "promotionalPriceIqd": zod.int().min(addMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMin).max(addMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMax).nullable(),
+  "corporatePriceIqd": zod.int().min(addMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMin).max(addMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMax).nullable(),
   "digitalContentAccess": zod.boolean(),
-  "guestPasses": zod.number().int().min(addMembershipPlanBodyRulesPlanTermsGuestPassesMin).max(addMembershipPlanBodyRulesPlanTermsGuestPassesMax),
+  "guestPasses": zod.int().min(addMembershipPlanBodyRulesPlanTermsGuestPassesMin).max(addMembershipPlanBodyRulesPlanTermsGuestPassesMax),
   "eventAccess": zod.boolean(),
   "additionalPaymentAllowed": zod.boolean()
 }).optional()
 }),
-  "priceIqd": zod.number().int().min(1).max(addMembershipPlanBodyPriceIqdMax).nullable()
+  "priceIqd": zod.int().min(1).max(addMembershipPlanBodyPriceIqdMax).nullable()
 })
 
 export const addMembershipPlanResponseOneDurationDaysMax = 366;
@@ -3861,21 +3861,21 @@ export const AddMembershipPlanResponse = zod.object({
   "name": zod.string(),
   "tier": zod.string(),
   "kind": zod.enum(['paid', 'trial', 'corporate']),
-  "durationDays": zod.number().int().min(1).max(addMembershipPlanResponseOneDurationDaysMax),
+  "durationDays": zod.int().min(1).max(addMembershipPlanResponseOneDurationDaysMax),
   "active": zod.boolean(),
   "rules": zod.object({
-  "quota": zod.number().int().min(addMembershipPlanResponseOneRulesQuotaMin),
-  "dailyLimit": zod.number().int().min(addMembershipPlanResponseOneRulesDailyLimitMin),
+  "quota": zod.int().min(addMembershipPlanResponseOneRulesQuotaMin),
+  "dailyLimit": zod.int().min(addMembershipPlanResponseOneRulesDailyLimitMin),
   "quotaMode": zod.enum(['shared', 'separate']),
-  "physicalQuota": zod.number().int().min(addMembershipPlanResponseOneRulesPhysicalQuotaMin),
-  "premiumQuota": zod.number().int().min(addMembershipPlanResponseOneRulesPremiumQuotaMin),
-  "liveQuota": zod.number().int().min(addMembershipPlanResponseOneRulesLiveQuotaMin),
+  "physicalQuota": zod.int().min(addMembershipPlanResponseOneRulesPhysicalQuotaMin),
+  "premiumQuota": zod.int().min(addMembershipPlanResponseOneRulesPremiumQuotaMin),
+  "liveQuota": zod.int().min(addMembershipPlanResponseOneRulesLiveQuotaMin),
   "cities": zod.array(zod.string()).optional(),
   "facilities": zod.array(zod.string()).optional(),
   "categories": zod.array(zod.string()).optional(),
-  "facilityLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanResponseOneRulesFacilityLimitsMinOne)).optional(),
-  "categoryLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanResponseOneRulesCategoryLimitsMinOne)).optional(),
-  "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(addMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
+  "facilityLimits": zod.record(zod.string(), zod.int().min(addMembershipPlanResponseOneRulesFacilityLimitsMinOne)).optional(),
+  "categoryLimits": zod.record(zod.string(), zod.int().min(addMembershipPlanResponseOneRulesCategoryLimitsMinOne)).optional(),
+  "partnerGroupLimits": zod.record(zod.string(), zod.int().min(addMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
   "corporateId": zod.string().optional(),
   "planTerms": zod.object({
@@ -3884,22 +3884,22 @@ export const AddMembershipPlanResponse = zod.object({
   "ar": zod.string().max(addMembershipPlanResponseOneRulesPlanTermsDescriptionArMax),
   "ku": zod.string().max(addMembershipPlanResponseOneRulesPlanTermsDescriptionKuMax)
 }),
-  "trialPeriodDays": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMin).max(addMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMax),
-  "minimumContractMonths": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMin).max(addMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMax),
-  "renewalPeriodDays": zod.number().int().min(1).max(addMembershipPlanResponseOneRulesPlanTermsRenewalPeriodDaysMax),
-  "cancellationPeriodDays": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMin).max(addMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMax),
+  "trialPeriodDays": zod.int().min(addMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMin).max(addMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMax),
+  "minimumContractMonths": zod.int().min(addMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMin).max(addMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMax),
+  "renewalPeriodDays": zod.int().min(1).max(addMembershipPlanResponseOneRulesPlanTermsRenewalPeriodDaysMax),
+  "cancellationPeriodDays": zod.int().min(addMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMin).max(addMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMax),
   "automaticRenewal": zod.boolean(),
-  "pauseAllowanceDays": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMin).max(addMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMax),
-  "priceProtectionMonths": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMin).max(addMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMax),
-  "promotionalPriceIqd": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMin).max(addMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMax).nullable(),
-  "corporatePriceIqd": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMin).max(addMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMax).nullable(),
+  "pauseAllowanceDays": zod.int().min(addMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMin).max(addMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMax),
+  "priceProtectionMonths": zod.int().min(addMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMin).max(addMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMax),
+  "promotionalPriceIqd": zod.int().min(addMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMin).max(addMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMax).nullable(),
+  "corporatePriceIqd": zod.int().min(addMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMin).max(addMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMax).nullable(),
   "digitalContentAccess": zod.boolean(),
-  "guestPasses": zod.number().int().min(addMembershipPlanResponseOneRulesPlanTermsGuestPassesMin).max(addMembershipPlanResponseOneRulesPlanTermsGuestPassesMax),
+  "guestPasses": zod.int().min(addMembershipPlanResponseOneRulesPlanTermsGuestPassesMin).max(addMembershipPlanResponseOneRulesPlanTermsGuestPassesMax),
   "eventAccess": zod.boolean(),
   "additionalPaymentAllowed": zod.boolean()
 }).optional()
 }),
-  "priceIqd": zod.number().int().min(1).max(addMembershipPlanResponseOnePriceIqdMax).nullable()
+  "priceIqd": zod.int().min(1).max(addMembershipPlanResponseOnePriceIqdMax).nullable()
 }).and(zod.object({
   "id": zod.string(),
   "purchasable": zod.boolean().optional(),
@@ -3970,21 +3970,21 @@ export const ReplaceMembershipPlanBody = zod.object({
   "name": zod.string(),
   "tier": zod.string(),
   "kind": zod.enum(['paid', 'trial', 'corporate']),
-  "durationDays": zod.number().int().min(1).max(replaceMembershipPlanBodyDurationDaysMax),
+  "durationDays": zod.int().min(1).max(replaceMembershipPlanBodyDurationDaysMax),
   "active": zod.boolean(),
   "rules": zod.object({
-  "quota": zod.number().int().min(replaceMembershipPlanBodyRulesQuotaMin),
-  "dailyLimit": zod.number().int().min(replaceMembershipPlanBodyRulesDailyLimitMin),
+  "quota": zod.int().min(replaceMembershipPlanBodyRulesQuotaMin),
+  "dailyLimit": zod.int().min(replaceMembershipPlanBodyRulesDailyLimitMin),
   "quotaMode": zod.enum(['shared', 'separate']),
-  "physicalQuota": zod.number().int().min(replaceMembershipPlanBodyRulesPhysicalQuotaMin),
-  "premiumQuota": zod.number().int().min(replaceMembershipPlanBodyRulesPremiumQuotaMin),
-  "liveQuota": zod.number().int().min(replaceMembershipPlanBodyRulesLiveQuotaMin),
+  "physicalQuota": zod.int().min(replaceMembershipPlanBodyRulesPhysicalQuotaMin),
+  "premiumQuota": zod.int().min(replaceMembershipPlanBodyRulesPremiumQuotaMin),
+  "liveQuota": zod.int().min(replaceMembershipPlanBodyRulesLiveQuotaMin),
   "cities": zod.array(zod.string()).optional(),
   "facilities": zod.array(zod.string()).optional(),
   "categories": zod.array(zod.string()).optional(),
-  "facilityLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanBodyRulesFacilityLimitsMinOne)).optional(),
-  "categoryLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanBodyRulesCategoryLimitsMinOne)).optional(),
-  "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanBodyRulesPartnerGroupLimitsMinOne)).optional(),
+  "facilityLimits": zod.record(zod.string(), zod.int().min(replaceMembershipPlanBodyRulesFacilityLimitsMinOne)).optional(),
+  "categoryLimits": zod.record(zod.string(), zod.int().min(replaceMembershipPlanBodyRulesCategoryLimitsMinOne)).optional(),
+  "partnerGroupLimits": zod.record(zod.string(), zod.int().min(replaceMembershipPlanBodyRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
   "corporateId": zod.string().optional(),
   "planTerms": zod.object({
@@ -3993,22 +3993,22 @@ export const ReplaceMembershipPlanBody = zod.object({
   "ar": zod.string().max(replaceMembershipPlanBodyRulesPlanTermsDescriptionArMax),
   "ku": zod.string().max(replaceMembershipPlanBodyRulesPlanTermsDescriptionKuMax)
 }),
-  "trialPeriodDays": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMin).max(replaceMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMax),
-  "minimumContractMonths": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMin).max(replaceMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMax),
-  "renewalPeriodDays": zod.number().int().min(1).max(replaceMembershipPlanBodyRulesPlanTermsRenewalPeriodDaysMax),
-  "cancellationPeriodDays": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMin).max(replaceMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMax),
+  "trialPeriodDays": zod.int().min(replaceMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMin).max(replaceMembershipPlanBodyRulesPlanTermsTrialPeriodDaysMax),
+  "minimumContractMonths": zod.int().min(replaceMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMin).max(replaceMembershipPlanBodyRulesPlanTermsMinimumContractMonthsMax),
+  "renewalPeriodDays": zod.int().min(1).max(replaceMembershipPlanBodyRulesPlanTermsRenewalPeriodDaysMax),
+  "cancellationPeriodDays": zod.int().min(replaceMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMin).max(replaceMembershipPlanBodyRulesPlanTermsCancellationPeriodDaysMax),
   "automaticRenewal": zod.boolean(),
-  "pauseAllowanceDays": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMin).max(replaceMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMax),
-  "priceProtectionMonths": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMin).max(replaceMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMax),
-  "promotionalPriceIqd": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMin).max(replaceMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMax).nullable(),
-  "corporatePriceIqd": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMin).max(replaceMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMax).nullable(),
+  "pauseAllowanceDays": zod.int().min(replaceMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMin).max(replaceMembershipPlanBodyRulesPlanTermsPauseAllowanceDaysMax),
+  "priceProtectionMonths": zod.int().min(replaceMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMin).max(replaceMembershipPlanBodyRulesPlanTermsPriceProtectionMonthsMax),
+  "promotionalPriceIqd": zod.int().min(replaceMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMin).max(replaceMembershipPlanBodyRulesPlanTermsPromotionalPriceIqdMax).nullable(),
+  "corporatePriceIqd": zod.int().min(replaceMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMin).max(replaceMembershipPlanBodyRulesPlanTermsCorporatePriceIqdMax).nullable(),
   "digitalContentAccess": zod.boolean(),
-  "guestPasses": zod.number().int().min(replaceMembershipPlanBodyRulesPlanTermsGuestPassesMin).max(replaceMembershipPlanBodyRulesPlanTermsGuestPassesMax),
+  "guestPasses": zod.int().min(replaceMembershipPlanBodyRulesPlanTermsGuestPassesMin).max(replaceMembershipPlanBodyRulesPlanTermsGuestPassesMax),
   "eventAccess": zod.boolean(),
   "additionalPaymentAllowed": zod.boolean()
 }).optional()
 }),
-  "priceIqd": zod.number().int().min(1).max(replaceMembershipPlanBodyPriceIqdMax).nullable()
+  "priceIqd": zod.int().min(1).max(replaceMembershipPlanBodyPriceIqdMax).nullable()
 })
 
 export const replaceMembershipPlanResponseOneDurationDaysMax = 366;
@@ -4069,21 +4069,21 @@ export const ReplaceMembershipPlanResponse = zod.object({
   "name": zod.string(),
   "tier": zod.string(),
   "kind": zod.enum(['paid', 'trial', 'corporate']),
-  "durationDays": zod.number().int().min(1).max(replaceMembershipPlanResponseOneDurationDaysMax),
+  "durationDays": zod.int().min(1).max(replaceMembershipPlanResponseOneDurationDaysMax),
   "active": zod.boolean(),
   "rules": zod.object({
-  "quota": zod.number().int().min(replaceMembershipPlanResponseOneRulesQuotaMin),
-  "dailyLimit": zod.number().int().min(replaceMembershipPlanResponseOneRulesDailyLimitMin),
+  "quota": zod.int().min(replaceMembershipPlanResponseOneRulesQuotaMin),
+  "dailyLimit": zod.int().min(replaceMembershipPlanResponseOneRulesDailyLimitMin),
   "quotaMode": zod.enum(['shared', 'separate']),
-  "physicalQuota": zod.number().int().min(replaceMembershipPlanResponseOneRulesPhysicalQuotaMin),
-  "premiumQuota": zod.number().int().min(replaceMembershipPlanResponseOneRulesPremiumQuotaMin),
-  "liveQuota": zod.number().int().min(replaceMembershipPlanResponseOneRulesLiveQuotaMin),
+  "physicalQuota": zod.int().min(replaceMembershipPlanResponseOneRulesPhysicalQuotaMin),
+  "premiumQuota": zod.int().min(replaceMembershipPlanResponseOneRulesPremiumQuotaMin),
+  "liveQuota": zod.int().min(replaceMembershipPlanResponseOneRulesLiveQuotaMin),
   "cities": zod.array(zod.string()).optional(),
   "facilities": zod.array(zod.string()).optional(),
   "categories": zod.array(zod.string()).optional(),
-  "facilityLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanResponseOneRulesFacilityLimitsMinOne)).optional(),
-  "categoryLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanResponseOneRulesCategoryLimitsMinOne)).optional(),
-  "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(replaceMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
+  "facilityLimits": zod.record(zod.string(), zod.int().min(replaceMembershipPlanResponseOneRulesFacilityLimitsMinOne)).optional(),
+  "categoryLimits": zod.record(zod.string(), zod.int().min(replaceMembershipPlanResponseOneRulesCategoryLimitsMinOne)).optional(),
+  "partnerGroupLimits": zod.record(zod.string(), zod.int().min(replaceMembershipPlanResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
   "corporateId": zod.string().optional(),
   "planTerms": zod.object({
@@ -4092,22 +4092,22 @@ export const ReplaceMembershipPlanResponse = zod.object({
   "ar": zod.string().max(replaceMembershipPlanResponseOneRulesPlanTermsDescriptionArMax),
   "ku": zod.string().max(replaceMembershipPlanResponseOneRulesPlanTermsDescriptionKuMax)
 }),
-  "trialPeriodDays": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMin).max(replaceMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMax),
-  "minimumContractMonths": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMin).max(replaceMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMax),
-  "renewalPeriodDays": zod.number().int().min(1).max(replaceMembershipPlanResponseOneRulesPlanTermsRenewalPeriodDaysMax),
-  "cancellationPeriodDays": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMin).max(replaceMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMax),
+  "trialPeriodDays": zod.int().min(replaceMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMin).max(replaceMembershipPlanResponseOneRulesPlanTermsTrialPeriodDaysMax),
+  "minimumContractMonths": zod.int().min(replaceMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMin).max(replaceMembershipPlanResponseOneRulesPlanTermsMinimumContractMonthsMax),
+  "renewalPeriodDays": zod.int().min(1).max(replaceMembershipPlanResponseOneRulesPlanTermsRenewalPeriodDaysMax),
+  "cancellationPeriodDays": zod.int().min(replaceMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMin).max(replaceMembershipPlanResponseOneRulesPlanTermsCancellationPeriodDaysMax),
   "automaticRenewal": zod.boolean(),
-  "pauseAllowanceDays": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMin).max(replaceMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMax),
-  "priceProtectionMonths": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMin).max(replaceMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMax),
-  "promotionalPriceIqd": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMin).max(replaceMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMax).nullable(),
-  "corporatePriceIqd": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMin).max(replaceMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMax).nullable(),
+  "pauseAllowanceDays": zod.int().min(replaceMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMin).max(replaceMembershipPlanResponseOneRulesPlanTermsPauseAllowanceDaysMax),
+  "priceProtectionMonths": zod.int().min(replaceMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMin).max(replaceMembershipPlanResponseOneRulesPlanTermsPriceProtectionMonthsMax),
+  "promotionalPriceIqd": zod.int().min(replaceMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMin).max(replaceMembershipPlanResponseOneRulesPlanTermsPromotionalPriceIqdMax).nullable(),
+  "corporatePriceIqd": zod.int().min(replaceMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMin).max(replaceMembershipPlanResponseOneRulesPlanTermsCorporatePriceIqdMax).nullable(),
   "digitalContentAccess": zod.boolean(),
-  "guestPasses": zod.number().int().min(replaceMembershipPlanResponseOneRulesPlanTermsGuestPassesMin).max(replaceMembershipPlanResponseOneRulesPlanTermsGuestPassesMax),
+  "guestPasses": zod.int().min(replaceMembershipPlanResponseOneRulesPlanTermsGuestPassesMin).max(replaceMembershipPlanResponseOneRulesPlanTermsGuestPassesMax),
   "eventAccess": zod.boolean(),
   "additionalPaymentAllowed": zod.boolean()
 }).optional()
 }),
-  "priceIqd": zod.number().int().min(1).max(replaceMembershipPlanResponseOnePriceIqdMax).nullable()
+  "priceIqd": zod.int().min(1).max(replaceMembershipPlanResponseOnePriceIqdMax).nullable()
 }).and(zod.object({
   "id": zod.string(),
   "purchasable": zod.boolean().optional(),
@@ -4176,7 +4176,7 @@ export const requestMembershipRefundBodyReasonMax = 500;
 export const RequestMembershipRefundBody = zod.object({
   "userId": zod.string().min(1).max(requestMembershipRefundBodyUserIdMax),
   "reason": zod.string().min(requestMembershipRefundBodyReasonMin).max(requestMembershipRefundBodyReasonMax),
-  "idempotencyKey": zod.string().uuid().optional()
+  "idempotencyKey": zod.uuid().optional()
 })
 
 
@@ -4190,11 +4190,11 @@ export const RequestMembershipRefundResponse = zod.object({
   "partnerId": zod.string().nullable(),
   "periodStart": zod.coerce.date().nullable(),
   "periodEnd": zod.coerce.date().nullable(),
-  "amountIqd": zod.number().int().min(1).nullable(),
+  "amountIqd": zod.int().min(1).nullable(),
   "reason": zod.string(),
   "requestedBy": zod.string(),
   "reviewedBy": zod.string().nullable(),
-  "idempotencyKey": zod.string().uuid(),
+  "idempotencyKey": zod.uuid(),
   "createdAt": zod.coerce.date(),
   "reviewedAt": zod.coerce.date().nullable()
 })
@@ -4228,8 +4228,8 @@ export const GetFinanceOverviewResponse = zod.object({
   "source": zod.string(),
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
-  "pauseAllowanceDays": zod.number().int().min(getFinanceOverviewResponseCustomersItemPauseAllowanceDaysMin),
-  "pauseUsedDays": zod.number().int().min(getFinanceOverviewResponseCustomersItemPauseUsedDaysMin),
+  "pauseAllowanceDays": zod.int().min(getFinanceOverviewResponseCustomersItemPauseAllowanceDaysMin),
+  "pauseUsedDays": zod.int().min(getFinanceOverviewResponseCustomersItemPauseUsedDaysMin),
   "pausedAt": zod.coerce.date().nullable()
 })),
   "bookings": zod.array(zod.record(zod.string(), zod.unknown())),
@@ -4244,11 +4244,11 @@ export const GetFinanceOverviewResponse = zod.object({
   "partnerId": zod.string().nullable(),
   "periodStart": zod.coerce.date().nullable(),
   "periodEnd": zod.coerce.date().nullable(),
-  "amountIqd": zod.number().int().min(1).nullable(),
+  "amountIqd": zod.int().min(1).nullable(),
   "reason": zod.string(),
   "requestedBy": zod.string(),
   "reviewedBy": zod.string().nullable(),
-  "idempotencyKey": zod.string().uuid(),
+  "idempotencyKey": zod.uuid(),
   "createdAt": zod.coerce.date(),
   "reviewedAt": zod.coerce.date().nullable()
 })),
@@ -4290,15 +4290,15 @@ export const GetFinanceSettlementsResponse = zod.object({
   "city": zod.string(),
   "category": zod.string(),
   "accessType": zod.string(),
-  "verifiedVisits": zod.number().int().min(getFinanceSettlementsResponseGroupsItemVerifiedVisitsMin),
-  "rejectedVisits": zod.number().int().min(getFinanceSettlementsResponseGroupsItemRejectedVisitsMin),
-  "disputedVisits": zod.number().int().min(getFinanceSettlementsResponseGroupsItemDisputedVisitsMin),
-  "onHoldVisits": zod.number().int().min(getFinanceSettlementsResponseGroupsItemOnHoldVisitsMin)
+  "verifiedVisits": zod.int().min(getFinanceSettlementsResponseGroupsItemVerifiedVisitsMin),
+  "rejectedVisits": zod.int().min(getFinanceSettlementsResponseGroupsItemRejectedVisitsMin),
+  "disputedVisits": zod.int().min(getFinanceSettlementsResponseGroupsItemDisputedVisitsMin),
+  "onHoldVisits": zod.int().min(getFinanceSettlementsResponseGroupsItemOnHoldVisitsMin)
 })),
-  "verifiedVisits": zod.number().int().min(getFinanceSettlementsResponseVerifiedVisitsMin),
-  "rejectedVisits": zod.number().int().min(getFinanceSettlementsResponseRejectedVisitsMin),
-  "disputedVisits": zod.number().int().min(getFinanceSettlementsResponseDisputedVisitsMin),
-  "onHoldVisits": zod.number().int().min(getFinanceSettlementsResponseOnHoldVisitsMin),
+  "verifiedVisits": zod.int().min(getFinanceSettlementsResponseVerifiedVisitsMin),
+  "rejectedVisits": zod.int().min(getFinanceSettlementsResponseRejectedVisitsMin),
+  "disputedVisits": zod.int().min(getFinanceSettlementsResponseDisputedVisitsMin),
+  "onHoldVisits": zod.int().min(getFinanceSettlementsResponseOnHoldVisitsMin),
   "payoutApprovalEnabled": zod.boolean(),
   "amountCalculationAvailable": zod.boolean()
 })
@@ -4315,7 +4315,7 @@ export const requestFinanceRefundBodyReasonMax = 500;
 
 export const RequestFinanceRefundBody = zod.object({
   "reason": zod.string().min(requestFinanceRefundBodyReasonMin).max(requestFinanceRefundBodyReasonMax),
-  "idempotencyKey": zod.string().uuid()
+  "idempotencyKey": zod.uuid()
 })
 
 
@@ -4329,11 +4329,11 @@ export const RequestFinanceRefundResponse = zod.object({
   "partnerId": zod.string().nullable(),
   "periodStart": zod.coerce.date().nullable(),
   "periodEnd": zod.coerce.date().nullable(),
-  "amountIqd": zod.number().int().min(1).nullable(),
+  "amountIqd": zod.int().min(1).nullable(),
   "reason": zod.string(),
   "requestedBy": zod.string(),
   "reviewedBy": zod.string().nullable(),
-  "idempotencyKey": zod.string().uuid(),
+  "idempotencyKey": zod.uuid(),
   "createdAt": zod.coerce.date(),
   "reviewedAt": zod.coerce.date().nullable()
 })
@@ -4352,9 +4352,9 @@ export const RequestFinancePayoutTrackingBody = zod.object({
   "partnerId": zod.string().min(1).max(requestFinancePayoutTrackingBodyPartnerIdMax),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date(),
-  "amountIqd": zod.number().int().min(1).max(requestFinancePayoutTrackingBodyAmountIqdMax),
+  "amountIqd": zod.int().min(1).max(requestFinancePayoutTrackingBodyAmountIqdMax),
   "reason": zod.string().min(requestFinancePayoutTrackingBodyReasonMin).max(requestFinancePayoutTrackingBodyReasonMax),
-  "idempotencyKey": zod.string().uuid()
+  "idempotencyKey": zod.uuid()
 })
 
 
@@ -4368,11 +4368,11 @@ export const RequestFinancePayoutTrackingResponse = zod.object({
   "partnerId": zod.string().nullable(),
   "periodStart": zod.coerce.date().nullable(),
   "periodEnd": zod.coerce.date().nullable(),
-  "amountIqd": zod.number().int().min(1).nullable(),
+  "amountIqd": zod.int().min(1).nullable(),
   "reason": zod.string(),
   "requestedBy": zod.string(),
   "reviewedBy": zod.string().nullable(),
-  "idempotencyKey": zod.string().uuid(),
+  "idempotencyKey": zod.uuid(),
   "createdAt": zod.coerce.date(),
   "reviewedAt": zod.coerce.date().nullable()
 })
@@ -4403,11 +4403,11 @@ export const DecideFinanceReviewResponse = zod.object({
   "partnerId": zod.string().nullable(),
   "periodStart": zod.coerce.date().nullable(),
   "periodEnd": zod.coerce.date().nullable(),
-  "amountIqd": zod.number().int().min(1).nullable(),
+  "amountIqd": zod.int().min(1).nullable(),
   "reason": zod.string(),
   "requestedBy": zod.string(),
   "reviewedBy": zod.string().nullable(),
-  "idempotencyKey": zod.string().uuid(),
+  "idempotencyKey": zod.uuid(),
   "createdAt": zod.coerce.date(),
   "reviewedAt": zod.coerce.date().nullable()
 })
@@ -4433,7 +4433,7 @@ export const ReviewPartnerFinanceInvoiceBody = zod.object({
 export const ReviewPartnerFinanceInvoiceResponse = zod.object({
   "id": zod.string(),
   "invoiceNumber": zod.string(),
-  "amountIqd": zod.number().int().min(1),
+  "amountIqd": zod.int().min(1),
   "issuedAt": zod.coerce.date(),
   "periodStart": zod.coerce.date(),
   "periodEnd": zod.coerce.date(),
@@ -4459,7 +4459,7 @@ export const GetFinanceAuditResponse = zod.object({
 
 export const GetSuperAdminAccountsResponseItem = zod.object({
   "userId": zod.string(),
-  "email": zod.string().email().nullable(),
+  "email": zod.email().nullable(),
   "role": zod.enum(['customer_support_admin', 'partner_operations_admin', 'finance_admin', 'content_admin', 'marketing_admin', 'corporate_admin', 'fraud_compliance_admin', 'technical_admin', 'super_admin']),
   "status": zod.enum(['active', 'suspended'])
 })
@@ -4471,14 +4471,14 @@ export const upsertSuperAdminAccountBodyEmailMax = 320;
 
 
 export const UpsertSuperAdminAccountBody = zod.object({
-  "email": zod.string().email().max(upsertSuperAdminAccountBodyEmailMax),
+  "email": zod.email().max(upsertSuperAdminAccountBodyEmailMax),
   "role": zod.enum(['customer_support_admin', 'partner_operations_admin', 'finance_admin', 'content_admin', 'marketing_admin', 'corporate_admin', 'fraud_compliance_admin', 'technical_admin', 'super_admin']),
   "status": zod.enum(['active', 'suspended'])
 })
 
 export const UpsertSuperAdminAccountResponse = zod.object({
   "userId": zod.string(),
-  "email": zod.string().email().nullable(),
+  "email": zod.email().nullable(),
   "role": zod.enum(['customer_support_admin', 'partner_operations_admin', 'finance_admin', 'content_admin', 'marketing_admin', 'corporate_admin', 'fraud_compliance_admin', 'technical_admin', 'super_admin']),
   "status": zod.enum(['active', 'suspended'])
 })
@@ -4518,15 +4518,15 @@ export const getSuperAdminPlatformRulesResponseSettingsMaxDailyVisitsPerPlanMax 
 
 export const GetSuperAdminPlatformRulesResponse = zod.object({
   "settings": zod.object({
-  "deviceChangeWaitHours": zod.number().int().min(1).max(getSuperAdminPlatformRulesResponseSettingsDeviceChangeWaitHoursMax),
-  "deviceChangeRiskWindowDays": zod.number().int().min(1).max(getSuperAdminPlatformRulesResponseSettingsDeviceChangeRiskWindowDaysMax),
-  "repeatedDeviceChangeThreshold": zod.number().int().min(1).max(getSuperAdminPlatformRulesResponseSettingsRepeatedDeviceChangeThresholdMax),
-  "maxCheckinAccuracyMeters": zod.number().int().min(1).max(getSuperAdminPlatformRulesResponseSettingsMaxCheckinAccuracyMetersMax),
-  "rapidCheckinBlockSeconds": zod.number().int().min(1).max(getSuperAdminPlatformRulesResponseSettingsRapidCheckinBlockSecondsMax),
-  "impossibleTravelWindowSeconds": zod.number().int().min(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMin).max(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMax),
-  "impossibleTravelBaseMeters": zod.number().int().min(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMin).max(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMax),
-  "impossibleTravelMetersPerSecond": zod.number().int().min(1).max(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelMetersPerSecondMax),
-  "maxDailyVisitsPerPlan": zod.number().int().min(1).max(getSuperAdminPlatformRulesResponseSettingsMaxDailyVisitsPerPlanMax),
+  "deviceChangeWaitHours": zod.int().min(1).max(getSuperAdminPlatformRulesResponseSettingsDeviceChangeWaitHoursMax),
+  "deviceChangeRiskWindowDays": zod.int().min(1).max(getSuperAdminPlatformRulesResponseSettingsDeviceChangeRiskWindowDaysMax),
+  "repeatedDeviceChangeThreshold": zod.int().min(1).max(getSuperAdminPlatformRulesResponseSettingsRepeatedDeviceChangeThresholdMax),
+  "maxCheckinAccuracyMeters": zod.int().min(1).max(getSuperAdminPlatformRulesResponseSettingsMaxCheckinAccuracyMetersMax),
+  "rapidCheckinBlockSeconds": zod.int().min(1).max(getSuperAdminPlatformRulesResponseSettingsRapidCheckinBlockSecondsMax),
+  "impossibleTravelWindowSeconds": zod.int().min(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMin).max(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMax),
+  "impossibleTravelBaseMeters": zod.int().min(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMin).max(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMax),
+  "impossibleTravelMetersPerSecond": zod.int().min(1).max(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelMetersPerSecondMax),
+  "maxDailyVisitsPerPlan": zod.int().min(1).max(getSuperAdminPlatformRulesResponseSettingsMaxDailyVisitsPerPlanMax),
   "offeringApprovalRequired": zod.boolean()
 }),
   "isCustom": zod.boolean(),
@@ -4558,15 +4558,15 @@ export const updateSuperAdminPlatformRulesBodySettingsMaxDailyVisitsPerPlanMax =
 
 export const UpdateSuperAdminPlatformRulesBody = zod.object({
   "settings": zod.object({
-  "deviceChangeWaitHours": zod.number().int().min(1).max(updateSuperAdminPlatformRulesBodySettingsDeviceChangeWaitHoursMax),
-  "deviceChangeRiskWindowDays": zod.number().int().min(1).max(updateSuperAdminPlatformRulesBodySettingsDeviceChangeRiskWindowDaysMax),
-  "repeatedDeviceChangeThreshold": zod.number().int().min(1).max(updateSuperAdminPlatformRulesBodySettingsRepeatedDeviceChangeThresholdMax),
-  "maxCheckinAccuracyMeters": zod.number().int().min(1).max(updateSuperAdminPlatformRulesBodySettingsMaxCheckinAccuracyMetersMax),
-  "rapidCheckinBlockSeconds": zod.number().int().min(1).max(updateSuperAdminPlatformRulesBodySettingsRapidCheckinBlockSecondsMax),
-  "impossibleTravelWindowSeconds": zod.number().int().min(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelWindowSecondsMin).max(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelWindowSecondsMax),
-  "impossibleTravelBaseMeters": zod.number().int().min(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelBaseMetersMin).max(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelBaseMetersMax),
-  "impossibleTravelMetersPerSecond": zod.number().int().min(1).max(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelMetersPerSecondMax),
-  "maxDailyVisitsPerPlan": zod.number().int().min(1).max(updateSuperAdminPlatformRulesBodySettingsMaxDailyVisitsPerPlanMax),
+  "deviceChangeWaitHours": zod.int().min(1).max(updateSuperAdminPlatformRulesBodySettingsDeviceChangeWaitHoursMax),
+  "deviceChangeRiskWindowDays": zod.int().min(1).max(updateSuperAdminPlatformRulesBodySettingsDeviceChangeRiskWindowDaysMax),
+  "repeatedDeviceChangeThreshold": zod.int().min(1).max(updateSuperAdminPlatformRulesBodySettingsRepeatedDeviceChangeThresholdMax),
+  "maxCheckinAccuracyMeters": zod.int().min(1).max(updateSuperAdminPlatformRulesBodySettingsMaxCheckinAccuracyMetersMax),
+  "rapidCheckinBlockSeconds": zod.int().min(1).max(updateSuperAdminPlatformRulesBodySettingsRapidCheckinBlockSecondsMax),
+  "impossibleTravelWindowSeconds": zod.int().min(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelWindowSecondsMin).max(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelWindowSecondsMax),
+  "impossibleTravelBaseMeters": zod.int().min(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelBaseMetersMin).max(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelBaseMetersMax),
+  "impossibleTravelMetersPerSecond": zod.int().min(1).max(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelMetersPerSecondMax),
+  "maxDailyVisitsPerPlan": zod.int().min(1).max(updateSuperAdminPlatformRulesBodySettingsMaxDailyVisitsPerPlanMax),
   "offeringApprovalRequired": zod.boolean()
 })
 })
@@ -4595,15 +4595,15 @@ export const updateSuperAdminPlatformRulesResponseSettingsMaxDailyVisitsPerPlanM
 
 export const UpdateSuperAdminPlatformRulesResponse = zod.object({
   "settings": zod.object({
-  "deviceChangeWaitHours": zod.number().int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsDeviceChangeWaitHoursMax),
-  "deviceChangeRiskWindowDays": zod.number().int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsDeviceChangeRiskWindowDaysMax),
-  "repeatedDeviceChangeThreshold": zod.number().int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsRepeatedDeviceChangeThresholdMax),
-  "maxCheckinAccuracyMeters": zod.number().int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsMaxCheckinAccuracyMetersMax),
-  "rapidCheckinBlockSeconds": zod.number().int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsRapidCheckinBlockSecondsMax),
-  "impossibleTravelWindowSeconds": zod.number().int().min(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMin).max(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMax),
-  "impossibleTravelBaseMeters": zod.number().int().min(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMin).max(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMax),
-  "impossibleTravelMetersPerSecond": zod.number().int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelMetersPerSecondMax),
-  "maxDailyVisitsPerPlan": zod.number().int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsMaxDailyVisitsPerPlanMax),
+  "deviceChangeWaitHours": zod.int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsDeviceChangeWaitHoursMax),
+  "deviceChangeRiskWindowDays": zod.int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsDeviceChangeRiskWindowDaysMax),
+  "repeatedDeviceChangeThreshold": zod.int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsRepeatedDeviceChangeThresholdMax),
+  "maxCheckinAccuracyMeters": zod.int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsMaxCheckinAccuracyMetersMax),
+  "rapidCheckinBlockSeconds": zod.int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsRapidCheckinBlockSecondsMax),
+  "impossibleTravelWindowSeconds": zod.int().min(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMin).max(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelWindowSecondsMax),
+  "impossibleTravelBaseMeters": zod.int().min(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMin).max(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMax),
+  "impossibleTravelMetersPerSecond": zod.int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelMetersPerSecondMax),
+  "maxDailyVisitsPerPlan": zod.int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsMaxDailyVisitsPerPlanMax),
   "offeringApprovalRequired": zod.boolean()
 }),
   "isCustom": zod.boolean(),
@@ -4717,7 +4717,7 @@ export const GetFacilityQualityControlResponse = zod.object({
   "city": zod.string(),
   "documentType": zod.enum(['licence', 'insurance']),
   "expiresOn": zod.coerce.date(),
-  "daysRemaining": zod.number().int()
+  "daysRemaining": zod.int()
 })),
   "emergencyContacts": zod.array(zod.object({
   "facilityId": zod.string(),
@@ -4990,14 +4990,14 @@ export const GetOperationsFacilityReviewsResponse = zod.object({
   "partnerName": zod.string(),
   "reviewerUserId": zod.string().nullable(),
   "reviewPrivilegeSuspended": zod.boolean(),
-  "overallRating": zod.number().int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemOverallRatingMax),
+  "overallRating": zod.int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemOverallRatingMax),
   "categoryRatings": zod.object({
-  "cleanliness": zod.number().int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsCleanlinessMax).nullable(),
-  "staff": zod.number().int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsStaffMax).nullable(),
-  "equipment": zod.number().int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsEquipmentMax).nullable(),
-  "instructor": zod.number().int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsInstructorMax).nullable(),
-  "facilities": zod.number().int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsFacilitiesMax).nullable(),
-  "informationAccuracy": zod.number().int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsInformationAccuracyMax).nullable()
+  "cleanliness": zod.int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsCleanlinessMax).nullable(),
+  "staff": zod.int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsStaffMax).nullable(),
+  "equipment": zod.int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsEquipmentMax).nullable(),
+  "instructor": zod.int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsInstructorMax).nullable(),
+  "facilities": zod.int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsFacilitiesMax).nullable(),
+  "informationAccuracy": zod.int().min(1).max(getOperationsFacilityReviewsResponseReviewsItemCategoryRatingsInformationAccuracyMax).nullable()
 }),
   "content": zod.string().max(getOperationsFacilityReviewsResponseReviewsItemContentMax).nullable(),
   "status": zod.enum(['published', 'hidden', 'removed']),
@@ -5005,7 +5005,7 @@ export const GetOperationsFacilityReviewsResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
   "partnerResponse": zod.string().max(getOperationsFacilityReviewsResponseReviewsItemPartnerResponseMax).nullable(),
-  "reportCount": zod.number().int().min(getOperationsFacilityReviewsResponseReviewsItemReportCountMin),
+  "reportCount": zod.int().min(getOperationsFacilityReviewsResponseReviewsItemReportCountMin),
   "reports": zod.array(zod.object({
   "id": zod.string(),
   "reason": zod.enum(['abusive', 'personal_information', 'misleading', 'other']),
@@ -5066,14 +5066,14 @@ export const ModerateFacilityReviewResponse = zod.object({
   "partnerName": zod.string(),
   "reviewerUserId": zod.string().nullable(),
   "reviewPrivilegeSuspended": zod.boolean(),
-  "overallRating": zod.number().int().min(1).max(moderateFacilityReviewResponseOverallRatingMax),
+  "overallRating": zod.int().min(1).max(moderateFacilityReviewResponseOverallRatingMax),
   "categoryRatings": zod.object({
-  "cleanliness": zod.number().int().min(1).max(moderateFacilityReviewResponseCategoryRatingsCleanlinessMax).nullable(),
-  "staff": zod.number().int().min(1).max(moderateFacilityReviewResponseCategoryRatingsStaffMax).nullable(),
-  "equipment": zod.number().int().min(1).max(moderateFacilityReviewResponseCategoryRatingsEquipmentMax).nullable(),
-  "instructor": zod.number().int().min(1).max(moderateFacilityReviewResponseCategoryRatingsInstructorMax).nullable(),
-  "facilities": zod.number().int().min(1).max(moderateFacilityReviewResponseCategoryRatingsFacilitiesMax).nullable(),
-  "informationAccuracy": zod.number().int().min(1).max(moderateFacilityReviewResponseCategoryRatingsInformationAccuracyMax).nullable()
+  "cleanliness": zod.int().min(1).max(moderateFacilityReviewResponseCategoryRatingsCleanlinessMax).nullable(),
+  "staff": zod.int().min(1).max(moderateFacilityReviewResponseCategoryRatingsStaffMax).nullable(),
+  "equipment": zod.int().min(1).max(moderateFacilityReviewResponseCategoryRatingsEquipmentMax).nullable(),
+  "instructor": zod.int().min(1).max(moderateFacilityReviewResponseCategoryRatingsInstructorMax).nullable(),
+  "facilities": zod.int().min(1).max(moderateFacilityReviewResponseCategoryRatingsFacilitiesMax).nullable(),
+  "informationAccuracy": zod.int().min(1).max(moderateFacilityReviewResponseCategoryRatingsInformationAccuracyMax).nullable()
 }),
   "content": zod.string().max(moderateFacilityReviewResponseContentMax).nullable(),
   "status": zod.enum(['published', 'hidden', 'removed']),
@@ -5081,7 +5081,7 @@ export const ModerateFacilityReviewResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
   "partnerResponse": zod.string().max(moderateFacilityReviewResponsePartnerResponseMax).nullable(),
-  "reportCount": zod.number().int().min(moderateFacilityReviewResponseReportCountMin),
+  "reportCount": zod.int().min(moderateFacilityReviewResponseReportCountMin),
   "reports": zod.array(zod.object({
   "id": zod.string(),
   "reason": zod.enum(['abusive', 'personal_information', 'misleading', 'other']),
@@ -5140,14 +5140,14 @@ export const RespondToFacilityReviewResponse = zod.object({
   "partnerName": zod.string(),
   "reviewerUserId": zod.string().nullable(),
   "reviewPrivilegeSuspended": zod.boolean(),
-  "overallRating": zod.number().int().min(1).max(respondToFacilityReviewResponseOverallRatingMax),
+  "overallRating": zod.int().min(1).max(respondToFacilityReviewResponseOverallRatingMax),
   "categoryRatings": zod.object({
-  "cleanliness": zod.number().int().min(1).max(respondToFacilityReviewResponseCategoryRatingsCleanlinessMax).nullable(),
-  "staff": zod.number().int().min(1).max(respondToFacilityReviewResponseCategoryRatingsStaffMax).nullable(),
-  "equipment": zod.number().int().min(1).max(respondToFacilityReviewResponseCategoryRatingsEquipmentMax).nullable(),
-  "instructor": zod.number().int().min(1).max(respondToFacilityReviewResponseCategoryRatingsInstructorMax).nullable(),
-  "facilities": zod.number().int().min(1).max(respondToFacilityReviewResponseCategoryRatingsFacilitiesMax).nullable(),
-  "informationAccuracy": zod.number().int().min(1).max(respondToFacilityReviewResponseCategoryRatingsInformationAccuracyMax).nullable()
+  "cleanliness": zod.int().min(1).max(respondToFacilityReviewResponseCategoryRatingsCleanlinessMax).nullable(),
+  "staff": zod.int().min(1).max(respondToFacilityReviewResponseCategoryRatingsStaffMax).nullable(),
+  "equipment": zod.int().min(1).max(respondToFacilityReviewResponseCategoryRatingsEquipmentMax).nullable(),
+  "instructor": zod.int().min(1).max(respondToFacilityReviewResponseCategoryRatingsInstructorMax).nullable(),
+  "facilities": zod.int().min(1).max(respondToFacilityReviewResponseCategoryRatingsFacilitiesMax).nullable(),
+  "informationAccuracy": zod.int().min(1).max(respondToFacilityReviewResponseCategoryRatingsInformationAccuracyMax).nullable()
 }),
   "content": zod.string().max(respondToFacilityReviewResponseContentMax).nullable(),
   "status": zod.enum(['published', 'hidden', 'removed']),
@@ -5155,7 +5155,7 @@ export const RespondToFacilityReviewResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
   "partnerResponse": zod.string().max(respondToFacilityReviewResponsePartnerResponseMax).nullable(),
-  "reportCount": zod.number().int().min(respondToFacilityReviewResponseReportCountMin),
+  "reportCount": zod.int().min(respondToFacilityReviewResponseReportCountMin),
   "reports": zod.array(zod.object({
   "id": zod.string(),
   "reason": zod.enum(['abusive', 'personal_information', 'misleading', 'other']),
@@ -5234,7 +5234,7 @@ export const GetLiveCatalogResponseItem = zod.object({
   "ar": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
-  "joinUrl": zod.string().url().nullish(),
+  "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
   "city": zod.string(),
   "facility": zod.string(),
@@ -5244,11 +5244,11 @@ export const GetLiveCatalogResponseItem = zod.object({
   "startsAt": zod.string(),
   "endsAt": zod.string(),
   "cancellationDeadline": zod.string(),
-  "capacity": zod.number().int().min(1),
-  "waitlistOfferMinutes": zod.number().int().min(getLiveCatalogResponseOneWaitlistOfferMinutesMin).max(getLiveCatalogResponseOneWaitlistOfferMinutesMax).default(getLiveCatalogResponseOneWaitlistOfferMinutesDefault),
+  "capacity": zod.int().min(1),
+  "waitlistOfferMinutes": zod.int().min(getLiveCatalogResponseOneWaitlistOfferMinutesMin).max(getLiveCatalogResponseOneWaitlistOfferMinutesMax).default(getLiveCatalogResponseOneWaitlistOfferMinutesDefault),
   "gender": zod.enum(['all', 'female', 'male']).optional(),
-  "minAge": zod.number().int().min(getLiveCatalogResponseOneMinAgeMin).optional(),
-  "maxAge": zod.number().int().nullish(),
+  "minAge": zod.int().min(getLiveCatalogResponseOneMinAgeMin).optional(),
+  "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
 }).and(zod.object({
@@ -5265,13 +5265,13 @@ export const GetLiveCatalogResponseItem = zod.object({
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
-  "remaining": zod.number().int().optional(),
+  "remaining": zod.int().optional(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.number().int().min(getLiveCatalogResponseTwoWaitlistOfferMinutesMin).max(getLiveCatalogResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(getLiveCatalogResponseTwoWaitlistOfferMinutesMin).max(getLiveCatalogResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
-  "radius": zod.number().int(),
+  "radius": zod.int(),
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
@@ -5290,7 +5290,7 @@ export const GetMemberDeviceStatusResponse = zod.object({
   "pendingActivationAt": zod.coerce.date().nullable(),
   "pendingPlatform": zod.union([zod.enum(['ios', 'android', 'unknown']),zod.null()]),
   "pendingRiskFlag": zod.boolean(),
-  "waitHours": zod.number().int().min(1).max(getMemberDeviceStatusResponseWaitHoursMax)
+  "waitHours": zod.int().min(1).max(getMemberDeviceStatusResponseWaitHoursMax)
 })
 
 
@@ -5308,7 +5308,7 @@ export const RegisterMemberDeviceResponse = zod.object({
   "pendingActivationAt": zod.coerce.date().nullable(),
   "pendingPlatform": zod.union([zod.enum(['ios', 'android', 'unknown']),zod.null()]),
   "pendingRiskFlag": zod.boolean(),
-  "waitHours": zod.number().int().min(1).max(registerMemberDeviceResponseWaitHoursMax)
+  "waitHours": zod.int().min(1).max(registerMemberDeviceResponseWaitHoursMax)
 })
 
 
@@ -5322,7 +5322,7 @@ export const CancelMemberDeviceChangeResponse = zod.object({
   "pendingActivationAt": zod.coerce.date().nullable(),
   "pendingPlatform": zod.union([zod.enum(['ios', 'android', 'unknown']),zod.null()]),
   "pendingRiskFlag": zod.boolean(),
-  "waitHours": zod.number().int().min(1).max(cancelMemberDeviceChangeResponseWaitHoursMax)
+  "waitHours": zod.int().min(1).max(cancelMemberDeviceChangeResponseWaitHoursMax)
 })
 
 
@@ -5368,15 +5368,15 @@ export const GetMemberCoursesResponseItem = zod.object({
 }),
   "category": zod.string().min(1).max(getMemberCoursesResponseOneCategoryMax),
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
-  "durationMinutes": zod.number().int().min(1).max(getMemberCoursesResponseOneDurationMinutesMax),
-  "thumbnailUrl": zod.string().url().nullable(),
+  "durationMinutes": zod.int().min(1).max(getMemberCoursesResponseOneDurationMinutesMax),
+  "thumbnailUrl": zod.url().nullable(),
   "published": zod.boolean()
 }).and(zod.object({
   "id": zod.string(),
   "title": zod.string(),
-  "lessonCount": zod.number().int(),
+  "lessonCount": zod.int(),
   "enrolled": zod.boolean(),
-  "completedLessons": zod.number().int()
+  "completedLessons": zod.int()
 }))
 export const GetMemberCoursesResponse = zod.array(GetMemberCoursesResponseItem)
 
@@ -5439,20 +5439,20 @@ export const GetMemberCourseResponse = zod.object({
 }),
   "category": zod.string().min(1).max(getMemberCourseResponseOneOneCategoryMax),
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
-  "durationMinutes": zod.number().int().min(1).max(getMemberCourseResponseOneOneDurationMinutesMax),
-  "thumbnailUrl": zod.string().url().nullable(),
+  "durationMinutes": zod.int().min(1).max(getMemberCourseResponseOneOneDurationMinutesMax),
+  "thumbnailUrl": zod.url().nullable(),
   "published": zod.boolean()
 }).and(zod.object({
   "id": zod.string(),
   "title": zod.string(),
-  "lessonCount": zod.number().int(),
+  "lessonCount": zod.int(),
   "enrolled": zod.boolean(),
-  "completedLessons": zod.number().int()
+  "completedLessons": zod.int()
 })).and(zod.object({
   "accessState": zod.enum(['membership_required', 'enrollment_required', 'ready']),
   "lessons": zod.array(zod.object({
   "id": zod.string(),
-  "position": zod.number().int(),
+  "position": zod.int(),
   "localizedTitle": zod.object({
   "en": zod.string().min(1).max(getMemberCourseResponseTwoLessonsItemLocalizedTitleEnMax),
   "ar": zod.string().min(1).max(getMemberCourseResponseTwoLessonsItemLocalizedTitleArMax),
@@ -5463,7 +5463,7 @@ export const GetMemberCourseResponse = zod.object({
   "ar": zod.string().min(1).max(getMemberCourseResponseTwoLessonsItemLocalizedContentOneArMax),
   "ku": zod.string().min(1).max(getMemberCourseResponseTwoLessonsItemLocalizedContentOneKuMax)
 }),zod.null()]),
-  "durationMinutes": zod.number().int(),
+  "durationMinutes": zod.int(),
   "mediaUrl": zod.string().nullable(),
   "hasRecording": zod.boolean(),
   "completed": zod.boolean()
@@ -5529,20 +5529,20 @@ export const EnrollMemberCourseResponse = zod.object({
 }),
   "category": zod.string().min(1).max(enrollMemberCourseResponseOneOneCategoryMax),
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
-  "durationMinutes": zod.number().int().min(1).max(enrollMemberCourseResponseOneOneDurationMinutesMax),
-  "thumbnailUrl": zod.string().url().nullable(),
+  "durationMinutes": zod.int().min(1).max(enrollMemberCourseResponseOneOneDurationMinutesMax),
+  "thumbnailUrl": zod.url().nullable(),
   "published": zod.boolean()
 }).and(zod.object({
   "id": zod.string(),
   "title": zod.string(),
-  "lessonCount": zod.number().int(),
+  "lessonCount": zod.int(),
   "enrolled": zod.boolean(),
-  "completedLessons": zod.number().int()
+  "completedLessons": zod.int()
 })).and(zod.object({
   "accessState": zod.enum(['membership_required', 'enrollment_required', 'ready']),
   "lessons": zod.array(zod.object({
   "id": zod.string(),
-  "position": zod.number().int(),
+  "position": zod.int(),
   "localizedTitle": zod.object({
   "en": zod.string().min(1).max(enrollMemberCourseResponseTwoLessonsItemLocalizedTitleEnMax),
   "ar": zod.string().min(1).max(enrollMemberCourseResponseTwoLessonsItemLocalizedTitleArMax),
@@ -5553,7 +5553,7 @@ export const EnrollMemberCourseResponse = zod.object({
   "ar": zod.string().min(1).max(enrollMemberCourseResponseTwoLessonsItemLocalizedContentOneArMax),
   "ku": zod.string().min(1).max(enrollMemberCourseResponseTwoLessonsItemLocalizedContentOneKuMax)
 }),zod.null()]),
-  "durationMinutes": zod.number().int(),
+  "durationMinutes": zod.int(),
   "mediaUrl": zod.string().nullable(),
   "hasRecording": zod.boolean(),
   "completed": zod.boolean()
@@ -5627,20 +5627,20 @@ export const UpdateCourseProgressResponse = zod.object({
 }),
   "category": zod.string().min(1).max(updateCourseProgressResponseOneOneCategoryMax),
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
-  "durationMinutes": zod.number().int().min(1).max(updateCourseProgressResponseOneOneDurationMinutesMax),
-  "thumbnailUrl": zod.string().url().nullable(),
+  "durationMinutes": zod.int().min(1).max(updateCourseProgressResponseOneOneDurationMinutesMax),
+  "thumbnailUrl": zod.url().nullable(),
   "published": zod.boolean()
 }).and(zod.object({
   "id": zod.string(),
   "title": zod.string(),
-  "lessonCount": zod.number().int(),
+  "lessonCount": zod.int(),
   "enrolled": zod.boolean(),
-  "completedLessons": zod.number().int()
+  "completedLessons": zod.int()
 })).and(zod.object({
   "accessState": zod.enum(['membership_required', 'enrollment_required', 'ready']),
   "lessons": zod.array(zod.object({
   "id": zod.string(),
-  "position": zod.number().int(),
+  "position": zod.int(),
   "localizedTitle": zod.object({
   "en": zod.string().min(1).max(updateCourseProgressResponseTwoLessonsItemLocalizedTitleEnMax),
   "ar": zod.string().min(1).max(updateCourseProgressResponseTwoLessonsItemLocalizedTitleArMax),
@@ -5651,7 +5651,7 @@ export const UpdateCourseProgressResponse = zod.object({
   "ar": zod.string().min(1).max(updateCourseProgressResponseTwoLessonsItemLocalizedContentOneArMax),
   "ku": zod.string().min(1).max(updateCourseProgressResponseTwoLessonsItemLocalizedContentOneKuMax)
 }),zod.null()]),
-  "durationMinutes": zod.number().int(),
+  "durationMinutes": zod.int(),
   "mediaUrl": zod.string().nullable(),
   "hasRecording": zod.boolean(),
   "completed": zod.boolean()
@@ -5722,7 +5722,7 @@ export const GetMemberLiveClassesResponseItem = zod.object({
   "partnerName": zod.string(),
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
-  "remaining": zod.number().int().min(getMemberLiveClassesResponseRemainingMin),
+  "remaining": zod.int().min(getMemberLiveClassesResponseRemainingMin),
   "booked": zod.boolean(),
   "canJoin": zod.boolean()
 })
@@ -5734,7 +5734,7 @@ export const CreateLiveClassJoinParams = zod.object({
 })
 
 export const CreateLiveClassJoinResponse = zod.object({
-  "url": zod.string().url(),
+  "url": zod.url(),
   "validUntil": zod.coerce.date()
 })
 
@@ -5789,7 +5789,7 @@ export const JoinMemberWaitlistResponse = zod.object({
   "offeringId": zod.string(),
   "title": zod.string(),
   "startsAt": zod.coerce.date(),
-  "queuePosition": zod.number().int().min(1),
+  "queuePosition": zod.int().min(1),
   "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
@@ -5855,7 +5855,7 @@ export const LeaveMemberWaitlistResponse = zod.object({
   "offeringId": zod.string(),
   "title": zod.string(),
   "startsAt": zod.coerce.date(),
-  "queuePosition": zod.number().int().min(1),
+  "queuePosition": zod.int().min(1),
   "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
@@ -5921,7 +5921,7 @@ export const AcceptMemberWaitlistOfferResponse = zod.object({
   "offeringId": zod.string(),
   "title": zod.string(),
   "startsAt": zod.coerce.date(),
-  "queuePosition": zod.number().int().min(1),
+  "queuePosition": zod.int().min(1),
   "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
@@ -6074,11 +6074,11 @@ export const getMemberSupportTicketAttachmentsResponseSizeMax = 10485760;
 
 
 export const GetMemberSupportTicketAttachmentsResponseItem = zod.object({
-  "id": zod.string().uuid(),
-  "messageId": zod.string().uuid(),
+  "id": zod.uuid(),
+  "messageId": zod.uuid(),
   "fileName": zod.string(),
   "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
-  "size": zod.number().int().min(1).max(getMemberSupportTicketAttachmentsResponseSizeMax),
+  "size": zod.int().min(1).max(getMemberSupportTicketAttachmentsResponseSizeMax),
   "uploaderRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical attachments only.'),
   "createdAt": zod.coerce.date()
 })
@@ -6096,22 +6096,22 @@ export const requestMemberSupportAttachmentUploadUrlBodySizeMax = 10485760;
 
 
 export const RequestMemberSupportAttachmentUploadUrlBody = zod.object({
-  "messageId": zod.string().uuid(),
+  "messageId": zod.uuid(),
   "fileName": zod.string().min(1).max(requestMemberSupportAttachmentUploadUrlBodyFileNameMax),
   "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
-  "size": zod.number().int().min(1).max(requestMemberSupportAttachmentUploadUrlBodySizeMax)
+  "size": zod.int().min(1).max(requestMemberSupportAttachmentUploadUrlBodySizeMax)
 })
 
 export const RequestMemberSupportAttachmentUploadUrlResponse = zod.object({
-  "id": zod.string().uuid(),
-  "uploadURL": zod.string().url(),
+  "id": zod.uuid(),
+  "uploadURL": zod.url(),
   "objectPath": zod.string()
 })
 
 
 export const CompleteMemberSupportAttachmentParams = zod.object({
   "id": zod.coerce.string(),
-  "attachmentId": zod.coerce.string().uuid()
+  "attachmentId": zod.uuid()
 })
 
 export const completeMemberSupportAttachmentResponseSizeMax = 10485760;
@@ -6119,11 +6119,11 @@ export const completeMemberSupportAttachmentResponseSizeMax = 10485760;
 
 
 export const CompleteMemberSupportAttachmentResponse = zod.object({
-  "id": zod.string().uuid(),
-  "messageId": zod.string().uuid(),
+  "id": zod.uuid(),
+  "messageId": zod.uuid(),
   "fileName": zod.string(),
   "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
-  "size": zod.number().int().min(1).max(completeMemberSupportAttachmentResponseSizeMax),
+  "size": zod.int().min(1).max(completeMemberSupportAttachmentResponseSizeMax),
   "uploaderRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical attachments only.'),
   "createdAt": zod.coerce.date()
 })
@@ -6131,7 +6131,7 @@ export const CompleteMemberSupportAttachmentResponse = zod.object({
 
 export const DeletePendingMemberSupportAttachmentParams = zod.object({
   "id": zod.coerce.string(),
-  "attachmentId": zod.coerce.string().uuid()
+  "attachmentId": zod.uuid()
 })
 
 export const DeletePendingMemberSupportAttachmentResponse = zod.void()
@@ -6139,10 +6139,32 @@ export const DeletePendingMemberSupportAttachmentResponse = zod.void()
 
 export const DownloadMemberSupportAttachmentParams = zod.object({
   "id": zod.coerce.string(),
-  "attachmentId": zod.coerce.string().uuid()
+  "attachmentId": zod.uuid()
 })
 
 export const DownloadMemberSupportAttachmentResponse = zod.unknown()
+
+
+export const GetMemberPrivacyRequestsResponseItem = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "createdAt": zod.coerce.date()
+})
+export const GetMemberPrivacyRequestsResponse = zod.array(GetMemberPrivacyRequestsResponseItem)
+
+
+export const CreateMemberPrivacyRequestBody = zod.object({
+  "kind": zod.enum(['data_export', 'account_deletion']),
+  "language": zod.enum(['en', 'ar', 'ku'])
+})
+
+export const CreateMemberPrivacyRequestResponse = zod.object({
+  "id": zod.string(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "createdAt": zod.coerce.date()
+})
 
 
 export const getMemberNotificationSettingsResponseRegisteredDevicesMin = 0;
@@ -6152,7 +6174,7 @@ export const getMemberNotificationSettingsResponseRegisteredDevicesMin = 0;
 export const GetMemberNotificationSettingsResponse = zod.object({
   "pushEnabled": zod.boolean(),
   "language": zod.enum(['en', 'ar', 'ku']),
-  "registeredDevices": zod.number().int().min(getMemberNotificationSettingsResponseRegisteredDevicesMin)
+  "registeredDevices": zod.int().min(getMemberNotificationSettingsResponseRegisteredDevicesMin)
 })
 
 
@@ -6168,7 +6190,7 @@ export const updateMemberNotificationSettingsResponseRegisteredDevicesMin = 0;
 export const UpdateMemberNotificationSettingsResponse = zod.object({
   "pushEnabled": zod.boolean(),
   "language": zod.enum(['en', 'ar', 'ku']),
-  "registeredDevices": zod.number().int().min(updateMemberNotificationSettingsResponseRegisteredDevicesMin)
+  "registeredDevices": zod.int().min(updateMemberNotificationSettingsResponseRegisteredDevicesMin)
 })
 
 
@@ -6192,7 +6214,7 @@ export const registerMemberPushDeviceResponseRegisteredDevicesMin = 0;
 export const RegisterMemberPushDeviceResponse = zod.object({
   "pushEnabled": zod.boolean(),
   "language": zod.enum(['en', 'ar', 'ku']),
-  "registeredDevices": zod.number().int().min(registerMemberPushDeviceResponseRegisteredDevicesMin)
+  "registeredDevices": zod.int().min(registerMemberPushDeviceResponseRegisteredDevicesMin)
 })
 
 
@@ -6212,7 +6234,7 @@ export const unregisterMemberPushDeviceResponseRegisteredDevicesMin = 0;
 export const UnregisterMemberPushDeviceResponse = zod.object({
   "pushEnabled": zod.boolean(),
   "language": zod.enum(['en', 'ar', 'ku']),
-  "registeredDevices": zod.number().int().min(unregisterMemberPushDeviceResponseRegisteredDevicesMin)
+  "registeredDevices": zod.int().min(unregisterMemberPushDeviceResponseRegisteredDevicesMin)
 })
 
 
@@ -6822,11 +6844,11 @@ export const getSupportStaffTicketAttachmentsResponseSizeMax = 10485760;
 
 
 export const GetSupportStaffTicketAttachmentsResponseItem = zod.object({
-  "id": zod.string().uuid(),
-  "messageId": zod.string().uuid(),
+  "id": zod.uuid(),
+  "messageId": zod.uuid(),
   "fileName": zod.string(),
   "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
-  "size": zod.number().int().min(1).max(getSupportStaffTicketAttachmentsResponseSizeMax),
+  "size": zod.int().min(1).max(getSupportStaffTicketAttachmentsResponseSizeMax),
   "uploaderRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical attachments only.'),
   "createdAt": zod.coerce.date()
 })
@@ -6844,22 +6866,22 @@ export const requestSupportStaffAttachmentUploadUrlBodySizeMax = 10485760;
 
 
 export const RequestSupportStaffAttachmentUploadUrlBody = zod.object({
-  "messageId": zod.string().uuid(),
+  "messageId": zod.uuid(),
   "fileName": zod.string().min(1).max(requestSupportStaffAttachmentUploadUrlBodyFileNameMax),
   "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
-  "size": zod.number().int().min(1).max(requestSupportStaffAttachmentUploadUrlBodySizeMax)
+  "size": zod.int().min(1).max(requestSupportStaffAttachmentUploadUrlBodySizeMax)
 })
 
 export const RequestSupportStaffAttachmentUploadUrlResponse = zod.object({
-  "id": zod.string().uuid(),
-  "uploadURL": zod.string().url(),
+  "id": zod.uuid(),
+  "uploadURL": zod.url(),
   "objectPath": zod.string()
 })
 
 
 export const CompleteSupportStaffAttachmentParams = zod.object({
   "id": zod.coerce.string(),
-  "attachmentId": zod.coerce.string().uuid()
+  "attachmentId": zod.uuid()
 })
 
 export const completeSupportStaffAttachmentResponseSizeMax = 10485760;
@@ -6867,11 +6889,11 @@ export const completeSupportStaffAttachmentResponseSizeMax = 10485760;
 
 
 export const CompleteSupportStaffAttachmentResponse = zod.object({
-  "id": zod.string().uuid(),
-  "messageId": zod.string().uuid(),
+  "id": zod.uuid(),
+  "messageId": zod.uuid(),
   "fileName": zod.string(),
   "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
-  "size": zod.number().int().min(1).max(completeSupportStaffAttachmentResponseSizeMax),
+  "size": zod.int().min(1).max(completeSupportStaffAttachmentResponseSizeMax),
   "uploaderRole": zod.enum(['member', 'support', 'customer_support_admin', 'admin']).describe('The legacy admin value is retained for historical attachments only.'),
   "createdAt": zod.coerce.date()
 })
@@ -6879,7 +6901,7 @@ export const CompleteSupportStaffAttachmentResponse = zod.object({
 
 export const DeletePendingSupportStaffAttachmentParams = zod.object({
   "id": zod.coerce.string(),
-  "attachmentId": zod.coerce.string().uuid()
+  "attachmentId": zod.uuid()
 })
 
 export const DeletePendingSupportStaffAttachmentResponse = zod.void()
@@ -6887,7 +6909,7 @@ export const DeletePendingSupportStaffAttachmentResponse = zod.void()
 
 export const DownloadSupportStaffAttachmentParams = zod.object({
   "id": zod.coerce.string(),
-  "attachmentId": zod.coerce.string().uuid()
+  "attachmentId": zod.uuid()
 })
 
 export const DownloadSupportStaffAttachmentResponse = zod.unknown()
@@ -6902,7 +6924,7 @@ export const GetSupportStaffAgentsResponseItem = zod.object({
   "role": zod.enum(['customer_support_admin', 'support', 'super_admin']),
   "receiveUrgentAlerts": zod.boolean(),
   "pushEnabled": zod.boolean().optional().describe('Present only to Customer Support Admins.'),
-  "activeDeviceCount": zod.number().int().min(getSupportStaffAgentsResponseActiveDeviceCountMin).optional().describe('Present only to Customer Support Admins; never includes device tokens.')
+  "activeDeviceCount": zod.int().min(getSupportStaffAgentsResponseActiveDeviceCountMin).optional().describe('Present only to Customer Support Admins; never includes device tokens.')
 })
 export const GetSupportStaffAgentsResponse = zod.array(GetSupportStaffAgentsResponseItem)
 
@@ -6926,7 +6948,7 @@ export const AddSupportStaffAgentResponse = zod.object({
   "role": zod.enum(['customer_support_admin', 'support', 'super_admin']),
   "receiveUrgentAlerts": zod.boolean(),
   "pushEnabled": zod.boolean().optional().describe('Present only to Customer Support Admins.'),
-  "activeDeviceCount": zod.number().int().min(addSupportStaffAgentResponseActiveDeviceCountMin).optional().describe('Present only to Customer Support Admins; never includes device tokens.')
+  "activeDeviceCount": zod.int().min(addSupportStaffAgentResponseActiveDeviceCountMin).optional().describe('Present only to Customer Support Admins; never includes device tokens.')
 })
 
 
@@ -6949,7 +6971,7 @@ export const RemoveSupportStaffAgentResponse = zod.object({
   "role": zod.enum(['customer_support_admin', 'support', 'super_admin']),
   "receiveUrgentAlerts": zod.boolean(),
   "pushEnabled": zod.boolean().optional().describe('Present only to Customer Support Admins.'),
-  "activeDeviceCount": zod.number().int().min(removeSupportStaffAgentResponseActiveDeviceCountMin).optional().describe('Present only to Customer Support Admins; never includes device tokens.')
+  "activeDeviceCount": zod.int().min(removeSupportStaffAgentResponseActiveDeviceCountMin).optional().describe('Present only to Customer Support Admins; never includes device tokens.')
 })
 
 
@@ -6976,7 +6998,7 @@ export const UpdateSupportStaffAgentUrgentAlertsResponse = zod.object({
   "role": zod.enum(['customer_support_admin', 'support', 'super_admin']),
   "receiveUrgentAlerts": zod.boolean(),
   "pushEnabled": zod.boolean().optional().describe('Present only to Customer Support Admins.'),
-  "activeDeviceCount": zod.number().int().min(updateSupportStaffAgentUrgentAlertsResponseActiveDeviceCountMin).optional().describe('Present only to Customer Support Admins; never includes device tokens.')
+  "activeDeviceCount": zod.int().min(updateSupportStaffAgentUrgentAlertsResponseActiveDeviceCountMin).optional().describe('Present only to Customer Support Admins; never includes device tokens.')
 })
 
 
@@ -7021,18 +7043,18 @@ export const GetSupportUrgentAlertDeliveryOutcomesResponseItem = zod.object({
   "ticketId": zod.string(),
   "recipientUserId": zod.string(),
   "kind": zod.enum(['support_urgent', 'support_urgent_escalation']),
-  "deviceCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseDeviceCountMin),
-  "acceptedDeviceCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseAcceptedDeviceCountMin),
-  "failedDeviceCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseFailedDeviceCountMin),
-  "retryPendingDeviceCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseRetryPendingDeviceCountMin),
-  "pendingDeviceCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponsePendingDeviceCountMin),
-  "cancelledDeviceCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseCancelledDeviceCountMin),
-  "receiptOkCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptOkCountMin),
-  "receiptPendingCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptPendingCountMin),
-  "receiptErrorCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptErrorCountMin),
-  "receiptUnavailableCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptUnavailableCountMin),
-  "receiptNotCheckedCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptNotCheckedCountMin),
-  "attemptCount": zod.number().int().min(getSupportUrgentAlertDeliveryOutcomesResponseAttemptCountMin),
+  "deviceCount": zod.int().min(getSupportUrgentAlertDeliveryOutcomesResponseDeviceCountMin),
+  "acceptedDeviceCount": zod.int().min(getSupportUrgentAlertDeliveryOutcomesResponseAcceptedDeviceCountMin),
+  "failedDeviceCount": zod.int().min(getSupportUrgentAlertDeliveryOutcomesResponseFailedDeviceCountMin),
+  "retryPendingDeviceCount": zod.int().min(getSupportUrgentAlertDeliveryOutcomesResponseRetryPendingDeviceCountMin),
+  "pendingDeviceCount": zod.int().min(getSupportUrgentAlertDeliveryOutcomesResponsePendingDeviceCountMin),
+  "cancelledDeviceCount": zod.int().min(getSupportUrgentAlertDeliveryOutcomesResponseCancelledDeviceCountMin),
+  "receiptOkCount": zod.int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptOkCountMin),
+  "receiptPendingCount": zod.int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptPendingCountMin),
+  "receiptErrorCount": zod.int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptErrorCountMin),
+  "receiptUnavailableCount": zod.int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptUnavailableCountMin),
+  "receiptNotCheckedCount": zod.int().min(getSupportUrgentAlertDeliveryOutcomesResponseReceiptNotCheckedCountMin),
+  "attemptCount": zod.int().min(getSupportUrgentAlertDeliveryOutcomesResponseAttemptCountMin),
   "createdAt": zod.coerce.date(),
   "latestActivityAt": zod.coerce.date(),
   "sendStatus": zod.enum(['accepted', 'partial', 'retrying', 'pending', 'failed', 'cancelled']),
@@ -7093,7 +7115,7 @@ export const GetSupportNotificationFailuresResponseItem = zod.object({
   "title": zod.string(),
   "status": zod.enum(['failed', 'retry_pending', 'sent']),
   "error": zod.string(),
-  "attemptCount": zod.number().int().min(getSupportNotificationFailuresResponseAttemptCountMin),
+  "attemptCount": zod.int().min(getSupportNotificationFailuresResponseAttemptCountMin),
   "nextAttemptAt": zod.coerce.date().nullable(),
   "receiptStatus": zod.union([zod.literal('pending'),zod.literal('ok'),zod.literal('error'),zod.literal('unavailable'),zod.literal(null)]).nullable(),
   "createdAt": zod.coerce.date()
@@ -7159,21 +7181,21 @@ export const GetLivePlansResponseItem = zod.object({
   "name": zod.string(),
   "tier": zod.string(),
   "kind": zod.enum(['paid', 'trial', 'corporate']),
-  "durationDays": zod.number().int().min(1).max(getLivePlansResponseOneDurationDaysMax),
+  "durationDays": zod.int().min(1).max(getLivePlansResponseOneDurationDaysMax),
   "active": zod.boolean(),
   "rules": zod.object({
-  "quota": zod.number().int().min(getLivePlansResponseOneRulesQuotaMin),
-  "dailyLimit": zod.number().int().min(getLivePlansResponseOneRulesDailyLimitMin),
+  "quota": zod.int().min(getLivePlansResponseOneRulesQuotaMin),
+  "dailyLimit": zod.int().min(getLivePlansResponseOneRulesDailyLimitMin),
   "quotaMode": zod.enum(['shared', 'separate']),
-  "physicalQuota": zod.number().int().min(getLivePlansResponseOneRulesPhysicalQuotaMin),
-  "premiumQuota": zod.number().int().min(getLivePlansResponseOneRulesPremiumQuotaMin),
-  "liveQuota": zod.number().int().min(getLivePlansResponseOneRulesLiveQuotaMin),
+  "physicalQuota": zod.int().min(getLivePlansResponseOneRulesPhysicalQuotaMin),
+  "premiumQuota": zod.int().min(getLivePlansResponseOneRulesPremiumQuotaMin),
+  "liveQuota": zod.int().min(getLivePlansResponseOneRulesLiveQuotaMin),
   "cities": zod.array(zod.string()).optional(),
   "facilities": zod.array(zod.string()).optional(),
   "categories": zod.array(zod.string()).optional(),
-  "facilityLimits": zod.record(zod.string(), zod.number().int().min(getLivePlansResponseOneRulesFacilityLimitsMinOne)).optional(),
-  "categoryLimits": zod.record(zod.string(), zod.number().int().min(getLivePlansResponseOneRulesCategoryLimitsMinOne)).optional(),
-  "partnerGroupLimits": zod.record(zod.string(), zod.number().int().min(getLivePlansResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
+  "facilityLimits": zod.record(zod.string(), zod.int().min(getLivePlansResponseOneRulesFacilityLimitsMinOne)).optional(),
+  "categoryLimits": zod.record(zod.string(), zod.int().min(getLivePlansResponseOneRulesCategoryLimitsMinOne)).optional(),
+  "partnerGroupLimits": zod.record(zod.string(), zod.int().min(getLivePlansResponseOneRulesPartnerGroupLimitsMinOne)).optional(),
   "trialAllowedTypes": zod.array(zod.enum(['physical', 'premium', 'live'])).optional(),
   "corporateId": zod.string().optional(),
   "planTerms": zod.object({
@@ -7182,22 +7204,22 @@ export const GetLivePlansResponseItem = zod.object({
   "ar": zod.string().max(getLivePlansResponseOneRulesPlanTermsDescriptionArMax),
   "ku": zod.string().max(getLivePlansResponseOneRulesPlanTermsDescriptionKuMax)
 }),
-  "trialPeriodDays": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsTrialPeriodDaysMin).max(getLivePlansResponseOneRulesPlanTermsTrialPeriodDaysMax),
-  "minimumContractMonths": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsMinimumContractMonthsMin).max(getLivePlansResponseOneRulesPlanTermsMinimumContractMonthsMax),
-  "renewalPeriodDays": zod.number().int().min(1).max(getLivePlansResponseOneRulesPlanTermsRenewalPeriodDaysMax),
-  "cancellationPeriodDays": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsCancellationPeriodDaysMin).max(getLivePlansResponseOneRulesPlanTermsCancellationPeriodDaysMax),
+  "trialPeriodDays": zod.int().min(getLivePlansResponseOneRulesPlanTermsTrialPeriodDaysMin).max(getLivePlansResponseOneRulesPlanTermsTrialPeriodDaysMax),
+  "minimumContractMonths": zod.int().min(getLivePlansResponseOneRulesPlanTermsMinimumContractMonthsMin).max(getLivePlansResponseOneRulesPlanTermsMinimumContractMonthsMax),
+  "renewalPeriodDays": zod.int().min(1).max(getLivePlansResponseOneRulesPlanTermsRenewalPeriodDaysMax),
+  "cancellationPeriodDays": zod.int().min(getLivePlansResponseOneRulesPlanTermsCancellationPeriodDaysMin).max(getLivePlansResponseOneRulesPlanTermsCancellationPeriodDaysMax),
   "automaticRenewal": zod.boolean(),
-  "pauseAllowanceDays": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsPauseAllowanceDaysMin).max(getLivePlansResponseOneRulesPlanTermsPauseAllowanceDaysMax),
-  "priceProtectionMonths": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsPriceProtectionMonthsMin).max(getLivePlansResponseOneRulesPlanTermsPriceProtectionMonthsMax),
-  "promotionalPriceIqd": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsPromotionalPriceIqdMin).max(getLivePlansResponseOneRulesPlanTermsPromotionalPriceIqdMax).nullable(),
-  "corporatePriceIqd": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsCorporatePriceIqdMin).max(getLivePlansResponseOneRulesPlanTermsCorporatePriceIqdMax).nullable(),
+  "pauseAllowanceDays": zod.int().min(getLivePlansResponseOneRulesPlanTermsPauseAllowanceDaysMin).max(getLivePlansResponseOneRulesPlanTermsPauseAllowanceDaysMax),
+  "priceProtectionMonths": zod.int().min(getLivePlansResponseOneRulesPlanTermsPriceProtectionMonthsMin).max(getLivePlansResponseOneRulesPlanTermsPriceProtectionMonthsMax),
+  "promotionalPriceIqd": zod.int().min(getLivePlansResponseOneRulesPlanTermsPromotionalPriceIqdMin).max(getLivePlansResponseOneRulesPlanTermsPromotionalPriceIqdMax).nullable(),
+  "corporatePriceIqd": zod.int().min(getLivePlansResponseOneRulesPlanTermsCorporatePriceIqdMin).max(getLivePlansResponseOneRulesPlanTermsCorporatePriceIqdMax).nullable(),
   "digitalContentAccess": zod.boolean(),
-  "guestPasses": zod.number().int().min(getLivePlansResponseOneRulesPlanTermsGuestPassesMin).max(getLivePlansResponseOneRulesPlanTermsGuestPassesMax),
+  "guestPasses": zod.int().min(getLivePlansResponseOneRulesPlanTermsGuestPassesMin).max(getLivePlansResponseOneRulesPlanTermsGuestPassesMax),
   "eventAccess": zod.boolean(),
   "additionalPaymentAllowed": zod.boolean()
 }).optional()
 }),
-  "priceIqd": zod.number().int().min(1).max(getLivePlansResponseOnePriceIqdMax).nullable()
+  "priceIqd": zod.int().min(1).max(getLivePlansResponseOnePriceIqdMax).nullable()
 }).and(zod.object({
   "id": zod.string(),
   "purchasable": zod.boolean().optional(),
@@ -7208,11 +7230,11 @@ export const GetLivePlansResponse = zod.array(GetLivePlansResponseItem)
 
 
 export const CreateMemberCheckoutBody = zod.object({
-  "planId": zod.string().uuid()
+  "planId": zod.uuid()
 })
 
 export const CreateMemberCheckoutResponse = zod.object({
-  "purchaseUrl": zod.string().url()
+  "purchaseUrl": zod.url()
 })
 
 
@@ -7221,7 +7243,7 @@ export const GetMemberSubscriptionResponse = zod.union([zod.null(),zod.object({
   "paymentStatus": zod.string(),
   "cancelAtPeriodEnd": zod.boolean(),
   "periodEndsAt": zod.coerce.date().nullable(),
-  "recoveryUrl": zod.string().url().nullable(),
+  "recoveryUrl": zod.url().nullable(),
   "refundStatus": zod.string().optional()
 })])
 
@@ -7283,7 +7305,7 @@ export const SaveMemberProfileResponse = zod.object({
   "offeringId": zod.string(),
   "title": zod.string(),
   "startsAt": zod.coerce.date(),
-  "queuePosition": zod.number().int().min(1),
+  "queuePosition": zod.int().min(1),
   "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
@@ -7308,7 +7330,7 @@ export const GetBookingCatalogResponseItem = zod.object({
   "startsAt": zod.string(),
   "cancellationDeadline": zod.string(),
   "scope": zod.string(),
-  "remaining": zod.number().int()
+  "remaining": zod.int()
 })
 export const GetBookingCatalogResponse = zod.array(GetBookingCatalogResponseItem)
 
@@ -7359,7 +7381,7 @@ export const GetMemberStateResponse = zod.object({
   "offeringId": zod.string(),
   "title": zod.string(),
   "startsAt": zod.coerce.date(),
-  "queuePosition": zod.number().int().min(1),
+  "queuePosition": zod.int().min(1),
   "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
@@ -7463,7 +7485,7 @@ export const EnablePreviewMembershipResponse = zod.object({
   "offeringId": zod.string(),
   "title": zod.string(),
   "startsAt": zod.coerce.date(),
-  "queuePosition": zod.number().int().min(1),
+  "queuePosition": zod.int().min(1),
   "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
@@ -7531,7 +7553,7 @@ export const CreateMemberBookingResponse = zod.object({
   "offeringId": zod.string(),
   "title": zod.string(),
   "startsAt": zod.coerce.date(),
-  "queuePosition": zod.number().int().min(1),
+  "queuePosition": zod.int().min(1),
   "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
@@ -7597,7 +7619,7 @@ export const CancelMemberBookingResponse = zod.object({
   "offeringId": zod.string(),
   "title": zod.string(),
   "startsAt": zod.coerce.date(),
-  "queuePosition": zod.number().int().min(1),
+  "queuePosition": zod.int().min(1),
   "status": zod.enum(['waiting', 'offered', 'booked', 'expired', 'left', 'ineligible', 'closed']),
   "createdAt": zod.coerce.date(),
   "offerExpiresAt": zod.coerce.date().nullish(),
@@ -7652,18 +7674,18 @@ export const getPublicFacilityReviewsResponseReviewsItemPartnerResponseMax = 200
 
 export const GetPublicFacilityReviewsResponse = zod.object({
   "facilityId": zod.string(),
-  "reviewCount": zod.number().int().min(getPublicFacilityReviewsResponseReviewCountMin),
+  "reviewCount": zod.int().min(getPublicFacilityReviewsResponseReviewCountMin),
   "averageRating": zod.number().min(1).max(getPublicFacilityReviewsResponseAverageRatingMax).nullable(),
   "reviews": zod.array(zod.object({
   "id": zod.string(),
-  "overallRating": zod.number().int().min(1).max(getPublicFacilityReviewsResponseReviewsItemOverallRatingMax),
+  "overallRating": zod.int().min(1).max(getPublicFacilityReviewsResponseReviewsItemOverallRatingMax),
   "categoryRatings": zod.object({
-  "cleanliness": zod.number().int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsCleanlinessMax).nullable(),
-  "staff": zod.number().int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsStaffMax).nullable(),
-  "equipment": zod.number().int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsEquipmentMax).nullable(),
-  "instructor": zod.number().int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsInstructorMax).nullable(),
-  "facilities": zod.number().int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsFacilitiesMax).nullable(),
-  "informationAccuracy": zod.number().int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsInformationAccuracyMax).nullable()
+  "cleanliness": zod.int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsCleanlinessMax).nullable(),
+  "staff": zod.int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsStaffMax).nullable(),
+  "equipment": zod.int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsEquipmentMax).nullable(),
+  "instructor": zod.int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsInstructorMax).nullable(),
+  "facilities": zod.int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsFacilitiesMax).nullable(),
+  "informationAccuracy": zod.int().min(1).max(getPublicFacilityReviewsResponseReviewsItemCategoryRatingsInformationAccuracyMax).nullable()
 }),
   "content": zod.string().max(getPublicFacilityReviewsResponseReviewsItemContentMax).nullable(),
   "createdAt": zod.coerce.date(),
@@ -7706,14 +7728,14 @@ export const GetMemberFacilityReviewsResponse = zod.object({
   "facilityId": zod.string(),
   "facility": zod.string(),
   "city": zod.string(),
-  "overallRating": zod.number().int().min(1).max(getMemberFacilityReviewsResponseReviewsItemOverallRatingMax),
+  "overallRating": zod.int().min(1).max(getMemberFacilityReviewsResponseReviewsItemOverallRatingMax),
   "categoryRatings": zod.object({
-  "cleanliness": zod.number().int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsCleanlinessMax).nullable(),
-  "staff": zod.number().int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsStaffMax).nullable(),
-  "equipment": zod.number().int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsEquipmentMax).nullable(),
-  "instructor": zod.number().int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsInstructorMax).nullable(),
-  "facilities": zod.number().int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsFacilitiesMax).nullable(),
-  "informationAccuracy": zod.number().int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsInformationAccuracyMax).nullable()
+  "cleanliness": zod.int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsCleanlinessMax).nullable(),
+  "staff": zod.int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsStaffMax).nullable(),
+  "equipment": zod.int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsEquipmentMax).nullable(),
+  "instructor": zod.int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsInstructorMax).nullable(),
+  "facilities": zod.int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsFacilitiesMax).nullable(),
+  "informationAccuracy": zod.int().min(1).max(getMemberFacilityReviewsResponseReviewsItemCategoryRatingsInformationAccuracyMax).nullable()
 }),
   "content": zod.string().max(getMemberFacilityReviewsResponseReviewsItemContentMax).nullable(),
   "status": zod.enum(['published', 'hidden', 'removed']),
@@ -7745,14 +7767,14 @@ export const createMemberFacilityReviewBodyContentMax = 2000;
 
 export const CreateMemberFacilityReviewBody = zod.object({
   "reservationId": zod.string().min(1).max(createMemberFacilityReviewBodyReservationIdMax),
-  "overallRating": zod.number().int().min(1).max(createMemberFacilityReviewBodyOverallRatingMax),
+  "overallRating": zod.int().min(1).max(createMemberFacilityReviewBodyOverallRatingMax),
   "categoryRatings": zod.object({
-  "cleanliness": zod.number().int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsCleanlinessMax).nullable(),
-  "staff": zod.number().int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsStaffMax).nullable(),
-  "equipment": zod.number().int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsEquipmentMax).nullable(),
-  "instructor": zod.number().int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsInstructorMax).nullable(),
-  "facilities": zod.number().int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsFacilitiesMax).nullable(),
-  "informationAccuracy": zod.number().int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsInformationAccuracyMax).nullable()
+  "cleanliness": zod.int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsCleanlinessMax).nullable(),
+  "staff": zod.int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsStaffMax).nullable(),
+  "equipment": zod.int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsEquipmentMax).nullable(),
+  "instructor": zod.int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsInstructorMax).nullable(),
+  "facilities": zod.int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsFacilitiesMax).nullable(),
+  "informationAccuracy": zod.int().min(1).max(createMemberFacilityReviewBodyCategoryRatingsInformationAccuracyMax).nullable()
 }),
   "content": zod.string().max(createMemberFacilityReviewBodyContentMax).nullable()
 })
@@ -7782,14 +7804,14 @@ export const CreateMemberFacilityReviewResponse = zod.object({
   "facilityId": zod.string(),
   "facility": zod.string(),
   "city": zod.string(),
-  "overallRating": zod.number().int().min(1).max(createMemberFacilityReviewResponseOverallRatingMax),
+  "overallRating": zod.int().min(1).max(createMemberFacilityReviewResponseOverallRatingMax),
   "categoryRatings": zod.object({
-  "cleanliness": zod.number().int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsCleanlinessMax).nullable(),
-  "staff": zod.number().int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsStaffMax).nullable(),
-  "equipment": zod.number().int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsEquipmentMax).nullable(),
-  "instructor": zod.number().int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsInstructorMax).nullable(),
-  "facilities": zod.number().int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsFacilitiesMax).nullable(),
-  "informationAccuracy": zod.number().int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsInformationAccuracyMax).nullable()
+  "cleanliness": zod.int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsCleanlinessMax).nullable(),
+  "staff": zod.int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsStaffMax).nullable(),
+  "equipment": zod.int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsEquipmentMax).nullable(),
+  "instructor": zod.int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsInstructorMax).nullable(),
+  "facilities": zod.int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsFacilitiesMax).nullable(),
+  "informationAccuracy": zod.int().min(1).max(createMemberFacilityReviewResponseCategoryRatingsInformationAccuracyMax).nullable()
 }),
   "content": zod.string().max(createMemberFacilityReviewResponseContentMax).nullable(),
   "status": zod.enum(['published', 'hidden', 'removed']),

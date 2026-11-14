@@ -1,6 +1,12 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth, useUser } from "@clerk/react";
-import { useGetMemberAccountSummary } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  getGetMemberPrivacyRequestsQueryKey,
+  useCreateMemberPrivacyRequest,
+  useGetMemberAccountSummary,
+  useGetMemberPrivacyRequests,
+} from "@workspace/api-client-react";
 import { Link, Redirect } from "wouter";
 
 type Language = "en" | "ar" | "ku";
@@ -37,6 +43,18 @@ const copy: Record<Language, Record<string, string>> = {
     paymentsNote: "These records are not available on the website yet. Membership checkout and payment history remain disabled.",
     mobileTitle: "Use the mobile app for member experiences",
     mobileNote: "The mobile app remains the intended place for QR scanning, GPS check-in, push notifications, live-class participation, and your membership card.",
+    privacyTitle: "Privacy requests",
+    privacyIntro: "Request a copy of your account information or ask MaydanGo to review account deletion.",
+    privacyNotice: "Requests are reviewed by authorized support staff. Sending one does not download your data or delete your account. Identity verification and record-retention review may be needed.",
+    privacyExport: "Request a copy of my data",
+    privacyDelete: "Request account deletion",
+    privacyActive: "You already have an open privacy request. A new request can be sent after it is resolved.",
+    privacyHistory: "Request history",
+    privacyNone: "No privacy requests yet.",
+    privacySent: "Your request was sent to MaydanGo support.",
+    privacyError: "The request could not be sent. Please try again.",
+    privacyLoadError: "Privacy requests could not be loaded.",
+    privacyFollowUp: "For follow-up, contact MaydanGo at",
     help: "Visit Help",
     backToPlans: "Explore plans",
     signIn: "Sign in to view your account",
@@ -72,6 +90,18 @@ const copy: Record<Language, Record<string, string>> = {
     paymentsNote: "هذه السجلات غير متاحة على الموقع حالياً. شراء العضوية وسجل المدفوعات ما زالا غير مفعّلين.",
     mobileTitle: "تجارب الأعضاء في تطبيق الهاتف",
     mobileNote: "يبقى تطبيق الهاتف المكان المقصود لمسح رمز QR وتسجيل الحضور عبر GPS والإشعارات الفورية والمشاركة في الصفوف المباشرة وبطاقة العضوية.",
+    privacyTitle: "طلبات الخصوصية",
+    privacyIntro: "يمكنك طلب نسخة من معلومات حسابك أو مطالبة MaydanGo بمراجعة حذف الحساب.",
+    privacyNotice: "يراجع فريق الدعم المخوّل الطلبات. إرسال الطلب لا ينزّل بياناتك ولا يحذف حسابك. قد نحتاج إلى التحقق من هويتك ومراجعة السجلات التي يجب الاحتفاظ بها.",
+    privacyExport: "طلب نسخة من بياناتي",
+    privacyDelete: "طلب حذف الحساب",
+    privacyActive: "لديك طلب خصوصية مفتوح بالفعل. يمكنك إرسال طلب جديد بعد حل الطلب الحالي.",
+    privacyHistory: "سجل الطلبات",
+    privacyNone: "لا توجد طلبات خصوصية حتى الآن.",
+    privacySent: "تم إرسال طلبك إلى دعم MaydanGo.",
+    privacyError: "تعذر إرسال الطلب. حاول مرة أخرى.",
+    privacyLoadError: "تعذر تحميل طلبات الخصوصية.",
+    privacyFollowUp: "للمتابعة، تواصل مع MaydanGo عبر",
     help: "زيارة المساعدة",
     backToPlans: "استكشف الخطط",
     signIn: "سجّل الدخول لعرض حسابك",
@@ -107,6 +137,18 @@ const copy: Record<Language, Record<string, string>> = {
     paymentsNote: "ئەم تۆمارانە هێشتا لە ماڵپەڕەکە بەردەست نین. کڕینی ئەندامێتی و مێژووی پارەدان ناچالاکن.",
     mobileTitle: "ئەزموونی ئەندامان لە ئەپی مۆبایل",
     mobileNote: "ئەپی مۆبایل شوێنی سەرەکیی پێشنیارکراوە بۆ سکانی QR، حزووری GPS، ئاگادارکردنەوە، بەشداری لە وانەی ڕاستەوخۆ و کارتی ئەندامێتی.",
+    privacyTitle: "داواکارییەکانی تایبەتمەندی",
+    privacyIntro: "دەتوانیت داوای کۆپیی زانیاریی هەژمارەکەت بکەیت یان داوای پێداچوونەوە بۆ سڕینەوەی هەژمارەکەت بکەیت.",
+    privacyNotice: "تیمی پشتگیریی ڕێگەپێدراو داواکارییەکان پێداچوونەوەیان بۆ دەکات. ناردنی داواکارییەکە داتاکانت ناداتەوە و هەژمارەکەت ناسڕێتەوە. لەوانەیە پشتڕاستکردنەوەی ناسنامە و پێداچوونەوەی تۆمارەکان پێویست بێت.",
+    privacyExport: "داوای کۆپیی داتاکەم بکە",
+    privacyDelete: "داوای سڕینەوەی هەژمار بکە",
+    privacyActive: "پێشتر داواکارییەکی تایبەتمەندیی کراوەتەوەت هەیە. دوای چارەسەرکردنی ئەوە دەتوانیت داواکارییەکی نوێ بنێریت.",
+    privacyHistory: "مێژووی داواکارییەکان",
+    privacyNone: "هێشتا هیچ داواکارییەکی تایبەتمەندی نییە.",
+    privacySent: "داواکارییەکەت بۆ تیمی پشتگیریی MaydanGo نێردرا.",
+    privacyError: "ناردنی داواکارییەکە سەرکەوتوو نەبوو. دووبارە هەوڵ بدەوە.",
+    privacyLoadError: "بارکردنی داواکارییەکانی تایبەتمەندی سەرکەوتوو نەبوو.",
+    privacyFollowUp: "بۆ بەدواداچوون، پەیوەندی بە MaydanGo بکە لە ڕێگەی",
     help: "سەردانی یارمەتی",
     backToPlans: "پلانەکان ببینە",
     signIn: "بچۆ ژوورەوە بۆ بینینی هەژمارەکەت",
@@ -114,6 +156,11 @@ const copy: Record<Language, Record<string, string>> = {
 };
 
 const locale: Record<Language, string> = { en: "en-IQ", ar: "ar-IQ", ku: "ckb-IQ" };
+const privacyStatusLabel: Record<Language, Record<string, string>> = {
+  en: { open: "Open", in_progress: "In progress", waiting_member: "Waiting for you", resolved: "Resolved", closed: "Closed" },
+  ar: { open: "مفتوح", in_progress: "قيد المعالجة", waiting_member: "بانتظار ردك", resolved: "تم الحل", closed: "مغلق" },
+  ku: { open: "کراوە", in_progress: "لە پێشچووندایە", waiting_member: "چاوەڕوانی وەڵامی تۆ", resolved: "چارەسەرکرا", closed: "داخرا" },
+};
 
 function formatIraqDate(value: string, language: Language) {
   const date = new Date(value);
@@ -128,9 +175,14 @@ function formatIraqDate(value: string, language: Language) {
 export default function MemberAccountPage({ language }: { language: Language }) {
   const { isLoaded, isSignedIn } = useAuth();
   const { isLoaded: userLoaded, user } = useUser();
+  const queryClient = useQueryClient();
   const summary = useGetMemberAccountSummary({
     query: { enabled: isLoaded && isSignedIn === true },
   });
+  const privacyRequests = useGetMemberPrivacyRequests({
+    query: { enabled: isLoaded && isSignedIn === true, retry: false },
+  });
+  const createPrivacyRequest = useCreateMemberPrivacyRequest();
   const t = copy[language];
   const rtl = language !== "en";
   const [firstName, setFirstName] = useState("");
@@ -138,6 +190,10 @@ export default function MemberAccountPage({ language }: { language: Language }) 
   const [saving, setSaving] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
   const [profileError, setProfileError] = useState(false);
+  const [privacyMessage, setPrivacyMessage] = useState("");
+  const activePrivacyRequest = privacyRequests.data?.find(request =>
+    ["open", "in_progress", "waiting_member"].includes(request.status)
+  );
 
   useEffect(() => {
     setFirstName(user?.firstName ?? "");
@@ -172,6 +228,18 @@ export default function MemberAccountPage({ language }: { language: Language }) 
       setProfileError(true);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function submitPrivacyRequest(kind: "data_export" | "account_deletion") {
+    setPrivacyMessage("");
+    try {
+      await createPrivacyRequest.mutateAsync({ data: { kind, language } });
+      await queryClient.invalidateQueries({ queryKey: getGetMemberPrivacyRequestsQueryKey() });
+      setPrivacyMessage(t.privacySent);
+    } catch {
+      await queryClient.invalidateQueries({ queryKey: getGetMemberPrivacyRequestsQueryKey() });
+      setPrivacyMessage(t.privacyError);
     }
   }
 
@@ -262,6 +330,56 @@ export default function MemberAccountPage({ language }: { language: Language }) 
           <section className="rounded-2xl border border-border bg-[#f2e8d9] p-5 sm:p-7" aria-labelledby="account-payments-heading">
             <h2 id="account-payments-heading" className="font-display text-xl font-bold">{t.payments}</h2>
             <p className="mt-2 text-sm leading-6">{t.paymentsNote}</p>
+          </section>
+
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7" aria-labelledby="account-privacy-heading">
+            <h2 id="account-privacy-heading" className="font-display text-xl font-bold">{t.privacyTitle}</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{t.privacyIntro}</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{t.privacyNotice}</p>
+            {activePrivacyRequest ? (
+              <p className="mt-4 rounded-xl bg-muted p-3 text-sm" role="status">
+                {t.privacyActive} <span className="font-semibold">{privacyStatusLabel[language][activePrivacyRequest.status] ?? activePrivacyRequest.status}</span>
+              </p>
+            ) : (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={createPrivacyRequest.isPending || privacyRequests.isLoading}
+                  onClick={() => void submitPrivacyRequest("data_export")}
+                  className="rounded-full bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                  data-testid="privacy-request-export"
+                >
+                  {t.privacyExport}
+                </button>
+                <button
+                  type="button"
+                  disabled={createPrivacyRequest.isPending || privacyRequests.isLoading}
+                  onClick={() => void submitPrivacyRequest("account_deletion")}
+                  className="rounded-full border border-border px-4 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60"
+                  data-testid="privacy-request-delete"
+                >
+                  {t.privacyDelete}
+                </button>
+              </div>
+            )}
+            {privacyMessage && <p className="mt-3 text-sm text-primary" role="status">{privacyMessage}</p>}
+            <div className="mt-5 border-t border-border pt-4">
+              <h3 className="font-semibold">{t.privacyHistory}</h3>
+              {privacyRequests.isLoading ? <p className="mt-2 text-sm text-muted-foreground">{t.loading}</p>
+                : privacyRequests.isError ? <p className="mt-2 text-sm text-destructive" role="alert">{t.privacyLoadError}</p>
+                  : privacyRequests.data?.length ? <ul className="mt-3 space-y-2">
+                    {privacyRequests.data.map(request => (
+                      <li key={request.id} className="flex flex-wrap items-start justify-between gap-2 rounded-xl border border-border p-3 text-sm">
+                        <span className="font-medium">{request.subject}</span>
+                        <span className="text-muted-foreground">{privacyStatusLabel[language][request.status] ?? request.status} · {formatIraqDate(request.createdAt, language)}</span>
+                      </li>
+                    ))}
+                  </ul> : <p className="mt-2 text-sm text-muted-foreground">{t.privacyNone}</p>}
+              <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                {t.privacyFollowUp}{" "}
+                <a className="font-semibold underline underline-offset-2" href="mailto:maydangoing@gmail.com">maydangoing@gmail.com</a>.
+              </p>
+            </div>
           </section>
 
           <section className="rounded-2xl border border-border bg-primary p-5 text-primary-foreground sm:p-7" aria-labelledby="account-mobile-heading">

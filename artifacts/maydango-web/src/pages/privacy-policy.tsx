@@ -12,6 +12,7 @@ const privacyCopy: Record<Language, {
   contactTitle: string;
   contactBody: string;
   contactEmailLabel: string;
+  accountRequestsLabel: string;
   back: string;
 }> = {
   en: {
@@ -73,8 +74,9 @@ const privacyCopy: Record<Language, {
         id: 'rights',
         title: 'Your privacy requests',
         paragraphs: [
-          'You may email MaydanGo to ask about personal information associated with your account or to request access, correction, or deletion. MaydanGo may need to verify that the request relates to your account before acting.',
-          'Some records may need to be retained for service safety, security, or other applicable requirements. Specific retention periods and procedures for guardian-consent copies need review before this draft is treated as final.',
+          'If you have an account, use Account → Privacy requests to ask for a copy of your information or request an account-deletion review. You may also email MaydanGo. Requests are reviewed by authorized support staff; submitting one does not automatically export information or delete an account.',
+          'MaydanGo may need to verify that a request relates to your account before acting. Some records may need to be retained for service safety, security, or other applicable requirements.',
+          'Specific retention periods and procedures for guardian-consent copies need review before this draft is treated as final.',
         ],
       },
       {
@@ -96,6 +98,7 @@ const privacyCopy: Record<Language, {
     contactTitle: 'Privacy questions or requests',
     contactBody: 'Use this email for privacy questions or requests. Please do not include passwords, payment-card details, or identity documents.',
     contactEmailLabel: 'Email MaydanGo about privacy',
+    accountRequestsLabel: 'Open account privacy requests',
     back: 'Back to legal information',
   },
   ar: {
@@ -157,8 +160,9 @@ const privacyCopy: Record<Language, {
         id: 'rights',
         title: 'طلبات الخصوصية',
         paragraphs: [
-          'يمكنك مراسلة MaydanGo للسؤال عن المعلومات الشخصية المرتبطة بحسابك أو لطلب الاطلاع عليها أو تصحيحها أو حذفها. وقد تحتاج MaydanGo إلى التحقق من أن الطلب يخص حسابك قبل تنفيذه.',
-          'قد يلزم الاحتفاظ ببعض السجلات لأغراض سلامة الخدمة أو أمنها أو لمتطلبات أخرى واجبة التطبيق. يجب مراجعة مدد الاحتفاظ وإجراءات نسخ موافقة ولي الأمر قبل اعتماد هذه المسودة كسياسة نهائية.',
+          'إذا كان لديك حساب، استخدم الحساب ← طلبات الخصوصية لطلب نسخة من معلوماتك أو طلب مراجعة حذف الحساب. ويمكنك أيضاً مراسلة MaydanGo. يراجع فريق الدعم المخوّل الطلبات؛ وإرسال الطلب لا يصدّر المعلومات ولا يحذف الحساب تلقائياً.',
+          'قد تحتاج MaydanGo إلى التحقق من أن الطلب يخص حسابك قبل اتخاذ إجراء. وقد يلزم الاحتفاظ ببعض السجلات لأغراض سلامة الخدمة أو أمنها أو لمتطلبات أخرى واجبة التطبيق.',
+          'يجب مراجعة مدد الاحتفاظ وإجراءات نسخ موافقة ولي الأمر قبل اعتماد هذه المسودة كسياسة نهائية.',
         ],
       },
       {
@@ -180,6 +184,7 @@ const privacyCopy: Record<Language, {
     contactTitle: 'أسئلة أو طلبات الخصوصية',
     contactBody: 'استخدم هذا البريد لأسئلة الخصوصية أو طلباتها. لا ترفق كلمات مرور أو بيانات بطاقات دفع أو وثائق هوية.',
     contactEmailLabel: 'راسل MaydanGo بشأن الخصوصية',
+    accountRequestsLabel: 'فتح طلبات الخصوصية في الحساب',
     back: 'العودة إلى المعلومات القانونية',
   },
   ku: {
@@ -241,8 +246,9 @@ const privacyCopy: Record<Language, {
         id: 'rights',
         title: 'داواکارییەکانی تایبەتمەندی',
         paragraphs: [
-          'دەتوانیت ئیمەیڵ بۆ MaydanGo بنێریت بۆ پرسیارکردن لەبارەی زانیاریی کەسی بەستراو بە هەژمارەکەت، یان داوای بینین، ڕاستکردنەوە یان سڕینەوەی بکەیت. لەوانەیە MaydanGo پێش جێبەجێکردن پشتڕاستی بکاتەوە کە داواکارییەکە پەیوەندی بە هەژمارەکەتەوە هەیە.',
-          'لەوانەیە پێویست بێت هەندێک تۆمار بۆ سەلامەتی و پاراستنی خزمەتگوزاری یان داواکارییەکانی تر بپارێزرێن. ماوەی دیاریکراوی هەڵگرتن و ڕێکاری پاراستنی وێنەی ڕەزامەندیی سەرپەرشتیار پێویستی بە پێداچوونەوە هەیە پێش ئەوەی ئەم ڕەشنووسە ببێتە سیاسەتی کۆتایی.',
+          'ئەگەر هەژمارت هەیە، لە هەژمار ← داواکارییەکانی تایبەتمەندی داوای کۆپیی زانیارییەکانت یان پێداچوونەوە بۆ سڕینەوەی هەژمار بکە. دەتوانیت ئیمەیڵیش بۆ MaydanGo بنێریت. تیمی پشتگیریی ڕێگەپێدراو پێداچوونەوە بە داواکارییەکاندا دەکات؛ ناردنیان بە شێوەی ئۆتۆماتیکی زانیاری ناگوازێتەوە و هەژمار ناسڕێتەوە.',
+          'لەوانەیە MaydanGo پێش هەر کارێک پشتڕاستی بکاتەوە کە داواکارییەکە پەیوەندی بە هەژمارەکەتەوە هەیە. لەوانەیە پێویست بێت هەندێک تۆمار بۆ سەلامەتی و پاراستنی خزمەتگوزاری یان داواکارییەکانی تر بپارێزرێن.',
+          'ماوەی دیاریکراوی هەڵگرتن و ڕێکاری پاراستنی وێنەی ڕەزامەندیی سەرپەرشتیار پێویستی بە پێداچوونەوە هەیە پێش ئەوەی ئەم ڕەشنووسە ببێتە سیاسەتی کۆتایی.',
         ],
       },
       {
@@ -264,6 +270,7 @@ const privacyCopy: Record<Language, {
     contactTitle: 'پرسیار یان داواکاریی تایبەتمەندی',
     contactBody: 'بۆ پرسیار یان داواکاریی تایبەتمەندی ئیمەیڵ بنێرە. وشەی نهێنی، وردەکاری کارتی پارەدان یان بەڵگەنامەی ناسنامە مەبنێرە.',
     contactEmailLabel: 'ئیمەیڵ بۆ MaydanGo لەبارەی تایبەتمەندی',
+    accountRequestsLabel: 'کردنەوەی داواکارییەکانی تایبەتمەندی لە هەژمار',
     back: 'گەڕانەوە بۆ زانیاریی یاسایی',
   },
 };
@@ -301,10 +308,15 @@ export function PrivacyPolicyPage({ language }: { language: Language }) {
       <section className="mt-6 rounded-2xl bg-[#eadfcd] p-5 sm:p-7">
         <h2 className="font-display text-xl font-bold">{text.contactTitle}</h2>
         <p className="mt-2 text-sm leading-6 text-[#536b61]">{text.contactBody}</p>
-        <a href={`mailto:${privacyEmail}`} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-[#174d43] px-4 py-2 text-sm font-bold text-[#fff9e9]" data-testid="link-privacy-email">
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link href="/account" className="inline-flex min-h-10 items-center rounded-full bg-[#174d43] px-4 py-2 text-sm font-bold text-[#fff9e9]" data-testid="link-account-privacy-requests">
+            {text.accountRequestsLabel}
+          </Link>
+          <a href={`mailto:${privacyEmail}`} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#174d43] px-4 py-2 text-sm font-bold text-[#174d43]" data-testid="link-privacy-email">
           <Mail size={15} />
           {text.contactEmailLabel}
-        </a>
+          </a>
+        </div>
       </section>
 
       <Link href="/legal" className="mt-7 inline-flex text-sm font-bold text-[#174d43] underline underline-offset-4" data-testid="link-privacy-legal">

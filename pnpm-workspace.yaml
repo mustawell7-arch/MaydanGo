@@ -43,6 +43,7 @@ onlyBuiltDependencies:
   - unrs-resolver
 
 overrides:
+  '@expo/cli@^57.0.32': ^57.0.34
   '@types/react': 19.2.18
   '@types/react-dom': 19.2.3
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0

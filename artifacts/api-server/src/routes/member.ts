@@ -4,9 +4,19 @@ import { z } from "zod";
 import { db, memberships, memberProfiles, offerings, reservations, partners, waitlistEntries } from "@workspace/db";
 import { eq, and, inArray, sql, gt, asc, isNull, ne, or } from "drizzle-orm";
 import {
+  CreateMemberPrivacyRequestBody,
+  CreateMemberPrivacyRequestResponse,
+  GetMemberPrivacyRequestsResponse,
+} from "@workspace/api-zod";
+import {
   BookingError, memberState, memberAccountSummary, createReservation, cancelReservation,
   acceptWaitlistOffer, joinWaitlist, leaveWaitlist,
 } from "../lib/reservations";
+import {
+  ActivePrivacyRequestError,
+  createMemberPrivacyRequest,
+  listMemberPrivacyRequests,
+} from "../lib/privacy-requests";
 import learningRouter from "./learning";
 import { memberSupportRouter } from "./support";
 import memberReviewsRouter from "./member-reviews";
@@ -25,6 +35,28 @@ router.use((req, res, next) => {
 });
 router.get("/account", async (req, res) => {
   res.json(await memberAccountSummary(getAuth(req).userId!));
+});
+router.get("/privacy-requests", async (req, res) => {
+  const ownerId = getAuth(req).userId!;
+  res.json(GetMemberPrivacyRequestsResponse.parse(await listMemberPrivacyRequests(ownerId)));
+});
+router.post("/privacy-requests", async (req, res) => {
+  const parsed = CreateMemberPrivacyRequestBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Choose a valid privacy request type and language." });
+    return;
+  }
+  const ownerId = getAuth(req).userId!;
+  try {
+    const request = await createMemberPrivacyRequest(ownerId, parsed.data.kind, parsed.data.language);
+    res.status(201).json(CreateMemberPrivacyRequestResponse.parse(request));
+  } catch (error) {
+    if (error instanceof ActivePrivacyRequestError) {
+      res.status(409).json({ message: "You already have an active privacy request. Use its support conversation to follow up." });
+      return;
+    }
+    throw error;
+  }
 });
 router.get("/device", async (req, res) => {
   const token = readMemberDeviceToken(req);

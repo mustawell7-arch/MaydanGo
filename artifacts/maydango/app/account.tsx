@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  getGetMemberPrivacyRequestsQueryKey,
+  useCreateMemberPrivacyRequest,
+  useGetMemberPrivacyRequests,
+} from '@workspace/api-client-react';
 import { Text, TextInput, Pressable } from '@/components/Localized';
 import { dateTime, errorCopy } from '@/lib/content';
 import { useAuth, useClerk, useUser, useSignIn, useSignUp, useSSO } from '@clerk/expo';
@@ -11,6 +17,7 @@ import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollV
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { MemberNotice } from '@/components/MemberNotice';
+import { translate, type MessageKey } from '@/lib/i18n';
 
 WebBrowser.maybeCompleteAuthSession();
 export default function AccountScreen() {
@@ -22,6 +29,9 @@ export default function AccountScreen() {
   const { signIn } = useSignIn();
   const { signUp } = useSignUp();
   const { startSSOFlow } = useSSO();
+  const queryClient = useQueryClient();
+  const privacyRequests = useGetMemberPrivacyRequests({ query: { enabled: isSignedIn === true } });
+  const createPrivacyRequest = useCreateMemberPrivacyRequest();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,6 +40,7 @@ export default function AccountScreen() {
   const [reset, setReset] = useState<'none' | 'code' | 'password'>('none');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [privacyNotice, setPrivacyNotice] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState<'female' | 'male' | 'unspecified'>('unspecified');
   const run = async (fn: () => Promise<void>) => {
@@ -72,6 +83,26 @@ export default function AccountScreen() {
     }
   });
   const button = (title: string, onPress: () => void, id?: string) => <Pressable testID={id} accessibilityRole="button" disabled={busy || app.memberLoading} onPress={onPress} style={[styles.button, { backgroundColor: c.primary, opacity: busy ? .6 : 1 }]}><Text style={{ color: c.primaryForeground, fontWeight: '700' }}>{title}</Text></Pressable>;
+  const openPrivacyRequest = privacyRequests.data?.find(request => ['open', 'in_progress', 'waiting_member'].includes(request.status));
+  const privacyStatusKey: Record<string, MessageKey> = {
+    open: 'supportStatusOpen',
+    in_progress: 'supportStatusInProgress',
+    waiting_member: 'supportStatusWaiting',
+    resolved: 'supportStatusResolved',
+    closed: 'supportStatusClosed',
+  };
+  const submitPrivacyRequest = async (kind: 'data_export' | 'account_deletion') => {
+    setPrivacyNotice('');
+    try {
+      const request = await createPrivacyRequest.mutateAsync({ data: { kind, language: app.language } });
+      await queryClient.invalidateQueries({ queryKey: getGetMemberPrivacyRequestsQueryKey() });
+      setPrivacyNotice(translate(app.language, 'privacyRequestSent'));
+      router.push({ pathname: '/support/[id]', params: { id: request.id } });
+    } catch {
+      await queryClient.invalidateQueries({ queryKey: getGetMemberPrivacyRequestsQueryKey() });
+      setPrivacyNotice(translate(app.language, 'privacyRequestError'));
+    }
+  };
   return <ScreenShell>
     <ScreenHeader eyebrow="MAYDANGO" title={isSignedIn ? 'Your account' : 'Welcome to MaydanGO'} />
     <KeyboardAwareScrollViewCompat contentContainerStyle={{ padding: 22, paddingBottom: 50, gap: 14 }} keyboardShouldPersistTaps="handled">
@@ -91,6 +122,53 @@ export default function AccountScreen() {
           {(['female', 'male', 'unspecified'] as const).map(g => <Pressable key={g} onPress={() => setGender(g)} accessibilityRole="radio" accessibilityState={{ checked: gender === g }}><Text style={{ color: c.primary, fontWeight: gender === g ? '800' : '400' }}>{g}</Text></Pressable>)}
         </View>
         {button('Save eligibility details', () => void app.saveProfile(gender, birthDate || app.memberProfile?.birthDate || ''))}
+        <View style={[styles.privacyCard, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={{ color: c.foreground, fontWeight: '800', fontSize: 18 }}>{translate(app.language, 'privacyRequestsTitle')}</Text>
+          <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'privacyRequestsIntro')}</Text>
+          <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'privacyRequestsNoAutomatic')}</Text>
+          {openPrivacyRequest ? <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: '/support/[id]', params: { id: openPrivacyRequest.id } })}
+            style={[styles.button, { backgroundColor: c.secondary }]}
+          >
+            <Text style={{ color: c.secondaryForeground, fontWeight: '700' }}>
+              {translate(app.language, 'privacyRequestActive')} · {translate(app.language, privacyStatusKey[openPrivacyRequest.status] ?? 'supportStatusOpen')}
+            </Text>
+          </Pressable> : <>
+            <Pressable
+              testID="privacy-request-export"
+              accessibilityRole="button"
+              disabled={createPrivacyRequest.isPending || privacyRequests.isLoading}
+              onPress={() => void submitPrivacyRequest('data_export')}
+              style={[styles.button, { backgroundColor: c.primary, opacity: createPrivacyRequest.isPending ? .6 : 1 }]}
+            >
+              <Text style={{ color: c.primaryForeground, fontWeight: '700' }}>{translate(app.language, 'privacyRequestCopyData')}</Text>
+            </Pressable>
+            <Pressable
+              testID="privacy-request-delete"
+              accessibilityRole="button"
+              disabled={createPrivacyRequest.isPending || privacyRequests.isLoading}
+              onPress={() => void submitPrivacyRequest('account_deletion')}
+              style={[styles.button, { backgroundColor: c.secondary, opacity: createPrivacyRequest.isPending ? .6 : 1 }]}
+            >
+              <Text style={{ color: c.secondaryForeground, fontWeight: '700' }}>{translate(app.language, 'privacyRequestDeleteAccount')}</Text>
+            </Pressable>
+          </>}
+          <Text style={{ color: c.foreground, fontWeight: '700', marginTop: 4 }}>{translate(app.language, 'privacyRequestHistory')}</Text>
+          {privacyRequests.isError ? <Text accessibilityRole="alert" style={{ color: c.destructive }}>{translate(app.language, 'privacyRequestLoadError')}</Text>
+            : privacyRequests.data?.length ? privacyRequests.data.map(request => (
+              <Pressable
+                key={request.id}
+                accessibilityRole="button"
+                onPress={() => router.push({ pathname: '/support/[id]', params: { id: request.id } })}
+                style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, paddingTop: 8 }}
+              >
+                <Text style={{ color: c.primary, fontWeight: '700' }}>{request.subject}</Text>
+                <Text style={{ color: c.mutedForeground }}>{translate(app.language, privacyStatusKey[request.status] ?? 'supportStatusOpen')} · {dateTime(request.createdAt, app.language, true)}</Text>
+              </Pressable>
+            )) : <Text style={{ color: c.mutedForeground }}>{translate(app.language, 'privacyRequestNoHistory')}</Text>}
+          {privacyNotice ? <Text accessibilityRole="alert" style={{ color: c.primary }}>{privacyNotice}</Text> : null}
+        </View>
         {!app.memberMemberships.some(m => m.scope === 'preview') ? <>
           <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>Enable an 8-reservation, 30-day sample trial to try account syncing. These are not real partner bookings. This creates a new sample membership only; it does not import old reservations or charge you.</Text>
           {button('I understand — enable sample trial', () => void app.enablePreview(), 'enable-preview')}
@@ -126,4 +204,5 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   input: { minHeight: 50, borderWidth: 1, borderRadius: 12, padding: 14 },
   button: { minHeight: 48, padding: 14, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  privacyCard: { gap: 12, borderWidth: 1, borderRadius: 16, padding: 16, marginTop: 6 },
 });

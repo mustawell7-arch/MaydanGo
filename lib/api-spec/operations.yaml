@@ -80,6 +80,30 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SupportTicketDetail" }
+  /member/privacy-requests:
+    get:
+      operationId: getMemberPrivacyRequests
+      responses:
+        "200":
+          description: Privacy requests belonging to the signed-in member
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/PrivacyRequest" } }
+    post:
+      operationId: createMemberPrivacyRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PrivacyRequestInput" }
+      responses:
+        "201":
+          description: A private support case was created for human review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PrivacyRequest" }
+        "409":
+          description: An active privacy request already exists
   /member/support/tickets/{id}:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     get:
@@ -1856,6 +1880,25 @@ components:
     SupportTicketCategory:
       type: string
       enum: [booking, account, access, safety, other]
+    PrivacyRequestKind:
+      type: string
+      enum: [data_export, account_deletion]
+    PrivacyRequestInput:
+      type: object
+      additionalProperties: false
+      required: [kind, language]
+      properties:
+        kind: { $ref: "#/components/schemas/PrivacyRequestKind" }
+        language: { $ref: "#/components/schemas/SupportedLanguage" }
+    PrivacyRequest:
+      type: object
+      additionalProperties: false
+      required: [id, subject, status, createdAt]
+      properties:
+        id: { type: string }
+        subject: { type: string }
+        status: { $ref: "#/components/schemas/SupportTicketStatus" }
+        createdAt: { type: string, format: date-time }
     SupportedLanguage:
       type: string
       enum: [en, ar, ku]
