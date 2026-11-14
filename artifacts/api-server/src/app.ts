@@ -3,10 +3,11 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { clerkMiddleware } from "@clerk/express";
+import { clerkMiddleware, getAuth } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware, getClerkProxyHost } from "./middlewares/clerkProxyMiddleware";
 import adminRbacMiddleware from "./middlewares/admin-rbac";
+import { createRateLimitMiddleware } from "./middlewares/rate-limit";
 import paymentWebhookRouter from "./routes/payment-webhook";
 
 const app: Express = express();
@@ -51,6 +52,27 @@ app.use(express.urlencoded({ extended: true }));
 app.use(clerkMiddleware((req) => ({
   publishableKey: publishableKeyFromHost(getClerkProxyHost(req) ?? "", process.env.CLERK_PUBLISHABLE_KEY),
 })));
+
+const accountKey = (req: Parameters<import("express").RequestHandler>[0]) => {
+  const userId = getAuth(req).userId;
+  return userId ? `account:${userId}` : null;
+};
+
+app.use("/api/attendance/scan", createRateLimitMiddleware({
+  windowMs: 60_000,
+  maxRequests: 12,
+  keyForRequest: accountKey,
+}));
+app.use("/api/member/bookings", createRateLimitMiddleware({
+  windowMs: 60_000,
+  maxRequests: 20,
+  keyForRequest: accountKey,
+}));
+app.use("/api", createRateLimitMiddleware({
+  windowMs: 60_000,
+  maxRequests: 300,
+  keyForRequest: accountKey,
+}));
 
 app.use(adminRbacMiddleware);
 app.use("/api", router);
