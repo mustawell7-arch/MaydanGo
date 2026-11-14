@@ -63,5 +63,22 @@ export const facilityQualityIncidents = pgTable("facility_quality_incidents", {
   check("facility_quality_incident_status_valid", sql`${table.status} IN ('open', 'under_review', 'resolved')`),
 ]);
 
+export const facilityQualityEmergencyContacts = pgTable("facility_quality_emergency_contacts", {
+  facilityId: text("facility_id").primaryKey().references(() => facilityProfiles.id, { onDelete: "cascade" }),
+  partnerId: text("partner_id").notNull().references(() => partners.id, { onDelete: "restrict" }),
+  contactName: text("contact_name").notNull(),
+  contactRole: text("contact_role").notNull(),
+  contactPhone: text("contact_phone").notNull(),
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  verifiedBy: text("verified_by"),
+  createdBy: text("created_by").notNull(),
+  updatedBy: text("updated_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  index("facility_quality_emergency_contact_partner").on(table.partnerId),
+]);
+
 export type FacilityQualityAssessment = typeof facilityQualityAssessments.$inferSelect;
 export type FacilityQualityIncident = typeof facilityQualityIncidents.$inferSelect;
+export type FacilityQualityEmergencyContact = typeof facilityQualityEmergencyContacts.$inferSelect;

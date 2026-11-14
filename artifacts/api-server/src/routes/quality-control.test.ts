@@ -5,7 +5,7 @@ import type { Server } from "node:http";
 import { and, eq, inArray } from "drizzle-orm";
 import express from "express";
 import {
-  db, facilityProfiles, facilityQualityAssessments, facilityQualityIncidents,
+  db, facilityProfiles, facilityQualityAssessments, facilityQualityEmergencyContacts, facilityQualityIncidents,
   operationAudit, operators, partners, pool,
 } from "@workspace/db";
 import qualityControlRouter from "./quality-control";
@@ -75,6 +75,8 @@ after(async () => {
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
   if (incidentIds.length) await db.delete(facilityQualityIncidents).where(inArray(facilityQualityIncidents.id, incidentIds));
   if (assessmentIds.length) await db.delete(facilityQualityAssessments).where(inArray(facilityQualityAssessments.id, assessmentIds));
+  await db.delete(facilityQualityEmergencyContacts)
+    .where(inArray(facilityQualityEmergencyContacts.facilityId, facilityIds));
   await db.delete(facilityProfiles).where(inArray(facilityProfiles.id, facilityIds));
   await db.delete(operators).where(inArray(operators.userId, userIds));
   await db.delete(partners).where(inArray(partners.id, [partnerA, partnerB]));
@@ -113,11 +115,46 @@ test("facility quality records are scoped, validated, and audited", async () => 
     assessments: unknown[];
     incidents: unknown[];
     expiringDocuments: unknown[];
+    emergencyContacts: unknown[];
   };
   assert.deepEqual(scopedData.facilities.map(item => item.id), [facilityA]);
   assert.equal(scopedData.assessments.length, 0);
   assert.equal(scopedData.incidents.length, 0);
   assert.equal(scopedData.expiringDocuments.length, 0);
+  assert.equal(scopedData.emergencyContacts.length, 0);
+
+  const emergencyContactBody = {
+    contactName: "Venue safety lead",
+    contactRole: "Facility manager",
+    contactPhone: "+964 770 000 0000",
+    verified: false,
+  };
+  assert.equal((await call(`/operations/quality/emergency-contacts/${facilityB}`, partnerUserA, "PUT", emergencyContactBody)).status, 404);
+  const createdContactResult = await call(
+    `/operations/quality/emergency-contacts/${facilityA}`, partnerUserA, "PUT", emergencyContactBody,
+  );
+  assert.equal(createdContactResult.status, 200);
+  const createdContact = createdContactResult.data as { verificationStatus: string; contactPhone: string };
+  assert.equal(createdContact.verificationStatus, "pending");
+  assert.equal(createdContact.contactPhone, emergencyContactBody.contactPhone);
+  assert.equal((await call(
+    `/operations/quality/emergency-contacts/${facilityA}`, partnerUserA, "PUT", { ...emergencyContactBody, verified: true },
+  )).status, 403);
+  const verifiedContactResult = await call(
+    `/operations/quality/emergency-contacts/${facilityA}`, adminUser, "PUT", { ...emergencyContactBody, verified: true },
+  );
+  assert.equal(verifiedContactResult.status, 200);
+  assert.equal((verifiedContactResult.data as { verificationStatus: string }).verificationStatus, "verified");
+  const changedContactResult = await call(
+    `/operations/quality/emergency-contacts/${facilityA}`, partnerUserA, "PUT", {
+      ...emergencyContactBody, contactPhone: "+964 770 111 0000",
+    },
+  );
+  assert.equal(changedContactResult.status, 200);
+  assert.equal((changedContactResult.data as { verificationStatus: string }).verificationStatus, "pending");
+  const otherPartnerContactView = await call("/operations/quality", partnerUserB);
+  assert.equal(otherPartnerContactView.status, 200);
+  assert.equal((otherPartnerContactView.data as { emergencyContacts: unknown[] }).emergencyContacts.length, 0);
 
   const inspection = await call("/operations/quality/assessments", partnerUserA, "POST", {});
   assert.equal(inspection.status, 403);
@@ -204,19 +241,33 @@ test("facility quality records are scoped, validated, and audited", async () => 
     assessments: Array<{ id: string }>;
     incidents: Array<{ id: string; status: string }>;
     expiringDocuments: unknown[];
+    emergencyContacts: Array<{ facilityId: string; contactPhone: string; verificationStatus: string }>;
   };
   assert.deepEqual(history.assessments.map(item => item.id), [refreshedAssessment.id, assessment.id]);
   assert.deepEqual(history.incidents.map(item => item.id), [incident.id]);
   assert.equal(history.incidents[0].status, "resolved");
   assert.equal(history.expiringDocuments.length, 0);
+  assert.deepEqual(history.emergencyContacts.map(item => ({
+    facilityId: item.facilityId,
+    contactPhone: item.contactPhone,
+    verificationStatus: item.verificationStatus,
+  })), [{
+    facilityId: facilityA,
+    contactPhone: "+964 770 111 0000",
+    verificationStatus: "pending",
+  }]);
 
   const auditRows = await db.select().from(operationAudit).where(and(
-    inArray(operationAudit.targetId, [assessment.id, refreshedAssessment.id, incident.id]),
+    inArray(operationAudit.targetId, [assessment.id, refreshedAssessment.id, incident.id, facilityA]),
     inArray(operationAudit.action, [
       "facility.quality.assessment.created",
       "facility.quality.incident.created",
       "facility.quality.incident.review",
+      "facility.quality.emergency_contact.updated",
     ]),
   ));
-  assert.equal(auditRows.length, 4);
+  assert.equal(auditRows.length, 7);
+  const contactAuditRows = auditRows.filter(row => row.action === "facility.quality.emergency_contact.updated");
+  assert.equal(contactAuditRows.length, 3);
+  assert.ok(contactAuditRows.every(row => !row.detail?.includes("770")));
 });

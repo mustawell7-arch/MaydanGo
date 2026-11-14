@@ -3,10 +3,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetFacilityQualityControlQueryKey, useCreateFacilityQualityAssessment,
   useCreateFacilityQualityIncident, useGetFacilityQualityControl,
-  useUpdateFacilityQualityAssessment, useUpdateFacilityQualityIncident,
+  useUpdateFacilityQualityAssessment, useUpdateFacilityQualityIncident, useUpsertFacilityEmergencyContact,
 } from '@workspace/api-client-react';
 import type {
-  FacilityHygieneChecklist, FacilityQualityAssessment, FacilityQualityAssessmentInput,
+  FacilityEmergencyContactInput, FacilityHygieneChecklist, FacilityQualityAssessment, FacilityQualityAssessmentInput,
   FacilityQualityIncidentInput, FacilityQualityIncidentUpdate, FacilitySafetyChecklist,
 } from '@workspace/api-client-react';
 import { AlertTriangle, ClipboardCheck, FileCheck2, RefreshCw, ShieldAlert } from 'lucide-react';
@@ -79,6 +79,19 @@ const copy = {
     expiryAlertTitle: 'Partner document expiry alerts',
     expiryAlertIntro: 'Expired licences and insurance, plus documents due within 30 days, are listed here.',
     noExpiryAlerts: 'No partner licences or insurance are expired or due within 30 days.',
+    emergencyContacts: 'Facility emergency contacts',
+    emergencyContactsIntro: 'Operational contacts are visible only to authorized partner and safety staff.',
+    contactPrivacyNote: 'Enter facility staff contacts only. Do not enter member or guardian details.',
+    contactName: 'Contact name',
+    contactRole: 'Facility role',
+    contactPhone: 'Phone number',
+    noEmergencyContact: 'No facility emergency contact is on file.',
+    pendingVerification: 'Awaiting safety review',
+    verifiedContact: 'Verified by safety admin',
+    contactAdminNote: 'Partner changes need safety-admin verification before they are marked verified.',
+    verifyContact: 'I verified this facility contact',
+    saveContact: 'Save emergency contact',
+    callContact: 'Call facility contact',
     checklistRequired: 'Mark every checklist item before saving.',
     chooseStatus: 'Choose a status',
   },
@@ -142,6 +155,19 @@ const copy = {
     expiryAlertTitle: 'تنبيهات انتهاء مستندات الشركاء',
     expiryAlertIntro: 'تظهر هنا التراخيص والتأمينات المنتهية أو التي ستنتهي خلال 30 يوماً.',
     noExpiryAlerts: 'لا توجد تراخيص أو تأمينات للشركاء منتهية أو مستحقة خلال 30 يوماً.',
+    emergencyContacts: 'جهات اتصال الطوارئ للمرافق',
+    emergencyContactsIntro: 'تظهر جهات الاتصال التشغيلية للشركاء المخولين وموظفي السلامة فقط.',
+    contactPrivacyNote: 'أدخل بيانات موظفي المرفق فقط. لا تدخل بيانات الأعضاء أو الأوصياء.',
+    contactName: 'اسم جهة الاتصال',
+    contactRole: 'الدور في المرفق',
+    contactPhone: 'رقم الهاتف',
+    noEmergencyContact: 'لا توجد جهة اتصال للطوارئ مسجلة لهذا المرفق.',
+    pendingVerification: 'بانتظار مراجعة السلامة',
+    verifiedContact: 'تم التحقق من مسؤول السلامة',
+    contactAdminNote: 'تحتاج تغييرات الشريك إلى تحقق مسؤول السلامة قبل اعتمادها.',
+    verifyContact: 'تحققت من جهة اتصال هذا المرفق',
+    saveContact: 'حفظ جهة اتصال الطوارئ',
+    callContact: 'اتصل بجهة اتصال المرفق',
     checklistRequired: 'حدد حالة كل بند في القائمة قبل الحفظ.',
     chooseStatus: 'اختر الحالة',
   },
@@ -205,6 +231,19 @@ const copy = {
     expiryAlertTitle: 'ئاگادارکردنەوەی بەسەرچوونی بەڵگەنامەی هاوبەش',
     expiryAlertIntro: 'مۆڵەت و بیمەی بەسەرچوو یان ئەوانەی لە ٣٠ ڕۆژی داهاتوودا بەسەردەچن لێرە پیشان دەدرێن.',
     noExpiryAlerts: 'هیچ مۆڵەت یان بیمەیەکی هاوبەش بەسەرنەچووە یان لە ٣٠ ڕۆژی داهاتوودا بەسەرناچێت.',
+    emergencyContacts: 'پەیوەندییەکانی فریاکەوتنی شوێن',
+    emergencyContactsIntro: 'تەنها هاوبەشی ڕێگەپێدراو و ستافی سەلامەتی دەتوانن پەیوەندییەکانی کارگێڕی ببینن.',
+    contactPrivacyNote: 'تەنها پەیوەندیی ستافی شوێن بنووسە. زانیاری ئەندام یان سەرپەرشتیار مەنووسە.',
+    contactName: 'ناوی پەیوەندی',
+    contactRole: 'ئەرک لە شوێن',
+    contactPhone: 'ژمارەی تەلەفۆن',
+    noEmergencyContact: 'هیچ پەیوەندییەکی فریاکەوتنی ئەم شوێنە تۆمار نەکراوە.',
+    pendingVerification: 'چاوەڕێی پێداچوونەوەی سەلامەتییە',
+    verifiedContact: 'لە لایەن بەڕێوەبەری سەلامەتییەوە پشتڕاست کراوەتەوە',
+    contactAdminNote: 'گۆڕانکاریی هاوبەش پێویستی بە پشتڕاستکردنەوەی بەڕێوەبەری سەلامەتی هەیە.',
+    verifyContact: 'پەیوەندیی ئەم شوێنەم پشتڕاست کردەوە',
+    saveContact: 'پاشەکەوتکردنی پەیوەندیی فریاکەوتن',
+    callContact: 'پەیوەندی بە کارمەندی شوێن بکە',
     checklistRequired: 'پێش پاشەکەوتکردن، دۆخی هەموو خاڵەکان دیاری بکە.',
     chooseStatus: 'دۆخێک هەڵبژێرە',
   },
@@ -259,10 +298,12 @@ function StatusSelect({ value, onChange, lang }: { value: CheckStatus; onChange:
 export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
   const queryClient = useQueryClient();
   const query = useGetFacilityQualityControl({ query: { refetchOnMount: 'always', retry: false } });
+  const qualityAdmin = query.data?.role === 'fraud_compliance_admin' || query.data?.role === 'super_admin';
   const createAssessment = useCreateFacilityQualityAssessment();
   const updateAssessment = useUpdateFacilityQualityAssessment();
   const createIncident = useCreateFacilityQualityIncident();
   const updateIncident = useUpdateFacilityQualityIncident();
+  const upsertEmergencyContact = useUpsertFacilityEmergencyContact();
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [facilityId, setFacilityId] = useState('');
@@ -335,6 +376,23 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
       setError(t(lang, 'saveError'));
     }
   };
+  const submitEmergencyContact = async (event: FormEvent<HTMLFormElement>, targetFacilityId: string) => {
+    event.preventDefault();
+    setError('');
+    const values = new FormData(event.currentTarget);
+    const input: FacilityEmergencyContactInput = {
+      contactName: String(values.get('contactName') ?? '').trim(),
+      contactRole: String(values.get('contactRole') ?? '').trim(),
+      contactPhone: String(values.get('contactPhone') ?? '').trim(),
+      verified: qualityAdmin && values.get('verified') === 'on',
+    };
+    try {
+      await upsertEmergencyContact.mutateAsync({ id: targetFacilityId, data: input });
+      await invalidate();
+    } catch {
+      setError(t(lang, 'saveError'));
+    }
+  };
   const submitAssessmentFollowUp = async (event: FormEvent<HTMLFormElement>, item: FacilityQualityAssessment) => {
     event.preventDefault();
     setError('');
@@ -371,8 +429,8 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
   if (query.isError || !query.data) return <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#fff7f3] p-5 text-sm text-[#9a4435]"><span>{t(lang, 'loadError')}</span><button type="button" className="inline-flex items-center gap-2 font-semibold" onClick={() => void query.refetch()}><RefreshCw size={14} />{t(lang, 'retry')}</button></div>;
 
   const facilities = query.data.facilities;
-  const qualityAdmin = query.data.role === 'fraud_compliance_admin' || query.data.role === 'super_admin';
   const expiryAlerts = qualityAdmin ? query.data.expiringDocuments : [];
+  const emergencyContactByFacility = new Map(query.data.emergencyContacts.map(item => [item.facilityId, item]));
   const statusLabel = (value: AssessmentStatus) => t(lang, value === 'approved' ? 'approved' : value === 'suspended' ? 'suspended' : 'actionRequired');
   const incidentStatusLabel = (value: IncidentStatus) => t(lang, value === 'resolved' ? 'resolved' : value === 'under_review' ? 'underReview' : 'open');
   const assessmentSelect = (item: FacilityQualityAssessment) => (
@@ -418,6 +476,43 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
         </div>
       </div>
     </section>}
+
+    <section aria-labelledby="emergency-contacts-title" className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6">
+      <div>
+        <h3 id="emergency-contacts-title" className="font-display text-xl font-bold">{t(lang, 'emergencyContacts')}</h3>
+        <p className="mt-1 text-sm leading-6 text-[#687a71]">{t(lang, 'emergencyContactsIntro')}</p>
+      </div>
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        {facilities.map(facility => {
+          const contact = emergencyContactByFacility.get(facility.id);
+          return <article key={facility.id} className="rounded-2xl border border-[#e7e1d4] bg-[#fbf9f1] p-4">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div><h4 className="font-bold">{facility.facility} · {facility.city}</h4><p className="mt-1 text-xs text-[#687a71]">{facility.partnerName}</p></div>
+              <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${contact?.verifiedAt ? 'bg-[#e1efdf] text-[#2d6d4a]' : 'bg-[#fff0d6] text-[#8a5b20]'}`}>
+                {contact ? t(lang, contact.verifiedAt ? 'verifiedContact' : 'pendingVerification') : t(lang, 'noEmergencyContact')}
+              </span>
+            </div>
+            {contact && <a href={`tel:${contact.contactPhone.replace(/[^\d+]/g, '')}`} className="mt-3 inline-flex text-sm font-semibold text-[#28695a] underline underline-offset-2">
+              {t(lang, 'callContact')}: {contact.contactPhone}
+            </a>}
+            <form key={`${facility.id}-${contact?.updatedAt ?? 'empty'}`} onSubmit={event => void submitEmergencyContact(event, facility.id)} className="mt-4 grid gap-3 border-t border-[#ece7d9] pt-4 sm:grid-cols-2">
+              <label className="text-xs font-semibold">{t(lang, 'contactName')}<input required name="contactName" maxLength={120} defaultValue={contact?.contactName ?? ''} className={inputClass} /></label>
+              <label className="text-xs font-semibold">{t(lang, 'contactRole')}<input required name="contactRole" minLength={2} maxLength={100} defaultValue={contact?.contactRole ?? ''} className={inputClass} /></label>
+              <label className="text-xs font-semibold sm:col-span-2">{t(lang, 'contactPhone')}<input required name="contactPhone" type="tel" inputMode="tel" autoComplete="tel" minLength={7} maxLength={30} pattern="[+0-9() -]+" defaultValue={contact?.contactPhone ?? ''} className={inputClass} /></label>
+              <p className="rounded-xl bg-[#f7f4e9] p-3 text-xs leading-5 text-[#687a71] sm:col-span-2">{t(lang, qualityAdmin ? 'contactAdminNote' : 'contactPrivacyNote')}</p>
+              {qualityAdmin && <label className="flex items-center gap-2 text-xs font-semibold sm:col-span-2">
+                <input type="checkbox" name="verified" defaultChecked={Boolean(contact?.verifiedAt)} className="size-4 accent-[#174d43]" />
+                {t(lang, 'verifyContact')}
+              </label>}
+              {!qualityAdmin && <p className="text-xs leading-5 text-[#76532d] sm:col-span-2">{t(lang, 'contactAdminNote')}</p>}
+              <button type="submit" disabled={upsertEmergencyContact.isPending} className={`${buttonClass} sm:col-span-2`}>
+                <ShieldAlert size={15} />{t(lang, 'saveContact')}
+              </button>
+            </form>
+          </article>;
+        })}
+      </div>
+    </section>
 
     <div className="grid gap-6 xl:grid-cols-2">
       {qualityAdmin && <form onSubmit={event => void submitAssessment(event)} className="grid content-start gap-4 rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6">

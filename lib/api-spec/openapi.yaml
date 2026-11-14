@@ -440,6 +440,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1super-admin~1audit-logs"
   /operations/quality:
     $ref: "./operations.yaml#/paths/~1operations~1quality"
+  /operations/quality/emergency-contacts/{id}:
+    $ref: "./operations.yaml#/paths/~1operations~1quality~1emergency-contacts~1{id}"
   /operations/quality/assessments:
     $ref: "./operations.yaml#/paths/~1operations~1quality~1assessments"
   /operations/quality/assessments/{id}:

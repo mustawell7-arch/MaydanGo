@@ -4553,7 +4553,58 @@ export const GetFacilityQualityControlResponse = zod.object({
   "documentType": zod.enum(['licence', 'insurance']),
   "expiresOn": zod.coerce.date(),
   "daysRemaining": zod.number().int()
+})),
+  "emergencyContacts": zod.array(zod.object({
+  "facilityId": zod.string(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "contactName": zod.string(),
+  "contactRole": zod.string(),
+  "contactPhone": zod.string(),
+  "verificationStatus": zod.enum(['pending', 'verified']),
+  "verifiedAt": zod.coerce.date().nullable(),
+  "updatedAt": zod.coerce.date()
 }))
+})
+
+
+export const UpsertFacilityEmergencyContactParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const upsertFacilityEmergencyContactBodyContactNameMax = 120;
+
+export const upsertFacilityEmergencyContactBodyContactRoleMin = 2;
+export const upsertFacilityEmergencyContactBodyContactRoleMax = 100;
+
+export const upsertFacilityEmergencyContactBodyContactPhoneMin = 7;
+export const upsertFacilityEmergencyContactBodyContactPhoneMax = 30;
+
+
+export const upsertFacilityEmergencyContactBodyContactPhoneRegExp = new RegExp('^[+0-9() -]+$');
+
+
+export const UpsertFacilityEmergencyContactBody = zod.object({
+  "contactName": zod.string().min(1).max(upsertFacilityEmergencyContactBodyContactNameMax),
+  "contactRole": zod.string().min(upsertFacilityEmergencyContactBodyContactRoleMin).max(upsertFacilityEmergencyContactBodyContactRoleMax),
+  "contactPhone": zod.string().min(upsertFacilityEmergencyContactBodyContactPhoneMin).max(upsertFacilityEmergencyContactBodyContactPhoneMax).regex(upsertFacilityEmergencyContactBodyContactPhoneRegExp),
+  "verified": zod.boolean()
+})
+
+export const UpsertFacilityEmergencyContactResponse = zod.object({
+  "facilityId": zod.string(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "contactName": zod.string(),
+  "contactRole": zod.string(),
+  "contactPhone": zod.string(),
+  "verificationStatus": zod.enum(['pending', 'verified']),
+  "verifiedAt": zod.coerce.date().nullable(),
+  "updatedAt": zod.coerce.date()
 })
 
 

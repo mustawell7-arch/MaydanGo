@@ -589,6 +589,24 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/FacilityQualityControl" }
+  /operations/quality/emergency-contacts/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    put:
+      operationId: upsertFacilityEmergencyContact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FacilityEmergencyContactInput" }
+      responses:
+        "200":
+          description: Facility emergency contact saved within the operator's authorized scope
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacilityEmergencyContact" }
+        "400": { description: Invalid facility contact details }
+        "403": { description: "Only authorized partner or safety administrators can save contacts, and only admins can verify them" }
+        "404": { description: Facility not found within the operator's scope }
   /operations/quality/assessments:
     post:
       operationId: createFacilityQualityAssessment
@@ -3215,16 +3233,42 @@ components:
         documentType: { type: string, enum: [licence, insurance] }
         expiresOn: { type: string, format: date }
         daysRemaining: { type: integer }
+    FacilityEmergencyContact:
+      type: object
+      additionalProperties: false
+      required: [facilityId, partnerId, partnerName, facility, city, contactName, contactRole, contactPhone, verificationStatus, verifiedAt, updatedAt]
+      properties:
+        facilityId: { type: string }
+        partnerId: { type: string }
+        partnerName: { type: string }
+        facility: { type: string }
+        city: { type: string }
+        contactName: { type: string }
+        contactRole: { type: string }
+        contactPhone: { type: string }
+        verificationStatus: { type: string, enum: [pending, verified] }
+        verifiedAt: { type: ["string", "null"], format: date-time }
+        updatedAt: { type: string, format: date-time }
+    FacilityEmergencyContactInput:
+      type: object
+      additionalProperties: false
+      required: [contactName, contactRole, contactPhone, verified]
+      properties:
+        contactName: { type: string, minLength: 1, maxLength: 120 }
+        contactRole: { type: string, minLength: 2, maxLength: 100 }
+        contactPhone: { type: string, minLength: 7, maxLength: 30, pattern: "^[+0-9() -]+$" }
+        verified: { type: boolean }
     FacilityQualityControl:
       type: object
       additionalProperties: false
-      required: [role, facilities, assessments, incidents, expiringDocuments]
+      required: [role, facilities, assessments, incidents, expiringDocuments, emergencyContacts]
       properties:
         role: { type: string, enum: [fraud_compliance_admin, partner, super_admin] }
         facilities: { type: array, items: { $ref: "#/components/schemas/FacilityQualityFacility" } }
         assessments: { type: array, items: { $ref: "#/components/schemas/FacilityQualityAssessment" } }
         incidents: { type: array, items: { $ref: "#/components/schemas/FacilityQualityIncident" } }
         expiringDocuments: { type: array, items: { $ref: "#/components/schemas/FacilityDocumentExpiryAlert" } }
+        emergencyContacts: { type: array, items: { $ref: "#/components/schemas/FacilityEmergencyContact" } }
     ReviewCategoryRatings:
       type: object
       additionalProperties: false

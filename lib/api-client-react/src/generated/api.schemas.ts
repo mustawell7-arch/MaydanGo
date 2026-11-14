@@ -2926,6 +2926,49 @@ export interface FacilityDocumentExpiryAlert {
   daysRemaining: number;
 }
 
+export type FacilityEmergencyContactVerificationStatus = typeof FacilityEmergencyContactVerificationStatus[keyof typeof FacilityEmergencyContactVerificationStatus];
+
+
+export const FacilityEmergencyContactVerificationStatus = {
+  pending: 'pending',
+  verified: 'verified',
+} as const;
+
+export interface FacilityEmergencyContact {
+  facilityId: string;
+  partnerId: string;
+  partnerName: string;
+  facility: string;
+  city: string;
+  contactName: string;
+  contactRole: string;
+  contactPhone: string;
+  verificationStatus: FacilityEmergencyContactVerificationStatus;
+  /** @nullable */
+  verifiedAt: string | null;
+  updatedAt: string;
+}
+
+export interface FacilityEmergencyContactInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  contactName: string;
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
+  contactRole: string;
+  /**
+     * @minLength 7
+     * @maxLength 30
+     * @pattern ^[+0-9() -]+$
+     */
+  contactPhone: string;
+  verified: boolean;
+}
+
 export type FacilityQualityControlRole = typeof FacilityQualityControlRole[keyof typeof FacilityQualityControlRole];
 
 
@@ -2941,6 +2984,7 @@ export interface FacilityQualityControl {
   assessments: FacilityQualityAssessment[];
   incidents: FacilityQualityIncident[];
   expiringDocuments: FacilityDocumentExpiryAlert[];
+  emergencyContacts: FacilityEmergencyContact[];
 }
 
 export interface ReviewCategoryRatings {

@@ -58,6 +58,8 @@ import type {
   CreateMemberBookingBody,
   DeviceChangeApprovalInput,
   EnablePreviewMembershipBody,
+  FacilityEmergencyContact,
+  FacilityEmergencyContactInput,
   FacilityHoursOverride,
   FacilityHoursOverrideInput,
   FacilityProfile,
@@ -7354,6 +7356,89 @@ export function useGetFacilityQualityControl<TData = Awaited<ReturnType<typeof g
 
 
 
+
+export const getUpsertFacilityEmergencyContactUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/quality/emergency-contacts/${id}`
+}
+
+export const upsertFacilityEmergencyContact = async (id: string,
+    facilityEmergencyContactInput: FacilityEmergencyContactInput, options?: Parameters<typeof customFetch>[1]): Promise<FacilityEmergencyContact> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FacilityEmergencyContact>(getUpsertFacilityEmergencyContactUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(facilityEmergencyContactInput)
+  }
+);}
+
+
+
+
+
+export const getUpsertFacilityEmergencyContactMutationKey = () => ['upsertFacilityEmergencyContact'] as const;
+
+export const getUpsertFacilityEmergencyContactMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertFacilityEmergencyContact>>, TError,UpsertFacilityEmergencyContactMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof upsertFacilityEmergencyContact>>, TError,UpsertFacilityEmergencyContactMutationVariables, TContext> => {
+
+const mutationKey = getUpsertFacilityEmergencyContactMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof upsertFacilityEmergencyContact>>, UpsertFacilityEmergencyContactMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  upsertFacilityEmergencyContact(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpsertFacilityEmergencyContactMutationResult = NonNullable<Awaited<ReturnType<typeof upsertFacilityEmergencyContact>>>
+    export type UpsertFacilityEmergencyContactMutationBody = BodyType<FacilityEmergencyContactInput>
+    export type UpsertFacilityEmergencyContactMutationError = ErrorType<void>
+    export type UpsertFacilityEmergencyContactMutationVariables = {id: string;data: BodyType<FacilityEmergencyContactInput>}
+
+    export const useUpsertFacilityEmergencyContact = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertFacilityEmergencyContact>>, TError,UpsertFacilityEmergencyContactMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof upsertFacilityEmergencyContact>>,
+        TError,
+        UpsertFacilityEmergencyContactMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpsertFacilityEmergencyContactMutationOptions(options), queryClient);
+    }
 
 export const getCreateFacilityQualityAssessmentUrl = () => {
 

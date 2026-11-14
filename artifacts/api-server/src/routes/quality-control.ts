@@ -4,7 +4,7 @@ import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { hasAdminPermission } from "../lib/admin-roles";
 import {
-  db, facilityProfiles, facilityQualityAssessments, facilityQualityIncidents,
+  db, facilityProfiles, facilityQualityAssessments, facilityQualityEmergencyContacts, facilityQualityIncidents,
   operationAudit, operators, partners,
 } from "@workspace/db";
 import {
@@ -13,7 +13,8 @@ import {
   GetFacilityQualityControlResponse, UpdateFacilityQualityAssessmentBody,
   UpdateFacilityQualityAssessmentParams, UpdateFacilityQualityAssessmentResponse,
   UpdateFacilityQualityIncidentBody, UpdateFacilityQualityIncidentParams,
-  UpdateFacilityQualityIncidentResponse,
+  UpdateFacilityQualityIncidentResponse, UpsertFacilityEmergencyContactBody,
+  UpsertFacilityEmergencyContactParams, UpsertFacilityEmergencyContactResponse,
 } from "@workspace/api-zod";
 
 const router = Router();
@@ -165,13 +166,37 @@ async function incidentDetail(id: string) {
   return row;
 }
 
+async function emergencyContactDetail(facilityId: string) {
+  const [row] = await db.select({
+    facilityId: facilityQualityEmergencyContacts.facilityId,
+    partnerId: facilityQualityEmergencyContacts.partnerId,
+    partnerName: partners.name,
+    facility: facilityProfiles.facility,
+    city: facilityProfiles.city,
+    contactName: facilityQualityEmergencyContacts.contactName,
+    contactRole: facilityQualityEmergencyContacts.contactRole,
+    contactPhone: facilityQualityEmergencyContacts.contactPhone,
+    verifiedAt: facilityQualityEmergencyContacts.verifiedAt,
+    updatedAt: facilityQualityEmergencyContacts.updatedAt,
+  }).from(facilityQualityEmergencyContacts)
+    .innerJoin(facilityProfiles, eq(facilityProfiles.id, facilityQualityEmergencyContacts.facilityId))
+    .innerJoin(partners, eq(partners.id, facilityQualityEmergencyContacts.partnerId))
+    .where(eq(facilityQualityEmergencyContacts.facilityId, facilityId)).limit(1);
+  if (!row) return undefined;
+  return {
+    ...row,
+    verificationStatus: row.verifiedAt ? "verified" : "pending",
+  };
+}
+
 router.get("/", async (_req, res): Promise<void> => {
   const operator = operatorFor(res);
   const partnerScope = operator.role === "partner" ? operator.partnerId : null;
   const facilityCondition = partnerScope ? eq(facilityProfiles.partnerId, partnerScope) : undefined;
   const assessmentCondition = partnerScope ? eq(facilityQualityAssessments.partnerId, partnerScope) : undefined;
   const incidentCondition = partnerScope ? eq(facilityQualityIncidents.partnerId, partnerScope) : undefined;
-  const [facilities, assessmentRows, incidentRows] = await Promise.all([
+  const contactCondition = partnerScope ? eq(facilityQualityEmergencyContacts.partnerId, partnerScope) : undefined;
+  const [facilities, assessmentRows, incidentRows, contactRows] = await Promise.all([
     db.select({
       id: facilityProfiles.id,
       partnerId: facilityProfiles.partnerId,
@@ -232,6 +257,22 @@ router.get("/", async (_req, res): Promise<void> => {
       .where(incidentCondition)
       .orderBy(desc(facilityQualityIncidents.createdAt))
       .limit(250),
+    db.select({
+      facilityId: facilityQualityEmergencyContacts.facilityId,
+      partnerId: facilityQualityEmergencyContacts.partnerId,
+      partnerName: partners.name,
+      facility: facilityProfiles.facility,
+      city: facilityProfiles.city,
+      contactName: facilityQualityEmergencyContacts.contactName,
+      contactRole: facilityQualityEmergencyContacts.contactRole,
+      contactPhone: facilityQualityEmergencyContacts.contactPhone,
+      verifiedAt: facilityQualityEmergencyContacts.verifiedAt,
+      updatedAt: facilityQualityEmergencyContacts.updatedAt,
+    }).from(facilityQualityEmergencyContacts)
+      .innerJoin(facilityProfiles, eq(facilityProfiles.id, facilityQualityEmergencyContacts.facilityId))
+      .innerJoin(partners, eq(partners.id, facilityQualityEmergencyContacts.partnerId))
+      .where(contactCondition)
+      .orderBy(asc(facilityProfiles.city), asc(facilityProfiles.facility)),
   ]);
   const [latestLicenceRows, latestInsuranceRows] = await Promise.all([
     db.selectDistinctOn([facilityQualityAssessments.facilityId], {
@@ -283,7 +324,109 @@ router.get("/", async (_req, res): Promise<void> => {
     assessments: assessmentRows,
     incidents: incidentRows,
     expiringDocuments,
+    emergencyContacts: contactRows.map(row => ({
+      ...row,
+      verificationStatus: row.verifiedAt ? "verified" : "pending",
+    })),
   }));
+});
+
+router.put("/emergency-contacts/:id", async (req, res): Promise<void> => {
+  const operator = operatorFor(res);
+  const params = UpsertFacilityEmergencyContactParams.safeParse(req.params);
+  const parsed = UpsertFacilityEmergencyContactBody.safeParse(req.body);
+  if (!params.success || !parsed.success) {
+    res.status(400).json({ message: "Enter a contact name, facility role, and valid phone number." });
+    return;
+  }
+  const input = parsed.data;
+  const contactName = input.contactName.trim();
+  const contactRole = input.contactRole.trim();
+  const contactPhone = input.contactPhone.trim();
+  const phoneDigits = contactPhone.replace(/\D/g, "");
+  if (!contactName || contactRole.length < 2 || phoneDigits.length < 7 || phoneDigits.length > 15) {
+    res.status(400).json({ message: "Enter a contact name, facility role, and valid phone number." });
+    return;
+  }
+  const isSafetyAdmin = hasAdminPermission(operator.role, "fraud_compliance");
+  if (input.verified && !isSafetyAdmin) {
+    res.status(403).json({ message: "Only a safety administrator can verify facility emergency contacts." });
+    return;
+  }
+  const [facility] = await db.select({
+    id: facilityProfiles.id,
+    partnerId: facilityProfiles.partnerId,
+  }).from(facilityProfiles).where(eq(facilityProfiles.id, params.data.id)).limit(1);
+  if (!facility || (operator.role === "partner" && facility.partnerId !== operator.partnerId)) {
+    res.status(404).json({ message: "Facility not found." });
+    return;
+  }
+
+  const actorId = operator.userId;
+  const now = new Date();
+  await db.transaction(async tx => {
+    const [current] = await tx.select().from(facilityQualityEmergencyContacts)
+      .where(eq(facilityQualityEmergencyContacts.facilityId, facility.id))
+      .for("update");
+    const fieldsChanged = !current
+      || current.contactName !== contactName
+      || current.contactRole !== contactRole
+      || current.contactPhone !== contactPhone;
+    const wasVerified = Boolean(current?.verifiedAt);
+    let verifiedAt: Date | null = null;
+    let verifiedBy: string | null = null;
+    if (isSafetyAdmin && input.verified) {
+      verifiedAt = fieldsChanged || !current?.verifiedAt ? now : current.verifiedAt;
+      verifiedBy = fieldsChanged || !current?.verifiedBy ? actorId : current.verifiedBy;
+    } else if (operator.role === "partner" && !fieldsChanged && current?.verifiedAt) {
+      verifiedAt = current.verifiedAt;
+      verifiedBy = current.verifiedBy;
+    }
+    const nextVerified = Boolean(verifiedAt);
+    const values = {
+      facilityId: facility.id,
+      partnerId: facility.partnerId,
+      contactName,
+      contactRole,
+      contactPhone,
+      verifiedAt,
+      verifiedBy,
+      updatedBy: actorId,
+      updatedAt: now,
+    };
+    await tx.insert(facilityQualityEmergencyContacts).values({
+      ...values,
+      createdBy: actorId,
+    }).onConflictDoUpdate({
+      target: facilityQualityEmergencyContacts.facilityId,
+      set: {
+        partnerId: values.partnerId,
+        contactName: values.contactName,
+        contactRole: values.contactRole,
+        contactPhone: values.contactPhone,
+        verifiedAt: values.verifiedAt,
+        verifiedBy: values.verifiedBy,
+        updatedBy: values.updatedBy,
+        updatedAt: values.updatedAt,
+      },
+    });
+    if (fieldsChanged || wasVerified !== nextVerified) {
+      await tx.insert(operationAudit).values({
+        id: randomUUID(),
+        actorId,
+        action: "facility.quality.emergency_contact.updated",
+        targetId: facility.id,
+        detail: `changed_fields=${fieldsChanged ? "contact_name,contact_role,contact_phone" : "none"};verification=${wasVerified ? "verified" : "pending"}->${nextVerified ? "verified" : "pending"}`,
+      });
+    }
+  });
+
+  const contact = await emergencyContactDetail(facility.id);
+  if (!contact) {
+    res.status(500).json({ message: "The facility contact could not be loaded after saving." });
+    return;
+  }
+  res.json(UpsertFacilityEmergencyContactResponse.parse(contact));
 });
 
 router.post("/assessments", async (req, res): Promise<void> => {
