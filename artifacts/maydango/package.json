@@ -51,9 +51,7 @@
     "react-native-svg": "15.15.4",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.10.1",
-    "typescript": "~6.0.3",
-    "zod": "catalog:",
-    "zod-validation-error": "^3.4.0"
+    "typescript": "~6.0.3"
   },
   "dependencies": {
     "@clerk/expo": "^4.14.5",
