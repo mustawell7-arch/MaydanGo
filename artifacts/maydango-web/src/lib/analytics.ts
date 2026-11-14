@@ -1,3 +1,5 @@
+import { hasAnalyticsConsent } from '@/lib/cookie-consent';
+
 type AnalyticsData = Record<string, string | number | boolean>;
 
 declare global {
@@ -9,7 +11,7 @@ declare global {
 }
 
 export function trackEvent(name: string, data?: AnalyticsData): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || !hasAnalyticsConsent()) return;
   try {
     window.umami?.track(name, data);
   } catch {

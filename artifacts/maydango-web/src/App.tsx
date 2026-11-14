@@ -5,6 +5,7 @@ import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import { ArrowDown, ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronDown, CircleHelp, Clock3, Dumbbell, Globe2, HeartHandshake, House, MapPin, Menu, MoveUpRight, Play, RotateCw, Sparkles, Users, X } from 'lucide-react';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { CookieConsent } from '@/components/cookie-consent';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useGetPublicCatalog, getGetPublicCatalogQueryKey, useGetPublicPlans, getGetPublicPlansQueryKey } from '@workspace/api-client-react';
@@ -508,6 +509,7 @@ function Layout({ children, language, setLanguage }: { children: ReactNode; lang
     document.documentElement.dir = rtl ? 'rtl' : 'ltr';
     document.documentElement.classList.toggle('rtl-copy', rtl);
     localStorage.setItem('maydango-language', language);
+    window.dispatchEvent(new Event('maydango-language-change'));
   }, [location, language, rtl]);
 
   const changeLanguage = (value: Language) => setLanguage(value);
@@ -1129,6 +1131,7 @@ function ClerkProviderWithRoutes() {
 function App() {
   return <TooltipProvider>
       <WouterRouter base={basePath}><ClerkProviderWithRoutes /></WouterRouter>
+      <CookieConsent />
       <Toaster />
     </TooltipProvider>;
 }
