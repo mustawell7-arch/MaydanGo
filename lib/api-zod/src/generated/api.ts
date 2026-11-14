@@ -4543,6 +4543,16 @@ export const GetFacilityQualityControlResponse = zod.object({
   "updatedBy": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
+})),
+  "expiringDocuments": zod.array(zod.object({
+  "facilityId": zod.string(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "documentType": zod.enum(['licence', 'insurance']),
+  "expiresOn": zod.coerce.date(),
+  "daysRemaining": zod.number().int()
 }))
 })
 

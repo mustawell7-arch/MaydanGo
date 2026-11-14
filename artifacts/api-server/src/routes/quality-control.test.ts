@@ -27,6 +27,7 @@ const facilityIds = [facilityA, facilityB];
 const assessmentIds: string[] = [];
 const incidentIds: string[] = [];
 let server: Server | null = null;
+const dateOffset = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 
 const openingHours = Array.from({ length: 7 }, (_, day) => ({
   day, closed: true, opensAt: null, closesAt: null,
@@ -107,19 +108,25 @@ test("facility quality records are scoped, validated, and audited", async () => 
 
   const scoped = await call("/operations/quality", partnerUserA);
   assert.equal(scoped.status, 200);
-  const scopedData = scoped.data as { facilities: Array<{ id: string }>; assessments: unknown[]; incidents: unknown[] };
+  const scopedData = scoped.data as {
+    facilities: Array<{ id: string }>;
+    assessments: unknown[];
+    incidents: unknown[];
+    expiringDocuments: unknown[];
+  };
   assert.deepEqual(scopedData.facilities.map(item => item.id), [facilityA]);
   assert.equal(scopedData.assessments.length, 0);
   assert.equal(scopedData.incidents.length, 0);
+  assert.equal(scopedData.expiringDocuments.length, 0);
 
   const inspection = await call("/operations/quality/assessments", partnerUserA, "POST", {});
   assert.equal(inspection.status, 403);
   const assessmentBody = {
     facilityId: facilityA,
-    reviewedOn: "2026-11-07",
-    nextReviewOn: "2027-02-07",
-    licenceExpiresOn: "2027-06-30",
-    insuranceExpiresOn: "2027-04-30",
+    reviewedOn: dateOffset(-3),
+    nextReviewOn: dateOffset(60),
+    licenceExpiresOn: dateOffset(10),
+    insuranceExpiresOn: dateOffset(20),
     hygieneChecklist: {
       cleanliness: "action_required", changingAreas: "pass", showers: "pass", waterSanitation: "pass",
     },
@@ -129,13 +136,33 @@ test("facility quality records are scoped, validated, and audited", async () => 
     status: "action_required",
     findings: "One hygiene item needs follow-up.",
     correctiveAction: "Complete the cleaning review and record the result.",
-    correctiveDueOn: "2026-11-21",
+    correctiveDueOn: dateOffset(7),
   };
   const createdAssessment = await call("/operations/quality/assessments", adminUser, "POST", assessmentBody);
   assert.equal(createdAssessment.status, 201);
   const assessment = createdAssessment.data as { id: string; status: string };
   assessmentIds.push(assessment.id);
   assert.equal(assessment.status, "action_required");
+
+  const adminDashboard = await call("/operations/quality", adminUser);
+  assert.equal(adminDashboard.status, 200);
+  const firstAlerts = (adminDashboard.data as { expiringDocuments: Array<{ documentType: string; daysRemaining: number }> })
+    .expiringDocuments;
+  assert.deepEqual(firstAlerts.map(item => item.documentType), ["licence", "insurance"]);
+  assert.deepEqual(firstAlerts.map(item => item.daysRemaining), [10, 20]);
+
+  const refreshedAssessmentResult = await call("/operations/quality/assessments", adminUser, "POST", {
+    ...assessmentBody,
+    reviewedOn: dateOffset(-1),
+    licenceExpiresOn: dateOffset(45),
+    insuranceExpiresOn: dateOffset(60),
+  });
+  assert.equal(refreshedAssessmentResult.status, 201);
+  const refreshedAssessment = refreshedAssessmentResult.data as { id: string };
+  assessmentIds.push(refreshedAssessment.id);
+  const refreshedDashboard = await call("/operations/quality", adminUser);
+  assert.equal(refreshedDashboard.status, 200);
+  assert.equal((refreshedDashboard.data as { expiringDocuments: unknown[] }).expiringDocuments.length, 0);
 
   const attemptedApproval = await call(`/operations/quality/assessments/${assessment.id}`, adminUser, "PATCH", {
     status: "approved", correctiveAction: null, correctiveDueOn: null,
@@ -173,18 +200,23 @@ test("facility quality records are scoped, validated, and audited", async () => 
 
   const partnerHistory = await call("/operations/quality", partnerUserA);
   assert.equal(partnerHistory.status, 200);
-  const history = partnerHistory.data as { assessments: Array<{ id: string }>; incidents: Array<{ id: string; status: string }> };
-  assert.deepEqual(history.assessments.map(item => item.id), [assessment.id]);
+  const history = partnerHistory.data as {
+    assessments: Array<{ id: string }>;
+    incidents: Array<{ id: string; status: string }>;
+    expiringDocuments: unknown[];
+  };
+  assert.deepEqual(history.assessments.map(item => item.id), [refreshedAssessment.id, assessment.id]);
   assert.deepEqual(history.incidents.map(item => item.id), [incident.id]);
   assert.equal(history.incidents[0].status, "resolved");
+  assert.equal(history.expiringDocuments.length, 0);
 
   const auditRows = await db.select().from(operationAudit).where(and(
-    inArray(operationAudit.targetId, [assessment.id, incident.id]),
+    inArray(operationAudit.targetId, [assessment.id, refreshedAssessment.id, incident.id]),
     inArray(operationAudit.action, [
       "facility.quality.assessment.created",
       "facility.quality.incident.created",
       "facility.quality.incident.review",
     ]),
   ));
-  assert.equal(auditRows.length, 3);
+  assert.equal(auditRows.length, 4);
 });

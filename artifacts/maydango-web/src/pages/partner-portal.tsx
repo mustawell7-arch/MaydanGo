@@ -1306,7 +1306,7 @@ export default function PartnerPortal() {
               </article>)}
             </div>
           </section>}
-          {tab === 'quality' && <FacilityQualityControl lang={language} isAdmin={isAdmin} />}
+          {tab === 'quality' && <FacilityQualityControl lang={language} />}
           {tab === 'reviews' && <FacilityReviewsPortal language={language} isAdmin={isAdmin} />}
           {tab === 'marketing' && !isAdmin && <PartnerMarketingCenter language={language} offerings={offerings} />}
           {tab === 'analytics' && <OperationsAnalytics language={language} />}

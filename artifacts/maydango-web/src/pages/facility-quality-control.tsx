@@ -76,6 +76,9 @@ const copy = {
     saved: 'Quality record saved.',
     due: 'Due',
     expired: 'Expired',
+    expiryAlertTitle: 'Partner document expiry alerts',
+    expiryAlertIntro: 'Expired licences and insurance, plus documents due within 30 days, are listed here.',
+    noExpiryAlerts: 'No partner licences or insurance are expired or due within 30 days.',
     checklistRequired: 'Mark every checklist item before saving.',
     chooseStatus: 'Choose a status',
   },
@@ -136,6 +139,9 @@ const copy = {
     saved: 'تم حفظ سجل الجودة.',
     due: 'مستحق',
     expired: 'منتهي',
+    expiryAlertTitle: 'تنبيهات انتهاء مستندات الشركاء',
+    expiryAlertIntro: 'تظهر هنا التراخيص والتأمينات المنتهية أو التي ستنتهي خلال 30 يوماً.',
+    noExpiryAlerts: 'لا توجد تراخيص أو تأمينات للشركاء منتهية أو مستحقة خلال 30 يوماً.',
     checklistRequired: 'حدد حالة كل بند في القائمة قبل الحفظ.',
     chooseStatus: 'اختر الحالة',
   },
@@ -196,6 +202,9 @@ const copy = {
     saved: 'تۆماری کوالێتی پاشەکەوت کرا.',
     due: 'ماوەکەی تەواوە',
     expired: 'بەسەرچووە',
+    expiryAlertTitle: 'ئاگادارکردنەوەی بەسەرچوونی بەڵگەنامەی هاوبەش',
+    expiryAlertIntro: 'مۆڵەت و بیمەی بەسەرچوو یان ئەوانەی لە ٣٠ ڕۆژی داهاتوودا بەسەردەچن لێرە پیشان دەدرێن.',
+    noExpiryAlerts: 'هیچ مۆڵەت یان بیمەیەکی هاوبەش بەسەرنەچووە یان لە ٣٠ ڕۆژی داهاتوودا بەسەرناچێت.',
     checklistRequired: 'پێش پاشەکەوتکردن، دۆخی هەموو خاڵەکان دیاری بکە.',
     chooseStatus: 'دۆخێک هەڵبژێرە',
   },
@@ -247,7 +256,7 @@ function StatusSelect({ value, onChange, lang }: { value: CheckStatus; onChange:
   </select>;
 }
 
-export function FacilityQualityControl({ lang, isAdmin }: { lang: PortalLanguage; isAdmin: boolean }) {
+export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
   const queryClient = useQueryClient();
   const query = useGetFacilityQualityControl({ query: { refetchOnMount: 'always', retry: false } });
   const createAssessment = useCreateFacilityQualityAssessment();
@@ -362,6 +371,8 @@ export function FacilityQualityControl({ lang, isAdmin }: { lang: PortalLanguage
   if (query.isError || !query.data) return <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#fff7f3] p-5 text-sm text-[#9a4435]"><span>{t(lang, 'loadError')}</span><button type="button" className="inline-flex items-center gap-2 font-semibold" onClick={() => void query.refetch()}><RefreshCw size={14} />{t(lang, 'retry')}</button></div>;
 
   const facilities = query.data.facilities;
+  const qualityAdmin = query.data.role === 'fraud_compliance_admin' || query.data.role === 'super_admin';
+  const expiryAlerts = qualityAdmin ? query.data.expiringDocuments : [];
   const statusLabel = (value: AssessmentStatus) => t(lang, value === 'approved' ? 'approved' : value === 'suspended' ? 'suspended' : 'actionRequired');
   const incidentStatusLabel = (value: IncidentStatus) => t(lang, value === 'resolved' ? 'resolved' : value === 'under_review' ? 'underReview' : 'open');
   const assessmentSelect = (item: FacilityQualityAssessment) => (
@@ -382,8 +393,34 @@ export function FacilityQualityControl({ lang, isAdmin }: { lang: PortalLanguage
     {notice && <p role="status" className="rounded-xl bg-[#e1efdf] px-4 py-3 text-sm text-[#2d6d4a]">{notice}</p>}
     {error && <p role="alert" className="rounded-xl bg-[#fff7f3] px-4 py-3 text-sm text-[#9a4435]">{error}</p>}
 
+    {qualityAdmin && <section aria-labelledby="document-expiry-alerts-title" className="rounded-3xl border border-[#e5b5a5] bg-[#fff5f1] p-5 sm:p-6">
+      <div className="flex items-start gap-3">
+        <AlertTriangle size={19} className="mt-1 shrink-0 text-[#9a4435]" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 id="document-expiry-alerts-title" className="font-display text-xl font-bold">{t(lang, 'expiryAlertTitle')}</h3>
+            <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-bold text-[#9a4435]" data-testid="text-expiry-alert-count">{expiryAlerts.length}</span>
+          </div>
+          <p className="mt-1 text-sm leading-6 text-[#76564d]">{t(lang, 'expiryAlertIntro')}</p>
+          {expiryAlerts.length
+            ? <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+              {expiryAlerts.map(alert => <li key={`${alert.facilityId}:${alert.documentType}`} className="rounded-2xl border border-[#ebd1c8] bg-white/80 p-4" data-testid="card-document-expiry-alert">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div><p className="font-bold">{alert.facility} · {alert.city}</p><p className="mt-1 text-xs text-[#687a71]">{alert.partnerName}</p></div>
+                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${alert.daysRemaining < 0 ? 'bg-[#f2dfd5] text-[#9a4435]' : 'bg-[#fff0d6] text-[#8a5b20]'}`}>
+                    {alert.daysRemaining < 0 ? t(lang, 'expired') : t(lang, 'due')}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm text-[#51665e]">{t(lang, alert.documentType === 'licence' ? 'licenceExpiry' : 'insuranceExpiry')}: {dateLabel(alert.expiresOn, lang)}</p>
+              </li>)}
+            </ul>
+            : <p className="mt-4 rounded-xl bg-white/80 p-4 text-sm text-[#51665e]" data-testid="text-no-document-expiry-alerts">{t(lang, 'noExpiryAlerts')}</p>}
+        </div>
+      </div>
+    </section>}
+
     <div className="grid gap-6 xl:grid-cols-2">
-      {isAdmin && <form onSubmit={event => void submitAssessment(event)} className="grid content-start gap-4 rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6">
+      {qualityAdmin && <form onSubmit={event => void submitAssessment(event)} className="grid content-start gap-4 rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6">
         <div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a76445]">{t(lang, 'newInspection')}</p><h3 className="mt-2 font-display text-xl font-bold">{t(lang, 'hygiene')} · {t(lang, 'safety')}</h3></div>
         <label className="text-xs font-semibold">{t(lang, 'facility')}<select required value={facilityId} onChange={event => setFacilityId(event.target.value)} className={inputClass}><option value="">{t(lang, 'chooseFacility')}</option>{facilities.map(item => <option key={item.id} value={item.id}>{item.facility} · {item.city}</option>)}</select></label>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -407,7 +444,7 @@ export function FacilityQualityControl({ lang, isAdmin }: { lang: PortalLanguage
         <button type="submit" disabled={!facilityId || createAssessment.isPending} className={buttonClass}><ClipboardCheck size={15} />{t(lang, 'saveInspection')}</button>
       </form>}
 
-      {!isAdmin && <form onSubmit={event => void submitIncident(event)} className="grid content-start gap-4 rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6">
+      {query.data.role === 'partner' && <form onSubmit={event => void submitIncident(event)} className="grid content-start gap-4 rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6">
         <div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a76445]">{t(lang, 'reportIncident')}</p><h3 className="mt-2 font-display text-xl font-bold">{t(lang, 'incidentType')}</h3></div>
         <label className="text-xs font-semibold">{t(lang, 'facility')}<select required value={incidentFacility} onChange={event => setIncidentFacility(event.target.value)} className={inputClass}><option value="">{t(lang, 'chooseFacility')}</option>{facilities.map(item => <option key={item.id} value={item.id}>{item.facility} · {item.city}</option>)}</select></label>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -432,7 +469,7 @@ export function FacilityQualityControl({ lang, isAdmin }: { lang: PortalLanguage
               {item.correctiveDueOn && <p>{t(lang, 'correctiveDue')}: {dateLabel(item.correctiveDueOn, lang)}</p>}
             </div>
             {item.correctiveAction && <p className="mt-2 rounded-xl bg-[#f1eddf] p-3 text-xs leading-5"><strong>{t(lang, 'correctiveAction')}:</strong> {item.correctiveAction}</p>}
-            {isAdmin && assessmentSelect(item)}
+            {qualityAdmin && assessmentSelect(item)}
           </article>) : <p className="rounded-xl bg-[#f7f4e9] p-4 text-sm text-[#75847c]">{t(lang, 'emptyAssessments')}</p>}
         </div>
       </section>
@@ -445,7 +482,7 @@ export function FacilityQualityControl({ lang, isAdmin }: { lang: PortalLanguage
           <div className="flex flex-wrap items-start justify-between gap-2"><div><h4 className="font-bold">{item.facility} · {item.city}</h4><p className="mt-1 text-xs text-[#687a71]">{t(lang, incidentOptions.find(([value]) => value === item.incidentType)?.[1] ?? 'otherIncident')} · {dateLabel(item.occurredAt, lang)}</p></div><span className="rounded-full bg-[#f1eddf] px-2.5 py-1 text-[10px] font-bold">{incidentStatusLabel(item.status)}</span></div>
           <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#51665e]">{item.description}</p>
           {item.resolution && <p className="mt-2 rounded-xl bg-[#e1efdf] p-3 text-xs leading-5"><strong>{t(lang, 'resolution')}:</strong> {item.resolution}</p>}
-          {isAdmin && <form key={`${item.id}-${item.updatedAt}`} onSubmit={event => void submitIncidentFollowUp(event, item.id)} className="mt-4 grid gap-3 border-t border-[#ece7d9] pt-4 sm:grid-cols-2">
+          {qualityAdmin && <form key={`${item.id}-${item.updatedAt}`} onSubmit={event => void submitIncidentFollowUp(event, item.id)} className="mt-4 grid gap-3 border-t border-[#ece7d9] pt-4 sm:grid-cols-2">
             <label className="text-xs font-semibold">{t(lang, 'status')}<select name="status" defaultValue={item.status} className={inputClass}><option value="open">{t(lang, 'open')}</option><option value="under_review">{t(lang, 'underReview')}</option><option value="resolved">{t(lang, 'resolved')}</option></select></label>
             <label className="text-xs font-semibold sm:col-span-2">{t(lang, 'resolution')}<textarea name="resolution" maxLength={2000} rows={2} defaultValue={item.resolution ?? ''} className={inputClass} /></label>
             <button className={buttonClass} disabled={updateIncident.isPending}>{t(lang, 'saveFollowUp')}</button>

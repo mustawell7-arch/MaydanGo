@@ -3202,15 +3202,29 @@ components:
       properties:
         status: { type: string, enum: [open, under_review, resolved] }
         resolution: { type: ["string", "null"], maxLength: 2000 }
+    FacilityDocumentExpiryAlert:
+      type: object
+      additionalProperties: false
+      required: [facilityId, partnerId, partnerName, facility, city, documentType, expiresOn, daysRemaining]
+      properties:
+        facilityId: { type: string }
+        partnerId: { type: string }
+        partnerName: { type: string }
+        facility: { type: string }
+        city: { type: string }
+        documentType: { type: string, enum: [licence, insurance] }
+        expiresOn: { type: string, format: date }
+        daysRemaining: { type: integer }
     FacilityQualityControl:
       type: object
       additionalProperties: false
-      required: [role, facilities, assessments, incidents]
+      required: [role, facilities, assessments, incidents, expiringDocuments]
       properties:
         role: { type: string, enum: [fraud_compliance_admin, partner, super_admin] }
         facilities: { type: array, items: { $ref: "#/components/schemas/FacilityQualityFacility" } }
         assessments: { type: array, items: { $ref: "#/components/schemas/FacilityQualityAssessment" } }
         incidents: { type: array, items: { $ref: "#/components/schemas/FacilityQualityIncident" } }
+        expiringDocuments: { type: array, items: { $ref: "#/components/schemas/FacilityDocumentExpiryAlert" } }
     ReviewCategoryRatings:
       type: object
       additionalProperties: false

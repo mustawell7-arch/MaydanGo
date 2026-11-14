@@ -1,6 +1,6 @@
 import { Router, type Response } from "express";
 import { getAuth } from "@clerk/express";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { hasAdminPermission } from "../lib/admin-roles";
 import {
@@ -59,6 +59,24 @@ function isCalendarDate(value: string | null) {
   if (value === null) return true;
   const timestamp = Date.parse(`${value}T00:00:00.000Z`);
   return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
+}
+
+function baghdadDate(now = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Baghdad",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const part = (type: string) => parts.find(item => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function daysUntilExpiry(expiresOn: string, today = baghdadDate()): number {
+  return Math.floor(
+    (Date.parse(`${expiresOn.slice(0, 10)}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`))
+    / 86_400_000,
+  );
 }
 
 function assessmentError(input: {
@@ -215,11 +233,56 @@ router.get("/", async (_req, res): Promise<void> => {
       .orderBy(desc(facilityQualityIncidents.createdAt))
       .limit(250),
   ]);
+  const [latestLicenceRows, latestInsuranceRows] = await Promise.all([
+    db.selectDistinctOn([facilityQualityAssessments.facilityId], {
+      facilityId: facilityQualityAssessments.facilityId,
+      partnerId: facilityQualityAssessments.partnerId,
+      partnerName: partners.name,
+      facility: facilityProfiles.facility,
+      city: facilityProfiles.city,
+      expiresOn: facilityQualityAssessments.licenceExpiresOn,
+    }).from(facilityQualityAssessments)
+      .innerJoin(facilityProfiles, eq(facilityProfiles.id, facilityQualityAssessments.facilityId))
+      .innerJoin(partners, eq(partners.id, facilityQualityAssessments.partnerId))
+      .where(and(isNotNull(facilityQualityAssessments.licenceExpiresOn), assessmentCondition))
+      .orderBy(
+        facilityQualityAssessments.facilityId,
+        desc(facilityQualityAssessments.updatedAt),
+        desc(facilityQualityAssessments.createdAt),
+      ),
+    db.selectDistinctOn([facilityQualityAssessments.facilityId], {
+      facilityId: facilityQualityAssessments.facilityId,
+      partnerId: facilityQualityAssessments.partnerId,
+      partnerName: partners.name,
+      facility: facilityProfiles.facility,
+      city: facilityProfiles.city,
+      expiresOn: facilityQualityAssessments.insuranceExpiresOn,
+    }).from(facilityQualityAssessments)
+      .innerJoin(facilityProfiles, eq(facilityProfiles.id, facilityQualityAssessments.facilityId))
+      .innerJoin(partners, eq(partners.id, facilityQualityAssessments.partnerId))
+      .where(and(isNotNull(facilityQualityAssessments.insuranceExpiresOn), assessmentCondition))
+      .orderBy(
+        facilityQualityAssessments.facilityId,
+        desc(facilityQualityAssessments.updatedAt),
+        desc(facilityQualityAssessments.createdAt),
+      ),
+  ]);
+  const expiringDocuments = [
+    ...latestLicenceRows.map(row => ({ ...row, documentType: "licence" as const })),
+    ...latestInsuranceRows.map(row => ({ ...row, documentType: "insurance" as const })),
+  ].flatMap(row => {
+    if (!row.expiresOn) return [];
+    const daysRemaining = daysUntilExpiry(row.expiresOn);
+    return daysRemaining <= 30 ? [{ ...row, daysRemaining }] : [];
+  }).sort((a, b) =>
+    a.daysRemaining - b.daysRemaining || a.city.localeCompare(b.city) || a.facility.localeCompare(b.facility),
+  );
   res.json(GetFacilityQualityControlResponse.parse({
     role: operator.role,
     facilities,
     assessments: assessmentRows,
     incidents: incidentRows,
+    expiringDocuments,
   }));
 });
 

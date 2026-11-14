@@ -2907,6 +2907,25 @@ export interface FacilityQualityIncidentUpdate {
   resolution: string | null;
 }
 
+export type FacilityDocumentExpiryAlertDocumentType = typeof FacilityDocumentExpiryAlertDocumentType[keyof typeof FacilityDocumentExpiryAlertDocumentType];
+
+
+export const FacilityDocumentExpiryAlertDocumentType = {
+  licence: 'licence',
+  insurance: 'insurance',
+} as const;
+
+export interface FacilityDocumentExpiryAlert {
+  facilityId: string;
+  partnerId: string;
+  partnerName: string;
+  facility: string;
+  city: string;
+  documentType: FacilityDocumentExpiryAlertDocumentType;
+  expiresOn: string;
+  daysRemaining: number;
+}
+
 export type FacilityQualityControlRole = typeof FacilityQualityControlRole[keyof typeof FacilityQualityControlRole];
 
 
@@ -2921,6 +2940,7 @@ export interface FacilityQualityControl {
   facilities: FacilityQualityFacility[];
   assessments: FacilityQualityAssessment[];
   incidents: FacilityQualityIncident[];
+  expiringDocuments: FacilityDocumentExpiryAlert[];
 }
 
 export interface ReviewCategoryRatings {
