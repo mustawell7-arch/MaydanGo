@@ -1,11 +1,29 @@
 import { Router, type IRouter } from "express";
+import { sql } from "drizzle-orm";
+import { db } from "@workspace/db";
 import { HealthCheckResponse } from "@workspace/api-zod";
 
-const router: IRouter = Router();
+type HealthDependencies = {
+  checkDatabase(): Promise<unknown>;
+};
 
-router.get("/healthz", (_req, res) => {
-  const data = HealthCheckResponse.parse({ status: "ok" });
-  res.json(data);
-});
+const databaseHealthCheck = async () => db.execute(sql`select 1`);
 
-export default router;
+export function createHealthRouter(dependencies: HealthDependencies = {
+  checkDatabase: databaseHealthCheck,
+}): IRouter {
+  const router: IRouter = Router();
+
+  router.get("/healthz", async (_req, res) => {
+    try {
+      await dependencies.checkDatabase();
+      res.json(HealthCheckResponse.parse({ status: "ok" }));
+    } catch {
+      res.status(503).json(HealthCheckResponse.parse({ status: "unavailable" }));
+    }
+  });
+
+  return router;
+}
+
+export default createHealthRouter();

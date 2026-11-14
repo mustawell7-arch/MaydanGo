@@ -708,6 +708,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+        "503":
+          description: The API is running but its database is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
   /public/facilities/{id}/reviews:
     get:
       operationId: getPublicFacilityReviews
