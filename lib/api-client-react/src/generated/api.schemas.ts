@@ -2443,6 +2443,7 @@ export type OperationsStateRole = typeof OperationsStateRole[keyof typeof Operat
 export const OperationsStateRole = {
   partner_operations_admin: 'partner_operations_admin',
   partner: 'partner',
+  marketing_admin: 'marketing_admin',
   super_admin: 'super_admin',
 } as const;
 
@@ -3491,6 +3492,134 @@ export type SuperAdminAuditLimit = number;
  * @maximum 1000000
  */
 export type SuperAdminAuditOffset = number;
+
+export type SponsoredPlacementType = typeof SponsoredPlacementType[keyof typeof SponsoredPlacementType];
+
+
+export const SponsoredPlacementType = {
+  home_featured: 'home_featured',
+  search_sponsored: 'search_sponsored',
+  category_featured: 'category_featured',
+} as const;
+
+export type SponsoredFacilityCampaignTargetMembershipTiersItem = typeof SponsoredFacilityCampaignTargetMembershipTiersItem[keyof typeof SponsoredFacilityCampaignTargetMembershipTiersItem];
+
+
+export const SponsoredFacilityCampaignTargetMembershipTiersItem = {
+  M: 'M',
+  L: 'L',
+  XL: 'XL',
+} as const;
+
+export type SponsoredFacilityCampaignStatus = typeof SponsoredFacilityCampaignStatus[keyof typeof SponsoredFacilityCampaignStatus];
+
+
+export const SponsoredFacilityCampaignStatus = {
+  draft: 'draft',
+  active: 'active',
+  paused: 'paused',
+} as const;
+
+export interface SponsoredFacilityCampaign {
+  id: string;
+  campaignName: string;
+  facilityId: string;
+  partnerId: string;
+  partnerName: string;
+  facility: string;
+  city: string;
+  /** @minItems 1 */
+  placementTypes: SponsoredPlacementType[];
+  /** @nullable */
+  targetCity: string | null;
+  /** @nullable */
+  targetActivity: string | null;
+  targetMembershipTiers: SponsoredFacilityCampaignTargetMembershipTiersItem[];
+  startsAt: string;
+  endsAt: string;
+  status: SponsoredFacilityCampaignStatus;
+  /** @minimum 0 */
+  impressions: number;
+  /** @minimum 0 */
+  clicks: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SponsoredFacilityCampaignInputTargetMembershipTiersItem = typeof SponsoredFacilityCampaignInputTargetMembershipTiersItem[keyof typeof SponsoredFacilityCampaignInputTargetMembershipTiersItem];
+
+
+export const SponsoredFacilityCampaignInputTargetMembershipTiersItem = {
+  M: 'M',
+  L: 'L',
+  XL: 'XL',
+} as const;
+
+export type SponsoredFacilityCampaignInputStatus = typeof SponsoredFacilityCampaignInputStatus[keyof typeof SponsoredFacilityCampaignInputStatus];
+
+
+export const SponsoredFacilityCampaignInputStatus = {
+  draft: 'draft',
+  active: 'active',
+  paused: 'paused',
+} as const;
+
+export interface SponsoredFacilityCampaignInput {
+  /**
+     * @minLength 2
+     * @maxLength 120
+     */
+  campaignName: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  facilityId: string;
+  /** @minItems 1 */
+  placementTypes: SponsoredPlacementType[];
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  targetCity: string | null;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  targetActivity: string | null;
+  targetMembershipTiers: SponsoredFacilityCampaignInputTargetMembershipTiersItem[];
+  startsAt: string;
+  endsAt: string;
+  status: SponsoredFacilityCampaignInputStatus;
+}
+
+export type SponsoredFacilityCampaignsResponse = SponsoredFacilityCampaign[];
+
+export interface PublicSponsoredFacilityPlacement {
+  campaignId: string;
+  facilityId: string;
+  placementTypes: SponsoredPlacementType[];
+  /** @nullable */
+  targetCity: string | null;
+  /** @nullable */
+  targetActivity: string | null;
+}
+
+export type PublicSponsoredFacilityPlacementsResponse = PublicSponsoredFacilityPlacement[];
+
+export type PublicSponsoredFacilityEventInputEventType = typeof PublicSponsoredFacilityEventInputEventType[keyof typeof PublicSponsoredFacilityEventInputEventType];
+
+
+export const PublicSponsoredFacilityEventInputEventType = {
+  impression: 'impression',
+  click: 'click',
+} as const;
+
+export interface PublicSponsoredFacilityEventInput {
+  eventType: PublicSponsoredFacilityEventInputEventType;
+  placementType: SponsoredPlacementType;
+}
 
 export type GetAttendance200RowsItemEventsItem = {
   action: string;

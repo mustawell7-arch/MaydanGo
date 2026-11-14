@@ -36,6 +36,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/PublicFacility"
         "404": { description: Facility not found }
+  /public/sponsored-facilities:
+    $ref: "./operations.yaml#/paths/~1public~1sponsored-facilities"
+  /public/sponsored-facilities/{id}/events:
+    $ref: "./operations.yaml#/paths/~1public~1sponsored-facilities~1{id}~1events"
   /operations/facilities:
     get:
       operationId: getOperationFacilities
@@ -332,6 +336,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1partners"
   /operations/marketing-profile:
     $ref: "./operations.yaml#/paths/~1operations~1marketing-profile"
+  /operations/sponsored-facilities:
+    $ref: "./operations.yaml#/paths/~1operations~1sponsored-facilities"
+  /operations/sponsored-facilities/{id}:
+    $ref: "./operations.yaml#/paths/~1operations~1sponsored-facilities~1{id}"
   /operations/analytics:
     $ref: "./operations.yaml#/paths/~1operations~1analytics"
   /operations/partners/{id}:

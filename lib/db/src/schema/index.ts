@@ -9,6 +9,7 @@ export * from "./partner-invoices";
 export * from "./finance";
 export * from "./member-devices";
 export * from "./quality-control";
+export * from "./sponsored-placements";
 export * from "./reviews";
 export * from "./instructor";
 export * from "./corporate";

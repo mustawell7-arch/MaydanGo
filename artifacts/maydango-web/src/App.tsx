@@ -19,6 +19,7 @@ import NotFound from '@/pages/not-found';
 import approvedCopy from '@/approved-copy.json';
 import { Route, Switch, useLocation, Router as WouterRouter, Link, Redirect } from 'wouter';
 import PartnerPortal from '@/pages/partner-portal';
+import SponsoredPlacementsManagerPage from '@/pages/sponsored-placements-manager';
 import FinanceConsole from '@/pages/finance-console';
 import { PublicCourseBrowser, PublicFacilityBrowser, PublicHomeShowcase } from '@/pages/public-catalog-sections';
 import MemberAccountPage from '@/pages/member-account';
@@ -1049,6 +1050,7 @@ function Router() {
     <Route path="/finance" component={FinanceConsole} />
     <Route path="/instructor-portal" component={InstructorPortalPage} />
     <Route path="/admin/instructor-access" component={AdminInstructorAccessPage} />
+    <Route path="/admin/sponsored-placements" component={SponsoredPlacementsManagerPage} />
     <Route path="/sign-in/*?" component={SignInPage} />
     <Route path="/sign-up/*?" component={SignUpPage} />
     <Route path="/" component={HomeRedirect} />
@@ -1065,7 +1067,7 @@ function HomeRedirect() {
 function SignInPage() {
   const requestedPath = new URLSearchParams(window.location.search).get('redirect_url');
   const normalizedPath = requestedPath?.startsWith(basePath) ? requestedPath.slice(basePath.length) : requestedPath;
-  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access', '/admin/corporate', '/corporate-portal', '/support-desk'].includes(normalizedPath ?? '')
+  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access', '/admin/sponsored-placements', '/admin/corporate', '/corporate-portal', '/support-desk'].includes(normalizedPath ?? '')
     ? normalizedPath!
     : normalizedPath?.startsWith('/corporate-invite?token=') ? normalizedPath : undefined;
   const redirectTo = safePath ? `${basePath}${safePath}` : undefined;
@@ -1076,7 +1078,7 @@ function SignInPage() {
 function SignUpPage() {
   const requestedPath = new URLSearchParams(window.location.search).get('redirect_url');
   const normalizedPath = requestedPath?.startsWith(basePath) ? requestedPath.slice(basePath.length) : requestedPath;
-  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access', '/admin/corporate', '/corporate-portal', '/support-desk'].includes(normalizedPath ?? '')
+  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access', '/admin/sponsored-placements', '/admin/corporate', '/corporate-portal', '/support-desk'].includes(normalizedPath ?? '')
     ? normalizedPath!
     : normalizedPath?.startsWith('/corporate-invite?token=') ? normalizedPath : undefined;
   const redirectTo = safePath ? `${basePath}${safePath}` : undefined;

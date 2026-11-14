@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ArrowRight, BookOpen, Clock3, ExternalLink, MapPin, RefreshCw, Search, Sparkles, Star } from 'lucide-react';
 import {
   getGetPublicCatalogQueryKey,
@@ -6,11 +6,14 @@ import {
   getGetPublicFacilitiesQueryKey,
   getGetPublicFacilityQueryKey,
   getGetPublicFacilityReviewsQueryKey,
+  getGetPublicSponsoredFacilitiesQueryKey,
   useGetPublicCatalog,
   useGetPublicCourses,
   useGetPublicFacilities,
   useGetPublicFacility,
   useGetPublicFacilityReviews,
+  useGetPublicSponsoredFacilities,
+  useRecordPublicSponsoredFacilityEvent,
 } from '@workspace/api-client-react';
 import type { PublicFacility, PublicCourse } from '@workspace/api-client-react';
 
@@ -94,6 +97,8 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     event: 'Event',
     coaching: 'Coaching',
     appNote: 'Booking and access are completed through the mobile app.',
+    sponsored: 'Sponsored',
+    viewFacility: 'View facility',
     updated: 'Public information only',
     search: 'Search courses',
     noSearchResults: 'No courses match that search.',
@@ -171,6 +176,8 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     event: 'فعالية',
     coaching: 'تدريب',
     appNote: 'يكتمل الحجز والدخول عبر تطبيق الهاتف.',
+    sponsored: 'إعلان مدفوع',
+    viewFacility: 'عرض المنشأة',
     updated: 'معلومات عامة فقط',
     search: 'ابحث في الدورات',
     noSearchResults: 'لا توجد دورات تطابق البحث.',
@@ -248,6 +255,8 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     event: 'بۆنە',
     coaching: 'ڕاهێنان',
     appNote: 'حجز و چوونەژوورەوە لە ئەپی مۆبایل تەواو دەکرێت.',
+    sponsored: 'سپۆنسەرکراو',
+    viewFacility: 'بینینی شوێن',
     updated: 'تەنها زانیاریی گشتی',
     search: 'گەڕان لە کۆرسەکان',
     noSearchResults: 'هیچ کۆرسێک لەگەڵ ئەم گەڕانە ناگونجێت.',
@@ -364,16 +373,83 @@ function FacilityProfileDetails({ facility, language }: { facility: PublicFacili
   );
 }
 
+type SponsoredPlacementType = 'home_featured' | 'search_sponsored' | 'category_featured';
+type PublicSponsoredPlacement = {
+  campaignId: string;
+  facilityId: string;
+  placementTypes: SponsoredPlacementType[];
+  targetCity: string | null;
+  targetActivity: string | null;
+};
+
+function SponsoredPlacementTracker({ campaignId, placementType, children }: { campaignId: string; placementType: SponsoredPlacementType; children: ReactNode }) {
+  const elementRef = useRef<HTMLDivElement>(null);
+  const recordEvent = useRecordPublicSponsoredFacilityEvent();
+  const record = (eventType: 'impression' | 'click') => recordEvent.mutate({
+    id: campaignId,
+    data: { eventType, placementType },
+  });
+
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element || typeof window === 'undefined') return;
+    if (!('IntersectionObserver' in window)) {
+      record('impression');
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) {
+        record('impression');
+        observer.disconnect();
+      }
+    }, { threshold: 0.5 });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [campaignId, placementType]);
+
+  return <div ref={elementRef} onClick={() => record('click')} data-sponsored-campaign={campaignId}>{children}</div>;
+}
+
+const normalizedText = (value: string) => value.trim().toLocaleLowerCase('en');
+function placementForFacility(
+  placements: PublicSponsoredPlacement[],
+  facility: PublicFacility,
+  placementType: SponsoredPlacementType,
+  selectedActivity?: string,
+): PublicSponsoredPlacement | undefined {
+  return placements.find(placement => {
+    if (placement.facilityId !== facility.id || !placement.placementTypes.includes(placementType)) return false;
+    if (placement.targetCity && normalizedText(placement.targetCity) !== normalizedText(facility.city)) return false;
+    if (placement.targetActivity) {
+      const matchingActivity = facility.activities.find(item =>
+        Object.values(item).some(value => normalizedText(value) === normalizedText(placement.targetActivity!)),
+      );
+      const facilityHasActivity = Boolean(matchingActivity);
+      if (!facilityHasActivity) return false;
+      if (placementType === 'category_featured' && selectedActivity) {
+        const localizedActivityValues = Object.values(matchingActivity!).map(normalizedText);
+        if (!localizedActivityValues.includes(normalizedText(selectedActivity))) return false;
+      }
+    }
+    return true;
+  });
+}
+
 export function PublicHomeShowcase({ language = 'en' }: { language?: PublicCatalogLanguage }) {
   const text = copy[language];
   const catalog = useGetPublicCatalog({ query: { queryKey: getGetPublicCatalogQueryKey() } });
   const facilities = useGetPublicFacilities({ query: { queryKey: getGetPublicFacilitiesQueryKey() } });
+  const sponsored = useGetPublicSponsoredFacilities({ query: { queryKey: getGetPublicSponsoredFacilitiesQueryKey() } });
   const courses = useGetPublicCourses({ query: { queryKey: getGetPublicCoursesQueryKey() } });
   const offerings = (catalog.data ?? [])
     .filter((offering) => !offering.additionalPayment && Date.parse(offering.startsAt) > Date.now())
     .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
   const upcoming = offerings.slice(0, 3);
-  const facilityPreview = facilities.data?.slice(0, 2) ?? [];
+  const sponsoredPlacements = (sponsored.data ?? []) as PublicSponsoredPlacement[];
+  const facilityPreview = [...(facilities.data ?? [])]
+    .sort((left, right) => Number(Boolean(placementForFacility(sponsoredPlacements, right, 'home_featured')))
+      - Number(Boolean(placementForFacility(sponsoredPlacements, left, 'home_featured'))))
+    .slice(0, 2);
   const coursePreview = courses.data?.slice(0, 2) ?? [];
   const isLoading = catalog.isLoading || facilities.isLoading || courses.isLoading;
   const hasError = catalog.isError || facilities.isError || courses.isError;
@@ -450,11 +526,23 @@ export function PublicHomeShowcase({ language = 'en' }: { language?: PublicCatal
             <p className="rounded-xl border border-secondary/40 bg-secondary/10 p-4 text-sm" role="alert" data-testid="status-home-facilities-error">{text.catalogError}</p>
           ) : facilityPreview.length ? (
             <ul className="space-y-2">
-              {facilityPreview.map((facility) => <li key={facility.id} className="rounded-xl border border-border bg-card p-4" data-testid={`card-home-facility-${facility.id}`}>
-                <p className="font-semibold">{localized(facility.localizedName, language) || facility.facility}</p>
-                <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />{facility.city}{localized(facility.localizedDistrict, language) ? ` · ${localized(facility.localizedDistrict, language)}` : ''}</p>
-                {facility.activities.length > 0 && <p className="mt-2 line-clamp-1 text-xs text-muted-foreground">{facility.activities.map((item) => localized(item, language)).filter(Boolean).join(' · ')}</p>}
-              </li>)}
+              {facilityPreview.map((facility) => {
+                const placement = placementForFacility(sponsoredPlacements, facility, 'home_featured');
+                const card = <div className="rounded-xl border border-border bg-card p-4" data-testid={`card-home-facility-${facility.id}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold">{localized(facility.localizedName, language) || facility.facility}</p>
+                    {placement && <span className="shrink-0 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-900" data-testid={`badge-sponsored-home-${facility.id}`}>{text.sponsored}</span>}
+                  </div>
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />{facility.city}{localized(facility.localizedDistrict, language) ? ` · ${localized(facility.localizedDistrict, language)}` : ''}</p>
+                  {facility.activities.length > 0 && <p className="mt-2 line-clamp-1 text-xs text-muted-foreground">{facility.activities.map((item) => localized(item, language)).filter(Boolean).join(' · ')}</p>}
+                  <a href={`${import.meta.env.BASE_URL}facilities?facility=${encodeURIComponent(facility.id)}#public-facilities`} className="mt-3 inline-flex rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">{text.viewFacility}<ArrowRight className="ms-1 h-3.5 w-3.5 rtl:rotate-180" aria-hidden="true" /></a>
+                </div>;
+                return <li key={facility.id}>
+                  {placement
+                    ? <SponsoredPlacementTracker campaignId={placement.campaignId} placementType="home_featured">{card}</SponsoredPlacementTracker>
+                    : card}
+                </li>;
+              })}
             </ul>
           ) : (
             <p className="rounded-xl border border-dashed border-border bg-card/60 p-4 text-sm text-muted-foreground" data-testid="empty-home-facilities">{text.noFacilities}</p>
@@ -492,10 +580,13 @@ export function PublicHomeShowcase({ language = 'en' }: { language?: PublicCatal
 export function PublicFacilityBrowser({ language = 'en' }: { language?: PublicCatalogLanguage }) {
   const text = copy[language];
   const facilitiesQuery = useGetPublicFacilities({ query: { queryKey: getGetPublicFacilitiesQueryKey() } });
+  const sponsoredQuery = useGetPublicSponsoredFacilities({ query: { queryKey: getGetPublicSponsoredFacilitiesQueryKey() } });
   const [city, setCity] = useState('');
   const [activity, setActivity] = useState('');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(() =>
+    typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('facility'));
   const facilities = facilitiesQuery.data ?? [];
+  const sponsoredPlacements = (sponsoredQuery.data ?? []) as PublicSponsoredPlacement[];
   const cities = useMemo(() => Array.from(new Set(facilities.map((facility) => facility.city).filter(Boolean))).sort((a, b) => a.localeCompare(b)), [facilities]);
   const activities = useMemo(() => {
     const byDisplay = new Map<string, string>();
@@ -509,7 +600,18 @@ export function PublicFacilityBrowser({ language = 'en' }: { language?: PublicCa
     const cityMatches = !city || facility.city === city;
     const activityMatches = !activity || facility.activities.some((item) => localized(item, language) === activity);
     return cityMatches && activityMatches;
+  }).sort((left, right) => {
+    const leftSponsored = placementForFacility(sponsoredPlacements, left, 'search_sponsored', activity)
+      ?? placementForFacility(sponsoredPlacements, left, 'category_featured', activity);
+    const rightSponsored = placementForFacility(sponsoredPlacements, right, 'search_sponsored', activity)
+      ?? placementForFacility(sponsoredPlacements, right, 'category_featured', activity);
+    return Number(Boolean(rightSponsored)) - Number(Boolean(leftSponsored));
   });
+
+  useEffect(() => {
+    if (!selectedId || facilities.length === 0) return;
+    document.getElementById(`public-facility-${selectedId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [selectedId, facilities.length]);
 
   return (
     <section id="public-facilities" className="site-shell mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-10" dir={language === 'en' ? 'ltr' : 'rtl'} aria-labelledby="public-facilities-title">
@@ -547,11 +649,17 @@ export function PublicFacilityBrowser({ language = 'en' }: { language?: PublicCa
             <div className="grid gap-4 lg:grid-cols-2">
               {filteredFacilities.map((facility) => {
                 const expanded = selectedId === facility.id;
+                const placement = placementForFacility(sponsoredPlacements, facility, 'search_sponsored', activity)
+                  ?? placementForFacility(sponsoredPlacements, facility, 'category_featured', activity);
+                const trackedPlacementType = placement?.placementTypes.includes('search_sponsored') ? 'search_sponsored' : 'category_featured';
                 const status = facility.openingStatus === 'open' ? text.open : facility.openingStatus === 'closed' ? text.closed : text.unavailable;
-                return <article key={facility.id} className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30 sm:p-6" data-testid={`card-public-facility-${facility.id}`}>
+                const card = <article id={`public-facility-${facility.id}`} className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30 sm:p-6" data-testid={`card-public-facility-${facility.id}`}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-xs font-bold uppercase tracking-[.16em] text-primary">{facility.city}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-xs font-bold uppercase tracking-[.16em] text-primary">{facility.city}</p>
+                        {placement && <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-900" data-testid={`badge-sponsored-facility-${facility.id}`}>{text.sponsored}</span>}
+                      </div>
                       <h3 className="font-display mt-2 text-2xl font-bold">{localized(facility.localizedName, language) || facility.facility}</h3>
                       {localized(facility.localizedDistrict, language) && <p className="mt-1 text-sm text-muted-foreground">{text.district} · {localized(facility.localizedDistrict, language)}</p>}
                     </div>
@@ -570,6 +678,9 @@ export function PublicFacilityBrowser({ language = 'en' }: { language?: PublicCa
                   </div>
                   {expanded && <FacilityProfileDetails facility={facility} language={language} />}
                 </article>;
+                return placement
+                  ? <SponsoredPlacementTracker key={facility.id} campaignId={placement.campaignId} placementType={trackedPlacementType}>{card}</SponsoredPlacementTracker>
+                  : <div key={facility.id}>{card}</div>;
               })}
             </div>
           </>

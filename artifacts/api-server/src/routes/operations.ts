@@ -45,7 +45,12 @@ router.use(async (req, res, next) => {
   const userId = getAuth(req).userId;
   if (!userId) { res.status(401).json({ message: "Sign in first." }); return; }
   const [operator] = await db.select().from(operators).where(eq(operators.userId, userId));
-  if (!operator || !isOperationsPortalRole(operator.role)) {
+  const isMarketingAdminOnly = Boolean(operator)
+    && hasAdminPermission(operator!.role, "marketing")
+    && !hasAdminPermission(operator!.role, "partner_operations");
+  const marketingHomeOnly = isMarketingAdminOnly && req.method === "GET" && req.path === "/";
+  if (!operator || (isMarketingAdminOnly && !marketingHomeOnly)
+    || (!isOperationsPortalRole(operator.role) && !marketingHomeOnly)) {
     res.status(403).json({ message: "Authorized staff access is required." }); return;
   }
   if (operator.role === "partner") {
@@ -120,7 +125,12 @@ const invoiceDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {
 router.get("/", async (_req, res) => {
   const op = res.locals.operator;
   const isStaff = hasAdminPermission(op.role, "partner_operations");
-  if (!isStaff && op.role !== "partner") throw new BookingError(403, "This operations view requires a partner operations role.");
+  const isMarketingAdmin = hasAdminPermission(op.role, "marketing");
+  if (!isStaff && !isMarketingAdmin && op.role !== "partner") throw new BookingError(403, "This operations view requires a partner operations role.");
+  if (!isStaff && isMarketingAdmin) {
+    res.json({ role: op.role, partnerId: null, partners: [], offerings: [], waitlist: [], plans: [] });
+    return;
+  }
   const [partnerRows, offeringRows, plans, queueRows] = await Promise.all([
     db.select().from(partners).where(isStaff ? undefined : eq(partners.id, op.partnerId ?? "")),
     db.select().from(offerings).where(and(eq(offerings.scope, "live"), isStaff ? undefined : eq(offerings.partnerId, op.partnerId ?? ""))),
