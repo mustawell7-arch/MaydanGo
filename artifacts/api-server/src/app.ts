@@ -47,8 +47,8 @@ app.use((req, res, next) => {
 });
 // PayTabs signs the complete callback body, so verify the original bytes before JSON parsing.
 app.use("/api/payments", express.raw({ type: "application/json", limit: "1mb" }), paymentWebhookRouter);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "100kb" }));
+app.use(express.urlencoded({ extended: true, limit: "100kb", parameterLimit: 1000 }));
 app.use(clerkMiddleware((req) => ({
   publishableKey: publishableKeyFromHost(getClerkProxyHost(req) ?? "", process.env.CLERK_PUBLISHABLE_KEY),
 })));
