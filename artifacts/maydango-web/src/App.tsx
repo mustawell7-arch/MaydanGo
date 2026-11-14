@@ -161,9 +161,18 @@ const legacyTranslations: Record<Language, Copy> = {
     planFaqAvailabilityBody: 'No. Availability varies by location and provider, even when an activity type is included in your plan.',
     planFaqCancelTitle: 'Where can I review booking and cancellation terms?',
     planFaqCancelBody: 'Review the activity details before booking. This website does not create reservations; use the MaydanGo app when booking is available.',
-    directions: 'Local partners, shared purpose', directionsD: 'We welcome spaces and instructors who help people feel at home in movement.',
-    onlineTitle: 'A way to move from home, too', onlineD: 'Follow live online sessions when available, or find a pace that fits your own space and day.',
-    homeFirst: 'A studio nearby or a corner at home.', homeFirstD: 'Wellbeing is not one-size-fits-all. Choose the setting that feels right today.',
+    facilitiesTitle: 'Find sports facilities',
+    facilitiesIntro: 'Browse facilities by city and activity. Confirm opening hours, access requirements, and session availability with the provider before visiting.',
+    onlineTitle: 'Online training',
+    onlineD: 'Browse live online classes and published course information. Availability and access depend on each offering and your membership.',
+    onlineSessionsLabel: 'Live online sessions',
+    onlineSessionsTitle: 'Upcoming online sessions',
+    onlineSessionsEmptyTitle: 'No online sessions are listed yet',
+    onlineSessionsEmptyText: 'New sessions will appear here when approved partners publish them.',
+    onlineContactTitle: 'Questions about online training?',
+    onlineContactText: 'Contact MaydanGo to ask about current sessions, membership eligibility, or app access.',
+    homeFirst: 'Train from home',
+    homeFirstD: 'Review available sessions and course options. Check each offering’s schedule and access requirements before joining.',
     footerNote: 'A wellbeing membership made in Iraq, for everyday life.',
     noDestination: 'This destination is not configured yet. Please check back for verified contact details.',
     send: 'Enquiry form', formNote: 'This form prepares an email draft for your review. The message is sent only when you send it from your email app; this website does not store enquiries.',
@@ -243,7 +252,7 @@ const legacyTranslations: Record<Language, Copy> = {
     legalRefundTitle: 'Refund policy', legalPartnerTermsTitle: 'Partner terms', legalCorporateTitle: 'Corporate terms',
     legalCourseTitle: 'Course-content policy',
     durationDays: 'days', place: 'places', placeOne: 'place',
-    appDownload: 'Continue on your device', appDestinationsUnavailable: 'Verified app-store destinations have not been configured yet.',
+    appDownload: 'Continue on your device', appDownloadDescription: 'Use the MaydanGo app to continue with eligible bookings and course access.', appDestinationsUnavailable: 'Verified app-store destinations have not been configured yet.',
     iosApp: 'Open MaydanGo for iOS', androidApp: 'Open MaydanGo for Android',
     regionNote: 'IRAQ · KURDISTAN · WEST · SOUTH', movementNote: 'MOVEMENT, YOUR WAY',
   },
@@ -302,9 +311,18 @@ const legacyTranslations: Record<Language, Copy> = {
     planFaqAvailabilityBody: 'لا. يختلف التوفر حسب الموقع والجهة المقدمة للخدمة، حتى إذا كان نوع النشاط مشمولاً في خطتك.',
     planFaqCancelTitle: 'أين يمكنني مراجعة شروط الحجز والإلغاء؟',
     planFaqCancelBody: 'راجع تفاصيل النشاط قبل الحجز. لا ينشئ هذا الموقع حجوزات؛ استخدم تطبيق MaydanGo عندما يكون الحجز متاحاً.',
-    directions: 'شركاء محليون وهدف مشترك', directionsD: 'نرحب بالأماكن والمدربين الذين يجعلون الحركة مساحة مريحة للجميع.',
-    onlineTitle: 'مساحة للحركة من المنزل أيضاً', onlineD: 'تابع الجلسات المباشرة المتاحة عبر الإنترنت، أو اختر إيقاعاً يناسب يومك ومساحتك.',
-    homeFirst: 'استوديو قريب أو مساحة في المنزل.', homeFirstD: 'العافية ليست قالباً واحداً. اختر المكان الذي يلائمك اليوم.',
+    facilitiesTitle: 'اكتشف المرافق الرياضية',
+    facilitiesIntro: 'تصفح المرافق حسب المدينة والنشاط. تحقق من ساعات العمل ومتطلبات الدخول وتوفر الجلسات مع الجهة المقدمة قبل الزيارة.',
+    onlineTitle: 'التدريب عبر الإنترنت',
+    onlineD: 'تصفح الحصص المباشرة ومعلومات الدورات المنشورة. يعتمد التوفر وإمكانية الوصول على كل نشاط وعضويتك.',
+    onlineSessionsLabel: 'جلسات مباشرة عبر الإنترنت',
+    onlineSessionsTitle: 'الجلسات القادمة عبر الإنترنت',
+    onlineSessionsEmptyTitle: 'لا توجد جلسات عبر الإنترنت مدرجة حالياً',
+    onlineSessionsEmptyText: 'ستظهر الجلسات الجديدة هنا عند نشرها من الشركاء المعتمدين.',
+    onlineContactTitle: 'هل لديك أسئلة عن التدريب عبر الإنترنت؟',
+    onlineContactText: 'تواصل مع MaydanGo للاستفسار عن الجلسات الحالية وأهلية العضوية والوصول إلى التطبيق.',
+    homeFirst: 'تدرّب من المنزل',
+    homeFirstD: 'اطلع على الجلسات وخيارات الدورات المتاحة. تحقق من موعد كل نشاط ومتطلبات الوصول قبل الانضمام.',
     footerNote: 'عضوية للعافية من العراق، للحياة اليومية.',
     noDestination: 'لم يتم إعداد وجهة التواصل بعد. تحقق لاحقاً من بيانات التواصل المعتمدة.',
     send: 'نموذج الاستفسار', formNote: 'يُعد هذا النموذج مسودة بريد إلكتروني لمراجعتها. لا تُرسل الرسالة إلا بعد اختيارك إرسالها من تطبيق البريد، ولا يحفظ الموقع الاستفسارات.',
@@ -379,7 +397,7 @@ const legacyTranslations: Record<Language, Copy> = {
     legalRefundTitle: 'سياسة استرداد الأموال', legalPartnerTermsTitle: 'شروط الشركاء', legalCorporateTitle: 'شروط المؤسسات',
     legalCourseTitle: 'سياسة محتوى الدورات',
     durationDays: 'يوماً', place: 'أماكن', placeOne: 'مكان',
-    appDownload: 'تابع على جهازك', appDestinationsUnavailable: 'لم يتم إعداد وجهات التطبيق المعتمدة بعد.',
+    appDownload: 'تابع على جهازك', appDownloadDescription: 'استخدم تطبيق MaydanGo لمتابعة الحجوزات المؤهلة والوصول إلى الدورات.', appDestinationsUnavailable: 'لم يتم إعداد وجهات التطبيق المعتمدة بعد.',
     iosApp: 'افتح MaydanGo لنظام iOS', androidApp: 'افتح MaydanGo لنظام Android',
     regionNote: 'العراق · كردستان · غرب العراق · جنوبه', movementNote: 'الحركة على طريقتك',
   },
@@ -438,9 +456,18 @@ const legacyTranslations: Record<Language, Copy> = {
     planFaqAvailabilityBody: 'نەخێر. بەردەستبوون بە شوێن و دابینکەرەوە پەیوەستە، تەنانەت ئەگەر جۆری چالاکییەکە لە پلانەکەتدا هەبێت.',
     planFaqCancelTitle: 'مەرجی حجزکردن و هەڵوەشاندنەوە لە کوێ ببینم؟',
     planFaqCancelBody: 'پێش حجزکردن وردەکاریی چالاکییەکە بپشکنە. ئەم ماڵپەڕە حجز ناکات؛ کاتێک حجز بەردەست بوو ئەپی MaydanGo بەکاربهێنە.',
-    directions: 'هاوبەشانی خۆجێیی، ئامانجی هاوبەش', directionsD: 'پێشوازی لە شوێن و ڕاهێنەر دەکەین کە جووڵە بۆ خەڵک دڵخواز دەکەن.',
-    onlineTitle: 'ڕێگایەک بۆ جووڵە لە ماڵەوەش', onlineD: 'بەشداری وانەی ئۆنلاین بکە کاتێک بەردەستە، یان ڕێتمێکی گونجاو بۆ شوێن و ڕۆژەکەت هەڵبژێرە.',
-    homeFirst: 'ستۆدیۆیەکی نزیک یان گوشەیەک لە ماڵەوە.', homeFirstD: 'تەندروستی یەک شێوە نییە. ئەو شوێنە هەڵبژێرە کە ئەمڕۆ گونجاوە.',
+    facilitiesTitle: 'شوێنە وەرزشییەکان بدۆزەوە',
+    facilitiesIntro: 'بەپێی شار و چالاکی شوێنەکان بپشکنە. پێش سەردان، کاتەکانی کارکردن، مەرجی چوونەژوورەوە و بەردەستبوونی وانەکان لەگەڵ دابینکەر پشتڕاست بکەرەوە.',
+    onlineTitle: 'ڕاهێنانی ئۆنلاین',
+    onlineD: 'وانە ڕاستەوخۆکانی ئۆنلاین و زانیاریی کۆرسە بڵاوکراوەکان ببینە. بەردەستبوون و دەستگەیشتن بە چالاکییەکە و ئەندامێتیی تۆ پەیوەستە.',
+    onlineSessionsLabel: 'وانە ڕاستەوخۆکانی ئۆنلاین',
+    onlineSessionsTitle: 'وانە ئۆنلاینەکانی داهاتوو',
+    onlineSessionsEmptyTitle: 'هێشتا هیچ وانەیەکی ئۆنلاین لیست نەکراوە',
+    onlineSessionsEmptyText: 'وانە نوێکان کاتێک لەلایەن هاوبەشە پەسەندکراوەکان بڵاو بکرێنەوە، لێرە دەردەکەون.',
+    onlineContactTitle: 'پرسیارت لەبارەی ڕاهێنانی ئۆنلاین هەیە؟',
+    onlineContactText: 'بۆ پرسیار لەبارەی وانە بەردەستەکان، شایستەیی ئەندامێتی یان دەستگەیشتن بە ئەپ، پەیوەندی بە MaydanGo بکە.',
+    homeFirst: 'لە ماڵەوە ڕاهێنان بکە',
+    homeFirstD: 'وانە و هەڵبژاردەکانی کۆرس بپشکنە. پێش بەشداری، کاتی چالاکی و مەرجەکانی دەستگەیشتن بخوێنەوە.',
     footerNote: 'ئەندامێتی تەندروستی لە عێراق بۆ ژیانی ڕۆژانە.',
     noDestination: 'ئەم شوێنەی پەیوەندی هێشتا ڕێکنەخراوە. دواتر زانیاری پەیوەندی پەسەندکراو ببینە.',
     send: 'فۆڕمی پرسیار', formNote: 'ئەم فۆڕمە ڕەشنووسی ئیمەیڵ بۆ پێداچوونەوە ئامادە دەکات. پەیامەکە تەنها دوای ناردنی لە ئەپی ئیمەیڵ دەگات؛ ماڵپەڕەکە پرسیارەکان هەڵناگرێت.',
@@ -515,7 +542,7 @@ const legacyTranslations: Record<Language, Copy> = {
     legalRefundTitle: 'سیاسەتی گەڕاندنەوەی پارە', legalPartnerTermsTitle: 'مەرجەکانی هاوبەش', legalCorporateTitle: 'مەرجەکانی دامەزراوە',
     legalCourseTitle: 'سیاسەتی ناوەڕۆکی کۆرس',
     durationDays: 'ڕۆژ', place: 'شوێن', placeOne: 'شوێن',
-    appDownload: 'لەسەر ئامێرەکەت بەردەوامبە', appDestinationsUnavailable: 'شوێنی پەسەندکراوی ئەپ هێشتا ڕێکنەخراوە.',
+    appDownload: 'لەسەر ئامێرەکەت بەردەوامبە', appDownloadDescription: 'بۆ بەردەوامبوون لە حجزە شایستەکان و دەستگەیشتن بە کۆرس، ئەپی MaydanGo بەکاربهێنە.', appDestinationsUnavailable: 'شوێنی پەسەندکراوی ئەپ هێشتا ڕێکنەخراوە.',
     iosApp: 'MaydanGo بۆ iOS بکەرەوە', androidApp: 'MaydanGo بۆ Android بکەرەوە',
     regionNote: 'عێراق · کوردستان · ڕۆژئاوا · باشوور', movementNote: 'جووڵە بە شێوازی خۆت',
   }
@@ -784,11 +811,11 @@ function HeroArtwork({ label }: { label: string }) {
   </div>;
 }
 
-function OfferingCards({ offerings, language, loading, error, retry, t, compact = false }: { offerings: PublicOffering[]; language: Language; loading: boolean; error: boolean; retry: () => void; t: Copy; compact?: boolean }) {
+function OfferingCards({ offerings, language, loading, error, retry, t, compact = false, emptyTitle, emptyDescription }: { offerings: PublicOffering[]; language: Language; loading: boolean; error: boolean; retry: () => void; t: Copy; compact?: boolean; emptyTitle?: string; emptyDescription?: string }) {
   if (loading) return <div className={`mt-8 grid gap-4 ${compact ? 'md:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-3'}`} aria-label={t.loading} aria-live="polite">{[1, 2, 3].slice(0, compact ? 2 : 3).map(n => <div key={n} className="h-52 animate-pulse rounded-2xl border border-border bg-muted/70" />)}</div>;
   if (error) return <div className="mt-8 rounded-2xl border border-[#bd8065]/30 bg-[#f2e4d6] p-6" role="alert"><p className="font-semibold">{t.error}</p><button onClick={retry} className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="button-retry-catalog"><RotateCw size={14} />{t.retry}</button></div>;
   if (!offerings.length) return <div className="mt-8 rounded-2xl border border-dashed border-border bg-card/65 px-6 py-10 text-center">
-    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-primary"><CalendarDays size={21} /></div><p className="font-display text-xl font-bold">{compact ? t.empty : t.noInventory}</p><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">{compact ? t.emptySub : t.noInventoryText}</p>
+    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-primary"><CalendarDays size={21} /></div><p className="font-display text-xl font-bold">{emptyTitle ?? (compact ? t.empty : t.noInventory)}</p><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">{emptyDescription ?? (compact ? t.emptySub : t.noInventoryText)}</p>
   </div>;
   return <div className={`mt-8 grid gap-4 ${compact ? 'md:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-3'}`}>
     {offerings.map(item => <article key={item.id} className="offering-card rounded-2xl border border-border bg-card p-5" data-testid={`card-offering-${item.id}`}>
@@ -927,7 +954,7 @@ function ErrorState({ text, retry, t }: { text: string; retry: () => void; t: Co
 function FacilitiesPage({ t, language }: { t: Copy; language: Language }) {
   const catalog = useGetPublicCatalog({ query: { queryKey: getGetPublicCatalogQueryKey() } });
   return <>
-    <PageHero kicker={t.facilities} title={t.discover} description={t.directionsD} />
+    <PageHero kicker={t.facilities} title={t.facilitiesTitle} description={t.facilitiesIntro} />
     <PublicFacilityBrowser language={language} />
     <PageWrap className="py-14 md:py-20">
       <div className="mb-10 grid gap-5 md:grid-cols-[1fr_auto] md:items-end"><div><SectionKicker>{t.live}</SectionKicker><h2 className="font-display text-4xl font-bold tracking-[-.05em]">{t.currentOfferings}</h2></div><p className="max-w-md text-sm leading-6 text-foreground/60">{t.emptySub}</p></div>
@@ -1033,7 +1060,7 @@ function AppDownloadLinks({ t }: { t: Copy }) {
   const iosUrl = verifiedHttpsDestination('VITE_IOS_APP_URL');
   const androidUrl = verifiedHttpsDestination('VITE_ANDROID_APP_URL');
   return <section className="mx-auto mt-10 max-w-7xl rounded-2xl border border-border bg-card px-5 py-6 sm:px-8 md:flex md:items-center md:justify-between">
-    <div><SectionKicker>{t.appDownload}</SectionKicker><p className="max-w-xl text-sm leading-6 text-foreground/60">{!iosUrl && !androidUrl ? t.appDestinationsUnavailable : t.onlineD}</p></div>
+    <div><SectionKicker>{t.appDownload}</SectionKicker><p className="max-w-xl text-sm leading-6 text-foreground/60">{!iosUrl && !androidUrl ? t.appDestinationsUnavailable : t.appDownloadDescription}</p></div>
     <div className="mt-4 flex flex-wrap gap-3 md:mt-0">
       {iosUrl && <a href={iosUrl} target="_blank" rel="noopener noreferrer" className="rounded-full border border-border px-4 py-3 text-sm font-bold hover:bg-muted" data-testid="link-ios-app">{t.iosApp}<ArrowUpRight size={14} className="ms-2 inline" /></a>}
       {androidUrl && <a href={androidUrl} target="_blank" rel="noopener noreferrer" className="rounded-full border border-border px-4 py-3 text-sm font-bold hover:bg-muted" data-testid="link-android-app">{t.androidApp}<ArrowUpRight size={14} className="ms-2 inline" /></a>}
@@ -1049,11 +1076,11 @@ function OnlinePage({ t, language }: { t: Copy; language: Language }) {
     <PageWrap className="py-14 md:py-20">
       <div className="grid gap-8 md:grid-cols-[.8fr_1.2fr]">
         <div className="rounded-[2rem] bg-[#e98960] p-7 md:p-9"><div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#173e37]/25"><House size={22} /></div><h2 className="mt-7 font-display text-3xl font-bold leading-tight tracking-[-.05em]">{t.homeFirst}</h2><p className="mt-3 text-sm leading-6 text-[#173e37]/75">{t.homeFirstD}</p><Link href="/how-it-works" className="mt-6 inline-flex items-center gap-2 text-sm font-bold" data-testid="link-online-how">{t.learnMore}<ArrowUpRight size={15} /></Link></div>
-         <div><SectionKicker>{t.live}</SectionKicker><h2 className="font-display text-3xl font-bold tracking-[-.05em]">{t.currentOfferings}</h2><OfferingCards offerings={live} language={language} loading={catalog.isLoading} error={catalog.isError} retry={() => catalog.refetch()} t={t} compact /></div>
+          <div><SectionKicker>{t.onlineSessionsLabel}</SectionKicker><h2 className="font-display text-3xl font-bold tracking-[-.05em]">{t.onlineSessionsTitle}</h2><OfferingCards offerings={live} language={language} loading={catalog.isLoading} error={catalog.isError} retry={() => catalog.refetch()} t={t} compact emptyTitle={t.onlineSessionsEmptyTitle} emptyDescription={t.onlineSessionsEmptyText} /></div>
       </div>
       <PublicCourseBrowser language={language} />
       <AppDownloadLinks t={t} />
-      <div className="mt-14 rounded-2xl border border-border bg-card px-6 py-7 md:flex md:items-center md:justify-between"><div><h2 className="font-display text-2xl font-bold">{t.availabilityTitle}</h2><p className="mt-2 text-sm text-foreground/60">{t.notCheckout}</p></div><ActionLink href="/contact" testId="link-online-updates">{t.getUpdates}</ActionLink></div>
+      <div className="mt-14 rounded-2xl border border-border bg-card px-6 py-7 md:flex md:items-center md:justify-between"><div><h2 className="font-display text-2xl font-bold">{t.onlineContactTitle}</h2><p className="mt-2 text-sm text-foreground/60">{t.onlineContactText}</p></div><ActionLink href="/contact" testId="link-online-updates">{t.ask}</ActionLink></div>
     </PageWrap>
   </>;
 }
