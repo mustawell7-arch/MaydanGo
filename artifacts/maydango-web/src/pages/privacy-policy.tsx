@@ -71,6 +71,14 @@ const privacyCopy: Record<Language, {
         ],
       },
       {
+        id: 'financial-retention',
+        title: 'Financial and tax records',
+        paragraphs: [
+          'MaydanGo currently plans to retain invoices, tax details, and invoice-correction records for at least 10 years. This is a product decision, not a confirmed Iraqi legal requirement, and must be checked with qualified local legal and accounting advisers.',
+          'Financial records are not automatically deleted when the 10-year period ends. Access remains limited to authorized finance staff, and any later deletion must follow the approved local retention rules.',
+        ],
+      },
+      {
         id: 'rights',
         title: 'Your privacy requests',
         paragraphs: [
@@ -156,6 +164,14 @@ const privacyCopy: Record<Language, {
         ],
       },
       {
+        id: 'financial-retention',
+        title: 'السجلات المالية والضريبية',
+        paragraphs: [
+          'تخطط MaydanGo حالياً للاحتفاظ بالفواتير وتفاصيل الضرائب وسجلات تصحيح الفواتير لمدة لا تقل عن 10 سنوات. هذا قرار للمنتج وليس متطلباً قانونياً عراقياً مؤكداً، ويجب التحقق منه مع مستشارين قانونيين ومحاسبين محليين مؤهلين.',
+          'لا تُحذف السجلات المالية تلقائياً عند انتهاء مدة السنوات العشر. ويظل الوصول مقتصراً على موظفي المالية المخولين، ويجب أن يتبع أي حذف لاحق قواعد الاحتفاظ المحلية المعتمدة.',
+        ],
+      },
+      {
         id: 'rights',
         title: 'طلبات الخصوصية',
         paragraphs: [
@@ -238,6 +254,14 @@ const privacyCopy: Record<Language, {
         paragraphs: [
           'کەمترین تەمەن 18 ساڵە. کەسێکی خوار 18 ساڵ تەنها بە ڕەزامەندیی سەرپەرشتیار دەتوانێت بەشداربێت. هاوبەش ڕەزامەندییەکە لە شوێنەکەدا دەپشکنێت و وێنەیەک لە ڕێگەی پۆرتاڵی تایبەتی هاوبەشی MaydanGo بار دەکات. تەنها کارمەندانی Super Admin دەتوانن وێنەکە ببینن؛ هاوبەش ناتوانێت دایبگرێت.',
           'وێنەکە بۆ سڕینەوەی خۆکار 90 ڕۆژ دوای سەردان ڕێکخراوە. وێنەی ڕەزامەندی، بەڵگەنامەی ناسنامە یان وردەکاریی هەستیاری سەرپەرشتیار لە فۆرمی گشتیی پرسیارەوە مەبنێرە.',
+        ],
+      },
+      {
+        id: 'financial-retention',
+        title: 'تۆمارە دارایی و باجییەکان',
+        paragraphs: [
+          'MaydanGo لە ئێستادا پلانی ئەوەی هەیە پسووڵە، وردەکاریی باج و تۆماری چاکسازیی پسووڵەکان بۆ لانیکەم 10 ساڵ بهێڵێتەوە. ئەمە بڕیارێکی بەرهەمە، نەک پێداویستییەکی یاسایی پشتڕاستکراوی عێراق؛ پێویستە لەلایەن ڕاوێژکاری یاسایی و ژمێریاریی ناوخۆیی شیاوەوە بپشکنرێت.',
+          'تۆمارە داراییەکان لە کۆتایی 10 ساڵدا بە شێوەی خۆکار ناسڕدرێنەوە. دەستگەیشتن سنووردارە بە کارمەندانی دارایی ڕێگەپێدراو، و هەر سڕینەوەیەکی دواتر دەبێت یاساکانی پەسەندکراوی ناوخۆیی بۆ پاراستنی تۆمارەکان پەیڕەو بکات.',
         ],
       },
       {

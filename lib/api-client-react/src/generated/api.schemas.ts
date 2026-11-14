@@ -112,6 +112,7 @@ export interface PartnerInvoice {
   documentName: string;
   status: PartnerInvoiceStatus;
   createdAt: string;
+  retentionUntil: string;
 }
 
 export interface LocalizedFacilityText {
@@ -2780,6 +2781,72 @@ export interface FinanceInvoiceReview {
   reason: string;
 }
 
+export type FinanceInvoiceCorrectionInputInvoiceType = typeof FinanceInvoiceCorrectionInputInvoiceType[keyof typeof FinanceInvoiceCorrectionInputInvoiceType];
+
+
+export const FinanceInvoiceCorrectionInputInvoiceType = {
+  customer: 'customer',
+  partner: 'partner',
+} as const;
+
+export type FinanceInvoiceCorrectionInputCorrectionType = typeof FinanceInvoiceCorrectionInputCorrectionType[keyof typeof FinanceInvoiceCorrectionInputCorrectionType];
+
+
+export const FinanceInvoiceCorrectionInputCorrectionType = {
+  full_refund: 'full_refund',
+  partial_refund: 'partial_refund',
+  incorrect_charge: 'incorrect_charge',
+  membership_cancellation: 'membership_cancellation',
+  event_cancellation: 'event_cancellation',
+  duplicate_payment: 'duplicate_payment',
+  pricing_correction: 'pricing_correction',
+  tax_correction: 'tax_correction',
+} as const;
+
+export interface FinanceInvoiceCorrectionInput {
+  invoiceType: FinanceInvoiceCorrectionInputInvoiceType;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  invoiceId: string;
+  correctionType: FinanceInvoiceCorrectionInputCorrectionType;
+  /**
+     * @minimum 1
+     * @maximum 1000000000
+     */
+  amountIqd?: number;
+  /** @maxLength 160 */
+  refundTransactionReference?: string;
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason: string;
+  idempotencyKey: string;
+}
+
+export interface FinanceInvoiceCorrection {
+  id: string;
+  /** @nullable */
+  membershipBillingId: string | null;
+  /** @nullable */
+  partnerInvoiceId: string | null;
+  correctionType: string;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  amountIqd: number | null;
+  /** @nullable */
+  refundTransactionReference: string | null;
+  reason: string;
+  createdBy: string;
+  idempotencyKey: string;
+  createdAt: string;
+  retentionUntil: string;
+}
+
 export type FinanceReviewItemKind = typeof FinanceReviewItemKind[keyof typeof FinanceReviewItemKind];
 
 
@@ -2895,6 +2962,7 @@ export interface FinanceOverview {
   bookings: FinanceOverviewBookingsItem[];
   customerInvoices: FinanceOverviewCustomerInvoicesItem[];
   partnerInvoices: FinanceOverviewPartnerInvoicesItem[];
+  invoiceCorrections: FinanceInvoiceCorrection[];
   reconciliation: FinanceOverviewReconciliationItem[];
   reviewItems: FinanceReviewItem[];
   reviewEvents: FinanceOverviewReviewEventsItem[];

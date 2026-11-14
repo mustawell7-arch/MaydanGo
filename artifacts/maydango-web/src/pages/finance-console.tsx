@@ -27,21 +27,25 @@ import {
 } from 'lucide-react';
 import { Link, Redirect } from 'wouter';
 import MembershipPlanManager from '@/pages/membership-plan-manager';
+import FinanceInvoiceCorrections, {
+  type CorrectionInvoiceOption,
+  type FinanceInvoiceCorrectionRow,
+} from '@/components/finance-invoice-corrections';
 
 type Language = 'en' | 'ar' | 'ku';
-type Tab = 'overview' | 'members' | 'bookings' | 'customer-invoices' | 'partner-invoices' | 'settlements' | 'reconciliation' | 'audit' | 'plans';
+type Tab = 'overview' | 'members' | 'bookings' | 'customer-invoices' | 'partner-invoices' | 'corrections' | 'settlements' | 'reconciliation' | 'audit' | 'plans';
 type AnyRecord = Record<string, unknown>;
 type MembershipLifecycleAction = 'schedule_cancel' | 'cancel_now' | 'reactivate' | 'pause' | 'resume' | 'suspend' | 'terminate';
 type MemberRow = { userId: string; status: string; paymentStatus: string; tier: string; source: string; startsAt: string; endsAt: string; pauseAllowanceDays: number; pauseUsedDays: number; pausedAt: string | null };
 type BookingRow = { id: string; userId: string; offeringId: string; title: string; partnerId: string; partnerName: string; facility: string; city: string; startsAt: string; status: string; createdAt: string };
-type CustomerInvoiceRow = { id: string; userId: string; planId: string; planName: string; status: string; paymentStatus: string; amountIqd: number; refundStatus: string; periodStartsAt: string; periodEndsAt: string; createdAt: string; updatedAt: string };
-type PartnerInvoiceRow = { id: string; partnerId: string; invoiceNumber: string; amountIqd: number; issuedAt: string; periodStart: string; periodEnd: string; documentName: string; status: string; submittedBy: string; createdAt: string };
+type CustomerInvoiceRow = { id: string; userId: string; planId: string; planName: string; status: string; paymentStatus: string; amountIqd: number; refundStatus: string; periodStartsAt: string; periodEndsAt: string; createdAt: string; updatedAt: string; retentionUntil: string };
+type PartnerInvoiceRow = { id: string; partnerId: string; invoiceNumber: string; amountIqd: number; issuedAt: string; periodStart: string; periodEnd: string; taxNumber: string | null; documentName: string; status: string; submittedBy: string; createdAt: string; retentionUntil: string };
 type ReconRow = { id: string; eventType: string; status: string; receivedAt: string; processedAt: string | null };
 
 const copy: Record<Language, Record<string, string>> = {
   en: {
     financeDesk: 'Finance desk', subtitle: 'A careful view of member billing, partner invoices and attendance evidence across Iraq.',
-    overview: 'Overview', members: 'Memberships', bookings: 'Bookings', customerInvoices: 'Customer invoices', partnerInvoices: 'Partner invoices', settlements: 'Attendance & settlement', reconciliation: 'Reconciliation', audit: 'Audit history',
+    overview: 'Overview', members: 'Memberships', bookings: 'Bookings', customerInvoices: 'Customer invoices', partnerInvoices: 'Partner invoices', corrections: 'Invoice corrections', settlements: 'Attendance & settlement', reconciliation: 'Reconciliation', audit: 'Audit history',
     admin: 'Administrator', finance: 'Finance reviewer', serverScope: 'Server-scoped records', refreshed: 'Review workspace', paymentGate: 'Customer payment gate', payoutGate: 'Live payout gate',
     open: 'Open', on: 'Enabled', off: 'Disabled', membersCount: 'Memberships in scope', invoicesCount: 'Customer invoices', partnerCount: 'Partners', pendingReviews: 'Reviews awaiting action',
     safeguards: 'Payment safeguards', noPayment: 'No payout is sent from this desk.', noAmount: 'Attendance does not calculate a settlement amount.', gateDisabled: 'Gate disabled', gateEnabled: 'Gate enabled',
@@ -51,7 +55,7 @@ const copy: Record<Language, Record<string, string>> = {
     approve: 'Approve manually', reject: 'Reject', decisionReason: 'Reason for this decision', saveDecision: 'Record decision', cancel: 'Cancel', ownRequest: 'You cannot approve a request you submitted.',
     queuedRefund: 'Queue refund review', refundQueued: 'Refund request queued for review. No refund has been sent.', refundGateOff: 'Refund requests are disabled while the customer payment gate is off.',
     requestRefund: 'Request refund review', invoice: 'Invoice', status: 'Status', paymentStatus: 'Payment', amount: 'Amount', period: 'Period', customer: 'Customer', plan: 'Plan', created: 'Created', updated: 'Updated',
-    partner: 'Partner', invoiceNumber: 'Invoice no.', issued: 'Issued', document: 'Document', download: 'Download PDF', invoiceReview: 'Review invoice', underReview: 'Under review', accepted: 'Accepted', rejectedInvoice: 'Rejected',
+    partner: 'Partner', invoiceNumber: 'Invoice no.', issued: 'Issued', document: 'Document', retainUntil: 'Retained until', download: 'Download PDF', invoiceReview: 'Review invoice', underReview: 'Under review', accepted: 'Accepted', rejectedInvoice: 'Rejected',
     settleNotice: 'Attendance totals only', noSettlementAmount: 'Settlement amount calculation is unavailable. Do not infer a rate or amount from visits.', group: 'Partner / facility / category', accessType: 'Access type',
     received: 'Received', processed: 'Processed', eventType: 'Event type', retry: 'Retry', loading: 'Loading finance records', deniedTitle: 'Finance access required', deniedCopy: 'This account is not authorized for the finance desk. Ask an administrator to review your access.',
     errorTitle: 'Finance records could not be loaded', emptyTitle: 'Nothing to review yet', emptyCopy: 'Records returned by the finance service will appear here.', search: 'Search this view', allStatuses: 'All statuses', noRows: 'No matching records.',
@@ -64,7 +68,7 @@ const copy: Record<Language, Record<string, string>> = {
   },
   ar: {
     financeDesk: 'مكتب المالية', subtitle: 'عرض دقيق لفواتير الأعضاء والشركاء وأدلة الحضور في أنحاء العراق.',
-    overview: 'نظرة عامة', members: 'العضويات', bookings: 'الحجوزات', customerInvoices: 'فواتير العملاء', partnerInvoices: 'فواتير الشركاء', settlements: 'الحضور والتسوية', reconciliation: 'المطابقة', audit: 'سجل التدقيق',
+    overview: 'نظرة عامة', members: 'العضويات', bookings: 'الحجوزات', customerInvoices: 'فواتير العملاء', partnerInvoices: 'فواتير الشركاء', corrections: 'تصحيحات الفواتير', settlements: 'الحضور والتسوية', reconciliation: 'المطابقة', audit: 'سجل التدقيق',
     admin: 'مدير', finance: 'مراجع مالي', serverScope: 'سجلات محددة من الخادم', refreshed: 'مساحة المراجعة', paymentGate: 'بوابة مدفوعات العملاء', payoutGate: 'بوابة الدفع المباشر',
     open: 'مفتوح', on: 'مفعّل', off: 'متوقف', membersCount: 'العضويات ضمن النطاق', invoicesCount: 'فواتير العملاء', partnerCount: 'الشركاء', pendingReviews: 'مراجعات تنتظر الإجراء',
     safeguards: 'ضوابط الدفع', noPayment: 'لا يتم إرسال أي دفعة من هذا المكتب.', noAmount: 'لا يحسب الحضور مبلغ التسوية.', gateDisabled: 'البوابة متوقفة', gateEnabled: 'البوابة مفعّلة',
@@ -74,7 +78,7 @@ const copy: Record<Language, Record<string, string>> = {
     approve: 'اعتماد يدوي', reject: 'رفض', decisionReason: 'سبب هذا القرار', saveDecision: 'تسجيل القرار', cancel: 'إلغاء', ownRequest: 'لا يمكنك اعتماد طلب قدمته بنفسك.',
     queuedRefund: 'إضافة طلب استرداد للمراجعة', refundQueued: 'تم وضع طلب الاسترداد في قائمة المراجعة. لم يتم إرسال أي استرداد.', refundGateOff: 'طلبات الاسترداد متوقفة ما دامت بوابة مدفوعات العملاء متوقفة.',
     requestRefund: 'طلب مراجعة استرداد', invoice: 'الفاتورة', status: 'الحالة', paymentStatus: 'الدفع', amount: 'المبلغ', period: 'الفترة', customer: 'العميل', plan: 'الخطة', created: 'تاريخ الإنشاء', updated: 'آخر تحديث',
-    partner: 'الشريك', invoiceNumber: 'رقم الفاتورة', issued: 'تاريخ الإصدار', document: 'المستند', download: 'تنزيل PDF', invoiceReview: 'مراجعة الفاتورة', underReview: 'قيد المراجعة', accepted: 'مقبولة', rejectedInvoice: 'مرفوضة',
+    partner: 'الشريك', invoiceNumber: 'رقم الفاتورة', issued: 'تاريخ الإصدار', document: 'المستند', retainUntil: 'الاحتفاظ حتى', download: 'تنزيل PDF', invoiceReview: 'مراجعة الفاتورة', underReview: 'قيد المراجعة', accepted: 'مقبولة', rejectedInvoice: 'مرفوضة',
     settleNotice: 'إجمالي الحضور فقط', noSettlementAmount: 'حساب مبلغ التسوية غير متاح. لا تستنتج سعراً أو مبلغاً من عدد الزيارات.', group: 'الشريك / المرفق / الفئة', accessType: 'نوع الوصول',
     received: 'تاريخ الاستلام', processed: 'تاريخ المعالجة', eventType: 'نوع الحدث', retry: 'إعادة المحاولة', loading: 'جارٍ تحميل سجلات المالية', deniedTitle: 'الوصول المالي مطلوب', deniedCopy: 'هذا الحساب غير مخول لدخول مكتب المالية. اطلب من مدير مراجعة صلاحياتك.',
     errorTitle: 'تعذر تحميل السجلات المالية', emptyTitle: 'لا توجد عناصر للمراجعة بعد', emptyCopy: 'ستظهر هنا السجلات التي يعيدها نظام المالية.', search: 'ابحث في هذا العرض', allStatuses: 'كل الحالات', noRows: 'لا توجد سجلات مطابقة.',
@@ -87,7 +91,7 @@ const copy: Record<Language, Record<string, string>> = {
   },
   ku: {
     financeDesk: 'مێزی دارایی', subtitle: 'بینینێکی ورد بۆ پسووڵەی ئەندامان و هاوبەشان و بەڵگەی ئامادەبوون لە سەرانسەری عێراق.',
-    overview: 'پوختە', members: 'ئەندامێتییەکان', bookings: 'حجزەکان', customerInvoices: 'پسووڵەی کڕیاران', partnerInvoices: 'پسووڵەی هاوبەشان', settlements: 'ئامادەبوون و یەکلاکردنەوە', reconciliation: 'هاوتاکردن', audit: 'مێژووی پشکنین',
+    overview: 'پوختە', members: 'ئەندامێتییەکان', bookings: 'حجزەکان', customerInvoices: 'پسووڵەی کڕیاران', partnerInvoices: 'پسووڵەی هاوبەشان', corrections: 'چاکسازیی پسووڵەکان', settlements: 'ئامادەبوون و یەکلاکردنەوە', reconciliation: 'هاوتاکردن', audit: 'مێژووی پشکنین',
     admin: 'بەڕێوەبەر', finance: 'پێداچوونەوەکاری دارایی', serverScope: 'تۆمارەکانی سنوورداری سێرڤەر', refreshed: 'شوێنی پێداچوونەوە', paymentGate: 'دەروازەی پارەدانی کڕیار', payoutGate: 'دەروازەی پارەدانی ڕاستەوخۆ',
     open: 'کراوە', on: 'چالاکە', off: 'ناچالاکە', membersCount: 'ئەندامێتی لە سنووردا', invoicesCount: 'پسووڵەی کڕیاران', partnerCount: 'هاوبەشان', pendingReviews: 'پێداچوونەوەی چاوەڕوان',
     safeguards: 'پاراستنی پارەدان', noPayment: 'هیچ پارەیەک لەم مێزەوە نانێردرێت.', noAmount: 'ئامادەبوون بڕی یەکلاکردنەوە حساب ناکات.', gateDisabled: 'دەروازە ناچالاکە', gateEnabled: 'دەروازە چالاکە',
@@ -97,7 +101,7 @@ const copy: Record<Language, Record<string, string>> = {
     approve: 'پەسەندکردنی دەستی', reject: 'ڕەتکردنەوە', decisionReason: 'هۆکاری ئەم بڕیارە', saveDecision: 'بڕیار تۆمار بکە', cancel: 'هەڵوەشاندنەوە', ownRequest: 'ناتوانیت داواکاری خۆت پەسەند بکەیت.',
     queuedRefund: 'داوای گەڕاندنەوە بخەرە ڕیز', refundQueued: 'داوای گەڕاندنەوە بۆ پێداچوونەوە تۆمار کرا. هیچ پارەیەک نەگەڕێندراوەتەوە.', refundGateOff: 'کاتێک دەروازەی پارەدانی کڕیار داخراوە، داوای گەڕاندنەوە ناچالاکە.',
     requestRefund: 'داوای پێداچوونەوەی گەڕاندنەوە', invoice: 'پسووڵە', status: 'دۆخ', paymentStatus: 'پارەدان', amount: 'بڕ', period: 'ماوە', customer: 'کڕیار', plan: 'پلان', created: 'دروستکراوە', updated: 'نوێکراوەتەوە',
-    partner: 'هاوبەش', invoiceNumber: 'ژمارەی پسووڵە', issued: 'دەرچووە', document: 'بەڵگەنامە', download: 'داگرتنی PDF', invoiceReview: 'پێداچوونەوەی پسووڵە', underReview: 'لە پێداچوونەوەدایە', accepted: 'پەسەندکراوە', rejectedInvoice: 'ڕەتکراوەتەوە',
+    partner: 'هاوبەش', invoiceNumber: 'ژمارەی پسووڵە', issued: 'دەرچووە', document: 'بەڵگەنامە', retainUntil: 'پاراستن تا', download: 'داگرتنی PDF', invoiceReview: 'پێداچوونەوەی پسووڵە', underReview: 'لە پێداچوونەوەدایە', accepted: 'پەسەندکراوە', rejectedInvoice: 'ڕەتکراوەتەوە',
     settleNotice: 'کۆی ئامادەبوون تەنها', noSettlementAmount: 'حسابکردنی بڕی یەکلاکردنەوە بەردەست نییە. لە ژمارەی سەردانەوە نرخ یان بڕ دەرنەهێنە.', group: 'هاوبەش / شوێن / جۆر', accessType: 'جۆری دەستگەیشتن',
     received: 'وەرگیراوە', processed: 'پرۆسە کراوە', eventType: 'جۆری ڕووداو', retry: 'دووبارە هەوڵبدە', loading: 'تۆمارە داراییەکان بار دەکرێن', deniedTitle: 'دەستگەیشتنی دارایی پێویستە', deniedCopy: 'ئەم هەژمارە ڕێگەی چوونە ژوورەوەی مێزی دارایی نییە. داوا لە بەڕێوەبەر بکە دەستگەیشتنت بپشکنێت.',
     errorTitle: 'نەتوانرا تۆمارە داراییەکان باربکرێن', emptyTitle: 'هێشتا هیچ شتێک بۆ پێداچوونەوە نییە', emptyCopy: 'تۆمارەکانی خزمەتگوزاری دارایی لێرە دەردەکەون.', search: 'لەم بینینە بگەڕێ', allStatuses: 'هەموو دۆخەکان', noRows: 'هیچ تۆمارێکی هاوتا نییە.',
@@ -269,6 +273,21 @@ export default function FinanceConsole() {
   const bookings = (data?.bookings ?? []).map(row => asRecord(row) as unknown as BookingRow);
   const customerInvoices = (data?.customerInvoices ?? []).map(row => asRecord(row) as unknown as CustomerInvoiceRow);
   const partnerInvoices = (data?.partnerInvoices ?? []).map(row => asRecord(row) as unknown as PartnerInvoiceRow);
+  const invoiceCorrections = (data?.invoiceCorrections ?? []) as FinanceInvoiceCorrectionRow[];
+  const correctionInvoices: CorrectionInvoiceOption[] = [
+    ...customerInvoices.map(invoice => ({
+      invoiceType: 'customer' as const,
+      invoiceId: invoice.id,
+      label: `${t('customer')} · ${invoice.planName} · ${invoice.userId}`,
+      retentionUntil: invoice.retentionUntil,
+    })),
+    ...partnerInvoices.map(invoice => ({
+      invoiceType: 'partner' as const,
+      invoiceId: invoice.id,
+      label: `${t('partner')} · ${partnerName(invoice.partnerId)} · ${invoice.invoiceNumber}`,
+      retentionUntil: invoice.retentionUntil,
+    })),
+  ];
   const reconciliation = (data?.reconciliation ?? []).map(row => asRecord(row) as unknown as ReconRow);
   const reviewItems = data?.reviewItems ?? [];
   const settlements = settlementsQuery.data;
@@ -383,7 +402,8 @@ export default function FinanceConsole() {
   const nav: { key: Tab; label: string; icon: ReactNode }[] = [
     { key: 'overview', label: t('overview'), icon: <Activity size={16} /> }, { key: 'members', label: t('members'), icon: <Users size={16} /> },
     { key: 'bookings', label: t('bookings'), icon: <CalendarDays size={16} /> }, { key: 'customer-invoices', label: t('customerInvoices'), icon: <FileText size={16} /> },
-    { key: 'partner-invoices', label: t('partnerInvoices'), icon: <WalletCards size={16} /> }, { key: 'settlements', label: t('settlements'), icon: <ShieldCheck size={16} /> },
+    { key: 'partner-invoices', label: t('partnerInvoices'), icon: <WalletCards size={16} /> }, { key: 'corrections', label: t('corrections'), icon: <FileCheck2 size={16} /> },
+    { key: 'settlements', label: t('settlements'), icon: <ShieldCheck size={16} /> },
     { key: 'reconciliation', label: t('reconciliation'), icon: <ArrowLeftRight size={16} /> }, { key: 'audit', label: t('audit'), icon: <Clock3 size={16} /> },
     ...(role === 'super_admin' ? [{
       key: 'plans' as const,
@@ -470,7 +490,7 @@ export default function FinanceConsole() {
 
           {tab !== 'overview' && <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div><p className="text-[10px] font-bold uppercase tracking-[.18em] text-[#a76445]">{t('serverScope')}</p><h2 className="mt-1 font-display text-2xl font-bold">{nav.find(item => item.key === tab)?.label}</h2></div>
-            {tab !== 'settlements' && tab !== 'audit' && <div className="flex flex-wrap gap-2"><label className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a9389]" size={14} /><input className={`${field} w-[min(72vw,240px)] ps-9`} value={search} onChange={e => setSearch(e.target.value)} placeholder={t('search')} data-testid="input-finance-search" /></label><label className="relative"><Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a9389]" size={14} /><select className={`${field} w-[150px] ps-9`} value={statusFilter} onChange={e => setStatusFilter(e.target.value)} aria-label={t('allStatuses')} data-testid="select-finance-status"><option value="all">{t('allStatuses')}</option>{Array.from(new Set([...members, ...bookings, ...customerInvoices, ...partnerInvoices].map(item => item.status).filter(Boolean))).map(status => <option key={status} value={status.toLowerCase()}>{status.replaceAll('_', ' ')}</option>)}</select></label></div>}
+            {tab !== 'settlements' && tab !== 'audit' && tab !== 'corrections' && <div className="flex flex-wrap gap-2"><label className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a9389]" size={14} /><input className={`${field} w-[min(72vw,240px)] ps-9`} value={search} onChange={e => setSearch(e.target.value)} placeholder={t('search')} data-testid="input-finance-search" /></label><label className="relative"><Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a9389]" size={14} /><select className={`${field} w-[150px] ps-9`} value={statusFilter} onChange={e => setStatusFilter(e.target.value)} aria-label={t('allStatuses')} data-testid="select-finance-status"><option value="all">{t('allStatuses')}</option>{Array.from(new Set([...members, ...bookings, ...customerInvoices, ...partnerInvoices].map(item => item.status).filter(Boolean))).map(status => <option key={status} value={status.toLowerCase()}>{status.replaceAll('_', ' ')}</option>)}</select></label></div>}
           </div>}
 
           {tab === 'members' && <Panel title={t('members')} subtitle={t('serverScope')}>
@@ -492,6 +512,8 @@ export default function FinanceConsole() {
           {tab === 'customer-invoices' && <Panel title={t('customerInvoices')} subtitle={data.paymentGateEnabled ? t('queuedRefund') : t('refundGateOff')}><div className="overflow-x-auto"><table className="w-full min-w-[1000px] text-left text-xs"><thead><tr className="bg-[#f7f4eb] text-[10px] uppercase tracking-[.1em] text-[#78857c]">{[t('invoice'),t('customer'),t('plan'),t('amount'),t('paymentStatus'),t('status'),t('refund'),t('created'),''].map(label => <th key={label} className="px-4 py-3 font-bold">{label}</th>)}</tr></thead><tbody>{filtered(customerInvoices, ['id','userId','planName','status','paymentStatus','refundStatus']).map(item => <tr key={item.id} className="border-t border-[#eee9de]" data-testid={`row-customer-invoice-${item.id}`}><td className="px-4 py-3 font-mono">{item.id}</td><td className="px-4 py-3 font-mono text-[11px]">{item.userId}</td><td className="px-4 py-3">{item.planName}</td><td className="px-4 py-3 font-mono">{formatIqd(item.amountIqd)} IQD</td><td className="px-4 py-3">{statusBadge(item.paymentStatus)}</td><td className="px-4 py-3">{statusBadge(item.status)}</td><td className="px-4 py-3">{statusBadge(item.refundStatus || 'none')}</td><td className="px-4 py-3">{formatDate(item.createdAt, locale)}</td><td className="px-4 py-3"><button onClick={() => { setRefundInvoice(item); setRefundReason(''); }} disabled={!data.paymentGateEnabled || !item.id || item.paymentStatus !== 'paid' || ['pending', 'processing', 'provider_pending', 'completed'].includes(item.refundStatus)} className="rounded-lg border border-[#d8d2c4] px-3 py-2 text-[10px] font-bold text-[#36564b] hover:bg-[#f1eddf] disabled:cursor-not-allowed disabled:opacity-40" data-testid={`button-request-refund-${item.id}`} title={!data.paymentGateEnabled ? t('refundGateOff') : t('requestRefund')}>{t('requestRefund')}</button></td></tr>)}</tbody></table>{!filtered(customerInvoices, ['id','userId','planName','status','paymentStatus','refundStatus']).length && <Empty title={customerInvoices.length ? t('noRows') : t('noCustomerInvoices')} />}</div></Panel>}
 
           {tab === 'partner-invoices' && <Panel title={t('partnerInvoices')} subtitle={t('serverScope')}><div className="overflow-x-auto"><table className="w-full min-w-[1020px] text-left text-xs"><thead><tr className="bg-[#f7f4eb] text-[10px] uppercase tracking-[.1em] text-[#78857c]">{[t('partner'),t('invoiceNumber'),t('amount'),t('period'),t('issued'),t('status'),t('document'),''].map(label => <th key={label} className="px-4 py-3 font-bold">{label}</th>)}</tr></thead><tbody>{filtered(partnerInvoices, ['id','partnerId','invoiceNumber','documentName','status']).map(item => <tr key={item.id} className="border-t border-[#eee9de]" data-testid={`row-partner-invoice-${item.id}`}><td className="px-4 py-3 font-semibold">{partnerName(item.partnerId)}</td><td className="px-4 py-3 font-mono">{item.invoiceNumber}</td><td className="px-4 py-3 font-mono">{formatIqd(item.amountIqd)} IQD</td><td className="px-4 py-3">{formatDate(item.periodStart, locale)} – {formatDate(item.periodEnd, locale)}</td><td className="px-4 py-3">{formatDate(item.issuedAt, locale)}</td><td className="px-4 py-3">{statusBadge(item.status)}</td><td className="px-4 py-3">{item.documentName}</td><td className="px-4 py-3"><div className="flex gap-2"><button onClick={async () => { setBusyId(`download-${item.id}`); try { const blob = await downloadFinancePartnerInvoice(item.id); const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = item.documentName || `${item.invoiceNumber}.pdf`; anchor.click(); URL.revokeObjectURL(url); } catch { setFeedback('Invoice document could not be downloaded.'); } finally { setBusyId(''); } }} disabled={busyId === `download-${item.id}`} className="inline-flex items-center gap-1 rounded-lg border border-[#d8d2c4] px-2.5 py-2 font-bold text-[#36564b] hover:bg-[#f1eddf] disabled:opacity-40" data-testid={`button-download-invoice-${item.id}`}><ArrowDownToLine size={13} />{t('download')}</button>{role === 'finance' && <button onClick={() => { setPayoutInvoice(item); setPayoutReason(''); }} disabled={item.status !== 'accepted'} className="rounded-lg bg-[#174d43] px-2.5 py-2 font-bold text-[#fff9e9] disabled:cursor-not-allowed disabled:opacity-40" data-testid={`button-track-payout-${item.id}`} title={t('trackingOnly')}>{t('payout')}</button>}<button onClick={() => { setInvoiceReview(item); setInvoiceStatus(item.status === 'accepted' ? 'accepted' : 'under_review'); setInvoiceReason(''); }} className="rounded-lg border border-[#d8d2c4] px-2.5 py-2 font-bold text-[#36564b] hover:bg-[#f1eddf]" data-testid={`button-review-invoice-${item.id}`}>{t('invoiceReview')}</button></div></td></tr>)}</tbody></table>{!filtered(partnerInvoices, ['id','partnerId','invoiceNumber','documentName','status']).length && <Empty title={partnerInvoices.length ? t('noRows') : t('noPartnerInvoices')} />}</div></Panel>}
+
+          {tab === 'corrections' && <FinanceInvoiceCorrections language={language} invoices={correctionInvoices} records={invoiceCorrections} />}
 
           {tab === 'settlements' && <><Panel title={t('settlements')} subtitle={`${t('noSettlementAmount')} ${t('holdCopy')}`} action={<div className="flex items-center gap-2"><label className="text-[10px] font-semibold text-[#718078]">{t('periodFrom')}<input type="date" value={from} onChange={e => setFrom(e.target.value)} className={`${field} mt-1`} data-testid="input-settlement-from" /></label><label className="text-[10px] font-semibold text-[#718078]">{t('periodTo')}<input type="date" value={to} onChange={e => setTo(e.target.value)} className={`${field} mt-1`} data-testid="input-settlement-to" /></label><button onClick={() => setPeriod({ from, to })} className="mt-4 rounded-xl bg-[#174d43] px-3 py-2 text-xs font-bold text-[#fff9e9]" data-testid="button-apply-settlement-period">{t('applyPeriod')}</button></div>}>
               {settlementsQuery.isError ? <div className="p-6 text-sm text-[#9a4435]" data-testid="settlement-error">{t('errorTitle')} <button onClick={() => settlementsQuery.refetch()} className="ms-2 underline">{t('retry')}</button></div> : settlementsQuery.isLoading ? <div className="space-y-3 p-5"><div className="h-14 animate-pulse rounded-xl bg-[#f1eddf]" /><div className="h-36 animate-pulse rounded-xl bg-[#f1eddf]" /></div> : <>

@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lte, lt } from "drizzle-orm";
 import { z } from "zod";
-import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, facilityProfiles, facilityHoursOverrides, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents, instructorPortalRequests, instructorCourseAssignments, instructorOfferingAssignments } from "@workspace/db";
+import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, facilityProfiles, facilityHoursOverrides, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents, financeInvoiceCorrections, instructorPortalRequests, instructorCourseAssignments, instructorOfferingAssignments } from "@workspace/db";
 import { BookingError, effectiveMembershipStatus, processWaitlistQueue } from "../lib/reservations";
 import { hasAdminPermission, isOperationsPortalRole, type AdminPermission } from "../lib/admin-roles";
 import { createFacilityProfileInput, facilityHoursOverrideInput, facilityProfileFields, offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
@@ -33,6 +33,7 @@ import { PaymentError, paymentsEnabled, payTabsTestModeEnabled } from "../lib/pa
 
 import { cancelPaidSubscriptionImmediately, requestFullRefund, validatePaidPlan } from "../lib/payments-paytabs";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
+import { financeRecordRetentionUntil } from "../lib/finance-record-retention";
 import { isPrivateCourseRecordingPath } from "../lib/course-recordings";
 import { completeGuardianConsentUpload, requestGuardianConsentUpload } from "../lib/guardian-consents";
 import {
@@ -1041,8 +1042,12 @@ router.get("/invoices", async (_req, res) => {
     createdAt: partnerInvoiceSubmissions.createdAt,
   }).from(partnerInvoiceSubmissions).where(eq(partnerInvoiceSubmissions.partnerId, partnerId))
     .orderBy(desc(partnerInvoiceSubmissions.createdAt));
-  GetPartnerInvoicesResponse.parse(rows);
-  res.json(rows);
+  const result = rows.map(row => ({
+    ...row,
+    retentionUntil: financeRecordRetentionUntil(new Date(`${row.issuedAt}T00:00:00.000Z`)).toISOString(),
+  }));
+  GetPartnerInvoicesResponse.parse(result);
+  res.json(result);
 });
 
 router.post("/attendance/:id/guardian-consent/upload-url", async (req, res) => {
@@ -1111,8 +1116,12 @@ router.post("/invoices", async (req, res) => {
     await audit(tx, res.locals.operator.userId, "partner.invoice.submit", row.id, `partner=${partnerId}; invoice=${row.invoiceNumber}`);
     return row;
   });
-  SubmitPartnerInvoiceResponse.parse(result);
-  res.status(201).json(result);
+  const response = {
+    ...result,
+    retentionUntil: financeRecordRetentionUntil(new Date(`${result.issuedAt}T00:00:00.000Z`)).toISOString(),
+  };
+  SubmitPartnerInvoiceResponse.parse(response);
+  res.status(201).json(response);
 });
 
 router.get("/invoices/:id/document", async (req, res) => {
@@ -1152,7 +1161,7 @@ async function financeEvent(tx: Tx, reviewItemId: string, actorId: string, actio
 router.get("/finance", async (_req, res) => {
   financeStaff(res);
   const [partnersRows, facilityRows, membershipRows, bookingRows, billingRows, partnerInvoices,
-    reconciliationRows, reviewRows, reviewEvents, operationEvents] = await Promise.all([
+    reconciliationRows, reviewRows, reviewEvents, operationEvents, correctionRows] = await Promise.all([
     db.select().from(partners).orderBy(asc(partners.name)),
     db.select({
       id: facilityProfiles.id, partnerId: facilityProfiles.partnerId, city: facilityProfiles.city,
@@ -1181,7 +1190,7 @@ router.get("/finance", async (_req, res) => {
     db.select({
       id: partnerInvoiceSubmissions.id, partnerId: partnerInvoiceSubmissions.partnerId,
       invoiceNumber: partnerInvoiceSubmissions.invoiceNumber, amountIqd: partnerInvoiceSubmissions.amountIqd,
-      issuedAt: partnerInvoiceSubmissions.issuedAt, periodStart: partnerInvoiceSubmissions.periodStart,
+      issuedAt: partnerInvoiceSubmissions.issuedAt, taxNumber: partnerInvoiceSubmissions.taxNumber, periodStart: partnerInvoiceSubmissions.periodStart,
       periodEnd: partnerInvoiceSubmissions.periodEnd, documentName: partnerInvoiceSubmissions.documentName,
       status: partnerInvoiceSubmissions.status, submittedBy: partnerInvoiceSubmissions.submittedBy,
       createdAt: partnerInvoiceSubmissions.createdAt,
@@ -1194,6 +1203,7 @@ router.get("/finance", async (_req, res) => {
     db.select().from(financeReviewItems).orderBy(desc(financeReviewItems.createdAt)).limit(500),
     db.select().from(financeReviewEvents).orderBy(desc(financeReviewEvents.createdAt)).limit(500),
     db.select().from(operationAudit).orderBy(desc(operationAudit.createdAt)).limit(500),
+    db.select().from(financeInvoiceCorrections).orderBy(desc(financeInvoiceCorrections.createdAt)).limit(500),
   ]);
   const pauseEvents = membershipRows.length ? await db.select({
     targetId: operationAudit.targetId, action: operationAudit.action, createdAt: operationAudit.createdAt,
@@ -1224,8 +1234,15 @@ router.get("/finance", async (_req, res) => {
       };
     }),
     bookings: bookingRows,
-    customerInvoices: billingRows,
-    partnerInvoices,
+    customerInvoices: billingRows.map(row => ({
+      ...row,
+      retentionUntil: financeRecordRetentionUntil(row.createdAt).toISOString(),
+    })),
+    partnerInvoices: partnerInvoices.map(row => ({
+      ...row,
+      retentionUntil: financeRecordRetentionUntil(new Date(`${row.issuedAt}T00:00:00.000Z`)).toISOString(),
+    })),
+    invoiceCorrections: correctionRows,
     reconciliation: reconciliationRows,
     reviewItems: reviewRows,
     reviewEvents,
@@ -1540,6 +1557,76 @@ router.get("/finance/invoices/:id/document", async (req, res) => {
     if (!res.headersSent) res.status(500);
     res.end();
   }).pipe(res);
+});
+
+const financeInvoiceCorrectionTypes = [
+  "full_refund",
+  "partial_refund",
+  "incorrect_charge",
+  "membership_cancellation",
+  "event_cancellation",
+  "duplicate_payment",
+  "pricing_correction",
+  "tax_correction",
+] as const;
+
+router.post("/finance/invoice-corrections", async (req, res) => {
+  financeStaff(res);
+  const input = z.object({
+    invoiceType: z.enum(["customer", "partner"]),
+    invoiceId: z.string().trim().min(1).max(160),
+    correctionType: z.enum(financeInvoiceCorrectionTypes),
+    amountIqd: z.number().int().min(1).max(1_000_000_000).optional(),
+    refundTransactionReference: z.string().trim().max(160).optional(),
+    reason: z.string().trim().min(5).max(500),
+    idempotencyKey: z.string().uuid(),
+  }).strict().parse(req.body);
+  const actorId = res.locals.operator.userId;
+  const billingId = input.invoiceType === "customer" ? input.invoiceId : null;
+  const partnerInvoiceId = input.invoiceType === "partner" ? input.invoiceId : null;
+  const created = await db.transaction(async tx => {
+    const [sameKey] = await tx.select().from(financeInvoiceCorrections)
+      .where(eq(financeInvoiceCorrections.idempotencyKey, input.idempotencyKey));
+    if (sameKey) {
+      const sameRequest = sameKey.createdBy === actorId
+        && sameKey.membershipBillingId === billingId
+        && sameKey.partnerInvoiceId === partnerInvoiceId
+        && sameKey.correctionType === input.correctionType
+        && sameKey.amountIqd === (input.amountIqd ?? null)
+        && sameKey.refundTransactionReference === (input.refundTransactionReference || null)
+        && sameKey.reason === input.reason;
+      if (!sameRequest) throw new BookingError(409, "This request key was already used for a different invoice correction.");
+      return sameKey;
+    }
+
+    if (input.invoiceType === "customer") {
+      const [invoice] = await tx.select({ id: membershipBilling.id }).from(membershipBilling)
+        .where(eq(membershipBilling.id, input.invoiceId)).limit(1);
+      if (!invoice) throw new BookingError(404, "Customer invoice not found.");
+    } else {
+      const [invoice] = await tx.select({ id: partnerInvoiceSubmissions.id }).from(partnerInvoiceSubmissions)
+        .where(eq(partnerInvoiceSubmissions.id, input.invoiceId)).limit(1);
+      if (!invoice) throw new BookingError(404, "Partner invoice not found.");
+    }
+
+    const [row] = await tx.insert(financeInvoiceCorrections).values({
+      id: randomUUID(),
+      membershipBillingId: billingId,
+      partnerInvoiceId,
+      correctionType: input.correctionType,
+      amountIqd: input.amountIqd ?? null,
+      refundTransactionReference: input.refundTransactionReference || null,
+      reason: input.reason,
+      createdBy: actorId,
+      idempotencyKey: input.idempotencyKey,
+      retentionUntil: financeRecordRetentionUntil(new Date()),
+    }).onConflictDoNothing({ target: financeInvoiceCorrections.idempotencyKey }).returning();
+    if (!row) throw new BookingError(409, "This request key has already been used.");
+    await audit(tx, actorId, "finance.invoice_correction.create", row.id,
+      `invoice=${input.invoiceType}:${input.invoiceId};type=${input.correctionType}`);
+    return row;
+  });
+  res.status(201).json(created);
 });
 
 router.get("/finance/audit", async (_req, res) => {

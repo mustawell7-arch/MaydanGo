@@ -442,6 +442,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1finance~1invoices~1{id}"
   /operations/finance/invoices/{id}/document:
     $ref: "./operations.yaml#/paths/~1operations~1finance~1invoices~1{id}~1document"
+  /operations/finance/invoice-corrections:
+    $ref: "./operations.yaml#/paths/~1operations~1finance~1invoice-corrections"
   /operations/finance/audit:
     $ref: "./operations.yaml#/paths/~1operations~1finance~1audit"
   /super-admin/admin-accounts:
@@ -850,7 +852,7 @@ components:
     PartnerInvoice:
       type: object
       additionalProperties: false
-      required: [id, invoiceNumber, amountIqd, issuedAt, periodStart, periodEnd, taxNumber, documentName, status, createdAt]
+      required: [id, invoiceNumber, amountIqd, issuedAt, periodStart, periodEnd, taxNumber, documentName, status, createdAt, retentionUntil]
       properties:
         id: { type: string }
         invoiceNumber: { type: string }
@@ -862,6 +864,7 @@ components:
         documentName: { type: string }
         status: { type: string, enum: [submitted, under_review, accepted, rejected] }
         createdAt: { type: string, format: date-time }
+        retentionUntil: { type: string, format: date-time }
     LocalizedFacilityText:
       type: object
       required: [en, ar, ku]

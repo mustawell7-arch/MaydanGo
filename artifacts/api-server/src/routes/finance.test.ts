@@ -5,7 +5,7 @@ import type { Server } from "node:http";
 import { and, eq, inArray } from "drizzle-orm";
 import express from "express";
 import {
-  attendance, db, financeReviewEvents, financeReviewItems, membershipBilling,
+  attendance, db, financeInvoiceCorrections, financeReviewEvents, financeReviewItems, membershipBilling,
   membershipPlans, offerings, operationAudit, operators, partners, pool, reservations, waitlistEntries,
 } from "@workspace/db";
 import operationsRouter from "./operations";
@@ -70,8 +70,7 @@ after(async () => {
   // Finance events and operation audit rows are append-only; randomized test records are retained.
   await db.delete(waitlistEntries).where(inArray(waitlistEntries.id, [attendedWaitlistId, startedWaitlistId, pastWaitlistId]));
   await db.delete(attendance).where(inArray(attendance.id, [attendanceId, attendedBookingAttendanceId]));
-  await db.delete(membershipBilling).where(eq(membershipBilling.id, billingId));
-  await db.delete(membershipPlans).where(eq(membershipPlans.id, planId));
+  // Keep the original invoice and plan because immutable correction history references them.
   await db.delete(reservations).where(inArray(reservations.id, [
     reservationId, attendedReservationId, startedReservationId, pastReservationId,
   ]));
@@ -118,6 +117,40 @@ test("finance access is role-restricted and refund reviews enforce replay, separ
 
   assert.equal((await call("/operations/finance", requesterId)).status, 200);
   assert.equal((await call("/operations/finance", partnerUserId)).status, 403);
+  const correctionKey = randomUUID();
+  const correctionBody = {
+    invoiceType: "customer",
+    invoiceId: billingId,
+    correctionType: "tax_correction",
+    amountIqd: 2500,
+    refundTransactionReference: "tax-note-test-001",
+    reason: "Corrected tax details on the original invoice",
+    idempotencyKey: correctionKey,
+  };
+  const correctionResponse = await call("/operations/finance/invoice-corrections", requesterId, "POST", correctionBody);
+  assert.equal(correctionResponse.status, 201);
+  assert.equal(correctionResponse.data.membershipBillingId, billingId);
+  assert.equal(correctionResponse.data.partnerInvoiceId, null);
+  assert.equal((await call("/operations/finance/invoice-corrections", requesterId, "POST", correctionBody)).data.id, correctionResponse.data.id);
+  assert.equal((await call("/operations/finance/invoice-corrections", requesterId, "POST", {
+    ...correctionBody, invoiceId: `${prefix}-missing`, idempotencyKey: randomUUID(),
+  })).status, 404);
+  assert.equal((await call("/operations/finance/invoice-corrections", partnerUserId, "POST", {
+    ...correctionBody, idempotencyKey: randomUUID(),
+  })).status, 403);
+  const correctionId = String(correctionResponse.data.id);
+  await assert.rejects(db.update(financeInvoiceCorrections).set({ reason: "Altered correction record" })
+    .where(eq(financeInvoiceCorrections.id, correctionId)));
+  await assert.rejects(db.delete(financeInvoiceCorrections).where(eq(financeInvoiceCorrections.id, correctionId)));
+  const originalBilling = await db.select().from(membershipBilling).where(eq(membershipBilling.id, billingId));
+  assert.equal(originalBilling[0]?.id, billingId, "corrections preserve the original invoice");
+  assert.equal(originalBilling[0]?.paymentStatus, "paid", "recording a correction does not issue or alter a payment");
+  const financeOverview = await call("/operations/finance", requesterId);
+  assert.equal(financeOverview.status, 200);
+  const customerInvoices = financeOverview.data.customerInvoices as Array<{ id: string; retentionUntil: string }>;
+  assert.ok(customerInvoices.find(invoice => invoice.id === billingId)?.retentionUntil);
+  const correctionRecords = financeOverview.data.invoiceCorrections as Array<{ id: string }>;
+  assert.ok(correctionRecords.some(record => record.id === correctionId));
   assert.equal((await call("/operations/grants", requesterId, "POST", {
     userId: `${prefix}-customer`, planId, reason: "Unauthorized finance role",
   })).status, 403);

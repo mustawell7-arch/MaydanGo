@@ -2826,7 +2826,8 @@ export const GetPartnerInvoicesResponseItem = zod.object({
   "taxNumber": zod.string().nullable(),
   "documentName": zod.string(),
   "status": zod.enum(['submitted', 'under_review', 'accepted', 'rejected']),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "retentionUntil": zod.coerce.date()
 })
 export const GetPartnerInvoicesResponse = zod.array(GetPartnerInvoicesResponseItem)
 
@@ -2867,7 +2868,8 @@ export const SubmitPartnerInvoiceResponse = zod.object({
   "taxNumber": zod.string().nullable(),
   "documentName": zod.string(),
   "status": zod.enum(['submitted', 'under_review', 'accepted', 'rejected']),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "retentionUntil": zod.coerce.date()
 })
 
 
@@ -4239,6 +4241,7 @@ export const getFinanceOverviewResponseCustomersItemPauseUsedDaysMin = 0;
 
 
 
+
 export const GetFinanceOverviewResponse = zod.object({
   "role": zod.enum(['finance_admin', 'finance', 'super_admin']),
   "paymentGateEnabled": zod.boolean(),
@@ -4267,6 +4270,19 @@ export const GetFinanceOverviewResponse = zod.object({
   "bookings": zod.array(zod.record(zod.string(), zod.unknown())),
   "customerInvoices": zod.array(zod.record(zod.string(), zod.unknown())),
   "partnerInvoices": zod.array(zod.record(zod.string(), zod.unknown())),
+  "invoiceCorrections": zod.array(zod.object({
+  "id": zod.string(),
+  "membershipBillingId": zod.string().nullable(),
+  "partnerInvoiceId": zod.string().nullable(),
+  "correctionType": zod.string(),
+  "amountIqd": zod.int().min(1).nullable(),
+  "refundTransactionReference": zod.string().nullable(),
+  "reason": zod.string(),
+  "createdBy": zod.string(),
+  "idempotencyKey": zod.uuid(),
+  "createdAt": zod.coerce.date(),
+  "retentionUntil": zod.coerce.date()
+})),
   "reconciliation": zod.array(zod.record(zod.string(), zod.unknown())),
   "reviewItems": zod.array(zod.object({
   "id": zod.string(),
@@ -4472,7 +4488,8 @@ export const ReviewPartnerFinanceInvoiceResponse = zod.object({
   "taxNumber": zod.string().nullable(),
   "documentName": zod.string(),
   "status": zod.enum(['submitted', 'under_review', 'accepted', 'rejected']),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "retentionUntil": zod.coerce.date()
 })
 
 
@@ -4481,6 +4498,45 @@ export const DownloadFinancePartnerInvoiceParams = zod.object({
 })
 
 export const DownloadFinancePartnerInvoiceResponse = zod.unknown()
+
+
+export const createFinanceInvoiceCorrectionBodyInvoiceIdMax = 160;
+
+export const createFinanceInvoiceCorrectionBodyAmountIqdMax = 1000000000;
+
+export const createFinanceInvoiceCorrectionBodyRefundTransactionReferenceMax = 160;
+
+export const createFinanceInvoiceCorrectionBodyReasonMin = 5;
+export const createFinanceInvoiceCorrectionBodyReasonMax = 500;
+
+
+
+export const CreateFinanceInvoiceCorrectionBody = zod.object({
+  "invoiceType": zod.enum(['customer', 'partner']),
+  "invoiceId": zod.string().min(1).max(createFinanceInvoiceCorrectionBodyInvoiceIdMax),
+  "correctionType": zod.enum(['full_refund', 'partial_refund', 'incorrect_charge', 'membership_cancellation', 'event_cancellation', 'duplicate_payment', 'pricing_correction', 'tax_correction']),
+  "amountIqd": zod.int().min(1).max(createFinanceInvoiceCorrectionBodyAmountIqdMax).optional(),
+  "refundTransactionReference": zod.string().max(createFinanceInvoiceCorrectionBodyRefundTransactionReferenceMax).optional(),
+  "reason": zod.string().min(createFinanceInvoiceCorrectionBodyReasonMin).max(createFinanceInvoiceCorrectionBodyReasonMax),
+  "idempotencyKey": zod.uuid()
+})
+
+
+
+
+export const CreateFinanceInvoiceCorrectionResponse = zod.object({
+  "id": zod.string(),
+  "membershipBillingId": zod.string().nullable(),
+  "partnerInvoiceId": zod.string().nullable(),
+  "correctionType": zod.string(),
+  "amountIqd": zod.int().min(1).nullable(),
+  "refundTransactionReference": zod.string().nullable(),
+  "reason": zod.string(),
+  "createdBy": zod.string(),
+  "idempotencyKey": zod.uuid(),
+  "createdAt": zod.coerce.date(),
+  "retentionUntil": zod.coerce.date()
+})
 
 
 export const GetFinanceAuditResponse = zod.object({

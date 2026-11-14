@@ -1532,6 +1532,22 @@ paths:
           content:
             application/pdf:
               schema: { type: string, format: binary }
+  /operations/finance/invoice-corrections:
+    post:
+      operationId: createFinanceInvoiceCorrection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinanceInvoiceCorrectionInput" }
+      responses:
+        "201":
+          description: Append-only correction record; does not change invoices or send payments
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinanceInvoiceCorrection" }
+        "403": { description: Finance staff access is required }
+        "404": { description: The original invoice was not found }
   /operations/finance/audit:
     get:
       operationId: getFinanceAudit
@@ -3522,6 +3538,36 @@ components:
       properties:
         status: { type: string, enum: [under_review, accepted, rejected] }
         reason: { type: string, minLength: 5, maxLength: 500 }
+    FinanceInvoiceCorrectionInput:
+      type: object
+      additionalProperties: false
+      required: [invoiceType, invoiceId, correctionType, reason, idempotencyKey]
+      properties:
+        invoiceType: { type: string, enum: [customer, partner] }
+        invoiceId: { type: string, minLength: 1, maxLength: 160 }
+        correctionType:
+          type: string
+          enum: [full_refund, partial_refund, incorrect_charge, membership_cancellation, event_cancellation, duplicate_payment, pricing_correction, tax_correction]
+        amountIqd: { type: integer, minimum: 1, maximum: 1000000000 }
+        refundTransactionReference: { type: string, maxLength: 160 }
+        reason: { type: string, minLength: 5, maxLength: 500 }
+        idempotencyKey: { type: string, format: uuid }
+    FinanceInvoiceCorrection:
+      type: object
+      additionalProperties: false
+      required: [id, membershipBillingId, partnerInvoiceId, correctionType, amountIqd, refundTransactionReference, reason, createdBy, idempotencyKey, createdAt, retentionUntil]
+      properties:
+        id: { type: string }
+        membershipBillingId: { type: [string, "null"] }
+        partnerInvoiceId: { type: [string, "null"] }
+        correctionType: { type: string }
+        amountIqd: { type: [integer, "null"], minimum: 1 }
+        refundTransactionReference: { type: [string, "null"] }
+        reason: { type: string }
+        createdBy: { type: string }
+        idempotencyKey: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+        retentionUntil: { type: string, format: date-time }
     FinanceReviewItem:
       type: object
       additionalProperties: false
@@ -3543,7 +3589,7 @@ components:
         reviewedAt: { type: [string, "null"], format: date-time }
     FinanceOverview:
       type: object
-      required: [role, paymentGateEnabled, livePayoutGateEnabled, partners, facilities, customers, bookings, customerInvoices, partnerInvoices, reconciliation, reviewItems, reviewEvents, audit]
+      required: [role, paymentGateEnabled, livePayoutGateEnabled, partners, facilities, customers, bookings, customerInvoices, partnerInvoices, invoiceCorrections, reconciliation, reviewItems, reviewEvents, audit]
       properties:
         role: { type: string, enum: [finance_admin, finance, super_admin] }
         paymentGateEnabled: { type: boolean }
@@ -3554,6 +3600,7 @@ components:
         bookings: { type: array, items: { type: object, additionalProperties: true } }
         customerInvoices: { type: array, items: { type: object, additionalProperties: true } }
         partnerInvoices: { type: array, items: { type: object, additionalProperties: true } }
+        invoiceCorrections: { type: array, items: { $ref: "#/components/schemas/FinanceInvoiceCorrection" } }
         reconciliation: { type: array, items: { type: object, additionalProperties: true } }
         reviewItems: { type: array, items: { $ref: "#/components/schemas/FinanceReviewItem" } }
         reviewEvents: { type: array, items: { type: object, additionalProperties: true } }
