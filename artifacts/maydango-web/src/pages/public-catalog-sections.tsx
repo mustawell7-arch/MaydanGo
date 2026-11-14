@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ArrowRight, BookOpen, Clock3, ExternalLink, MapPin, RefreshCw, Search, Sparkles, Star } from 'lucide-react';
+import { Link } from 'wouter';
 import {
   getGetPublicCatalogQueryKey,
   getGetPublicCoursesQueryKey,
@@ -102,6 +103,18 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     updated: 'Public information only',
     search: 'Search courses',
     noSearchResults: 'No courses match that search.',
+    allCategories: 'All categories',
+    categoryFilter: 'Filter courses by category',
+    noFilteredCourses: 'No courses match these filters.',
+    instructorProfiles: 'Instructor profiles',
+    instructorProfilesIntro: 'Browse instructor names and course titles from published public courses. No biography or photo is assumed.',
+    noInstructorProfiles: 'Instructor profiles will appear when courses are published for public discovery.',
+    onePublishedCourse: 'published course',
+    courseCountLabel: 'published courses',
+    moreCourses: 'more courses',
+    membershipRequirementTitle: 'Membership requirement',
+    membershipRequirement: 'Course playback requires an active membership that includes digital-course access. This website does not activate membership or unlock lessons.',
+    viewMembershipPlans: 'Compare membership access',
   },
   ar: {
     region: 'العراق · كردستان · الغرب · الجنوب',
@@ -181,6 +194,18 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     updated: 'معلومات عامة فقط',
     search: 'ابحث في الدورات',
     noSearchResults: 'لا توجد دورات تطابق البحث.',
+    allCategories: 'كل الفئات',
+    categoryFilter: 'تصفية الدورات حسب الفئة',
+    noFilteredCourses: 'لا توجد دورات تطابق عوامل التصفية.',
+    instructorProfiles: 'ملفات المدرّبين',
+    instructorProfilesIntro: 'تصفح أسماء المدرّبين وعناوين الدورات المنشورة للعامة. لا نضيف سيرة أو صورة غير منشورة.',
+    noInstructorProfiles: 'ستظهر ملفات المدرّبين عند نشر دورات للاستكشاف العام.',
+    onePublishedCourse: 'دورة منشورة',
+    courseCountLabel: 'دورات منشورة',
+    moreCourses: 'دورات أخرى',
+    membershipRequirementTitle: 'متطلبات العضوية',
+    membershipRequirement: 'تتطلب مشاهدة الدورات عضوية فعالة تشمل الوصول إلى الدورات الرقمية. هذا الموقع لا يفعّل العضويات ولا يفتح الدروس.',
+    viewMembershipPlans: 'قارن مزايا العضوية',
   },
   ku: {
     region: 'عێراق · کوردستان · ڕۆژئاوا · باشوور',
@@ -260,6 +285,18 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     updated: 'تەنها زانیاریی گشتی',
     search: 'گەڕان لە کۆرسەکان',
     noSearchResults: 'هیچ کۆرسێک لەگەڵ ئەم گەڕانە ناگونجێت.',
+    allCategories: 'هەموو پۆلەکان',
+    categoryFilter: 'فلتەرکردنی کۆرسەکان بەپێی پۆل',
+    noFilteredCourses: 'هیچ کۆرسێک لەگەڵ ئەم فلتەرانە ناگونجێت.',
+    instructorProfiles: 'پرۆفایلی مامۆستاکان',
+    instructorProfilesIntro: 'ناوی مامۆستاکان و ناونیشانی کۆرسە بڵاوکراوە گشتییەکان ببینە. بایۆگرافی یان وێنەی نەپشتڕاستکراو زیاد ناکەین.',
+    noInstructorProfiles: 'کاتێک کۆرسەکان بۆ دۆزینەوەی گشتی بڵاوکرانەوە، پرۆفایلی مامۆستاکان لێرە دەردەکەون.',
+    onePublishedCourse: 'کۆرسی بڵاوکراوە',
+    courseCountLabel: 'کۆرسی بڵاوکراوەکان',
+    moreCourses: 'کۆرسی زیاتر',
+    membershipRequirementTitle: 'مەرجی ئەندامێتی',
+    membershipRequirement: 'بینینی کۆرس پێویستی بە ئەندامێتی چالاک هەیە کە دەستگەیشتنی کۆرسی دیجیتاڵی لەخۆبگرێت. ئەم ماڵپەڕە ئەندامێتی چالاک ناکات و وانەکان ناکاتەوە.',
+    viewMembershipPlans: 'بەراوردی دەستگەیشتنی پلانەکان',
   },
 };
 
@@ -694,8 +731,36 @@ export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCata
   const text = copy[language];
   const coursesQuery = useGetPublicCourses({ query: { queryKey: getGetPublicCoursesQueryKey() } });
   const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState('');
   const courses = coursesQuery.data ?? [];
-  const filtered = courses.filter((course) => [localized(course.localizedTitle, language), localized(course.localizedSummary, language), localized(course.localizedInstructor, language), course.category, course.level].join(' ').toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
+  const locale = language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ';
+  const categories = useMemo(
+    () => Array.from(new Set(courses.map((course) => course.category.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, locale)),
+    [courses, locale],
+  );
+  const filtered = courses.filter((course) =>
+    (!activeCategory || course.category === activeCategory)
+    && [localized(course.localizedTitle, language), localized(course.localizedSummary, language), localized(course.localizedInstructor, language), course.category, course.level]
+      .join(' ').toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
+  );
+  const instructorProfiles = useMemo(() => {
+    const groups = new Map<string, { name: string; courses: PublicCourse[] }>();
+    for (const course of courses) {
+      const name = localized(course.localizedInstructor, language).trim();
+      if (!name) continue;
+      const key = JSON.stringify(course.localizedInstructor);
+      const group = groups.get(key) ?? { name, courses: [] };
+      group.courses.push(course);
+      groups.set(key, group);
+    }
+    return Array.from(groups.entries())
+      .map(([key, profile]) => ({
+        key,
+        ...profile,
+        categories: Array.from(new Set(profile.courses.map((course) => course.category.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, locale)),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, locale));
+  }, [courses, language, locale]);
 
   return (
     <section id="public-courses" className="site-shell mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-10" dir={language === 'en' ? 'ltr' : 'rtl'} aria-labelledby="public-courses-title">
@@ -704,6 +769,12 @@ export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCata
         <h2 id="public-courses-title" className="font-display mt-2 text-2xl font-bold sm:text-3xl">{text.coursesTitle}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{text.coursesIntro}</p>
       </header>
+      <aside className="mb-8 flex flex-col gap-4 rounded-2xl border border-border bg-muted/60 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-7" data-testid="notice-course-membership">
+        <div><p className="font-semibold">{text.membershipRequirementTitle}</p><p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">{text.membershipRequirement}</p></div>
+        <Link href="/membership-plans" className="inline-flex shrink-0 items-center gap-2 text-sm font-bold text-primary" data-testid="link-online-membership-requirements">
+          {text.viewMembershipPlans}<ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
+      </aside>
       <section className="mt-8" aria-label={text.courses}>
         <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div><p className="text-xs font-bold uppercase tracking-[.18em] text-primary">{text.publicInfo}</p><h2 className="font-display mt-2 text-2xl font-bold sm:text-3xl">{text.courses}</h2></div>
@@ -713,10 +784,24 @@ export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCata
             <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={text.search} className="h-11 w-full rounded-full border border-input bg-card ps-10 pe-4 text-sm text-foreground placeholder:text-muted-foreground" data-testid="input-search-courses" />
           </label>
         </div>
+        {!coursesQuery.isLoading && !coursesQuery.isError && categories.length > 0 ? <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label={text.categoryFilter} data-testid="group-course-category-filter">
+          {[text.allCategories, ...categories].map((category, index) => {
+            const value = index === 0 ? '' : categories[index - 1];
+            const selected = activeCategory === value;
+            return <button
+              key={value || 'all'}
+              type="button"
+              onClick={() => setActiveCategory(value)}
+              aria-pressed={selected}
+              className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-foreground/70 hover:border-primary/40 hover:text-primary'}`}
+              data-testid={`button-filter-course-category-${index}`}
+            >{category}</button>;
+          })}
+        </div> : null}
         {coursesQuery.isLoading ? <LoadingBlocks label={text.loadingCourses} id="courses" /> : coursesQuery.isError ? <QueryError message={text.failedCourses} retry={() => void coursesQuery.refetch()} retryLabel={text.retry} id="courses" /> : !courses.length ? (
           <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center" data-testid="empty-courses"><BookOpen className="mx-auto h-7 w-7 text-primary" aria-hidden="true" /><h3 className="font-display mt-4 text-xl font-bold">{text.noCourses}</h3><p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">{text.noCoursesBody}</p></div>
         ) : !filtered.length ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center" data-testid="empty-course-search"><p className="font-display text-xl font-bold">{text.noSearchResults}</p></div>
+          <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center" data-testid="empty-course-search"><p className="font-display text-xl font-bold">{text.noFilteredCourses}</p></div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filtered.map((course: PublicCourse, index: number) => <article key={course.id} className="offering-card flex min-h-[270px] flex-col rounded-2xl border border-border bg-card p-5 sm:p-6" data-testid={`card-public-course-${course.id}`}>
@@ -732,6 +817,40 @@ export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCata
           </div>
         )}
       </section>
+      {!coursesQuery.isLoading && !coursesQuery.isError ? <section className="mt-12" aria-labelledby="public-instructor-profiles-title" data-testid="section-public-instructor-profiles">
+        <header className="mb-6">
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-primary">{text.instructor}</p>
+          <h2 id="public-instructor-profiles-title" className="font-display mt-2 text-2xl font-bold sm:text-3xl">{text.instructorProfiles}</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{text.instructorProfilesIntro}</p>
+        </header>
+        {instructorProfiles.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {instructorProfiles.map((profile, profileIndex) => {
+            const visibleCourses = profile.courses.slice(0, 3);
+            const moreCount = profile.courses.length - visibleCourses.length;
+            return <article key={profile.key} className="rounded-2xl border border-border bg-card p-5 sm:p-6" data-testid={`card-public-instructor-${profileIndex + 1}`}>
+              <p className="text-xs font-semibold text-muted-foreground">{text.instructor}</p>
+              <h3 className="font-display mt-2 text-xl font-bold">{profile.name}</h3>
+              <p className="mt-2 text-xs text-muted-foreground" data-testid={`text-instructor-course-count-${profileIndex + 1}`}>
+                {profile.courses.length} {profile.courses.length === 1 ? text.onePublishedCourse : text.courseCountLabel}
+              </p>
+              {profile.categories.length ? <div className="mt-4 flex flex-wrap gap-2" aria-label={text.categoryFilter}>
+                {profile.categories.map((category) => <span key={`${profile.key}-${category}`} className="rounded-full bg-accent/60 px-3 py-1 text-xs font-semibold">{category}</span>)}
+              </div> : null}
+              <div className="mt-5 border-t border-border pt-4">
+                <p className="text-xs font-semibold text-muted-foreground">{text.courses}</p>
+                <ul className="mt-2 space-y-2">
+                  {visibleCourses.map((course) => <li key={course.id} className="text-sm leading-5" data-testid={`row-instructor-course-${profileIndex + 1}-${course.id}`}>
+                    {localized(course.localizedTitle, language)}
+                  </li>)}
+                </ul>
+                {moreCount > 0 ? <p className="mt-2 text-xs text-muted-foreground">{moreCount} {text.moreCourses}</p> : null}
+              </div>
+            </article>;
+          })}
+        </div> : <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-10 text-center" data-testid="empty-public-instructor-profiles">
+          <p className="text-sm leading-6 text-muted-foreground">{text.noInstructorProfiles}</p>
+        </div>}
+      </section> : null}
       <aside className="mt-8 rounded-2xl bg-muted/70 p-5 sm:px-7 sm:py-6"><p className="text-sm font-medium leading-6">{text.appNote}</p></aside>
     </section>
   );
