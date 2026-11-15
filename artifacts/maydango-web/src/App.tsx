@@ -22,7 +22,13 @@ import { Route, Switch, useLocation, Router as WouterRouter, Link, Redirect } fr
 import { PublicCourseBrowser, PublicFacilityBrowser, PublicHomeShowcase } from '@/pages/public-catalog-sections';
 import { PrivacyPolicyPage } from '@/pages/privacy-policy';
 import { PolicyDocumentPage } from '@/pages/policy-document';
-import { createContactEmailDraft, initialContactTopic, verifiedContactEmail } from '@/lib/contact-enquiry';
+import {
+  copyContactText,
+  createContactEmailCopyText,
+  createContactEmailDraftDetails,
+  initialContactTopic,
+  verifiedContactEmail,
+} from '@/lib/contact-enquiry';
 import './index.css';
 
 const PartnerPortal = lazy(() => import('@/pages/partner-portal'));
@@ -191,7 +197,7 @@ const legacyTranslations: Record<Language, Copy> = {
     homeFirstD: 'A live class or online course can help you keep moving from home. Browse the options and choose what fits your routine.',
     footerNote: 'A wellbeing membership made in Iraq, for everyday life.',
     noDestination: 'This contact option is not available yet. Please check back for confirmed details.',
-    send: 'Enquiry form', formNote: 'Submitting this form opens a draft in your email app. Review it before sending; the website does not store your message.',
+    send: 'Enquiry form', formNote: 'Prepare a message to review before sending. This website does not send or store it. If no email app opens, use the copy option.',
     learnMore: 'Learn more', availabilityTitle: 'Talk to our team', availabilityD: 'Our team can help you understand what is currently available and what to do next.',
     faq1: 'Is MaydanGo available in my area?', faq1d: 'Our public catalog shows activities from approved, active partners. What is available can differ from one city to another.',
     faq2: 'Can I take online classes?', faq2d: 'Online classes appear in the catalog when a partner publishes them. Availability may vary.',
@@ -252,6 +258,10 @@ const legacyTranslations: Record<Language, Copy> = {
     partnerServicesLabel: 'Services and activities offered (optional)',
     partnerApplicationNote: 'This form prepares an email draft about becoming a partner. Review and send it from your email app. MaydanGo considers each enquiry individually, and sending one does not guarantee approval.',
     previewEnquiry: 'Prepare an email draft', localFormNotice: 'Nothing has been sent or stored. Use the verified contact details on this page, if available.',
+    copyEnquiry: 'Copy enquiry details',
+    copySuccess: 'Recipient, subject and message copied. Paste them into your email app to send.',
+    copyUnavailable: 'Copy is unavailable in this browser. Select the prepared details below and copy them manually, or open the email draft.',
+    copyDetailsLabel: 'Prepared enquiry details', recipientLabel: 'To', subjectLabel: 'Subject',
     emailMaydanGo: 'Email MaydanGo',
     nameLabel: 'Your name', emailLabel: 'Your email', messageLabel: 'Your message',
     openEmailDraft: 'Open email draft', draftReady: 'Your email draft is ready to review.',
@@ -341,7 +351,7 @@ const legacyTranslations: Record<Language, Copy> = {
     homeFirstD: 'اطلع على الجلسات وخيارات الدورات المتاحة. تحقق من موعد كل نشاط ومتطلبات الوصول قبل الانضمام.',
     footerNote: 'عضوية للعافية من العراق، للحياة اليومية.',
     noDestination: 'لم يتم إعداد وجهة التواصل بعد. تحقق لاحقاً من بيانات التواصل المعتمدة.',
-    send: 'نموذج الاستفسار', formNote: 'يُعد هذا النموذج مسودة بريد إلكتروني لمراجعتها. لا تُرسل الرسالة إلا بعد اختيارك إرسالها من تطبيق البريد، ولا يحفظ الموقع الاستفسارات.',
+    send: 'نموذج الاستفسار', formNote: 'أعدّ رسالة لمراجعتها قبل الإرسال. لا يرسل الموقع رسالتك ولا يخزنها. إذا لم يفتح تطبيق البريد، استخدم خيار النسخ.',
     learnMore: 'اعرف المزيد', availabilityTitle: 'المعلومات والاستفسارات', availabilityD: 'تواصل مع فريق MaydanGo للحصول على معلومات محدثة عن العضوية والأنشطة وفرص الشراكة.',
     faq1: 'هل تتوفر MaydanGo في منطقتي؟', faq1d: 'يعرض الدليل العام الأنشطة القادمة التي ينشرها الشركاء النشطون والمعتمدون. وقد يختلف التوفر من مدينة إلى أخرى.',
     faq2: 'هل تتوفر دروس عبر الإنترنت؟', faq2d: 'قد تظهر الدروس عبر الإنترنت إلى جانب الجلسات الحضورية عندما ينشرها الشركاء المعتمدون.',
@@ -397,6 +407,10 @@ const legacyTranslations: Record<Language, Copy> = {
     partnerServicesLabel: 'الخدمات والأنشطة المقدمة (اختياري)',
     partnerApplicationNote: 'يُعد هذا النموذج مسودة بريد لاستفسار الشراكة. راجعها وأرسلها من تطبيق البريد. تراجع MaydanGo كل استفسار على حدة، ولا يضمن تقديمه الموافقة.',
     previewEnquiry: 'جهّز مسودة بريد إلكتروني', localFormNotice: 'لم يتم إرسال المعلومات أو تخزينها. استخدم وسيلة التواصل المعتمدة في الصفحة إن توفرت.',
+    copyEnquiry: 'انسخ تفاصيل الاستفسار',
+    copySuccess: 'تم نسخ المستلم والموضوع والرسالة. الصقها في تطبيق البريد لإرسالها.',
+    copyUnavailable: 'النسخ غير متاح في هذا المتصفح. حدّد التفاصيل أدناه وانسخها يدوياً، أو افتح مسودة البريد.',
+    copyDetailsLabel: 'تفاصيل الاستفسار الجاهزة', recipientLabel: 'إلى', subjectLabel: 'الموضوع',
     emailMaydanGo: 'راسل MaydanGo',
     nameLabel: 'اسمك', emailLabel: 'بريدك الإلكتروني', messageLabel: 'رسالتك',
     openEmailDraft: 'افتح مسودة البريد', draftReady: 'مسودة البريد جاهزة للمراجعة.',
@@ -486,7 +500,7 @@ const legacyTranslations: Record<Language, Copy> = {
     homeFirstD: 'وانە و هەڵبژاردەکانی کۆرس بپشکنە. پێش بەشداری، کاتی چالاکی و مەرجەکانی دەستگەیشتن بخوێنەوە.',
     footerNote: 'ئەندامێتی تەندروستی لە عێراق بۆ ژیانی ڕۆژانە.',
     noDestination: 'ئەم شوێنەی پەیوەندی هێشتا ڕێکنەخراوە. دواتر زانیاری پەیوەندی پەسەندکراو ببینە.',
-    send: 'فۆڕمی پرسیار', formNote: 'ئەم فۆڕمە ڕەشنووسی ئیمەیڵ بۆ پێداچوونەوە ئامادە دەکات. پەیامەکە تەنها دوای ناردنی لە ئەپی ئیمەیڵ دەگات؛ ماڵپەڕەکە پرسیارەکان هەڵناگرێت.',
+    send: 'فۆڕمی پرسیار', formNote: 'ئەم فۆڕمە نامەیەک ئامادە دەکات بۆ پێداچوونەوە پێش ناردن. ماڵپەڕەکە پەیامەکەت نانێرێت و هەڵی ناگرێت. ئەگەر ئەپی ئیمەیڵ نەکرایەوە، هەڵبژاردەی کۆپیکردن بەکاربهێنە.',
     learnMore: 'زیاتر بزانە', availabilityTitle: 'زانیاری و پرسیارەکان', availabilityD: 'بۆ زانیاریی نوێ لەبارەی ئەندامێتی، چالاکی و هەڵبژاردەکانی هاوبەشی، پەیوەندی بە تیمی MaydanGo بکە.',
     faq1: 'MaydanGo لە ناوچەکەم بەردەستە؟', faq1d: 'کاتالۆگی گشتی چالاکییە داهاتووەکانی هاوبەشە چالاک و پەسەندکراوەکان پیشان دەدات. بەردەستبوون لە شارێکەوە بۆ شارێکی تر جیاوازە.',
     faq2: 'وانەی ئۆنالین بەردەستە؟', faq2d: 'وانەی ئۆنالین دەتوانێت لەگەڵ وانەی ڕووبەڕوو پیشان بدرێت، کاتێک هاوبەشە پەسەندکراوەکان بڵاویان دەکەنەوە.',
@@ -542,6 +556,10 @@ const legacyTranslations: Record<Language, Copy> = {
     partnerServicesLabel: 'خزمەتگوزاری و چالاکییە پێشکەشکراوەکان (ئارەزوومەندانە)',
     partnerApplicationNote: 'ئەم فۆڕمە ڕەشنووسی ئیمەیڵ بۆ پرسیاری هاوبەشی ئامادە دەکات. پێداچوونەوەی بکە و لە ئەپی ئیمەیڵ بینێرە. MaydanGo هەر پرسیارێک بە جیاوازی هەڵدەسەنگێنێت؛ ناردنی پرسیار گەرەنتی پەسەندکردن نییە.',
     previewEnquiry: 'ڕەشنووسی ئیمەیڵێک ئامادە بکە', localFormNotice: 'هیچ زانیارییەک نەنێردرا و هەڵنەگیرا. ئەگەر هەیە، ڕێگای پەیوەندی پەسەندکراوی ئەم پەڕەیە بەکاربهێنە.',
+    copyEnquiry: 'زانیارییەکانی پرسیار کۆپی بکە',
+    copySuccess: 'وەرگر، بابەت و پەیام کۆپیکران. بۆ ناردن بیاننووسە لە ئەپی ئیمەیڵ.',
+    copyUnavailable: 'کۆپیکردن لەم وێبگەڕەدا بەردەست نییە. وردەکارییەکانی خوارەوە هەڵبژێرە و بە دەستی کۆپییان بکە، یان ڕەشنووسی ئیمەیڵ بکەرەوە.',
+    copyDetailsLabel: 'وردەکارییە ئامادەکراوەکانی پرسیار', recipientLabel: 'بۆ', subjectLabel: 'بابەت',
     emailMaydanGo: 'ئیمەیڵ بۆ MaydanGo',
     nameLabel: 'ناوت', emailLabel: 'ئیمەیڵەکەت', messageLabel: 'پەیامەکەت',
     openEmailDraft: 'کردنەوەی ڕەشنووسی ئیمەیڵ', draftReady: 'ڕەشنووسی ئیمەیڵ بۆ پێداچوونەوە ئامادەیە.',
@@ -1140,14 +1158,24 @@ function HelpPage({ t }: { t: Copy }) {
 function ContactPage({ t }: { t: Copy }) {
   const email = verifiedContactEmail(destination('VITE_CONTACT_EMAIL'));
   const [draftHref, setDraftHref] = useState('');
+  const [draftText, setDraftText] = useState('');
+  const [copyStatus, setCopyStatus] = useState<'copied' | 'unavailable' | ''>('');
   const initialTopic = initialContactTopic(window.location.search);
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
     defaultValues: { topic: initialTopic, name: '', replyEmail: '', message: '', partnerOrganization: '', partnerCity: '', partnerServices: '' },
   });
   const selectedTopic = form.watch('topic');
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      setDraftHref('');
+      setDraftText('');
+      setCopyStatus('');
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
   const handleSubmit = (values: ContactFormValues) => {
-    const href = createContactEmailDraft(email, values, {
+    const draft = createContactEmailDraftDetails(email, values, {
       contactTopic: t.contactTopic,
       nameLabel: t.nameLabel,
       emailLabel: t.emailLabel,
@@ -1162,8 +1190,18 @@ function ContactPage({ t }: { t: Copy }) {
       partnerCityLabel: t.partnerCityLabel,
       partnerServicesLabel: t.partnerServicesLabel,
     });
-    if (!href) return;
-    setDraftHref(href);
+    if (!draft) return;
+    setDraftHref(draft.href);
+    setDraftText(createContactEmailCopyText(draft, {
+      recipientLabel: t.recipientLabel,
+      subjectLabel: t.subjectLabel,
+    }));
+    setCopyStatus('');
+  };
+  const handleCopy = async () => {
+    if (!draftText) return;
+    const copied = await copyContactText(draftText, navigator.clipboard);
+    setCopyStatus(copied ? 'copied' : 'unavailable');
   };
   return <>
     <PageHero kicker={t.contact} title={t.contactTitle} description={t.contactIntro} />
@@ -1204,7 +1242,19 @@ function ContactPage({ t }: { t: Copy }) {
               </FormItem>} />
               <button disabled={!email} className="inline-flex w-fit items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50" type="submit" data-testid="button-contact-enquiry">{t.previewEnquiry}<ArrowUpRight size={15} /></button>
               {!email && <p className="text-xs leading-5 text-muted-foreground" role="status">{t.contactUnavailable}</p>}
-              {draftHref && <div className="rounded-xl bg-muted p-4" role="status"><p className="text-sm font-medium">{t.draftReady}</p><a href={draftHref} className="mt-2 inline-flex items-center gap-2 font-bold text-primary" data-testid="link-open-email-draft">{t.openEmailDraft}<ArrowUpRight size={14} /></a></div>}
+              {draftHref && draftText && <div className="rounded-xl bg-muted p-4">
+                <p className="text-sm font-medium" role="status" aria-live="polite">{t.draftReady}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-4">
+                  <a href={draftHref} className="inline-flex items-center gap-2 font-bold text-primary" data-testid="link-open-email-draft">{t.openEmailDraft}<ArrowUpRight size={14} /></a>
+                  <button type="button" onClick={handleCopy} className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-bold text-foreground" data-testid="button-copy-enquiry">{t.copyEnquiry}</button>
+                </div>
+                {copyStatus === 'copied' && <p className="mt-3 text-sm text-foreground/70" role="status" aria-live="polite">{t.copySuccess}</p>}
+                {copyStatus === 'unavailable' && <div className="mt-3 grid gap-2">
+                  <p className="text-sm text-foreground/70" role="status" aria-live="polite">{t.copyUnavailable}</p>
+                  <label htmlFor="input-copy-enquiry-details" className="text-xs font-semibold text-foreground/70">{t.copyDetailsLabel}</label>
+                  <Textarea id="input-copy-enquiry-details" readOnly rows={6} value={draftText} onFocus={event => event.currentTarget.select()} data-testid="textarea-copy-enquiry-details" />
+                </div>}
+              </div>}
             </form>
           </Form>
         </div>

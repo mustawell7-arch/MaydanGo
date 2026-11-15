@@ -10,6 +10,7 @@
 - [Expo tunnel subdomains](expo-tunnel-subdomains.md) — Fixed ngrok subdomains can remain occupied after a local workflow stops; app-specific suffixes avoid prior endpoints.
 - [Expo phone launch routing](expo-phone-launch.md) — A Replit-branded phone 404 can be separate from a healthy Expo tunnel; verify the Expo manifest and bundles before changing app code.
 - [Expo web font loading](expo-web-font-loading.md) — Keep web routes visible while fonts load; waiting on font readiness can leave the preview blank.
+- [Expo web Clerk loading](expo-web-clerk-loading.md) — Keep Clerk active without blocking public routes on browser session restore; retain native auth and device gates.
 - [Partner operations platform](partner-operations-platform.md) — MaydanGo partner tools belong in the web portal.
 - [Corporate portal scope](corporate-portal-scope.md) — Start with company employee enrollment only; keep HR away from member activity and finance.
 - [Instructor access approval](instructor-access-approval.md) — Instructors request access; admins approve and assign specific courses/sessions; instructor views stay limited to those items.

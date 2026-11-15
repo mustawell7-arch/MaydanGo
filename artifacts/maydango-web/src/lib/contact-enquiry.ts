@@ -20,6 +20,17 @@ export type ContactDraftLabels = {
   partnerServicesLabel?: string;
 };
 
+export type ContactEmailDraftDetails = {
+  recipient: string;
+  subject: string;
+  body: string;
+  href: string;
+};
+
+type ClipboardWriter = {
+  writeText: (text: string) => Promise<void>;
+};
+
 export function verifiedContactEmail(value: string | undefined): string {
   const email = value?.trim() ?? "";
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : "";
@@ -32,11 +43,11 @@ export function initialContactTopic(search: string): ContactTopic {
     : "membership";
 }
 
-export function createContactEmailDraft(
+export function createContactEmailDraftDetails(
   recipient: string,
   values: ContactSubmission,
   labels: ContactDraftLabels,
-): string | null {
+): ContactEmailDraftDetails | null {
   const email = verifiedContactEmail(recipient);
   if (!email) return null;
 
@@ -61,5 +72,38 @@ export function createContactEmailDraft(
     values.message,
   ].join("\n");
 
-  return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return {
+    recipient: email,
+    subject,
+    body,
+    href: `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+  };
+}
+
+export function createContactEmailCopyText(
+  draft: ContactEmailDraftDetails,
+  labels: { recipientLabel: string; subjectLabel: string },
+): string {
+  return `${labels.recipientLabel}: ${draft.recipient}\n${labels.subjectLabel}: ${draft.subject}\n\n${draft.body}`;
+}
+
+export async function copyContactText(
+  text: string,
+  clipboard: ClipboardWriter | undefined,
+): Promise<boolean> {
+  if (!clipboard?.writeText) return false;
+  try {
+    await clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function createContactEmailDraft(
+  recipient: string,
+  values: ContactSubmission,
+  labels: ContactDraftLabels,
+): string | null {
+  return createContactEmailDraftDetails(recipient, values, labels)?.href ?? null;
 }

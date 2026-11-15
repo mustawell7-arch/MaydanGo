@@ -131,7 +131,11 @@ export default function RootLayout() {
       tokenCache={tokenCache}
       proxyUrl={proxyUrl}
     >
-      <ClerkLoaded>{appTree}</ClerkLoaded>
+      {Platform.OS === 'web'
+        // The browser can render public routes while Clerk restores its session.
+        // The Clerk provider and server-side auth checks remain in place.
+        ? appTree
+        : <ClerkLoaded>{appTree}</ClerkLoaded>}
     </ClerkProvider>
   );
 }
