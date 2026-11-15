@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { ClerkProvider, SignIn, SignUp, useAuth, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
@@ -19,18 +19,32 @@ import { Textarea } from '@/components/ui/textarea';
 import NotFound from '@/pages/not-found';
 import approvedCopy from '@/approved-copy.json';
 import { Route, Switch, useLocation, Router as WouterRouter, Link, Redirect } from 'wouter';
-import PartnerPortal from '@/pages/partner-portal';
-import SponsoredPlacementsManagerPage from '@/pages/sponsored-placements-manager';
-import FinanceConsole from '@/pages/finance-console';
 import { PublicCourseBrowser, PublicFacilityBrowser, PublicHomeShowcase } from '@/pages/public-catalog-sections';
-import MemberAccountPage from '@/pages/member-account';
 import { PrivacyPolicyPage } from '@/pages/privacy-policy';
-import { AdminInstructorAccessPage, InstructorPortalPage } from '@/pages/instructor-access';
-import SupportDeskPage from '@/pages/support-desk';
-import SuperAdminPage from '@/pages/super-admin';
 import { createContactEmailDraft, initialContactTopic, verifiedContactEmail } from '@/lib/contact-enquiry';
-import { CorporateAdminPage, CorporateInvitePage, CorporatePortalPage } from '@/pages/corporate-workspace';
 import './index.css';
+
+const PartnerPortal = lazy(() => import('@/pages/partner-portal'));
+const SponsoredPlacementsManagerPage = lazy(() => import('@/pages/sponsored-placements-manager'));
+const FinanceConsole = lazy(() => import('@/pages/finance-console'));
+const MemberAccountPage = lazy(() => import('@/pages/member-account'));
+const AdminInstructorAccessPage = lazy(() =>
+  import('@/pages/instructor-access').then(module => ({ default: module.AdminInstructorAccessPage })),
+);
+const InstructorPortalPage = lazy(() =>
+  import('@/pages/instructor-access').then(module => ({ default: module.InstructorPortalPage })),
+);
+const SupportDeskPage = lazy(() => import('@/pages/support-desk'));
+const SuperAdminPage = lazy(() => import('@/pages/super-admin'));
+const CorporateAdminPage = lazy(() =>
+  import('@/pages/corporate-workspace').then(module => ({ default: module.CorporateAdminPage })),
+);
+const CorporateInvitePage = lazy(() =>
+  import('@/pages/corporate-workspace').then(module => ({ default: module.CorporateInvitePage })),
+);
+const CorporatePortalPage = lazy(() =>
+  import('@/pages/corporate-workspace').then(module => ({ default: module.CorporatePortalPage })),
+);
 
 const queryClient = new QueryClient();
 const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
@@ -1269,22 +1283,24 @@ function ContentRouter() {
 }
 
 function Router() {
-  return <Switch>
-    <Route path="/super-admin" component={SuperAdminPage} />
-    <Route path="/admin/corporate" component={CorporateAdminPage} />
-    <Route path="/corporate-portal" component={CorporatePortalPage} />
-    <Route path="/corporate-invite" component={CorporateInvitePage} />
-    <Route path="/support-desk" component={SupportDeskPage} />
-    <Route path="/partner-portal" component={PartnerPortal} />
-    <Route path="/finance" component={FinanceConsole} />
-    <Route path="/instructor-portal" component={InstructorPortalPage} />
-    <Route path="/admin/instructor-access" component={AdminInstructorAccessPage} />
-    <Route path="/admin/sponsored-placements" component={SponsoredPlacementsManagerPage} />
-    <Route path="/sign-in/*?" component={SignInPage} />
-    <Route path="/sign-up/*?" component={SignUpPage} />
-    <Route path="/" component={HomeRedirect} />
-    <Route component={ContentRouter} />
-  </Switch>;
+  return <Suspense fallback={<main className="flex min-h-[50vh] items-center justify-center px-5 py-12 text-center text-sm text-muted-foreground" role="status" aria-live="polite">{translations[savedLanguage()].loading}</main>}>
+    <Switch>
+      <Route path="/super-admin" component={SuperAdminPage} />
+      <Route path="/admin/corporate" component={CorporateAdminPage} />
+      <Route path="/corporate-portal" component={CorporatePortalPage} />
+      <Route path="/corporate-invite" component={CorporateInvitePage} />
+      <Route path="/support-desk" component={SupportDeskPage} />
+      <Route path="/partner-portal" component={PartnerPortal} />
+      <Route path="/finance" component={FinanceConsole} />
+      <Route path="/instructor-portal" component={InstructorPortalPage} />
+      <Route path="/admin/instructor-access" component={AdminInstructorAccessPage} />
+      <Route path="/admin/sponsored-placements" component={SponsoredPlacementsManagerPage} />
+      <Route path="/sign-in/*?" component={SignInPage} />
+      <Route path="/sign-up/*?" component={SignUpPage} />
+      <Route path="/" component={HomeRedirect} />
+      <Route component={ContentRouter} />
+    </Switch>
+  </Suspense>;
 }
 
 function HomeRedirect() {
