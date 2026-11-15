@@ -834,11 +834,12 @@ export function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
     event.preventDefault();
     const ticketId = selectedTicketId;
     const body = replyText.trim();
-    if (!ticketId || !body) return;
+    const ticketLanguage = conversation.data?.language;
+    if (!ticketId || !body || !ticketLanguage) return;
     setReplyNotice('');
     setAttachmentsBusy(true);
     try {
-      const updated = await replyTicket.mutateAsync({ id: ticketId, data: { message: body, language: lang } });
+      const updated = await replyTicket.mutateAsync({ id: ticketId, data: { message: body, language: ticketLanguage } });
       const lastMessage = updated.messages[updated.messages.length - 1];
       let attachmentFailed = false;
       if (replyFiles.length && lastMessage?.id) {

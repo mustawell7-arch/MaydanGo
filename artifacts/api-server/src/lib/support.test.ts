@@ -485,6 +485,12 @@ test("support conversations are private, triaged, audited, and replyable", async
   });
   assert.equal(memberReply.status, 201);
   assert.equal(memberReply.data.status, "in_progress");
+  assert.equal(memberReply.data.messages.at(-1).language, created.data.language);
+  assert.ok(memberReply.data.events.some((event: { action: string; nextStatus: string | null }) =>
+    event.action === "member_reopened" && event.nextStatus === "in_progress"));
+  assert.equal((await call(`/member/support/tickets/${created.data.id}/replies`, bob, "POST", {
+    message: "This reply must not be added to another account's ticket.", language: "en",
+  })).status, 404);
 
   const closed = await call(`/support/staff/tickets/${created.data.id}`, adminId, "PATCH", { status: "closed" });
   assert.equal(closed.status, 200);

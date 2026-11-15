@@ -285,7 +285,7 @@ memberSupportRouter.post("/support/tickets/:id/replies", async (req, res) => {
       : ticket.status === "waiting_member" ? "in_progress" : ticket.status;
     await tx.insert(supportMessages).values({
       id: randomUUID(), ticketId: id, authorId: ownerId, authorRole: "member",
-      body: parsed.data.message, language: parsed.data.language, createdAt: now,
+      body: parsed.data.message, language: ticket.language, createdAt: now,
     });
     await tx.update(supportTickets).set({
       status: nextStatus, updatedAt: now, lastMessageAt: now, closedAt: null,
