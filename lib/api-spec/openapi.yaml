@@ -464,6 +464,14 @@ paths:
     $ref: "./operations.yaml#/paths/~1super-admin~1guardian-consents~1{id}~1document"
   /operations/quality:
     $ref: "./operations.yaml#/paths/~1operations~1quality"
+  /operations/quality/documents/upload-url:
+    $ref: "./operations.yaml#/paths/~1operations~1quality~1documents~1upload-url"
+  /operations/quality/documents/{id}/complete:
+    $ref: "./operations.yaml#/paths/~1operations~1quality~1documents~1{id}~1complete"
+  /operations/quality/documents/{id}/file:
+    $ref: "./operations.yaml#/paths/~1operations~1quality~1documents~1{id}~1file"
+  /operations/quality/documents/{id}/review:
+    $ref: "./operations.yaml#/paths/~1operations~1quality~1documents~1{id}~1review"
   /operations/quality/emergency-contacts/{id}:
     $ref: "./operations.yaml#/paths/~1operations~1quality~1emergency-contacts~1{id}"
   /operations/quality/assessments:

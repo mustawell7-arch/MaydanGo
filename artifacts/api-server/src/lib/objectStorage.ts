@@ -64,6 +64,18 @@ export class ObjectStorageService {
     return { uploadURL, documentPath: `/objects/${objectName}` };
   }
 
+  async createPartnerComplianceUpload(partnerId: string, facilityId: string, documentId: string) {
+    if (!/^[A-Za-z0-9_-]{1,160}$/.test(partnerId)
+      || !/^[A-Za-z0-9_-]{1,160}$/.test(facilityId)
+      || !/^[0-9a-f-]{36}$/i.test(documentId)) {
+      throw new Error("Invalid partner compliance document identifier.");
+    }
+    const objectName = `partner-compliance/${partnerId}/${facilityId}/${documentId}`;
+    const { bucketName, objectName: bucketObjectName } = parseObjectPath(`${this.privateDir()}/${objectName}`);
+    const uploadURL = await signUpload(bucketName, bucketObjectName);
+    return { uploadURL, documentPath: `/objects/${objectName}` };
+  }
+
   async createSupportAttachmentUpload(ticketId: string, attachmentId: string) {
     if (!/^[0-9a-f-]{36}$/i.test(ticketId) || !/^[0-9a-f-]{36}$/i.test(attachmentId)) {
       throw new Error("Invalid support attachment identifier.");

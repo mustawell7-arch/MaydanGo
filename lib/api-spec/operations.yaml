@@ -690,6 +690,64 @@ paths:
         "400": { description: Invalid facility contact details }
         "403": { description: "Only authorized partner or safety administrators can save contacts, and only admins can verify them" }
         "404": { description: Facility not found within the operator's scope }
+  /operations/quality/documents/upload-url:
+    post:
+      operationId: requestPartnerComplianceUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerComplianceDocumentUploadInput" }
+      responses:
+        "200":
+          description: Short-lived private upload URL for an approved partner facility
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerComplianceDocumentUpload" }
+        "400": { description: Invalid document details or unsupported file size }
+        "403": { description: Partner account required }
+        "404": { description: Facility not found within the partner's scope }
+  /operations/quality/documents/{id}/complete:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: completePartnerComplianceUpload
+      responses:
+        "200":
+          description: Uploaded file validated and submitted for safety review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerComplianceDocument" }
+        "400": { description: Uploaded file is missing or does not meet type and size limits }
+        "404": { description: Upload not found within the operator's scope }
+  /operations/quality/documents/{id}/file:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: downloadPartnerComplianceDocument
+      responses:
+        "200":
+          description: Private partner compliance document for its owner or an authorized safety administrator
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "404": { description: Document not found within the operator's scope }
+  /operations/quality/documents/{id}/review:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: reviewPartnerComplianceDocument
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerComplianceDocumentReviewInput" }
+      responses:
+        "200":
+          description: Partner document decision recorded and audited
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerComplianceDocument" }
+        "400": { description: Invalid document decision or missing rejection reason }
+        "403": { description: Only a safety administrator can review partner documents }
+        "404": { description: Document not found }
   /operations/quality/assessments:
     post:
       operationId: createFacilityQualityAssessment
@@ -3782,6 +3840,51 @@ components:
         documentType: { type: string, enum: [licence, insurance] }
         expiresOn: { type: string, format: date }
         daysRemaining: { type: integer }
+    PartnerComplianceDocument:
+      type: object
+      additionalProperties: false
+      required: [id, facilityId, partnerId, partnerName, facility, city, documentType, documentName, contentType, fileSize, expiresOn, status, reviewNote, reviewedAt, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        facilityId: { type: string }
+        partnerId: { type: string }
+        partnerName: { type: string }
+        facility: { type: string }
+        city: { type: string }
+        documentType: { type: string, enum: [licence, insurance, supporting_document] }
+        documentName: { type: string }
+        contentType: { type: ["string", "null"], enum: [application/pdf, image/jpeg, image/png, null] }
+        fileSize: { type: ["integer", "null"], minimum: 1, maximum: 10485760 }
+        expiresOn: { type: ["string", "null"], format: date }
+        status: { type: string, enum: [upload_pending, submitted, approved, rejected] }
+        reviewNote: { type: ["string", "null"] }
+        reviewedAt: { type: ["string", "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    PartnerComplianceDocumentUploadInput:
+      type: object
+      additionalProperties: false
+      required: [facilityId, documentType, documentName, size, expiresOn]
+      properties:
+        facilityId: { type: string, minLength: 1, maxLength: 160 }
+        documentType: { type: string, enum: [licence, insurance, supporting_document] }
+        documentName: { type: string, minLength: 1, maxLength: 180 }
+        size: { type: integer, minimum: 1, maximum: 10485760 }
+        expiresOn: { type: ["string", "null"], format: date }
+    PartnerComplianceDocumentUpload:
+      type: object
+      additionalProperties: false
+      required: [id, uploadURL]
+      properties:
+        id: { type: string, format: uuid }
+        uploadURL: { type: string, format: uri }
+    PartnerComplianceDocumentReviewInput:
+      type: object
+      additionalProperties: false
+      required: [status, reviewNote]
+      properties:
+        status: { type: string, enum: [approved, rejected] }
+        reviewNote: { type: ["string", "null"], maxLength: 1000 }
     FacilityEmergencyContact:
       type: object
       additionalProperties: false
@@ -3810,7 +3913,7 @@ components:
     FacilityQualityControl:
       type: object
       additionalProperties: false
-      required: [role, facilities, assessments, incidents, expiringDocuments, emergencyContacts]
+      required: [role, facilities, assessments, incidents, expiringDocuments, emergencyContacts, complianceDocuments]
       properties:
         role: { type: string, enum: [fraud_compliance_admin, partner, super_admin] }
         facilities: { type: array, items: { $ref: "#/components/schemas/FacilityQualityFacility" } }
@@ -3818,6 +3921,7 @@ components:
         incidents: { type: array, items: { $ref: "#/components/schemas/FacilityQualityIncident" } }
         expiringDocuments: { type: array, items: { $ref: "#/components/schemas/FacilityDocumentExpiryAlert" } }
         emergencyContacts: { type: array, items: { $ref: "#/components/schemas/FacilityEmergencyContact" } }
+        complianceDocuments: { type: array, items: { $ref: "#/components/schemas/PartnerComplianceDocument" } }
     ReviewCategoryRatings:
       type: object
       additionalProperties: false

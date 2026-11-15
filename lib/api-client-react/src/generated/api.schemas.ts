@@ -3299,6 +3299,117 @@ export interface FacilityDocumentExpiryAlert {
   daysRemaining: number;
 }
 
+export type PartnerComplianceDocumentDocumentType = typeof PartnerComplianceDocumentDocumentType[keyof typeof PartnerComplianceDocumentDocumentType];
+
+
+export const PartnerComplianceDocumentDocumentType = {
+  licence: 'licence',
+  insurance: 'insurance',
+  supporting_document: 'supporting_document',
+} as const;
+
+/**
+ * @nullable
+ */
+export type PartnerComplianceDocumentContentType = typeof PartnerComplianceDocumentContentType[keyof typeof PartnerComplianceDocumentContentType] | null;
+
+
+export const PartnerComplianceDocumentContentType = {
+  'application/pdf': 'application/pdf',
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+} as const;
+
+export type PartnerComplianceDocumentStatus = typeof PartnerComplianceDocumentStatus[keyof typeof PartnerComplianceDocumentStatus];
+
+
+export const PartnerComplianceDocumentStatus = {
+  upload_pending: 'upload_pending',
+  submitted: 'submitted',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface PartnerComplianceDocument {
+  id: string;
+  facilityId: string;
+  partnerId: string;
+  partnerName: string;
+  facility: string;
+  city: string;
+  documentType: PartnerComplianceDocumentDocumentType;
+  documentName: string;
+  /** @nullable */
+  contentType: PartnerComplianceDocumentContentType;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     * @nullable
+     */
+  fileSize: number | null;
+  /** @nullable */
+  expiresOn: string | null;
+  status: PartnerComplianceDocumentStatus;
+  /** @nullable */
+  reviewNote: string | null;
+  /** @nullable */
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PartnerComplianceDocumentUploadInputDocumentType = typeof PartnerComplianceDocumentUploadInputDocumentType[keyof typeof PartnerComplianceDocumentUploadInputDocumentType];
+
+
+export const PartnerComplianceDocumentUploadInputDocumentType = {
+  licence: 'licence',
+  insurance: 'insurance',
+  supporting_document: 'supporting_document',
+} as const;
+
+export interface PartnerComplianceDocumentUploadInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  facilityId: string;
+  documentType: PartnerComplianceDocumentUploadInputDocumentType;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  documentName: string;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+  /** @nullable */
+  expiresOn: string | null;
+}
+
+export interface PartnerComplianceDocumentUpload {
+  id: string;
+  uploadURL: string;
+}
+
+export type PartnerComplianceDocumentReviewInputStatus = typeof PartnerComplianceDocumentReviewInputStatus[keyof typeof PartnerComplianceDocumentReviewInputStatus];
+
+
+export const PartnerComplianceDocumentReviewInputStatus = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface PartnerComplianceDocumentReviewInput {
+  status: PartnerComplianceDocumentReviewInputStatus;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  reviewNote: string | null;
+}
+
 export type FacilityEmergencyContactVerificationStatus = typeof FacilityEmergencyContactVerificationStatus[keyof typeof FacilityEmergencyContactVerificationStatus];
 
 
@@ -3358,6 +3469,7 @@ export interface FacilityQualityControl {
   incidents: FacilityQualityIncident[];
   expiringDocuments: FacilityDocumentExpiryAlert[];
   emergencyContacts: FacilityEmergencyContact[];
+  complianceDocuments: PartnerComplianceDocument[];
 }
 
 export interface ReviewCategoryRatings {

@@ -6,7 +6,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import express from "express";
 import {
   db, facilityProfiles, facilityQualityAssessments, facilityQualityEmergencyContacts, facilityQualityIncidents,
-  operationAudit, operators, partners, pool,
+  operationAudit, operators, partners, partnerComplianceDocuments, pool,
 } from "@workspace/db";
 import qualityControlRouter from "./quality-control";
 import operationsRouter from "./operations";
@@ -26,6 +26,7 @@ const userIds = [adminUser, partnerOperationsAdmin, partnerUserA, partnerUserB, 
 const facilityIds = [facilityA, facilityB];
 const assessmentIds: string[] = [];
 const incidentIds: string[] = [];
+const complianceDocumentIds: string[] = [];
 let server: Server | null = null;
 const dateOffset = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 
@@ -75,6 +76,7 @@ after(async () => {
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
   if (incidentIds.length) await db.delete(facilityQualityIncidents).where(inArray(facilityQualityIncidents.id, incidentIds));
   if (assessmentIds.length) await db.delete(facilityQualityAssessments).where(inArray(facilityQualityAssessments.id, assessmentIds));
+  if (complianceDocumentIds.length) await db.delete(partnerComplianceDocuments).where(inArray(partnerComplianceDocuments.id, complianceDocumentIds));
   await db.delete(facilityQualityEmergencyContacts)
     .where(inArray(facilityQualityEmergencyContacts.facilityId, facilityIds));
   await db.delete(facilityProfiles).where(inArray(facilityProfiles.id, facilityIds));
@@ -116,12 +118,14 @@ test("facility quality records are scoped, validated, and audited", async () => 
     incidents: unknown[];
     expiringDocuments: unknown[];
     emergencyContacts: unknown[];
+    complianceDocuments: unknown[];
   };
   assert.deepEqual(scopedData.facilities.map(item => item.id), [facilityA]);
   assert.equal(scopedData.assessments.length, 0);
   assert.equal(scopedData.incidents.length, 0);
   assert.equal(scopedData.expiringDocuments.length, 0);
   assert.equal(scopedData.emergencyContacts.length, 0);
+  assert.equal(scopedData.complianceDocuments.length, 0);
 
   const emergencyContactBody = {
     contactName: "Venue safety lead",
@@ -188,6 +192,69 @@ test("facility quality records are scoped, validated, and audited", async () => 
   assert.deepEqual(firstAlerts.map(item => item.documentType), ["licence", "insurance"]);
   assert.deepEqual(firstAlerts.map(item => item.daysRemaining), [10, 20]);
 
+  const approvedDocumentId = randomUUID();
+  const reviewDocumentId = randomUUID();
+  const otherPartnerDocumentId = randomUUID();
+  const pendingDocumentId = randomUUID();
+  complianceDocumentIds.push(approvedDocumentId, reviewDocumentId, otherPartnerDocumentId, pendingDocumentId);
+  await db.insert(partnerComplianceDocuments).values([
+    {
+      id: approvedDocumentId, partnerId: partnerA, facilityId: facilityA, documentType: "licence",
+      documentName: "operating-licence.pdf", documentPath: `/objects/partner-compliance/${partnerA}/${facilityA}/${approvedDocumentId}`,
+      contentType: "application/pdf", fileSize: 2048, expiresOn: dateOffset(3), status: "approved",
+      uploadedBy: partnerUserA, reviewedBy: adminUser, reviewedAt: new Date(),
+    },
+    {
+      id: reviewDocumentId, partnerId: partnerA, facilityId: facilityA, documentType: "supporting_document",
+      documentName: "facility-plan.png", documentPath: `/objects/partner-compliance/${partnerA}/${facilityA}/${reviewDocumentId}`,
+      contentType: "image/png", fileSize: 1024, expiresOn: null, status: "submitted", uploadedBy: partnerUserA,
+    },
+    {
+      id: otherPartnerDocumentId, partnerId: partnerB, facilityId: facilityB, documentType: "insurance",
+      documentName: "insurance.pdf", documentPath: `/objects/partner-compliance/${partnerB}/${facilityB}/${otherPartnerDocumentId}`,
+      contentType: "application/pdf", fileSize: 4096, expiresOn: dateOffset(2), status: "submitted", uploadedBy: partnerUserB,
+    },
+    {
+      id: pendingDocumentId, partnerId: partnerA, facilityId: facilityA, documentType: "insurance",
+      documentName: "pending-insurance.pdf", documentPath: `/objects/partner-compliance/${partnerA}/${facilityA}/${pendingDocumentId}`,
+      expiresOn: dateOffset(1), status: "upload_pending", uploadedBy: partnerUserA,
+    },
+  ]);
+  const partnerDocumentsView = await call("/operations/quality", partnerUserA);
+  assert.equal(partnerDocumentsView.status, 200);
+  const partnerDocuments = (partnerDocumentsView.data as { complianceDocuments: Array<{ id: string; status: string }> }).complianceDocuments;
+  assert.deepEqual(partnerDocuments.map(item => item.id).sort(), [approvedDocumentId, reviewDocumentId].sort());
+  assert.ok(partnerDocuments.every(item => item.id !== otherPartnerDocumentId && item.id !== pendingDocumentId));
+  const adminDocumentsView = await call("/operations/quality", adminUser);
+  const adminDocuments = (adminDocumentsView.data as {
+    complianceDocuments: Array<{ id: string }>;
+    expiringDocuments: Array<{ documentType: string; daysRemaining: number }>;
+  });
+  assert.deepEqual(adminDocuments.complianceDocuments.map(item => item.id).sort(),
+    [approvedDocumentId, reviewDocumentId, otherPartnerDocumentId].sort());
+  assert.deepEqual(adminDocuments.expiringDocuments.map(item => item.daysRemaining), [3, 20]);
+  assert.equal((await call(`/operations/quality/documents/${approvedDocumentId}/file`, partnerUserB)).status, 404);
+  const invalidScopeUpload = await call("/operations/quality/documents/upload-url", partnerUserA, "POST", {
+    facilityId: facilityB, documentType: "licence", documentName: "licence.pdf", size: 1024, expiresOn: dateOffset(30),
+  });
+  assert.equal(invalidScopeUpload.status, 404);
+  const unsupportedUpload = await call("/operations/quality/documents/upload-url", partnerUserA, "POST", {
+    facilityId: facilityA, documentType: "licence", documentName: "licence.exe", size: 1024, expiresOn: dateOffset(30),
+  });
+  assert.equal(unsupportedUpload.status, 400);
+  assert.equal((await call(`/operations/quality/documents/${pendingDocumentId}/complete`, partnerUserB, "POST")).status, 404);
+  assert.equal((await call(`/operations/quality/documents/${reviewDocumentId}/review`, partnerUserA, "PATCH", {
+    status: "approved", reviewNote: null,
+  })).status, 403);
+  assert.equal((await call(`/operations/quality/documents/${reviewDocumentId}/review`, adminUser, "PATCH", {
+    status: "rejected", reviewNote: null,
+  })).status, 400);
+  const reviewedDocument = await call(`/operations/quality/documents/${reviewDocumentId}/review`, adminUser, "PATCH", {
+    status: "rejected", reviewNote: "The uploaded facility plan is not readable.",
+  });
+  assert.equal(reviewedDocument.status, 200);
+  assert.equal((reviewedDocument.data as { status: string }).status, "rejected");
+
   const refreshedAssessmentResult = await call("/operations/quality/assessments", adminUser, "POST", {
     ...assessmentBody,
     reviewedOn: dateOffset(-1),
@@ -199,7 +266,11 @@ test("facility quality records are scoped, validated, and audited", async () => 
   assessmentIds.push(refreshedAssessment.id);
   const refreshedDashboard = await call("/operations/quality", adminUser);
   assert.equal(refreshedDashboard.status, 200);
-  assert.equal((refreshedDashboard.data as { expiringDocuments: unknown[] }).expiringDocuments.length, 0);
+  assert.deepEqual(
+    (refreshedDashboard.data as { expiringDocuments: Array<{ daysRemaining: number }> }).expiringDocuments
+      .map(item => item.daysRemaining),
+    [3],
+  );
 
   const attemptedApproval = await call(`/operations/quality/assessments/${assessment.id}`, adminUser, "PATCH", {
     status: "approved", correctiveAction: null, correctiveDueOn: null,
@@ -242,11 +313,19 @@ test("facility quality records are scoped, validated, and audited", async () => 
     incidents: Array<{ id: string; status: string }>;
     expiringDocuments: unknown[];
     emergencyContacts: Array<{ facilityId: string; contactPhone: string; verificationStatus: string }>;
+    complianceDocuments: Array<{ id: string; status: string }>;
   };
   assert.deepEqual(history.assessments.map(item => item.id), [refreshedAssessment.id, assessment.id]);
   assert.deepEqual(history.incidents.map(item => item.id), [incident.id]);
   assert.equal(history.incidents[0].status, "resolved");
-  assert.equal(history.expiringDocuments.length, 0);
+  assert.deepEqual(
+    (history.expiringDocuments as Array<{ daysRemaining: number }>).map(item => item.daysRemaining),
+    [3],
+  );
+  assert.deepEqual(
+    history.complianceDocuments.map(item => [item.id, item.status]).sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
+    [[approvedDocumentId, "approved"], [reviewDocumentId, "rejected"]].sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
+  );
   assert.deepEqual(history.emergencyContacts.map(item => ({
     facilityId: item.facilityId,
     contactPhone: item.contactPhone,
@@ -270,4 +349,10 @@ test("facility quality records are scoped, validated, and audited", async () => 
   const contactAuditRows = auditRows.filter(row => row.action === "facility.quality.emergency_contact.updated");
   assert.equal(contactAuditRows.length, 3);
   assert.ok(contactAuditRows.every(row => !row.detail?.includes("770")));
+  const documentAuditRows = await db.select().from(operationAudit).where(and(
+    eq(operationAudit.targetId, reviewDocumentId),
+    eq(operationAudit.action, "partner.compliance_document.rejected"),
+  ));
+  assert.equal(documentAuditRows.length, 1);
+  assert.ok(!documentAuditRows[0].detail?.includes("facility-plan.png"));
 });

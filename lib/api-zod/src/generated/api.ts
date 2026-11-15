@@ -4836,6 +4836,10 @@ export const DownloadSuperAdminGuardianConsentDocumentParams = zod.object({
 export const DownloadSuperAdminGuardianConsentDocumentResponse = zod.unknown()
 
 
+export const getFacilityQualityControlResponseComplianceDocumentsItemFileSizeMax = 10485760;
+
+
+
 export const GetFacilityQualityControlResponse = zod.object({
   "role": zod.enum(['fraud_compliance_admin', 'partner', 'super_admin']),
   "facilities": zod.array(zod.object({
@@ -4916,7 +4920,119 @@ export const GetFacilityQualityControlResponse = zod.object({
   "verificationStatus": zod.enum(['pending', 'verified']),
   "verifiedAt": zod.coerce.date().nullable(),
   "updatedAt": zod.coerce.date()
+})),
+  "complianceDocuments": zod.array(zod.object({
+  "id": zod.string(),
+  "facilityId": zod.string(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "documentType": zod.enum(['licence', 'insurance', 'supporting_document']),
+  "documentName": zod.string(),
+  "contentType": zod.union([zod.literal('application/pdf'),zod.literal('image/jpeg'),zod.literal('image/png'),zod.literal(null)]).nullable(),
+  "fileSize": zod.int().min(1).max(getFacilityQualityControlResponseComplianceDocumentsItemFileSizeMax).nullable(),
+  "expiresOn": zod.coerce.date().nullable(),
+  "status": zod.enum(['upload_pending', 'submitted', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
 }))
+})
+
+
+export const requestPartnerComplianceUploadUrlBodyFacilityIdMax = 160;
+
+export const requestPartnerComplianceUploadUrlBodyDocumentNameMax = 180;
+
+export const requestPartnerComplianceUploadUrlBodySizeMax = 10485760;
+
+
+
+export const RequestPartnerComplianceUploadUrlBody = zod.object({
+  "facilityId": zod.string().min(1).max(requestPartnerComplianceUploadUrlBodyFacilityIdMax),
+  "documentType": zod.enum(['licence', 'insurance', 'supporting_document']),
+  "documentName": zod.string().min(1).max(requestPartnerComplianceUploadUrlBodyDocumentNameMax),
+  "size": zod.int().min(1).max(requestPartnerComplianceUploadUrlBodySizeMax),
+  "expiresOn": zod.coerce.date().nullable()
+})
+
+export const RequestPartnerComplianceUploadUrlResponse = zod.object({
+  "id": zod.uuid(),
+  "uploadURL": zod.url()
+})
+
+
+export const CompletePartnerComplianceUploadParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const completePartnerComplianceUploadResponseFileSizeMax = 10485760;
+
+
+
+export const CompletePartnerComplianceUploadResponse = zod.object({
+  "id": zod.string(),
+  "facilityId": zod.string(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "documentType": zod.enum(['licence', 'insurance', 'supporting_document']),
+  "documentName": zod.string(),
+  "contentType": zod.union([zod.literal('application/pdf'),zod.literal('image/jpeg'),zod.literal('image/png'),zod.literal(null)]).nullable(),
+  "fileSize": zod.int().min(1).max(completePartnerComplianceUploadResponseFileSizeMax).nullable(),
+  "expiresOn": zod.coerce.date().nullable(),
+  "status": zod.enum(['upload_pending', 'submitted', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const DownloadPartnerComplianceDocumentParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DownloadPartnerComplianceDocumentResponse = zod.unknown()
+
+
+export const ReviewPartnerComplianceDocumentParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const reviewPartnerComplianceDocumentBodyReviewNoteMax = 1000;
+
+
+
+export const ReviewPartnerComplianceDocumentBody = zod.object({
+  "status": zod.enum(['approved', 'rejected']),
+  "reviewNote": zod.string().max(reviewPartnerComplianceDocumentBodyReviewNoteMax).nullable()
+})
+
+export const reviewPartnerComplianceDocumentResponseFileSizeMax = 10485760;
+
+
+
+export const ReviewPartnerComplianceDocumentResponse = zod.object({
+  "id": zod.string(),
+  "facilityId": zod.string(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "documentType": zod.enum(['licence', 'insurance', 'supporting_document']),
+  "documentName": zod.string(),
+  "contentType": zod.union([zod.literal('application/pdf'),zod.literal('image/jpeg'),zod.literal('image/png'),zod.literal(null)]).nullable(),
+  "fileSize": zod.int().min(1).max(reviewPartnerComplianceDocumentResponseFileSizeMax).nullable(),
+  "expiresOn": zod.coerce.date().nullable(),
+  "status": zod.enum(['upload_pending', 'submitted', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
 })
 
 
