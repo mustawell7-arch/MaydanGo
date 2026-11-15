@@ -6,7 +6,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import express from "express";
 import {
   db, pool, memberNotificationPreferences, memberships, offerings, operators, partners,
-  memberUpdates, pushDeliveries, pushDevices, reservations, waitlistEntries,
+  memberConsentEvents, memberUpdates, pushDeliveries, pushDevices, reservations, waitlistEntries,
 } from "@workspace/db";
 import memberRouter from "../routes/member";
 import operationsRouter from "../routes/operations";
@@ -62,6 +62,7 @@ after(async () => {
   await db.delete(reservations).where(eq(reservations.offeringId, offeringId));
   await db.delete(operators).where(eq(operators.userId, owner));
   await db.delete(memberships).where(inArray(memberships.userId, users));
+  await db.delete(memberConsentEvents).where(inArray(memberConsentEvents.userId, users));
   await db.delete(offerings).where(eq(offerings.id, offeringId));
   await db.delete(offerings).where(eq(offerings.id, otherOfferingId));
   await db.delete(partners).where(eq(partners.id, partnerId));
@@ -102,6 +103,15 @@ test("full live classes promote the first eligible member after a cancellation",
     startsAt: new Date(Date.now() - 60000), endsAt: new Date(Date.now() + 7 * 86400000),
     rules: { quota: 10, dailyLimit: 10, trialAllowedTypes: ["physical"] },
   })));
+  await db.insert(memberConsentEvents).values(users.flatMap(userId =>
+    (["terms_of_use", "privacy_policy"] as const).map(purpose => ({
+      id: `${prefix}-${userId}-${purpose}`,
+      userId,
+      purpose,
+      policyVersion: "v1-draft",
+      choice: "accepted" as const,
+    })),
+  ));
   const booking = await createReservation(owner, { kind: "session", targetId: offeringId, slot: "" });
   reservationIds.push(booking.id);
 

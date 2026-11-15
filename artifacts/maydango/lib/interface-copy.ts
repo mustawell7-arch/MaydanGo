@@ -27,6 +27,7 @@ export const interfaceCopy: Record<string, readonly [string, string]> = {
   'This class has already started.': ['هذا الكالس بدا من قبل.', 'ئەم کالسە دەستی پێکردووە.'],
   'You need an active membership that covers this class.': ['تحتاج اشتراك فعّال ومناسب لهذا الموعد.', 'بۆ ئەم کاتە ئەندامێتییەکی چالاک و گونجاو پێویستە.'],
   'Save your age and gender details in Account before booking this class.': ['احفظ بيانات العمر والجنس بحسابك قبل ما تحجز هذا الكالس.', 'پێش حجزکردنی ئەم کالسە زانیاری تەمەن و ڕەگەزت لە هەژمارەکەتدا پاشەکەوت بکە.'],
+  'Accept the current Terms of Use and Privacy Policy in Account before booking.': ['قبل الحجز، وافق على شروط الاستخدام وسياسة الخصوصية الحالية من صفحة الحساب.', 'پێش حجزکردن، لە بەشی هەژماردا ڕەزامەندی بە مەرجەکانی بەکارهێنان و سیاسەتی تایبەتمەندیی ئێستا بدە.'],
   "This class’s age or gender requirement doesn’t match your profile.": ['شروط العمر أو الجنس لهذا الكالس ما تطابق بياناتك.', 'مەرجی تەمەن یان ڕەگەزی ئەم کالسە لەگەڵ زانیارییەکانت ناگونجێت.'],
   'Your membership doesn’t include this activity.': ['اشتراكك ما يشمل هذا النشاط.', 'ئەندامێتییەکەت ئەم چالاکییە ناگرێتەوە.'],
   'You already have an active booking or request.': ['عندك حجز أو طلب فعّال من قبل.', 'پێشتر حجز یان داواکارییەکی چالاکت هەیە.'],

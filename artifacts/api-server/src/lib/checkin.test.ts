@@ -2,7 +2,7 @@ import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
-import { db, pool, partners, operators, offerings, facilityProfiles, guardianConsentDocuments, memberships, memberProfiles, reservations, attendance, checkinPolicies, checkinChallenges, manualCheckinChallenges, attendanceEvents } from "@workspace/db";
+import { db, pool, partners, operators, offerings, facilityProfiles, guardianConsentDocuments, memberships, memberProfiles, memberConsentEvents, reservations, attendance, checkinPolicies, checkinChallenges, manualCheckinChallenges, attendanceEvents } from "@workspace/db";
 import { savePolicy, issueQr, scanQr, review, roster, scanInput, issueManualCheckinCode, recordManualCheckin, manualCheckinInput, isCheckinTravelViolation } from "./checkin";
 import { BookingError, createReservation } from "./reservations";
 import app from "../app";
@@ -88,6 +88,9 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
   await db.insert(memberships).values({ userId: member, scope: "live", status: "trial", source: "trial", paymentStatus: "not_required", tier: "M",
     startsAt: new Date(now - 86400000), endsAt: new Date(now + 86400000),
     rules: { quota: 2, dailyLimit: 2, trialAllowedTypes: ["physical"] } });
+  await db.insert(memberConsentEvents).values((["terms_of_use", "privacy_policy"] as const).map(purpose => ({
+    id: `${prefix}-${purpose}`, userId: member, purpose, policyVersion: "v1-draft", choice: "accepted" as const,
+  })));
   await db.insert(memberProfiles).values({ userId: member, gender: "unspecified", birthDate: "1990-01-01" });
   await db.insert(reservations).values({ id: r, userId: member, offeringId: o, status: "reserved" });
   await db.insert(offerings).values({ id: nextOffering, targetId: nextOffering, kind: "session", title: prefix, scope: "live", partnerId: p,
@@ -394,6 +397,7 @@ after(async () => {
   await db.delete(offerings).where(inArray(offerings.id, [o, nextOffering]));
   await db.delete(facilityProfiles).where(inArray(facilityProfiles.id, [mainFacilityProfile, otherFacilityProfile]));
   await db.delete(memberships).where(inArray(memberships.userId, users));
+  await db.delete(memberConsentEvents).where(eq(memberConsentEvents.userId, member));
   await db.delete(memberProfiles).where(eq(memberProfiles.userId, member));
   await db.delete(operators).where(inArray(operators.userId, users));
   await db.delete(partners).where(eq(partners.id, p));

@@ -2,7 +2,7 @@ import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
-import { db, pool, offerings, memberships, reservations, waitlistEntries, attendance, memberProfiles, partners, operators, membershipPlans, accessGrants, operationAudit, learningCourses, learningLessons, courseEnrollments, lessonProgress, facilityProfiles } from "@workspace/db";
+import { db, pool, offerings, memberships, reservations, waitlistEntries, attendance, memberProfiles, memberConsentEvents, partners, operators, membershipPlans, accessGrants, operationAudit, learningCourses, learningLessons, courseEnrollments, lessonProgress, facilityProfiles } from "@workspace/db";
 import express from "express";
 import operationsRouter from "../routes/operations";
 import memberRouter from "../routes/member";
@@ -12,6 +12,7 @@ import app from "../app";
 
 const prefix = `test-${randomUUID()}`;
 const alice = `${prefix}-a`, bob = `${prefix}-b`, charlie = `${prefix}-c`;
+const consentless = `${prefix}-consentless`;
 const ids: string[] = [];
 const waitlistUsers: string[] = [];
 const partnerIds: string[] = [], planIds: string[] = [];
@@ -34,6 +35,13 @@ async function membership(userId: string) {
     userId, scope: prefix, tier: "M", status: "active", paymentStatus: "paid",
     startsAt: new Date(now - 86400000), endsAt: new Date(now + 10 * 86400000), rules: { quota: 20, dailyLimit: 20 },
   });
+  await db.insert(memberConsentEvents).values(["terms_of_use", "privacy_policy"].map(purpose => ({
+    id: `${prefix}-${userId}-${purpose}`,
+    userId,
+    purpose: purpose as "terms_of_use" | "privacy_policy",
+    policyVersion: "v1-draft",
+    choice: "accepted" as const,
+  }))).onConflictDoNothing();
 }
 async function rejects(fn: () => Promise<unknown>, status: number) {
   await assert.rejects(fn, (e: unknown) => e instanceof BookingError && e.status === status);
@@ -52,6 +60,16 @@ test("authenticated booking service: ownership, durable history, eligibility and
     assert.equal(Object.hasOwn(account, "profile"), false);
     const again = await memberState(alice);
     assert.deepEqual(again.bookings, state.bookings);
+  });
+  await t.test("current Terms and Privacy consent is required before a booking", async () => {
+    await membership(consentless);
+    await db.delete(memberConsentEvents).where(eq(memberConsentEvents.userId, consentless));
+    await assert.rejects(
+      createReservation(consentless, input(id)),
+      (error: unknown) => error instanceof BookingError
+        && error.status === 403
+        && error.message.includes("Terms of Use and Privacy Policy"),
+    );
   });
   await t.test("other accounts cannot list or cancel an owner's reservation", async () => {
     assert.equal((await memberState(bob)).bookings.length, 0);
@@ -183,6 +201,15 @@ test("live session waitlists preserve order, offer cancelled places, and hand of
     startsAt: new Date(now - 86400000), endsAt: new Date(now + 10 * 86400000),
     rules: { quota: 10, dailyLimit: 10 },
   });
+  await db.insert(memberConsentEvents).values(waitlistUsers.flatMap(userId =>
+    (["terms_of_use", "privacy_policy"] as const).map(purpose => ({
+      id: `${prefix}-${userId}-${purpose}`,
+      userId,
+      purpose,
+      policyVersion: "v1-draft",
+      choice: "accepted" as const,
+    })),
+  ));
 
   const liveOffer = (overrides: Partial<typeof offerings.$inferInsert> = {}) => offer({
     scope: "live", partnerId, capacity: 1, ...overrides,
@@ -526,6 +553,13 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       const futureDate = new Date(`${iraqToday}T00:00:00Z`);
       futureDate.setUTCDate(futureDate.getUTCDate() + 1);
       const startsOn = futureDate.toISOString().slice(0, 10);
+      await db.insert(memberConsentEvents).values((["terms_of_use", "privacy_policy"] as const).map(purpose => ({
+        id: `${prefix}-${charlie}-${purpose}`,
+        userId: charlie,
+        purpose,
+        policyVersion: "v1-draft",
+        choice: "accepted" as const,
+      }))).onConflictDoNothing();
       const grant = await call("/operations/grants", supportAdminId, "POST", {
         userId: charlie, planId: plan.data.id, startsOn, reason: "Schedule trial access",
       });
@@ -735,9 +769,10 @@ test("live operations: staff scope, approved inventory, server grants and quota 
   }
 });
 after(async () => {
-  const users = [alice, bob, charlie, ...waitlistUsers];
+  const users = [alice, bob, charlie, consentless, ...waitlistUsers];
   await db.delete(reservations).where(inArray(reservations.userId, users));
   await db.delete(memberships).where(inArray(memberships.userId, users));
+  await db.delete(memberConsentEvents).where(inArray(memberConsentEvents.userId, users));
   await db.delete(memberProfiles).where(inArray(memberProfiles.userId, [alice, bob]));
   if (ids.length) await db.delete(waitlistEntries).where(inArray(waitlistEntries.offeringId, ids));
   if (ids.length) await db.delete(offerings).where(inArray(offerings.id, ids));
