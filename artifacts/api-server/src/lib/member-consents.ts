@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
-import { db, memberConsentEvents, type MemberConsentChoice, type MemberConsentEvent, type MemberConsentPurpose } from "@workspace/db";
+import { and, desc, eq, inArray } from "drizzle-orm";
+import { db, memberConsentEvents, pushDeliveries, type MemberConsentChoice, type MemberConsentEvent, type MemberConsentPurpose } from "@workspace/db";
 
 export const MEMBER_POLICY_VERSIONS: Record<MemberConsentPurpose, string> = {
   terms_of_use: "v1-draft",
@@ -72,6 +72,10 @@ export async function hasCurrentRequiredMemberConsent(userId: string): Promise<b
   return (await getMemberConsentState(userId)).requiredAccepted;
 }
 
+export async function hasCurrentMarketingConsent(userId: string): Promise<boolean> {
+  return (await getMemberConsentState(userId)).currentChoices.marketing === "accepted";
+}
+
 export async function saveMemberConsentChoices(
   userId: string,
   input: MemberConsentInput,
@@ -103,9 +107,20 @@ export async function saveMemberConsentChoices(
       choice,
     }));
 
-  if (events.length) {
+  if (events.length || !input.marketingConsent) {
     await db.transaction(async tx => {
-      await tx.insert(memberConsentEvents).values(events);
+      if (events.length) await tx.insert(memberConsentEvents).values(events);
+      if (!input.marketingConsent) {
+        await tx.update(pushDeliveries).set({
+          status: "cancelled",
+          error: "Marketing consent was withdrawn before delivery.",
+          nextAttemptAt: null,
+        }).where(and(
+          eq(pushDeliveries.userId, userId),
+          eq(pushDeliveries.kind, "marketing_update"),
+          inArray(pushDeliveries.status, ["pending", "retry_pending"]),
+        ));
+      }
     });
   }
 

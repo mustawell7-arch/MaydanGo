@@ -11,7 +11,8 @@ import {
 import memberRouter from "../routes/member";
 import operationsRouter from "../routes/operations";
 import { createReservation, processWaitlistQueue } from "./reservations";
-import { retryPendingPushDeliveries } from "./notifications";
+import { retryPendingPushDeliveries, sendMemberMarketingNotification } from "./notifications";
+import { saveMemberConsentChoices } from "./member-consents";
 
 const prefix = `waitlist-test-${randomUUID()}`;
 const owner = `${prefix}-owner`;
@@ -193,6 +194,38 @@ test("full live classes promote the first eligible member after a cancellation",
     return originalFetch(input, init);
   }) as typeof fetch;
   restoreFetch = () => { globalThis.fetch = originalFetch; };
+  const marketingCopy = {
+    en: { title: "A new MaydanGo offer", body: "See the latest activities in MaydanGo." },
+    ar: { title: "عرض جديد من MaydanGo", body: "اكتشف أحدث الأنشطة في MaydanGo." },
+    ku: { title: "پێشکەشکردنێکی نوێ لە MaydanGo", body: "چالاکییە نوێیەکانی MaydanGo ببینە." },
+  };
+  const declinedBeforeOptIn = await sendMemberMarketingNotification(second, marketingCopy);
+  assert.deepEqual(declinedBeforeOptIn, { status: "skipped", reason: "marketing_consent_required" });
+  assert.equal(sentKinds.includes("marketing_update"), false);
+
+  await saveMemberConsentChoices(second, {
+    termsOfUseAccepted: true, privacyPolicyAccepted: true, marketingConsent: true,
+  });
+  const acceptedMarketing = await sendMemberMarketingNotification(second, marketingCopy);
+  assert.deepEqual(acceptedMarketing, { status: "sent" });
+  assert.equal(sentKinds.filter(kind => kind === "marketing_update").length, 1);
+
+  await saveMemberConsentChoices(second, {
+    termsOfUseAccepted: true, privacyPolicyAccepted: true, marketingConsent: false,
+  });
+  const staleRetryId = randomUUID();
+  await db.insert(pushDeliveries).values({
+    id: staleRetryId, userId: second, deviceId: secondDeviceId, kind: "marketing_update",
+    title: "Stale marketing retry", body: "Must not be sent after opt-out.",
+    status: "retry_pending", dedupeKey: `marketing-retry:${staleRetryId}`,
+    attemptCount: 1, nextAttemptAt: new Date(Date.now() - 1000),
+  });
+  const sentBeforeOptOutRetry = sentKinds.length;
+  await retryPendingPushDeliveries();
+  assert.equal(sentKinds.length, sentBeforeOptOutRetry);
+  const [staleRetry] = await db.select().from(pushDeliveries).where(eq(pushDeliveries.id, staleRetryId));
+  assert.equal(staleRetry?.status, "cancelled");
+
   const enqueueReminderRetry = async (userId: string, entryId: string, deviceId: string) => {
     const id = randomUUID();
     await db.insert(pushDeliveries).values({

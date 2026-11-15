@@ -1,9 +1,10 @@
-import { and, asc, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import {
-  db, memberNotificationPreferences, operationAudit, operators, pushDeliveries, pushDevices, supportTickets,
+  db, memberConsentEvents, memberNotificationPreferences, operationAudit, operators, pushDeliveries, pushDevices, supportTickets,
   waitlistEntries,
 } from "@workspace/db";
 import { randomUUID } from "node:crypto";
+import { buildMemberConsentState, hasCurrentMarketingConsent } from "./member-consents";
 
 export type AppLanguage = "en" | "ar" | "ku";
 export type NotificationKind =
@@ -23,7 +24,16 @@ export type NotificationKind =
   | "support_urgent"
   | "support_urgent_escalation"
   | "waitlist_promoted"
-  | "waitlist_cancelled";
+  | "waitlist_cancelled"
+  | "marketing_update";
+type OperationalNotificationKind = Exclude<NotificationKind, "marketing_update">;
+type NotificationContext = {
+  offerExpiresAt?: Date;
+  remainingMinutes?: number;
+  dedupeKey?: string;
+  ticketId?: string;
+};
+export type LocalizedMarketingMessage = Record<AppLanguage, { title: string; body: string }>;
 
 const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: string }>> = {
   en: {
@@ -44,6 +54,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     support_urgent_escalation: { title: "Urgent report still unassigned", body: "An urgent safety report is still unassigned after 30 minutes. Open MaydanGO support and assign it to an authorized teammate." },
     waitlist_promoted: { title: "A place opened", body: "A place in your MaydanGO class is now reserved for you." },
     waitlist_cancelled: { title: "Class cancelled", body: "The partner cancelled this class, so you were removed from its waiting list." },
+    marketing_update: { title: "MaydanGo update", body: "A new MaydanGo offer is available." },
   },
   ar: {
     booking_created: { title: "تم تأكيد الحجز", body: "تم تأكيد حجزك في MaydanGO." },
@@ -63,6 +74,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     support_urgent_escalation: { title: "تذكير ببلاغ سلامة عاجل غير مسند", body: "ما زال هناك بلاغ سلامة عاجل غير مسند بعد 30 دقيقة. افتح دعم MaydanGO وأسنده إلى عضو مخوّل من الفريق." },
     waitlist_promoted: { title: "توفر مكان", body: "تم حجز مكان لك في الحصة التي انتظرتها عبر MaydanGO." },
     waitlist_cancelled: { title: "تم إلغاء الحصة", body: "ألغى الشريك هذه الحصة، لذلك أُزلت من قائمة الانتظار." },
+    marketing_update: { title: "تحديث من MaydanGO", body: "هناك عرض جديد من MaydanGO." },
   },
   ku: {
     booking_created: { title: "حجز پشتڕاست کرایەوە", body: "حجزەکەت لە MaydanGO پشتڕاست کرایەوە." },
@@ -82,6 +94,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     support_urgent_escalation: { title: "بیرخستنەوەی ڕاپۆرتی پەلەیی ناسپێردراو", body: "دوای 30 خولەک هێشتا ڕاپۆرتێکی پەلەیی سەلامەتی نەسپێردراوە. پشتگیریی MaydanGO بکەرەوە و بیسپێرە بە ئەندامێکی ڕێگەپێدراوی تیم." },
     waitlist_promoted: { title: "شوێنێک بەردەست بوو", body: "شوێنێک لە وانەکەت لە MaydanGO بۆ تۆ حجز کرا." },
     waitlist_cancelled: { title: "وانەکە هەڵوەشێندرایەوە", body: "شریکەکە وانەکەی هەڵوەشاندەوە، بۆیە لە لیستی چاوەڕوانی دەرتکرایت." },
+    marketing_update: { title: "نوێکاریی MaydanGO", body: "پێشکەشکردنێکی نوێ لە MaydanGO بەردەستە." },
   },
 };
 
@@ -271,13 +284,16 @@ async function sendPushAttempts(attempts: PushAttempt[], now: Date) {
  * Sends operational notifications only after the underlying state change has
  * committed. Delivery errors are stored for staff review and never rethrown.
  */
-export async function sendMemberNotification(userId: string, kind: NotificationKind, context: {
-  offerExpiresAt?: Date;
-  remainingMinutes?: number;
-  dedupeKey?: string;
-  ticketId?: string;
-} = {}) {
+async function deliverMemberNotification(
+  userId: string,
+  kind: NotificationKind,
+  context: NotificationContext = {},
+  marketingMessage?: LocalizedMarketingMessage,
+) {
   try {
+    if (kind === "marketing_update" && !await hasCurrentMarketingConsent(userId)) {
+      return { status: "skipped" as const, reason: "marketing_consent_required" };
+    }
     const [preference] = await db.select().from(memberNotificationPreferences)
       .where(eq(memberNotificationPreferences.userId, userId)).limit(1);
     if (!preference?.pushEnabled) return { status: "skipped" as const, reason: "opted_out" };
@@ -288,7 +304,7 @@ export async function sendMemberNotification(userId: string, kind: NotificationK
 
     const language: AppLanguage = preference.language === "ar" || preference.language === "ku"
       ? preference.language : "en";
-    const localized = copy[language][kind];
+    const localized = marketingMessage?.[language] ?? copy[language][kind];
     const deadline = context.offerExpiresAt
       ? new Intl.DateTimeFormat(language === "ar" ? "ar-IQ" : language === "ku" ? "ku-IQ" : "en-IQ", {
           dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Baghdad",
@@ -332,6 +348,32 @@ export async function sendMemberNotification(userId: string, kind: NotificationK
     console.error("Operational push notification failed outside delivery tracking.", messageOf(error));
     return { status: "failed" as const };
   }
+}
+
+export async function sendMemberNotification(
+  userId: string,
+  kind: OperationalNotificationKind,
+  context: NotificationContext = {},
+) {
+  return deliverMemberNotification(userId, kind, context);
+}
+
+export async function sendMemberMarketingNotification(
+  userId: string,
+  message: LocalizedMarketingMessage,
+  context: Pick<NotificationContext, "dedupeKey"> = {},
+) {
+  const validContent = (["en", "ar", "ku"] as const).every(language => {
+    const localized = message?.[language];
+    return typeof localized?.title === "string"
+      && localized.title.trim().length > 0
+      && localized.title.length <= 120
+      && typeof localized.body === "string"
+      && localized.body.trim().length > 0
+      && localized.body.length <= 400;
+  });
+  if (!validContent) return { status: "failed" as const, reason: "invalid_marketing_content" };
+  return deliverMemberNotification(userId, "marketing_update", context, message);
 }
 
 export async function sendUrgentEscalationReminder(ticketId: string, recipientUserIds: string[], now = new Date()) {
@@ -432,6 +474,19 @@ export async function retryPendingPushDeliveries(now = new Date()) {
             nextAttemptAt: null,
           }).where(eq(pushDeliveries.id, delivery.id));
           continue;
+        }
+        if (delivery.kind === "marketing_update") {
+          const consentHistory = await tx.select().from(memberConsentEvents)
+            .where(eq(memberConsentEvents.userId, delivery.userId))
+            .orderBy(desc(memberConsentEvents.recordedAt), desc(memberConsentEvents.id));
+          if (buildMemberConsentState(consentHistory).currentChoices.marketing !== "accepted") {
+            await tx.update(pushDeliveries).set({
+              status: "cancelled",
+              error: "Marketing consent was withdrawn before retry.",
+              nextAttemptAt: null,
+            }).where(eq(pushDeliveries.id, delivery.id));
+            continue;
+          }
         }
         if (delivery.kind === "waitlist_reminder") {
           const prefix = "waitlist-reminder:";
