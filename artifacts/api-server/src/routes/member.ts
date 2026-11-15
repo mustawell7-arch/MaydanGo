@@ -23,7 +23,7 @@ import {
   recordMemberPrivacyExportDownload,
 } from "../lib/privacy-requests";
 import { createMemberDataExport } from "../lib/member-data-export";
-import { getMemberConsentState, saveMemberConsentChoices, RequiredMemberConsentError } from "../lib/member-consents";
+import { getMemberConsentState, saveMemberConsentChoices, RequiredMemberConsentError, StaleMemberConsentPolicyError } from "../lib/member-consents";
 import learningRouter from "./learning";
 import { memberSupportRouter } from "./support";
 import memberReviewsRouter from "./member-reviews";
@@ -59,6 +59,10 @@ router.post("/consents", async (req, res) => {
   } catch (error) {
     if (error instanceof RequiredMemberConsentError) {
       res.status(400).json({ message: error.message });
+      return;
+    }
+    if (error instanceof StaleMemberConsentPolicyError) {
+      res.status(409).json({ code: "POLICY_VERSION_CHANGED", message: error.message });
       return;
     }
     throw error;

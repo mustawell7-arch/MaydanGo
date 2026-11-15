@@ -1,5 +1,6 @@
 import { Link } from 'wouter';
 import { Mail, ShieldCheck } from 'lucide-react';
+import { useGetPublicLegalPolicies } from '@workspace/api-client-react';
 
 type Language = 'en' | 'ar' | 'ku';
 type Section = { id: string; title: string; paragraphs: string[] };
@@ -299,8 +300,44 @@ const privacyCopy: Record<Language, {
 const privacyEmail = 'maydangoing@gmail.com';
 
 export function PrivacyPolicyPage({ language }: { language: Language }) {
+  const publishedPolicies = useGetPublicLegalPolicies();
+  const publishedPolicy = publishedPolicies.data?.find(policy => policy.policyKey === 'privacy_policy');
   const text = privacyCopy[language];
   const rtl = language !== 'en';
+  const publishedCopy = publishedPolicy?.translations[language];
+
+  if (publishedCopy && publishedPolicy) {
+    const versionLabel = language === 'en' ? 'Version' : language === 'ar' ? 'الإصدار' : 'وەشان';
+    const effectiveLabel = language === 'en' ? 'Effective date' : language === 'ar' ? 'تاريخ السريان' : 'بەرواری جێبەجێبوون';
+    return (
+      <main dir={rtl ? 'rtl' : 'ltr'} className="mx-auto max-w-5xl px-5 py-10 text-[#173d35] sm:py-16">
+        <article className="overflow-hidden rounded-3xl border border-[#dfdacb] bg-[#fffdf7]">
+          <header className="bg-[#174d43] p-6 text-[#fff9e9] sm:p-10">
+            <p className="text-xs font-bold uppercase tracking-[.16em] text-[#efaa83]">MaydanGo</p>
+            <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight sm:text-5xl">{publishedCopy.title}</h1>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-[#e3eee7] sm:text-base">{publishedCopy.introduction}</p>
+            <p className="mt-5 text-xs text-[#e3eee7]">
+              {versionLabel}: {publishedPolicy.version} · {effectiveLabel}: {new Intl.DateTimeFormat(language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ', { dateStyle: 'long' }).format(new Date(publishedPolicy.effectiveAt))}
+            </p>
+          </header>
+          <div className="space-y-4 p-6 sm:p-10">
+            {publishedCopy.body.split(/\n\s*\n/).map((paragraph, index) => (
+              <p key={`${index}-${paragraph.slice(0, 20)}`} className="whitespace-pre-wrap text-sm leading-7 text-[#536b61] sm:text-base">{paragraph}</p>
+            ))}
+          </div>
+        </article>
+        <section className="mt-6 rounded-2xl bg-[#eadfcd] p-5 sm:p-7">
+          <h2 className="font-display text-xl font-bold">{text.contactTitle}</h2>
+          <p className="mt-2 text-sm leading-6 text-[#536b61]">{text.contactBody}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href="/account" className="inline-flex min-h-10 items-center rounded-full bg-[#174d43] px-4 py-2 text-sm font-bold text-[#fff9e9]">{text.accountRequestsLabel}</Link>
+            <a href={`mailto:${privacyEmail}`} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#174d43] px-4 py-2 text-sm font-bold text-[#174d43]"><Mail size={15} />{text.contactEmailLabel}</a>
+          </div>
+        </section>
+        <Link href="/legal" className="mt-7 inline-flex text-sm font-bold text-[#174d43] underline underline-offset-4" data-testid="link-privacy-legal">{text.back}</Link>
+      </main>
+    );
+  }
 
   return (
     <main dir={rtl ? 'rtl' : 'ltr'} className="mx-auto max-w-5xl px-5 py-10 text-[#173d35] sm:py-16">

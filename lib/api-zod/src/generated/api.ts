@@ -4796,10 +4796,310 @@ export const GetSuperAdminMemberConsentHistoryResponseItem = zod.object({
   "userId": zod.string(),
   "purpose": zod.enum(['terms_of_use', 'privacy_policy', 'marketing']),
   "policyVersion": zod.string(),
+  "documentPath": zod.union([zod.string(),zod.null()]),
   "choice": zod.enum(['accepted', 'declined']),
   "recordedAt": zod.coerce.date()
 })
 export const GetSuperAdminMemberConsentHistoryResponse = zod.array(GetSuperAdminMemberConsentHistoryResponseItem)
+
+
+export const getSuperAdminLegalPolicyVersionsResponseTranslationsEnTitleMax = 160;
+
+export const getSuperAdminLegalPolicyVersionsResponseTranslationsEnIntroductionMax = 5000;
+
+export const getSuperAdminLegalPolicyVersionsResponseTranslationsEnBodyMax = 40000;
+
+export const getSuperAdminLegalPolicyVersionsResponseTranslationsArTitleMax = 160;
+
+export const getSuperAdminLegalPolicyVersionsResponseTranslationsArIntroductionMax = 5000;
+
+export const getSuperAdminLegalPolicyVersionsResponseTranslationsArBodyMax = 40000;
+
+export const getSuperAdminLegalPolicyVersionsResponseTranslationsKuTitleMax = 160;
+
+export const getSuperAdminLegalPolicyVersionsResponseTranslationsKuIntroductionMax = 5000;
+
+export const getSuperAdminLegalPolicyVersionsResponseTranslationsKuBodyMax = 40000;
+
+
+
+export const GetSuperAdminLegalPolicyVersionsResponseItem = zod.object({
+  "id": zod.string(),
+  "policyKey": zod.enum(['terms_of_use', 'privacy_policy', 'booking_policy', 'cancellation_policy', 'refund_policy']),
+  "version": zod.string(),
+  "status": zod.enum(['draft', 'published']),
+  "translations": zod.object({
+  "en": zod.object({
+  "title": zod.string().max(getSuperAdminLegalPolicyVersionsResponseTranslationsEnTitleMax),
+  "introduction": zod.string().max(getSuperAdminLegalPolicyVersionsResponseTranslationsEnIntroductionMax),
+  "body": zod.string().max(getSuperAdminLegalPolicyVersionsResponseTranslationsEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().max(getSuperAdminLegalPolicyVersionsResponseTranslationsArTitleMax),
+  "introduction": zod.string().max(getSuperAdminLegalPolicyVersionsResponseTranslationsArIntroductionMax),
+  "body": zod.string().max(getSuperAdminLegalPolicyVersionsResponseTranslationsArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().max(getSuperAdminLegalPolicyVersionsResponseTranslationsKuTitleMax),
+  "introduction": zod.string().max(getSuperAdminLegalPolicyVersionsResponseTranslationsKuIntroductionMax),
+  "body": zod.string().max(getSuperAdminLegalPolicyVersionsResponseTranslationsKuBodyMax)
+})
+}),
+  "effectiveAt": zod.coerce.date(),
+  "publishedAt": zod.union([zod.coerce.date(),zod.null()]),
+  "publishedBy": zod.union([zod.string(),zod.null()]),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const GetSuperAdminLegalPolicyVersionsResponse = zod.array(GetSuperAdminLegalPolicyVersionsResponseItem)
+
+
+export const createSuperAdminLegalPolicyDraftBodyVersionMax = 40;
+
+export const createSuperAdminLegalPolicyDraftBodyTranslationsEnTitleMax = 160;
+
+export const createSuperAdminLegalPolicyDraftBodyTranslationsEnIntroductionMax = 5000;
+
+export const createSuperAdminLegalPolicyDraftBodyTranslationsEnBodyMax = 40000;
+
+export const createSuperAdminLegalPolicyDraftBodyTranslationsArTitleMax = 160;
+
+export const createSuperAdminLegalPolicyDraftBodyTranslationsArIntroductionMax = 5000;
+
+export const createSuperAdminLegalPolicyDraftBodyTranslationsArBodyMax = 40000;
+
+export const createSuperAdminLegalPolicyDraftBodyTranslationsKuTitleMax = 160;
+
+export const createSuperAdminLegalPolicyDraftBodyTranslationsKuIntroductionMax = 5000;
+
+export const createSuperAdminLegalPolicyDraftBodyTranslationsKuBodyMax = 40000;
+
+
+
+export const CreateSuperAdminLegalPolicyDraftBody = zod.object({
+  "policyKey": zod.enum(['terms_of_use', 'privacy_policy', 'booking_policy', 'cancellation_policy', 'refund_policy']),
+  "version": zod.string().min(1).max(createSuperAdminLegalPolicyDraftBodyVersionMax),
+  "translations": zod.object({
+  "en": zod.object({
+  "title": zod.string().max(createSuperAdminLegalPolicyDraftBodyTranslationsEnTitleMax),
+  "introduction": zod.string().max(createSuperAdminLegalPolicyDraftBodyTranslationsEnIntroductionMax),
+  "body": zod.string().max(createSuperAdminLegalPolicyDraftBodyTranslationsEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().max(createSuperAdminLegalPolicyDraftBodyTranslationsArTitleMax),
+  "introduction": zod.string().max(createSuperAdminLegalPolicyDraftBodyTranslationsArIntroductionMax),
+  "body": zod.string().max(createSuperAdminLegalPolicyDraftBodyTranslationsArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().max(createSuperAdminLegalPolicyDraftBodyTranslationsKuTitleMax),
+  "introduction": zod.string().max(createSuperAdminLegalPolicyDraftBodyTranslationsKuIntroductionMax),
+  "body": zod.string().max(createSuperAdminLegalPolicyDraftBodyTranslationsKuBodyMax)
+})
+}),
+  "effectiveAt": zod.coerce.date()
+})
+
+export const createSuperAdminLegalPolicyDraftResponseTranslationsEnTitleMax = 160;
+
+export const createSuperAdminLegalPolicyDraftResponseTranslationsEnIntroductionMax = 5000;
+
+export const createSuperAdminLegalPolicyDraftResponseTranslationsEnBodyMax = 40000;
+
+export const createSuperAdminLegalPolicyDraftResponseTranslationsArTitleMax = 160;
+
+export const createSuperAdminLegalPolicyDraftResponseTranslationsArIntroductionMax = 5000;
+
+export const createSuperAdminLegalPolicyDraftResponseTranslationsArBodyMax = 40000;
+
+export const createSuperAdminLegalPolicyDraftResponseTranslationsKuTitleMax = 160;
+
+export const createSuperAdminLegalPolicyDraftResponseTranslationsKuIntroductionMax = 5000;
+
+export const createSuperAdminLegalPolicyDraftResponseTranslationsKuBodyMax = 40000;
+
+
+
+export const CreateSuperAdminLegalPolicyDraftResponse = zod.object({
+  "id": zod.string(),
+  "policyKey": zod.enum(['terms_of_use', 'privacy_policy', 'booking_policy', 'cancellation_policy', 'refund_policy']),
+  "version": zod.string(),
+  "status": zod.enum(['draft', 'published']),
+  "translations": zod.object({
+  "en": zod.object({
+  "title": zod.string().max(createSuperAdminLegalPolicyDraftResponseTranslationsEnTitleMax),
+  "introduction": zod.string().max(createSuperAdminLegalPolicyDraftResponseTranslationsEnIntroductionMax),
+  "body": zod.string().max(createSuperAdminLegalPolicyDraftResponseTranslationsEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().max(createSuperAdminLegalPolicyDraftResponseTranslationsArTitleMax),
+  "introduction": zod.string().max(createSuperAdminLegalPolicyDraftResponseTranslationsArIntroductionMax),
+  "body": zod.string().max(createSuperAdminLegalPolicyDraftResponseTranslationsArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().max(createSuperAdminLegalPolicyDraftResponseTranslationsKuTitleMax),
+  "introduction": zod.string().max(createSuperAdminLegalPolicyDraftResponseTranslationsKuIntroductionMax),
+  "body": zod.string().max(createSuperAdminLegalPolicyDraftResponseTranslationsKuBodyMax)
+})
+}),
+  "effectiveAt": zod.coerce.date(),
+  "publishedAt": zod.union([zod.coerce.date(),zod.null()]),
+  "publishedBy": zod.union([zod.string(),zod.null()]),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const UpdateSuperAdminLegalPolicyDraftParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updateSuperAdminLegalPolicyDraftBodyTranslationsEnTitleMax = 160;
+
+export const updateSuperAdminLegalPolicyDraftBodyTranslationsEnIntroductionMax = 5000;
+
+export const updateSuperAdminLegalPolicyDraftBodyTranslationsEnBodyMax = 40000;
+
+export const updateSuperAdminLegalPolicyDraftBodyTranslationsArTitleMax = 160;
+
+export const updateSuperAdminLegalPolicyDraftBodyTranslationsArIntroductionMax = 5000;
+
+export const updateSuperAdminLegalPolicyDraftBodyTranslationsArBodyMax = 40000;
+
+export const updateSuperAdminLegalPolicyDraftBodyTranslationsKuTitleMax = 160;
+
+export const updateSuperAdminLegalPolicyDraftBodyTranslationsKuIntroductionMax = 5000;
+
+export const updateSuperAdminLegalPolicyDraftBodyTranslationsKuBodyMax = 40000;
+
+
+
+export const UpdateSuperAdminLegalPolicyDraftBody = zod.object({
+  "translations": zod.object({
+  "en": zod.object({
+  "title": zod.string().max(updateSuperAdminLegalPolicyDraftBodyTranslationsEnTitleMax),
+  "introduction": zod.string().max(updateSuperAdminLegalPolicyDraftBodyTranslationsEnIntroductionMax),
+  "body": zod.string().max(updateSuperAdminLegalPolicyDraftBodyTranslationsEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().max(updateSuperAdminLegalPolicyDraftBodyTranslationsArTitleMax),
+  "introduction": zod.string().max(updateSuperAdminLegalPolicyDraftBodyTranslationsArIntroductionMax),
+  "body": zod.string().max(updateSuperAdminLegalPolicyDraftBodyTranslationsArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().max(updateSuperAdminLegalPolicyDraftBodyTranslationsKuTitleMax),
+  "introduction": zod.string().max(updateSuperAdminLegalPolicyDraftBodyTranslationsKuIntroductionMax),
+  "body": zod.string().max(updateSuperAdminLegalPolicyDraftBodyTranslationsKuBodyMax)
+})
+}),
+  "effectiveAt": zod.coerce.date()
+})
+
+export const updateSuperAdminLegalPolicyDraftResponseTranslationsEnTitleMax = 160;
+
+export const updateSuperAdminLegalPolicyDraftResponseTranslationsEnIntroductionMax = 5000;
+
+export const updateSuperAdminLegalPolicyDraftResponseTranslationsEnBodyMax = 40000;
+
+export const updateSuperAdminLegalPolicyDraftResponseTranslationsArTitleMax = 160;
+
+export const updateSuperAdminLegalPolicyDraftResponseTranslationsArIntroductionMax = 5000;
+
+export const updateSuperAdminLegalPolicyDraftResponseTranslationsArBodyMax = 40000;
+
+export const updateSuperAdminLegalPolicyDraftResponseTranslationsKuTitleMax = 160;
+
+export const updateSuperAdminLegalPolicyDraftResponseTranslationsKuIntroductionMax = 5000;
+
+export const updateSuperAdminLegalPolicyDraftResponseTranslationsKuBodyMax = 40000;
+
+
+
+export const UpdateSuperAdminLegalPolicyDraftResponse = zod.object({
+  "id": zod.string(),
+  "policyKey": zod.enum(['terms_of_use', 'privacy_policy', 'booking_policy', 'cancellation_policy', 'refund_policy']),
+  "version": zod.string(),
+  "status": zod.enum(['draft', 'published']),
+  "translations": zod.object({
+  "en": zod.object({
+  "title": zod.string().max(updateSuperAdminLegalPolicyDraftResponseTranslationsEnTitleMax),
+  "introduction": zod.string().max(updateSuperAdminLegalPolicyDraftResponseTranslationsEnIntroductionMax),
+  "body": zod.string().max(updateSuperAdminLegalPolicyDraftResponseTranslationsEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().max(updateSuperAdminLegalPolicyDraftResponseTranslationsArTitleMax),
+  "introduction": zod.string().max(updateSuperAdminLegalPolicyDraftResponseTranslationsArIntroductionMax),
+  "body": zod.string().max(updateSuperAdminLegalPolicyDraftResponseTranslationsArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().max(updateSuperAdminLegalPolicyDraftResponseTranslationsKuTitleMax),
+  "introduction": zod.string().max(updateSuperAdminLegalPolicyDraftResponseTranslationsKuIntroductionMax),
+  "body": zod.string().max(updateSuperAdminLegalPolicyDraftResponseTranslationsKuBodyMax)
+})
+}),
+  "effectiveAt": zod.coerce.date(),
+  "publishedAt": zod.union([zod.coerce.date(),zod.null()]),
+  "publishedBy": zod.union([zod.string(),zod.null()]),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const PublishSuperAdminLegalPolicyVersionParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const publishSuperAdminLegalPolicyVersionResponseTranslationsEnTitleMax = 160;
+
+export const publishSuperAdminLegalPolicyVersionResponseTranslationsEnIntroductionMax = 5000;
+
+export const publishSuperAdminLegalPolicyVersionResponseTranslationsEnBodyMax = 40000;
+
+export const publishSuperAdminLegalPolicyVersionResponseTranslationsArTitleMax = 160;
+
+export const publishSuperAdminLegalPolicyVersionResponseTranslationsArIntroductionMax = 5000;
+
+export const publishSuperAdminLegalPolicyVersionResponseTranslationsArBodyMax = 40000;
+
+export const publishSuperAdminLegalPolicyVersionResponseTranslationsKuTitleMax = 160;
+
+export const publishSuperAdminLegalPolicyVersionResponseTranslationsKuIntroductionMax = 5000;
+
+export const publishSuperAdminLegalPolicyVersionResponseTranslationsKuBodyMax = 40000;
+
+
+
+export const PublishSuperAdminLegalPolicyVersionResponse = zod.object({
+  "id": zod.string(),
+  "policyKey": zod.enum(['terms_of_use', 'privacy_policy', 'booking_policy', 'cancellation_policy', 'refund_policy']),
+  "version": zod.string(),
+  "status": zod.enum(['draft', 'published']),
+  "translations": zod.object({
+  "en": zod.object({
+  "title": zod.string().max(publishSuperAdminLegalPolicyVersionResponseTranslationsEnTitleMax),
+  "introduction": zod.string().max(publishSuperAdminLegalPolicyVersionResponseTranslationsEnIntroductionMax),
+  "body": zod.string().max(publishSuperAdminLegalPolicyVersionResponseTranslationsEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().max(publishSuperAdminLegalPolicyVersionResponseTranslationsArTitleMax),
+  "introduction": zod.string().max(publishSuperAdminLegalPolicyVersionResponseTranslationsArIntroductionMax),
+  "body": zod.string().max(publishSuperAdminLegalPolicyVersionResponseTranslationsArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().max(publishSuperAdminLegalPolicyVersionResponseTranslationsKuTitleMax),
+  "introduction": zod.string().max(publishSuperAdminLegalPolicyVersionResponseTranslationsKuIntroductionMax),
+  "body": zod.string().max(publishSuperAdminLegalPolicyVersionResponseTranslationsKuBodyMax)
+})
+}),
+  "effectiveAt": zod.coerce.date(),
+  "publishedAt": zod.union([zod.coerce.date(),zod.null()]),
+  "publishedBy": zod.union([zod.string(),zod.null()]),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
 
 
 export const getSuperAdminGuardianConsentsQueryLimitDefault = 100;
@@ -4939,6 +5239,107 @@ export const GetFacilityQualityControlResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 }))
+})
+
+
+export const getPublicLegalPoliciesResponseTranslationsEnTitleMax = 160;
+
+export const getPublicLegalPoliciesResponseTranslationsEnIntroductionMax = 5000;
+
+export const getPublicLegalPoliciesResponseTranslationsEnBodyMax = 40000;
+
+export const getPublicLegalPoliciesResponseTranslationsArTitleMax = 160;
+
+export const getPublicLegalPoliciesResponseTranslationsArIntroductionMax = 5000;
+
+export const getPublicLegalPoliciesResponseTranslationsArBodyMax = 40000;
+
+export const getPublicLegalPoliciesResponseTranslationsKuTitleMax = 160;
+
+export const getPublicLegalPoliciesResponseTranslationsKuIntroductionMax = 5000;
+
+export const getPublicLegalPoliciesResponseTranslationsKuBodyMax = 40000;
+
+
+
+export const GetPublicLegalPoliciesResponseItem = zod.object({
+  "policyKey": zod.enum(['terms_of_use', 'privacy_policy', 'booking_policy', 'cancellation_policy', 'refund_policy']),
+  "version": zod.string(),
+  "translations": zod.object({
+  "en": zod.object({
+  "title": zod.string().max(getPublicLegalPoliciesResponseTranslationsEnTitleMax),
+  "introduction": zod.string().max(getPublicLegalPoliciesResponseTranslationsEnIntroductionMax),
+  "body": zod.string().max(getPublicLegalPoliciesResponseTranslationsEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().max(getPublicLegalPoliciesResponseTranslationsArTitleMax),
+  "introduction": zod.string().max(getPublicLegalPoliciesResponseTranslationsArIntroductionMax),
+  "body": zod.string().max(getPublicLegalPoliciesResponseTranslationsArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().max(getPublicLegalPoliciesResponseTranslationsKuTitleMax),
+  "introduction": zod.string().max(getPublicLegalPoliciesResponseTranslationsKuIntroductionMax),
+  "body": zod.string().max(getPublicLegalPoliciesResponseTranslationsKuBodyMax)
+})
+}),
+  "effectiveAt": zod.coerce.date()
+})
+export const GetPublicLegalPoliciesResponse = zod.array(GetPublicLegalPoliciesResponseItem)
+
+
+export const GetPublicLegalPolicyVersionParams = zod.object({
+  "policyKey": zod.enum(['terms_of_use', 'privacy_policy', 'booking_policy', 'cancellation_policy', 'refund_policy'])
+})
+
+export const getPublicLegalPolicyVersionQueryVersionMax = 40;
+
+
+
+export const GetPublicLegalPolicyVersionQueryParams = zod.object({
+  "version": zod.coerce.string().min(1).max(getPublicLegalPolicyVersionQueryVersionMax).optional()
+})
+
+export const getPublicLegalPolicyVersionResponseTranslationsEnTitleMax = 160;
+
+export const getPublicLegalPolicyVersionResponseTranslationsEnIntroductionMax = 5000;
+
+export const getPublicLegalPolicyVersionResponseTranslationsEnBodyMax = 40000;
+
+export const getPublicLegalPolicyVersionResponseTranslationsArTitleMax = 160;
+
+export const getPublicLegalPolicyVersionResponseTranslationsArIntroductionMax = 5000;
+
+export const getPublicLegalPolicyVersionResponseTranslationsArBodyMax = 40000;
+
+export const getPublicLegalPolicyVersionResponseTranslationsKuTitleMax = 160;
+
+export const getPublicLegalPolicyVersionResponseTranslationsKuIntroductionMax = 5000;
+
+export const getPublicLegalPolicyVersionResponseTranslationsKuBodyMax = 40000;
+
+
+
+export const GetPublicLegalPolicyVersionResponse = zod.object({
+  "policyKey": zod.enum(['terms_of_use', 'privacy_policy', 'booking_policy', 'cancellation_policy', 'refund_policy']),
+  "version": zod.string(),
+  "translations": zod.object({
+  "en": zod.object({
+  "title": zod.string().max(getPublicLegalPolicyVersionResponseTranslationsEnTitleMax),
+  "introduction": zod.string().max(getPublicLegalPolicyVersionResponseTranslationsEnIntroductionMax),
+  "body": zod.string().max(getPublicLegalPolicyVersionResponseTranslationsEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().max(getPublicLegalPolicyVersionResponseTranslationsArTitleMax),
+  "introduction": zod.string().max(getPublicLegalPolicyVersionResponseTranslationsArIntroductionMax),
+  "body": zod.string().max(getPublicLegalPolicyVersionResponseTranslationsArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().max(getPublicLegalPolicyVersionResponseTranslationsKuTitleMax),
+  "introduction": zod.string().max(getPublicLegalPolicyVersionResponseTranslationsKuIntroductionMax),
+  "body": zod.string().max(getPublicLegalPolicyVersionResponseTranslationsKuBodyMax)
+})
+}),
+  "effectiveAt": zod.coerce.date()
 })
 
 
@@ -6567,11 +6968,51 @@ export const CreateMemberPrivacyRequestResponse = zod.object({
 })
 
 
+export const getMemberConsentsResponsePoliciesItemTranslationsOneEnTitleMax = 160;
+
+export const getMemberConsentsResponsePoliciesItemTranslationsOneEnIntroductionMax = 5000;
+
+export const getMemberConsentsResponsePoliciesItemTranslationsOneEnBodyMax = 40000;
+
+export const getMemberConsentsResponsePoliciesItemTranslationsOneArTitleMax = 160;
+
+export const getMemberConsentsResponsePoliciesItemTranslationsOneArIntroductionMax = 5000;
+
+export const getMemberConsentsResponsePoliciesItemTranslationsOneArBodyMax = 40000;
+
+export const getMemberConsentsResponsePoliciesItemTranslationsOneKuTitleMax = 160;
+
+export const getMemberConsentsResponsePoliciesItemTranslationsOneKuIntroductionMax = 5000;
+
+export const getMemberConsentsResponsePoliciesItemTranslationsOneKuBodyMax = 40000;
+
+
+
 export const GetMemberConsentsResponse = zod.object({
   "policies": zod.array(zod.object({
   "purpose": zod.enum(['terms_of_use', 'privacy_policy', 'marketing']),
   "version": zod.string(),
-  "required": zod.boolean()
+  "required": zod.boolean(),
+  "policyKey": zod.union([zod.enum(['terms_of_use', 'privacy_policy', 'booking_policy', 'cancellation_policy', 'refund_policy']),zod.null()]),
+  "documentPath": zod.union([zod.string(),zod.null()]),
+  "translations": zod.union([zod.object({
+  "en": zod.object({
+  "title": zod.string().max(getMemberConsentsResponsePoliciesItemTranslationsOneEnTitleMax),
+  "introduction": zod.string().max(getMemberConsentsResponsePoliciesItemTranslationsOneEnIntroductionMax),
+  "body": zod.string().max(getMemberConsentsResponsePoliciesItemTranslationsOneEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().max(getMemberConsentsResponsePoliciesItemTranslationsOneArTitleMax),
+  "introduction": zod.string().max(getMemberConsentsResponsePoliciesItemTranslationsOneArIntroductionMax),
+  "body": zod.string().max(getMemberConsentsResponsePoliciesItemTranslationsOneArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().max(getMemberConsentsResponsePoliciesItemTranslationsOneKuTitleMax),
+  "introduction": zod.string().max(getMemberConsentsResponsePoliciesItemTranslationsOneKuIntroductionMax),
+  "body": zod.string().max(getMemberConsentsResponsePoliciesItemTranslationsOneKuBodyMax)
+})
+}),zod.null()]),
+  "effectiveAt": zod.union([zod.coerce.date(),zod.null()])
 })),
   "currentChoices": zod.object({
   "termsOfUse": zod.union([zod.enum(['accepted', 'declined']),zod.null()]),
@@ -6584,23 +7025,72 @@ export const GetMemberConsentsResponse = zod.object({
   "userId": zod.string(),
   "purpose": zod.enum(['terms_of_use', 'privacy_policy', 'marketing']),
   "policyVersion": zod.string(),
+  "documentPath": zod.union([zod.string(),zod.null()]),
   "choice": zod.enum(['accepted', 'declined']),
   "recordedAt": zod.coerce.date()
 }))
 })
 
 
+export const saveMemberConsentsBodyTermsVersionMax = 40;
+
+export const saveMemberConsentsBodyPrivacyVersionMax = 40;
+
+
+
 export const SaveMemberConsentsBody = zod.object({
   "termsOfUseAccepted": zod.boolean(),
   "privacyPolicyAccepted": zod.boolean(),
-  "marketingConsent": zod.boolean()
+  "marketingConsent": zod.boolean(),
+  "termsVersion": zod.string().min(1).max(saveMemberConsentsBodyTermsVersionMax),
+  "privacyVersion": zod.string().min(1).max(saveMemberConsentsBodyPrivacyVersionMax)
 })
+
+export const saveMemberConsentsResponsePoliciesItemTranslationsOneEnTitleMax = 160;
+
+export const saveMemberConsentsResponsePoliciesItemTranslationsOneEnIntroductionMax = 5000;
+
+export const saveMemberConsentsResponsePoliciesItemTranslationsOneEnBodyMax = 40000;
+
+export const saveMemberConsentsResponsePoliciesItemTranslationsOneArTitleMax = 160;
+
+export const saveMemberConsentsResponsePoliciesItemTranslationsOneArIntroductionMax = 5000;
+
+export const saveMemberConsentsResponsePoliciesItemTranslationsOneArBodyMax = 40000;
+
+export const saveMemberConsentsResponsePoliciesItemTranslationsOneKuTitleMax = 160;
+
+export const saveMemberConsentsResponsePoliciesItemTranslationsOneKuIntroductionMax = 5000;
+
+export const saveMemberConsentsResponsePoliciesItemTranslationsOneKuBodyMax = 40000;
+
+
 
 export const SaveMemberConsentsResponse = zod.object({
   "policies": zod.array(zod.object({
   "purpose": zod.enum(['terms_of_use', 'privacy_policy', 'marketing']),
   "version": zod.string(),
-  "required": zod.boolean()
+  "required": zod.boolean(),
+  "policyKey": zod.union([zod.enum(['terms_of_use', 'privacy_policy', 'booking_policy', 'cancellation_policy', 'refund_policy']),zod.null()]),
+  "documentPath": zod.union([zod.string(),zod.null()]),
+  "translations": zod.union([zod.object({
+  "en": zod.object({
+  "title": zod.string().max(saveMemberConsentsResponsePoliciesItemTranslationsOneEnTitleMax),
+  "introduction": zod.string().max(saveMemberConsentsResponsePoliciesItemTranslationsOneEnIntroductionMax),
+  "body": zod.string().max(saveMemberConsentsResponsePoliciesItemTranslationsOneEnBodyMax)
+}),
+  "ar": zod.object({
+  "title": zod.string().max(saveMemberConsentsResponsePoliciesItemTranslationsOneArTitleMax),
+  "introduction": zod.string().max(saveMemberConsentsResponsePoliciesItemTranslationsOneArIntroductionMax),
+  "body": zod.string().max(saveMemberConsentsResponsePoliciesItemTranslationsOneArBodyMax)
+}),
+  "ku": zod.object({
+  "title": zod.string().max(saveMemberConsentsResponsePoliciesItemTranslationsOneKuTitleMax),
+  "introduction": zod.string().max(saveMemberConsentsResponsePoliciesItemTranslationsOneKuIntroductionMax),
+  "body": zod.string().max(saveMemberConsentsResponsePoliciesItemTranslationsOneKuBodyMax)
+})
+}),zod.null()]),
+  "effectiveAt": zod.union([zod.coerce.date(),zod.null()])
 })),
   "currentChoices": zod.object({
   "termsOfUse": zod.union([zod.enum(['accepted', 'declined']),zod.null()]),
@@ -6613,6 +7103,7 @@ export const SaveMemberConsentsResponse = zod.object({
   "userId": zod.string(),
   "purpose": zod.enum(['terms_of_use', 'privacy_policy', 'marketing']),
   "policyVersion": zod.string(),
+  "documentPath": zod.union([zod.string(),zod.null()]),
   "choice": zod.enum(['accepted', 'declined']),
   "recordedAt": zod.coerce.date()
 }))

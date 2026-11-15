@@ -4,20 +4,24 @@ import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
 import { eq, inArray } from "drizzle-orm";
 import express from "express";
-import { db, adminRolePermissions, memberConsentEvents, operationAudit, operators, platformSafetyRules, pool } from "@workspace/db";
+import { db, adminRolePermissions, legalPolicyVersions, memberConsentEvents, operationAudit, operators, platformSafetyRules, pool } from "@workspace/db";
 import { createSuperAdminRouter } from "./super-admin";
+import superAdminMemberRouter from "./member";
+import publicPoliciesRouter from "./legal-policies";
 import { DEFAULT_ADMIN_ACTIONS } from "../lib/admin-roles";
 
 const prefix = `super-admin-${randomUUID()}`;
 const superAdminId = `${prefix}-root`;
 const targetId = `${prefix}-target`;
 const partnerId = `${prefix}-partner`;
+const consentMemberId = `${prefix}-consent-member`;
 const superAdminEmail = `${prefix}@example.com`;
 const targetEmail = `operator-${prefix}@example.com`;
 const partnerEmail = `partner-${prefix}@example.com`;
 let server: Server | null = null;
 let originalFinancePolicy: typeof adminRolePermissions.$inferSelect | null = null;
 let originalPlatformRules: typeof platformSafetyRules.$inferSelect | null = null;
+const createdPolicyIds: string[] = [];
 
 const identities = new Map([
   [superAdminEmail, { userId: superAdminId, email: superAdminEmail }],
@@ -36,6 +40,8 @@ app.use((req, _res, next) => {
   });
   next();
 });
+app.use("/policies", publicPoliciesRouter);
+app.use("/member", superAdminMemberRouter);
 app.use("/super-admin", createSuperAdminRouter({
   async findVerifiedByEmail(email) {
     return identities.get(email) ?? null;
@@ -87,6 +93,10 @@ after(async () => {
     await db.delete(platformSafetyRules).where(eq(platformSafetyRules.id, "global"));
   }
   await db.delete(operators).where(inArray(operators.userId, [superAdminId, targetId, partnerId]));
+  if (createdPolicyIds.length) {
+    await db.delete(legalPolicyVersions).where(inArray(legalPolicyVersions.id, createdPolicyIds));
+  }
+  await db.delete(memberConsentEvents).where(eq(memberConsentEvents.userId, consentMemberId));
   // Audit history is append-only; randomized test events are intentionally retained.
   await pool.end();
 });
@@ -247,9 +257,90 @@ test("Super Admin role management is protected, auditable, and preserves other s
     userId: targetId,
     purpose: "privacy_policy",
     policyVersion: "v1-draft",
+    documentPath: "/privacy",
     choice: "accepted",
     recordedAt: (consentHistory.data as Array<{ recordedAt: string }>)[0].recordedAt,
   }]);
   const consentAudit = await call("/super-admin/audit-logs?limit=100", "GET", superAdminId);
   assert.equal((consentAudit.data as Array<{ action: string }>).some(event => event.action === "super_admin.member_consent_history.viewed"), true);
+
+  const policyVersion = `test-${randomUUID().slice(0, 8)}`;
+  const translations = {
+    en: { title: "Privacy policy test", introduction: "A complete test introduction.", body: "A complete test policy body for English." },
+    ar: { title: "سياسة الخصوصية للاختبار", introduction: "مقدمة اختبار مكتملة للسياسة.", body: "نص اختبار مكتمل للسياسة باللغة العربية." },
+    ku: { title: "سیاسەتی تایبەتمەندی تاقیکردنەوە", introduction: "پێشەکییەکی تەواوی تاقیکردنەوە.", body: "دەقی تەواوی سیاسەت بۆ زمانی کوردی." },
+  };
+  const incompleteTranslations = {
+    ...translations,
+    ku: { ...translations.ku, body: "" },
+  };
+  const draftBody = {
+    policyKey: "privacy_policy",
+    version: policyVersion,
+    translations: incompleteTranslations,
+    effectiveAt: new Date(Date.now() - 60_000).toISOString(),
+  };
+  assert.equal((await call("/super-admin/policies")).status, 401);
+  assert.equal((await call("/super-admin/policies", "GET", partnerId)).status, 403);
+  assert.equal((await call("/super-admin/policies", "POST", partnerId, draftBody)).status, 403);
+  const draftResponse = await call("/super-admin/policies", "POST", superAdminId, draftBody);
+  assert.equal(draftResponse.status, 201);
+  const draft = draftResponse.data as { id: string; status: string };
+  createdPolicyIds.push(draft.id);
+  assert.equal(draft.status, "draft");
+  assert.equal((await call(`/policies/privacy_policy?version=${policyVersion}`)).status, 404);
+  assert.equal((await call(`/super-admin/policies/${draft.id}/publish`, "POST", superAdminId)).status, 400);
+  assert.equal((await call(`/super-admin/policies/${draft.id}`, "PATCH", superAdminId, {
+    translations,
+    effectiveAt: draftBody.effectiveAt,
+  })).status, 200);
+  const publishResponse = await call(`/super-admin/policies/${draft.id}/publish`, "POST", superAdminId);
+  assert.equal(publishResponse.status, 200);
+  assert.equal((publishResponse.data as { status: string }).status, "published");
+  const archivedPolicy = await call(`/policies/privacy_policy?version=${policyVersion}`);
+  assert.equal(archivedPolicy.status, 200);
+  assert.equal((archivedPolicy.data as { translations: typeof translations }).translations.en.body, translations.en.body);
+  assert.equal((await call("/policies/privacy_policy")).status, 200);
+  assert.equal((await call(`/super-admin/policies/${draft.id}`, "PATCH", superAdminId, {
+    translations,
+    effectiveAt: draftBody.effectiveAt,
+  })).status, 409);
+  assert.equal((await call(`/super-admin/policies/${draft.id}/publish`, "POST", superAdminId)).status, 409);
+
+  const memberStateResponse = await call("/member/consents", "GET", consentMemberId);
+  assert.equal(memberStateResponse.status, 200);
+  const memberState = memberStateResponse.data as {
+    policies: Array<{ purpose: string; version: string; translations: typeof translations | null }>;
+    history: Array<{ purpose: string; policyVersion: string; documentPath: string | null }>;
+  };
+  const currentPrivacy = memberState.policies.find(policy => policy.purpose === "privacy_policy");
+  assert.equal(currentPrivacy?.version, policyVersion);
+  assert.equal(currentPrivacy?.translations?.en.body, translations.en.body);
+  const staleChoice = await call("/member/consents", "POST", consentMemberId, {
+    termsOfUseAccepted: true,
+    privacyPolicyAccepted: true,
+    marketingConsent: false,
+    termsVersion: "v1-draft",
+    privacyVersion: "previous-version",
+  });
+  assert.equal(staleChoice.status, 409);
+  const termsVersion = memberState.policies.find(policy => policy.purpose === "terms_of_use")?.version;
+  assert.ok(termsVersion);
+  const currentChoice = await call("/member/consents", "POST", consentMemberId, {
+    termsOfUseAccepted: true,
+    privacyPolicyAccepted: true,
+    marketingConsent: false,
+    termsVersion,
+    privacyVersion: policyVersion,
+  });
+  assert.equal(currentChoice.status, 200);
+  assert.equal((currentChoice.data as typeof memberState).history.some(record =>
+    record.purpose === "privacy_policy" && record.policyVersion === policyVersion
+    && record.documentPath === `/policies/privacy_policy?version=${policyVersion}`,
+  ), true);
+  const policyAudit = await call("/super-admin/audit-logs?limit=100", "GET", superAdminId);
+  assert.equal((policyAudit.data as Array<{ action: string; targetId: string }>).some(event =>
+    event.action === "super_admin.legal_policy.published"
+      && event.targetId === `privacy_policy:${policyVersion}`,
+  ), true);
 });

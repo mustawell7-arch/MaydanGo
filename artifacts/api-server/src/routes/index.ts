@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import memberRouter from "./member";
+import legalPoliciesRouter from "./legal-policies";
 import operationsRouter from "./operations";
 import attendanceRouter from "./attendance";
 import publicRouter from "./public";
@@ -23,6 +24,7 @@ router.use("/public", publicReviewsRouter);
 router.use("/public", publicLearningRouter);
 router.use("/public", publicRouter);
 router.use("/member", memberRouter);
+router.use("/policies", legalPoliciesRouter);
 router.use("/instructor", instructorRouter);
 router.use("/corporate", corporateRouter);
 router.use("/operations/corporate-organizations", operationsCorporateRouter);

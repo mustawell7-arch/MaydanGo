@@ -130,11 +130,19 @@ export default function AccountScreen() {
       setPrivacyNotice(translate(app.language, 'memberConsentsRequiredHint'));
       return;
     }
+    const termsVersion = consents.data?.policies.find(policy => policy.purpose === 'terms_of_use')?.version;
+    const privacyVersion = consents.data?.policies.find(policy => policy.purpose === 'privacy_policy')?.version;
+    if (!termsVersion || !privacyVersion) {
+      setPrivacyNotice(translate(app.language, 'memberConsentsError'));
+      return;
+    }
     try {
       await saveConsents.mutateAsync({ data: {
         termsOfUseAccepted: termsAccepted,
         privacyPolicyAccepted: privacyAccepted,
         marketingConsent,
+        termsVersion,
+        privacyVersion,
       } });
       await queryClient.invalidateQueries({ queryKey: getGetMemberConsentsQueryKey() });
       await app.refreshMember();
@@ -207,9 +215,19 @@ export default function AccountScreen() {
               : <>
                 <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'memberConsentsRequiredHint')}</Text>
                 {consents.data?.policies.map(policy => (
-                  <Text key={policy.purpose} style={{ color: c.mutedForeground }}>
-                    {translate(app.language, consentPurposeKey[policy.purpose])} · {translate(app.language, 'memberConsentsVersion')}: {policy.version}
-                  </Text>
+                  <View key={policy.purpose} style={{ gap: 4 }}>
+                    <Text style={{ color: c.mutedForeground }}>
+                      {translate(app.language, consentPurposeKey[policy.purpose])} · {translate(app.language, 'memberConsentsVersion')}: {policy.version}
+                    </Text>
+                    {policy.policyKey && policy.translations && (
+                      <Pressable
+                        accessibilityRole="link"
+                        onPress={() => router.push({ pathname: '/policies/[policyKey]', params: { policyKey: policy.policyKey!, version: policy.version } })}
+                      >
+                        <Text style={{ color: c.primary, textDecorationLine: 'underline' }}>{translate(app.language, 'memberConsentsReadPolicy')}</Text>
+                      </Pressable>
+                    )}
+                  </View>
                 ))}
                 <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: termsAccepted, disabled: consents.data?.currentChoices.termsOfUse === 'accepted' }} onPress={() => {
                   if (consents.data?.currentChoices.termsOfUse !== 'accepted') setTermsAccepted(value => !value);
@@ -235,6 +253,17 @@ export default function AccountScreen() {
                     <View key={record.id} style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, paddingTop: 8 }}>
                       <Text style={{ color: c.foreground }}>{translate(app.language, consentPurposeKey[record.purpose])} · {record.policyVersion} · {translate(app.language, record.choice === 'accepted' ? 'memberConsentsAccepted' : 'memberConsentsDeclined')}</Text>
                       <Text style={{ color: c.mutedForeground }}>{dateTime(String(record.recordedAt), app.language, true)}</Text>
+                      {record.policyVersion !== 'v1-draft' && record.documentPath && (record.purpose === 'terms_of_use' || record.purpose === 'privacy_policy') ? (
+                        <Pressable
+                          accessibilityRole="link"
+                          onPress={() => router.push({
+                            pathname: '/policies/[policyKey]',
+                            params: { policyKey: record.purpose, version: record.policyVersion },
+                          })}
+                        >
+                          <Text style={{ color: c.primary, textDecorationLine: 'underline' }}>{translate(app.language, 'memberConsentsReadPolicy')}</Text>
+                        </Pressable>
+                      ) : null}
                     </View>
                   ))}
                 </> : <Text style={{ color: c.mutedForeground }}>{translate(app.language, 'memberConsentsNoHistory')}</Text>}

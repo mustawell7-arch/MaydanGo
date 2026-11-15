@@ -56,6 +56,7 @@ import type {
   CoursePlaybackLinkResponse,
   CourseProgressInput,
   CourseSummary,
+  CreateLegalPolicyDraftBody,
   CreateMemberBookingBody,
   DeviceChangeApprovalInput,
   EnablePreviewMembershipBody,
@@ -98,6 +99,7 @@ import type {
   GetOperationCoursesResponse,
   GetOperationsAnalyticsParams,
   GetPartnerSettlementSummaryParams,
+  GetPublicLegalPolicyVersionParams,
   GetSuperAdminAuditLogsParams,
   GetSuperAdminGuardianConsentsParams,
   GetSuperAdminGuardianConsentsResponse,
@@ -114,6 +116,7 @@ import type {
   InstructorSupportTicketInput,
   IssueCheckinQr200,
   JoinAccess,
+  LegalPolicyKey,
   LessonInput,
   LiveOffering,
   LivePlan,
@@ -170,6 +173,7 @@ import type {
   PublicCourse,
   PublicFacility,
   PublicFacilityReviews,
+  PublicLegalPolicyVersion,
   PublicOffering,
   PublicPlan,
   PublicSponsoredFacilityEventInput,
@@ -192,6 +196,7 @@ import type {
   SponsoredFacilityCampaignsResponse,
   StreamMemberCoursePlaybackParams,
   SuperAdminAuditLog,
+  SuperAdminLegalPolicyVersion,
   SupportAgent,
   SupportAgentInput,
   SupportAgentUrgentAlertInput,
@@ -218,7 +223,8 @@ import type {
   SupportTicketLinkInput,
   SupportTicketSummary,
   SupportUrgentAlertDeliveryOutcome,
-  SupportUrgentAlertRecipientAudit
+  SupportUrgentAlertRecipientAudit,
+  UpdateLegalPolicyDraftBody
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -8062,6 +8068,334 @@ export function useGetSuperAdminMemberConsentHistory<TData = Awaited<ReturnType<
 
 
 
+export const getGetSuperAdminLegalPolicyVersionsUrl = () => {
+
+
+
+
+  return `/api/super-admin/policies`
+}
+
+export const getSuperAdminLegalPolicyVersions = async ( options?: Parameters<typeof customFetch>[1]): Promise<SuperAdminLegalPolicyVersion[]> => {
+
+  return customFetch<SuperAdminLegalPolicyVersion[]>(getGetSuperAdminLegalPolicyVersionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSuperAdminLegalPolicyVersionsQueryKey = () => {
+    return [
+    `/api/super-admin/policies`
+    ] as const;
+    }
+
+
+export const getGetSuperAdminLegalPolicyVersionsQueryOptions = <TData = Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSuperAdminLegalPolicyVersionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>> = ({ signal }) => getSuperAdminLegalPolicyVersions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSuperAdminLegalPolicyVersionsQueryResult = NonNullable<Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>>
+export type GetSuperAdminLegalPolicyVersionsQueryError = ErrorType<unknown>
+
+
+export function useGetSuperAdminLegalPolicyVersions<TData = Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminLegalPolicyVersions<TData = Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminLegalPolicyVersions<TData = Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSuperAdminLegalPolicyVersions<TData = Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminLegalPolicyVersions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSuperAdminLegalPolicyVersionsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSuperAdminLegalPolicyDraftUrl = () => {
+
+
+
+
+  return `/api/super-admin/policies`
+}
+
+export const createSuperAdminLegalPolicyDraft = async (createLegalPolicyDraftBody: CreateLegalPolicyDraftBody, options?: Parameters<typeof customFetch>[1]): Promise<SuperAdminLegalPolicyVersion> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SuperAdminLegalPolicyVersion>(getCreateSuperAdminLegalPolicyDraftUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createLegalPolicyDraftBody)
+  }
+);}
+
+
+
+
+
+export const getCreateSuperAdminLegalPolicyDraftMutationKey = () => ['createSuperAdminLegalPolicyDraft'] as const;
+
+export const getCreateSuperAdminLegalPolicyDraftMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSuperAdminLegalPolicyDraft>>, TError,CreateSuperAdminLegalPolicyDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSuperAdminLegalPolicyDraft>>, TError,CreateSuperAdminLegalPolicyDraftMutationVariables, TContext> => {
+
+const mutationKey = getCreateSuperAdminLegalPolicyDraftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSuperAdminLegalPolicyDraft>>, CreateSuperAdminLegalPolicyDraftMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSuperAdminLegalPolicyDraft(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSuperAdminLegalPolicyDraftMutationResult = NonNullable<Awaited<ReturnType<typeof createSuperAdminLegalPolicyDraft>>>
+    export type CreateSuperAdminLegalPolicyDraftMutationBody = BodyType<CreateLegalPolicyDraftBody>
+    export type CreateSuperAdminLegalPolicyDraftMutationError = ErrorType<void>
+    export type CreateSuperAdminLegalPolicyDraftMutationVariables = {data: BodyType<CreateLegalPolicyDraftBody>}
+
+    export const useCreateSuperAdminLegalPolicyDraft = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSuperAdminLegalPolicyDraft>>, TError,CreateSuperAdminLegalPolicyDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createSuperAdminLegalPolicyDraft>>,
+        TError,
+        CreateSuperAdminLegalPolicyDraftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateSuperAdminLegalPolicyDraftMutationOptions(options), queryClient);
+    }
+
+export const getUpdateSuperAdminLegalPolicyDraftUrl = (id: string,) => {
+
+
+
+
+  return `/api/super-admin/policies/${id}`
+}
+
+export const updateSuperAdminLegalPolicyDraft = async (id: string,
+    updateLegalPolicyDraftBody: UpdateLegalPolicyDraftBody, options?: Parameters<typeof customFetch>[1]): Promise<SuperAdminLegalPolicyVersion> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SuperAdminLegalPolicyVersion>(getUpdateSuperAdminLegalPolicyDraftUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateLegalPolicyDraftBody)
+  }
+);}
+
+
+
+
+
+export const getUpdateSuperAdminLegalPolicyDraftMutationKey = () => ['updateSuperAdminLegalPolicyDraft'] as const;
+
+export const getUpdateSuperAdminLegalPolicyDraftMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSuperAdminLegalPolicyDraft>>, TError,UpdateSuperAdminLegalPolicyDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSuperAdminLegalPolicyDraft>>, TError,UpdateSuperAdminLegalPolicyDraftMutationVariables, TContext> => {
+
+const mutationKey = getUpdateSuperAdminLegalPolicyDraftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSuperAdminLegalPolicyDraft>>, UpdateSuperAdminLegalPolicyDraftMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSuperAdminLegalPolicyDraft(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSuperAdminLegalPolicyDraftMutationResult = NonNullable<Awaited<ReturnType<typeof updateSuperAdminLegalPolicyDraft>>>
+    export type UpdateSuperAdminLegalPolicyDraftMutationBody = BodyType<UpdateLegalPolicyDraftBody>
+    export type UpdateSuperAdminLegalPolicyDraftMutationError = ErrorType<void>
+    export type UpdateSuperAdminLegalPolicyDraftMutationVariables = {id: string;data: BodyType<UpdateLegalPolicyDraftBody>}
+
+    export const useUpdateSuperAdminLegalPolicyDraft = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSuperAdminLegalPolicyDraft>>, TError,UpdateSuperAdminLegalPolicyDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateSuperAdminLegalPolicyDraft>>,
+        TError,
+        UpdateSuperAdminLegalPolicyDraftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateSuperAdminLegalPolicyDraftMutationOptions(options), queryClient);
+    }
+
+export const getPublishSuperAdminLegalPolicyVersionUrl = (id: string,) => {
+
+
+
+
+  return `/api/super-admin/policies/${id}/publish`
+}
+
+export const publishSuperAdminLegalPolicyVersion = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<SuperAdminLegalPolicyVersion> => {
+
+  return customFetch<SuperAdminLegalPolicyVersion>(getPublishSuperAdminLegalPolicyVersionUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPublishSuperAdminLegalPolicyVersionMutationKey = () => ['publishSuperAdminLegalPolicyVersion'] as const;
+
+export const getPublishSuperAdminLegalPolicyVersionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishSuperAdminLegalPolicyVersion>>, TError,PublishSuperAdminLegalPolicyVersionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof publishSuperAdminLegalPolicyVersion>>, TError,PublishSuperAdminLegalPolicyVersionMutationVariables, TContext> => {
+
+const mutationKey = getPublishSuperAdminLegalPolicyVersionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishSuperAdminLegalPolicyVersion>>, PublishSuperAdminLegalPolicyVersionMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  publishSuperAdminLegalPolicyVersion(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PublishSuperAdminLegalPolicyVersionMutationResult = NonNullable<Awaited<ReturnType<typeof publishSuperAdminLegalPolicyVersion>>>
+
+    export type PublishSuperAdminLegalPolicyVersionMutationError = ErrorType<void>
+    export type PublishSuperAdminLegalPolicyVersionMutationVariables = {id: string}
+
+    export const usePublishSuperAdminLegalPolicyVersion = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishSuperAdminLegalPolicyVersion>>, TError,PublishSuperAdminLegalPolicyVersionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof publishSuperAdminLegalPolicyVersion>>,
+        TError,
+        PublishSuperAdminLegalPolicyVersionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPublishSuperAdminLegalPolicyVersionMutationOptions(options), queryClient);
+    }
+
 export const getGetSuperAdminGuardianConsentsUrl = (params?: GetSuperAdminGuardianConsentsParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -8342,6 +8676,211 @@ export function useGetFacilityQualityControl<TData = Awaited<ReturnType<typeof g
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetFacilityQualityControlQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicLegalPoliciesUrl = () => {
+
+
+
+
+  return `/api/policies`
+}
+
+export const getPublicLegalPolicies = async ( options?: Parameters<typeof customFetch>[1]): Promise<PublicLegalPolicyVersion[]> => {
+
+  return customFetch<PublicLegalPolicyVersion[]>(getGetPublicLegalPoliciesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicLegalPoliciesQueryKey = () => {
+    return [
+    `/api/policies`
+    ] as const;
+    }
+
+
+export const getGetPublicLegalPoliciesQueryOptions = <TData = Awaited<ReturnType<typeof getPublicLegalPolicies>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicLegalPolicies>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicLegalPoliciesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicLegalPolicies>>> = ({ signal }) => getPublicLegalPolicies({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicLegalPolicies>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPublicLegalPoliciesQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicLegalPolicies>>>
+export type GetPublicLegalPoliciesQueryError = ErrorType<unknown>
+
+
+export function useGetPublicLegalPolicies<TData = Awaited<ReturnType<typeof getPublicLegalPolicies>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicLegalPolicies>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicLegalPolicies>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicLegalPolicies>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicLegalPolicies<TData = Awaited<ReturnType<typeof getPublicLegalPolicies>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicLegalPolicies>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicLegalPolicies>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicLegalPolicies>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicLegalPolicies<TData = Awaited<ReturnType<typeof getPublicLegalPolicies>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicLegalPolicies>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPublicLegalPolicies<TData = Awaited<ReturnType<typeof getPublicLegalPolicies>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicLegalPolicies>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPublicLegalPoliciesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicLegalPolicyVersionUrl = (policyKey: LegalPolicyKey,
+    params?: GetPublicLegalPolicyVersionParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/policies/${policyKey}?${stringifiedParams}` : `/api/policies/${policyKey}`
+}
+
+export const getPublicLegalPolicyVersion = async (policyKey: LegalPolicyKey,
+    params?: GetPublicLegalPolicyVersionParams, options?: Parameters<typeof customFetch>[1]): Promise<PublicLegalPolicyVersion> => {
+
+  return customFetch<PublicLegalPolicyVersion>(getGetPublicLegalPolicyVersionUrl(policyKey,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicLegalPolicyVersionQueryKey = (policyKey: LegalPolicyKey,
+    params?: GetPublicLegalPolicyVersionParams,) => {
+    return [
+    `/api/policies/${policyKey}`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPublicLegalPolicyVersionQueryOptions = <TData = Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>, TError = ErrorType<void>>(policyKey: LegalPolicyKey,
+    params?: GetPublicLegalPolicyVersionParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicLegalPolicyVersionQueryKey(policyKey,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>> = ({ signal }) => getPublicLegalPolicyVersion(policyKey,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: policyKey !== null && policyKey !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPublicLegalPolicyVersionQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>>
+export type GetPublicLegalPolicyVersionQueryError = ErrorType<void>
+
+
+export function useGetPublicLegalPolicyVersion<TData = Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>, TError = ErrorType<void>>(
+ policyKey: LegalPolicyKey,
+    params: undefined |  GetPublicLegalPolicyVersionParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicLegalPolicyVersion<TData = Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>, TError = ErrorType<void>>(
+ policyKey: LegalPolicyKey,
+    params?: GetPublicLegalPolicyVersionParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicLegalPolicyVersion<TData = Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>, TError = ErrorType<void>>(
+ policyKey: LegalPolicyKey,
+    params?: GetPublicLegalPolicyVersionParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPublicLegalPolicyVersion<TData = Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>, TError = ErrorType<void>>(
+ policyKey: LegalPolicyKey,
+    params?: GetPublicLegalPolicyVersionParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicLegalPolicyVersion>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPublicLegalPolicyVersionQueryOptions(policyKey,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

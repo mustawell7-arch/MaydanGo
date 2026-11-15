@@ -78,6 +78,8 @@ const copy: Record<Language, Record<string, string>> = {
     consentSaving: "Saving choices…",
     consentSaved: "Your choices were recorded.",
     consentError: "Your choices could not be saved. Please try again.",
+    consentPolicyChanged: "A policy changed while you were reviewing it. Read the latest version and submit your choices again.",
+    readPolicyVersion: "Read this version",
     consentLoadError: "Consent history could not be loaded.",
     consentHistory: "Consent history",
     consentNoHistory: "No consent choices have been recorded yet.",
@@ -150,6 +152,8 @@ const copy: Record<Language, Record<string, string>> = {
     consentSaving: "جارٍ حفظ الخيارات…",
     consentSaved: "تم تسجيل خياراتك.",
     consentError: "تعذر حفظ خياراتك. حاول مرة أخرى.",
+    consentPolicyChanged: "تغيّرت إحدى السياسات أثناء مراجعتها. اقرأ الإصدار الحالي ثم أرسل خياراتك مجدداً.",
+    readPolicyVersion: "قراءة هذا الإصدار",
     consentLoadError: "تعذر تحميل سجل الموافقات.",
     consentHistory: "سجل الموافقات",
     consentNoHistory: "لم تُسجل أي خيارات موافقة بعد.",
@@ -222,6 +226,8 @@ const copy: Record<Language, Record<string, string>> = {
     consentSaving: "هەڵبژاردەکان پاشەکەوت دەکرێن…",
     consentSaved: "هەڵبژاردەکانت تۆمار کران.",
     consentError: "نەتوانرا هەڵبژاردەکانت پاشەکەوت بکرێن. دووبارە هەوڵ بدەوە.",
+    consentPolicyChanged: "سیاسەتێک لە کاتی پێداچوونەوەتدا گۆڕا. وەشانی نوێ بخوێنەوە و دووبارە هەڵبژاردەکانت بنێرە.",
+    readPolicyVersion: "خوێندنەوەی ئەم وەشانە",
     consentLoadError: "نەتوانرا مێژووی ڕەزامەندی باربکرێت.",
     consentHistory: "مێژووی ڕەزامەندی",
     consentNoHistory: "هێشتا هیچ هەڵبژاردەیەکی ڕەزامەندی تۆمار نەکراوە.",
@@ -352,18 +358,31 @@ export default function MemberAccountPage({ language }: { language: Language }) 
     event.preventDefault();
     setConsentMessage("");
     setConsentError(false);
+    const termsVersion = consents.data?.policies.find(policy => policy.purpose === "terms_of_use")?.version;
+    const privacyVersion = consents.data?.policies.find(policy => policy.purpose === "privacy_policy")?.version;
+    if (!termsVersion || !privacyVersion) {
+      setConsentMessage(t.consentError);
+      setConsentError(true);
+      return;
+    }
     try {
       await saveConsents.mutateAsync({
         data: {
           termsOfUseAccepted: termsAccepted,
           privacyPolicyAccepted: privacyAccepted,
           marketingConsent,
+          termsVersion,
+          privacyVersion,
         },
       });
       await queryClient.invalidateQueries({ queryKey: getGetMemberConsentsQueryKey() });
       setConsentMessage(t.consentSaved);
-    } catch {
-      setConsentMessage(t.consentError);
+    } catch (error) {
+      const status = typeof error === "object" && error !== null && "status" in error
+        ? (error as { status?: unknown }).status : undefined;
+      const policyChanged = status === 409;
+      if (policyChanged) await queryClient.invalidateQueries({ queryKey: getGetMemberConsentsQueryKey() });
+      setConsentMessage(policyChanged ? t.consentPolicyChanged : t.consentError);
       setConsentError(true);
     }
   }
@@ -489,8 +508,8 @@ export default function MemberAccountPage({ language }: { language: Language }) 
             <h2 id="account-consents-heading" className="font-display text-xl font-bold">{t.consentsTitle}</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">{t.consentsIntro}</p>
             <div className="mt-3 flex flex-wrap gap-3 text-sm font-semibold">
-              <Link href="/legal" className="text-primary underline underline-offset-2">{t.readTerms}</Link>
-              <Link href="/privacy" className="text-primary underline underline-offset-2">{t.readPrivacy}</Link>
+              <Link href={consents.data?.policies.find(policy => policy.purpose === "terms_of_use")?.documentPath ?? "/legal"} className="text-primary underline underline-offset-2">{t.readTerms}</Link>
+              <Link href={consents.data?.policies.find(policy => policy.purpose === "privacy_policy")?.documentPath ?? "/privacy"} className="text-primary underline underline-offset-2">{t.readPrivacy}</Link>
             </div>
             {consents.isLoading ? <p className="mt-4 text-sm text-muted-foreground" role="status">{t.loading}</p>
               : consents.isError ? <p className="mt-4 text-sm text-destructive" role="alert">{t.consentLoadError}</p>
@@ -529,6 +548,7 @@ export default function MemberAccountPage({ language }: { language: Language }) 
                             <span className="text-muted-foreground">{record.choice === "accepted" ? t.consentAccepted : t.consentDeclined}</span>
                           </div>
                           <time className="mt-1 block text-xs text-muted-foreground">{formatIraqDate(record.recordedAt, language)}</time>
+                          {record.documentPath && <Link href={record.documentPath} className="mt-2 inline-flex text-xs font-semibold text-primary underline underline-offset-2">{t.readPolicyVersion}</Link>}
                         </li>
                       ))}
                     </ul> : <p className="mt-2 text-sm text-muted-foreground">{t.consentNoHistory}</p>}

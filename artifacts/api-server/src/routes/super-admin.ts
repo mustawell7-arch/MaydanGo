@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, gt, inArray, or } from "drizzle-orm";
-import { db, adminRolePermissions, attendance, guardianConsentDocuments, memberConsentEvents, operationAudit, operators, offerings, partners, platformSafetyRules } from "@workspace/db";
+import { db, adminRolePermissions, attendance, guardianConsentDocuments, legalPolicyVersions, memberConsentEvents, operationAudit, operators, offerings, partners, platformSafetyRules } from "@workspace/db";
 import { z } from "zod";
 import {
   GetSuperAdminPlatformRulesResponse,
@@ -12,6 +12,12 @@ import {
   GetSuperAdminAuditLogsResponse,
   GetSuperAdminMemberConsentHistoryQueryParams,
   GetSuperAdminMemberConsentHistoryResponse,
+  GetSuperAdminLegalPolicyVersionsResponse,
+  CreateSuperAdminLegalPolicyDraftBody,
+  CreateSuperAdminLegalPolicyDraftResponse,
+  UpdateSuperAdminLegalPolicyDraftBody,
+  UpdateSuperAdminLegalPolicyDraftResponse,
+  PublishSuperAdminLegalPolicyVersionResponse,
   UpdateSuperAdminPlatformRulesBody,
   UpdateSuperAdminPlatformRulesResponse,
   UpdateSuperAdminRolePermissionsBody,
@@ -29,6 +35,7 @@ import {
 } from "../lib/admin-roles";
 import { DEFAULT_PLATFORM_SAFETY_RULES, platformSafetyRulesSchema } from "../lib/platform-rules";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
+import { isCompletePolicyTranslation, policyDocumentPath } from "../lib/legal-policies";
 
 type ClerkAccount = { userId: string; email: string };
 type ClerkDirectory = {
@@ -405,8 +412,175 @@ export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirector
     });
     res.json(GetSuperAdminMemberConsentHistoryResponse.parse(rows.map(row => ({
       ...row,
+      documentPath: row.purpose === "terms_of_use" || row.purpose === "privacy_policy"
+        ? policyDocumentPath(row.purpose, row.policyVersion)
+        : null,
       recordedAt: row.recordedAt.toISOString(),
     }))));
+  });
+
+  router.get("/policies", async (_req, res): Promise<void> => {
+    const rows = await db.select().from(legalPolicyVersions)
+      .orderBy(desc(legalPolicyVersions.createdAt), desc(legalPolicyVersions.id))
+      .limit(500);
+    res.json(GetSuperAdminLegalPolicyVersionsResponse.parse(rows.map(row => ({
+      ...row,
+      effectiveAt: row.effectiveAt.toISOString(),
+      publishedAt: row.publishedAt?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    }))));
+  });
+
+  router.post("/policies", async (req, res): Promise<void> => {
+    const parsed = CreateSuperAdminLegalPolicyDraftBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: "Enter a valid policy version, effective date, and translations." });
+      return;
+    }
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/.test(parsed.data.version)) {
+      res.status(400).json({ message: "Enter a valid policy version." });
+      return;
+    }
+    const effectiveAt = new Date(parsed.data.effectiveAt);
+    if (!Number.isFinite(effectiveAt.getTime())) {
+      res.status(400).json({ message: "Choose a valid effective date." });
+      return;
+    }
+    const id = randomUUID();
+    const [created] = await db.insert(legalPolicyVersions).values({
+      id,
+      policyKey: parsed.data.policyKey,
+      version: parsed.data.version,
+      status: "draft",
+      translations: parsed.data.translations,
+      effectiveAt,
+      createdBy: res.locals.superAdminUserId as string,
+    }).onConflictDoNothing()
+      .returning();
+    if (!created) {
+      res.status(409).json({ message: "That version already exists for this policy." });
+      return;
+    }
+    await db.insert(operationAudit).values({
+      id: randomUUID(),
+      actorId: res.locals.superAdminUserId as string,
+      action: "super_admin.legal_policy.draft_created",
+      targetId: `${created.policyKey}:${created.version}`,
+      detail: "Created a draft policy version.",
+    });
+    res.status(201).json(CreateSuperAdminLegalPolicyDraftResponse.parse({
+      ...created,
+      effectiveAt: created.effectiveAt.toISOString(),
+      publishedAt: null,
+      createdAt: created.createdAt.toISOString(),
+      updatedAt: created.updatedAt.toISOString(),
+    }));
+  });
+
+  router.patch("/policies/:id", async (req, res): Promise<void> => {
+    const params = z.object({ id: z.string().uuid() }).safeParse(req.params);
+    const parsed = UpdateSuperAdminLegalPolicyDraftBody.safeParse(req.body);
+    if (!params.success || !parsed.success) {
+      res.status(400).json({ message: "Choose a valid draft and provide complete version details." });
+      return;
+    }
+    const [existing] = await db.select().from(legalPolicyVersions)
+      .where(eq(legalPolicyVersions.id, params.data.id)).limit(1);
+    if (!existing) {
+      res.status(404).json({ message: "Policy draft not found." });
+      return;
+    }
+    if (existing.status !== "draft") {
+      res.status(409).json({ message: "Published policy versions cannot be changed." });
+      return;
+    }
+    const effectiveAt = new Date(parsed.data.effectiveAt);
+    if (!Number.isFinite(effectiveAt.getTime())) {
+      res.status(400).json({ message: "Choose a valid effective date." });
+      return;
+    }
+    const [updated] = await db.update(legalPolicyVersions).set({
+      translations: parsed.data.translations,
+      effectiveAt,
+      updatedAt: new Date(),
+    }).where(and(
+      eq(legalPolicyVersions.id, params.data.id),
+      eq(legalPolicyVersions.status, "draft"),
+    )).returning();
+    if (!updated) {
+      res.status(409).json({ message: "Published policy versions cannot be changed." });
+      return;
+    }
+    await db.insert(operationAudit).values({
+      id: randomUUID(),
+      actorId: res.locals.superAdminUserId as string,
+      action: "super_admin.legal_policy.draft_updated",
+      targetId: `${updated.policyKey}:${updated.version}`,
+      detail: "Updated an unpublished policy draft.",
+    });
+    res.json(UpdateSuperAdminLegalPolicyDraftResponse.parse({
+      ...updated,
+      effectiveAt: updated.effectiveAt.toISOString(),
+      publishedAt: updated.publishedAt?.toISOString() ?? null,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+    }));
+  });
+
+  router.post("/policies/:id/publish", async (req, res): Promise<void> => {
+    const params = z.object({ id: z.string().uuid() }).safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ message: "Choose a valid policy draft." });
+      return;
+    }
+    const [draft] = await db.select().from(legalPolicyVersions)
+      .where(eq(legalPolicyVersions.id, params.data.id)).limit(1);
+    if (!draft) {
+      res.status(404).json({ message: "Policy draft not found." });
+      return;
+    }
+    if (draft.status !== "draft") {
+      res.status(409).json({ message: "This policy version has already been published and is immutable." });
+      return;
+    }
+    const locales = ["en", "ar", "ku"] as const;
+    if (!draft.translations || !locales.every(locale => {
+      const translation = draft.translations[locale];
+      return translation && isCompletePolicyTranslation(translation);
+    })) {
+      res.status(400).json({ message: "Complete the title, introduction, and policy text in English, Arabic, and Kurdish before publishing." });
+      return;
+    }
+    const publishedAt = new Date();
+    const actorId = res.locals.superAdminUserId as string;
+    const [published] = await db.update(legalPolicyVersions).set({
+      status: "published",
+      publishedAt,
+      publishedBy: actorId,
+      updatedAt: publishedAt,
+    }).where(and(
+      eq(legalPolicyVersions.id, params.data.id),
+      eq(legalPolicyVersions.status, "draft"),
+    )).returning();
+    if (!published) {
+      res.status(409).json({ message: "This policy version has already been published and is immutable." });
+      return;
+    }
+    await db.insert(operationAudit).values({
+      id: randomUUID(),
+      actorId,
+      action: "super_admin.legal_policy.published",
+      targetId: `${published.policyKey}:${published.version}`,
+      detail: `Effective ${published.effectiveAt.toISOString()}.`,
+    });
+    res.json(PublishSuperAdminLegalPolicyVersionResponse.parse({
+      ...published,
+      effectiveAt: published.effectiveAt.toISOString(),
+      publishedAt: published.publishedAt?.toISOString() ?? null,
+      createdAt: published.createdAt.toISOString(),
+      updatedAt: published.updatedAt.toISOString(),
+    }));
   });
 
   router.get("/guardian-consents", async (req, res): Promise<void> => {

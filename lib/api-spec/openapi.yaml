@@ -458,12 +458,22 @@ paths:
     $ref: "./operations.yaml#/paths/~1super-admin~1audit-logs"
   /super-admin/member-consents:
     $ref: "./operations.yaml#/paths/~1super-admin~1member-consents"
+  /super-admin/policies:
+    $ref: "./operations.yaml#/paths/~1super-admin~1policies"
+  /super-admin/policies/{id}:
+    $ref: "./operations.yaml#/paths/~1super-admin~1policies~1{id}"
+  /super-admin/policies/{id}/publish:
+    $ref: "./operations.yaml#/paths/~1super-admin~1policies~1{id}~1publish"
   /super-admin/guardian-consents:
     $ref: "./operations.yaml#/paths/~1super-admin~1guardian-consents"
   /super-admin/guardian-consents/{id}/document:
     $ref: "./operations.yaml#/paths/~1super-admin~1guardian-consents~1{id}~1document"
   /operations/quality:
     $ref: "./operations.yaml#/paths/~1operations~1quality"
+  /policies:
+    $ref: "./operations.yaml#/paths/~1policies"
+  /policies/{policyKey}:
+    $ref: "./operations.yaml#/paths/~1policies~1{policyKey}"
   /operations/quality/documents/upload-url:
     $ref: "./operations.yaml#/paths/~1operations~1quality~1documents~1upload-url"
   /operations/quality/documents/{id}/complete:

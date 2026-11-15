@@ -8,7 +8,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { CookieConsent } from '@/components/cookie-consent';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { useGetPublicCatalog, getGetPublicCatalogQueryKey, useGetPublicPlans, getGetPublicPlansQueryKey } from '@workspace/api-client-react';
+import { useGetPublicCatalog, getGetPublicCatalogQueryKey, useGetPublicPlans, getGetPublicPlansQueryKey, useGetPublicLegalPolicies } from '@workspace/api-client-react';
 import type { PublicOffering, PublicPlan } from '@workspace/api-client-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,6 +21,7 @@ import approvedCopy from '@/approved-copy.json';
 import { Route, Switch, useLocation, Router as WouterRouter, Link, Redirect } from 'wouter';
 import { PublicCourseBrowser, PublicFacilityBrowser, PublicHomeShowcase } from '@/pages/public-catalog-sections';
 import { PrivacyPolicyPage } from '@/pages/privacy-policy';
+import { PolicyDocumentPage } from '@/pages/policy-document';
 import { createContactEmailDraft, initialContactTopic, verifiedContactEmail } from '@/lib/contact-enquiry';
 import './index.css';
 
@@ -36,6 +37,7 @@ const InstructorPortalPage = lazy(() =>
 );
 const SupportDeskPage = lazy(() => import('@/pages/support-desk'));
 const SuperAdminPage = lazy(() => import('@/pages/super-admin'));
+const SuperAdminPoliciesPage = lazy(() => import('@/pages/super-admin-policies'));
 const CorporateAdminPage = lazy(() =>
   import('@/pages/corporate-workspace').then(module => ({ default: module.CorporateAdminPage })),
 );
@@ -259,7 +261,7 @@ const legacyTranslations: Record<Language, Copy> = {
     legalPrivacy: 'Privacy note', legalPrivacyD: 'This website may display information necessary to describe public offerings. The contact enquiry interface does not submit or store a message. For privacy questions, use the configured contact route if available.',
     legalStatus: 'Informational status', legalStatusD: 'This content is an informational draft only. It is not legal advice and does not state that it has been reviewed or approved by a lawyer. It should be reviewed for the relevant jurisdictions before formal use.',
     legalDisclaimer: 'This content is an informational draft only. It is not legal advice and does not state that it has been reviewed or approved by a lawyer.',
-    legalPolicyChecklist: 'Policies awaiting review', legalPolicyPending: 'This is a publication checklist, not a set of active terms. Each item needs review before it can be published as policy.',
+    legalPolicyChecklist: 'Policies awaiting review', legalPolicyPending: 'This is a publication checklist, not a set of active terms. Each item needs review before it can be published as policy.', legalPublishedVersions: 'Published policy versions',
     legalPendingLabel: 'Not published as active policy',
     legalTermsTitle: 'Terms of use', legalPrivacyTitle: 'Privacy policy', legalCookiesTitle: 'Cookie policy',
     legalBookingTitle: 'Booking policy', legalCancellationTitle: 'Cancellation policy', legalNoShowTitle: 'No-show policy',
@@ -404,7 +406,7 @@ const legacyTranslations: Record<Language, Copy> = {
     legalPrivacy: 'ملاحظة الخصوصية', legalPrivacyD: 'قد يعرض الموقع معلومات لازمة لوصف الخيارات العامة. واجهة الاستفسار لا ترسل الرسائل ولا تخزنها. لأسئلة الخصوصية استخدم جهة التواصل المعدة إن توفرت.',
     legalStatus: 'الطبيعة المعلوماتية', legalStatusD: 'هذا المحتوى مسودة معلوماتية فقط، وليس نصيحة قانونية ولا يدعي مراجعة محامٍ له أو اعتماده. ينبغي مراجعته وفق الاختصاصات ذات الصلة قبل استخدامه رسمياً.',
     legalDisclaimer: 'هذا المحتوى مسودة معلوماتية فقط، وليس نصيحة قانونية ولا يدعي مراجعته أو اعتماده من محامٍ.',
-    legalPolicyChecklist: 'سياسات بانتظار المراجعة', legalPolicyPending: 'هذه قائمة تجهيز للنشر وليست مجموعة شروط سارية. يحتاج كل بند إلى مراجعة قبل نشره كسياسة.',
+    legalPolicyChecklist: 'سياسات بانتظار المراجعة', legalPolicyPending: 'هذه قائمة تجهيز للنشر وليست مجموعة شروط سارية. يحتاج كل بند إلى مراجعة قبل نشره كسياسة.', legalPublishedVersions: 'إصدارات السياسات المنشورة',
     legalPendingLabel: 'غير منشورة كسياسة سارية',
     legalTermsTitle: 'شروط الاستخدام', legalPrivacyTitle: 'سياسة الخصوصية', legalCookiesTitle: 'سياسة ملفات تعريف الارتباط',
     legalBookingTitle: 'سياسة الحجز', legalCancellationTitle: 'سياسة الإلغاء', legalNoShowTitle: 'سياسة عدم الحضور',
@@ -549,7 +551,7 @@ const legacyTranslations: Record<Language, Copy> = {
     legalPrivacy: 'تێبینی تایبەتمەندی', legalPrivacyD: 'ئەم ماڵپەڕە لەوانەیە زانیاریی پێویست بۆ وەسفکردنی هەڵبژاردە گشتییەکان پیشان بدات. ڕووکاری پرسیار پەیام نانێرێت و هەڵیناگرێت. بۆ پرسیاری تایبەتمەندی ئەگەر هەبوو ڕێگای پەیوەندی ڕێکخراو بەکاربهێنە.',
     legalStatus: 'بارودۆخی زانیاری', legalStatusD: 'ئەم ناوەڕۆکە تەنها ڕەشنووسی زانیارییە. ڕاوێژی یاسایی نییە و بانگەشەی پەسەندکردن یان پێداچوونەوەی پارێزەر ناکات. پێش بەکارهێنانی فەرمی، بەپێی دادوەریی پەیوەندیدار پێداچوونەوەی بۆ بکرێت.',
     legalDisclaimer: 'ئەم ناوەڕۆکە تەنها ڕەشنووسی زانیارییە، ڕاوێژی یاسایی نییە و بانگەشەی پێداچوونەوە یان پەسەندکردنی پارێزەر ناکات.',
-    legalPolicyChecklist: 'سیاسەتەکان چاوەڕێی پێداچوونەوەن', legalPolicyPending: 'ئەمە تەنها لیستی ئامادەکاریی بڵاوکردنەوەیە، نەک کۆمەڵێک مەرجی کارپێکراو. هەر بابەتێک پێویستی بە پێداچوونەوە هەیە پێش ئەوەی وەک سیاسەت بڵاو بکرێتەوە.',
+    legalPolicyChecklist: 'سیاسەتەکان چاوەڕێی پێداچوونەوەن', legalPolicyPending: 'ئەمە تەنها لیستی ئامادەکاریی بڵاوکردنەوەیە، نەک کۆمەڵێک مەرجی کارپێکراو. هەر بابەتێک پێویستی بە پێداچوونەوە هەیە پێش ئەوەی وەک سیاسەت بڵاو بکرێتەوە.', legalPublishedVersions: 'وەشانە بڵاوکراوەکانی سیاسەت',
     legalPendingLabel: 'وەک سیاسەتی کارپێکراو بڵاونەکراوەتەوە',
     legalTermsTitle: 'مەرجەکانی بەکارهێنان', legalPrivacyTitle: 'سیاسەتی تایبەتمەندی', legalCookiesTitle: 'سیاسەتی کوکی',
     legalBookingTitle: 'سیاسەتی حجزکردن', legalCancellationTitle: 'سیاسەتی هەڵوەشاندنەوە', legalNoShowTitle: 'سیاسەتی نەهاتن',
@@ -1222,7 +1224,8 @@ const contactSchema = z.object({
 });
 type ContactFormValues = z.infer<typeof contactSchema>;
 
-function LegalPage({ t }: { t: Copy }) {
+function LegalPage({ t, language }: { t: Copy; language: 'en' | 'ar' | 'ku' }) {
+  const publishedPolicies = useGetPublicLegalPolicies();
   const pendingPolicies = [
     t.legalTermsTitle, t.legalPrivacyTitle, t.legalCookiesTitle, t.legalBookingTitle, t.legalCancellationTitle,
     t.legalNoShowTitle, t.legalRefundTitle, t.legalPartnerTermsTitle, t.legalCorporateTitle, t.legalCourseTitle,
@@ -1233,6 +1236,18 @@ function LegalPage({ t }: { t: Copy }) {
       <div className="mx-auto max-w-3xl">
         <div role="note" className="mb-10 rounded-2xl border border-[#dcaf82]/50 bg-[#f1e6d6] p-5 text-sm font-semibold leading-6">{t.legalDisclaimer}</div>
         <Link href="/privacy" className="mb-8 inline-flex rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground" data-testid="link-legal-privacy-page">{t.privacyLink}</Link>
+        {!!publishedPolicies.data?.length && <section className="mb-10 rounded-2xl border border-border bg-card p-5" aria-labelledby="published-policies-title">
+          <h2 id="published-policies-title" className="font-display text-xl font-bold">{t.legalPublishedVersions}</h2>
+          <ul className="mt-3 flex flex-wrap gap-3">
+            {publishedPolicies.data.map(policy => (
+              <li key={`${policy.policyKey}-${policy.version}`}>
+                <Link href={`/policies/${policy.policyKey}?version=${encodeURIComponent(policy.version)}`} className="text-sm font-semibold text-primary underline underline-offset-2">
+                  {policy.translations[language].title} · {policy.version}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>}
         <article className="prose prose-stone max-w-none">
           <h2>{t.legalWebsite}</h2><p>{t.legalWebsiteD}</p>
           <h2>{t.legalMembership}</h2><p>{t.legalMembershipD}</p>
@@ -1273,8 +1288,9 @@ function ContentRouter() {
         <Route path="/corporate" component={() => <EnquiryPage type="corporate" t={t} />} />
         <Route path="/help" component={() => <HelpPage t={t} />} />
         <Route path="/contact" component={() => <ContactPage t={t} />} />
-        <Route path="/legal" component={() => <LegalPage t={t} />} />
+        <Route path="/legal" component={() => <LegalPage t={t} language={language} />} />
         <Route path="/privacy" component={() => <PrivacyPolicyPage language={language} />} />
+        <Route path="/policies/:policyKey">{params => <PolicyDocumentPage policyKey={params.policyKey ?? ''} language={language} />}</Route>
         <Route path="/account" component={() => <MemberAccountPage language={language} />} />
         <Route component={() => <NotFound title={t.not_found_title} description={t.not_found_description} />} />
       </Switch>
@@ -1286,6 +1302,7 @@ function Router() {
   return <Suspense fallback={<main className="flex min-h-[50vh] items-center justify-center px-5 py-12 text-center text-sm text-muted-foreground" role="status" aria-live="polite">{translations[savedLanguage()].loading}</main>}>
     <Switch>
       <Route path="/super-admin" component={SuperAdminPage} />
+      <Route path="/super-admin/policies" component={SuperAdminPoliciesPage} />
       <Route path="/admin/corporate" component={CorporateAdminPage} />
       <Route path="/corporate-portal" component={CorporatePortalPage} />
       <Route path="/corporate-invite" component={CorporateInvitePage} />

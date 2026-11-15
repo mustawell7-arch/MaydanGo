@@ -949,11 +949,83 @@ export const MemberConsentChoice = {
   declined: 'declined',
 } as const;
 
+export type LegalPolicyKey = typeof LegalPolicyKey[keyof typeof LegalPolicyKey];
+
+
+export const LegalPolicyKey = {
+  terms_of_use: 'terms_of_use',
+  privacy_policy: 'privacy_policy',
+  booking_policy: 'booking_policy',
+  cancellation_policy: 'cancellation_policy',
+  refund_policy: 'refund_policy',
+} as const;
+
+export interface LegalPolicyTranslation {
+  /** @maxLength 160 */
+  title: string;
+  /** @maxLength 5000 */
+  introduction: string;
+  /** @maxLength 40000 */
+  body: string;
+}
+
+export interface LegalPolicyTranslations {
+  en: LegalPolicyTranslation;
+  ar: LegalPolicyTranslation;
+  ku: LegalPolicyTranslation;
+}
+
+export type LegalPolicyVersionStatus = typeof LegalPolicyVersionStatus[keyof typeof LegalPolicyVersionStatus];
+
+
+export const LegalPolicyVersionStatus = {
+  draft: 'draft',
+  published: 'published',
+} as const;
+
+export interface PublicLegalPolicyVersion {
+  policyKey: LegalPolicyKey;
+  version: string;
+  translations: LegalPolicyTranslations;
+  effectiveAt: string;
+}
+
+export interface SuperAdminLegalPolicyVersion {
+  id: string;
+  policyKey: LegalPolicyKey;
+  version: string;
+  status: LegalPolicyVersionStatus;
+  translations: LegalPolicyTranslations;
+  effectiveAt: string;
+  publishedAt: string | null;
+  publishedBy: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateLegalPolicyDraftBody {
+  policyKey: LegalPolicyKey;
+  /**
+     * @minLength 1
+     * @maxLength 40
+     */
+  version: string;
+  translations: LegalPolicyTranslations;
+  effectiveAt: string;
+}
+
+export interface UpdateLegalPolicyDraftBody {
+  translations: LegalPolicyTranslations;
+  effectiveAt: string;
+}
+
 export interface MemberConsentRecord {
   id: string;
   userId: string;
   purpose: MemberConsentPurpose;
   policyVersion: string;
+  documentPath: string | null;
   choice: MemberConsentChoice;
   recordedAt: string;
 }
@@ -962,6 +1034,10 @@ export interface MemberConsentPolicy {
   purpose: MemberConsentPurpose;
   version: string;
   required: boolean;
+  policyKey: LegalPolicyKey | null;
+  documentPath: string | null;
+  translations: LegalPolicyTranslations | null;
+  effectiveAt: string | null;
 }
 
 export interface MemberConsentCurrentChoices {
@@ -981,6 +1057,16 @@ export interface MemberConsentInput {
   termsOfUseAccepted: boolean;
   privacyPolicyAccepted: boolean;
   marketingConsent: boolean;
+  /**
+     * @minLength 1
+     * @maxLength 40
+     */
+  termsVersion: string;
+  /**
+     * @minLength 1
+     * @maxLength 40
+     */
+  privacyVersion: string;
 }
 
 /**
@@ -4306,6 +4392,14 @@ limit?: number;
  * @minimum 0
  */
 offset?: number;
+};
+
+export type GetPublicLegalPolicyVersionParams = {
+/**
+ * @minLength 1
+ * @maxLength 40
+ */
+version?: string;
 };
 
 export type StreamMemberCoursePlaybackParams = {

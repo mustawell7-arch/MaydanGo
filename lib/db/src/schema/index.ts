@@ -15,6 +15,7 @@ export * from "./reviews";
 export * from "./instructor";
 export * from "./corporate";
 export * from "./member-consents";
+export * from "./legal-policy-versions";
 export * from "./guardian-consents";
 // Export your models here. Add one export per file
 // export * from "./posts";

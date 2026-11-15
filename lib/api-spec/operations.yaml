@@ -126,6 +126,37 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/MemberConsentState" }
+  /policies:
+    get:
+      operationId: getPublicLegalPolicies
+      responses:
+        "200":
+          description: Currently effective published policy versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PublicLegalPolicyVersion" }
+  /policies/{policyKey}:
+    parameters:
+      - name: policyKey
+        in: path
+        required: true
+        schema: { $ref: "#/components/schemas/LegalPolicyKey" }
+      - name: version
+        in: query
+        required: false
+        schema: { type: string, minLength: 1, maxLength: 40 }
+    get:
+      operationId: getPublicLegalPolicyVersion
+      responses:
+        "200":
+          description: A published policy version, current or historical
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicLegalPolicyVersion" }
+        "404":
+          description: No published version exists for the requested policy
   /member/privacy-requests/{id}/export:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     get:
@@ -2036,6 +2067,67 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/MemberConsentRecord" }
+  /super-admin/policies:
+    get:
+      operationId: getSuperAdminLegalPolicyVersions
+      responses:
+        "200":
+          description: Draft and published policy version history for Super Admin review
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SuperAdminLegalPolicyVersion" }
+    post:
+      operationId: createSuperAdminLegalPolicyDraft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateLegalPolicyDraftBody" }
+      responses:
+        "201":
+          description: A new editable draft version
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuperAdminLegalPolicyVersion" }
+        "409":
+          description: The policy version already exists
+  /super-admin/policies/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: updateSuperAdminLegalPolicyDraft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateLegalPolicyDraftBody" }
+      responses:
+        "200":
+          description: The updated draft version
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuperAdminLegalPolicyVersion" }
+        "404":
+          description: Draft not found
+        "409":
+          description: Published policy versions are immutable
+  /super-admin/policies/{id}/publish:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: publishSuperAdminLegalPolicyVersion
+      responses:
+        "200":
+          description: The policy version is published and effective on its selected date
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuperAdminLegalPolicyVersion" }
+        "400":
+          description: All supported languages need complete policy text before publication
+        "404":
+          description: Draft not found
+        "409":
+          description: The policy version has already been published
 components:
   parameters:
     Id: { name: id, in: path, required: true, schema: { type: string } }
@@ -2297,25 +2389,114 @@ components:
     MemberConsentChoice:
       type: string
       enum: [accepted, declined]
+    LegalPolicyKey:
+      type: string
+      enum: [terms_of_use, privacy_policy, booking_policy, cancellation_policy, refund_policy]
+    LegalPolicyTranslation:
+      type: object
+      additionalProperties: false
+      required: [title, introduction, body]
+      properties:
+        title: { type: string, maxLength: 160 }
+        introduction: { type: string, maxLength: 5000 }
+        body: { type: string, maxLength: 40000 }
+    LegalPolicyTranslations:
+      type: object
+      additionalProperties: false
+      required: [en, ar, ku]
+      properties:
+        en: { $ref: "#/components/schemas/LegalPolicyTranslation" }
+        ar: { $ref: "#/components/schemas/LegalPolicyTranslation" }
+        ku: { $ref: "#/components/schemas/LegalPolicyTranslation" }
+    LegalPolicyVersionStatus:
+      type: string
+      enum: [draft, published]
+    PublicLegalPolicyVersion:
+      type: object
+      additionalProperties: false
+      required: [policyKey, version, translations, effectiveAt]
+      properties:
+        policyKey: { $ref: "#/components/schemas/LegalPolicyKey" }
+        version: { type: string }
+        translations: { $ref: "#/components/schemas/LegalPolicyTranslations" }
+        effectiveAt: { type: string, format: date-time }
+    SuperAdminLegalPolicyVersion:
+      type: object
+      additionalProperties: false
+      required: [id, policyKey, version, status, translations, effectiveAt, publishedAt, publishedBy, createdBy, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        policyKey: { $ref: "#/components/schemas/LegalPolicyKey" }
+        version: { type: string }
+        status: { $ref: "#/components/schemas/LegalPolicyVersionStatus" }
+        translations: { $ref: "#/components/schemas/LegalPolicyTranslations" }
+        effectiveAt: { type: string, format: date-time }
+        publishedAt:
+          anyOf:
+            - { type: string, format: date-time }
+            - { type: "null" }
+        publishedBy:
+          anyOf:
+            - { type: string }
+            - { type: "null" }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CreateLegalPolicyDraftBody:
+      type: object
+      additionalProperties: false
+      required: [policyKey, version, translations, effectiveAt]
+      properties:
+        policyKey: { $ref: "#/components/schemas/LegalPolicyKey" }
+        version: { type: string, minLength: 1, maxLength: 40 }
+        translations: { $ref: "#/components/schemas/LegalPolicyTranslations" }
+        effectiveAt: { type: string, format: date-time }
+    UpdateLegalPolicyDraftBody:
+      type: object
+      additionalProperties: false
+      required: [translations, effectiveAt]
+      properties:
+        translations: { $ref: "#/components/schemas/LegalPolicyTranslations" }
+        effectiveAt: { type: string, format: date-time }
     MemberConsentRecord:
       type: object
       additionalProperties: false
-      required: [id, userId, purpose, policyVersion, choice, recordedAt]
+      required: [id, userId, purpose, policyVersion, documentPath, choice, recordedAt]
       properties:
         id: { type: string }
         userId: { type: string }
         purpose: { $ref: "#/components/schemas/MemberConsentPurpose" }
         policyVersion: { type: string }
+        documentPath:
+          anyOf:
+            - { type: string }
+            - { type: "null" }
         choice: { $ref: "#/components/schemas/MemberConsentChoice" }
         recordedAt: { type: string, format: date-time }
     MemberConsentPolicy:
       type: object
       additionalProperties: false
-      required: [purpose, version, required]
+      required: [purpose, version, required, policyKey, documentPath, translations, effectiveAt]
       properties:
         purpose: { $ref: "#/components/schemas/MemberConsentPurpose" }
         version: { type: string }
         required: { type: boolean }
+        policyKey:
+          anyOf:
+            - { $ref: "#/components/schemas/LegalPolicyKey" }
+            - { type: "null" }
+        documentPath:
+          anyOf:
+            - { type: string }
+            - { type: "null" }
+        translations:
+          anyOf:
+            - { $ref: "#/components/schemas/LegalPolicyTranslations" }
+            - { type: "null" }
+        effectiveAt:
+          anyOf:
+            - { type: string, format: date-time }
+            - { type: "null" }
     MemberConsentCurrentChoices:
       type: object
       additionalProperties: false
@@ -2349,11 +2530,13 @@ components:
     MemberConsentInput:
       type: object
       additionalProperties: false
-      required: [termsOfUseAccepted, privacyPolicyAccepted, marketingConsent]
+      required: [termsOfUseAccepted, privacyPolicyAccepted, marketingConsent, termsVersion, privacyVersion]
       properties:
         termsOfUseAccepted: { type: boolean }
         privacyPolicyAccepted: { type: boolean }
         marketingConsent: { type: boolean }
+        termsVersion: { type: string, minLength: 1, maxLength: 40 }
+        privacyVersion: { type: string, minLength: 1, maxLength: 40 }
     MemberConsentHistoryLimit:
       type: integer
       minimum: 1
