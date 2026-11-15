@@ -3496,6 +3496,118 @@ export interface PartnerComplianceDocumentReviewInput {
   reviewNote: string | null;
 }
 
+/**
+ * @nullable
+ */
+export type PartnerContractVersionContentType = typeof PartnerContractVersionContentType[keyof typeof PartnerContractVersionContentType] | null;
+
+
+export const PartnerContractVersionContentType = {
+  'application/pdf': 'application/pdf',
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+} as const;
+
+export type PartnerContractVersionStatus = typeof PartnerContractVersionStatus[keyof typeof PartnerContractVersionStatus];
+
+
+export const PartnerContractVersionStatus = {
+  upload_pending: 'upload_pending',
+  submitted: 'submitted',
+  approved: 'approved',
+  rejected: 'rejected',
+  superseded: 'superseded',
+} as const;
+
+export interface PartnerContractVersion {
+  id: string;
+  partnerId: string;
+  partnerName: string;
+  /** @minimum 1 */
+  versionNumber: number;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  replacesVersionNumber: number | null;
+  documentName: string;
+  changeSummary: string;
+  /** @nullable */
+  contentType: PartnerContractVersionContentType;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     * @nullable
+     */
+  fileSize: number | null;
+  status: PartnerContractVersionStatus;
+  /** @nullable */
+  reviewNote: string | null;
+  /** @nullable */
+  reviewedAt: string | null;
+  /** @nullable */
+  supersededAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PartnerContractUploadInputContentType = typeof PartnerContractUploadInputContentType[keyof typeof PartnerContractUploadInputContentType];
+
+
+export const PartnerContractUploadInputContentType = {
+  'application/pdf': 'application/pdf',
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+} as const;
+
+export interface PartnerContractUploadInput {
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  documentName: string;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+  contentType: PartnerContractUploadInputContentType;
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
+  changeSummary: string;
+}
+
+export interface PartnerContractUpload {
+  id: string;
+  uploadURL: string;
+  /** @minimum 1 */
+  versionNumber: number;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  replacesVersionNumber: number | null;
+}
+
+export type PartnerContractReviewInputStatus = typeof PartnerContractReviewInputStatus[keyof typeof PartnerContractReviewInputStatus];
+
+
+export const PartnerContractReviewInputStatus = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface PartnerContractReviewInput {
+  status: PartnerContractReviewInputStatus;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  reviewNote: string | null;
+}
+
 export type FacilityEmergencyContactVerificationStatus = typeof FacilityEmergencyContactVerificationStatus[keyof typeof FacilityEmergencyContactVerificationStatus];
 
 

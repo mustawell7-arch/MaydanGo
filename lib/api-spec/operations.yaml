@@ -703,6 +703,78 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/FacilityQualityControl" }
+  /operations/contracts:
+    get:
+      operationId: getPartnerContractVersions
+      responses:
+        "200":
+          description: Private partner contract history for the owning partner or authorized safety administrators
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PartnerContractVersion" }
+        "401": { description: Sign-in required }
+        "403": { description: Partner or safety administrator access required }
+  /operations/contracts/upload-url:
+    post:
+      operationId: requestPartnerContractUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerContractUploadInput" }
+      responses:
+        "200":
+          description: Short-lived private upload URL and assigned version number
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerContractUpload" }
+        "400": { description: Invalid file metadata or change summary }
+        "403": { description: Approved partner access required }
+        "409": { description: The partner record is unavailable for contract upload }
+  /operations/contracts/{id}/complete:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: completePartnerContractUpload
+      responses:
+        "200":
+          description: Contract upload verified and submitted for safety review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerContractVersion" }
+        "400": { description: Uploaded contract is missing or does not meet type and size limits }
+        "404": { description: Upload not found within the partner's scope }
+  /operations/contracts/{id}/file:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: downloadPartnerContractVersion
+      responses:
+        "200":
+          description: Private contract file for its owning partner or authorized safety administrator
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "404": { description: Contract not found within the operator's scope }
+  /operations/contracts/{id}/review:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: reviewPartnerContractVersion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerContractReviewInput" }
+      responses:
+        "200":
+          description: Contract decision recorded; approved replacements preserve the previous version
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerContractVersion" }
+        "400": { description: Invalid contract decision or missing rejection reason }
+        "403": { description: Safety administrator access required }
+        "409": { description: The version no longer replaces the current approved contract }
+        "404": { description: Submitted contract not found }
   /operations/quality/emergency-contacts/{id}:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     put:
@@ -4062,6 +4134,51 @@ components:
         id: { type: string, format: uuid }
         uploadURL: { type: string, format: uri }
     PartnerComplianceDocumentReviewInput:
+      type: object
+      additionalProperties: false
+      required: [status, reviewNote]
+      properties:
+        status: { type: string, enum: [approved, rejected] }
+        reviewNote: { type: ["string", "null"], maxLength: 1000 }
+    PartnerContractVersion:
+      type: object
+      additionalProperties: false
+      required: [id, partnerId, partnerName, versionNumber, replacesVersionNumber, documentName, changeSummary, contentType, fileSize, status, reviewNote, reviewedAt, supersededAt, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        partnerId: { type: string }
+        partnerName: { type: string }
+        versionNumber: { type: integer, minimum: 1 }
+        replacesVersionNumber: { type: ["integer", "null"], minimum: 1 }
+        documentName: { type: string }
+        changeSummary: { type: string }
+        contentType: { type: ["string", "null"], enum: [application/pdf, image/jpeg, image/png, null] }
+        fileSize: { type: ["integer", "null"], minimum: 1, maximum: 10485760 }
+        status: { type: string, enum: [upload_pending, submitted, approved, rejected, superseded] }
+        reviewNote: { type: ["string", "null"] }
+        reviewedAt: { type: ["string", "null"], format: date-time }
+        supersededAt: { type: ["string", "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    PartnerContractUploadInput:
+      type: object
+      additionalProperties: false
+      required: [documentName, size, contentType, changeSummary]
+      properties:
+        documentName: { type: string, minLength: 1, maxLength: 180 }
+        size: { type: integer, minimum: 1, maximum: 10485760 }
+        contentType: { type: string, enum: [application/pdf, image/jpeg, image/png] }
+        changeSummary: { type: string, minLength: 10, maxLength: 2000 }
+    PartnerContractUpload:
+      type: object
+      additionalProperties: false
+      required: [id, uploadURL, versionNumber, replacesVersionNumber]
+      properties:
+        id: { type: string, format: uuid }
+        uploadURL: { type: string, format: uri }
+        versionNumber: { type: integer, minimum: 1 }
+        replacesVersionNumber: { type: ["integer", "null"], minimum: 1 }
+    PartnerContractReviewInput:
       type: object
       additionalProperties: false
       required: [status, reviewNote]

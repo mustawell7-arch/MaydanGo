@@ -6,6 +6,7 @@ import {
   useUpdateFacilityQualityAssessment, useUpdateFacilityQualityIncident, useUpsertFacilityEmergencyContact,
 } from '@workspace/api-client-react';
 import { PartnerComplianceDocuments } from '@/components/partner-compliance-documents';
+import { PartnerContractVersions } from '@/components/partner-contract-versions';
 import type {
   FacilityEmergencyContactInput, FacilityHygieneChecklist, FacilityQualityAssessment, FacilityQualityAssessmentInput,
   FacilityQualityIncidentInput, FacilityQualityIncidentUpdate, FacilitySafetyChecklist,
@@ -521,6 +522,7 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
       facilities={facilities}
       documents={query.data.complianceDocuments}
     />
+    <PartnerContractVersions lang={lang} role={query.data.role} />
 
     <div className="grid gap-6 xl:grid-cols-2">
       {qualityAdmin && <form onSubmit={event => void submitAssessment(event)} className="grid content-start gap-4 rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6">

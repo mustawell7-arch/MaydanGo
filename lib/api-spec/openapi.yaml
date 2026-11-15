@@ -336,6 +336,16 @@ paths:
         "200": { description: Audited review saved }
   /operations:
     $ref: "./operations.yaml#/paths/~1operations"
+  /operations/contracts:
+    $ref: "./operations.yaml#/paths/~1operations~1contracts"
+  /operations/contracts/upload-url:
+    $ref: "./operations.yaml#/paths/~1operations~1contracts~1upload-url"
+  /operations/contracts/{id}/complete:
+    $ref: "./operations.yaml#/paths/~1operations~1contracts~1{id}~1complete"
+  /operations/contracts/{id}/file:
+    $ref: "./operations.yaml#/paths/~1operations~1contracts~1{id}~1file"
+  /operations/contracts/{id}/review:
+    $ref: "./operations.yaml#/paths/~1operations~1contracts~1{id}~1review"
   /operations/partners:
     $ref: "./operations.yaml#/paths/~1operations~1partners"
   /operations/attendance/{id}/guardian-consent/upload-url:

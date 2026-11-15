@@ -1481,6 +1481,134 @@ export const GetOperationsResponse = zod.object({
 })
 
 
+
+
+export const getPartnerContractVersionsResponseFileSizeMax = 10485760;
+
+
+
+export const GetPartnerContractVersionsResponseItem = zod.object({
+  "id": zod.uuid(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "versionNumber": zod.int().min(1),
+  "replacesVersionNumber": zod.int().min(1).nullable(),
+  "documentName": zod.string(),
+  "changeSummary": zod.string(),
+  "contentType": zod.union([zod.literal('application/pdf'),zod.literal('image/jpeg'),zod.literal('image/png'),zod.literal(null)]).nullable(),
+  "fileSize": zod.int().min(1).max(getPartnerContractVersionsResponseFileSizeMax).nullable(),
+  "status": zod.enum(['upload_pending', 'submitted', 'approved', 'rejected', 'superseded']),
+  "reviewNote": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "supersededAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const GetPartnerContractVersionsResponse = zod.array(GetPartnerContractVersionsResponseItem)
+
+
+export const requestPartnerContractUploadUrlBodyDocumentNameMax = 180;
+
+export const requestPartnerContractUploadUrlBodySizeMax = 10485760;
+
+export const requestPartnerContractUploadUrlBodyChangeSummaryMin = 10;
+export const requestPartnerContractUploadUrlBodyChangeSummaryMax = 2000;
+
+
+
+export const RequestPartnerContractUploadUrlBody = zod.object({
+  "documentName": zod.string().min(1).max(requestPartnerContractUploadUrlBodyDocumentNameMax),
+  "size": zod.int().min(1).max(requestPartnerContractUploadUrlBodySizeMax),
+  "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png']),
+  "changeSummary": zod.string().min(requestPartnerContractUploadUrlBodyChangeSummaryMin).max(requestPartnerContractUploadUrlBodyChangeSummaryMax)
+})
+
+
+
+
+
+export const RequestPartnerContractUploadUrlResponse = zod.object({
+  "id": zod.uuid(),
+  "uploadURL": zod.url(),
+  "versionNumber": zod.int().min(1),
+  "replacesVersionNumber": zod.int().min(1).nullable()
+})
+
+
+export const CompletePartnerContractUploadParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+export const completePartnerContractUploadResponseFileSizeMax = 10485760;
+
+
+
+export const CompletePartnerContractUploadResponse = zod.object({
+  "id": zod.uuid(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "versionNumber": zod.int().min(1),
+  "replacesVersionNumber": zod.int().min(1).nullable(),
+  "documentName": zod.string(),
+  "changeSummary": zod.string(),
+  "contentType": zod.union([zod.literal('application/pdf'),zod.literal('image/jpeg'),zod.literal('image/png'),zod.literal(null)]).nullable(),
+  "fileSize": zod.int().min(1).max(completePartnerContractUploadResponseFileSizeMax).nullable(),
+  "status": zod.enum(['upload_pending', 'submitted', 'approved', 'rejected', 'superseded']),
+  "reviewNote": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "supersededAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const DownloadPartnerContractVersionParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DownloadPartnerContractVersionResponse = zod.unknown()
+
+
+export const ReviewPartnerContractVersionParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const reviewPartnerContractVersionBodyReviewNoteMax = 1000;
+
+
+
+export const ReviewPartnerContractVersionBody = zod.object({
+  "status": zod.enum(['approved', 'rejected']),
+  "reviewNote": zod.string().max(reviewPartnerContractVersionBodyReviewNoteMax).nullable()
+})
+
+
+
+export const reviewPartnerContractVersionResponseFileSizeMax = 10485760;
+
+
+
+export const ReviewPartnerContractVersionResponse = zod.object({
+  "id": zod.uuid(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "versionNumber": zod.int().min(1),
+  "replacesVersionNumber": zod.int().min(1).nullable(),
+  "documentName": zod.string(),
+  "changeSummary": zod.string(),
+  "contentType": zod.union([zod.literal('application/pdf'),zod.literal('image/jpeg'),zod.literal('image/png'),zod.literal(null)]).nullable(),
+  "fileSize": zod.int().min(1).max(reviewPartnerContractVersionResponseFileSizeMax).nullable(),
+  "status": zod.enum(['upload_pending', 'submitted', 'approved', 'rejected', 'superseded']),
+  "reviewNote": zod.string().nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "supersededAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
 export const AddPartnerBody = zod.object({
   "name": zod.string(),
   "groupId": zod.string(),

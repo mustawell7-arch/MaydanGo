@@ -76,6 +76,17 @@ export class ObjectStorageService {
     return { uploadURL, documentPath: `/objects/${objectName}` };
   }
 
+  async createPartnerContractUpload(partnerId: string, versionId: string) {
+    if (!/^[A-Za-z0-9_-]{1,160}$/.test(partnerId)
+      || !/^[0-9a-f-]{36}$/i.test(versionId)) {
+      throw new Error("Invalid partner contract version identifier.");
+    }
+    const objectName = `partner-contracts/${partnerId}/${versionId}`;
+    const { bucketName, objectName: bucketObjectName } = parseObjectPath(`${this.privateDir()}/${objectName}`);
+    const uploadURL = await signUpload(bucketName, bucketObjectName);
+    return { uploadURL, documentPath: `/objects/${objectName}` };
+  }
+
   async createSupportAttachmentUpload(ticketId: string, attachmentId: string) {
     if (!/^[0-9a-f-]{36}$/i.test(ticketId) || !/^[0-9a-f-]{36}$/i.test(attachmentId)) {
       throw new Error("Invalid support attachment identifier.");
