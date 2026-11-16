@@ -70,3 +70,31 @@ mtime_ms = 1793550064074
 storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/50f3283e-bdc6-4af6-bbfa-5dbda055aa1f/9f08d129-b86e-46cf-9250-b523f2881d66"
 storage_version_token = "1793550119194570"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "EiT2BkvBnhneKRuZNM3BZ"
+uri = "file://generated-artifacts/maydango-corporate-enrollment-agreement-draft-0.1.pdf"
+type = "pdf"
+title = "MaydanGo corporate agreement draft — PDF"
+description = "English discussion draft 0.1 for review. It is not for signature and leaves legal and commercial terms for qualified Iraqi counsel."
+logical_id = "9fecfce3-86f5-436b-b0dc-ba2bcf7c5625"
+content_hash = "sha256:b3f0aac461ffd7017aa7442b06617acd39d175ceef7c091727b93bb72d01f39f"
+size = 129574
+mtime_ms = 1794833486168
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/9fecfce3-86f5-436b-b0dc-ba2bcf7c5625/e5a3b2bc-bec7-4e15-af4d-4ad5ef4acafa"
+storage_version_token = "1794833843425787"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "FOe_zpJb3P8zppALrJcRV"
+uri = "file://generated-artifacts/maydango-corporate-enrollment-agreement-draft-0.1.docx"
+type = "word_document"
+title = "MaydanGo corporate agreement draft — DOCX"
+description = "Editable English discussion draft 0.1 for review and redlining. It is not for signature and leaves legal and commercial terms for qualified Iraqi counsel."
+logical_id = "d2adc1ce-8034-420e-b8b0-6106ff931504"
+content_hash = "sha256:c73def73f75cc6f4fe6ee1c0979b96bfbcb50d95ca083d61793770f25a9f830d"
+size = 40155
+mtime_ms = 1794833588815
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/d2adc1ce-8034-420e-b8b0-6106ff931504/f1fddab3-c048-4413-98f1-41bc86c11932"
+storage_version_token = "1794833844127870"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

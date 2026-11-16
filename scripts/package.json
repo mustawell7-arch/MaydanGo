@@ -5,10 +5,14 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
+    "generate-corporate-agreement-pdf": "tsx ./src/generate-corporate-agreement-pdf.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "tsx": "catalog:"
+  },
+  "dependencies": {
+    "puppeteer-core": "^25.17.0"
   }
 }

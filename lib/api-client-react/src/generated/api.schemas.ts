@@ -2385,6 +2385,133 @@ export interface InstructorAccessDecisionResponse {
   offeringCount: number;
 }
 
+export interface CorporateAgreementTemplate {
+  agreementText: string;
+}
+
+export type CorporateAgreementVersionStatus = typeof CorporateAgreementVersionStatus[keyof typeof CorporateAgreementVersionStatus];
+
+
+export const CorporateAgreementVersionStatus = {
+  draft: 'draft',
+  approved: 'approved',
+  rejected: 'rejected',
+  signed: 'signed',
+  superseded: 'superseded',
+} as const;
+
+/**
+ * @nullable
+ */
+export type CorporateAgreementVersionSignedContentType = typeof CorporateAgreementVersionSignedContentType[keyof typeof CorporateAgreementVersionSignedContentType] | null;
+
+
+export const CorporateAgreementVersionSignedContentType = {
+  'application/pdf': 'application/pdf',
+} as const;
+
+export interface CorporateAgreementVersion {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  /** @minimum 1 */
+  versionNumber: number;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  replacesVersionNumber: number | null;
+  agreementText: string;
+  changeSummary: string;
+  status: CorporateAgreementVersionStatus;
+  /** @nullable */
+  reviewNote: string | null;
+  /** @nullable */
+  signedDocumentName: string | null;
+  /** @nullable */
+  signedContentType: CorporateAgreementVersionSignedContentType;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     * @nullable
+     */
+  signedFileSize: number | null;
+  /** @nullable */
+  reviewedAt: string | null;
+  /** @nullable */
+  signedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CorporateAgreementDraftInput {
+  /**
+     * @minLength 10
+     * @maxLength 1000
+     */
+  changeSummary: string;
+}
+
+export interface CorporateAgreementEditInput {
+  /**
+     * @minLength 100
+     * @maxLength 30000
+     */
+  agreementText: string;
+  /**
+     * @minLength 10
+     * @maxLength 1000
+     */
+  changeSummary: string;
+}
+
+export type CorporateAgreementReviewInputStatus = typeof CorporateAgreementReviewInputStatus[keyof typeof CorporateAgreementReviewInputStatus];
+
+
+export const CorporateAgreementReviewInputStatus = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface CorporateAgreementReviewInput {
+  status: CorporateAgreementReviewInputStatus;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  reviewNote: string | null;
+}
+
+export type CorporateAgreementUploadInputContentType = typeof CorporateAgreementUploadInputContentType[keyof typeof CorporateAgreementUploadInputContentType];
+
+
+export const CorporateAgreementUploadInputContentType = {
+  'application/pdf': 'application/pdf',
+} as const;
+
+export interface CorporateAgreementUploadInput {
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  documentName: string;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+  contentType: CorporateAgreementUploadInputContentType;
+}
+
+export interface CorporateAgreementUpload {
+  uploadId: string;
+  uploadURL: string;
+}
+
+export interface CorporateAgreementUploadCompleteInput {
+  uploadId: string;
+}
+
 export interface CorporateOrganizationInput {
   /**
      * @minLength 2

@@ -416,6 +416,24 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1corporate-organizations"
   /operations/corporate-organizations/{id}/admin-invitations:
     $ref: "./operations.yaml#/paths/~1operations~1corporate-organizations~1{id}~1admin-invitations"
+  /operations/corporate-organizations/{id}/agreements:
+    $ref: "./operations.yaml#/paths/~1operations~1corporate-organizations~1{id}~1agreements"
+  /operations/corporate-organizations/{id}/agreements/{versionId}:
+    $ref: "./operations.yaml#/paths/~1operations~1corporate-organizations~1{id}~1agreements~1{versionId}"
+  /operations/corporate-organizations/{id}/agreements/{versionId}/review:
+    $ref: "./operations.yaml#/paths/~1operations~1corporate-organizations~1{id}~1agreements~1{versionId}~1review"
+  /operations/corporate-organizations/{id}/agreements/{versionId}/upload-url:
+    $ref: "./operations.yaml#/paths/~1operations~1corporate-organizations~1{id}~1agreements~1{versionId}~1upload-url"
+  /operations/corporate-organizations/{id}/agreements/{versionId}/complete:
+    $ref: "./operations.yaml#/paths/~1operations~1corporate-organizations~1{id}~1agreements~1{versionId}~1complete"
+  /operations/corporate-organizations/{id}/agreements/{versionId}/file:
+    $ref: "./operations.yaml#/paths/~1operations~1corporate-organizations~1{id}~1agreements~1{versionId}~1file"
+  /corporate/organizations/{id}/agreements:
+    $ref: "./operations.yaml#/paths/~1corporate~1organizations~1{id}~1agreements"
+  /public/corporate-agreement-template:
+    $ref: "./operations.yaml#/paths/~1public~1corporate-agreement-template"
+  /corporate/organizations/{id}/agreements/{versionId}/file:
+    $ref: "./operations.yaml#/paths/~1corporate~1organizations~1{id}~1agreements~1{versionId}~1file"
   /corporate/portal:
     $ref: "./operations.yaml#/paths/~1corporate~1portal"
   /corporate/invitations/accept:

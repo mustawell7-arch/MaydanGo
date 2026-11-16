@@ -54,6 +54,9 @@ const CorporateInvitePage = lazy(() =>
 const CorporatePortalPage = lazy(() =>
   import('@/pages/corporate-workspace').then(module => ({ default: module.CorporatePortalPage })),
 );
+const CorporateAgreementTemplatePage = lazy(() =>
+  import('@/pages/corporate-workspace').then(module => ({ default: module.CorporateAgreementTemplatePage })),
+);
 
 const queryClient = new QueryClient();
 const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
@@ -1356,6 +1359,7 @@ function Router() {
       <Route path="/super-admin" component={SuperAdminPage} />
       <Route path="/super-admin/policies" component={SuperAdminPoliciesPage} />
       <Route path="/admin/corporate" component={CorporateAdminPage} />
+      <Route path="/corporate-agreement-draft" component={CorporateAgreementTemplatePage} />
       <Route path="/corporate-portal" component={CorporatePortalPage} />
       <Route path="/corporate-invite" component={CorporateInvitePage} />
       <Route path="/support-desk" component={SupportDeskPage} />

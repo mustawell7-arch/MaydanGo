@@ -18,6 +18,7 @@ import instructorRouter from "./instructor";
 import corporateRouter from "./corporate";
 import operationsCorporateRouter from "./operations-corporate";
 import partnerContractsRouter from "./partner-contracts";
+import corporateAgreementsRouter from "./corporate-agreements";
 import superAdminRouter from "./super-admin";
 
 const router: IRouter = Router();
@@ -29,6 +30,7 @@ router.use("/policies", legalPoliciesRouter);
 router.use("/instructor", instructorRouter);
 router.use("/corporate", corporateRouter);
 router.use("/operations/corporate-organizations", operationsCorporateRouter);
+router.use(corporateAgreementsRouter);
 router.use("/operations/contracts", partnerContractsRouter);
 router.use(sponsoredPlacementsRouter);
 router.use("/operations/quality", qualityControlRouter);

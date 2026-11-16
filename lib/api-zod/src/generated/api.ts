@@ -3803,6 +3803,270 @@ export const InviteCorporateAdministratorResponse = zod.object({
 })
 
 
+export const GetCorporateAgreementVersionsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+export const getCorporateAgreementVersionsResponseSignedFileSizeMax = 10485760;
+
+
+
+export const GetCorporateAgreementVersionsResponseItem = zod.object({
+  "id": zod.uuid(),
+  "organizationId": zod.uuid(),
+  "organizationName": zod.string(),
+  "versionNumber": zod.int().min(1),
+  "replacesVersionNumber": zod.int().min(1).nullable(),
+  "agreementText": zod.string(),
+  "changeSummary": zod.string(),
+  "status": zod.enum(['draft', 'approved', 'rejected', 'signed', 'superseded']),
+  "reviewNote": zod.string().nullable(),
+  "signedDocumentName": zod.string().nullable(),
+  "signedContentType": zod.union([zod.literal('application/pdf'),zod.literal(null)]).nullable(),
+  "signedFileSize": zod.int().min(1).max(getCorporateAgreementVersionsResponseSignedFileSizeMax).nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "signedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const GetCorporateAgreementVersionsResponse = zod.array(GetCorporateAgreementVersionsResponseItem)
+
+
+export const CreateCorporateAgreementDraftParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const createCorporateAgreementDraftBodyChangeSummaryMin = 10;
+export const createCorporateAgreementDraftBodyChangeSummaryMax = 1000;
+
+
+
+export const CreateCorporateAgreementDraftBody = zod.object({
+  "changeSummary": zod.string().min(createCorporateAgreementDraftBodyChangeSummaryMin).max(createCorporateAgreementDraftBodyChangeSummaryMax)
+})
+
+
+
+export const createCorporateAgreementDraftResponseSignedFileSizeMax = 10485760;
+
+
+
+export const CreateCorporateAgreementDraftResponse = zod.object({
+  "id": zod.uuid(),
+  "organizationId": zod.uuid(),
+  "organizationName": zod.string(),
+  "versionNumber": zod.int().min(1),
+  "replacesVersionNumber": zod.int().min(1).nullable(),
+  "agreementText": zod.string(),
+  "changeSummary": zod.string(),
+  "status": zod.enum(['draft', 'approved', 'rejected', 'signed', 'superseded']),
+  "reviewNote": zod.string().nullable(),
+  "signedDocumentName": zod.string().nullable(),
+  "signedContentType": zod.union([zod.literal('application/pdf'),zod.literal(null)]).nullable(),
+  "signedFileSize": zod.int().min(1).max(createCorporateAgreementDraftResponseSignedFileSizeMax).nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "signedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const UpdateCorporateAgreementDraftParams = zod.object({
+  "id": zod.coerce.string(),
+  "versionId": zod.uuid()
+})
+
+export const updateCorporateAgreementDraftBodyAgreementTextMin = 100;
+export const updateCorporateAgreementDraftBodyAgreementTextMax = 30000;
+
+export const updateCorporateAgreementDraftBodyChangeSummaryMin = 10;
+export const updateCorporateAgreementDraftBodyChangeSummaryMax = 1000;
+
+
+
+export const UpdateCorporateAgreementDraftBody = zod.object({
+  "agreementText": zod.string().min(updateCorporateAgreementDraftBodyAgreementTextMin).max(updateCorporateAgreementDraftBodyAgreementTextMax),
+  "changeSummary": zod.string().min(updateCorporateAgreementDraftBodyChangeSummaryMin).max(updateCorporateAgreementDraftBodyChangeSummaryMax)
+})
+
+
+
+export const updateCorporateAgreementDraftResponseSignedFileSizeMax = 10485760;
+
+
+
+export const UpdateCorporateAgreementDraftResponse = zod.object({
+  "id": zod.uuid(),
+  "organizationId": zod.uuid(),
+  "organizationName": zod.string(),
+  "versionNumber": zod.int().min(1),
+  "replacesVersionNumber": zod.int().min(1).nullable(),
+  "agreementText": zod.string(),
+  "changeSummary": zod.string(),
+  "status": zod.enum(['draft', 'approved', 'rejected', 'signed', 'superseded']),
+  "reviewNote": zod.string().nullable(),
+  "signedDocumentName": zod.string().nullable(),
+  "signedContentType": zod.union([zod.literal('application/pdf'),zod.literal(null)]).nullable(),
+  "signedFileSize": zod.int().min(1).max(updateCorporateAgreementDraftResponseSignedFileSizeMax).nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "signedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const ReviewCorporateAgreementDraftParams = zod.object({
+  "id": zod.coerce.string(),
+  "versionId": zod.uuid()
+})
+
+export const reviewCorporateAgreementDraftBodyReviewNoteMax = 1000;
+
+
+
+export const ReviewCorporateAgreementDraftBody = zod.object({
+  "status": zod.enum(['approved', 'rejected']),
+  "reviewNote": zod.string().max(reviewCorporateAgreementDraftBodyReviewNoteMax).nullable()
+})
+
+
+
+export const reviewCorporateAgreementDraftResponseSignedFileSizeMax = 10485760;
+
+
+
+export const ReviewCorporateAgreementDraftResponse = zod.object({
+  "id": zod.uuid(),
+  "organizationId": zod.uuid(),
+  "organizationName": zod.string(),
+  "versionNumber": zod.int().min(1),
+  "replacesVersionNumber": zod.int().min(1).nullable(),
+  "agreementText": zod.string(),
+  "changeSummary": zod.string(),
+  "status": zod.enum(['draft', 'approved', 'rejected', 'signed', 'superseded']),
+  "reviewNote": zod.string().nullable(),
+  "signedDocumentName": zod.string().nullable(),
+  "signedContentType": zod.union([zod.literal('application/pdf'),zod.literal(null)]).nullable(),
+  "signedFileSize": zod.int().min(1).max(reviewCorporateAgreementDraftResponseSignedFileSizeMax).nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "signedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const RequestCorporateAgreementUploadUrlParams = zod.object({
+  "id": zod.coerce.string(),
+  "versionId": zod.uuid()
+})
+
+export const requestCorporateAgreementUploadUrlBodyDocumentNameMax = 180;
+
+export const requestCorporateAgreementUploadUrlBodySizeMax = 10485760;
+
+
+
+export const RequestCorporateAgreementUploadUrlBody = zod.object({
+  "documentName": zod.string().min(1).max(requestCorporateAgreementUploadUrlBodyDocumentNameMax),
+  "size": zod.int().min(1).max(requestCorporateAgreementUploadUrlBodySizeMax),
+  "contentType": zod.enum(['application/pdf'])
+})
+
+export const RequestCorporateAgreementUploadUrlResponse = zod.object({
+  "uploadId": zod.uuid(),
+  "uploadURL": zod.url()
+})
+
+
+export const CompleteCorporateAgreementUploadParams = zod.object({
+  "id": zod.coerce.string(),
+  "versionId": zod.uuid()
+})
+
+export const CompleteCorporateAgreementUploadBody = zod.object({
+  "uploadId": zod.uuid()
+})
+
+
+
+export const completeCorporateAgreementUploadResponseSignedFileSizeMax = 10485760;
+
+
+
+export const CompleteCorporateAgreementUploadResponse = zod.object({
+  "id": zod.uuid(),
+  "organizationId": zod.uuid(),
+  "organizationName": zod.string(),
+  "versionNumber": zod.int().min(1),
+  "replacesVersionNumber": zod.int().min(1).nullable(),
+  "agreementText": zod.string(),
+  "changeSummary": zod.string(),
+  "status": zod.enum(['draft', 'approved', 'rejected', 'signed', 'superseded']),
+  "reviewNote": zod.string().nullable(),
+  "signedDocumentName": zod.string().nullable(),
+  "signedContentType": zod.union([zod.literal('application/pdf'),zod.literal(null)]).nullable(),
+  "signedFileSize": zod.int().min(1).max(completeCorporateAgreementUploadResponseSignedFileSizeMax).nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "signedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const DownloadCorporateAgreementFileParams = zod.object({
+  "id": zod.coerce.string(),
+  "versionId": zod.uuid()
+})
+
+export const DownloadCorporateAgreementFileResponse = zod.unknown()
+
+
+export const GetMyCorporateAgreementVersionsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+export const getMyCorporateAgreementVersionsResponseSignedFileSizeMax = 10485760;
+
+
+
+export const GetMyCorporateAgreementVersionsResponseItem = zod.object({
+  "id": zod.uuid(),
+  "organizationId": zod.uuid(),
+  "organizationName": zod.string(),
+  "versionNumber": zod.int().min(1),
+  "replacesVersionNumber": zod.int().min(1).nullable(),
+  "agreementText": zod.string(),
+  "changeSummary": zod.string(),
+  "status": zod.enum(['draft', 'approved', 'rejected', 'signed', 'superseded']),
+  "reviewNote": zod.string().nullable(),
+  "signedDocumentName": zod.string().nullable(),
+  "signedContentType": zod.union([zod.literal('application/pdf'),zod.literal(null)]).nullable(),
+  "signedFileSize": zod.int().min(1).max(getMyCorporateAgreementVersionsResponseSignedFileSizeMax).nullable(),
+  "reviewedAt": zod.coerce.date().nullable(),
+  "signedAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const GetMyCorporateAgreementVersionsResponse = zod.array(GetMyCorporateAgreementVersionsResponseItem)
+
+
+export const GetPublicCorporateAgreementTemplateResponse = zod.object({
+  "agreementText": zod.string()
+})
+
+
+export const DownloadMyCorporateAgreementFileParams = zod.object({
+  "id": zod.coerce.string(),
+  "versionId": zod.uuid()
+})
+
+export const DownloadMyCorporateAgreementFileResponse = zod.unknown()
+
+
 export const GetCorporatePortalResponse = zod.object({
   "adminOrganizations": zod.array(zod.object({
   "id": zod.string(),

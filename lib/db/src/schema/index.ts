@@ -15,6 +15,7 @@ export * from "./sponsored-placements";
 export * from "./reviews";
 export * from "./instructor";
 export * from "./corporate";
+export * from "./corporate-agreement-versions";
 export * from "./member-consents";
 export * from "./legal-policy-versions";
 export * from "./guardian-consents";

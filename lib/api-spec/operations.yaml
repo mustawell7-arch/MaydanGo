@@ -1452,6 +1452,159 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CorporateInvitationLink" }
+  /operations/corporate-organizations/{id}/agreements:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getCorporateAgreementVersions
+      responses:
+        "200":
+          description: Agreement versions for an organization, restricted to authorized corporate administrators
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/CorporateAgreementVersion" } }
+        "403": { description: Corporate administrator access required }
+        "404": { description: Organization not found }
+    post:
+      operationId: createCorporateAgreementDraft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorporateAgreementDraftInput" }
+      responses:
+        "201":
+          description: New non-binding discussion draft created for legal review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorporateAgreementVersion" }
+        "400": { description: Invalid change summary }
+        "409": { description: An editable draft already exists }
+  /operations/corporate-organizations/{id}/agreements/{versionId}:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - { $ref: "#/components/parameters/VersionId" }
+    patch:
+      operationId: updateCorporateAgreementDraft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorporateAgreementEditInput" }
+      responses:
+        "200":
+          description: Draft text updated before review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorporateAgreementVersion" }
+        "400": { description: Invalid draft text }
+        "409": { description: Only draft versions can be edited }
+        "404": { description: Draft not found in the organization }
+  /operations/corporate-organizations/{id}/agreements/{versionId}/review:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - { $ref: "#/components/parameters/VersionId" }
+    patch:
+      operationId: reviewCorporateAgreementDraft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorporateAgreementReviewInput" }
+      responses:
+        "200":
+          description: Approval or rejection recorded without enabling billing or access
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorporateAgreementVersion" }
+        "400": { description: Invalid review decision }
+        "409": { description: Draft is no longer current or reviewable }
+        "404": { description: Draft not found in the organization }
+  /operations/corporate-organizations/{id}/agreements/{versionId}/upload-url:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - { $ref: "#/components/parameters/VersionId" }
+    post:
+      operationId: requestCorporateAgreementUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorporateAgreementUploadInput" }
+      responses:
+        "200":
+          description: Short-lived private upload URL for an approved signed PDF
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorporateAgreementUpload" }
+        "400": { description: Invalid PDF metadata }
+        "409": { description: Only approved versions can receive a signed copy }
+  /operations/corporate-organizations/{id}/agreements/{versionId}/complete:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - { $ref: "#/components/parameters/VersionId" }
+    post:
+      operationId: completeCorporateAgreementUpload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CorporateAgreementUploadCompleteInput" }
+      responses:
+        "200":
+          description: Signed PDF verified and recorded as an immutable agreement version
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorporateAgreementVersion" }
+        "400": { description: Uploaded file is missing or invalid }
+        "409": { description: Upload is no longer current }
+        "404": { description: Agreement version not found }
+  /operations/corporate-organizations/{id}/agreements/{versionId}/file:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - { $ref: "#/components/parameters/VersionId" }
+    get:
+      operationId: downloadCorporateAgreementFile
+      responses:
+        "200":
+          description: Private signed agreement PDF for an authorized corporate administrator
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "404": { description: Signed document not found in the organization }
+  /corporate/organizations/{id}/agreements:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getMyCorporateAgreementVersions
+      responses:
+        "200":
+          description: Agreement history for the signed-in HR administrator's own organization
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/CorporateAgreementVersion" } }
+        "403": { description: HR administrator access required }
+        "404": { description: Agreement organization not found }
+  /public/corporate-agreement-template:
+    get:
+      operationId: getPublicCorporateAgreementTemplate
+      responses:
+        "200":
+          description: Non-binding English corporate enrollment discussion draft for legal review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CorporateAgreementTemplate" }
+  /corporate/organizations/{id}/agreements/{versionId}/file:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - { $ref: "#/components/parameters/VersionId" }
+    get:
+      operationId: downloadMyCorporateAgreementFile
+      responses:
+        "200":
+          description: Private signed agreement PDF for the owning organization
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "404": { description: Signed document not found in the organization's scope }
   /corporate/portal:
     get:
       operationId: getCorporatePortal
@@ -2225,6 +2378,7 @@ paths:
 components:
   parameters:
     Id: { name: id, in: path, required: true, schema: { type: string } }
+    VersionId: { name: versionId, in: path, required: true, schema: { type: string, format: uuid } }
   schemas:
     MemberDevicePlatform:
       type: string
@@ -3482,6 +3636,74 @@ components:
         status: { type: string, enum: [approved, rejected] }
         courseCount: { type: integer }
         offeringCount: { type: integer }
+    CorporateAgreementTemplate:
+      type: object
+      additionalProperties: false
+      required: [agreementText]
+      properties:
+        agreementText: { type: string }
+    CorporateAgreementVersion:
+      type: object
+      additionalProperties: false
+      required: [id, organizationId, organizationName, versionNumber, replacesVersionNumber, agreementText, changeSummary, status, reviewNote, signedDocumentName, signedContentType, signedFileSize, reviewedAt, signedAt, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        organizationId: { type: string, format: uuid }
+        organizationName: { type: string }
+        versionNumber: { type: integer, minimum: 1 }
+        replacesVersionNumber: { type: ["integer", "null"], minimum: 1 }
+        agreementText: { type: string }
+        changeSummary: { type: string }
+        status: { type: string, enum: [draft, approved, rejected, signed, superseded] }
+        reviewNote: { type: ["string", "null"] }
+        signedDocumentName: { type: ["string", "null"] }
+        signedContentType: { type: ["string", "null"], enum: [application/pdf, null] }
+        signedFileSize: { type: ["integer", "null"], minimum: 1, maximum: 10485760 }
+        reviewedAt: { type: ["string", "null"], format: date-time }
+        signedAt: { type: ["string", "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    CorporateAgreementDraftInput:
+      type: object
+      additionalProperties: false
+      required: [changeSummary]
+      properties:
+        changeSummary: { type: string, minLength: 10, maxLength: 1000 }
+    CorporateAgreementEditInput:
+      type: object
+      additionalProperties: false
+      required: [agreementText, changeSummary]
+      properties:
+        agreementText: { type: string, minLength: 100, maxLength: 30000 }
+        changeSummary: { type: string, minLength: 10, maxLength: 1000 }
+    CorporateAgreementReviewInput:
+      type: object
+      additionalProperties: false
+      required: [status, reviewNote]
+      properties:
+        status: { type: string, enum: [approved, rejected] }
+        reviewNote: { type: ["string", "null"], maxLength: 1000 }
+    CorporateAgreementUploadInput:
+      type: object
+      additionalProperties: false
+      required: [documentName, size, contentType]
+      properties:
+        documentName: { type: string, minLength: 1, maxLength: 180 }
+        size: { type: integer, minimum: 1, maximum: 10485760 }
+        contentType: { type: string, enum: [application/pdf] }
+    CorporateAgreementUpload:
+      type: object
+      additionalProperties: false
+      required: [uploadId, uploadURL]
+      properties:
+        uploadId: { type: string, format: uuid }
+        uploadURL: { type: string, format: uri }
+    CorporateAgreementUploadCompleteInput:
+      type: object
+      additionalProperties: false
+      required: [uploadId]
+      properties:
+        uploadId: { type: string, format: uuid }
     CorporateOrganizationInput:
       type: object
       additionalProperties: false

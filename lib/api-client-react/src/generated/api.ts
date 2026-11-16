@@ -40,6 +40,14 @@ import type {
   CheckinPolicy,
   CompletePartnerGuardianConsentUpload200,
   CorporateAdministratorInvitationInput,
+  CorporateAgreementDraftInput,
+  CorporateAgreementEditInput,
+  CorporateAgreementReviewInput,
+  CorporateAgreementTemplate,
+  CorporateAgreementUpload,
+  CorporateAgreementUploadCompleteInput,
+  CorporateAgreementUploadInput,
+  CorporateAgreementVersion,
   CorporateEmployeeInvitationBatch,
   CorporateEmployeeInvitationInput,
   CorporateEmployeeRemoval,
@@ -6059,6 +6067,920 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getInviteCorporateAdministratorMutationOptions(options), queryClient);
     }
+
+export const getGetCorporateAgreementVersionsUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/corporate-organizations/${id}/agreements`
+}
+
+export const getCorporateAgreementVersions = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<CorporateAgreementVersion[]> => {
+
+  return customFetch<CorporateAgreementVersion[]>(getGetCorporateAgreementVersionsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCorporateAgreementVersionsQueryKey = (id: string,) => {
+    return [
+    `/api/operations/corporate-organizations/${id}/agreements`
+    ] as const;
+    }
+
+
+export const getGetCorporateAgreementVersionsQueryOptions = <TData = Awaited<ReturnType<typeof getCorporateAgreementVersions>>, TError = ErrorType<void>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCorporateAgreementVersions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCorporateAgreementVersionsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCorporateAgreementVersions>>> = ({ signal }) => getCorporateAgreementVersions(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCorporateAgreementVersions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCorporateAgreementVersionsQueryResult = NonNullable<Awaited<ReturnType<typeof getCorporateAgreementVersions>>>
+export type GetCorporateAgreementVersionsQueryError = ErrorType<void>
+
+
+export function useGetCorporateAgreementVersions<TData = Awaited<ReturnType<typeof getCorporateAgreementVersions>>, TError = ErrorType<void>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCorporateAgreementVersions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCorporateAgreementVersions>>,
+          TError,
+          Awaited<ReturnType<typeof getCorporateAgreementVersions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCorporateAgreementVersions<TData = Awaited<ReturnType<typeof getCorporateAgreementVersions>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCorporateAgreementVersions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCorporateAgreementVersions>>,
+          TError,
+          Awaited<ReturnType<typeof getCorporateAgreementVersions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCorporateAgreementVersions<TData = Awaited<ReturnType<typeof getCorporateAgreementVersions>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCorporateAgreementVersions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetCorporateAgreementVersions<TData = Awaited<ReturnType<typeof getCorporateAgreementVersions>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCorporateAgreementVersions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCorporateAgreementVersionsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateCorporateAgreementDraftUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/corporate-organizations/${id}/agreements`
+}
+
+export const createCorporateAgreementDraft = async (id: string,
+    corporateAgreementDraftInput: CorporateAgreementDraftInput, options?: Parameters<typeof customFetch>[1]): Promise<CorporateAgreementVersion> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CorporateAgreementVersion>(getCreateCorporateAgreementDraftUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(corporateAgreementDraftInput)
+  }
+);}
+
+
+
+
+
+export const getCreateCorporateAgreementDraftMutationKey = () => ['createCorporateAgreementDraft'] as const;
+
+export const getCreateCorporateAgreementDraftMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCorporateAgreementDraft>>, TError,CreateCorporateAgreementDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCorporateAgreementDraft>>, TError,CreateCorporateAgreementDraftMutationVariables, TContext> => {
+
+const mutationKey = getCreateCorporateAgreementDraftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCorporateAgreementDraft>>, CreateCorporateAgreementDraftMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createCorporateAgreementDraft(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCorporateAgreementDraftMutationResult = NonNullable<Awaited<ReturnType<typeof createCorporateAgreementDraft>>>
+    export type CreateCorporateAgreementDraftMutationBody = BodyType<CorporateAgreementDraftInput>
+    export type CreateCorporateAgreementDraftMutationError = ErrorType<void>
+    export type CreateCorporateAgreementDraftMutationVariables = {id: string;data: BodyType<CorporateAgreementDraftInput>}
+
+    export const useCreateCorporateAgreementDraft = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCorporateAgreementDraft>>, TError,CreateCorporateAgreementDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createCorporateAgreementDraft>>,
+        TError,
+        CreateCorporateAgreementDraftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateCorporateAgreementDraftMutationOptions(options), queryClient);
+    }
+
+export const getUpdateCorporateAgreementDraftUrl = (id: string,
+    versionId: string,) => {
+
+
+
+
+  return `/api/operations/corporate-organizations/${id}/agreements/${versionId}`
+}
+
+export const updateCorporateAgreementDraft = async (id: string,
+    versionId: string,
+    corporateAgreementEditInput: CorporateAgreementEditInput, options?: Parameters<typeof customFetch>[1]): Promise<CorporateAgreementVersion> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CorporateAgreementVersion>(getUpdateCorporateAgreementDraftUrl(id,versionId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(corporateAgreementEditInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateCorporateAgreementDraftMutationKey = () => ['updateCorporateAgreementDraft'] as const;
+
+export const getUpdateCorporateAgreementDraftMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCorporateAgreementDraft>>, TError,UpdateCorporateAgreementDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCorporateAgreementDraft>>, TError,UpdateCorporateAgreementDraftMutationVariables, TContext> => {
+
+const mutationKey = getUpdateCorporateAgreementDraftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCorporateAgreementDraft>>, UpdateCorporateAgreementDraftMutationVariables> = (props) => {
+          const {id,versionId,data} = props ?? {};
+
+          return  updateCorporateAgreementDraft(id,versionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCorporateAgreementDraftMutationResult = NonNullable<Awaited<ReturnType<typeof updateCorporateAgreementDraft>>>
+    export type UpdateCorporateAgreementDraftMutationBody = BodyType<CorporateAgreementEditInput>
+    export type UpdateCorporateAgreementDraftMutationError = ErrorType<void>
+    export type UpdateCorporateAgreementDraftMutationVariables = {id: string;versionId: string;data: BodyType<CorporateAgreementEditInput>}
+
+    export const useUpdateCorporateAgreementDraft = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCorporateAgreementDraft>>, TError,UpdateCorporateAgreementDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateCorporateAgreementDraft>>,
+        TError,
+        UpdateCorporateAgreementDraftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateCorporateAgreementDraftMutationOptions(options), queryClient);
+    }
+
+export const getReviewCorporateAgreementDraftUrl = (id: string,
+    versionId: string,) => {
+
+
+
+
+  return `/api/operations/corporate-organizations/${id}/agreements/${versionId}/review`
+}
+
+export const reviewCorporateAgreementDraft = async (id: string,
+    versionId: string,
+    corporateAgreementReviewInput: CorporateAgreementReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<CorporateAgreementVersion> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CorporateAgreementVersion>(getReviewCorporateAgreementDraftUrl(id,versionId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(corporateAgreementReviewInput)
+  }
+);}
+
+
+
+
+
+export const getReviewCorporateAgreementDraftMutationKey = () => ['reviewCorporateAgreementDraft'] as const;
+
+export const getReviewCorporateAgreementDraftMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewCorporateAgreementDraft>>, TError,ReviewCorporateAgreementDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewCorporateAgreementDraft>>, TError,ReviewCorporateAgreementDraftMutationVariables, TContext> => {
+
+const mutationKey = getReviewCorporateAgreementDraftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewCorporateAgreementDraft>>, ReviewCorporateAgreementDraftMutationVariables> = (props) => {
+          const {id,versionId,data} = props ?? {};
+
+          return  reviewCorporateAgreementDraft(id,versionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewCorporateAgreementDraftMutationResult = NonNullable<Awaited<ReturnType<typeof reviewCorporateAgreementDraft>>>
+    export type ReviewCorporateAgreementDraftMutationBody = BodyType<CorporateAgreementReviewInput>
+    export type ReviewCorporateAgreementDraftMutationError = ErrorType<void>
+    export type ReviewCorporateAgreementDraftMutationVariables = {id: string;versionId: string;data: BodyType<CorporateAgreementReviewInput>}
+
+    export const useReviewCorporateAgreementDraft = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewCorporateAgreementDraft>>, TError,ReviewCorporateAgreementDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reviewCorporateAgreementDraft>>,
+        TError,
+        ReviewCorporateAgreementDraftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReviewCorporateAgreementDraftMutationOptions(options), queryClient);
+    }
+
+export const getRequestCorporateAgreementUploadUrlUrl = (id: string,
+    versionId: string,) => {
+
+
+
+
+  return `/api/operations/corporate-organizations/${id}/agreements/${versionId}/upload-url`
+}
+
+export const requestCorporateAgreementUploadUrl = async (id: string,
+    versionId: string,
+    corporateAgreementUploadInput: CorporateAgreementUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<CorporateAgreementUpload> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CorporateAgreementUpload>(getRequestCorporateAgreementUploadUrlUrl(id,versionId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(corporateAgreementUploadInput)
+  }
+);}
+
+
+
+
+
+export const getRequestCorporateAgreementUploadUrlMutationKey = () => ['requestCorporateAgreementUploadUrl'] as const;
+
+export const getRequestCorporateAgreementUploadUrlMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestCorporateAgreementUploadUrl>>, TError,RequestCorporateAgreementUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestCorporateAgreementUploadUrl>>, TError,RequestCorporateAgreementUploadUrlMutationVariables, TContext> => {
+
+const mutationKey = getRequestCorporateAgreementUploadUrlMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestCorporateAgreementUploadUrl>>, RequestCorporateAgreementUploadUrlMutationVariables> = (props) => {
+          const {id,versionId,data} = props ?? {};
+
+          return  requestCorporateAgreementUploadUrl(id,versionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestCorporateAgreementUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestCorporateAgreementUploadUrl>>>
+    export type RequestCorporateAgreementUploadUrlMutationBody = BodyType<CorporateAgreementUploadInput>
+    export type RequestCorporateAgreementUploadUrlMutationError = ErrorType<void>
+    export type RequestCorporateAgreementUploadUrlMutationVariables = {id: string;versionId: string;data: BodyType<CorporateAgreementUploadInput>}
+
+    export const useRequestCorporateAgreementUploadUrl = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestCorporateAgreementUploadUrl>>, TError,RequestCorporateAgreementUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof requestCorporateAgreementUploadUrl>>,
+        TError,
+        RequestCorporateAgreementUploadUrlMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestCorporateAgreementUploadUrlMutationOptions(options), queryClient);
+    }
+
+export const getCompleteCorporateAgreementUploadUrl = (id: string,
+    versionId: string,) => {
+
+
+
+
+  return `/api/operations/corporate-organizations/${id}/agreements/${versionId}/complete`
+}
+
+export const completeCorporateAgreementUpload = async (id: string,
+    versionId: string,
+    corporateAgreementUploadCompleteInput: CorporateAgreementUploadCompleteInput, options?: Parameters<typeof customFetch>[1]): Promise<CorporateAgreementVersion> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CorporateAgreementVersion>(getCompleteCorporateAgreementUploadUrl(id,versionId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(corporateAgreementUploadCompleteInput)
+  }
+);}
+
+
+
+
+
+export const getCompleteCorporateAgreementUploadMutationKey = () => ['completeCorporateAgreementUpload'] as const;
+
+export const getCompleteCorporateAgreementUploadMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeCorporateAgreementUpload>>, TError,CompleteCorporateAgreementUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeCorporateAgreementUpload>>, TError,CompleteCorporateAgreementUploadMutationVariables, TContext> => {
+
+const mutationKey = getCompleteCorporateAgreementUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeCorporateAgreementUpload>>, CompleteCorporateAgreementUploadMutationVariables> = (props) => {
+          const {id,versionId,data} = props ?? {};
+
+          return  completeCorporateAgreementUpload(id,versionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteCorporateAgreementUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completeCorporateAgreementUpload>>>
+    export type CompleteCorporateAgreementUploadMutationBody = BodyType<CorporateAgreementUploadCompleteInput>
+    export type CompleteCorporateAgreementUploadMutationError = ErrorType<void>
+    export type CompleteCorporateAgreementUploadMutationVariables = {id: string;versionId: string;data: BodyType<CorporateAgreementUploadCompleteInput>}
+
+    export const useCompleteCorporateAgreementUpload = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeCorporateAgreementUpload>>, TError,CompleteCorporateAgreementUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof completeCorporateAgreementUpload>>,
+        TError,
+        CompleteCorporateAgreementUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompleteCorporateAgreementUploadMutationOptions(options), queryClient);
+    }
+
+export const getDownloadCorporateAgreementFileUrl = (id: string,
+    versionId: string,) => {
+
+
+
+
+  return `/api/operations/corporate-organizations/${id}/agreements/${versionId}/file`
+}
+
+export const downloadCorporateAgreementFile = async (id: string,
+    versionId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadCorporateAgreementFileUrl(id,versionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadCorporateAgreementFileQueryKey = (id: string,
+    versionId: string,) => {
+    return [
+    `/api/operations/corporate-organizations/${id}/agreements/${versionId}/file`
+    ] as const;
+    }
+
+
+export const getDownloadCorporateAgreementFileQueryOptions = <TData = Awaited<ReturnType<typeof downloadCorporateAgreementFile>>, TError = ErrorType<void>>(id: string,
+    versionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadCorporateAgreementFile>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadCorporateAgreementFileQueryKey(id,versionId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadCorporateAgreementFile>>> = ({ signal }) => downloadCorporateAgreementFile(id,versionId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && versionId !== null && versionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadCorporateAgreementFile>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DownloadCorporateAgreementFileQueryResult = NonNullable<Awaited<ReturnType<typeof downloadCorporateAgreementFile>>>
+export type DownloadCorporateAgreementFileQueryError = ErrorType<void>
+
+
+export function useDownloadCorporateAgreementFile<TData = Awaited<ReturnType<typeof downloadCorporateAgreementFile>>, TError = ErrorType<void>>(
+ id: string,
+    versionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadCorporateAgreementFile>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadCorporateAgreementFile>>,
+          TError,
+          Awaited<ReturnType<typeof downloadCorporateAgreementFile>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadCorporateAgreementFile<TData = Awaited<ReturnType<typeof downloadCorporateAgreementFile>>, TError = ErrorType<void>>(
+ id: string,
+    versionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadCorporateAgreementFile>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadCorporateAgreementFile>>,
+          TError,
+          Awaited<ReturnType<typeof downloadCorporateAgreementFile>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadCorporateAgreementFile<TData = Awaited<ReturnType<typeof downloadCorporateAgreementFile>>, TError = ErrorType<void>>(
+ id: string,
+    versionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadCorporateAgreementFile>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useDownloadCorporateAgreementFile<TData = Awaited<ReturnType<typeof downloadCorporateAgreementFile>>, TError = ErrorType<void>>(
+ id: string,
+    versionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadCorporateAgreementFile>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDownloadCorporateAgreementFileQueryOptions(id,versionId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMyCorporateAgreementVersionsUrl = (id: string,) => {
+
+
+
+
+  return `/api/corporate/organizations/${id}/agreements`
+}
+
+export const getMyCorporateAgreementVersions = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<CorporateAgreementVersion[]> => {
+
+  return customFetch<CorporateAgreementVersion[]>(getGetMyCorporateAgreementVersionsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyCorporateAgreementVersionsQueryKey = (id: string,) => {
+    return [
+    `/api/corporate/organizations/${id}/agreements`
+    ] as const;
+    }
+
+
+export const getGetMyCorporateAgreementVersionsQueryOptions = <TData = Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>, TError = ErrorType<void>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyCorporateAgreementVersionsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>> = ({ signal }) => getMyCorporateAgreementVersions(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMyCorporateAgreementVersionsQueryResult = NonNullable<Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>>
+export type GetMyCorporateAgreementVersionsQueryError = ErrorType<void>
+
+
+export function useGetMyCorporateAgreementVersions<TData = Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>, TError = ErrorType<void>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>,
+          TError,
+          Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMyCorporateAgreementVersions<TData = Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>,
+          TError,
+          Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMyCorporateAgreementVersions<TData = Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMyCorporateAgreementVersions<TData = Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyCorporateAgreementVersions>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMyCorporateAgreementVersionsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicCorporateAgreementTemplateUrl = () => {
+
+
+
+
+  return `/api/public/corporate-agreement-template`
+}
+
+export const getPublicCorporateAgreementTemplate = async ( options?: Parameters<typeof customFetch>[1]): Promise<CorporateAgreementTemplate> => {
+
+  return customFetch<CorporateAgreementTemplate>(getGetPublicCorporateAgreementTemplateUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicCorporateAgreementTemplateQueryKey = () => {
+    return [
+    `/api/public/corporate-agreement-template`
+    ] as const;
+    }
+
+
+export const getGetPublicCorporateAgreementTemplateQueryOptions = <TData = Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicCorporateAgreementTemplateQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>> = ({ signal }) => getPublicCorporateAgreementTemplate({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPublicCorporateAgreementTemplateQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>>
+export type GetPublicCorporateAgreementTemplateQueryError = ErrorType<unknown>
+
+
+export function useGetPublicCorporateAgreementTemplate<TData = Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicCorporateAgreementTemplate<TData = Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicCorporateAgreementTemplate<TData = Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPublicCorporateAgreementTemplate<TData = Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCorporateAgreementTemplate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPublicCorporateAgreementTemplateQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDownloadMyCorporateAgreementFileUrl = (id: string,
+    versionId: string,) => {
+
+
+
+
+  return `/api/corporate/organizations/${id}/agreements/${versionId}/file`
+}
+
+export const downloadMyCorporateAgreementFile = async (id: string,
+    versionId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadMyCorporateAgreementFileUrl(id,versionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadMyCorporateAgreementFileQueryKey = (id: string,
+    versionId: string,) => {
+    return [
+    `/api/corporate/organizations/${id}/agreements/${versionId}/file`
+    ] as const;
+    }
+
+
+export const getDownloadMyCorporateAgreementFileQueryOptions = <TData = Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>, TError = ErrorType<void>>(id: string,
+    versionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadMyCorporateAgreementFileQueryKey(id,versionId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>> = ({ signal }) => downloadMyCorporateAgreementFile(id,versionId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && versionId !== null && versionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DownloadMyCorporateAgreementFileQueryResult = NonNullable<Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>>
+export type DownloadMyCorporateAgreementFileQueryError = ErrorType<void>
+
+
+export function useDownloadMyCorporateAgreementFile<TData = Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>, TError = ErrorType<void>>(
+ id: string,
+    versionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>,
+          TError,
+          Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadMyCorporateAgreementFile<TData = Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>, TError = ErrorType<void>>(
+ id: string,
+    versionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>,
+          TError,
+          Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadMyCorporateAgreementFile<TData = Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>, TError = ErrorType<void>>(
+ id: string,
+    versionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useDownloadMyCorporateAgreementFile<TData = Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>, TError = ErrorType<void>>(
+ id: string,
+    versionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMyCorporateAgreementFile>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDownloadMyCorporateAgreementFileQueryOptions(id,versionId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetCorporatePortalUrl = () => {
 

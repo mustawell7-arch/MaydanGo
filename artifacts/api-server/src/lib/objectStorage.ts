@@ -87,6 +87,18 @@ export class ObjectStorageService {
     return { uploadURL, documentPath: `/objects/${objectName}` };
   }
 
+  async createCorporateAgreementUpload(organizationId: string, versionId: string, uploadId: string) {
+    if (!/^[0-9a-f-]{36}$/i.test(organizationId)
+      || !/^[0-9a-f-]{36}$/i.test(versionId)
+      || !/^[0-9a-f-]{36}$/i.test(uploadId)) {
+      throw new Error("Invalid corporate agreement upload identifier.");
+    }
+    const objectName = `corporate-agreements/${organizationId}/${versionId}/${uploadId}.pdf`;
+    const { bucketName, objectName: bucketObjectName } = parseObjectPath(`${this.privateDir()}/${objectName}`);
+    const uploadURL = await signUpload(bucketName, bucketObjectName);
+    return { uploadURL, documentPath: `/objects/${objectName}` };
+  }
+
   async createSupportAttachmentUpload(ticketId: string, attachmentId: string) {
     if (!/^[0-9a-f-]{36}$/i.test(ticketId) || !/^[0-9a-f-]{36}$/i.test(attachmentId)) {
       throw new Error("Invalid support attachment identifier.");

@@ -1,20 +1,28 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth, useClerk } from '@clerk/react';
 import {
   getGetCorporateOrganizationsQueryKey,
   getGetCorporatePortalQueryKey,
+  getGetCorporateAgreementVersionsQueryKey,
+  useCompleteCorporateAgreementUpload,
   useAcceptCorporateInvitation,
   useCreateCorporateOrganization,
+  useCreateCorporateAgreementDraft,
   useGetCorporateOrganizations,
+  useGetCorporateAgreementVersions,
+  useGetMyCorporateAgreementVersions,
   useGetCorporatePortal,
   useInviteCorporateAdministrator,
   useInviteCorporateEmployees,
   useRemoveCorporateEmployee,
+  useRequestCorporateAgreementUploadUrl,
   useReissueCorporateEmployeeInvitation,
+  useReviewCorporateAgreementDraft,
+  useUpdateCorporateAgreementDraft,
 } from '@workspace/api-client-react';
-import type { CorporateInvitationLink } from '@workspace/api-client-react';
-import { AlertCircle, ArrowRight, Check, ChevronRight, Clipboard, Clock3, Copy, LockKeyhole, LogOut, Mail, Plus, RefreshCw, ShieldCheck, Users, X } from 'lucide-react';
+import type { CorporateAgreementVersion, CorporateInvitationLink } from '@workspace/api-client-react';
+import { AlertCircle, ArrowRight, Check, ChevronRight, Clipboard, Clock3, Copy, Download, FileText, LockKeyhole, LogOut, Mail, Plus, RefreshCw, ShieldCheck, Upload, Users, X } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 
 type Lang = 'en' | 'ar' | 'ku';
@@ -190,6 +198,7 @@ function AdminOrganizations({ lang }: { lang: Lang }) {
   const [email, setEmail] = useState('');
   const [hrEmail, setHrEmail] = useState('');
   const [issuingFor, setIssuingFor] = useState('');
+  const [agreementOrganizationId, setAgreementOrganizationId] = useState('');
   const [issued, setIssued] = useState<CorporateInvitationLink | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -230,9 +239,136 @@ function AdminOrganizations({ lang }: { lang: Lang }) {
         <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-bold">{org.name}</h3><p className="mt-1 text-xs text-[#7b867d]">{c.created} · {dateLabel(org.createdAt, lang)}</p></div><span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide ${org.status === 'active' ? 'bg-[#e5eee2] text-[#326448]' : 'bg-[#f3e5d8] text-[#995c35]'}`}>{org.status === 'active' ? c.active : c.suspended}</span></div>
         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t border-[#e8e4d9] pt-3 text-xs text-[#67766d]"><span>{org.employeeCount} {c.employees}</span><span>{org.administratorCount} {c.administrators}</span></div>
         {issuingFor === org.id ? <form onSubmit={event => sendHrInvite(event, org.id)} className="mt-4 flex flex-col gap-2 sm:flex-row"><input value={hrEmail} onChange={event => setHrEmail(event.target.value)} type="email" placeholder={c.email} aria-label={c.email} className="min-w-0 flex-1 rounded-xl border border-[#d8d2c4] bg-[#fffdf7] px-3 py-2.5 text-sm" data-testid={`input-hr-invite-${org.id}`} required /><button disabled={inviteAdmin.isPending} className="rounded-xl bg-[#174d43] px-4 py-2.5 text-xs font-bold text-[#fff9e9] disabled:opacity-60" data-testid={`button-send-hr-invite-${org.id}`}>{inviteAdmin.isPending ? c.inviting : c.sendInvite}</button><button type="button" onClick={() => setIssuingFor('')} aria-label={c.cancel} className="grid h-10 w-10 place-items-center rounded-xl border border-[#ded9cb] text-[#68786f]" data-testid={`button-cancel-hr-invite-${org.id}`}><X size={16} /></button></form> : <button onClick={() => { setIssuingFor(org.id); setError(''); setSuccess(''); setIssued(null); }} className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#174d43] hover:text-[#a05b3e]" data-testid={`button-invite-hr-${org.id}`}><Mail size={14} />{c.inviteHr}<ArrowRight size={14} /></button>}
+        <button type="button" onClick={() => setAgreementOrganizationId(current => current === org.id ? '' : org.id)} className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-[#174d43] hover:text-[#a05b3e]" data-testid={`button-manage-corporate-agreement-${org.id}`}><FileText size={14} />{agreementOrganizationId === org.id ? 'Close agreement record' : 'Manage client agreement'}<ArrowRight size={14} /></button>
       </article>)}</div>}
       {issued && !success && <div className="mt-4"><TokenCard item={issued} lang={lang} /></div>}
     </section>
+    {agreementOrganizationId && <section className="lg:col-span-2 rounded-[26px] border border-[#ded9cb] bg-[#fffdf7] p-5 shadow-[0_14px_40px_rgba(38,63,49,.04)] sm:p-7"><CorporateAgreementAdminPanel organizationId={agreementOrganizationId} organizationName={query.data?.find(org => org.id === agreementOrganizationId)?.name ?? 'Organisation'} /></section>}
+  </div>;
+}
+
+function CorporateAgreementAdminPanel({ organizationId, organizationName }: { organizationId: string; organizationName: string }) {
+  const client = useQueryClient();
+  const query = useGetCorporateAgreementVersions(organizationId, { query: { retry: false } });
+  const create = useCreateCorporateAgreementDraft();
+  const update = useUpdateCorporateAgreementDraft();
+  const review = useReviewCorporateAgreementDraft();
+  const requestUpload = useRequestCorporateAgreementUploadUrl();
+  const completeUpload = useCompleteCorporateAgreementUpload();
+  const [changeSummary, setChangeSummary] = useState('Initial corporate enrolment draft');
+  const [agreementText, setAgreementText] = useState('');
+  const [reviewNote, setReviewNote] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const invalidate = () => void client.invalidateQueries({ queryKey: getGetCorporateAgreementVersionsQueryKey(organizationId) });
+  const draft = query.data?.find(version => version.status === 'draft');
+  const approved = query.data?.find(version => version.status === 'approved');
+  const active = draft ?? approved ?? query.data?.find(version => version.status === 'signed');
+
+  useEffect(() => {
+    setAgreementText(draft?.agreementText ?? '');
+    if (draft) setChangeSummary(draft.changeSummary);
+  }, [draft?.id, draft?.agreementText, draft?.changeSummary]);
+
+  const createDraft = () => {
+    setError(''); setSuccess('');
+    create.mutate({ id: organizationId, data: { changeSummary: changeSummary.trim() || 'Initial corporate enrolment draft' } }, {
+      onSuccess: result => {
+        setAgreementText(result.agreementText);
+        setChangeSummary(result.changeSummary);
+        setSuccess('Discussion draft created. It is not ready for signature or service activation.');
+        invalidate();
+      },
+      onError: () => setError('The draft could not be created. Please try again.'),
+    });
+  };
+  const saveDraft = () => {
+    if (!draft || agreementText.trim().length < 100 || changeSummary.trim().length < 10) {
+      setError('Add at least 100 characters of draft text and a change summary of at least 10 characters.');
+      return;
+    }
+    setError(''); setSuccess('');
+    update.mutate({ id: organizationId, versionId: draft.id, data: { agreementText: agreementText.trim(), changeSummary: changeSummary.trim() } }, {
+      onSuccess: () => { setSuccess('Draft changes saved.'); invalidate(); },
+      onError: () => setError('The draft could not be saved. Please try again.'),
+    });
+  };
+  const decide = (status: 'approved' | 'rejected') => {
+    if (!draft) return;
+    if (status === 'rejected' && reviewNote.trim().length < 5) {
+      setError('Add a reason of at least five characters before rejecting.');
+      return;
+    }
+    setError(''); setSuccess('');
+    review.mutate({ id: organizationId, versionId: draft.id, data: { status, reviewNote: reviewNote.trim() || null } }, {
+      onSuccess: () => { setReviewNote(''); setSuccess(status === 'approved' ? 'Internal review recorded. No access or billing has been activated.' : 'Draft returned for changes.'); invalidate(); },
+      onError: () => setError('The review decision could not be recorded. Please try again.'),
+    });
+  };
+  const uploadSignedCopy = async (event: FormEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file || !approved) return;
+    setError(''); setSuccess('');
+    if (file.type !== 'application/pdf' || file.size < 1 || file.size > 10 * 1024 * 1024 || !file.name.toLowerCase().endsWith('.pdf')) {
+      setError('Choose a PDF file smaller than 10 MB.');
+      return;
+    }
+    try {
+      const upload = await requestUpload.mutateAsync({
+        id: organizationId,
+        versionId: approved.id,
+        data: { documentName: file.name, size: file.size, contentType: 'application/pdf' },
+      });
+      const response = await fetch(upload.uploadURL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/pdf' },
+        body: file,
+      });
+      if (!response.ok) throw new Error('The private upload did not complete.');
+      await completeUpload.mutateAsync({ id: organizationId, versionId: approved.id, data: { uploadId: upload.uploadId } });
+      setSuccess('Signed PDF recorded privately for this organisation.');
+      invalidate();
+    } catch {
+      setError('The signed PDF could not be recorded. Request a fresh upload link and try again.');
+    }
+  };
+
+  return <div className="space-y-5" dir="ltr">
+    <div className="flex flex-wrap items-start justify-between gap-4">
+      <div><p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#a05b3e]">Corporate agreement · English draft</p><h2 className="mt-1 font-display text-xl font-extrabold">{organizationName}</h2><p className="mt-1 max-w-3xl text-xs leading-5 text-[#748178]">Internal review and version history only. Approval does not activate employee access, membership, services, billing, or payment.</p></div>
+      {!draft && <button type="button" onClick={createDraft} disabled={create.isPending || query.isLoading || query.isError} className="inline-flex items-center gap-2 rounded-full bg-[#174d43] px-4 py-2.5 text-xs font-bold text-[#fff9e9] disabled:opacity-50" data-testid={`button-create-agreement-draft-${organizationId}`}><FileText size={14} />{create.isPending ? 'Creating draft…' : 'Create next draft'}</button>}
+    </div>
+    {query.isLoading ? <div className="h-24 animate-pulse rounded-2xl bg-[#e5e1d5]" /> : query.isError ? <Notice kind="error">Agreement history could not be loaded. <button onClick={() => void query.refetch()} className="font-bold underline underline-offset-4">Try again</button></Notice> : null}
+    {error && <Notice kind="error">{error}</Notice>}
+    {success && <Notice kind="success">{success}</Notice>}
+    {draft && <section className="rounded-2xl border border-[#d9d4c6] bg-[#f9f7ef] p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-bold">Discussion draft · Version {draft.versionNumber}</h3><p className="mt-1 text-xs leading-5 text-[#748178]">This draft is not a final agreement and must not be signed. Legal and commercial terms remain incomplete.</p></div><span className="rounded-full bg-[#f4ead7] px-3 py-1 text-[10px] font-bold uppercase text-[#916333]">Draft</span></div>
+      <label className="mt-4 block space-y-1.5 text-xs font-bold text-[#50675d]">Change summary<input value={changeSummary} onChange={event => setChangeSummary(event.target.value)} maxLength={1000} className="w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm font-medium text-[#173d35]" data-testid="input-corporate-agreement-change-summary" /></label>
+      <label className="mt-4 block space-y-1.5 text-xs font-bold text-[#50675d]">Draft text<textarea value={agreementText} onChange={event => setAgreementText(event.target.value)} rows={18} maxLength={30000} className="w-full resize-y rounded-xl border border-[#d8d2c4] bg-white px-3.5 py-3 font-serif text-sm leading-6 text-[#2e3d35]" data-testid="textarea-corporate-agreement-draft" /></label>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button type="button" onClick={saveDraft} disabled={update.isPending} className="rounded-full bg-[#174d43] px-4 py-2.5 text-xs font-bold text-[#fff9e9] disabled:opacity-50" data-testid="button-save-corporate-agreement-draft">{update.isPending ? 'Saving…' : 'Save draft'}</button>
+        <button type="button" onClick={() => decide('approved')} disabled={review.isPending || update.isPending} className="rounded-full border border-[#9cb39f] bg-[#edf5e9] px-4 py-2.5 text-xs font-bold text-[#326448] disabled:opacity-50" data-testid="button-approve-corporate-agreement">Approve for signature outside MaydanGo</button>
+      </div>
+      <label className="mt-4 block space-y-1.5 text-xs font-bold text-[#50675d]">Rejection reason<textarea value={reviewNote} onChange={event => setReviewNote(event.target.value)} rows={2} maxLength={1000} className="w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm font-medium text-[#173d35]" data-testid="textarea-corporate-agreement-review-note" /></label>
+      <button type="button" onClick={() => decide('rejected')} disabled={review.isPending} className="mt-3 rounded-full border border-[#e0c5b7] px-4 py-2.5 text-xs font-bold text-[#934635] disabled:opacity-50" data-testid="button-reject-corporate-agreement">Return draft for changes</button>
+      <p className="mt-4 border-t border-[#e7e1d3] pt-3 text-[11px] leading-5 text-[#8a6548]">MaydanGo and the company details, fees, term, renewal, cancellation, liability, privacy roles, governing law, and dispute process require confirmation and Iraqi legal review before any signature.</p>
+    </section>}
+    {approved && <section className="rounded-2xl border border-[#c9dcc8] bg-[#f7fbf4] p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-bold">Approved for external signature · Version {approved.versionNumber}</h3><p className="mt-1 text-xs leading-5 text-[#748178]">Approval is an internal review status only. Signing occurs outside MaydanGo; no account, service, or payment is activated here.</p></div><label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#174d43] px-4 py-2.5 text-xs font-bold text-[#fff9e9] hover:bg-[#226556]"><Upload size={14} />{requestUpload.isPending || completeUpload.isPending ? 'Recording…' : 'Record signed PDF'}<input type="file" accept="application/pdf,.pdf" className="sr-only" onChange={uploadSignedCopy} disabled={requestUpload.isPending || completeUpload.isPending} data-testid="input-corporate-signed-pdf" /></label></div>
+      <p className="mt-3 text-xs leading-5 text-[#748178]">PDF only, maximum 10 MB. The file is stored privately and is available only to authorised MaydanGo administrators and this organisation’s HR administrators.</p>
+    </section>}
+    {active?.status === 'signed' && active.signedDocumentName && <p className="rounded-xl border border-[#c9dcc8] bg-[#edf5e9] p-4 text-sm text-[#326448]">The signed copy is recorded for this version. It is available in the organisation’s private workspace.</p>}
+    {!!query.data?.length && <section className="space-y-3">
+      <h3 className="font-display text-lg font-extrabold">Agreement history</h3>
+      {query.data.map(version => <article key={version.id} className="rounded-xl border border-[#e4e0d5] bg-white p-4" data-testid={`row-corporate-agreement-${version.id}`}>
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-bold">Version {version.versionNumber} · {version.changeSummary}</p><p className="mt-1 text-xs text-[#7b867d]">Updated {dateLabel(version.updatedAt, 'en')}{version.reviewedAt ? ` · Reviewed ${dateLabel(version.reviewedAt, 'en')}` : ''}</p></div><span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${version.status === 'signed' ? 'bg-[#e5eee2] text-[#326448]' : version.status === 'approved' ? 'bg-[#e8edee] text-[#49616a]' : version.status === 'rejected' ? 'bg-[#fff0e9] text-[#934635]' : version.status === 'superseded' ? 'bg-[#eee9e2] text-[#7b7163]' : 'bg-[#f3ead9] text-[#916333]'}`}>{version.status === 'signed' ? 'Signed copy recorded' : version.status === 'superseded' ? 'Superseded' : version.status}</span></div>
+        <details className="mt-3"><summary className="cursor-pointer text-xs font-bold text-[#174d43]">Review draft text</summary><pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded-xl bg-[#f9f7ef] p-4 font-serif text-xs leading-6 text-[#34483d]">{version.agreementText}</pre></details>
+        {version.signedDocumentName && <a href={`/api/operations/corporate-organizations/${organizationId}/agreements/${version.id}/file`} className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-[#174d43] underline underline-offset-4" data-testid={`link-admin-corporate-agreement-file-${version.id}`}><Download size={14} />Download signed PDF · {version.signedDocumentName}</a>}
+        {version.reviewNote && <p className="mt-3 rounded-lg bg-[#fff4ee] p-3 text-xs leading-5 text-[#824b39]">Review note: {version.reviewNote}</p>}
+      </article>)}
+    </section>}
+    <p className="text-[11px] leading-5 text-[#8a6548]">Template structure informed by Common Paper’s Cloud Service Agreement (Version 3.0, released September 30, 2026). This MaydanGo draft is independently written, incomplete, and not approved by Common Paper or Iraqi counsel.</p>
   </div>;
 }
 
@@ -299,6 +435,7 @@ function PortalWorkspace({ lang, setLang }: { lang: Lang; setLang: (value: Lang)
   const orgs = query.data?.adminOrganizations ?? [];
   const enrollments = query.data?.myEnrollments ?? [];
   const primaryOrg = orgs.find(org => org.id === selectedOrganizationId) ?? orgs[0];
+  const agreementQuery = useGetMyCorporateAgreementVersions(primaryOrg?.id ?? '', { query: { enabled: Boolean(primaryOrg), retry: false } });
   const employeeRows = primaryOrg?.employees ?? [];
   const activeCount = employeeRows.filter(employee => employee.status === 'active').length;
   return <Shell lang={lang} setLang={setLang}>
@@ -340,10 +477,39 @@ function PortalWorkspace({ lang, setLang }: { lang: Lang; setLang: (value: Lang)
           {enrollments.length === 0 ? <div className="mt-5 rounded-xl bg-[#f8f6ee] p-4 text-sm leading-6 text-[#78837a]">{c.noEnrollments}</div> : <div className="mt-4 space-y-3">{enrollments.map(enrollment => <article key={enrollment.id} className="rounded-2xl border border-[#e6e2d8] bg-[#fcfbf6] p-4" data-testid={`card-corporate-enrollment-${enrollment.id}`}><div className="flex items-start justify-between gap-2"><h3 className="font-bold">{enrollment.organizationName}</h3><span className="rounded-full bg-[#e5eee2] px-2.5 py-1 text-[10px] font-bold text-[#326448]">{enrollment.status === 'active' ? c.enrollmentActive : enrollment.status === 'invited' ? c.enrollmentInvited : c.enrollmentRemoved}</span></div><div className="mt-4 border-t border-[#e8e4d9] pt-3"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#a05b3e]">{c.membership}</p>{enrollment.membership ? <><p className="mt-2 text-sm font-bold">{enrollment.membership.tier}</p><p className="mt-1 text-xs text-[#77837a]">{c.status}: {enrollment.membership.status}</p><p className="mt-2 text-xs text-[#77837a]">{c.starts} · {dateLabel(enrollment.membership.startsAt, lang)}</p><p className="mt-1 text-xs text-[#77837a]">{c.ends} · {dateLabel(enrollment.membership.endsAt, lang)}</p></> : <p className="mt-2 text-xs leading-5 text-[#77837a]">{c.noMembership}</p>}</div></article>)}</div>}
           <div className="mt-4 rounded-xl bg-[#f4f1e7] p-3 text-[11px] leading-5 text-[#6c786f]">{c.membershipNote}</div>
         </section>
+        {primaryOrg && <CorporateAgreementMemberPanel organizationId={primaryOrg.id} organizationName={primaryOrg.name} versions={agreementQuery.data} loading={agreementQuery.isLoading} failed={agreementQuery.isError} onRetry={() => void agreementQuery.refetch()} />}
         <Notice><strong>{c.securityTitle}</strong><br />{c.roleNote}</Notice>
       </aside>
     </div>
   </Shell>;
+}
+
+function CorporateAgreementMemberPanel({
+  organizationId,
+  organizationName,
+  versions,
+  loading,
+  failed,
+  onRetry,
+}: {
+  organizationId: string;
+  organizationName: string;
+  versions?: CorporateAgreementVersion[];
+  loading: boolean;
+  failed: boolean;
+  onRetry: () => void;
+}) {
+  return <section className="rounded-[26px] border border-[#ded9cb] bg-[#fffdf7] p-5 shadow-[0_14px_40px_rgba(38,63,49,.04)] sm:p-6" dir="ltr" data-testid="section-corporate-agreement">
+    <div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#f0ecdf] text-[#174d43]"><FileText size={18} /></span><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a05b3e]">Agreement · English</p><h2 className="font-display text-lg font-extrabold">{organizationName}</h2></div></div>
+    <p className="mt-3 text-xs leading-5 text-[#748178]">This record is for review only. The workspace does not accept signatures, activate services, or set up billing.</p>
+    {loading ? <div className="mt-4 h-16 animate-pulse rounded-xl bg-[#e5e1d5]" /> : failed ? <Notice kind="error">Your agreement record could not be loaded. <button onClick={onRetry} className="font-bold underline underline-offset-4">Try again</button></Notice> : versions?.length ? <div className="mt-4 space-y-3">
+      {versions.map(version => <article key={version.id} className="rounded-xl border border-[#e4e0d5] bg-[#fbfaf4] p-4" data-testid={`card-my-corporate-agreement-${version.id}`}>
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-sm font-bold">Version {version.versionNumber}</h3><p className="mt-1 text-xs leading-5 text-[#748178]">{version.changeSummary}</p></div><span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${version.status === 'signed' ? 'bg-[#e5eee2] text-[#326448]' : version.status === 'approved' ? 'bg-[#e8edee] text-[#49616a]' : version.status === 'rejected' ? 'bg-[#fff0e9] text-[#934635]' : version.status === 'superseded' ? 'bg-[#eee9e2] text-[#7b7163]' : 'bg-[#f3ead9] text-[#916333]'}`}>{version.status === 'signed' ? 'Signed copy recorded' : version.status === 'superseded' ? 'Superseded' : version.status}</span></div>
+        <details className="mt-3"><summary className="cursor-pointer text-xs font-bold text-[#174d43]">Review agreement text</summary><pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded-xl bg-white p-3 font-serif text-xs leading-6 text-[#34483d]">{version.agreementText}</pre></details>
+        {version.signedDocumentName && version.status === 'signed' && <a href={`/api/corporate/organizations/${organizationId}/agreements/${version.id}/file`} className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-[#174d43] underline underline-offset-4" data-testid={`link-my-corporate-agreement-file-${version.id}`}><Download size={14} />Download signed PDF</a>}
+      </article>)}
+    </div> : <p className="mt-4 rounded-xl bg-[#f8f6ee] p-4 text-xs leading-5 text-[#748178]">MaydanGo has not prepared an agreement draft for this organisation yet.</p>}
+  </section>;
 }
 
 function AcceptInvitation({ lang, setLang }: { lang: Lang; setLang: (value: Lang) => void }) {
@@ -387,6 +553,61 @@ export function CorporatePortalPage() {
   if (!isLoaded) return <main className="min-h-[100dvh] bg-[#f3f1e8] p-6"><div className="mx-auto max-w-6xl"><LoadingState lang={lang} /></div></main>;
   if (!isSignedIn) return <AuthGate lang={lang} setLang={setLang} />;
   return <PortalWorkspace lang={lang} setLang={setLang} />;
+}
+
+export function CorporateAgreementTemplatePage() {
+  const [agreementText, setAgreementText] = useState('');
+  const [error, setError] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch('/api/public/corporate-agreement-template', { signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error('Template unavailable');
+        const result = await response.json() as { agreementText?: unknown };
+        if (typeof result.agreementText !== 'string') throw new Error('Template unavailable');
+        setAgreementText(result.agreementText);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setError(true);
+      });
+    return () => controller.abort();
+  }, []);
+
+  return <main className="min-h-screen bg-[#ece9df] px-3 py-6 text-[#233d32] sm:px-6 sm:py-10">
+    <style>{`
+      @page { size: A4; margin: 0; }
+      @media print {
+        html, body, #root { margin: 0 !important; padding: 0 !important; background: white !important; }
+        .agreement-toolbar { display: none !important; }
+        aside { display: none !important; }
+        .agreement-page { width: auto !important; max-width: none !important; min-height: 0 !important; margin: 0 !important; padding: 20mm 22mm !important; box-shadow: none !important; }
+        .agreement-content { font-size: 11pt !important; line-height: 1.55 !important; }
+        .agreement-footer { position: static !important; margin-top: 2rem !important; }
+      }
+    `}</style>
+    <div className="agreement-toolbar mx-auto mb-4 flex max-w-[816px] items-center justify-between gap-4 rounded-2xl border border-[#d8d2c4] bg-[#fffdf7] px-4 py-3">
+      <div><p className="text-xs font-extrabold uppercase tracking-[.16em] text-[#a05b3e]">MaydanGo · Corporate agreement</p><p className="mt-1 text-xs text-[#748178]">English discussion draft for legal review</p></div>
+      <button onClick={() => window.print()} className="rounded-full bg-[#174d43] px-4 py-2.5 text-xs font-bold text-[#fff9e9]" data-testid="button-print-corporate-agreement">Print / Save PDF</button>
+    </div>
+    <article className="agreement-page relative mx-auto min-h-[1056px] max-w-[816px] bg-white px-8 py-10 shadow-[0_18px_55px_rgba(38,63,49,.13)] sm:px-[72px] sm:py-[64px]">
+      <header className="mb-10 flex items-center justify-between border-b border-[#e7e2d6] pb-4">
+        <span className="font-display text-lg font-extrabold tracking-tight text-[#174d43]">MaydanGo</span>
+        <span className="rounded-full bg-[#fff1e8] px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[.15em] text-[#934b39]">Discussion draft · Not for signature</span>
+      </header>
+      {error ? <div role="alert" className="rounded-xl border border-[#e6c5b8] bg-[#fff4ee] p-4 text-sm text-[#934635]">The draft template could not be loaded. Refresh this page to try again.</div> : agreementText ? <div className="agreement-content font-serif text-[13px] leading-[1.8] text-[#293c32]">
+        {agreementText.split('\n').map((line, index) => {
+          if (!line.trim()) return <div key={index} className="h-2" aria-hidden="true" />;
+          if (index === 0) return <h1 key={index} className="mb-2 text-center font-display text-xl font-extrabold leading-tight text-[#174d43]">{line}</h1>;
+          if (index === 1) return <p key={index} className="mb-8 text-center font-sans text-[10px] font-extrabold uppercase tracking-[.15em] text-[#934b39]">{line}</p>;
+          if (/^\d+\./.test(line)) return <h2 key={index} className="mb-2 mt-6 font-sans text-[11px] font-extrabold uppercase tracking-[.04em] text-[#174d43]">{line}</h2>;
+          if (line === 'IMPORTANT') return <h2 key={index} className="mb-2 mt-5 font-sans text-[11px] font-extrabold uppercase tracking-[.12em] text-[#934b39]">{line}</h2>;
+          if (line.startsWith('This incomplete working draft')) return <p key={index} className="mb-4 rounded-lg border-s-4 border-[#c06a4c] bg-[#fff6ef] p-4 font-sans text-[11px] font-semibold leading-6 text-[#744b3d]">{line}</p>;
+          return <p key={index} className="mb-3 whitespace-pre-wrap">{line}</p>;
+        })}
+      </div> : <div aria-label="Loading agreement draft" role="status" className="h-96 animate-pulse rounded-xl bg-[#f1efe7]" />}
+      <footer className="agreement-footer mt-12 border-t border-[#e7e2d6] pt-4 font-sans text-[9px] leading-5 text-[#7d877f]">DRAFT 0.1 · ENGLISH · NOT FOR SIGNATURE · All unresolved terms require review by qualified Iraqi counsel.</footer>
+    </article>
+  </main>;
 }
 
 export function CorporateInvitePage() {
