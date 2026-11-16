@@ -38,6 +38,9 @@ import {
 } from "../lib/admin-roles";
 import { DEFAULT_PLATFORM_SAFETY_RULES, platformSafetyRulesSchema } from "../lib/platform-rules";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
+import { sendMemberNotification } from "../lib/notifications";
+import { lockVenueAccess } from "../lib/account-access-restrictions";
+import { cancelUpcomingVenueSessions, type UpcomingVenueTarget } from "../lib/venue-suspensions";
 import { isCompletePolicyTranslation, policyDocumentPath } from "../lib/legal-policies";
 
 type ClerkAccount = { userId: string; email: string };
@@ -88,7 +91,10 @@ function roleFromRow(row: typeof operators.$inferSelect): AdminRole | null {
   return isAdminRole(row.role) ? row.role : null;
 }
 
-export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirectory): IRouter {
+export function createSuperAdminRouter(
+  directory: ClerkDirectory = clerkDirectory,
+  notifyMember: typeof sendMemberNotification = sendMemberNotification,
+): IRouter {
   const router: IRouter = Router();
 
   router.use(async (req, res, next) => {
@@ -149,6 +155,7 @@ export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirector
           ? partnerById.get(row.entityId) ?? row.entityId
           : facilityById.get(row.entityId) ?? row.entityId,
       status: row.status as "active" | "suspended",
+      reasonCategory: row.reasonCategory as "administrative" | "safety" | "fraud" | "closure",
       reason: row.reason,
       updatedBy: row.updatedBy,
       updatedAt: row.updatedAt,
@@ -173,6 +180,7 @@ export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirector
     const input = parsed.data;
     let entityId = input.target.trim();
     let targetLabel = entityId;
+    let venueTarget: UpcomingVenueTarget | null = null;
     if (input.entityType === "member") {
       if (input.status === "suspended" || entityId.includes("@")) {
         const account = await directory.findVerifiedByEmail(entityId.toLowerCase());
@@ -198,6 +206,7 @@ export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirector
         return;
       }
       targetLabel = partner.name;
+      venueTarget = { partnerId: partner.id };
     } else {
       const [facility] = await db.select({
         id: facilityProfiles.id,
@@ -212,14 +221,38 @@ export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirector
       const [partner] = await db.select({ name: partners.name }).from(partners)
         .where(eq(partners.id, facility.partnerId)).limit(1);
       targetLabel = `${facility.facility} · ${facility.city} · ${partner?.name ?? "Partner"}`;
+      venueTarget = {
+        partnerId: facility.partnerId,
+        city: facility.city,
+        facility: facility.facility,
+      };
     }
 
     const actorId = res.locals.superAdminUserId as string;
-    const saved = await db.transaction(async tx => {
+    const result = await db.transaction(async tx => {
+      const [previous] = await tx.select().from(accountAccessRestrictions).where(and(
+        eq(accountAccessRestrictions.entityType, input.entityType),
+        eq(accountAccessRestrictions.entityId, entityId),
+      )).for("update");
+      const reasonCategory = input.entityType === "member"
+        ? "administrative"
+        : input.status === "suspended"
+          ? input.reasonCategory ?? previous?.reasonCategory ?? "administrative"
+          : previous?.reasonCategory ?? input.reasonCategory ?? "administrative";
+      const cancellation = input.status === "suspended"
+        && input.entityType !== "member"
+        && reasonCategory !== "administrative"
+        && venueTarget
+        ? await cancelUpcomingVenueSessions(tx, venueTarget, actorId)
+        : null;
+      if (venueTarget) {
+        await lockVenueAccess(tx, venueTarget.partnerId, venueTarget.city, venueTarget.facility);
+      }
       const [row] = await tx.insert(accountAccessRestrictions).values({
         entityType: input.entityType,
         entityId,
         status: input.status,
+        reasonCategory,
         reason: input.reason.trim(),
         updatedBy: actorId,
         updatedAt: new Date(),
@@ -227,6 +260,7 @@ export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirector
         target: [accountAccessRestrictions.entityType, accountAccessRestrictions.entityId],
         set: {
           status: input.status,
+          reasonCategory,
           reason: input.reason.trim(),
           updatedBy: actorId,
           updatedAt: new Date(),
@@ -237,18 +271,41 @@ export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirector
         actorId,
         action: `super_admin.account_access.${input.status === "suspended" ? "suspend" : "restore"}`,
         targetId: `${input.entityType}:${entityId}`,
-        detail: `reason=${input.reason.trim()}`,
+        detail: `category=${reasonCategory};reason=${input.reason.trim()}${cancellation
+          ? `;cancelledOfferings=${cancellation.cancelledOfferingCount};cancelledBookings=${cancellation.cancelledBookingCount};closedWaitlists=${cancellation.closedWaitlistCount}`
+          : ""}`,
       });
-      return row;
+      return { row, cancellation };
     });
+    if (result.cancellation) {
+      const dedupePrefix = `venue-suspension:${input.entityType}:${entityId}:${result.row.updatedAt.getTime()}`;
+      await Promise.allSettled([
+        ...result.cancellation.affectedMemberIds.map(userId => notifyMember(
+          userId,
+          "venue_suspension_cancelled",
+          { dedupeKey: `${dedupePrefix}:booking:${userId}` },
+        )),
+        ...result.cancellation.affectedWaitlistMemberIds.map(userId => notifyMember(
+          userId,
+          "waitlist_closed",
+          { dedupeKey: `${dedupePrefix}:waitlist:${userId}` },
+        )),
+      ]);
+    }
     res.json(UpdateSuperAdminAccountRestrictionResponse.parse({
       entityType: input.entityType,
       entityId,
       targetLabel,
-      status: saved.status,
-      reason: saved.reason,
-      updatedBy: saved.updatedBy,
-      updatedAt: saved.updatedAt,
+      status: result.row.status,
+      reasonCategory: result.row.reasonCategory,
+      reason: result.row.reason,
+      updatedBy: result.row.updatedBy,
+      updatedAt: result.row.updatedAt,
+      ...(result.cancellation ? {
+        cancelledOfferingCount: result.cancellation.cancelledOfferingCount,
+        cancelledBookingCount: result.cancellation.cancelledBookingCount,
+        closedWaitlistCount: result.cancellation.closedWaitlistCount,
+      } : {}),
     }));
   });
 

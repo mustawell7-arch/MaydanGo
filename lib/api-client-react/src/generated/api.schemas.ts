@@ -4122,6 +4122,16 @@ export const AccountRestrictionStatus = {
   suspended: 'suspended',
 } as const;
 
+export type AccountRestrictionReasonCategory = typeof AccountRestrictionReasonCategory[keyof typeof AccountRestrictionReasonCategory];
+
+
+export const AccountRestrictionReasonCategory = {
+  administrative: 'administrative',
+  safety: 'safety',
+  fraud: 'fraud',
+  closure: 'closure',
+} as const;
+
 export interface AccountRestrictionTarget {
   entityType: AccountRestrictionEntityType;
   entityId: string;
@@ -4133,9 +4143,16 @@ export interface AccountAccessRestriction {
   entityId: string;
   targetLabel: string;
   status: AccountRestrictionStatus;
+  reasonCategory: AccountRestrictionReasonCategory;
   reason: string;
   updatedBy: string;
   updatedAt: string;
+  /** @minimum 0 */
+  cancelledOfferingCount?: number;
+  /** @minimum 0 */
+  cancelledBookingCount?: number;
+  /** @minimum 0 */
+  closedWaitlistCount?: number;
 }
 
 export interface AccountAccessRestrictionsResponse {
@@ -4157,6 +4174,7 @@ export interface AccountAccessRestrictionUpdateInput {
      * @maxLength 500
      */
   reason: string;
+  reasonCategory?: AccountRestrictionReasonCategory;
 }
 
 export type AdminAction = typeof AdminAction[keyof typeof AdminAction];

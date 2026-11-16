@@ -5,7 +5,7 @@ import { z } from "zod";
 import { BookingError, membershipCanAccess, processWaitlistQueue } from "./reservations";
 import { ageOnDate } from "./age";
 import { hasAdminPermission, type AdminPermission } from "./admin-roles";
-import { isAccessSuspended } from "./account-access-restrictions";
+import { isAccessSuspended, isVenueSafetyRestricted, lockVenueAccess } from "./account-access-restrictions";
 import { iraqCalendarDate, openingState, previousIraqCalendarDate } from "./facility-hours";
 import { getPlatformSafetyRules } from "./platform-rules";
 import type { PlatformSafetyRules } from "@workspace/db";
@@ -75,7 +75,10 @@ async function staff(
   const hasRequiredPermission = !!op && permissions.some(permission => hasAdminPermission(op.role, permission));
   if (!op || (!hasRequiredPermission && !(op.role === "partner" && partnerId && op.partnerId === partnerId)))
     throw new BookingError(403, "Authorized staff for this partner are required.");
-  if (op.role === "partner" && partnerId && await isAccessSuspended("partner", partnerId)) {
+  if (op.role === "partner" && partnerId) {
+    await lockVenueAccess(tx, partnerId, offering?.city, offering?.facility);
+  }
+  if (op.role === "partner" && partnerId && await isVenueSafetyRestricted("partner", partnerId)) {
     throw new BookingError(403, "Partner attendance actions are temporarily restricted. Contact MaydanGo support.");
   }
   if (op.role === "partner" && offering && partnerId) {
@@ -84,7 +87,7 @@ async function staff(
       eq(facilityProfiles.city, offering.city),
       eq(facilityProfiles.facility, offering.facility),
     )).limit(1);
-    if (facility && await isAccessSuspended("facility", facility.id)) {
+    if (facility && await isVenueSafetyRestricted("facility", facility.id)) {
       throw new BookingError(403, "Facility attendance actions are temporarily restricted.");
     }
   }
@@ -92,10 +95,11 @@ async function staff(
 }
 async function eligible(tx: Tx, c: Awaited<ReturnType<typeof context>>) {
   const { r, o } = c;
+  await lockVenueAccess(tx, o.partnerId, o.city, o.facility);
   if (await isAccessSuspended("member", r.userId)) {
     throw new BookingError(403, "This account is temporarily restricted from check-in. Contact MaydanGo support.");
   }
-  if (o.partnerId && await isAccessSuspended("partner", o.partnerId)) {
+  if (o.partnerId && await isVenueSafetyRestricted("partner", o.partnerId)) {
     throw new BookingError(403, "This partner is temporarily restricted from check-in.");
   }
   const [facility] = o.partnerId ? await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
@@ -103,7 +107,7 @@ async function eligible(tx: Tx, c: Awaited<ReturnType<typeof context>>) {
     eq(facilityProfiles.city, o.city),
     eq(facilityProfiles.facility, o.facility),
   )).limit(1) : [];
-  if (facility && await isAccessSuspended("facility", facility.id)) {
+  if (facility && await isVenueSafetyRestricted("facility", facility.id)) {
     throw new BookingError(403, "This facility is temporarily restricted from check-in.");
   }
   const otherArrivals = await tx.select().from(attendance).where(and(eq(attendance.userId, r.userId),

@@ -4,12 +4,12 @@ import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
 import { eq, inArray } from "drizzle-orm";
 import express from "express";
-import { db, accountAccessRestrictions, adminRolePermissions, facilityProfiles, legalPolicyVersions, memberConsentEvents, offerings, operationAudit, operators, partners, platformSafetyRules, pool } from "@workspace/db";
+import { db, accountAccessRestrictions, adminRolePermissions, facilityProfiles, legalPolicyVersions, memberConsentEvents, offerings, operationAudit, operators, partners, platformSafetyRules, pool, reservations, waitlistEntries } from "@workspace/db";
 import { createSuperAdminRouter } from "./super-admin";
 import superAdminMemberRouter from "./member";
 import publicPoliciesRouter from "./legal-policies";
 import { DEFAULT_ADMIN_ACTIONS } from "../lib/admin-roles";
-import { filterSuspendedOfferings, isAccessSuspended } from "../lib/account-access-restrictions";
+import { filterSuspendedOfferings, isAccessSuspended, isVenueSafetyRestricted } from "../lib/account-access-restrictions";
 import { BookingError, assertMemberEligibleForOffering } from "../lib/reservations";
 
 const prefix = `super-admin-${randomUUID()}`;
@@ -21,10 +21,14 @@ const superAdminEmail = `${prefix}@example.com`;
 const targetEmail = `operator-${prefix}@example.com`;
 const partnerEmail = `partner-${prefix}@example.com`;
 const facilityId = `${prefix}-facility`;
+const venueOfferingId = `${prefix}-venue-offering`;
+const bookedMemberId = `${prefix}-booked-member`;
+const waitlistMemberId = `${prefix}-waitlist-member`;
 let server: Server | null = null;
 let originalFinancePolicy: typeof adminRolePermissions.$inferSelect | null = null;
 let originalPlatformRules: typeof platformSafetyRules.$inferSelect | null = null;
 const createdPolicyIds: string[] = [];
+const notificationAttempts: Array<{ userId: string; kind: string }> = [];
 
 const identities = new Map([
   [superAdminEmail, { userId: superAdminId, email: superAdminEmail }],
@@ -52,6 +56,9 @@ app.use("/super-admin", createSuperAdminRouter({
   async getEmail(userId) {
     return [...identities.values()].find(identity => identity.userId === userId)?.email ?? null;
   },
+}, async (userId, kind) => {
+  notificationAttempts.push({ userId, kind });
+  return { status: "sent" };
 }));
 
 async function call(path: string, method = "GET", userId?: string, body?: unknown) {
@@ -97,6 +104,9 @@ after(async () => {
   }
   await db.delete(operators).where(inArray(operators.userId, [superAdminId, targetId, partnerId]));
   await db.delete(accountAccessRestrictions).where(inArray(accountAccessRestrictions.entityId, [targetId, partnerId, facilityId]));
+  await db.delete(waitlistEntries).where(eq(waitlistEntries.offeringId, venueOfferingId));
+  await db.delete(reservations).where(eq(reservations.offeringId, venueOfferingId));
+  await db.delete(offerings).where(eq(offerings.id, venueOfferingId));
   await db.delete(facilityProfiles).where(eq(facilityProfiles.id, facilityId));
   await db.delete(partners).where(eq(partners.id, partnerId));
   if (createdPolicyIds.length) {
@@ -273,6 +283,39 @@ test("Super Admin role management is protected, auditable, and preserves other s
     localizedDescription: { en: "Test", ar: "اختبار", ku: "تاقیکردنەوە" },
     openingHours: [],
   });
+  const startsAt = new Date(Date.now() + 86_400_000);
+  await db.insert(offerings).values({
+    id: venueOfferingId,
+    kind: "session",
+    targetId: venueOfferingId,
+    slot: "",
+    title: "Upcoming restriction test session",
+    scope: "live",
+    partnerId,
+    city: "Erbil",
+    facility: "Restriction test facility",
+    category: "physical",
+    tiers: ["M"],
+    startsAt,
+    endsAt: new Date(startsAt.getTime() + 3_600_000),
+    cancellationDeadline: new Date(startsAt.getTime() - 3_600_000),
+    capacity: 5,
+    active: true,
+    approvalStatus: "published",
+  });
+  await db.insert(reservations).values({
+    id: `${prefix}-venue-booking`,
+    userId: bookedMemberId,
+    offeringId: venueOfferingId,
+    status: "reserved",
+  });
+  await db.insert(waitlistEntries).values({
+    id: `${prefix}-venue-waitlist`,
+    userId: waitlistMemberId,
+    offeringId: venueOfferingId,
+    queuePosition: 1,
+    status: "waiting",
+  });
   const restrictionsBefore = await call("/super-admin/account-restrictions", "GET", superAdminId);
   assert.equal(restrictionsBefore.status, 200);
   const targetOptions = (restrictionsBefore.data as { targets: Array<{ entityId: string }> }).targets;
@@ -302,18 +345,41 @@ test("Super Admin role management is protected, auditable, and preserves other s
     entityType: "partner",
     target: partnerId,
     status: "suspended",
+    reasonCategory: "administrative",
     reason: "Compliance review",
   });
   assert.equal(partnerSuspended.status, 200);
   assert.equal(await isAccessSuspended("partner", partnerId), true);
+  assert.equal(await isVenueSafetyRestricted("partner", partnerId), false);
+  const preservedBooking = await db.select().from(reservations).where(eq(reservations.offeringId, venueOfferingId));
+  assert.equal(preservedBooking[0]?.status, "reserved");
+  const preservedOffering = await db.select().from(offerings).where(eq(offerings.id, venueOfferingId));
+  assert.equal(preservedOffering[0]?.cancelledAt, null);
+  assert.equal(preservedOffering[0]?.active, true);
   const facilitySuspended = await call("/super-admin/account-restrictions", "PUT", superAdminId, {
     entityType: "facility",
     target: facilityId,
     status: "suspended",
+    reasonCategory: "safety",
     reason: "Safety inspection",
   });
   assert.equal(facilitySuspended.status, 200);
   assert.equal(await isAccessSuspended("facility", facilityId), true);
+  assert.equal(await isVenueSafetyRestricted("facility", facilityId), true);
+  const cancellationResult = facilitySuspended.data as {
+    cancelledOfferingCount: number;
+    cancelledBookingCount: number;
+    closedWaitlistCount: number;
+  };
+  assert.equal(cancellationResult.cancelledOfferingCount, 1);
+  assert.equal(cancellationResult.cancelledBookingCount, 1);
+  assert.equal(cancellationResult.closedWaitlistCount, 1);
+  const cancelledBooking = await db.select().from(reservations).where(eq(reservations.offeringId, venueOfferingId));
+  assert.equal(cancelledBooking[0]?.status, "admin_cancelled");
+  const closedWaitlist = await db.select().from(waitlistEntries).where(eq(waitlistEntries.offeringId, venueOfferingId));
+  assert.equal(closedWaitlist[0]?.status, "closed");
+  assert.equal(notificationAttempts.some(item => item.userId === bookedMemberId && item.kind === "venue_suspension_cancelled"), true);
+  assert.equal(notificationAttempts.some(item => item.userId === waitlistMemberId && item.kind === "waitlist_closed"), true);
   const filtered = await filterSuspendedOfferings([{
     partnerId,
     city: "Erbil",
@@ -327,6 +393,19 @@ test("Super Admin role management is protected, auditable, and preserves other s
     row.action === "super_admin.account_access.suspend"
     && row.targetId === `facility:${facilityId}`
     && row.detail.includes("Safety inspection")), true);
+  const facilityRestored = await call("/super-admin/account-restrictions", "PUT", superAdminId, {
+    entityType: "facility",
+    target: facilityId,
+    status: "active",
+    reason: "Closure review completed",
+  });
+  assert.equal(facilityRestored.status, 200);
+  assert.equal(await isAccessSuspended("facility", facilityId), false);
+  assert.equal(await isVenueSafetyRestricted("facility", facilityId), false);
+  const stillCancelledBooking = await db.select().from(reservations).where(eq(reservations.offeringId, venueOfferingId));
+  assert.equal(stillCancelledBooking[0]?.status, "admin_cancelled");
+  const stillCancelledOffering = await db.select().from(offerings).where(eq(offerings.id, venueOfferingId));
+  assert.notEqual(stillCancelledOffering[0]?.cancelledAt, null);
 
   const consentId = randomUUID();
   await db.insert(memberConsentEvents).values({

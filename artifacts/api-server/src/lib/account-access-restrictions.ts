@@ -1,8 +1,24 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { accountAccessRestrictions, db, facilityProfiles } from "@workspace/db";
 import { inArray } from "drizzle-orm";
 
 export type RestrictedEntityType = "member" | "partner" | "facility";
+export type VenueRestrictionCategory = "administrative" | "safety" | "fraud" | "closure";
+type RestrictionTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+export async function lockVenueAccess(
+  tx: RestrictionTransaction,
+  partnerId: string | null,
+  city?: string,
+  facility?: string,
+) {
+  if (!partnerId) return;
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtext('maydango-venue-partner'), hashtext(${partnerId}))`);
+  if (city && facility) {
+    const venueKey = `${city.trim().toLowerCase()}|${facility.trim().toLowerCase()}`;
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${partnerId}), hashtext(${venueKey}))`);
+  }
+}
 
 export async function isAccessSuspended(entityType: RestrictedEntityType, entityId: string): Promise<boolean> {
   const [restriction] = await db.select({ entityId: accountAccessRestrictions.entityId })
@@ -13,6 +29,17 @@ export async function isAccessSuspended(entityType: RestrictedEntityType, entity
       eq(accountAccessRestrictions.status, "suspended"),
     )).limit(1);
   return !!restriction;
+}
+
+export async function isVenueSafetyRestricted(entityType: "partner" | "facility", entityId: string): Promise<boolean> {
+  const [restriction] = await db.select({
+    status: accountAccessRestrictions.status,
+    reasonCategory: accountAccessRestrictions.reasonCategory,
+  }).from(accountAccessRestrictions).where(and(
+    eq(accountAccessRestrictions.entityType, entityType),
+    eq(accountAccessRestrictions.entityId, entityId),
+  )).limit(1);
+  return restriction?.status === "suspended" && restriction.reasonCategory !== "administrative";
 }
 
 export async function hasAccessRestrictionRecord(entityType: RestrictedEntityType, entityId: string): Promise<boolean> {

@@ -10,6 +10,7 @@ export type AppLanguage = "en" | "ar" | "ku";
 export type NotificationKind =
   | "booking_created"
   | "booking_cancelled"
+  | "venue_suspension_cancelled"
   | "booking_rejected"
   | "schedule_changed"
   | "waitlist_offer"
@@ -47,6 +48,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
   en: {
     booking_created: { title: "Booking confirmed", body: "Your MaydanGO booking is confirmed." },
     booking_cancelled: { title: "Booking update", body: "Your MaydanGO booking was cancelled." },
+    venue_suspension_cancelled: { title: "Venue visit cancelled", body: "Your upcoming visit was cancelled because the venue is unavailable. Your membership visit allowance has been restored. Contact MaydanGo support about any separate payment." },
     booking_rejected: { title: "Booking request update", body: "The venue could not accept this booking request. Contact MaydanGO support if you need help." },
     schedule_changed: { title: "Class schedule changed", body: "A class time changed. Check the updated schedule in MaydanGO." },
     waitlist_offer: { title: "A class place opened", body: "A place opened in your class. Accept by {deadline} Iraq time in MaydanGO; it is not booked until you accept." },
@@ -69,6 +71,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
   ar: {
     booking_created: { title: "تم تأكيد الحجز", body: "تم تأكيد حجزك في MaydanGO." },
     booking_cancelled: { title: "تحديث الحجز", body: "تم إلغاء حجزك في MaydanGO." },
+    venue_suspension_cancelled: { title: "أُلغيت زيارة المكان", body: "أُلغيت زيارتك القادمة لعدم توفر المكان. أُعيدت الزيارة إلى رصيد عضويتك. تواصل مع دعم MaydanGo بشأن أي دفعة منفصلة." },
     booking_rejected: { title: "تحديث طلب الحجز", body: "لم يتمكن المكان من قبول طلب الحجز. تواصل مع دعم MaydanGO إذا احتجت إلى مساعدة." },
     schedule_changed: { title: "تغيّر موعد الحصة", body: "تغيّر موعد حصة. راجع الجدول المحدّث في MaydanGO." },
     waitlist_offer: { title: "توفر مكان في الحصة", body: "توفر مكان في حصتك. أكّد الحجز في MaydanGO قبل {deadline} بتوقيت العراق؛ ما يتأكد الحجز إلا بعد موافقتك." },
@@ -91,6 +94,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
   ku: {
     booking_created: { title: "حجز پشتڕاست کرایەوە", body: "حجزەکەت لە MaydanGO پشتڕاست کرایەوە." },
     booking_cancelled: { title: "نوێکاریی حجز", body: "حجزەکەت لە MaydanGO هەڵوەشێندرایەوە." },
+    venue_suspension_cancelled: { title: "سەردانی شوێن هەڵوەشێندرایەوە", body: "سەردانی داهاتووت بەهۆی بەردەست نەبوونی شوێنەکە هەڵوەشێندرایەوە. سەردانەکە گەڕێندرایەوە بۆ باڵانسی ئەندامێتیت. بۆ هەر پارەدانێکی جیاواز پەیوەندی بە پشتگیریی MaydanGo بکە." },
     booking_rejected: { title: "نوێکاریی داواکاریی حجز", body: "شوێنەکە نەیتوانی داواکاریی حجزەکەت قبوڵ بکات. ئەگەر یارمەتی پێویستت بوو، پەیوەندی بە پشتگیریی MaydanGO بکە." },
     schedule_changed: { title: "کاتی وانە گۆڕا", body: "کاتی وانەیەک گۆڕا. خشتەی نوێ لە MaydanGO ببینە." },
     waitlist_offer: { title: "شوێنێک لە وانە بەردەستە", body: "شوێنێک لە وانەکەت بەردەست بووە. تا {deadline} بە کاتی عێراق لە MaydanGO پێشنیارەکە قبووڵ بکە؛ حجزەکە تا ئەو کاتە پشتڕاست نییە." },

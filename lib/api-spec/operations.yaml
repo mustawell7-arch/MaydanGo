@@ -4443,6 +4443,9 @@ components:
     AccountRestrictionStatus:
       type: string
       enum: [active, suspended]
+    AccountRestrictionReasonCategory:
+      type: string
+      enum: [administrative, safety, fraud, closure]
     AccountRestrictionTarget:
       type: object
       additionalProperties: false
@@ -4454,15 +4457,19 @@ components:
     AccountAccessRestriction:
       type: object
       additionalProperties: false
-      required: [entityType, entityId, targetLabel, status, reason, updatedBy, updatedAt]
+      required: [entityType, entityId, targetLabel, status, reasonCategory, reason, updatedBy, updatedAt]
       properties:
         entityType: { $ref: "#/components/schemas/AccountRestrictionEntityType" }
         entityId: { type: string }
         targetLabel: { type: string }
         status: { $ref: "#/components/schemas/AccountRestrictionStatus" }
+        reasonCategory: { $ref: "#/components/schemas/AccountRestrictionReasonCategory" }
         reason: { type: string }
         updatedBy: { type: string }
         updatedAt: { type: string, format: date-time }
+        cancelledOfferingCount: { type: integer, minimum: 0 }
+        cancelledBookingCount: { type: integer, minimum: 0 }
+        closedWaitlistCount: { type: integer, minimum: 0 }
     AccountAccessRestrictionsResponse:
       type: object
       additionalProperties: false
@@ -4483,6 +4490,8 @@ components:
         target: { type: string, minLength: 1, maxLength: 320, description: "Verified email for members; target ID for partners and facilities." }
         status: { $ref: "#/components/schemas/AccountRestrictionStatus" }
         reason: { type: string, minLength: 5, maxLength: 500 }
+        reasonCategory:
+          $ref: "#/components/schemas/AccountRestrictionReasonCategory"
     AdminAction:
       type: string
       enum: [view, create, edit, approve, reject, suspend, refund, export, delete, publish, manage_payments, manage_users, view_sensitive_data]

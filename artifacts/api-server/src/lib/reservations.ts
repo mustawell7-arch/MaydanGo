@@ -3,7 +3,7 @@ import { and, asc, desc, eq, gt, inArray, isNull, lte, sql } from "drizzle-orm";
 import { db, memberships, offerings, reservations, attendance, facilityProfiles, memberProfiles, partners, waitlistEntries, memberUpdates } from "@workspace/db";
 import { sendMemberNotification } from "./notifications";
 import { hasCurrentRequiredMemberConsent } from "./member-consents";
-import { isAccessSuspended } from "./account-access-restrictions";
+import { isAccessSuspended, lockVenueAccess } from "./account-access-restrictions";
 
 export class BookingError extends Error {
   constructor(public status: number, message: string) { super(message); }
@@ -43,6 +43,7 @@ export async function assertMemberEligibleForOffering(tx: BookingTx, userId: str
   }
   const now = new Date();
   if (o.scope === "live") {
+    await lockVenueAccess(tx, o.partnerId, o.city, o.facility);
     const [partner] = o.partnerId ? await tx.select().from(partners).where(eq(partners.id, o.partnerId)).for("share") : [];
     if (!partner?.approved) throw new BookingError(403, "This partner is not approved for live bookings.");
     if (o.partnerId && await isAccessSuspended("partner", o.partnerId)) {
@@ -440,13 +441,18 @@ export async function createReservation(userId: string, input: { kind: string; t
 export async function cancelReservation(userId: string, id: string) {
   const result = await db.transaction(async tx => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
-    const [r] = await tx.select().from(reservations).where(and(eq(reservations.id, id), eq(reservations.userId, userId))).for("update");
-    if (!r) throw new BookingError(404, "Booking not found.");
+    const [initial] = await tx.select({ offeringId: reservations.offeringId }).from(reservations)
+      .where(and(eq(reservations.id, id), eq(reservations.userId, userId)));
+    if (!initial) throw new BookingError(404, "Booking not found.");
+    const [o] = await tx.select().from(offerings).where(eq(offerings.id, initial.offeringId)).for("update");
+    if (!o) throw new BookingError(404, "This activity is no longer available.");
+    const [r] = await tx.select().from(reservations)
+      .where(and(eq(reservations.id, id), eq(reservations.userId, userId))).for("update");
+    if (!r || r.offeringId !== initial.offeringId) throw new BookingError(409, "This booking changed. Refresh and try again.");
     if (r.status === "cancelled") return { cancelled: false, changes: { offered: [], expired: [], reminders: [] } as WaitlistChanges };
     if (!["reserved", "requested"].includes(r.status)) throw new BookingError(409, "This booking can’t be canceled.");
     if ((await tx.select().from(attendance).where(eq(attendance.reservationId, id))).length)
       throw new BookingError(409, "Attendance already exists. Request an attendance review.");
-    const [o] = await tx.select().from(offerings).where(eq(offerings.id, r.offeringId)).for("update");
     if (new Date() >= o.cancellationDeadline) throw new BookingError(409, "The cancellation deadline has passed. Contact support.");
     await tx.update(reservations).set({ status: "cancelled", cancelledAt: new Date() }).where(eq(reservations.id, r.id));
     const changes = o.scope === "live"

@@ -4741,15 +4741,27 @@ export const UpsertSuperAdminAccountResponse = zod.object({
 })
 
 
+export const getSuperAdminAccountRestrictionsResponseItemsItemCancelledOfferingCountMin = 0;
+
+export const getSuperAdminAccountRestrictionsResponseItemsItemCancelledBookingCountMin = 0;
+
+export const getSuperAdminAccountRestrictionsResponseItemsItemClosedWaitlistCountMin = 0;
+
+
+
 export const GetSuperAdminAccountRestrictionsResponse = zod.object({
   "items": zod.array(zod.object({
   "entityType": zod.enum(['member', 'partner', 'facility']),
   "entityId": zod.string(),
   "targetLabel": zod.string(),
   "status": zod.enum(['active', 'suspended']),
+  "reasonCategory": zod.enum(['administrative', 'safety', 'fraud', 'closure']),
   "reason": zod.string(),
   "updatedBy": zod.string(),
-  "updatedAt": zod.coerce.date()
+  "updatedAt": zod.coerce.date(),
+  "cancelledOfferingCount": zod.int().min(getSuperAdminAccountRestrictionsResponseItemsItemCancelledOfferingCountMin).optional(),
+  "cancelledBookingCount": zod.int().min(getSuperAdminAccountRestrictionsResponseItemsItemCancelledBookingCountMin).optional(),
+  "closedWaitlistCount": zod.int().min(getSuperAdminAccountRestrictionsResponseItemsItemClosedWaitlistCountMin).optional()
 })),
   "targets": zod.array(zod.object({
   "entityType": zod.enum(['member', 'partner', 'facility']),
@@ -4770,17 +4782,30 @@ export const UpdateSuperAdminAccountRestrictionBody = zod.object({
   "entityType": zod.enum(['member', 'partner', 'facility']),
   "target": zod.string().min(1).max(updateSuperAdminAccountRestrictionBodyTargetMax).describe('Verified email for members; target ID for partners and facilities.'),
   "status": zod.enum(['active', 'suspended']),
-  "reason": zod.string().min(updateSuperAdminAccountRestrictionBodyReasonMin).max(updateSuperAdminAccountRestrictionBodyReasonMax)
+  "reason": zod.string().min(updateSuperAdminAccountRestrictionBodyReasonMin).max(updateSuperAdminAccountRestrictionBodyReasonMax),
+  "reasonCategory": zod.enum(['administrative', 'safety', 'fraud', 'closure']).optional()
 })
+
+export const updateSuperAdminAccountRestrictionResponseCancelledOfferingCountMin = 0;
+
+export const updateSuperAdminAccountRestrictionResponseCancelledBookingCountMin = 0;
+
+export const updateSuperAdminAccountRestrictionResponseClosedWaitlistCountMin = 0;
+
+
 
 export const UpdateSuperAdminAccountRestrictionResponse = zod.object({
   "entityType": zod.enum(['member', 'partner', 'facility']),
   "entityId": zod.string(),
   "targetLabel": zod.string(),
   "status": zod.enum(['active', 'suspended']),
+  "reasonCategory": zod.enum(['administrative', 'safety', 'fraud', 'closure']),
   "reason": zod.string(),
   "updatedBy": zod.string(),
-  "updatedAt": zod.coerce.date()
+  "updatedAt": zod.coerce.date(),
+  "cancelledOfferingCount": zod.int().min(updateSuperAdminAccountRestrictionResponseCancelledOfferingCountMin).optional(),
+  "cancelledBookingCount": zod.int().min(updateSuperAdminAccountRestrictionResponseCancelledBookingCountMin).optional(),
+  "closedWaitlistCount": zod.int().min(updateSuperAdminAccountRestrictionResponseClosedWaitlistCountMin).optional()
 })
 
 

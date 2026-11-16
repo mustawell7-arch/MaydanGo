@@ -38,8 +38,8 @@ Membership access settings are snapshots: event booking follows the saved `event
 
 **How to apply:** Enforce saved rules for every booking and course endpoint, including playback. Do not use current plan edits to rewrite existing memberships, and do not treat `additionalPaymentAllowed` as payment authorization.
 
-Suspension keeps sign-in and support access available while blocking restricted actions. Member suspensions block new bookings, course enrollment/playback, and check-in; partner suspensions block operational actions except safety reads and incident reports; facility suspensions hide new discovery and pause check-in. Existing records and bookings remain saved and are not automatically cancelled. Require a reason for every suspension and restoration and record the actor, target, and time.
+Suspension keeps sign-in and support access available while blocking restricted actions. Member suspensions block new bookings, course enrollment/playback, and check-in; partner suspensions block operational actions except safety reads and incident reports. Venue suspensions require a category: administrative restrictions block new bookings but preserve existing visits; safety, suspected fraud, and closure cancel upcoming sessions/bookings, close waitlists, restore membership visit allowance, and notify affected members. Restoring access does not recreate cancelled bookings. Require a reason for every suspension and restoration and record the actor, target, and time.
 
-**Why:** The user chose to allow sign-in while blocking actions and preserving records.
+**Why:** The user chose to keep sign-in available and explicitly defined different treatment for administrative versus safety, fraud, or closure suspensions.
 
-**How to apply:** Keep restrictions reversible and separate from membership/payment history. Make the handling of upcoming bookings clear before changing their treatment.
+**How to apply:** Keep restrictions reversible and separate from payment history. Treat old venue restrictions as administrative unless reviewed. Cancellation returns membership visit allowance; never initiate a provider refund automatically, and keep any cash refund under the final payment milestone and separate finance approval.

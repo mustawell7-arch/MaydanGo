@@ -22,6 +22,7 @@ import {
   type AdminAction,
   type AdminAccount,
   type AccountRestrictionEntityType,
+  type AccountRestrictionReasonCategory,
   type AccountAccessRestriction,
   type AdminRole,
   type AdminRolePermission,
@@ -153,7 +154,9 @@ export default function SuperAdminPage() {
   const [restrictionType, setRestrictionType] = useState<AccountRestrictionEntityType>("member");
   const [restrictionTarget, setRestrictionTarget] = useState("");
   const [restrictionStatus, setRestrictionStatus] = useState<"active" | "suspended">("suspended");
+  const [restrictionCategory, setRestrictionCategory] = useState<AccountRestrictionReasonCategory | "">("");
   const [restrictionReason, setRestrictionReason] = useState("");
+  const [confirmVenueCancellation, setConfirmVenueCancellation] = useState(false);
   const [adminReason, setAdminReason] = useState("");
   const [restrictionFeedback, setRestrictionFeedback] = useState("");
   const [permissionFeedback, setPermissionFeedback] = useState("");
@@ -161,6 +164,10 @@ export default function SuperAdminPage() {
   const [guardianDownloadId, setGuardianDownloadId] = useState<string | null>(null);
   const [guardianFeedback, setGuardianFeedback] = useState("");
   const [busyId, setBusyId] = useState("");
+  const requiresVenueCategory = restrictionStatus === "suspended" && restrictionType !== "member";
+  const cancelsUpcomingVenueVisits = requiresVenueCategory
+    && !!restrictionCategory
+    && restrictionCategory !== "administrative";
 
   const refresh = async () => {
     await Promise.all([
@@ -207,7 +214,9 @@ export default function SuperAdminPage() {
 
   const submitRestriction = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!restrictionTarget.trim() || restrictionReason.trim().length < 5) return;
+    if (!restrictionTarget.trim() || restrictionReason.trim().length < 5
+      || (requiresVenueCategory && !restrictionCategory)
+      || (cancelsUpcomingVenueVisits && !confirmVenueCancellation)) return;
     setBusyId("account-restriction");
     setRestrictionFeedback("");
     saveRestriction.mutate(
@@ -216,12 +225,22 @@ export default function SuperAdminPage() {
         target: restrictionTarget.trim(),
         status: restrictionStatus,
         reason: restrictionReason.trim(),
+        ...(requiresVenueCategory && restrictionCategory ? { reasonCategory: restrictionCategory } : {}),
       } },
       {
-        onSuccess: async () => {
-          setRestrictionFeedback(`${restrictionType === "member" ? "Member account" : restrictionType === "partner" ? "Partner" : "Facility"} access was ${restrictionStatus === "suspended" ? "suspended" : "restored"}. Existing records were preserved.`);
+        onSuccess: async result => {
+          const targetName = restrictionType === "member" ? "Member account" : restrictionType === "partner" ? "Partner" : "Facility";
+          setRestrictionFeedback(cancelsUpcomingVenueVisits
+            ? `${targetName} restricted. ${result.cancelledOfferingCount ?? 0} upcoming sessions and ${result.cancelledBookingCount ?? 0} bookings cancelled; ${result.closedWaitlistCount ?? 0} waitlist entries closed. Membership visit allowances are restored. No payment refund was initiated.`
+            : restrictionStatus === "active"
+              ? `${targetName} access restored. Previously cancelled bookings are not recreated.`
+              : restrictionType === "member"
+                ? "Member access was suspended. Existing records were preserved."
+                : "Administrative restriction applied. New bookings are blocked; existing bookings remain usable.");
           setRestrictionReason("");
           setRestrictionTarget("");
+          setRestrictionCategory("");
+          setConfirmVenueCancellation(false);
           setAuditPage(0);
           await refresh();
           setBusyId("");
@@ -238,7 +257,9 @@ export default function SuperAdminPage() {
     setRestrictionType(restriction.entityType);
     setRestrictionTarget(restriction.entityType === "member" ? restriction.entityId : restriction.entityId);
     setRestrictionStatus(restriction.status === "suspended" ? "active" : "suspended");
+    setRestrictionCategory(restriction.reasonCategory);
     setRestrictionReason("");
+    setConfirmVenueCancellation(false);
     setRestrictionFeedback("");
   };
 
@@ -488,11 +509,17 @@ export default function SuperAdminPage() {
           <section className="mb-8 rounded-3xl border border-[#e1dccf] bg-[#fffdf7] p-5 sm:p-6" aria-labelledby="account-restrictions-title" data-testid="section-account-restrictions">
             <div className="mb-5">
               <h2 id="account-restrictions-title" className="font-display text-xl font-bold">Customer, partner and facility access</h2>
-              <p className="mt-1 max-w-3xl text-sm leading-5 text-[#60756b]">Suspension does not block sign-in or delete records. It prevents new member bookings and course access and removes partner operations access. Check-ins at suspended partners or facilities remain paused; existing bookings are kept and are not automatically cancelled. Members and partners can still contact support. Add a clear reason for every suspension or restoration.</p>
+              <p className="mt-1 max-w-3xl text-sm leading-5 text-[#60756b]">Sign-in and support remain available. An administrative venue restriction blocks new bookings but allows existing visits. Safety, suspected fraud, or closure restrictions cancel upcoming sessions and bookings, close waitlists, restore membership visit allowances, and notify affected members. Any cash refund remains a separate finance review.</p>
             </div>
             <form onSubmit={submitRestriction} className="grid gap-3 rounded-2xl border border-[#e5dfd1] bg-[#faf8f1] p-4 md:grid-cols-2" data-testid="form-account-restriction">
               <label className="text-xs font-semibold">Account type
-                <select value={restrictionType} onChange={event => { setRestrictionType(event.target.value as AccountRestrictionEntityType); setRestrictionTarget(""); }} className="mt-1.5 w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm" data-testid="select-restriction-entity-type">
+                <select value={restrictionType} onChange={event => {
+                  const nextType = event.target.value as AccountRestrictionEntityType;
+                  setRestrictionType(nextType);
+                  setRestrictionTarget("");
+                  setRestrictionCategory(nextType === "member" ? "administrative" : "");
+                  setConfirmVenueCancellation(false);
+                }} className="mt-1.5 w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm" data-testid="select-restriction-entity-type">
                   <option value="member">Member account</option><option value="partner">Partner</option><option value="facility">Facility</option>
                 </select>
               </label>
@@ -507,15 +534,37 @@ export default function SuperAdminPage() {
                     </select>
                   </label>}
               <label className="text-xs font-semibold">Access status
-                <select value={restrictionStatus} onChange={event => setRestrictionStatus(event.target.value as "active" | "suspended")} className="mt-1.5 w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm" data-testid="select-restriction-status">
+                <select value={restrictionStatus} onChange={event => {
+                  setRestrictionStatus(event.target.value as "active" | "suspended");
+                  setConfirmVenueCancellation(false);
+                }} className="mt-1.5 w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm" data-testid="select-restriction-status">
                   <option value="suspended">Suspend access</option><option value="active">Restore access</option>
                 </select>
               </label>
+              {requiresVenueCategory && <label className="text-xs font-semibold">Suspension category
+                <select required value={restrictionCategory} onChange={event => {
+                  setRestrictionCategory(event.target.value as AccountRestrictionReasonCategory | "");
+                  setConfirmVenueCancellation(false);
+                }} className="mt-1.5 w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm" data-testid="select-restriction-category">
+                  <option value="">Choose the reason type…</option>
+                  <option value="administrative">Administrative issue — preserve existing visits</option>
+                  <option value="safety">Safety concern — cancel upcoming visits</option>
+                  <option value="fraud">Suspected fraud — cancel upcoming visits</option>
+                  <option value="closure">Venue closure — cancel upcoming visits</option>
+                </select>
+              </label>}
               <label className="text-xs font-semibold">Reason
                 <textarea required minLength={5} maxLength={500} value={restrictionReason} onChange={event => setRestrictionReason(event.target.value)} className="mt-1.5 min-h-20 w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm" placeholder="Enter the reason for this access change." data-testid="input-restriction-reason" />
               </label>
+              {cancelsUpcomingVenueVisits && <div className="md:col-span-2 rounded-xl border border-[#e8c5ba] bg-[#fff5f1] p-3 text-sm leading-6 text-[#713d32]" data-testid="notice-restriction-cancellations">
+                This action cancels upcoming sessions and bookings, closes waitlists, restores membership visit allowances, and notifies affected members. It does not issue an automatic cash refund.
+                <label className="mt-3 flex items-start gap-2 font-semibold">
+                  <input type="checkbox" checked={confirmVenueCancellation} onChange={event => setConfirmVenueCancellation(event.target.checked)} className="mt-1" data-testid="checkbox-confirm-venue-cancellation" />
+                  <span>I understand the upcoming bookings will be cancelled.</span>
+                </label>
+              </div>}
               <div className="md:col-span-2 flex flex-wrap items-center gap-3">
-                <button type="submit" disabled={!!busyId || !restrictionTarget.trim() || restrictionReason.trim().length < 5} className="rounded-xl bg-[#174d43] px-4 py-2.5 text-sm font-bold text-[#fff9e9] disabled:opacity-50" data-testid="button-save-account-restriction">{busyId === "account-restriction" ? "Saving…" : restrictionStatus === "suspended" ? "Suspend access" : "Restore access"}</button>
+                <button type="submit" disabled={!!busyId || !restrictionTarget.trim() || restrictionReason.trim().length < 5 || (requiresVenueCategory && !restrictionCategory) || (cancelsUpcomingVenueVisits && !confirmVenueCancellation)} className="rounded-xl bg-[#174d43] px-4 py-2.5 text-sm font-bold text-[#fff9e9] disabled:opacity-50" data-testid="button-save-account-restriction">{busyId === "account-restriction" ? "Saving…" : restrictionStatus === "suspended" ? "Suspend access" : "Restore access"}</button>
                 {restrictionFeedback && <p className="text-sm text-[#536b61]" role="status" data-testid="status-account-restriction-feedback">{restrictionFeedback}</p>}
               </div>
             </form>
@@ -524,18 +573,19 @@ export default function SuperAdminPage() {
                 ? <p className="py-5 text-center text-sm text-[#748279]" role="status">Loading access records…</p>
                 : restrictionsQuery.isError
                   ? <p className="rounded-xl border border-[#e8c5ba] bg-[#fff5f1] p-4 text-sm text-[#9a4435]" role="alert">Access records could not be loaded.</p>
-                  : <table className="w-full min-w-[680px] text-left text-sm">
-                    <thead><tr className="border-b border-[#e7e2d6] text-[10px] uppercase tracking-[.1em] text-[#78857c]"><th className="px-2 py-3">Target</th><th className="px-2 py-3">Type</th><th className="px-2 py-3">Status</th><th className="px-2 py-3">Reason</th><th className="px-2 py-3">Updated</th><th className="px-2 py-3">Action</th></tr></thead>
+                  : <table className="w-full min-w-[820px] text-left text-sm">
+                    <thead><tr className="border-b border-[#e7e2d6] text-[10px] uppercase tracking-[.1em] text-[#78857c]"><th className="px-2 py-3">Target</th><th className="px-2 py-3">Type</th><th className="px-2 py-3">Status</th><th className="px-2 py-3">Category</th><th className="px-2 py-3">Reason</th><th className="px-2 py-3">Updated</th><th className="px-2 py-3">Action</th></tr></thead>
                     <tbody>
                       {(restrictionsQuery.data?.items ?? []).map(restriction => <tr key={`${restriction.entityType}:${restriction.entityId}`} className="border-b border-[#eee9de] align-top" data-testid={`row-account-restriction-${restriction.entityType}-${restriction.entityId}`}>
                         <td className="px-2 py-3"><p className="font-semibold">{restriction.targetLabel}</p><p className="mt-1 break-all font-mono text-[10px] text-[#839087]">{restriction.entityId}</p></td>
                         <td className="px-2 py-3 capitalize">{restriction.entityType}</td>
                         <td className="px-2 py-3"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${restriction.status === "active" ? "bg-[#e4f0e6] text-[#315e42]" : "bg-[#f6e7e2] text-[#9a4435]"}`}>{restriction.status === "active" ? "Active" : "Suspended"}</span></td>
+                        <td className="px-2 py-3">{restriction.reasonCategory === "administrative" ? "Administrative" : restriction.reasonCategory === "safety" ? "Safety" : restriction.reasonCategory === "fraud" ? "Suspected fraud" : "Closure"}</td>
                         <td className="max-w-[260px] whitespace-normal px-2 py-3 text-xs text-[#536b61]">{restriction.reason}</td>
                         <td className="px-2 py-3 text-xs text-[#748279]">{new Date(restriction.updatedAt).toLocaleString()}</td>
                         <td className="px-2 py-3"><button type="button" onClick={() => prepareRestrictionChange(restriction)} className="rounded-lg border border-[#d8d2c4] px-3 py-2 text-[11px] font-bold text-[#36564b]" data-testid={`button-change-restriction-${restriction.entityType}-${restriction.entityId}`}>{restriction.status === "suspended" ? "Prepare restore" : "Prepare suspension"}</button></td>
                       </tr>)}
-                      {!restrictionsQuery.data?.items.length && <tr><td colSpan={6} className="px-2 py-8 text-center text-sm text-[#748279]">No member, partner or facility access changes have been recorded.</td></tr>}
+                      {!restrictionsQuery.data?.items.length && <tr><td colSpan={7} className="px-2 py-8 text-center text-sm text-[#748279]">No member, partner or facility access changes have been recorded.</td></tr>}
                     </tbody>
                   </table>}
             </div>
