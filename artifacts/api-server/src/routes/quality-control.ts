@@ -1,10 +1,11 @@
 import { Router, type Response } from "express";
 import { getAuth } from "@clerk/express";
-import { and, asc, desc, eq, inArray, isNotNull, ne } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { hasAdminPermission } from "../lib/admin-roles";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
+import { listExpiringPartnerDocuments } from "../lib/partner-document-expiry";
 import {
   db, facilityProfiles, facilityQualityAssessments, facilityQualityEmergencyContacts, facilityQualityIncidents,
   operationAudit, operators, partners, partnerComplianceDocuments,
@@ -117,24 +118,6 @@ function isCalendarDate(value: string | null) {
   if (value === null) return true;
   const timestamp = Date.parse(`${value}T00:00:00.000Z`);
   return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
-}
-
-function baghdadDate(now = new Date()): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Baghdad",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(now);
-  const part = (type: string) => parts.find(item => item.type === type)?.value ?? "";
-  return `${part("year")}-${part("month")}-${part("day")}`;
-}
-
-function daysUntilExpiry(expiresOn: string, today = baghdadDate()): number {
-  return Math.floor(
-    (Date.parse(`${expiresOn.slice(0, 10)}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`))
-    / 86_400_000,
-  );
 }
 
 function assessmentError(input: {
@@ -358,88 +341,7 @@ router.get("/", async (_req, res): Promise<void> => {
       .orderBy(desc(partnerComplianceDocuments.createdAt))
       .limit(500),
   ]);
-  const [latestLicenceRows, latestInsuranceRows, latestApprovedComplianceDocuments] = await Promise.all([
-    db.selectDistinctOn([facilityQualityAssessments.facilityId], {
-      facilityId: facilityQualityAssessments.facilityId,
-      partnerId: facilityQualityAssessments.partnerId,
-      partnerName: partners.name,
-      facility: facilityProfiles.facility,
-      city: facilityProfiles.city,
-      expiresOn: facilityQualityAssessments.licenceExpiresOn,
-    }).from(facilityQualityAssessments)
-      .innerJoin(facilityProfiles, eq(facilityProfiles.id, facilityQualityAssessments.facilityId))
-      .innerJoin(partners, eq(partners.id, facilityQualityAssessments.partnerId))
-      .where(and(isNotNull(facilityQualityAssessments.licenceExpiresOn), assessmentCondition))
-      .orderBy(
-        facilityQualityAssessments.facilityId,
-        desc(facilityQualityAssessments.updatedAt),
-        desc(facilityQualityAssessments.createdAt),
-      ),
-    db.selectDistinctOn([facilityQualityAssessments.facilityId], {
-      facilityId: facilityQualityAssessments.facilityId,
-      partnerId: facilityQualityAssessments.partnerId,
-      partnerName: partners.name,
-      facility: facilityProfiles.facility,
-      city: facilityProfiles.city,
-      expiresOn: facilityQualityAssessments.insuranceExpiresOn,
-    }).from(facilityQualityAssessments)
-      .innerJoin(facilityProfiles, eq(facilityProfiles.id, facilityQualityAssessments.facilityId))
-      .innerJoin(partners, eq(partners.id, facilityQualityAssessments.partnerId))
-      .where(and(isNotNull(facilityQualityAssessments.insuranceExpiresOn), assessmentCondition))
-      .orderBy(
-        facilityQualityAssessments.facilityId,
-        desc(facilityQualityAssessments.updatedAt),
-        desc(facilityQualityAssessments.createdAt),
-      ),
-    db.selectDistinctOn([partnerComplianceDocuments.facilityId, partnerComplianceDocuments.documentType], {
-      facilityId: partnerComplianceDocuments.facilityId,
-      partnerId: partnerComplianceDocuments.partnerId,
-      partnerName: partners.name,
-      facility: facilityProfiles.facility,
-      city: facilityProfiles.city,
-      expiresOn: partnerComplianceDocuments.expiresOn,
-      documentType: partnerComplianceDocuments.documentType,
-    }).from(partnerComplianceDocuments)
-      .innerJoin(facilityProfiles, eq(facilityProfiles.id, partnerComplianceDocuments.facilityId))
-      .innerJoin(partners, eq(partners.id, partnerComplianceDocuments.partnerId))
-      .where(and(
-        eq(partnerComplianceDocuments.status, "approved"),
-        isNotNull(partnerComplianceDocuments.expiresOn),
-        inArray(partnerComplianceDocuments.documentType, ["licence", "insurance"]),
-        partnerScope ? eq(partnerComplianceDocuments.partnerId, partnerScope) : undefined,
-      ))
-      .orderBy(
-        partnerComplianceDocuments.facilityId,
-        partnerComplianceDocuments.documentType,
-        desc(partnerComplianceDocuments.updatedAt),
-        desc(partnerComplianceDocuments.createdAt),
-      ),
-  ]);
-  const expiryRows = new Map<string, {
-    facilityId: string;
-    partnerId: string;
-    partnerName: string;
-    facility: string;
-    city: string;
-    expiresOn: string | null;
-    documentType: "licence" | "insurance";
-  }>();
-  [
-    ...latestLicenceRows.map(row => ({ ...row, documentType: "licence" as const })),
-    ...latestInsuranceRows.map(row => ({ ...row, documentType: "insurance" as const })),
-  ].forEach(row => expiryRows.set(`${row.facilityId}:${row.documentType}`, row));
-  latestApprovedComplianceDocuments.forEach(row => {
-    if (row.documentType === "licence" || row.documentType === "insurance") {
-      expiryRows.set(`${row.facilityId}:${row.documentType}`, { ...row, documentType: row.documentType });
-    }
-  });
-  const expiringDocuments = [...expiryRows.values()].flatMap(row => {
-    if (!row.expiresOn) return [];
-    const daysRemaining = daysUntilExpiry(row.expiresOn);
-    return daysRemaining <= 30 ? [{ ...row, daysRemaining }] : [];
-  }).sort((a, b) =>
-    a.daysRemaining - b.daysRemaining || a.city.localeCompare(b.city) || a.facility.localeCompare(b.facility),
-  );
+  const expiringDocuments = await listExpiringPartnerDocuments(partnerScope);
   res.json(GetFacilityQualityControlResponse.parse({
     role: operator.role,
     facilities,

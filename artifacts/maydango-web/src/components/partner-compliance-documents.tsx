@@ -286,7 +286,7 @@ export function PartnerComplianceDocuments({
     <div className="mt-6">
       <h4 className="font-display text-lg font-bold">{t.history}</h4>
       {documents.length ? <div className="mt-3 grid gap-3 lg:grid-cols-2">
-        {documents.map(document => <article key={document.id} className="rounded-2xl border border-[#e7e1d4] bg-[#fbf9f1] p-4">
+        {documents.map(document => <article key={document.id} id={`quality-document-${document.id}`} className="rounded-2xl border border-[#e7e1d4] bg-[#fbf9f1] p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <h5 className="break-words font-bold">{typeLabel(document.documentType)}</h5>

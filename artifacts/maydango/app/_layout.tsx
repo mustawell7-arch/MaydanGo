@@ -66,6 +66,7 @@ function RootLayoutNav() {
         <Stack.Screen name="support/index" options={{ headerShown: false }} />
         <Stack.Screen name="support/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="support/staff" options={{ headerShown: false }} />
+        <Stack.Screen name="support/quality-document" options={{ headerShown: false }} />
       </Stack>
     </>
   );
@@ -76,15 +77,43 @@ function NativeNotificationResponseHandler() {
   useEffect(() => {
     if (!lastNotificationResponse) return;
     const { actionIdentifier, notification } = lastNotificationResponse;
-    const data = notification.request.content.data as { kind?: unknown; ticketId?: unknown };
-    if (data.kind !== 'support_urgent' && data.kind !== 'support_urgent_escalation') return;
+    const data = notification.request.content.data as {
+      kind?: unknown;
+      ticketId?: unknown;
+      facilityId?: unknown;
+      documentType?: unknown;
+      expiresOn?: unknown;
+    };
+    const supportAlert = data.kind === 'support_urgent' || data.kind === 'support_urgent_escalation';
+    const partnerExpiryAlert = data.kind === 'partner_document_expiry_upcoming'
+      || data.kind === 'partner_document_expiry_overdue';
+    if (!supportAlert && !partnerExpiryAlert) return;
     void Notifications.clearLastNotificationResponseAsync().catch(() => {});
+    if (actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
+    if (supportAlert) {
+      if (
+        typeof data.ticketId !== 'string'
+        || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(data.ticketId)
+      ) return;
+      router.push({ pathname: '/support/staff', params: { ticketId: data.ticketId } });
+      return;
+    }
     if (
-      actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER
-      || typeof data.ticketId !== 'string'
-      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(data.ticketId)
+      typeof data.facilityId !== 'string'
+      || !/^[A-Za-z0-9_-]{1,180}$/.test(data.facilityId)
+      || (data.documentType !== 'licence' && data.documentType !== 'insurance')
+      || typeof data.expiresOn !== 'string'
+      || !/^\d{4}-\d{2}-\d{2}$/.test(data.expiresOn)
     ) return;
-    router.push({ pathname: '/support/staff', params: { ticketId: data.ticketId } });
+    router.push({
+      pathname: '/support/quality-document',
+      params: {
+        facilityId: data.facilityId,
+        documentType: data.documentType,
+        expiresOn: data.expiresOn,
+        phase: data.kind === 'partner_document_expiry_overdue' ? 'overdue' : 'upcoming',
+      },
+    });
   }, [lastNotificationResponse]);
   return null;
 }

@@ -81,6 +81,7 @@ const copy = {
     expiryAlertTitle: 'Partner document expiry alerts',
     expiryAlertIntro: 'Expired licences and insurance, plus documents due within 30 days, are listed here.',
     noExpiryAlerts: 'No partner licences or insurance are expired or due within 30 days.',
+    viewQualityRecord: 'View quality record',
     emergencyContacts: 'Facility emergency contacts',
     emergencyContactsIntro: 'Operational contacts are visible only to authorized partner and safety staff.',
     contactPrivacyNote: 'Enter facility staff contacts only. Do not enter member or guardian details.',
@@ -157,6 +158,7 @@ const copy = {
     expiryAlertTitle: 'تنبيهات انتهاء مستندات الشركاء',
     expiryAlertIntro: 'تظهر هنا التراخيص والتأمينات المنتهية أو التي ستنتهي خلال 30 يوماً.',
     noExpiryAlerts: 'لا توجد تراخيص أو تأمينات للشركاء منتهية أو مستحقة خلال 30 يوماً.',
+    viewQualityRecord: 'عرض سجل الجودة',
     emergencyContacts: 'جهات اتصال الطوارئ للمرافق',
     emergencyContactsIntro: 'تظهر جهات الاتصال التشغيلية للشركاء المخولين وموظفي السلامة فقط.',
     contactPrivacyNote: 'أدخل بيانات موظفي المرفق فقط. لا تدخل بيانات الأعضاء أو الأوصياء.',
@@ -233,6 +235,7 @@ const copy = {
     expiryAlertTitle: 'ئاگادارکردنەوەی بەسەرچوونی بەڵگەنامەی هاوبەش',
     expiryAlertIntro: 'مۆڵەت و بیمەی بەسەرچوو یان ئەوانەی لە ٣٠ ڕۆژی داهاتوودا بەسەردەچن لێرە پیشان دەدرێن.',
     noExpiryAlerts: 'هیچ مۆڵەت یان بیمەیەکی هاوبەش بەسەرنەچووە یان لە ٣٠ ڕۆژی داهاتوودا بەسەرناچێت.',
+    viewQualityRecord: 'بینینی تۆماری کوالێتی',
     emergencyContacts: 'پەیوەندییەکانی فریاکەوتنی شوێن',
     emergencyContactsIntro: 'تەنها هاوبەشی ڕێگەپێدراو و ستافی سەلامەتی دەتوانن پەیوەندییەکانی کارگێڕی ببینن.',
     contactPrivacyNote: 'تەنها پەیوەندیی ستافی شوێن بنووسە. زانیاری ئەندام یان سەرپەرشتیار مەنووسە.',
@@ -464,15 +467,31 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
           <p className="mt-1 text-sm leading-6 text-[#76564d]">{t(lang, 'expiryAlertIntro')}</p>
           {expiryAlerts.length
             ? <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-              {expiryAlerts.map(alert => <li key={`${alert.facilityId}:${alert.documentType}`} className="rounded-2xl border border-[#ebd1c8] bg-white/80 p-4" data-testid="card-document-expiry-alert">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div><p className="font-bold">{alert.facility} · {alert.city}</p><p className="mt-1 text-xs text-[#687a71]">{alert.partnerName}</p></div>
-                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${alert.daysRemaining < 0 ? 'bg-[#f2dfd5] text-[#9a4435]' : 'bg-[#fff0d6] text-[#8a5b20]'}`}>
-                    {alert.daysRemaining < 0 ? t(lang, 'expired') : t(lang, 'due')}
-                  </span>
-                </div>
-                <p className="mt-3 text-sm text-[#51665e]">{t(lang, alert.documentType === 'licence' ? 'licenceExpiry' : 'insuranceExpiry')}: {dateLabel(alert.expiresOn, lang)}</p>
-              </li>)}
+              {expiryAlerts.map(alert => {
+                const approvedDocument = query.data.complianceDocuments.find(document =>
+                  document.facilityId === alert.facilityId
+                  && document.documentType === alert.documentType
+                  && document.status === 'approved',
+                );
+                const assessment = query.data.assessments.find(item => item.facilityId === alert.facilityId);
+                const recordAnchor = approvedDocument
+                  ? `#quality-document-${approvedDocument.id}`
+                  : assessment
+                    ? `#quality-assessment-${assessment.id}`
+                    : '#document-expiry-alerts-title';
+                return <li key={`${alert.facilityId}:${alert.documentType}`} className="rounded-2xl border border-[#ebd1c8] bg-white/80 p-4" data-testid="card-document-expiry-alert">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div><p className="font-bold">{alert.facility} · {alert.city}</p><p className="mt-1 text-xs text-[#687a71]">{alert.partnerName}</p></div>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${alert.daysRemaining < 0 ? 'bg-[#f2dfd5] text-[#9a4435]' : 'bg-[#fff0d6] text-[#8a5b20]'}`}>
+                      {alert.daysRemaining < 0 ? t(lang, 'expired') : t(lang, 'due')}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm text-[#51665e]">{t(lang, alert.documentType === 'licence' ? 'licenceExpiry' : 'insuranceExpiry')}: {dateLabel(alert.expiresOn, lang)}</p>
+                  <a href={recordAnchor} className="mt-3 inline-flex rounded-lg px-1 py-1 text-sm font-bold text-[#174d43] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" data-testid="link-document-quality-record">
+                    {t(lang, 'viewQualityRecord')}
+                  </a>
+                </li>;
+              })}
             </ul>
             : <p className="mt-4 rounded-xl bg-white/80 p-4 text-sm text-[#51665e]" data-testid="text-no-document-expiry-alerts">{t(lang, 'noExpiryAlerts')}</p>}
         </div>
@@ -564,7 +583,7 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
       <section className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6">
         <h3 className="font-display text-xl font-bold">{t(lang, 'inspectionHistory')}</h3>
         <div className="mt-4 space-y-3">
-          {query.data.assessments.length ? query.data.assessments.map(item => <article key={item.id} className="rounded-2xl border border-[#e7e1d4] bg-[#fbf9f1] p-4">
+          {query.data.assessments.length ? query.data.assessments.map(item => <article key={item.id} id={`quality-assessment-${item.id}`} className="rounded-2xl border border-[#e7e1d4] bg-[#fbf9f1] p-4">
             <div className="flex flex-wrap items-start justify-between gap-2"><div><h4 className="font-bold">{item.facility} · {item.city}</h4><p className="mt-1 text-xs text-[#687a71]">{t(lang, 'reviewedOn')}: {dateLabel(item.reviewedOn, lang)}</p></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${item.status === 'approved' ? 'bg-[#e1efdf] text-[#2d6d4a]' : item.status === 'suspended' ? 'bg-[#f2dfd5] text-[#9a4435]' : 'bg-[#fff0d6] text-[#8a5b20]'}`}>{statusLabel(item.status)}</span></div>
             <p className="mt-3 text-sm leading-6 text-[#51665e]">{item.findings}</p>
             <div className="mt-3 grid gap-2 text-xs text-[#687a71] sm:grid-cols-2">

@@ -10,6 +10,8 @@ import {
 } from "@workspace/db";
 import qualityControlRouter from "./quality-control";
 import operationsRouter from "./operations";
+import { runPartnerDocumentExpiryReminders } from "../lib/partner-document-expiry";
+import { sendMemberNotification } from "../lib/notifications";
 
 const prefix = `quality-control-${randomUUID()}`;
 const partnerA = `${prefix}-partner-a`;
@@ -20,9 +22,10 @@ const partnerUserA = `${prefix}-user-a`;
 const partnerUserB = `${prefix}-user-b`;
 const financeUser = `${prefix}-finance`;
 const supportUser = `${prefix}-support`;
+const superAdminUser = `${prefix}-super-admin`;
 const facilityA = `${prefix}-facility-a`;
 const facilityB = `${prefix}-facility-b`;
-const userIds = [adminUser, partnerOperationsAdmin, partnerUserA, partnerUserB, financeUser, supportUser];
+const userIds = [adminUser, partnerOperationsAdmin, partnerUserA, partnerUserB, financeUser, supportUser, superAdminUser];
 const facilityIds = [facilityA, facilityB];
 const assessmentIds: string[] = [];
 const incidentIds: string[] = [];
@@ -92,12 +95,13 @@ test("facility quality records are scoped, validated, and audited", async () => 
     { id: partnerB, name: `${prefix} partner B`, groupId: prefix, ownerUserId: partnerUserB, approved: true },
   ]);
   await db.insert(operators).values([
-    { userId: adminUser, role: "fraud_compliance_admin", partnerId: null },
+    { userId: adminUser, role: "fraud_compliance_admin", partnerId: null, receiveUrgentAlerts: true },
     { userId: partnerOperationsAdmin, role: "partner_operations_admin", partnerId: null },
     { userId: partnerUserA, role: "partner", partnerId: partnerA },
     { userId: partnerUserB, role: "partner", partnerId: partnerB },
     { userId: financeUser, role: "finance", partnerId: null },
-    { userId: supportUser, role: "support", partnerId: null },
+    { userId: supportUser, role: "support", partnerId: null, receiveUrgentAlerts: true },
+    { userId: superAdminUser, role: "super_admin", partnerId: null, receiveUrgentAlerts: true },
   ]);
   await db.insert(facilityProfiles).values([
     { id: facilityA, partnerId: partnerA, ...profile(`${prefix} facility A`) },
@@ -233,6 +237,62 @@ test("facility quality records are scoped, validated, and audited", async () => 
   assert.deepEqual(adminDocuments.complianceDocuments.map(item => item.id).sort(),
     [approvedDocumentId, reviewDocumentId, otherPartnerDocumentId].sort());
   assert.deepEqual(adminDocuments.expiringDocuments.map(item => item.daysRemaining), [3, 20]);
+  const reminderCalls: Array<{
+    userId: string;
+    kind: string;
+    dedupeKey: string | undefined;
+    qualityRecord: {
+      facilityId: string;
+      documentType: string;
+      expiresOn: string;
+      phase: string;
+    } | undefined;
+  }> = [];
+  const fakeNotification: typeof sendMemberNotification = async (userId, kind, context) => {
+    reminderCalls.push({
+      userId,
+      kind,
+      dedupeKey: context?.dedupeKey,
+      qualityRecord: context?.qualityRecord,
+    });
+    return { status: "sent" };
+  };
+
+  const initialRun = await runPartnerDocumentExpiryReminders(new Date(), fakeNotification);
+  const facilityAReminders = reminderCalls.filter(call => call.qualityRecord?.facilityId === facilityA);
+  assert.ok(facilityAReminders.some(call =>
+    call.kind === "partner_document_expiry_upcoming" && call.qualityRecord?.documentType === "licence",
+  ));
+  assert.ok(facilityAReminders.some(call =>
+    call.kind === "partner_document_expiry_upcoming" && call.qualityRecord?.documentType === "insurance",
+  ));
+  assert.ok(facilityAReminders.some(call => call.userId === superAdminUser));
+  assert.ok(facilityAReminders.every(call => call.userId !== supportUser && call.userId !== adminUser));
+  assert.equal(initialRun.attempts, reminderCalls.length);
+  assert.ok(facilityAReminders.every(call =>
+    Object.keys(call.qualityRecord ?? {}).sort().join(",") === "documentType,expiresOn,facilityId,phase",
+  ));
+
+  const initialKeys = reminderCalls
+    .filter(call => call.qualityRecord?.facilityId === facilityA)
+    .map(call => call.dedupeKey)
+    .sort();
+  reminderCalls.length = 0;
+  await runPartnerDocumentExpiryReminders(new Date(), fakeNotification);
+  assert.deepEqual(
+    reminderCalls.filter(call => call.qualityRecord?.facilityId === facilityA)
+      .map(call => call.dedupeKey).sort(),
+    initialKeys,
+  );
+
+  reminderCalls.length = 0;
+  await runPartnerDocumentExpiryReminders(new Date(Date.now() + 5 * 86_400_000), fakeNotification);
+  assert.ok(reminderCalls.some(call =>
+    call.qualityRecord?.facilityId === facilityA
+    && call.qualityRecord.documentType === "licence"
+    && call.kind === "partner_document_expiry_overdue",
+  ));
+
   assert.equal((await call(`/operations/quality/documents/${approvedDocumentId}/file`, partnerUserB)).status, 404);
   const invalidScopeUpload = await call("/operations/quality/documents/upload-url", partnerUserA, "POST", {
     facilityId: facilityB, documentType: "licence", documentName: "licence.pdf", size: 1024, expiresOn: dateOffset(30),
@@ -355,4 +415,20 @@ test("facility quality records are scoped, validated, and audited", async () => 
   ));
   assert.equal(documentAuditRows.length, 1);
   assert.ok(!documentAuditRows[0].detail?.includes("facility-plan.png"));
+
+  const renewedLicenceId = randomUUID();
+  complianceDocumentIds.push(renewedLicenceId);
+  await db.insert(partnerComplianceDocuments).values({
+    id: renewedLicenceId, partnerId: partnerA, facilityId: facilityA, documentType: "licence",
+    documentName: "renewed-licence.pdf",
+    documentPath: `/objects/partner-compliance/${partnerA}/${facilityA}/${renewedLicenceId}`,
+    contentType: "application/pdf", fileSize: 2048, expiresOn: dateOffset(50), status: "approved",
+    uploadedBy: partnerUserA, reviewedBy: adminUser, reviewedAt: new Date(),
+    createdAt: new Date(Date.now() + 5_000), updatedAt: new Date(Date.now() + 5_000),
+  });
+  reminderCalls.length = 0;
+  await runPartnerDocumentExpiryReminders(new Date(), fakeNotification);
+  assert.ok(!reminderCalls.some(call =>
+    call.qualityRecord?.facilityId === facilityA && call.qualityRecord.documentType === "licence",
+  ), "an approved renewal suppresses reminders for the expired licence");
 });

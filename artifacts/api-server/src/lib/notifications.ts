@@ -23,6 +23,8 @@ export type NotificationKind =
   | "support_status"
   | "support_urgent"
   | "support_urgent_escalation"
+  | "partner_document_expiry_upcoming"
+  | "partner_document_expiry_overdue"
   | "waitlist_promoted"
   | "waitlist_cancelled"
   | "marketing_update";
@@ -32,6 +34,12 @@ type NotificationContext = {
   remainingMinutes?: number;
   dedupeKey?: string;
   ticketId?: string;
+  qualityRecord?: {
+    facilityId: string;
+    documentType: "licence" | "insurance";
+    expiresOn: string;
+    phase: "upcoming" | "overdue";
+  };
 };
 export type LocalizedMarketingMessage = Record<AppLanguage, { title: string; body: string }>;
 
@@ -52,6 +60,8 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     support_status: { title: "Support update", body: "The status of your MaydanGO support request has changed." },
     support_urgent: { title: "Urgent safety report", body: "A new urgent safety report is in the MaydanGO support queue. Please review and assign it to an authorized teammate." },
     support_urgent_escalation: { title: "Urgent report still unassigned", body: "An urgent safety report is still unassigned after 30 minutes. Open MaydanGO support and assign it to an authorized teammate." },
+    partner_document_expiry_upcoming: { title: "Partner document due soon", body: "A partner licence or insurance document expires within 30 days. Open the facility quality record to review it." },
+    partner_document_expiry_overdue: { title: "Partner document expired", body: "A partner licence or insurance document has expired without an approved renewal. Review the facility quality record." },
     waitlist_promoted: { title: "A place opened", body: "A place in your MaydanGO class is now reserved for you." },
     waitlist_cancelled: { title: "Class cancelled", body: "The partner cancelled this class, so you were removed from its waiting list." },
     marketing_update: { title: "MaydanGo update", body: "A new MaydanGo offer is available." },
@@ -72,6 +82,8 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     support_status: { title: "تحديث من الدعم", body: "تغيّرت حالة طلب الدعم الخاص بك في MaydanGO." },
     support_urgent: { title: "بلاغ سلامة عاجل", body: "يوجد بلاغ سلامة عاجل جديد في قائمة دعم MaydanGO. يرجى مراجعته وإسناده إلى عضو مخوّل من فريق الدعم." },
     support_urgent_escalation: { title: "تذكير ببلاغ سلامة عاجل غير مسند", body: "ما زال هناك بلاغ سلامة عاجل غير مسند بعد 30 دقيقة. افتح دعم MaydanGO وأسنده إلى عضو مخوّل من الفريق." },
+    partner_document_expiry_upcoming: { title: "اقتراب انتهاء مستند شريك", body: "سينتهي ترخيص أو تأمين أحد الشركاء خلال 30 يوماً. افتح سجل جودة المرفق لمراجعته." },
+    partner_document_expiry_overdue: { title: "انتهاء مستند شريك", body: "انتهى ترخيص أو تأمين أحد الشركاء دون اعتماد تجديد. راجع سجل جودة المرفق." },
     waitlist_promoted: { title: "توفر مكان", body: "تم حجز مكان لك في الحصة التي انتظرتها عبر MaydanGO." },
     waitlist_cancelled: { title: "تم إلغاء الحصة", body: "ألغى الشريك هذه الحصة، لذلك أُزلت من قائمة الانتظار." },
     marketing_update: { title: "تحديث من MaydanGO", body: "هناك عرض جديد من MaydanGO." },
@@ -92,6 +104,8 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     support_status: { title: "نوێکاریی پشتگیری", body: "دۆخی داواکاریی پشتگیریی MaydanGO گۆڕاوە." },
     support_urgent: { title: "ڕاپۆرتی پەلەیی سەلامەتی", body: "ڕاپۆرتێکی پەلەیی نوێی سەلامەتی لە لیستی پشتگیریی MaydanGO هەیە. تکایە پێداچوونەوەی بۆ بکە و بیسپێرە بە ئەندامێکی ڕێگەپێدراوی تیمی پشتگیری." },
     support_urgent_escalation: { title: "بیرخستنەوەی ڕاپۆرتی پەلەیی ناسپێردراو", body: "دوای 30 خولەک هێشتا ڕاپۆرتێکی پەلەیی سەلامەتی نەسپێردراوە. پشتگیریی MaydanGO بکەرەوە و بیسپێرە بە ئەندامێکی ڕێگەپێدراوی تیم." },
+    partner_document_expiry_upcoming: { title: "بەڵگەنامەی هاوبەش بە زوویی بەسەردەچێت", body: "مۆڵەت یان بیمەیەکی هاوبەش لە ماوەی ٣٠ ڕۆژدا بەسەردەچێت. تۆماری کوالێتیی شوێن بکەرەوە و پێداچوونەوەی بۆ بکە." },
+    partner_document_expiry_overdue: { title: "بەڵگەنامەی هاوبەش بەسەرچووە", body: "مۆڵەت یان بیمەیەکی هاوبەش بەسەرچووە و نوێکردنەوەی پەسەندکراوی نییە. تۆماری کوالێتیی شوێن بپشکنە." },
     waitlist_promoted: { title: "شوێنێک بەردەست بوو", body: "شوێنێک لە وانەکەت لە MaydanGO بۆ تۆ حجز کرا." },
     waitlist_cancelled: { title: "وانەکە هەڵوەشێندرایەوە", body: "شریکەکە وانەکەی هەڵوەشاندەوە، بۆیە لە لیستی چاوەڕوانی دەرتکرایت." },
     marketing_update: { title: "نوێکاریی MaydanGO", body: "پێشکەشکردنێکی نوێ لە MaydanGO بەردەستە." },
@@ -317,7 +331,17 @@ async function deliverMemberNotification(
       kind === "support_urgent" || kind === URGENT_ESCALATION_KIND
     ) && context.ticketId
       ? { ticketId: context.ticketId }
-      : {};
+      : (
+        (kind === "partner_document_expiry_upcoming" || kind === "partner_document_expiry_overdue")
+        && context.qualityRecord
+      )
+        ? {
+            facilityId: context.qualityRecord.facilityId,
+            documentType: context.qualityRecord.documentType,
+            expiresOn: context.qualityRecord.expiresOn,
+            phase: context.qualityRecord.phase,
+          }
+        : {};
     const rows = devices.map(device => ({
       id: randomUUID(),
       userId,

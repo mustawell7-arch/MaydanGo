@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { processWaitlistQueue } from "./lib/reservations";
 import { escalateUnassignedUrgentTickets, recoverPushDeliveries } from "./lib/notifications";
 import { expireGuardianConsentDocuments } from "./lib/guardian-consents";
+import { runPartnerDocumentExpiryReminders } from "./lib/partner-document-expiry";
 
 const runPushDeliveryRecovery = async () => {
   try {
@@ -33,6 +34,15 @@ const runGuardianConsentRetention = async () => {
   }
 };
 
+const runPartnerExpiryReminders = async () => {
+  try {
+    const result = await runPartnerDocumentExpiryReminders();
+    if (result.attempts) logger.info(result, "Partner document expiry reminders processed");
+  } catch (err) {
+    logger.error({ err }, "Partner document expiry reminders failed");
+  }
+};
+
 const rawPort = process.env["PORT"];
 
 if (!rawPort) {
@@ -58,6 +68,7 @@ app.listen(port, (err) => {
   void runPushDeliveryRecovery();
   void runUrgentEscalations();
   void runGuardianConsentRetention();
+  void runPartnerExpiryReminders();
 });
 
 const waitlistExpiryTimer = setInterval(() => {
@@ -79,3 +90,8 @@ const guardianConsentRetentionTimer = setInterval(() => {
   void runGuardianConsentRetention();
 }, 60 * 60 * 1000);
 guardianConsentRetentionTimer.unref();
+
+const partnerDocumentExpiryTimer = setInterval(() => {
+  void runPartnerExpiryReminders();
+}, 60 * 60 * 1000);
+partnerDocumentExpiryTimer.unref();
