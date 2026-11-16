@@ -140,6 +140,10 @@ export const offeringInput = z.object({
   partnerId: label, title: label, kind: z.enum(["session", "event", "coach"]),
   localizedTitle: localizedText.nullable().optional(),
   localizedDescription: localizedText.nullable().optional(),
+  localizedInstructor: localizedText.nullable().optional(),
+  difficultyLevel: z.enum(["all-levels", "beginner", "intermediate", "advanced"]).nullable().optional(),
+  instructionLanguage: z.enum(["en", "ar", "ku", "mixed"]).nullable().optional(),
+  requiredEquipment: localizedText.nullable().optional(),
   joinUrl: secureUrl.nullable().optional(),
   city: label, facility: label, category: label,
   accessType: z.enum(["physical", "premium", "live"]),
@@ -156,6 +160,10 @@ export const offeringInput = z.object({
   if (o.accessType === "live" && o.active) {
     if (!o.localizedTitle) ctx.addIssue({ code: "custom", path: ["localizedTitle"], message: "Live classes need English, Arabic and Sorani titles." });
     if (!o.localizedDescription) ctx.addIssue({ code: "custom", path: ["localizedDescription"], message: "Live classes need English, Arabic and Sorani descriptions." });
+    if (!o.localizedInstructor) ctx.addIssue({ code: "custom", path: ["localizedInstructor"], message: "Live classes need an instructor name in English, Arabic and Sorani." });
+    if (!o.difficultyLevel) ctx.addIssue({ code: "custom", path: ["difficultyLevel"], message: "Choose a live class difficulty level." });
+    if (!o.instructionLanguage) ctx.addIssue({ code: "custom", path: ["instructionLanguage"], message: "Choose the language used in the live class." });
+    if (!o.requiredEquipment) ctx.addIssue({ code: "custom", path: ["requiredEquipment"], message: "Add the required equipment in English, Arabic and Sorani." });
     if (!o.joinUrl) ctx.addIssue({ code: "custom", path: ["joinUrl"], message: "An HTTPS class link is required before publishing." });
   }
   if (!(new Date(o.startsAt) > new Date() && new Date(o.endsAt) > new Date(o.startsAt)

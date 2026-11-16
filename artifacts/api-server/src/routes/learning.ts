@@ -640,12 +640,19 @@ router.get("/live-classes", async (req, res): Promise<void> => {
     title: offerings.title,
     localizedTitle: offerings.localizedTitle,
     localizedDescription: offerings.localizedDescription,
+    localizedInstructor: offerings.localizedInstructor,
+    difficultyLevel: offerings.difficultyLevel,
+    instructionLanguage: offerings.instructionLanguage,
+    requiredEquipment: offerings.requiredEquipment,
     city: offerings.city,
     facility: offerings.facility,
     partnerName: partners.name,
     startsAt: offerings.startsAt,
     endsAt: offerings.endsAt,
+    cancellationDeadline: offerings.cancellationDeadline,
     capacity: offerings.capacity,
+    tiers: offerings.tiers,
+    additionalPayment: offerings.additionalPayment,
     reserved: sql<number>`count(${reservations.id})::int`,
     booked: sql<boolean>`coalesce(bool_or(${reservations.userId} = ${userId} and ${reservations.status} = 'reserved'), false)`,
     joinUrl: offerings.joinUrl,
@@ -672,14 +679,22 @@ router.get("/live-classes", async (req, res): Promise<void> => {
     title: row.title,
     localizedTitle: row.localizedTitle,
     localizedDescription: row.localizedDescription,
+    localizedInstructor: row.localizedInstructor,
+    difficultyLevel: row.difficultyLevel,
+    instructionLanguage: row.instructionLanguage,
+    requiredEquipment: row.requiredEquipment,
     city: row.city,
     facility: row.facility,
     partnerName: row.partnerName,
     startsAt: row.startsAt,
     endsAt: row.endsAt,
+    cancellationDeadline: row.cancellationDeadline,
+    capacity: row.capacity,
+    tiers: row.tiers,
+    additionalPayment: row.additionalPayment,
     remaining: Math.max(0, row.capacity - row.reserved),
     booked: row.booked,
-    canJoin: !!membership && row.booked && !!row.joinUrl
+    canJoin: !!membership && row.booked && !row.additionalPayment && !!row.joinUrl
       && row.startsAt.getTime() <= now.getTime() + joinLeadMs && row.endsAt > now
       && membership.endsAt >= row.endsAt,
   }))));
@@ -704,6 +719,9 @@ router.post("/live-classes/:id/join", async (req, res): Promise<void> => {
     eq(reservations.offeringId, id), eq(reservations.userId, userId), eq(reservations.status, "reserved"),
   ));
   if (!reservation) throw new BookingError(403, "Book this class with an eligible membership before joining.");
+  if (row.offering.additionalPayment) {
+    throw new BookingError(403, "This class requires a separate payment, which is not available yet.");
+  }
   const membership = await currentLiveMembership(userId);
   if (!membership || membership.endsAt < row.offering.endsAt) {
     throw new BookingError(403, "An eligible membership covering this class is required to join.");

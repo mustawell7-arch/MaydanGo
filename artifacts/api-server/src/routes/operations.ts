@@ -519,8 +519,9 @@ async function assertOfferingReadyForReview(tx: Tx, row: OfferingRow) {
     throw new BookingError(403, "This facility is temporarily restricted from publishing activities.");
   }
   if (row.accessType === "live") {
-    if (!row.localizedTitle || !row.localizedDescription) {
-      throw new BookingError(400, "Live classes need English, Arabic and Sorani details.");
+    if (!row.localizedTitle || !row.localizedDescription || !row.localizedInstructor
+      || !row.difficultyLevel || !row.instructionLanguage || !row.requiredEquipment) {
+      throw new BookingError(400, "Live classes need a translated title, description, instructor, language and equipment details.");
     }
     ensureHttps(row.joinUrl, "Live class join link");
   }

@@ -1970,6 +1970,32 @@ export interface OperationsAnalyticsResponse {
   unavailableMetrics: OperationsAnalyticsResponseUnavailableMetricsItem[];
 }
 
+/**
+ * @nullable
+ */
+export type OfferingInputDifficultyLevel = typeof OfferingInputDifficultyLevel[keyof typeof OfferingInputDifficultyLevel] | null;
+
+
+export const OfferingInputDifficultyLevel = {
+  'all-levels': 'all-levels',
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
+} as const;
+
+/**
+ * @nullable
+ */
+export type OfferingInputInstructionLanguage = typeof OfferingInputInstructionLanguage[keyof typeof OfferingInputInstructionLanguage] | null;
+
+
+export const OfferingInputInstructionLanguage = {
+  en: 'en',
+  ar: 'ar',
+  ku: 'ku',
+  mixed: 'mixed',
+} as const;
+
 export type OfferingInputKind = typeof OfferingInputKind[keyof typeof OfferingInputKind];
 
 
@@ -2020,6 +2046,12 @@ export interface OfferingInput {
   title: string;
   localizedTitle?: LocalizedText | null;
   localizedDescription?: LocalizedText | null;
+  localizedInstructor?: LocalizedText | null;
+  /** @nullable */
+  difficultyLevel?: OfferingInputDifficultyLevel;
+  /** @nullable */
+  instructionLanguage?: OfferingInputInstructionLanguage;
+  requiredEquipment?: LocalizedText | null;
   /** @nullable */
   joinUrl?: string | null;
   kind: OfferingInputKind;
@@ -2964,18 +2996,56 @@ export interface CourseProgressInput {
   completed: boolean;
 }
 
+/**
+ * @nullable
+ */
+export type MemberLiveClassDifficultyLevel = typeof MemberLiveClassDifficultyLevel[keyof typeof MemberLiveClassDifficultyLevel] | null;
+
+
+export const MemberLiveClassDifficultyLevel = {
+  'all-levels': 'all-levels',
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
+} as const;
+
+/**
+ * @nullable
+ */
+export type MemberLiveClassInstructionLanguage = typeof MemberLiveClassInstructionLanguage[keyof typeof MemberLiveClassInstructionLanguage] | null;
+
+
+export const MemberLiveClassInstructionLanguage = {
+  en: 'en',
+  ar: 'ar',
+  ku: 'ku',
+  mixed: 'mixed',
+} as const;
+
 export interface MemberLiveClass {
   id: string;
   title: string;
   localizedTitle: LocalizedText | null;
   localizedDescription: LocalizedText | null;
+  localizedInstructor: LocalizedText | null;
+  /** @nullable */
+  difficultyLevel: MemberLiveClassDifficultyLevel;
+  /** @nullable */
+  instructionLanguage: MemberLiveClassInstructionLanguage;
+  requiredEquipment: LocalizedText | null;
   city: string;
   facility: string;
   partnerName: string;
   startsAt: string;
   endsAt: string;
+  cancellationDeadline: string;
+  /** @minimum 1 */
+  capacity: number;
   /** @minimum 0 */
   remaining: number;
+  /** @minItems 1 */
+  tiers: string[];
+  additionalPayment: boolean;
   booked: boolean;
   canJoin: boolean;
 }

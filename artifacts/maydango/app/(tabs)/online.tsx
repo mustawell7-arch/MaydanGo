@@ -274,8 +274,17 @@ export default function OnlineScreen() {
               const title = localText(session.localizedTitle, app.language) || session.title;
               const description = localText(session.localizedDescription, app.language);
               const booked = session.booked;
-              const canCancel = booked && Date.parse(session.startsAt) > Date.now();
+              const canCancel = booked && Date.parse(session.cancellationDeadline) > Date.now();
               const duration = Math.max(1, Math.round((Date.parse(session.endsAt) - Date.parse(session.startsAt)) / 60000));
+              const instructor = localText(session.localizedInstructor, app.language);
+              const equipment = localText(session.requiredEquipment, app.language);
+              const instructionLanguage = session.instructionLanguage === 'en' ? t('languageEnglish')
+                : session.instructionLanguage === 'ar' ? t('languageArabic')
+                  : session.instructionLanguage === 'ku' ? t('languageSoraniKurdish')
+                    : session.instructionLanguage === 'mixed' ? t('languageMultiple') : t('informationNotProvided');
+              const difficulty = session.difficultyLevel === 'all-levels' ? t('allLevels')
+                : session.difficultyLevel ? t(session.difficultyLevel) : t('informationNotProvided');
+              const cancelBy = t('liveCancelBy').replace('{date}', iraqDateTime(session.cancellationDeadline, app.language));
               return (
                 <View key={session.id} style={[styles.liveCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <View style={[styles.liveImage, styles.liveIcon, { backgroundColor: colors.secondary }]}><Ionicons name="videocam-outline" size={23} color={colors.primary} /></View>
@@ -286,8 +295,22 @@ export default function OnlineScreen() {
                       {session.partnerName} · {session.facility}, {session.city}{booked ? ` · ${t('bookedLive')}` : ''}
                     </Text>
                     {description ? <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{description}</Text> : null}
+                    <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{t('liveInstructor')}: {instructor || t('informationNotProvided')}</Text>
+                    <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{t('liveDifficulty')}: {difficulty} · {t('liveLanguage')}: {instructionLanguage}</Text>
+                    <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
+                      {t('liveEquipment')}: {equipment || t('informationNotProvided')}
+                    </Text>
+                    <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
+                      {t('liveMembership')}: {session.tiers.join(', ')}
+                    </Text>
+                    <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
+                      {t('livePlacesRemaining').replace('{remaining}', String(session.remaining)).replace('{capacity}', String(session.capacity))}
+                    </Text>
+                    <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{cancelBy}</Text>
                     <View style={styles.liveActions}>
-                      {session.canJoin ? (
+                      {session.additionalPayment ? (
+                        <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align }]}>{t('liveExtraPaymentUnavailable')}</Text>
+                      ) : session.canJoin ? (
                         <Pressable accessibilityRole="button" accessibilityLabel={`${t('joinClass')}: ${title}`}
                           disabled={joinMutation.isPending} onPress={() => void joinLive(session.id)}
                           style={[styles.joinButton, { backgroundColor: colors.primary, opacity: joinMutation.isPending ? .55 : 1 }]}>
@@ -299,6 +322,8 @@ export default function OnlineScreen() {
                           style={[styles.joinButton, { borderColor: colors.destructive, borderWidth: 1 }]}>
                           <Text style={[styles.joinText, { color: colors.destructive }]}>{t('cancelLiveBooking')}</Text>
                         </Pressable>
+                      ) : booked && Date.parse(session.startsAt) > Date.now() ? (
+                        <Text style={[styles.progressLabel, { color: colors.mutedForeground }]}>{t('liveCancellationClosed')}</Text>
                       ) : booked ? (
                         <Text style={[styles.progressLabel, { color: colors.primary }]}>{t('bookedLive')}</Text>
                       ) : session.remaining < 1 ? (

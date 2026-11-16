@@ -1313,6 +1313,18 @@ export const getOperationsResponseOfferingsItemOneLocalizedDescriptionOneArMax =
 
 export const getOperationsResponseOfferingsItemOneLocalizedDescriptionOneKuMax = 240;
 
+export const getOperationsResponseOfferingsItemOneLocalizedInstructorOneEnMax = 240;
+
+export const getOperationsResponseOfferingsItemOneLocalizedInstructorOneArMax = 240;
+
+export const getOperationsResponseOfferingsItemOneLocalizedInstructorOneKuMax = 240;
+
+export const getOperationsResponseOfferingsItemOneRequiredEquipmentOneEnMax = 240;
+
+export const getOperationsResponseOfferingsItemOneRequiredEquipmentOneArMax = 240;
+
+export const getOperationsResponseOfferingsItemOneRequiredEquipmentOneKuMax = 240;
+
 
 
 export const getOperationsResponseOfferingsItemOneWaitlistOfferMinutesDefault = 30;
@@ -1412,6 +1424,18 @@ export const GetOperationsResponse = zod.object({
   "en": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedInstructorOneKuMax)
+}),zod.null()]).optional(),
+  "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(getOperationsResponseOfferingsItemOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemOneRequiredEquipmentOneKuMax)
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
@@ -2083,6 +2107,18 @@ export const addLiveOfferingBodyLocalizedDescriptionOneArMax = 240;
 
 export const addLiveOfferingBodyLocalizedDescriptionOneKuMax = 240;
 
+export const addLiveOfferingBodyLocalizedInstructorOneEnMax = 240;
+
+export const addLiveOfferingBodyLocalizedInstructorOneArMax = 240;
+
+export const addLiveOfferingBodyLocalizedInstructorOneKuMax = 240;
+
+export const addLiveOfferingBodyRequiredEquipmentOneEnMax = 240;
+
+export const addLiveOfferingBodyRequiredEquipmentOneArMax = 240;
+
+export const addLiveOfferingBodyRequiredEquipmentOneKuMax = 240;
+
 
 
 export const addLiveOfferingBodyWaitlistOfferMinutesDefault = 30;
@@ -2105,6 +2141,18 @@ export const AddLiveOfferingBody = zod.object({
   "en": zod.string().min(1).max(addLiveOfferingBodyLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(addLiveOfferingBodyLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(addLiveOfferingBodyLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(addLiveOfferingBodyLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(addLiveOfferingBodyLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(addLiveOfferingBodyLocalizedInstructorOneKuMax)
+}),zod.null()]).optional(),
+  "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(addLiveOfferingBodyRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(addLiveOfferingBodyRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(addLiveOfferingBodyRequiredEquipmentOneKuMax)
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
@@ -2137,6 +2185,18 @@ export const addLiveOfferingResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const addLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const addLiveOfferingResponseOneLocalizedInstructorOneEnMax = 240;
+
+export const addLiveOfferingResponseOneLocalizedInstructorOneArMax = 240;
+
+export const addLiveOfferingResponseOneLocalizedInstructorOneKuMax = 240;
+
+export const addLiveOfferingResponseOneRequiredEquipmentOneEnMax = 240;
+
+export const addLiveOfferingResponseOneRequiredEquipmentOneArMax = 240;
+
+export const addLiveOfferingResponseOneRequiredEquipmentOneKuMax = 240;
+
 
 
 export const addLiveOfferingResponseOneWaitlistOfferMinutesDefault = 30;
@@ -2166,6 +2226,18 @@ export const AddLiveOfferingResponse = zod.object({
   "en": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedInstructorOneKuMax)
+}),zod.null()]).optional(),
+  "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(addLiveOfferingResponseOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(addLiveOfferingResponseOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(addLiveOfferingResponseOneRequiredEquipmentOneKuMax)
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
@@ -2224,6 +2296,18 @@ export const createRecurringOfferingsBodyTemplateLocalizedDescriptionOneArMax = 
 
 export const createRecurringOfferingsBodyTemplateLocalizedDescriptionOneKuMax = 240;
 
+export const createRecurringOfferingsBodyTemplateLocalizedInstructorOneEnMax = 240;
+
+export const createRecurringOfferingsBodyTemplateLocalizedInstructorOneArMax = 240;
+
+export const createRecurringOfferingsBodyTemplateLocalizedInstructorOneKuMax = 240;
+
+export const createRecurringOfferingsBodyTemplateRequiredEquipmentOneEnMax = 240;
+
+export const createRecurringOfferingsBodyTemplateRequiredEquipmentOneArMax = 240;
+
+export const createRecurringOfferingsBodyTemplateRequiredEquipmentOneKuMax = 240;
+
 
 
 export const createRecurringOfferingsBodyTemplateWaitlistOfferMinutesDefault = 30;
@@ -2260,6 +2344,18 @@ export const CreateRecurringOfferingsBody = zod.object({
   "en": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedInstructorOneKuMax)
+}),zod.null()]).optional(),
+  "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsBodyTemplateRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsBodyTemplateRequiredEquipmentOneKuMax)
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
@@ -2301,6 +2397,18 @@ export const createRecurringOfferingsResponseOneLocalizedDescriptionOneArMax = 2
 
 export const createRecurringOfferingsResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const createRecurringOfferingsResponseOneLocalizedInstructorOneEnMax = 240;
+
+export const createRecurringOfferingsResponseOneLocalizedInstructorOneArMax = 240;
+
+export const createRecurringOfferingsResponseOneLocalizedInstructorOneKuMax = 240;
+
+export const createRecurringOfferingsResponseOneRequiredEquipmentOneEnMax = 240;
+
+export const createRecurringOfferingsResponseOneRequiredEquipmentOneArMax = 240;
+
+export const createRecurringOfferingsResponseOneRequiredEquipmentOneKuMax = 240;
+
 
 
 export const createRecurringOfferingsResponseOneWaitlistOfferMinutesDefault = 30;
@@ -2330,6 +2438,18 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "en": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedInstructorOneKuMax)
+}),zod.null()]).optional(),
+  "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsResponseOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsResponseOneRequiredEquipmentOneKuMax)
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
@@ -2430,6 +2550,18 @@ export const changeLiveOfferingResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const changeLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const changeLiveOfferingResponseOneLocalizedInstructorOneEnMax = 240;
+
+export const changeLiveOfferingResponseOneLocalizedInstructorOneArMax = 240;
+
+export const changeLiveOfferingResponseOneLocalizedInstructorOneKuMax = 240;
+
+export const changeLiveOfferingResponseOneRequiredEquipmentOneEnMax = 240;
+
+export const changeLiveOfferingResponseOneRequiredEquipmentOneArMax = 240;
+
+export const changeLiveOfferingResponseOneRequiredEquipmentOneKuMax = 240;
+
 
 
 export const changeLiveOfferingResponseOneWaitlistOfferMinutesDefault = 30;
@@ -2459,6 +2591,18 @@ export const ChangeLiveOfferingResponse = zod.object({
   "en": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedInstructorOneKuMax)
+}),zod.null()]).optional(),
+  "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeLiveOfferingResponseOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(changeLiveOfferingResponseOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(changeLiveOfferingResponseOneRequiredEquipmentOneKuMax)
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
@@ -2585,6 +2729,18 @@ export const changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneArMa
 
 export const changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const changeRecurringOfferingSeriesResponseOneLocalizedInstructorOneEnMax = 240;
+
+export const changeRecurringOfferingSeriesResponseOneLocalizedInstructorOneArMax = 240;
+
+export const changeRecurringOfferingSeriesResponseOneLocalizedInstructorOneKuMax = 240;
+
+export const changeRecurringOfferingSeriesResponseOneRequiredEquipmentOneEnMax = 240;
+
+export const changeRecurringOfferingSeriesResponseOneRequiredEquipmentOneArMax = 240;
+
+export const changeRecurringOfferingSeriesResponseOneRequiredEquipmentOneKuMax = 240;
+
 
 
 export const changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesDefault = 30;
@@ -2614,6 +2770,18 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
   "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedInstructorOneKuMax)
+}),zod.null()]).optional(),
+  "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneRequiredEquipmentOneKuMax)
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
@@ -2688,6 +2856,18 @@ export const submitLiveOfferingResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const submitLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const submitLiveOfferingResponseOneLocalizedInstructorOneEnMax = 240;
+
+export const submitLiveOfferingResponseOneLocalizedInstructorOneArMax = 240;
+
+export const submitLiveOfferingResponseOneLocalizedInstructorOneKuMax = 240;
+
+export const submitLiveOfferingResponseOneRequiredEquipmentOneEnMax = 240;
+
+export const submitLiveOfferingResponseOneRequiredEquipmentOneArMax = 240;
+
+export const submitLiveOfferingResponseOneRequiredEquipmentOneKuMax = 240;
+
 
 
 export const submitLiveOfferingResponseOneWaitlistOfferMinutesDefault = 30;
@@ -2717,6 +2897,18 @@ export const SubmitLiveOfferingResponse = zod.object({
   "en": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedInstructorOneKuMax)
+}),zod.null()]).optional(),
+  "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(submitLiveOfferingResponseOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(submitLiveOfferingResponseOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(submitLiveOfferingResponseOneRequiredEquipmentOneKuMax)
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
@@ -2788,6 +2980,18 @@ export const respondToOfferingCorrectionResponseOneLocalizedDescriptionOneArMax 
 
 export const respondToOfferingCorrectionResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const respondToOfferingCorrectionResponseOneLocalizedInstructorOneEnMax = 240;
+
+export const respondToOfferingCorrectionResponseOneLocalizedInstructorOneArMax = 240;
+
+export const respondToOfferingCorrectionResponseOneLocalizedInstructorOneKuMax = 240;
+
+export const respondToOfferingCorrectionResponseOneRequiredEquipmentOneEnMax = 240;
+
+export const respondToOfferingCorrectionResponseOneRequiredEquipmentOneArMax = 240;
+
+export const respondToOfferingCorrectionResponseOneRequiredEquipmentOneKuMax = 240;
+
 
 
 export const respondToOfferingCorrectionResponseOneWaitlistOfferMinutesDefault = 30;
@@ -2817,6 +3021,18 @@ export const RespondToOfferingCorrectionResponse = zod.object({
   "en": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedInstructorOneKuMax)
+}),zod.null()]).optional(),
+  "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(respondToOfferingCorrectionResponseOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseOneRequiredEquipmentOneKuMax)
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
@@ -2889,6 +3105,18 @@ export const reviewOfferingApprovalResponseOneLocalizedDescriptionOneArMax = 240
 
 export const reviewOfferingApprovalResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const reviewOfferingApprovalResponseOneLocalizedInstructorOneEnMax = 240;
+
+export const reviewOfferingApprovalResponseOneLocalizedInstructorOneArMax = 240;
+
+export const reviewOfferingApprovalResponseOneLocalizedInstructorOneKuMax = 240;
+
+export const reviewOfferingApprovalResponseOneRequiredEquipmentOneEnMax = 240;
+
+export const reviewOfferingApprovalResponseOneRequiredEquipmentOneArMax = 240;
+
+export const reviewOfferingApprovalResponseOneRequiredEquipmentOneKuMax = 240;
+
 
 
 export const reviewOfferingApprovalResponseOneWaitlistOfferMinutesDefault = 30;
@@ -2918,6 +3146,18 @@ export const ReviewOfferingApprovalResponse = zod.object({
   "en": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedInstructorOneKuMax)
+}),zod.null()]).optional(),
+  "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(reviewOfferingApprovalResponseOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(reviewOfferingApprovalResponseOneRequiredEquipmentOneKuMax)
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
@@ -6690,6 +6930,18 @@ export const getLiveCatalogResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const getLiveCatalogResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const getLiveCatalogResponseOneLocalizedInstructorOneEnMax = 240;
+
+export const getLiveCatalogResponseOneLocalizedInstructorOneArMax = 240;
+
+export const getLiveCatalogResponseOneLocalizedInstructorOneKuMax = 240;
+
+export const getLiveCatalogResponseOneRequiredEquipmentOneEnMax = 240;
+
+export const getLiveCatalogResponseOneRequiredEquipmentOneArMax = 240;
+
+export const getLiveCatalogResponseOneRequiredEquipmentOneKuMax = 240;
+
 
 
 export const getLiveCatalogResponseOneWaitlistOfferMinutesDefault = 30;
@@ -6719,6 +6971,18 @@ export const GetLiveCatalogResponseItem = zod.object({
   "en": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedInstructorOneKuMax)
+}),zod.null()]).optional(),
+  "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(getLiveCatalogResponseOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(getLiveCatalogResponseOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(getLiveCatalogResponseOneRequiredEquipmentOneKuMax)
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
@@ -7624,7 +7888,21 @@ export const getMemberLiveClassesResponseLocalizedDescriptionOneArMax = 240;
 
 export const getMemberLiveClassesResponseLocalizedDescriptionOneKuMax = 240;
 
+export const getMemberLiveClassesResponseLocalizedInstructorOneEnMax = 240;
+
+export const getMemberLiveClassesResponseLocalizedInstructorOneArMax = 240;
+
+export const getMemberLiveClassesResponseLocalizedInstructorOneKuMax = 240;
+
+export const getMemberLiveClassesResponseRequiredEquipmentOneEnMax = 240;
+
+export const getMemberLiveClassesResponseRequiredEquipmentOneArMax = 240;
+
+export const getMemberLiveClassesResponseRequiredEquipmentOneKuMax = 240;
+
+
 export const getMemberLiveClassesResponseRemainingMin = 0;
+
 
 
 
@@ -7641,12 +7919,28 @@ export const GetMemberLiveClassesResponseItem = zod.object({
   "ar": zod.string().min(1).max(getMemberLiveClassesResponseLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(getMemberLiveClassesResponseLocalizedDescriptionOneKuMax)
 }),zod.null()]),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberLiveClassesResponseLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(getMemberLiveClassesResponseLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(getMemberLiveClassesResponseLocalizedInstructorOneKuMax)
+}),zod.null()]),
+  "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullable(),
+  "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullable(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberLiveClassesResponseRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(getMemberLiveClassesResponseRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(getMemberLiveClassesResponseRequiredEquipmentOneKuMax)
+}),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
   "partnerName": zod.string(),
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
+  "cancellationDeadline": zod.coerce.date(),
+  "capacity": zod.int().min(1),
   "remaining": zod.int().min(getMemberLiveClassesResponseRemainingMin),
+  "tiers": zod.array(zod.string()).min(1),
+  "additionalPayment": zod.boolean(),
   "booked": zod.boolean(),
   "canJoin": zod.boolean()
 })

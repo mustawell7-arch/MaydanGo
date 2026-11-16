@@ -118,6 +118,10 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
   const approved = d.partners.filter(p => p.approved);
   const [f, setF] = useState({ partnerId: d.partnerId ?? approved[0]?.id ?? '', title: '', kind: 'session' as Offering['kind'], city: '', facility: '', category: '',
     localizedTitleEn: '', localizedTitleAr: '', localizedTitleKu: '', localizedDescriptionEn: '', localizedDescriptionAr: '', localizedDescriptionKu: '', joinUrl: '',
+    localizedInstructorEn: '', localizedInstructorAr: '', localizedInstructorKu: '',
+    requiredEquipmentEn: '', requiredEquipmentAr: '', requiredEquipmentKu: '',
+    difficultyLevel: 'all-levels' as NonNullable<Offering['difficultyLevel']>,
+    instructionLanguage: 'mixed' as NonNullable<Offering['instructionLanguage']>,
     accessType: 'physical' as Offering['accessType'], tiers: ['M'] as string[], startsAt: '', endsAt: '', cancellationDeadline: '', capacity: '12', gender: 'all' as 'all' | 'female' | 'male', minAge: '0', maxAge: '', additionalPayment: false, active: true });
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -132,15 +136,25 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
       : iraqInstant(f.startsAt).getTime() <= Date.now() ? 'Start must be in the future.'
       : f.accessType === 'live' && (!f.localizedTitleEn.trim() || !f.localizedTitleAr.trim() || !f.localizedTitleKu.trim()
         || !f.localizedDescriptionEn.trim() || !f.localizedDescriptionAr.trim() || !f.localizedDescriptionKu.trim()) ? 'Live classes need titles and descriptions in English, Iraqi Arabic and Sorani.'
+      : f.accessType === 'live' && (!f.localizedInstructorEn.trim() || !f.localizedInstructorAr.trim() || !f.localizedInstructorKu.trim()
+        || !f.requiredEquipmentEn.trim() || !f.requiredEquipmentAr.trim() || !f.requiredEquipmentKu.trim()) ? 'Add the instructor and equipment details in English, Iraqi Arabic and Sorani.'
       : f.accessType === 'live' && f.active && !/^https:\/\/[^ ]+$/i.test(f.joinUrl.trim()) ? 'Published live classes need a secure HTTPS join link.' : null;
     if (err) { setMsg({ ok: false, text: err }); return; }
     setBusy('create'); setMsg(null);
     try {
-      const { localizedTitleEn, localizedTitleAr, localizedTitleKu, localizedDescriptionEn, localizedDescriptionAr, localizedDescriptionKu, joinUrl, ...offering } = f;
+      const {
+        localizedTitleEn, localizedTitleAr, localizedTitleKu,
+        localizedDescriptionEn, localizedDescriptionAr, localizedDescriptionKu,
+        localizedInstructorEn, localizedInstructorAr, localizedInstructorKu,
+        requiredEquipmentEn, requiredEquipmentAr, requiredEquipmentKu,
+        joinUrl, ...offering
+      } = f;
       await api('/operations/offerings', { method: 'POST', body: { ...offering, title: f.title.trim(), city: f.city.trim(), facility: f.facility.trim(), category: f.category.trim(),
         ...(f.accessType === 'live' ? {
           localizedTitle: { en: localizedTitleEn.trim(), ar: localizedTitleAr.trim(), ku: localizedTitleKu.trim() },
           localizedDescription: { en: localizedDescriptionEn.trim(), ar: localizedDescriptionAr.trim(), ku: localizedDescriptionKu.trim() },
+          localizedInstructor: { en: localizedInstructorEn.trim(), ar: localizedInstructorAr.trim(), ku: localizedInstructorKu.trim() },
+          requiredEquipment: { en: requiredEquipmentEn.trim(), ar: requiredEquipmentAr.trim(), ku: requiredEquipmentKu.trim() },
           joinUrl: joinUrl.trim() || null,
         } : {}),
         startsAt: iraqInstant(f.startsAt).toISOString(), endsAt: iraqInstant(f.endsAt).toISOString(), cancellationDeadline: iraqInstant(f.cancellationDeadline).toISOString(),
@@ -177,6 +191,10 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
          <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Member-facing details are required in all three app languages. The join link is only returned to an eligible member who has booked and is inside the join window.</Text>
          <View style={s.wrap}><Field c={c} label="TITLE · ENGLISH" value={f.localizedTitleEn} onChange={set('localizedTitleEn')} /><Field c={c} label="العنوان · العربية العراقية" value={f.localizedTitleAr} onChange={set('localizedTitleAr')} /><Field c={c} label="ناونیشان · سۆرانی" value={f.localizedTitleKu} onChange={set('localizedTitleKu')} /></View>
          <View style={s.wrap}><Field c={c} label="DESCRIPTION · ENGLISH" value={f.localizedDescriptionEn} onChange={set('localizedDescriptionEn')} multiline /><Field c={c} label="الوصف · العربية العراقية" value={f.localizedDescriptionAr} onChange={set('localizedDescriptionAr')} multiline /><Field c={c} label="وەسف · سۆرانی" value={f.localizedDescriptionKu} onChange={set('localizedDescriptionKu')} multiline /></View>
+         <View style={s.wrap}><Field c={c} label="INSTRUCTOR · ENGLISH" value={f.localizedInstructorEn} onChange={set('localizedInstructorEn')} /><Field c={c} label="المدرب · العربية العراقية" value={f.localizedInstructorAr} onChange={set('localizedInstructorAr')} /><Field c={c} label="ڕاهێنەر · سۆرانی" value={f.localizedInstructorKu} onChange={set('localizedInstructorKu')} /></View>
+         <View style={s.wrap}><Field c={c} label="REQUIRED EQUIPMENT · ENGLISH" value={f.requiredEquipmentEn} onChange={set('requiredEquipmentEn')} /><Field c={c} label="المعدات المطلوبة · العربية العراقية" value={f.requiredEquipmentAr} onChange={set('requiredEquipmentAr')} /><Field c={c} label="کەرەستەی پێویست · سۆرانی" value={f.requiredEquipmentKu} onChange={set('requiredEquipmentKu')} /></View>
+         <Choice c={c} label="DIFFICULTY LEVEL" options={['all-levels', 'beginner', 'intermediate', 'advanced'] as const} value={f.difficultyLevel} onChange={v => setF(x => ({ ...x, difficultyLevel: v }))} names={{ 'all-levels': 'All levels', beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' }} />
+         <Choice c={c} label="CLASS LANGUAGE" options={['en', 'ar', 'ku', 'mixed'] as const} value={f.instructionLanguage} onChange={v => setF(x => ({ ...x, instructionLanguage: v }))} names={{ en: 'English', ar: 'Arabic', ku: 'Sorani Kurdish', mixed: 'Multiple languages' }} />
          <Field c={c} label="SECURE JOIN LINK · HTTPS" value={f.joinUrl} onChange={set('joinUrl')} placeholder="https://…" />
        </> : null}
       <Choice c={c} label="TIERS" options={['M', 'L', 'XL']} value={f.tiers} onChange={v => setF(x => ({ ...x, tiers: x.tiers.includes(v) ? x.tiers.filter(t => t !== v) : [...x.tiers, v] }))} />

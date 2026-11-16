@@ -3488,6 +3488,20 @@ components:
           anyOf:
             - $ref: "#/components/schemas/LocalizedText"
             - type: "null"
+        localizedInstructor:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedText"
+            - type: "null"
+        difficultyLevel:
+          type: ["string", "null"]
+          enum: [all-levels, beginner, intermediate, advanced, null]
+        instructionLanguage:
+          type: ["string", "null"]
+          enum: [en, ar, ku, mixed, null]
+        requiredEquipment:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedText"
+            - type: "null"
         joinUrl: { type: ["string", "null"], format: uri }
         kind: { type: string, enum: [session, event, coach] }
         city: { type: string }
@@ -4185,7 +4199,7 @@ components:
         completed: { type: boolean }
     MemberLiveClass:
       type: object
-      required: [id, title, localizedTitle, localizedDescription, city, facility, partnerName, startsAt, endsAt, remaining, booked, canJoin]
+      required: [id, title, localizedTitle, localizedDescription, localizedInstructor, difficultyLevel, instructionLanguage, requiredEquipment, city, facility, partnerName, startsAt, endsAt, cancellationDeadline, capacity, remaining, tiers, additionalPayment, booked, canJoin]
       properties:
         id: { type: string }
         title: { type: string }
@@ -4197,12 +4211,30 @@ components:
           anyOf:
             - $ref: "#/components/schemas/LocalizedText"
             - type: "null"
+        localizedInstructor:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedText"
+            - type: "null"
+        difficultyLevel:
+          type: ["string", "null"]
+          enum: [all-levels, beginner, intermediate, advanced, null]
+        instructionLanguage:
+          type: ["string", "null"]
+          enum: [en, ar, ku, mixed, null]
+        requiredEquipment:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedText"
+            - type: "null"
         city: { type: string }
         facility: { type: string }
         partnerName: { type: string }
         startsAt: { type: string, format: date-time }
         endsAt: { type: string, format: date-time }
+        cancellationDeadline: { type: string, format: date-time }
+        capacity: { type: integer, minimum: 1 }
         remaining: { type: integer, minimum: 0 }
+        tiers: { type: array, items: { type: string }, minItems: 1 }
+        additionalPayment: { type: boolean }
         booked: { type: boolean }
         canJoin: { type: boolean }
     JoinAccess:

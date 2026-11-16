@@ -23,6 +23,10 @@ export type Offering = {
   id: string; partnerId: string; title: string; kind: 'session' | 'event' | 'coach'; city: string; facility: string; category: string;
   localizedTitle?: { en: string; ar: string; ku: string } | null;
   localizedDescription?: { en: string; ar: string; ku: string } | null;
+  localizedInstructor?: { en: string; ar: string; ku: string } | null;
+  difficultyLevel?: 'all-levels' | 'beginner' | 'intermediate' | 'advanced' | null;
+  instructionLanguage?: 'en' | 'ar' | 'ku' | 'mixed' | null;
+  requiredEquipment?: { en: string; ar: string; ku: string } | null;
   joinUrl?: string | null; canJoin?: boolean;
   accessType: 'physical' | 'premium' | 'live'; tiers: string[]; startsAt: string; endsAt: string; cancellationDeadline: string;
   capacity: number; waitlistOfferMinutes?: number; gender: 'all' | 'female' | 'male'; minAge: number; maxAge: number | null; additionalPayment: boolean; active: boolean;

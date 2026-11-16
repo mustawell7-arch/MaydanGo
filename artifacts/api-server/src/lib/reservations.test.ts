@@ -760,8 +760,16 @@ test("live operations: staff scope, approved inventory, server grants and quota 
         cancellationDeadline: new Date(start.getTime() - 5 * 60_000).toISOString(),
         localizedTitle: { en: "Online mobility", ar: "حركة أونلاين", ku: "جووڵەی ئۆنلاین" },
         localizedDescription: { en: "Move from home.", ar: "تمرّن من المنزل.", ku: "لە ماڵەوە ڕاهێنان بکە." },
+        localizedInstructor: { en: "Rana Ahmed", ar: "رنا أحمد", ku: "ڕەنا ئەحمەد" },
+        difficultyLevel: "beginner",
+        instructionLanguage: "ar",
+        requiredEquipment: { en: "A yoga mat", ar: "بساط يوغا", ku: "بەرگێکی یۆگا" },
         joinUrl: "https://example.test/private-class-room",
       };
+      const incomplete = await call("/operations/offerings", adminId, "POST", {
+        ...liveBody, active: true, requiredEquipment: null,
+      });
+      assert.equal(incomplete.status, 400);
       const created = await call("/operations/offerings", partnerUser, "POST", liveBody);
       assert.equal(created.status, 201); ids.push(created.data.id);
       await publishOffering(created.data.id);
@@ -773,10 +781,19 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       const session = beforeBooking.data.find((row: any) => row.id === created.data.id);
       assert.equal(session.canJoin, false);
       assert.equal(session.joinUrl, undefined);
+      assert.equal(session.localizedInstructor.ku, liveBody.localizedInstructor.ku);
+      assert.equal(session.difficultyLevel, "beginner");
+      assert.equal(session.instructionLanguage, "ar");
+      assert.equal(session.requiredEquipment.en, "A yoga mat");
+      assert.equal(session.capacity, 2);
+      assert.equal(session.remaining, 2);
+      assert.deepEqual(session.tiers, ["M"]);
+      assert.equal(Date.parse(session.cancellationDeadline), Date.parse(liveBody.cancellationDeadline));
       assert.equal((await call(`/member/live-classes/${created.data.id}/join`, alice, "POST", {})).status, 403);
       assert.equal((await call("/member/bookings", alice, "POST", input(created.data.id))).status, 201);
       const afterBooking = await call("/member/live-classes", alice);
       assert.equal(afterBooking.data.find((row: any) => row.id === created.data.id).canJoin, true);
+      assert.equal(afterBooking.data.find((row: any) => row.id === created.data.id).remaining, 1);
 
       const joinResponse = await fetch(`http://127.0.0.1:${port}/member/live-classes/${created.data.id}/join`, {
         method: "POST", headers: { "Content-Type": "application/json", "x-test-user": alice }, body: "{}",
@@ -785,6 +802,10 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       assert.equal(joinResponse.headers.get("cache-control"), "no-store");
       assert.equal((await joinResponse.json() as any).url, liveBody.joinUrl);
       assert.equal((await call(`/member/live-classes/${created.data.id}/join`, bob, "POST", {})).status, 403);
+      await db.update(offerings).set({ additionalPayment: true }).where(eq(offerings.id, created.data.id));
+      const paymentBlocked = await call("/member/live-classes", alice);
+      assert.equal(paymentBlocked.data.find((row: any) => row.id === created.data.id).canJoin, false);
+      assert.equal((await call(`/member/live-classes/${created.data.id}/join`, alice, "POST", {})).status, 403);
       const publicCatalog = await fetch(`http://127.0.0.1:${port}/public/catalog`).then(response => response.json()) as any[];
       assert.equal(publicCatalog.find((row: any) => row.id === created.data.id)?.joinUrl, undefined);
     });
