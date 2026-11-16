@@ -86,6 +86,7 @@ const workspaceLinks = [
   { href: "/support-desk", title: "Customer support", description: "Review and assign member support requests." },
   { href: "/admin/corporate", title: "Corporate accounts", description: "Manage company enrollment and invitations." },
   { href: "/admin/instructor-access", title: "Instructor access", description: "Review instructor requests and course assignments." },
+  { href: "/admin/course-materials", title: "Course materials", description: "Upload approved PDFs for enrolled members." },
 ];
 
 export default function SuperAdminPage() {

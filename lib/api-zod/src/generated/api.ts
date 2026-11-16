@@ -3666,6 +3666,82 @@ export const AddLearningLessonResponse = zod.object({
 })
 
 
+export const GetOperationCourseMaterialsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getOperationCourseMaterialsResponseMaterialsItemOneTitleMax = 160;
+
+export const getOperationCourseMaterialsResponseMaterialsItemOneFileNameMax = 180;
+
+
+
+
+export const GetOperationCourseMaterialsResponse = zod.object({
+  "materials": zod.array(zod.object({
+  "id": zod.uuid(),
+  "title": zod.string().min(1).max(getOperationCourseMaterialsResponseMaterialsItemOneTitleMax),
+  "fileName": zod.string().min(1).max(getOperationCourseMaterialsResponseMaterialsItemOneFileNameMax),
+  "sizeBytes": zod.int().min(1),
+  "approvedAt": zod.coerce.date()
+}).and(zod.object({
+  "approvedBy": zod.string()
+})))
+})
+
+
+export const CreateCourseMaterialUploadUrlParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const createCourseMaterialUploadUrlBodyFileNameMax = 180;
+
+
+
+export const CreateCourseMaterialUploadUrlBody = zod.object({
+  "fileName": zod.string().min(1).max(createCourseMaterialUploadUrlBodyFileNameMax)
+})
+
+export const CreateCourseMaterialUploadUrlResponse = zod.object({
+  "id": zod.uuid(),
+  "uploadURL": zod.url()
+})
+
+
+export const CompleteCourseMaterialUploadParams = zod.object({
+  "id": zod.coerce.string(),
+  "materialId": zod.uuid()
+})
+
+export const completeCourseMaterialUploadBodyTitleMax = 160;
+
+export const completeCourseMaterialUploadBodyFileNameMax = 180;
+
+
+
+export const CompleteCourseMaterialUploadBody = zod.object({
+  "title": zod.string().min(1).max(completeCourseMaterialUploadBodyTitleMax),
+  "fileName": zod.string().min(1).max(completeCourseMaterialUploadBodyFileNameMax)
+})
+
+export const completeCourseMaterialUploadResponseOneTitleMax = 160;
+
+export const completeCourseMaterialUploadResponseOneFileNameMax = 180;
+
+
+
+
+export const CompleteCourseMaterialUploadResponse = zod.object({
+  "id": zod.uuid(),
+  "title": zod.string().min(1).max(completeCourseMaterialUploadResponseOneTitleMax),
+  "fileName": zod.string().min(1).max(completeCourseMaterialUploadResponseOneFileNameMax),
+  "sizeBytes": zod.int().min(1),
+  "approvedAt": zod.coerce.date()
+}).and(zod.object({
+  "approvedBy": zod.string()
+}))
+
+
 export const getInstructorAccessRequestsResponseCoursesItemLocalizedTitleEnMax = 240;
 
 export const getInstructorAccessRequestsResponseCoursesItemLocalizedTitleArMax = 240;
@@ -6978,6 +7054,11 @@ export const getMemberCourseResponseTwoLessonsItemLocalizedContentOneArMax = 240
 
 export const getMemberCourseResponseTwoLessonsItemLocalizedContentOneKuMax = 240;
 
+export const getMemberCourseResponseTwoMaterialsItemTitleMax = 160;
+
+export const getMemberCourseResponseTwoMaterialsItemFileNameMax = 180;
+
+
 
 
 export const GetMemberCourseResponse = zod.object({
@@ -7043,6 +7124,13 @@ export const GetMemberCourseResponse = zod.object({
   "mediaUrl": zod.string().nullable(),
   "hasRecording": zod.boolean(),
   "completed": zod.boolean()
+})),
+  "materials": zod.array(zod.object({
+  "id": zod.uuid(),
+  "title": zod.string().min(1).max(getMemberCourseResponseTwoMaterialsItemTitleMax),
+  "fileName": zod.string().min(1).max(getMemberCourseResponseTwoMaterialsItemFileNameMax),
+  "sizeBytes": zod.int().min(1),
+  "approvedAt": zod.coerce.date()
 }))
 }))
 
@@ -7106,6 +7194,11 @@ export const enrollMemberCourseResponseTwoLessonsItemLocalizedContentOneEnMax = 
 export const enrollMemberCourseResponseTwoLessonsItemLocalizedContentOneArMax = 240;
 
 export const enrollMemberCourseResponseTwoLessonsItemLocalizedContentOneKuMax = 240;
+
+export const enrollMemberCourseResponseTwoMaterialsItemTitleMax = 160;
+
+export const enrollMemberCourseResponseTwoMaterialsItemFileNameMax = 180;
+
 
 
 
@@ -7172,6 +7265,13 @@ export const EnrollMemberCourseResponse = zod.object({
   "mediaUrl": zod.string().nullable(),
   "hasRecording": zod.boolean(),
   "completed": zod.boolean()
+})),
+  "materials": zod.array(zod.object({
+  "id": zod.uuid(),
+  "title": zod.string().min(1).max(enrollMemberCourseResponseTwoMaterialsItemTitleMax),
+  "fileName": zod.string().min(1).max(enrollMemberCourseResponseTwoMaterialsItemFileNameMax),
+  "sizeBytes": zod.int().min(1),
+  "approvedAt": zod.coerce.date()
 }))
 }))
 
@@ -7244,6 +7344,11 @@ export const updateCourseProgressResponseTwoLessonsItemLocalizedContentOneArMax 
 
 export const updateCourseProgressResponseTwoLessonsItemLocalizedContentOneKuMax = 240;
 
+export const updateCourseProgressResponseTwoMaterialsItemTitleMax = 160;
+
+export const updateCourseProgressResponseTwoMaterialsItemFileNameMax = 180;
+
+
 
 
 export const UpdateCourseProgressResponse = zod.object({
@@ -7309,6 +7414,13 @@ export const UpdateCourseProgressResponse = zod.object({
   "mediaUrl": zod.string().nullable(),
   "hasRecording": zod.boolean(),
   "completed": zod.boolean()
+})),
+  "materials": zod.array(zod.object({
+  "id": zod.uuid(),
+  "title": zod.string().min(1).max(updateCourseProgressResponseTwoMaterialsItemTitleMax),
+  "fileName": zod.string().min(1).max(updateCourseProgressResponseTwoMaterialsItemFileNameMax),
+  "sizeBytes": zod.int().min(1),
+  "approvedAt": zod.coerce.date()
 }))
 }))
 
@@ -7325,6 +7437,28 @@ export const CreateMemberCoursePlaybackLinkResponse = zod.object({
   "url": zod.string(),
   "validUntil": zod.coerce.date()
 })
+
+
+export const CreateMemberCourseMaterialDownloadLinkParams = zod.object({
+  "id": zod.coerce.string(),
+  "materialId": zod.uuid()
+})
+
+export const CreateMemberCourseMaterialDownloadLinkResponse = zod.object({
+  "url": zod.string(),
+  "validUntil": zod.coerce.date()
+})
+
+
+export const downloadMemberCourseMaterialQueryTokenMax = 2048;
+
+
+
+export const DownloadMemberCourseMaterialQueryParams = zod.object({
+  "token": zod.coerce.string().min(1).max(downloadMemberCourseMaterialQueryTokenMax)
+})
+
+export const DownloadMemberCourseMaterialResponse = zod.unknown()
 
 
 export const streamMemberCoursePlaybackQueryTokenMax = 2048;

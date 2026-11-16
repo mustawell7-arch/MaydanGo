@@ -7,7 +7,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ScreenShell } from '@/components/ScreenShell';
 import {
   getGetMemberCourseQueryKey, getGetMemberCoursesQueryKey,
-  useCreateMemberCoursePlaybackLink, useEnrollMemberCourse, useGetMemberCourse, useUpdateCourseProgress,
+  useCreateMemberCourseMaterialDownloadLink, useCreateMemberCoursePlaybackLink,
+  useEnrollMemberCourse, useGetMemberCourse, useUpdateCourseProgress,
 } from '@workspace/api-client-react';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
@@ -24,6 +25,7 @@ export default function CourseDetailScreen() {
   const enrollMutation = useEnrollMemberCourse();
   const progressMutation = useUpdateCourseProgress();
   const playbackLinkMutation = useCreateMemberCoursePlaybackLink();
+  const materialDownloadMutation = useCreateMemberCourseMaterialDownloadLink();
   const [openLesson, setOpenLesson] = useState<string | null>(null);
   const resumedCourseId = useRef<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -95,6 +97,15 @@ export default function CourseDetailScreen() {
       await Linking.openURL(new URL(playback.url, baseUrl).toString());
     } catch (error) { setMessage(errorCopy(error)); }
   };
+  const downloadMaterial = async (materialId: string) => {
+    try {
+      const download = await materialDownloadMutation.mutateAsync({ id: course.id, materialId });
+      const domain = process.env.EXPO_PUBLIC_DOMAIN;
+      if (!domain) throw new Error('Course materials are unavailable. Try again later.');
+      const baseUrl = domain.startsWith('http') ? domain : `https://${domain}`;
+      await Linking.openURL(new URL(download.url, baseUrl).toString());
+    } catch (error) { setMessage(errorCopy(error)); }
+  };
   const enroll = async () => {
     try {
       await enrollMutation.mutateAsync({ id: course.id });
@@ -139,6 +150,39 @@ export default function CourseDetailScreen() {
               ))}
             </View>
           </View>
+          {ready && course.materials.length ? (
+            <View style={{ marginBottom: 12, padding: 15, borderRadius: 14, backgroundColor: colors.secondary, gap: 10 }}>
+              <Text style={{ color: colors.foreground, fontWeight: '800', fontSize: 16, textAlign: align }}>{t('courseMaterialsHeading')}</Text>
+              {course.materials.map(material => (
+                <Pressable
+                  key={material.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t('downloadCourseMaterial')}: ${material.title}`}
+                  disabled={materialDownloadMutation.isPending}
+                  onPress={() => void downloadMaterial(material.id)}
+                  style={({ pressed }) => ({
+                    minHeight: 48,
+                    paddingHorizontal: 12,
+                    borderRadius: 12,
+                    backgroundColor: colors.card,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                    opacity: pressed || materialDownloadMutation.isPending ? 0.65 : 1,
+                  })}
+                >
+                  <Text style={{ flex: 1, color: colors.foreground, fontSize: 13, fontWeight: '700', textAlign: align }}>{material.title}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '800' }}>
+                      {materialDownloadMutation.isPending ? t('coursesLoading') : t('downloadCourseMaterial')}
+                    </Text>
+                    <Ionicons name="download-outline" size={18} color={colors.primary} />
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
 
           {course.enrolled ? (
             <View style={[styles.progressCard, { backgroundColor: colors.secondary }]}>

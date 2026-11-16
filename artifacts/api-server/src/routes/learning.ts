@@ -3,11 +3,12 @@ import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, gt, gte, inArray, isNull, sql } from "drizzle-orm";
 import {
-  db, courseEnrollments, learningCourses, learningLessons, lessonProgress,
+  db, courseEnrollments, courseMaterials, learningCourses, learningLessons, lessonProgress,
   memberships, offerings, partners, reservations,
 } from "@workspace/db";
 import {
   CreateMemberCoursePlaybackLinkResponse,
+  CreateMemberCourseMaterialDownloadLinkResponse,
   CreateLiveClassJoinResponse, EnrollMemberCourseResponse, GetMemberCourseResponse,
   GetMemberCoursesResponse, GetMemberLiveClassesResponse, UpdateCourseProgressBody,
   UpdateCourseProgressResponse,
@@ -16,6 +17,8 @@ import { BookingError, membershipCanAccess } from "../lib/reservations";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 import { courseRecordingContentType, isPrivateCourseRecordingPath } from "../lib/course-recordings";
 import { createCoursePlaybackToken, verifyCoursePlaybackToken } from "../lib/course-playback-token";
+import { createCourseMaterialToken, verifyCourseMaterialToken } from "../lib/course-material-token";
+import { courseMaterialObjectPath, isPrivateCourseMaterialPath } from "../lib/course-materials";
 import { isAccessSuspended } from "../lib/account-access-restrictions";
 
 const router = Router();
@@ -92,10 +95,22 @@ async function getCourseDetail(userId: string, id: string) {
       .where(eq(lessonProgress.enrollmentId, enrolled.id))
     : [];
   const completed = new Set(completedRows.map(row => row.lessonId));
+  const materials = accessState === "ready" && enrolled
+    ? await db.select({
+      id: courseMaterials.id,
+      title: courseMaterials.title,
+      fileName: courseMaterials.fileName,
+      sizeBytes: courseMaterials.sizeBytes,
+      approvedAt: courseMaterials.approvedAt,
+    }).from(courseMaterials)
+      .where(eq(courseMaterials.courseId, id))
+      .orderBy(asc(courseMaterials.approvedAt))
+    : [];
   const summary = courseSummary(course, !!enrolled, completed.size, lessons.length);
   return {
     ...summary,
     accessState,
+    materials,
     lessons: lessons.map(lesson => ({
       id: lesson.id,
       position: lesson.position,
@@ -189,6 +204,105 @@ router.put("/courses/:id/progress", async (req, res): Promise<void> => {
     ));
   }
   res.json(UpdateCourseProgressResponse.parse(await getCourseDetail(userId, courseId)));
+});
+
+router.post("/courses/:id/materials/:materialId/download-link", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) { res.status(401).json({ message: "Sign in to download course materials." }); return; }
+  if (await isAccessSuspended("member", userId)) {
+    throw new BookingError(403, "This account is temporarily restricted from course access. Contact MaydanGo support.");
+  }
+  const courseId = String(req.params.id);
+  const materialId = String(req.params.materialId);
+  const [course] = await db.select({ id: learningCourses.id }).from(learningCourses).where(and(
+    eq(learningCourses.id, courseId), eq(learningCourses.published, true),
+  ));
+  if (!course) throw new BookingError(404, "This course is not available.");
+  if (!await currentDigitalCourseMembership(userId)) {
+    throw new BookingError(403, "An eligible membership with digital course access is required to download materials.");
+  }
+  const [enrollment] = await db.select({ id: courseEnrollments.id }).from(courseEnrollments).where(and(
+    eq(courseEnrollments.userId, userId), eq(courseEnrollments.courseId, courseId),
+  ));
+  if (!enrollment) throw new BookingError(403, "Enroll in this course before downloading materials.");
+  const [material] = await db.select().from(courseMaterials).where(and(
+    eq(courseMaterials.id, materialId), eq(courseMaterials.courseId, courseId),
+  ));
+  if (!material || !isPrivateCourseMaterialPath(material.objectPath)) {
+    throw new BookingError(404, "This course material is unavailable.");
+  }
+  try {
+    const file = await learningObjectStorage.getPrivateFile(material.objectPath);
+    const [metadata] = await file.getMetadata();
+    if (Number(metadata.size) !== material.sizeBytes || Number(metadata.size) < 1) {
+      throw new BookingError(404, "This course material is unavailable.");
+    }
+  } catch (error) {
+    if (error instanceof ObjectNotFoundError) throw new BookingError(404, "This course material is unavailable.");
+    throw error;
+  }
+  const { token, expiresAt } = createCourseMaterialToken({ userId, courseId, materialId });
+  res.setHeader("Cache-Control", "no-store");
+  res.json(CreateMemberCourseMaterialDownloadLinkResponse.parse({
+    url: `/api/member/course-material-download?token=${encodeURIComponent(token)}`,
+    validUntil: new Date(expiresAt),
+  }));
+});
+
+router.get("/course-material-download", async (req, res): Promise<void> => {
+  const token = typeof req.query.token === "string" ? req.query.token : "";
+  const claims = verifyCourseMaterialToken(token);
+  if (!claims) { res.status(403).json({ message: "This material link is invalid or expired." }); return; }
+  if (await isAccessSuspended("member", claims.userId)) {
+    res.status(403).json({ message: "This account is temporarily restricted from course access." }); return;
+  }
+  const [course] = await db.select({ id: learningCourses.id }).from(learningCourses).where(and(
+    eq(learningCourses.id, claims.courseId), eq(learningCourses.published, true),
+  ));
+  const [enrollment] = await db.select({ id: courseEnrollments.id }).from(courseEnrollments).where(and(
+    eq(courseEnrollments.userId, claims.userId), eq(courseEnrollments.courseId, claims.courseId),
+  ));
+  const [material] = await db.select().from(courseMaterials).where(and(
+    eq(courseMaterials.id, claims.materialId), eq(courseMaterials.courseId, claims.courseId),
+  ));
+  let expectedObjectPath: string;
+  try {
+    expectedObjectPath = courseMaterialObjectPath(claims.courseId, claims.materialId);
+  } catch {
+    res.status(403).json({ message: "Course material access is no longer available." }); return;
+  }
+  if (!course || !enrollment || !material
+      || material.objectPath !== expectedObjectPath
+      || !await currentDigitalCourseMembership(claims.userId)) {
+    res.status(403).json({ message: "Course material access is no longer available." }); return;
+  }
+  let file: Awaited<ReturnType<typeof learningObjectStorage.getPrivateFile>>;
+  try {
+    file = await learningObjectStorage.getPrivateFile(material.objectPath);
+  } catch (error) {
+    if (error instanceof ObjectNotFoundError) { res.status(404).end(); return; }
+    throw error;
+  }
+  const [metadata] = await file.getMetadata();
+  const sizeBytes = Number(metadata.size);
+  if (metadata.contentType !== "application/pdf" || sizeBytes !== material.sizeBytes
+      || !Number.isSafeInteger(sizeBytes) || sizeBytes < 1) {
+    res.status(404).end(); return;
+  }
+  const asciiName = material.fileName.replace(/[^A-Za-z0-9._ -]/g, "_").replace(/["\\]/g, "_");
+  const encodedName = encodeURIComponent(material.fileName)
+    .replace(/['()*]/g, character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`);
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Length", String(sizeBytes));
+  res.setHeader("Content-Disposition", `attachment; filename="${asciiName}"; filename*=UTF-8''${encodedName}`);
+  file.createReadStream()
+    .on("error", error => {
+      if (res.headersSent) res.destroy(error);
+      else res.status(500).end();
+    })
+    .pipe(res);
 });
 
 router.post("/courses/:id/lessons/:lessonId/playback-link", async (req, res): Promise<void> => {

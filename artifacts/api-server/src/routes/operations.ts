@@ -4,16 +4,18 @@ import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lte, lt } from "drizzle-orm";
 import { z } from "zod";
-import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, facilityProfiles, facilityHoursOverrides, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents, financeInvoiceCorrections, instructorPortalRequests, instructorCourseAssignments, instructorOfferingAssignments } from "@workspace/db";
+import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, courseMaterials, facilityProfiles, facilityHoursOverrides, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents, financeInvoiceCorrections, instructorPortalRequests, instructorCourseAssignments, instructorOfferingAssignments } from "@workspace/db";
 import { BookingError, effectiveMembershipStatus, processWaitlistQueue } from "../lib/reservations";
 import { hasAdminPermission, isOperationsPortalRole, type AdminPermission } from "../lib/admin-roles";
 import { createFacilityProfileInput, facilityHoursOverrideInput, facilityProfileFields, offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
 import {
   AddLearningLessonBody, AddLearningLessonResponse, ChangeLiveOfferingBody,
   CreateLearningCourseBody, CreateLearningCourseResponse,
+  CompleteCourseMaterialUploadBody, CompleteCourseMaterialUploadResponse,
+  CreateCourseMaterialUploadUrlBody, CreateCourseMaterialUploadUrlResponse,
   CreateFacilityProfileBody, CreateFacilityProfileResponse, CreateFacilityHoursOverrideBody,
   CreateFacilityHoursOverrideParams, CreateFacilityHoursOverrideResponse, CreateRecurringOfferingsBody,
-  DeleteFacilityHoursOverrideParams, GetOperationCoursesResponse,
+  DeleteFacilityHoursOverrideParams, GetOperationCoursesResponse, GetOperationCourseMaterialsResponse,
   CreateRecurringOfferingsResponse, GetOperationFacilitiesResponse,
   UpdateFacilityProfileBody, UpdateFacilityProfileResponse,
   UpdateLearningCourseBody, UpdateLearningCourseResponse,
@@ -35,6 +37,7 @@ import { cancelPaidSubscriptionImmediately, requestFullRefund, validatePaidPlan 
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 import { financeRecordRetentionUntil } from "../lib/finance-record-retention";
 import { isPrivateCourseRecordingPath } from "../lib/course-recordings";
+import { courseMaterialObjectPath, courseMaterialUploadObjectPath, isPrivateCourseMaterialUploadPath, isSafeCourseMaterialFileName, maxCourseMaterialBytes } from "../lib/course-materials";
 import { hasAccessRestrictionRecord, isAccessSuspended } from "../lib/account-access-restrictions";
 import { completeGuardianConsentUpload, requestGuardianConsentUpload } from "../lib/guardian-consents";
 import {
@@ -44,6 +47,7 @@ import {
 
 const router = Router();
 const objectStorage = new ObjectStorageService();
+export const operationsObjectStorage = objectStorage;
 router.use(async (req, res, next) => {
   const userId = getAuth(req).userId;
   if (!userId) { res.status(401).json({ message: "Sign in first." }); return; }
@@ -1935,6 +1939,105 @@ router.post("/courses/:id/lessons", async (req, res) => {
     return { ...added, hasRecording: true, completed: false };
   });
   res.status(201).json(AddLearningLessonResponse.parse(lesson));
+});
+
+router.get("/courses/:id/materials", async (req, res) => {
+  admin(res, "content");
+  const courseId = String(req.params.id);
+  const [course] = await db.select({ id: learningCourses.id }).from(learningCourses)
+    .where(eq(learningCourses.id, courseId));
+  if (!course) throw new BookingError(404, "Course not found.");
+  const materials = await db.select({
+    id: courseMaterials.id,
+    title: courseMaterials.title,
+    fileName: courseMaterials.fileName,
+    sizeBytes: courseMaterials.sizeBytes,
+    approvedAt: courseMaterials.approvedAt,
+    approvedBy: courseMaterials.approvedBy,
+  }).from(courseMaterials)
+    .where(eq(courseMaterials.courseId, courseId))
+    .orderBy(asc(courseMaterials.approvedAt));
+  res.json(GetOperationCourseMaterialsResponse.parse({ materials }));
+});
+
+router.post("/courses/:id/materials/upload-url", async (req, res) => {
+  admin(res, "content");
+  const parsed = CreateCourseMaterialUploadUrlBody.safeParse(req.body);
+  if (!parsed.success || !isSafeCourseMaterialFileName(parsed.data?.fileName)) {
+    res.status(400).json({ message: "Choose a PDF file with a valid filename." }); return;
+  }
+  const courseId = String(req.params.id);
+  const [course] = await db.select({ id: learningCourses.id }).from(learningCourses)
+    .where(eq(learningCourses.id, courseId));
+  if (!course) throw new BookingError(404, "Course not found.");
+  const id = randomUUID();
+  const { uploadURL } = await objectStorage.createCourseMaterialUpload(courseId, id);
+  res.json(CreateCourseMaterialUploadUrlResponse.parse({ id, uploadURL }));
+});
+
+router.post("/courses/:id/materials/:materialId/complete", async (req, res) => {
+  admin(res, "content");
+  const parsed = CompleteCourseMaterialUploadBody.safeParse(req.body);
+  if (!parsed.success || !isSafeCourseMaterialFileName(parsed.data?.fileName)) {
+    res.status(400).json({ message: "Provide a title and valid PDF filename." }); return;
+  }
+  const courseId = String(req.params.id);
+  const materialId = String(req.params.materialId);
+  const [course] = await db.select({ id: learningCourses.id }).from(learningCourses)
+    .where(eq(learningCourses.id, courseId));
+  if (!course) throw new BookingError(404, "Course not found.");
+  let stagingPath: string;
+  try {
+    stagingPath = courseMaterialUploadObjectPath(courseId, materialId);
+  } catch {
+    res.status(400).json({ message: "Use a valid course material identifier." }); return;
+  }
+  let file: Awaited<ReturnType<ObjectStorageService["getPrivateFile"]>>;
+  try {
+    file = await objectStorage.getPrivateFile(stagingPath);
+  } catch (error) {
+    if (error instanceof ObjectNotFoundError) {
+      res.status(400).json({ message: "Upload the PDF before completing it." }); return;
+    }
+    throw error;
+  }
+  const [metadata] = await file.getMetadata();
+  const sizeBytes = Number(metadata.size);
+  if (metadata.contentType !== "application/pdf"
+      || !Number.isSafeInteger(sizeBytes) || sizeBytes < 1 || sizeBytes > maxCourseMaterialBytes
+      || !isPrivateCourseMaterialUploadPath(stagingPath)) {
+    await objectStorage.deletePrivateFile(stagingPath);
+    res.status(400).json({ message: "The uploaded file must be a PDF no larger than 15 MB." }); return;
+  }
+  const objectPath = await objectStorage.promoteCourseMaterialUpload(stagingPath, courseId, materialId);
+  const approvedBy = getAuth(req).userId!;
+  let material: typeof courseMaterials.$inferSelect;
+  try {
+    [material] = await db.transaction(async tx => {
+      const inserted = await tx.insert(courseMaterials).values({
+        id: materialId,
+        courseId,
+        title: parsed.data.title.trim(),
+        fileName: parsed.data.fileName.trim(),
+        objectPath,
+        sizeBytes,
+        approvedBy,
+      }).returning();
+      await audit(tx, approvedBy, "course.material.approved", materialId, `course=${courseId};size=${sizeBytes}`);
+      return inserted;
+    });
+  } catch (error) {
+    await objectStorage.deletePrivateFile(objectPath);
+    throw error;
+  }
+  res.status(201).json(CompleteCourseMaterialUploadResponse.parse({
+    id: material.id,
+    title: material.title,
+    fileName: material.fileName,
+    sizeBytes: material.sizeBytes,
+    approvedAt: material.approvedAt,
+    approvedBy: material.approvedBy,
+  }));
 });
 
 router.post("/plans", async (req, res) => {

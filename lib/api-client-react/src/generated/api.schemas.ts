@@ -2789,6 +2789,62 @@ export interface CourseLesson {
   completed: boolean;
 }
 
+export interface CourseMaterial {
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  title: string;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  fileName: string;
+  /** @minimum 1 */
+  sizeBytes: number;
+  approvedAt: string;
+}
+
+export type CourseMaterialAdmin = CourseMaterial & {
+  approvedBy: string;
+};
+
+export interface GetOperationCourseMaterialsResponse {
+  materials: CourseMaterialAdmin[];
+}
+
+export interface CourseMaterialUploadUrlInput {
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  fileName: string;
+}
+
+export interface CourseMaterialUploadUrlResponse {
+  id: string;
+  uploadURL: string;
+}
+
+export interface CourseMaterialUploadCompleteInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  title: string;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  fileName: string;
+}
+
+export interface CourseMaterialDownloadLinkResponse {
+  url: string;
+  validUntil: string;
+}
+
 export type CourseDetailAccessState = typeof CourseDetailAccessState[keyof typeof CourseDetailAccessState];
 
 
@@ -2801,6 +2857,7 @@ export const CourseDetailAccessState = {
 export type CourseDetail = CourseSummary & {
   accessState: CourseDetailAccessState;
   lessons: CourseLesson[];
+  materials: CourseMaterial[];
 };
 
 export interface CoursePlaybackLinkResponse {
@@ -4834,6 +4891,14 @@ export type GetPublicLegalPolicyVersionParams = {
  * @maxLength 40
  */
 version?: string;
+};
+
+export type DownloadMemberCourseMaterialParams = {
+/**
+ * @minLength 1
+ * @maxLength 2048
+ */
+token: string;
 };
 
 export type StreamMemberCoursePlaybackParams = {

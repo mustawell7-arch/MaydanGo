@@ -45,6 +45,7 @@ const InstructorPortalPage = lazy(() =>
 const SupportDeskPage = lazy(() => import('@/pages/support-desk'));
 const SuperAdminPage = lazy(() => import('@/pages/super-admin'));
 const SuperAdminPoliciesPage = lazy(() => import('@/pages/super-admin-policies'));
+const CourseMaterialsManagerPage = lazy(() => import('@/pages/course-materials-manager'));
 const CorporateAdminPage = lazy(() =>
   import('@/pages/corporate-workspace').then(module => ({ default: module.CorporateAdminPage })),
 );
@@ -1358,6 +1359,7 @@ function Router() {
     <Switch>
       <Route path="/super-admin" component={SuperAdminPage} />
       <Route path="/super-admin/policies" component={SuperAdminPoliciesPage} />
+      <Route path="/admin/course-materials" component={CourseMaterialsManagerPage} />
       <Route path="/admin/corporate" component={CorporateAdminPage} />
       <Route path="/corporate-agreement-draft" component={CorporateAgreementTemplatePage} />
       <Route path="/corporate-portal" component={CorporatePortalPage} />

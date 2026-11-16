@@ -63,6 +63,11 @@ import type {
   CourseDetail,
   CourseInput,
   CourseLesson,
+  CourseMaterialAdmin,
+  CourseMaterialDownloadLinkResponse,
+  CourseMaterialUploadCompleteInput,
+  CourseMaterialUploadUrlInput,
+  CourseMaterialUploadUrlResponse,
   CourseMetadataInput,
   CoursePlaybackLinkResponse,
   CourseProgressInput,
@@ -70,6 +75,7 @@ import type {
   CreateLegalPolicyDraftBody,
   CreateMemberBookingBody,
   DeviceChangeApprovalInput,
+  DownloadMemberCourseMaterialParams,
   EnablePreviewMembershipBody,
   FacilityEmergencyContact,
   FacilityEmergencyContactInput,
@@ -107,6 +113,7 @@ import type {
   GetBookingCatalog200Item,
   GetFinanceSettlementsParams,
   GetInstructorAccessRequestsResponse,
+  GetOperationCourseMaterialsResponse,
   GetOperationCoursesResponse,
   GetOperationsAnalyticsParams,
   GetPartnerSettlementSummaryParams,
@@ -5097,6 +5104,269 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getAddLearningLessonMutationOptions(options), queryClient);
+    }
+
+export const getGetOperationCourseMaterialsUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/courses/${id}/materials`
+}
+
+export const getOperationCourseMaterials = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<GetOperationCourseMaterialsResponse> => {
+
+  return customFetch<GetOperationCourseMaterialsResponse>(getGetOperationCourseMaterialsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationCourseMaterialsQueryKey = (id: string,) => {
+    return [
+    `/api/operations/courses/${id}/materials`
+    ] as const;
+    }
+
+
+export const getGetOperationCourseMaterialsQueryOptions = <TData = Awaited<ReturnType<typeof getOperationCourseMaterials>>, TError = ErrorType<unknown>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationCourseMaterials>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationCourseMaterialsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationCourseMaterials>>> = ({ signal }) => getOperationCourseMaterials(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationCourseMaterials>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOperationCourseMaterialsQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationCourseMaterials>>>
+export type GetOperationCourseMaterialsQueryError = ErrorType<unknown>
+
+
+export function useGetOperationCourseMaterials<TData = Awaited<ReturnType<typeof getOperationCourseMaterials>>, TError = ErrorType<unknown>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationCourseMaterials>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOperationCourseMaterials>>,
+          TError,
+          Awaited<ReturnType<typeof getOperationCourseMaterials>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOperationCourseMaterials<TData = Awaited<ReturnType<typeof getOperationCourseMaterials>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationCourseMaterials>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOperationCourseMaterials>>,
+          TError,
+          Awaited<ReturnType<typeof getOperationCourseMaterials>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOperationCourseMaterials<TData = Awaited<ReturnType<typeof getOperationCourseMaterials>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationCourseMaterials>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetOperationCourseMaterials<TData = Awaited<ReturnType<typeof getOperationCourseMaterials>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationCourseMaterials>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOperationCourseMaterialsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateCourseMaterialUploadUrlUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/courses/${id}/materials/upload-url`
+}
+
+export const createCourseMaterialUploadUrl = async (id: string,
+    courseMaterialUploadUrlInput: CourseMaterialUploadUrlInput, options?: Parameters<typeof customFetch>[1]): Promise<CourseMaterialUploadUrlResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CourseMaterialUploadUrlResponse>(getCreateCourseMaterialUploadUrlUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(courseMaterialUploadUrlInput)
+  }
+);}
+
+
+
+
+
+export const getCreateCourseMaterialUploadUrlMutationKey = () => ['createCourseMaterialUploadUrl'] as const;
+
+export const getCreateCourseMaterialUploadUrlMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCourseMaterialUploadUrl>>, TError,CreateCourseMaterialUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCourseMaterialUploadUrl>>, TError,CreateCourseMaterialUploadUrlMutationVariables, TContext> => {
+
+const mutationKey = getCreateCourseMaterialUploadUrlMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCourseMaterialUploadUrl>>, CreateCourseMaterialUploadUrlMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createCourseMaterialUploadUrl(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCourseMaterialUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof createCourseMaterialUploadUrl>>>
+    export type CreateCourseMaterialUploadUrlMutationBody = BodyType<CourseMaterialUploadUrlInput>
+    export type CreateCourseMaterialUploadUrlMutationError = ErrorType<unknown>
+    export type CreateCourseMaterialUploadUrlMutationVariables = {id: string;data: BodyType<CourseMaterialUploadUrlInput>}
+
+    export const useCreateCourseMaterialUploadUrl = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCourseMaterialUploadUrl>>, TError,CreateCourseMaterialUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createCourseMaterialUploadUrl>>,
+        TError,
+        CreateCourseMaterialUploadUrlMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateCourseMaterialUploadUrlMutationOptions(options), queryClient);
+    }
+
+export const getCompleteCourseMaterialUploadUrl = (id: string,
+    materialId: string,) => {
+
+
+
+
+  return `/api/operations/courses/${id}/materials/${materialId}/complete`
+}
+
+export const completeCourseMaterialUpload = async (id: string,
+    materialId: string,
+    courseMaterialUploadCompleteInput: CourseMaterialUploadCompleteInput, options?: Parameters<typeof customFetch>[1]): Promise<CourseMaterialAdmin> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CourseMaterialAdmin>(getCompleteCourseMaterialUploadUrl(id,materialId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(courseMaterialUploadCompleteInput)
+  }
+);}
+
+
+
+
+
+export const getCompleteCourseMaterialUploadMutationKey = () => ['completeCourseMaterialUpload'] as const;
+
+export const getCompleteCourseMaterialUploadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeCourseMaterialUpload>>, TError,CompleteCourseMaterialUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeCourseMaterialUpload>>, TError,CompleteCourseMaterialUploadMutationVariables, TContext> => {
+
+const mutationKey = getCompleteCourseMaterialUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeCourseMaterialUpload>>, CompleteCourseMaterialUploadMutationVariables> = (props) => {
+          const {id,materialId,data} = props ?? {};
+
+          return  completeCourseMaterialUpload(id,materialId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteCourseMaterialUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completeCourseMaterialUpload>>>
+    export type CompleteCourseMaterialUploadMutationBody = BodyType<CourseMaterialUploadCompleteInput>
+    export type CompleteCourseMaterialUploadMutationError = ErrorType<unknown>
+    export type CompleteCourseMaterialUploadMutationVariables = {id: string;materialId: string;data: BodyType<CourseMaterialUploadCompleteInput>}
+
+    export const useCompleteCourseMaterialUpload = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeCourseMaterialUpload>>, TError,CompleteCourseMaterialUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof completeCourseMaterialUpload>>,
+        TError,
+        CompleteCourseMaterialUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompleteCourseMaterialUploadMutationOptions(options), queryClient);
     }
 
 export const getGetInstructorAccessRequestsUrl = () => {
@@ -12354,6 +12624,178 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getCreateMemberCoursePlaybackLinkMutationOptions(options), queryClient);
     }
+
+export const getCreateMemberCourseMaterialDownloadLinkUrl = (id: string,
+    materialId: string,) => {
+
+
+
+
+  return `/api/member/courses/${id}/materials/${materialId}/download-link`
+}
+
+export const createMemberCourseMaterialDownloadLink = async (id: string,
+    materialId: string, options?: Parameters<typeof customFetch>[1]): Promise<CourseMaterialDownloadLinkResponse> => {
+
+  return customFetch<CourseMaterialDownloadLinkResponse>(getCreateMemberCourseMaterialDownloadLinkUrl(id,materialId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCreateMemberCourseMaterialDownloadLinkMutationKey = () => ['createMemberCourseMaterialDownloadLink'] as const;
+
+export const getCreateMemberCourseMaterialDownloadLinkMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMemberCourseMaterialDownloadLink>>, TError,CreateMemberCourseMaterialDownloadLinkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createMemberCourseMaterialDownloadLink>>, TError,CreateMemberCourseMaterialDownloadLinkMutationVariables, TContext> => {
+
+const mutationKey = getCreateMemberCourseMaterialDownloadLinkMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMemberCourseMaterialDownloadLink>>, CreateMemberCourseMaterialDownloadLinkMutationVariables> = (props) => {
+          const {id,materialId} = props ?? {};
+
+          return  createMemberCourseMaterialDownloadLink(id,materialId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMemberCourseMaterialDownloadLinkMutationResult = NonNullable<Awaited<ReturnType<typeof createMemberCourseMaterialDownloadLink>>>
+
+    export type CreateMemberCourseMaterialDownloadLinkMutationError = ErrorType<unknown>
+    export type CreateMemberCourseMaterialDownloadLinkMutationVariables = {id: string;materialId: string}
+
+    export const useCreateMemberCourseMaterialDownloadLink = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMemberCourseMaterialDownloadLink>>, TError,CreateMemberCourseMaterialDownloadLinkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createMemberCourseMaterialDownloadLink>>,
+        TError,
+        CreateMemberCourseMaterialDownloadLinkMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateMemberCourseMaterialDownloadLinkMutationOptions(options), queryClient);
+    }
+
+export const getDownloadMemberCourseMaterialUrl = (params: DownloadMemberCourseMaterialParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/member/course-material-download?${stringifiedParams}` : `/api/member/course-material-download`
+}
+
+export const downloadMemberCourseMaterial = async (params: DownloadMemberCourseMaterialParams, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadMemberCourseMaterialUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadMemberCourseMaterialQueryKey = (params?: DownloadMemberCourseMaterialParams,) => {
+    return [
+    `/api/member/course-material-download`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDownloadMemberCourseMaterialQueryOptions = <TData = Awaited<ReturnType<typeof downloadMemberCourseMaterial>>, TError = ErrorType<void>>(params: DownloadMemberCourseMaterialParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMemberCourseMaterial>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadMemberCourseMaterialQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadMemberCourseMaterial>>> = ({ signal }) => downloadMemberCourseMaterial(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadMemberCourseMaterial>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DownloadMemberCourseMaterialQueryResult = NonNullable<Awaited<ReturnType<typeof downloadMemberCourseMaterial>>>
+export type DownloadMemberCourseMaterialQueryError = ErrorType<void>
+
+
+export function useDownloadMemberCourseMaterial<TData = Awaited<ReturnType<typeof downloadMemberCourseMaterial>>, TError = ErrorType<void>>(
+ params: DownloadMemberCourseMaterialParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMemberCourseMaterial>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadMemberCourseMaterial>>,
+          TError,
+          Awaited<ReturnType<typeof downloadMemberCourseMaterial>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadMemberCourseMaterial<TData = Awaited<ReturnType<typeof downloadMemberCourseMaterial>>, TError = ErrorType<void>>(
+ params: DownloadMemberCourseMaterialParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMemberCourseMaterial>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadMemberCourseMaterial>>,
+          TError,
+          Awaited<ReturnType<typeof downloadMemberCourseMaterial>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadMemberCourseMaterial<TData = Awaited<ReturnType<typeof downloadMemberCourseMaterial>>, TError = ErrorType<void>>(
+ params: DownloadMemberCourseMaterialParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMemberCourseMaterial>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useDownloadMemberCourseMaterial<TData = Awaited<ReturnType<typeof downloadMemberCourseMaterial>>, TError = ErrorType<void>>(
+ params: DownloadMemberCourseMaterialParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadMemberCourseMaterial>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDownloadMemberCourseMaterialQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getStreamMemberCoursePlaybackUrl = (params: StreamMemberCoursePlaybackParams,) => {
   const normalizedParams = new URLSearchParams();

@@ -87,6 +87,35 @@ export class ObjectStorageService {
     return { uploadURL, documentPath: `/objects/${objectName}` };
   }
 
+  async createCourseMaterialUpload(courseId: string, materialId: string) {
+    if (!/^[0-9a-f-]{36}$/i.test(courseId) || !/^[0-9a-f-]{36}$/i.test(materialId)) {
+      throw new Error("Invalid course material identifier.");
+    }
+    const objectName = `course-material-uploads/${courseId}/${materialId}.pdf`;
+    const { bucketName, objectName: bucketObjectName } = parseObjectPath(`${this.privateDir()}/${objectName}`);
+    const uploadURL = await signUpload(bucketName, bucketObjectName);
+    return { uploadURL, documentPath: `/objects/${objectName}` };
+  }
+
+  async promoteCourseMaterialUpload(stagingPath: string, courseId: string, materialId: string) {
+    const expectedStagingPath = `/objects/course-material-uploads/${courseId}/${materialId}.pdf`;
+    const finalPath = `/objects/course-materials/${courseId}/${materialId}.pdf`;
+    if (!/^[0-9a-f-]{36}$/i.test(courseId) || !/^[0-9a-f-]{36}$/i.test(materialId)
+        || stagingPath !== expectedStagingPath) {
+      throw new ObjectNotFoundError();
+    }
+    const source = await this.getPrivateFile(stagingPath);
+    const { bucketName, objectName } = parseObjectPath(`${this.privateDir()}/${finalPath.slice("/objects/".length)}`);
+    const destination = objectStorageClient.bucket(bucketName).file(objectName);
+    await source.copy(destination);
+    try {
+      await source.delete({ ignoreNotFound: true });
+    } catch {
+      // The approved copy is immutable to the expired upload URL; cleanup can retry later.
+    }
+    return finalPath;
+  }
+
   async createCorporateAgreementUpload(organizationId: string, versionId: string, uploadId: string) {
     if (!/^[0-9a-f-]{36}$/i.test(organizationId)
       || !/^[0-9a-f-]{36}$/i.test(versionId)

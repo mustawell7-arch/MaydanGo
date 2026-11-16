@@ -1321,6 +1321,51 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CourseLesson" }
+  /operations/courses/{id}/materials:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getOperationCourseMaterials
+      responses:
+        "200":
+          description: Approved course materials visible to authorized content administrators
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetOperationCourseMaterialsResponse" }
+  /operations/courses/{id}/materials/upload-url:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: createCourseMaterialUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CourseMaterialUploadUrlInput" }
+      responses:
+        "200":
+          description: Private upload URL for a PDF course material
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CourseMaterialUploadUrlResponse" }
+  /operations/courses/{id}/materials/{materialId}/complete:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: materialId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: completeCourseMaterialUpload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CourseMaterialUploadCompleteInput" }
+      responses:
+        "201":
+          description: Verified PDF approved and attached to the course
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CourseMaterialAdmin" }
   /operations/instructor-access-requests:
     get:
       operationId: getInstructorAccessRequests
@@ -2036,6 +2081,36 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CoursePlaybackLinkResponse" }
+  /member/courses/{id}/materials/{materialId}/download-link:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: materialId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: createMemberCourseMaterialDownloadLink
+      responses:
+        "200":
+          description: Short-lived PDF download link after membership and enrollment checks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CourseMaterialDownloadLinkResponse" }
+  /member/course-material-download:
+    get:
+      operationId: downloadMemberCourseMaterial
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 2048 }
+      responses:
+        "200":
+          description: Private approved course PDF
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "403": { description: The course material link is invalid or expired }
   /member/course-playback:
     get:
       operationId: streamMemberCoursePlayback
@@ -3914,14 +3989,65 @@ components:
         mediaUrl: { type: ["string", "null"] }
         hasRecording: { type: boolean }
         completed: { type: boolean }
+    CourseMaterial:
+      type: object
+      required: [id, title, fileName, sizeBytes, approvedAt]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string, minLength: 1, maxLength: 160 }
+        fileName: { type: string, minLength: 1, maxLength: 180 }
+        sizeBytes: { type: integer, minimum: 1 }
+        approvedAt: { type: string, format: date-time }
+    CourseMaterialAdmin:
+      allOf:
+        - $ref: "#/components/schemas/CourseMaterial"
+        - type: object
+          required: [approvedBy]
+          properties:
+            approvedBy: { type: string }
+    GetOperationCourseMaterialsResponse:
+      type: object
+      required: [materials]
+      properties:
+        materials:
+          type: array
+          items: { $ref: "#/components/schemas/CourseMaterialAdmin" }
+    CourseMaterialUploadUrlInput:
+      type: object
+      additionalProperties: false
+      required: [fileName]
+      properties:
+        fileName: { type: string, minLength: 1, maxLength: 180 }
+    CourseMaterialUploadUrlResponse:
+      type: object
+      additionalProperties: false
+      required: [id, uploadURL]
+      properties:
+        id: { type: string, format: uuid }
+        uploadURL: { type: string, format: uri }
+    CourseMaterialUploadCompleteInput:
+      type: object
+      additionalProperties: false
+      required: [title, fileName]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 160 }
+        fileName: { type: string, minLength: 1, maxLength: 180 }
+    CourseMaterialDownloadLinkResponse:
+      type: object
+      additionalProperties: false
+      required: [url, validUntil]
+      properties:
+        url: { type: string }
+        validUntil: { type: string, format: date-time }
     CourseDetail:
       allOf:
         - $ref: "#/components/schemas/CourseSummary"
         - type: object
-          required: [accessState, lessons]
+          required: [accessState, lessons, materials]
           properties:
             accessState: { type: string, enum: [membership_required, enrollment_required, ready] }
             lessons: { type: array, items: { $ref: "#/components/schemas/CourseLesson" } }
+            materials: { type: array, items: { $ref: "#/components/schemas/CourseMaterial" } }
     CoursePlaybackLinkResponse:
       type: object
       additionalProperties: false

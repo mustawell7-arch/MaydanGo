@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { eq } from "drizzle-orm";
 import express from "express";
-import { db, courseEnrollments, learningCourses, learningLessons, memberships, pool } from "@workspace/db";
+import { db, courseEnrollments, courseMaterials, learningCourses, learningLessons, memberships, pool } from "@workspace/db";
 import learningRouter, { learningObjectStorage } from "./learning";
 import {
   createCoursePlaybackToken,
@@ -14,10 +14,12 @@ import {
 
 const prefix = `learning-playback-test-${randomUUID()}`;
 const userId = `${prefix}-member`;
-const courseId = `${prefix}-course`;
-const lessonId = `${prefix}-lesson`;
-const enrollmentId = `${prefix}-enrollment`;
+const courseId = randomUUID();
+const lessonId = randomUUID();
+const enrollmentId = randomUUID();
+const materialId = randomUUID();
 const recordingPath = "/objects/course-recordings/test-recording.mp4";
+const materialPath = `/objects/course-materials/${courseId}/${materialId}.pdf`;
 const courseRules = (digitalContentAccess: boolean) => ({
   quota: 12,
   dailyLimit: 2,
@@ -47,12 +49,17 @@ process.env.SESSION_SECRET = "test-only-course-playback-secret";
 
 const bytes = Buffer.from("recording");
 const fakeFile = {
-  getMetadata: async () => [{ size: String(bytes.length) }],
+  getMetadata: async () => [{ size: String(bytes.length), contentType: "video/mp4" }],
   createReadStream: (options?: { start?: number; end?: number }) => {
     const start = options?.start ?? 0;
     const end = options?.end ?? bytes.length - 1;
     return Readable.from(bytes.subarray(start, end + 1));
   },
+};
+const pdfBytes = Buffer.from("%PDF-test");
+const fakePdfFile = {
+  getMetadata: async () => [{ size: String(pdfBytes.length), contentType: "application/pdf" }],
+  createReadStream: () => Readable.from(pdfBytes),
 };
 
 app.use(express.json());
@@ -93,8 +100,9 @@ after(async () => {
 
 test("private course recordings require current membership and enrollment", async () => {
   learningObjectStorage.getPrivateFile = async path => {
-    assert.equal(path, recordingPath);
-    return fakeFile as unknown as Awaited<ReturnType<typeof originalGetPrivateFile>>;
+    if (path === recordingPath) return fakeFile as unknown as Awaited<ReturnType<typeof originalGetPrivateFile>>;
+    if (path === materialPath) return fakePdfFile as unknown as Awaited<ReturnType<typeof originalGetPrivateFile>>;
+    throw new Error("Unexpected private course file.");
   };
   await db.insert(learningCourses).values({
     id: courseId,
@@ -117,6 +125,15 @@ test("private course recordings require current membership and enrollment", asyn
     durationMinutes: 9,
     mediaUrl: recordingPath,
   });
+  await db.insert(courseMaterials).values({
+    id: materialId,
+    courseId,
+    title: "Training plan",
+    fileName: "training-plan.pdf",
+    objectPath: materialPath,
+    sizeBytes: pdfBytes.length,
+    approvedBy: `${prefix}-admin`,
+  });
   await db.insert(memberships).values({
     userId,
     scope: "live",
@@ -133,6 +150,7 @@ test("private course recordings require current membership and enrollment", asyn
   await new Promise<void>(resolve => server!.once("listening", resolve));
   const path = `/api/member/courses/${courseId}/lessons/${lessonId}/playback-link`;
   assert.equal((await call(path, userId, "POST")).response.status, 403);
+  assert.equal((await call(`/api/member/courses/${courseId}/materials/${materialId}/download-link`, userId, "POST")).response.status, 403);
 
   await db.insert(courseEnrollments).values({ id: enrollmentId, userId, courseId });
   const restrictedDetails = await call(`/api/member/courses/${courseId}`, userId);
@@ -141,6 +159,7 @@ test("private course recordings require current membership and enrollment", asyn
   const restrictedLesson = (restrictedDetails.data as { lessons: Array<{ localizedContent: unknown; hasRecording: boolean }> }).lessons[0];
   assert.equal(restrictedLesson.localizedContent, null);
   assert.equal(restrictedLesson.hasRecording, false);
+  assert.equal((restrictedDetails.data as { materials: unknown[] }).materials.length, 0);
   assert.equal((await call(path, userId, "POST")).response.status, 403);
 
   await db.update(memberships).set({ rules: courseRules(true) }).where(eq(memberships.userId, userId));
@@ -150,6 +169,22 @@ test("private course recordings require current membership and enrollment", asyn
   const lesson = (details.data as { lessons: Array<{ mediaUrl: string | null; hasRecording: boolean }> }).lessons[0];
   assert.equal(lesson.mediaUrl, null);
   assert.equal(lesson.hasRecording, true);
+  assert.equal((details.data as { materials: Array<{ id: string; title: string }> }).materials[0]?.title, "Training plan");
+
+  const materialLinkResponse = await call(
+    `/api/member/courses/${courseId}/materials/${materialId}/download-link`,
+    userId,
+    "POST",
+  );
+  assert.equal(materialLinkResponse.response.status, 200);
+  const materialLink = (materialLinkResponse.data as { url: string }).url;
+  assert.match(materialLink, /^\/api\/member\/course-material-download\?token=/);
+  const materialDownloadUrl = new URL(materialLink, `http://127.0.0.1:${(server!.address() as { port: number }).port}`);
+  const downloadedMaterial = await fetch(materialDownloadUrl);
+  assert.equal(downloadedMaterial.status, 200);
+  assert.equal(downloadedMaterial.headers.get("content-type"), "application/pdf");
+  assert.match(downloadedMaterial.headers.get("content-disposition") ?? "", /attachment/);
+  assert.deepEqual(Buffer.from(await downloadedMaterial.arrayBuffer()), pdfBytes);
 
   const linkResponse = await call(path, userId, "POST");
   assert.equal(linkResponse.response.status, 200);
@@ -164,6 +199,7 @@ test("private course recordings require current membership and enrollment", asyn
 
   await db.update(memberships).set({ rules: courseRules(false) }).where(eq(memberships.userId, userId));
   assert.equal((await fetch(playbackUrl)).status, 403, "revoking course access blocks previously issued playback links");
+  assert.equal((await fetch(materialDownloadUrl)).status, 403, "revoking course access blocks previously issued material links");
   await db.update(memberships).set({
     rules: courseRules(true),
     endsAt: new Date(Date.now() - 1000),

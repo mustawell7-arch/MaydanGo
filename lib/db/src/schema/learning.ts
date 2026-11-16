@@ -48,6 +48,19 @@ export const courseEnrollments = pgTable("course_enrollments", {
   index("course_enrollment_user").on(table.userId),
 ]);
 
+export const courseMaterials = pgTable("course_materials", {
+  id: text("id").primaryKey(),
+  courseId: text("course_id").notNull().references(() => learningCourses.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  fileName: text("file_name").notNull(),
+  objectPath: text("object_path").notNull().unique(),
+  sizeBytes: integer("size_bytes").notNull(),
+  approvedBy: text("approved_by").notNull(),
+  approvedAt: timestamp("approved_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  index("course_materials_course").on(table.courseId),
+]);
+
 export const lessonProgress = pgTable("lesson_progress", {
   id: text("id").primaryKey(),
   enrollmentId: text("enrollment_id").notNull().references(() => courseEnrollments.id, { onDelete: "cascade" }),

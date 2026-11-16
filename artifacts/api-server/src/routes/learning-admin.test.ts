@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { inArray } from "drizzle-orm";
 import express from "express";
 import { db, learningCourses, operators, partners, pool } from "@workspace/db";
-import operationsRouter from "./operations";
+import operationsRouter, { operationsObjectStorage } from "./operations";
 
 const prefix = `learning-admin-test-${randomUUID()}`;
 const adminUserId = `${prefix}-admin`;
@@ -14,6 +14,12 @@ const partnerUserId = `${prefix}-partner`;
 const partnerId = `${prefix}-partner-record`;
 let server: Server | null = null;
 let courseIds: string[] = [];
+const originalCreateCourseMaterialUpload = operationsObjectStorage.createCourseMaterialUpload.bind(operationsObjectStorage);
+const originalGetPrivateFile = operationsObjectStorage.getPrivateFile.bind(operationsObjectStorage);
+const originalPromoteCourseMaterialUpload = operationsObjectStorage.promoteCourseMaterialUpload.bind(operationsObjectStorage);
+const fakePdf = {
+  getMetadata: async () => [{ size: "8", contentType: "application/pdf" }],
+};
 
 const app = express();
 app.use(express.json());
@@ -64,6 +70,9 @@ const courseMetadata = (published: boolean) => ({
 
 after(async () => {
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
+  operationsObjectStorage.createCourseMaterialUpload = originalCreateCourseMaterialUpload;
+  operationsObjectStorage.getPrivateFile = originalGetPrivateFile;
+  operationsObjectStorage.promoteCourseMaterialUpload = originalPromoteCourseMaterialUpload;
   if (courseIds.length) await db.delete(learningCourses).where(
     inArray(learningCourses.id, courseIds),
   );
@@ -77,6 +86,16 @@ after(async () => {
 });
 
 test("only administrators can list, edit, publish, or add lessons to courses", async () => {
+  operationsObjectStorage.createCourseMaterialUpload = async (courseId, materialId) => ({
+    uploadURL: `https://upload.example.test/${materialId}`,
+    documentPath: `/objects/course-material-uploads/${courseId}/${materialId}.pdf`,
+  });
+  operationsObjectStorage.getPrivateFile = async path => {
+    assert.match(path, /^\/objects\/course-material-uploads\/[0-9a-f-]+\/[0-9a-f-]+\.pdf$/i);
+    return fakePdf as unknown as Awaited<ReturnType<typeof originalGetPrivateFile>>;
+  };
+  operationsObjectStorage.promoteCourseMaterialUpload = async (_stagingPath, courseId, materialId) =>
+    `/objects/course-materials/${courseId}/${materialId}.pdf`;
   await db.insert(partners).values({
     id: partnerId,
     name: prefix,
@@ -120,6 +139,33 @@ test("only administrators can list, edit, publish, or add lessons to courses", a
   assert.deepEqual(course.courseLanguages, ["en", "ar", "ku"]);
   assert.deepEqual(course.subtitleLanguages, []);
   assert.equal(course.requiredEquipment.en, "A mat");
+
+  assert.equal((await call(`/operations/courses/${course.id}/materials`, financeUserId)).status, 403);
+  assert.equal((await call(`/operations/courses/${course.id}/materials/upload-url`, adminUserId, "POST", {
+    fileName: "guide.txt",
+  })).status, 400);
+  const uploadRequest = await call(`/operations/courses/${course.id}/materials/upload-url`, adminUserId, "POST", {
+    fileName: "beginner-plan.pdf",
+  });
+  assert.equal(uploadRequest.status, 200);
+  const upload = uploadRequest.data as { id: string; uploadURL: string };
+  assert.match(upload.uploadURL, /^https:\/\/upload\.example\.test\//);
+  const materialComplete = await call(
+    `/operations/courses/${course.id}/materials/${upload.id}/complete`,
+    adminUserId,
+    "POST",
+    { title: "Beginner plan", fileName: "beginner-plan.pdf" },
+  );
+  assert.equal(materialComplete.status, 201);
+  const materialsListing = await call(`/operations/courses/${course.id}/materials`, adminUserId);
+  assert.equal(
+    (materialsListing.data as { materials: Array<{ title: string; approvedBy: string }> }).materials[0]?.title,
+    "Beginner plan",
+  );
+  assert.equal(
+    (materialsListing.data as { materials: Array<{ title: string; approvedBy: string }> }).materials[0]?.approvedBy,
+    adminUserId,
+  );
 
   const listing = await call("/operations/courses", adminUserId);
   assert.equal(listing.status, 200);
