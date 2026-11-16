@@ -2081,6 +2081,41 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CoursePlaybackLinkResponse" }
+  /member/courses/{id}/lessons/{lessonId}/view:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: lessonId
+        in: path
+        required: true
+        schema: { type: string, minLength: 1 }
+    post:
+      operationId: recordMemberCourseLessonView
+      responses:
+        "200":
+          description: Lesson view and course last-access time recorded for the enrolled member
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecordCourseLessonViewResponse" }
+  /member/courses/{id}/lessons/{lessonId}/playback-progress:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: lessonId
+        in: path
+        required: true
+        schema: { type: string, minLength: 1 }
+    put:
+      operationId: updateMemberCoursePlaybackProgress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CoursePlaybackProgressInput" }
+      responses:
+        "200":
+          description: Playback position saved to the enrolled member account
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CoursePlaybackProgressResponse" }
   /member/courses/{id}/materials/{materialId}/download-link:
     parameters:
       - { $ref: "#/components/parameters/Id" }
@@ -2623,16 +2658,30 @@ components:
       properties:
         title: { type: string }
         completedAt: { type: string, format: date-time }
+    MemberDataExportViewedLesson:
+      type: object
+      additionalProperties: false
+      required: [title, firstViewedAt, lastViewedAt, playbackPositionSeconds, durationSeconds]
+      properties:
+        title: { type: string }
+        firstViewedAt: { type: string, format: date-time }
+        lastViewedAt: { type: string, format: date-time }
+        playbackPositionSeconds: { type: integer, minimum: 0 }
+        durationSeconds: { type: ["integer", "null"], minimum: 1 }
     MemberDataExportCourse:
       type: object
       additionalProperties: false
-      required: [title, enrolledAt, completedLessons]
+      required: [title, enrolledAt, lastAccessAt, completedLessons, viewedLessons]
       properties:
         title: { type: string }
         enrolledAt: { type: string, format: date-time }
+        lastAccessAt: { type: ["string", "null"], format: date-time }
         completedLessons:
           type: array
           items: { $ref: "#/components/schemas/MemberDataExportCompletedLesson" }
+        viewedLessons:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportViewedLesson" }
     MemberDataExportReviewRatings:
       type: object
       additionalProperties: false
@@ -3976,7 +4025,7 @@ components:
             completedLessons: { type: integer }
     CourseLesson:
       type: object
-      required: [id, position, localizedTitle, localizedContent, durationMinutes, mediaUrl, hasRecording, completed]
+      required: [id, position, localizedTitle, localizedContent, durationMinutes, mediaUrl, hasRecording, recordingKind, completed, viewed, playbackPositionSeconds, durationSeconds]
       properties:
         id: { type: string }
         position: { type: integer }
@@ -3988,7 +4037,36 @@ components:
         durationMinutes: { type: integer }
         mediaUrl: { type: ["string", "null"] }
         hasRecording: { type: boolean }
+        recordingKind: { type: ["string", "null"], enum: [audio, video, null] }
         completed: { type: boolean }
+        viewed: { type: boolean }
+        playbackPositionSeconds: { type: integer, minimum: 0 }
+        durationSeconds: { type: ["integer", "null"], minimum: 1 }
+    CoursePlaybackProgressInput:
+      type: object
+      additionalProperties: false
+      required: [positionSeconds, durationSeconds]
+      properties:
+        positionSeconds: { type: integer, minimum: 0, maximum: 86400 }
+        durationSeconds: { type: integer, minimum: 1, maximum: 86400 }
+    CoursePlaybackProgressResponse:
+      type: object
+      additionalProperties: false
+      required: [lessonId, positionSeconds, durationSeconds, lastAccessAt]
+      properties:
+        lessonId: { type: string }
+        positionSeconds: { type: integer, minimum: 0 }
+        durationSeconds: { type: integer, minimum: 1 }
+        lastAccessAt: { type: string, format: date-time }
+    RecordCourseLessonViewResponse:
+      type: object
+      additionalProperties: false
+      required: [lessonId, firstViewedAt, lastViewedAt, lastAccessAt]
+      properties:
+        lessonId: { type: string }
+        firstViewedAt: { type: string, format: date-time }
+        lastViewedAt: { type: string, format: date-time }
+        lastAccessAt: { type: string, format: date-time }
     CourseMaterial:
       type: object
       required: [id, title, fileName, sizeBytes, approvedAt]
@@ -4043,11 +4121,12 @@ components:
       allOf:
         - $ref: "#/components/schemas/CourseSummary"
         - type: object
-          required: [accessState, lessons, materials]
+          required: [accessState, lessons, materials, lastAccessAt]
           properties:
             accessState: { type: string, enum: [membership_required, enrollment_required, ready] }
             lessons: { type: array, items: { $ref: "#/components/schemas/CourseLesson" } }
             materials: { type: array, items: { $ref: "#/components/schemas/CourseMaterial" } }
+            lastAccessAt: { type: [string, "null"], format: date-time }
     CoursePlaybackLinkResponse:
       type: object
       additionalProperties: false

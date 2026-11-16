@@ -5,11 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { ScreenShell } from '@/components/ScreenShell';
+import CoursePlayer from '@/components/CoursePlayer';
 import {
   getGetMemberCourseQueryKey, getGetMemberCoursesQueryKey,
   useCreateMemberCourseMaterialDownloadLink, useCreateMemberCoursePlaybackLink,
-  useEnrollMemberCourse, useGetMemberCourse, useUpdateCourseProgress,
+  useEnrollMemberCourse, useGetMemberCourse, useRecordMemberCourseLessonView,
+  useUpdateCourseProgress, useUpdateMemberCoursePlaybackProgress,
 } from '@workspace/api-client-react';
+import type { CourseDetail } from '@workspace/api-client-react';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { translate, type MessageKey } from '@/lib/i18n';
@@ -25,18 +28,41 @@ export default function CourseDetailScreen() {
   const enrollMutation = useEnrollMemberCourse();
   const progressMutation = useUpdateCourseProgress();
   const playbackLinkMutation = useCreateMemberCoursePlaybackLink();
+  const playbackProgressMutation = useUpdateMemberCoursePlaybackProgress();
   const materialDownloadMutation = useCreateMemberCourseMaterialDownloadLink();
+  const lessonViewMutation = useRecordMemberCourseLessonView();
+  const [activePlayback, setActivePlayback] = useState<{
+    lessonId: string;
+    url: string;
+    kind: 'audio' | 'video';
+    initialPositionSeconds: number;
+  } | null>(null);
+  const savedPlaybackPositions = useRef(new Map<string, { positionSeconds: number; durationSeconds: number }>());
+  const lastPlaybackSaveAt = useRef(new Map<string, number>());
   const [openLesson, setOpenLesson] = useState<string | null>(null);
   const resumedCourseId = useRef<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const t = (key: MessageKey) => translate(app.language, key);
   const align = app.language === 'en' ? 'left' : 'right';
+  const recordLessonView = async (lessonId: string) => {
+    if (!course) return;
+    try {
+      await lessonViewMutation.mutateAsync({ id: course.id, lessonId });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetMemberCourseQueryKey(course.id) }),
+        queryClient.invalidateQueries({ queryKey: getGetMemberCoursesQueryKey() }),
+      ]);
+    } catch (error) { setMessage(errorCopy(error)); }
+  };
   useEffect(() => {
     if (resume !== '1' || !course || course.accessState !== 'ready' || resumedCourseId.current === course.id) return;
     resumedCourseId.current = course.id;
     const nextLesson = course.lessons.find((lesson) => !lesson.completed);
-    if (nextLesson) setOpenLesson(nextLesson.id);
-  }, [course, resume]);
+    if (nextLesson) {
+      setOpenLesson(nextLesson.id);
+      void recordLessonView(nextLesson.id);
+    }
+  }, [course, recordLessonView, resume]);
   const courseLanguageNames = {
     en: t('languageEnglish'),
     ar: t('languageArabic'),
@@ -88,13 +114,61 @@ export default function CourseDetailScreen() {
       ]);
     } catch (error) { setMessage(errorCopy(error)); }
   };
-  const openRecording = async (lessonId: string) => {
+  const savePlaybackPosition = (
+    lessonId: string,
+    positionSeconds: number,
+    durationSeconds: number,
+    force: boolean,
+  ) => {
+    if (!course || !Number.isSafeInteger(positionSeconds) || !Number.isSafeInteger(durationSeconds) || durationSeconds < 1) return;
+    const boundedPosition = Math.max(0, Math.min(positionSeconds, durationSeconds));
+    savedPlaybackPositions.current.set(lessonId, { positionSeconds: boundedPosition, durationSeconds });
+    const now = Date.now();
+    if (!force && now - (lastPlaybackSaveAt.current.get(lessonId) ?? 0) < 4500) return;
+    lastPlaybackSaveAt.current.set(lessonId, now);
+    playbackProgressMutation.mutate({
+      id: course.id,
+      lessonId,
+      data: { positionSeconds: boundedPosition, durationSeconds },
+    }, {
+      onSuccess: saved => {
+        queryClient.setQueryData<CourseDetail>(getGetMemberCourseQueryKey(course.id), current => current ? {
+          ...current,
+          lastAccessAt: saved.lastAccessAt,
+          lessons: current.lessons.map(lesson => lesson.id === lessonId ? {
+            ...lesson,
+            playbackPositionSeconds: saved.positionSeconds,
+            durationSeconds: saved.durationSeconds,
+          } : lesson),
+        } : current);
+      },
+      onError: error => setMessage(errorCopy(error)),
+    });
+  };
+  const closeRecording = () => {
+    if (activePlayback) {
+      const latest = savedPlaybackPositions.current.get(activePlayback.lessonId);
+      if (latest) savePlaybackPosition(activePlayback.lessonId, latest.positionSeconds, latest.durationSeconds, true);
+    }
+    setActivePlayback(null);
+  };
+  const openRecording = async (lessonId: string, savedPositionSeconds: number, kind: 'audio' | 'video') => {
+    if (activePlayback?.lessonId === lessonId) {
+      closeRecording();
+      return;
+    }
     try {
       const playback = await playbackLinkMutation.mutateAsync({ id: course.id, lessonId });
       const domain = process.env.EXPO_PUBLIC_DOMAIN;
       if (!domain) throw new Error('Course playback is unavailable. Try again later.');
       const baseUrl = domain.startsWith('http') ? domain : `https://${domain}`;
-      await Linking.openURL(new URL(playback.url, baseUrl).toString());
+      const saved = savedPlaybackPositions.current.get(lessonId)?.positionSeconds ?? savedPositionSeconds;
+      setActivePlayback({
+        lessonId,
+        url: new URL(playback.url, baseUrl).toString(),
+        kind,
+        initialPositionSeconds: saved,
+      });
     } catch (error) { setMessage(errorCopy(error)); }
   };
   const downloadMaterial = async (materialId: string) => {
@@ -195,6 +269,9 @@ export default function CourseDetailScreen() {
               <View style={[styles.track, { backgroundColor: colors.card }]}>
                 <View style={[styles.fill, { width: `${pct}%`, backgroundColor: colors.primary }]} />
               </View>
+              <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align }]}>
+                {course.lessons.filter(lesson => lesson.viewed).length}/{course.lessonCount} {t('lessonsViewed')}
+              </Text>
             </View>
           ) : null}
           {course.accessState === 'membership_required' ? (
@@ -218,16 +295,23 @@ export default function CourseDetailScreen() {
             return (
               <View key={lesson.id} style={[styles.lesson, { backgroundColor: colors.card, borderColor: done ? colors.primary : colors.border }]}>
                 <Pressable
+                  testID={`button-course-lesson-${lesson.id}`}
                   accessibilityRole="button"
                   accessibilityState={{ expanded: open }}
-                  onPress={() => setOpenLesson(open ? null : lesson.id)}
+                  onPress={() => {
+                    if (open) setOpenLesson(null);
+                    else {
+                      setOpenLesson(lesson.id);
+                      if (ready) void recordLessonView(lesson.id);
+                    }
+                  }}
                   style={styles.lessonHead}
                 >
                   <View style={[styles.lessonNum, { backgroundColor: done ? colors.primary : colors.secondary }]}>
                     {done ? <Ionicons name="checkmark" size={15} color={colors.primaryForeground} /> : <Text style={[styles.lessonNumText, { color: colors.primary }]}>{index + 1}</Text>}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.lessonKicker, { color: colors.mutedForeground, textAlign: align }]}>{t('lessonWord')} {lesson.position ?? index + 1} · {lesson.durationMinutes} {t('minutesShort')}</Text>
+                    <Text style={[styles.lessonKicker, { color: colors.mutedForeground, textAlign: align }]}>{t('lessonWord')} {lesson.position ?? index + 1} · {lesson.durationMinutes} {t('minutesShort')}{lesson.viewed ? ` · ${t('lessonViewed')}` : ''}</Text>
                     <Text style={[styles.lessonTitle, { color: colors.foreground, textAlign: align }]}>{lesson.localizedTitle[app.language] || lesson.localizedTitle.en}</Text>
                   </View>
                   <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={17} color={colors.mutedForeground} />
@@ -237,12 +321,35 @@ export default function CourseDetailScreen() {
                     {ready && lesson.localizedContent ? <Text style={[styles.lessonText, { color: colors.foreground, textAlign: align }]}>{lesson.localizedContent[app.language] || lesson.localizedContent.en}</Text>
                       : <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align }]}>{t(course.accessState === 'membership_required' ? 'membershipRequired' : 'enrollmentRequired')}</Text>}
                     {ready && lesson.hasRecording ? (
-                      <Pressable accessibilityRole="button" disabled={playbackLinkMutation.isPending}
-                        onPress={() => void openRecording(lesson.id)}
-                        style={[styles.doneButton, { backgroundColor: colors.accent }, playbackLinkMutation.isPending && { opacity: 0.6 }]}>
-                        <Ionicons name="play-circle-outline" size={17} color={colors.accentForeground} />
-                        <Text style={[styles.doneText, { color: colors.accentForeground }]}>{t('viewCourse')}</Text>
-                      </Pressable>
+                      <View style={{ marginTop: 10 }}>
+                        <Pressable
+                          testID={`button-course-recording-${lesson.id}`}
+                          accessibilityRole="button"
+                          disabled={playbackLinkMutation.isPending && activePlayback?.lessonId !== lesson.id}
+                          onPress={() => void openRecording(lesson.id, lesson.playbackPositionSeconds, lesson.recordingKind ?? 'video')}
+                          style={[styles.doneButton, { backgroundColor: colors.accent }, playbackLinkMutation.isPending && activePlayback?.lessonId !== lesson.id && { opacity: 0.6 }]}
+                        >
+                          <Ionicons name={activePlayback?.lessonId === lesson.id ? 'close-circle-outline' : 'play-circle-outline'} size={17} color={colors.accentForeground} />
+                          <Text style={[styles.doneText, { color: colors.accentForeground }]}>
+                            {activePlayback?.lessonId === lesson.id
+                              ? t('closeRecording')
+                              : lesson.playbackPositionSeconds > 0 && lesson.durationSeconds != null && lesson.playbackPositionSeconds < lesson.durationSeconds - 2
+                                ? t('resumeRecording')
+                                : t('playRecording')}
+                          </Text>
+                        </Pressable>
+                        {activePlayback?.lessonId === lesson.id ? (
+                          <View style={{ marginTop: 10 }}>
+                            <CoursePlayer
+                              key={lesson.id}
+                              sourceUrl={activePlayback.url}
+                              initialPositionSeconds={activePlayback.initialPositionSeconds}
+                              kind={activePlayback.kind}
+                              onProgress={(position, duration, force) => savePlaybackPosition(lesson.id, position, duration, force)}
+                            />
+                          </View>
+                        ) : null}
+                      </View>
                     ) : null}
                     {ready ? (
                       <Pressable

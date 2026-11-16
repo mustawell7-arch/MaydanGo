@@ -7,6 +7,7 @@ import {
   facilityReviews,
   learningCourses,
   learningLessons,
+  lessonAccess,
   lessonProgress,
   memberNotificationPreferences,
   memberProfiles,
@@ -88,6 +89,7 @@ export async function createMemberDataExport(userId: string) {
       id: courseEnrollments.id,
       title: learningCourses.title,
       enrolledAt: courseEnrollments.enrolledAt,
+      lastAccessAt: courseEnrollments.lastAccessAt,
     }).from(courseEnrollments)
       .innerJoin(learningCourses, eq(courseEnrollments.courseId, learningCourses.id))
       .where(eq(courseEnrollments.userId, userId))
@@ -131,6 +133,19 @@ export async function createMemberDataExport(userId: string) {
       .where(inArray(lessonProgress.enrollmentId, enrollmentIds))
       .orderBy(asc(lessonProgress.completedAt))
     : [];
+  const lessonAccessRows = enrollmentIds.length
+    ? await db.select({
+      enrollmentId: lessonAccess.enrollmentId,
+      title: learningLessons.localizedTitle,
+      firstViewedAt: lessonAccess.firstViewedAt,
+      lastViewedAt: lessonAccess.lastViewedAt,
+      playbackPositionSeconds: lessonAccess.playbackPositionSeconds,
+      durationSeconds: lessonAccess.durationSeconds,
+    }).from(lessonAccess)
+      .innerJoin(learningLessons, eq(lessonAccess.lessonId, learningLessons.id))
+      .where(inArray(lessonAccess.enrollmentId, enrollmentIds))
+      .orderBy(asc(lessonAccess.lastViewedAt))
+    : [];
 
   const completedLessons = new Map<string, { title: string; completedAt: Date }[]>();
   for (const row of progressRows) {
@@ -140,6 +155,24 @@ export async function createMemberDataExport(userId: string) {
       completedAt: row.completedAt,
     });
     completedLessons.set(row.enrollmentId, lessons);
+  }
+  const viewedLessons = new Map<string, Array<{
+    title: string;
+    firstViewedAt: Date;
+    lastViewedAt: Date;
+    playbackPositionSeconds: number;
+    durationSeconds: number | null;
+  }>>();
+  for (const row of lessonAccessRows) {
+    const lessons = viewedLessons.get(row.enrollmentId) ?? [];
+    lessons.push({
+      title: row.title.en,
+      firstViewedAt: row.firstViewedAt,
+      lastViewedAt: row.lastViewedAt,
+      playbackPositionSeconds: row.playbackPositionSeconds,
+      durationSeconds: row.durationSeconds,
+    });
+    viewedLessons.set(row.enrollmentId, lessons);
   }
 
   return GetMemberPrivacyRequestExportResponse.parse({
@@ -159,7 +192,9 @@ export async function createMemberDataExport(userId: string) {
     courses: enrollmentRows.map(row => ({
       title: row.title,
       enrolledAt: row.enrolledAt,
+      lastAccessAt: row.lastAccessAt,
       completedLessons: completedLessons.get(row.id) ?? [],
+      viewedLessons: viewedLessons.get(row.id) ?? [],
     })),
     reviews: reviewRows,
     privacyRequests: privacyRows.map(row => ({

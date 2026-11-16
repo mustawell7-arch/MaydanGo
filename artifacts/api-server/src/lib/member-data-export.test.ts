@@ -28,7 +28,19 @@ test("member export response contains only the declared, non-secret fields", () 
     bookings: [],
     waitlist: [],
     attendance: [],
-    courses: [],
+    courses: [{
+      title: "Movement basics",
+      enrolledAt: now,
+      lastAccessAt: now,
+      completedLessons: [],
+      viewedLessons: [{
+        title: "Warm-up",
+        firstViewedAt: now,
+        lastViewedAt: now,
+        playbackPositionSeconds: 45,
+        durationSeconds: 600,
+      }],
+    }],
     reviews: [],
     privacyRequests: [],
     notificationPreferences: null,
@@ -45,6 +57,7 @@ test("member export response contains only the declared, non-secret fields", () 
   assert.equal("passwordHash" in parsed.account, false);
   assert.equal("billingId" in parsed.memberships[0], false);
   assert.equal("rules" in parsed.memberships[0], false);
+  assert.equal(parsed.courses[0]?.viewedLessons[0]?.playbackPositionSeconds, 45);
   assert.deepEqual(parsed.excludedData, [
     "payment_instrument_details",
     "login_credentials",

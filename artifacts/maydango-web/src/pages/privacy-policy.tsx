@@ -25,7 +25,7 @@ const privacyCopy: Record<Language, {
         id: 'information',
         title: 'Information MaydanGo handles',
         paragraphs: [
-          'Depending on the features you use, this may include account name and email, basic profile and eligibility details, membership status, reservations, waitlist activity, check-ins, attendance, course enrolment and progress, and support or safety reports you choose to submit.',
+          'Depending on the features you use, this may include account name and email, basic profile and eligibility details, membership status, reservations, waitlist activity, check-ins, attendance, course enrolment and progress, and support or safety reports you choose to submit. For enrolled courses, progress includes lessons you open and the last saved playback position, so you can resume later.',
           'The mobile app may use your device location when you start a location-based check-in. It is used to support that check-in, not to continuously follow your movements.',
           'When you use a feature that needs a device notification, the app may store a device token and notification settings so it can deliver relevant service messages.',
         ],
@@ -118,7 +118,7 @@ const privacyCopy: Record<Language, {
         id: 'information',
         title: 'المعلومات التي تتعامل معها MaydanGo',
         paragraphs: [
-          'بحسب الميزات التي تستخدمها، قد تشمل المعلومات اسم الحساب والبريد الإلكتروني وتفاصيل الملف الشخصي والأهلية وحالة العضوية والحجوزات وقائمة الانتظار وتسجيلات الحضور والتقدم في الدورات وبلاغات الدعم أو السلامة التي تختار إرسالها.',
+          'بحسب الميزات التي تستخدمها، قد تشمل المعلومات اسم الحساب والبريد الإلكتروني وتفاصيل الملف الشخصي والأهلية وحالة العضوية والحجوزات وقائمة الانتظار وتسجيلات الحضور والتقدم في الدورات وبلاغات الدعم أو السلامة التي تختار إرسالها. ويشمل التقدم في الدورات المسجّل فيها الدروس التي تفتحها وآخر موضع محفوظ للتشغيل كي تتمكن من المتابعة لاحقاً.',
           'قد يستخدم تطبيق الهاتف موقع جهازك عند بدء تسجيل حضور يعتمد على الموقع. يُستخدم ذلك لدعم تسجيل الحضور، وليس لتتبع تحركاتك باستمرار.',
           'عند استخدام ميزة تحتاج إلى إشعارات، قد يخزّن التطبيق رمز الجهاز وإعدادات الإشعارات لإرسال رسائل الخدمة المناسبة.',
         ],
@@ -211,7 +211,7 @@ const privacyCopy: Record<Language, {
         id: 'information',
         title: 'زانیارییەکانی MaydanGo',
         paragraphs: [
-          'بەپێی ئەو تایبەتمەندییانەی بەکاریان دەهێنیت، زانیارییەکان لەوانەیە ناوی هەژمار و ئیمەیڵ، وردەکاریی پڕۆفایل و شایستەیی، دۆخی ئەندامێتی، حجز، لیستی چاوەڕوانی، تۆماری حزوور، پێشکەوتنی کۆرس، و ڕاپۆرتی پشتگیری یان سەلامەتی بگرێتەوە کە خۆت دەنێریت.',
+          'بەپێی ئەو تایبەتمەندییانەی بەکاریان دەهێنیت، زانیارییەکان لەوانەیە ناوی هەژمار و ئیمەیڵ، وردەکاریی پڕۆفایل و شایستەیی، دۆخی ئەندامێتی، حجز، لیستی چاوەڕوانی، تۆماری حزوور، پێشکەوتنی کۆرس، و ڕاپۆرتی پشتگیری یان سەلامەتی بگرێتەوە کە خۆت دەنێریت. لە کۆرسەکانی تۆمارکراویتدا، پێشکەوتن ئەو وانانە دەگرێتەوە کە دەیکەیتەوە و دوا شوێنی پەخشکردنی پاشەکەوتکراو، بۆ ئەوەی دواتر لەوێوە بەردەوام بیت.',
           'ئەپی مۆبایل لەوانەیە کاتی دەستپێکردنی حزووری پشتبەستوو بە شوێن، شوێنی ئامێرەکەت بەکاربهێنێت. ئەمە بۆ پشتگیریی تۆمارکردنی حزوورە، نەک بۆ بەدواداچوونی بەردەوامی جووڵەکانت.',
           'کاتێک تایبەتمەندییەک پێویستی بە ئاگادارکردنەوە هەیە، ئەپەکە لەوانەیە تۆکنی ئامێر و ڕێکخستنەکانی ئاگادارکردنەوە هەڵبگرێت بۆ ناردنی پەیامی پەیوەندیدار بە خزمەتگوزاری.',
         ],

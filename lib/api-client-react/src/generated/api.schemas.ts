@@ -916,10 +916,26 @@ export interface MemberDataExportCompletedLesson {
   completedAt: string;
 }
 
+export interface MemberDataExportViewedLesson {
+  title: string;
+  firstViewedAt: string;
+  lastViewedAt: string;
+  /** @minimum 0 */
+  playbackPositionSeconds: number;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  durationSeconds: number | null;
+}
+
 export interface MemberDataExportCourse {
   title: string;
   enrolledAt: string;
+  /** @nullable */
+  lastAccessAt: string | null;
   completedLessons: MemberDataExportCompletedLesson[];
+  viewedLessons: MemberDataExportViewedLesson[];
 }
 
 export interface MemberDataExportReviewRatings {
@@ -2777,6 +2793,17 @@ export type CourseSummary = CourseMetadataInput & {
   completedLessons: number;
 };
 
+/**
+ * @nullable
+ */
+export type CourseLessonRecordingKind = typeof CourseLessonRecordingKind[keyof typeof CourseLessonRecordingKind] | null;
+
+
+export const CourseLessonRecordingKind = {
+  audio: 'audio',
+  video: 'video',
+} as const;
+
 export interface CourseLesson {
   id: string;
   position: number;
@@ -2786,7 +2813,46 @@ export interface CourseLesson {
   /** @nullable */
   mediaUrl: string | null;
   hasRecording: boolean;
+  /** @nullable */
+  recordingKind: CourseLessonRecordingKind;
   completed: boolean;
+  viewed: boolean;
+  /** @minimum 0 */
+  playbackPositionSeconds: number;
+  /**
+     * @minimum 1
+     * @nullable
+     */
+  durationSeconds: number | null;
+}
+
+export interface CoursePlaybackProgressInput {
+  /**
+     * @minimum 0
+     * @maximum 86400
+     */
+  positionSeconds: number;
+  /**
+     * @minimum 1
+     * @maximum 86400
+     */
+  durationSeconds: number;
+}
+
+export interface CoursePlaybackProgressResponse {
+  lessonId: string;
+  /** @minimum 0 */
+  positionSeconds: number;
+  /** @minimum 1 */
+  durationSeconds: number;
+  lastAccessAt: string;
+}
+
+export interface RecordCourseLessonViewResponse {
+  lessonId: string;
+  firstViewedAt: string;
+  lastViewedAt: string;
+  lastAccessAt: string;
 }
 
 export interface CourseMaterial {
@@ -2854,11 +2920,13 @@ export const CourseDetailAccessState = {
   ready: 'ready',
 } as const;
 
-export type CourseDetail = CourseSummary & {
+export type CourseDetail = CourseSummary & ({
   accessState: CourseDetailAccessState;
   lessons: CourseLesson[];
   materials: CourseMaterial[];
-};
+  /** @nullable */
+  lastAccessAt: string | null;
+});
 
 export interface CoursePlaybackLinkResponse {
   url: string;

@@ -3644,6 +3644,9 @@ export const addLearningLessonResponseLocalizedContentOneArMax = 240;
 
 export const addLearningLessonResponseLocalizedContentOneKuMax = 240;
 
+export const addLearningLessonResponsePlaybackPositionSecondsMin = 0;
+
+
 
 
 export const AddLearningLessonResponse = zod.object({
@@ -3662,7 +3665,11 @@ export const AddLearningLessonResponse = zod.object({
   "durationMinutes": zod.int(),
   "mediaUrl": zod.string().nullable(),
   "hasRecording": zod.boolean(),
-  "completed": zod.boolean()
+  "recordingKind": zod.union([zod.literal('audio'),zod.literal('video'),zod.literal(null)]).nullable(),
+  "completed": zod.boolean(),
+  "viewed": zod.boolean(),
+  "playbackPositionSeconds": zod.int().min(addLearningLessonResponsePlaybackPositionSecondsMin),
+  "durationSeconds": zod.int().min(1).nullable()
 })
 
 
@@ -6763,6 +6770,11 @@ export const GetMemberPrivacyRequestExportParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const getMemberPrivacyRequestExportResponseCoursesItemViewedLessonsItemPlaybackPositionSecondsMin = 0;
+
+
+
+
 export const GetMemberPrivacyRequestExportResponse = zod.object({
   "formatVersion": zod.enum(['1.0']),
   "generatedAt": zod.coerce.date(),
@@ -6819,9 +6831,17 @@ export const GetMemberPrivacyRequestExportResponse = zod.object({
   "courses": zod.array(zod.object({
   "title": zod.string(),
   "enrolledAt": zod.coerce.date(),
+  "lastAccessAt": zod.coerce.date().nullable(),
   "completedLessons": zod.array(zod.object({
   "title": zod.string(),
   "completedAt": zod.coerce.date()
+})),
+  "viewedLessons": zod.array(zod.object({
+  "title": zod.string(),
+  "firstViewedAt": zod.coerce.date(),
+  "lastViewedAt": zod.coerce.date(),
+  "playbackPositionSeconds": zod.int().min(getMemberPrivacyRequestExportResponseCoursesItemViewedLessonsItemPlaybackPositionSecondsMin),
+  "durationSeconds": zod.int().min(1).nullable()
 }))
 })),
   "reviews": zod.array(zod.object({
@@ -7054,6 +7074,9 @@ export const getMemberCourseResponseTwoLessonsItemLocalizedContentOneArMax = 240
 
 export const getMemberCourseResponseTwoLessonsItemLocalizedContentOneKuMax = 240;
 
+export const getMemberCourseResponseTwoLessonsItemPlaybackPositionSecondsMin = 0;
+
+
 export const getMemberCourseResponseTwoMaterialsItemTitleMax = 160;
 
 export const getMemberCourseResponseTwoMaterialsItemFileNameMax = 180;
@@ -7123,7 +7146,11 @@ export const GetMemberCourseResponse = zod.object({
   "durationMinutes": zod.int(),
   "mediaUrl": zod.string().nullable(),
   "hasRecording": zod.boolean(),
-  "completed": zod.boolean()
+  "recordingKind": zod.union([zod.literal('audio'),zod.literal('video'),zod.literal(null)]).nullable(),
+  "completed": zod.boolean(),
+  "viewed": zod.boolean(),
+  "playbackPositionSeconds": zod.int().min(getMemberCourseResponseTwoLessonsItemPlaybackPositionSecondsMin),
+  "durationSeconds": zod.int().min(1).nullable()
 })),
   "materials": zod.array(zod.object({
   "id": zod.uuid(),
@@ -7131,7 +7158,8 @@ export const GetMemberCourseResponse = zod.object({
   "fileName": zod.string().min(1).max(getMemberCourseResponseTwoMaterialsItemFileNameMax),
   "sizeBytes": zod.int().min(1),
   "approvedAt": zod.coerce.date()
-}))
+})),
+  "lastAccessAt": zod.coerce.date().nullable()
 }))
 
 
@@ -7194,6 +7222,9 @@ export const enrollMemberCourseResponseTwoLessonsItemLocalizedContentOneEnMax = 
 export const enrollMemberCourseResponseTwoLessonsItemLocalizedContentOneArMax = 240;
 
 export const enrollMemberCourseResponseTwoLessonsItemLocalizedContentOneKuMax = 240;
+
+export const enrollMemberCourseResponseTwoLessonsItemPlaybackPositionSecondsMin = 0;
+
 
 export const enrollMemberCourseResponseTwoMaterialsItemTitleMax = 160;
 
@@ -7264,7 +7295,11 @@ export const EnrollMemberCourseResponse = zod.object({
   "durationMinutes": zod.int(),
   "mediaUrl": zod.string().nullable(),
   "hasRecording": zod.boolean(),
-  "completed": zod.boolean()
+  "recordingKind": zod.union([zod.literal('audio'),zod.literal('video'),zod.literal(null)]).nullable(),
+  "completed": zod.boolean(),
+  "viewed": zod.boolean(),
+  "playbackPositionSeconds": zod.int().min(enrollMemberCourseResponseTwoLessonsItemPlaybackPositionSecondsMin),
+  "durationSeconds": zod.int().min(1).nullable()
 })),
   "materials": zod.array(zod.object({
   "id": zod.uuid(),
@@ -7272,7 +7307,8 @@ export const EnrollMemberCourseResponse = zod.object({
   "fileName": zod.string().min(1).max(enrollMemberCourseResponseTwoMaterialsItemFileNameMax),
   "sizeBytes": zod.int().min(1),
   "approvedAt": zod.coerce.date()
-}))
+})),
+  "lastAccessAt": zod.coerce.date().nullable()
 }))
 
 
@@ -7344,6 +7380,9 @@ export const updateCourseProgressResponseTwoLessonsItemLocalizedContentOneArMax 
 
 export const updateCourseProgressResponseTwoLessonsItemLocalizedContentOneKuMax = 240;
 
+export const updateCourseProgressResponseTwoLessonsItemPlaybackPositionSecondsMin = 0;
+
+
 export const updateCourseProgressResponseTwoMaterialsItemTitleMax = 160;
 
 export const updateCourseProgressResponseTwoMaterialsItemFileNameMax = 180;
@@ -7413,7 +7452,11 @@ export const UpdateCourseProgressResponse = zod.object({
   "durationMinutes": zod.int(),
   "mediaUrl": zod.string().nullable(),
   "hasRecording": zod.boolean(),
-  "completed": zod.boolean()
+  "recordingKind": zod.union([zod.literal('audio'),zod.literal('video'),zod.literal(null)]).nullable(),
+  "completed": zod.boolean(),
+  "viewed": zod.boolean(),
+  "playbackPositionSeconds": zod.int().min(updateCourseProgressResponseTwoLessonsItemPlaybackPositionSecondsMin),
+  "durationSeconds": zod.int().min(1).nullable()
 })),
   "materials": zod.array(zod.object({
   "id": zod.uuid(),
@@ -7421,7 +7464,8 @@ export const UpdateCourseProgressResponse = zod.object({
   "fileName": zod.string().min(1).max(updateCourseProgressResponseTwoMaterialsItemFileNameMax),
   "sizeBytes": zod.int().min(1),
   "approvedAt": zod.coerce.date()
-}))
+})),
+  "lastAccessAt": zod.coerce.date().nullable()
 }))
 
 
@@ -7436,6 +7480,55 @@ export const CreateMemberCoursePlaybackLinkParams = zod.object({
 export const CreateMemberCoursePlaybackLinkResponse = zod.object({
   "url": zod.string(),
   "validUntil": zod.coerce.date()
+})
+
+
+
+
+
+export const RecordMemberCourseLessonViewParams = zod.object({
+  "id": zod.coerce.string(),
+  "lessonId": zod.coerce.string().min(1)
+})
+
+export const RecordMemberCourseLessonViewResponse = zod.object({
+  "lessonId": zod.string(),
+  "firstViewedAt": zod.coerce.date(),
+  "lastViewedAt": zod.coerce.date(),
+  "lastAccessAt": zod.coerce.date()
+})
+
+
+
+
+
+export const UpdateMemberCoursePlaybackProgressParams = zod.object({
+  "id": zod.coerce.string(),
+  "lessonId": zod.coerce.string().min(1)
+})
+
+export const updateMemberCoursePlaybackProgressBodyPositionSecondsMin = 0;
+export const updateMemberCoursePlaybackProgressBodyPositionSecondsMax = 86400;
+
+export const updateMemberCoursePlaybackProgressBodyDurationSecondsMax = 86400;
+
+
+
+export const UpdateMemberCoursePlaybackProgressBody = zod.object({
+  "positionSeconds": zod.int().min(updateMemberCoursePlaybackProgressBodyPositionSecondsMin).max(updateMemberCoursePlaybackProgressBodyPositionSecondsMax),
+  "durationSeconds": zod.int().min(1).max(updateMemberCoursePlaybackProgressBodyDurationSecondsMax)
+})
+
+export const updateMemberCoursePlaybackProgressResponsePositionSecondsMin = 0;
+
+
+
+
+export const UpdateMemberCoursePlaybackProgressResponse = zod.object({
+  "lessonId": zod.string(),
+  "positionSeconds": zod.int().min(updateMemberCoursePlaybackProgressResponsePositionSecondsMin),
+  "durationSeconds": zod.int().min(1),
+  "lastAccessAt": zod.coerce.date()
 })
 
 

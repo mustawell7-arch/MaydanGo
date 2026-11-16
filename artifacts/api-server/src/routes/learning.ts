@@ -3,7 +3,7 @@ import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, gt, gte, inArray, isNull, sql } from "drizzle-orm";
 import {
-  db, courseEnrollments, courseMaterials, learningCourses, learningLessons, lessonProgress,
+  db, courseEnrollments, courseMaterials, lessonAccess, learningCourses, learningLessons, lessonProgress,
   memberships, offerings, partners, reservations,
 } from "@workspace/db";
 import {
@@ -11,7 +11,8 @@ import {
   CreateMemberCourseMaterialDownloadLinkResponse,
   CreateLiveClassJoinResponse, EnrollMemberCourseResponse, GetMemberCourseResponse,
   GetMemberCoursesResponse, GetMemberLiveClassesResponse, UpdateCourseProgressBody,
-  UpdateCourseProgressResponse,
+  UpdateCourseProgressResponse, RecordMemberCourseLessonViewResponse,
+  UpdateMemberCoursePlaybackProgressBody, UpdateMemberCoursePlaybackProgressResponse,
 } from "@workspace/api-zod";
 import { BookingError, membershipCanAccess } from "../lib/reservations";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
@@ -90,11 +91,20 @@ async function getCourseDetail(userId: string, id: string) {
   const accessState = !membership ? "membership_required" : !enrolled ? "enrollment_required" : "ready";
   const lessons = await db.select().from(learningLessons)
     .where(eq(learningLessons.courseId, id)).orderBy(asc(learningLessons.position));
-  const completedRows = enrolled
-    ? await db.select({ lessonId: lessonProgress.lessonId }).from(lessonProgress)
-      .where(eq(lessonProgress.enrollmentId, enrolled.id))
-    : [];
+  const [completedRows, viewedRows] = enrolled
+    ? await Promise.all([
+      db.select({ lessonId: lessonProgress.lessonId }).from(lessonProgress)
+        .where(eq(lessonProgress.enrollmentId, enrolled.id)),
+      db.select({
+        lessonId: lessonAccess.lessonId,
+        playbackPositionSeconds: lessonAccess.playbackPositionSeconds,
+        durationSeconds: lessonAccess.durationSeconds,
+      }).from(lessonAccess)
+        .where(eq(lessonAccess.enrollmentId, enrolled.id)),
+    ])
+    : [[], []];
   const completed = new Set(completedRows.map(row => row.lessonId));
+  const viewedByLesson = new Map(viewedRows.map(row => [row.lessonId, row]));
   const materials = accessState === "ready" && enrolled
     ? await db.select({
       id: courseMaterials.id,
@@ -111,6 +121,7 @@ async function getCourseDetail(userId: string, id: string) {
     ...summary,
     accessState,
     materials,
+    lastAccessAt: enrolled?.lastAccessAt ?? null,
     lessons: lessons.map(lesson => ({
       id: lesson.id,
       position: lesson.position,
@@ -119,7 +130,13 @@ async function getCourseDetail(userId: string, id: string) {
       durationMinutes: lesson.durationMinutes,
       mediaUrl: null,
       hasRecording: accessState === "ready" && isPrivateCourseRecordingPath(lesson.mediaUrl),
+      recordingKind: accessState === "ready" && isPrivateCourseRecordingPath(lesson.mediaUrl)
+        ? (courseRecordingContentType(lesson.mediaUrl)?.startsWith("audio/") ? "audio" : "video")
+        : null,
       completed: completed.has(lesson.id),
+      viewed: viewedByLesson.has(lesson.id),
+      playbackPositionSeconds: accessState === "ready" ? viewedByLesson.get(lesson.id)?.playbackPositionSeconds ?? 0 : 0,
+      durationSeconds: accessState === "ready" ? viewedByLesson.get(lesson.id)?.durationSeconds ?? null : null,
     })),
   };
 }
@@ -154,6 +171,118 @@ router.get("/courses/:id", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) { res.status(401).json({ message: "Sign in to view this course." }); return; }
   res.json(GetMemberCourseResponse.parse(await getCourseDetail(userId, String(req.params.id))));
+});
+
+router.post("/courses/:id/lessons/:lessonId/view", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) { res.status(401).json({ message: "Sign in to record lesson progress." }); return; }
+  if (await isAccessSuspended("member", userId)) {
+    throw new BookingError(403, "This account is temporarily restricted from course changes. Contact MaydanGo support.");
+  }
+  const courseId = String(req.params.id);
+  const lessonId = String(req.params.lessonId);
+  const [course] = await db.select({ id: learningCourses.id }).from(learningCourses).where(and(
+    eq(learningCourses.id, courseId), eq(learningCourses.published, true),
+  ));
+  if (!course) throw new BookingError(404, "This course is not available.");
+  if (!await currentDigitalCourseMembership(userId)) {
+    throw new BookingError(403, "An eligible membership with digital course access is required to view lessons.");
+  }
+  const [enrollment] = await db.select({ id: courseEnrollments.id }).from(courseEnrollments).where(and(
+    eq(courseEnrollments.userId, userId), eq(courseEnrollments.courseId, courseId),
+  ));
+  if (!enrollment) throw new BookingError(403, "Enroll in this course before viewing lessons.");
+  const [lesson] = await db.select({ id: learningLessons.id }).from(learningLessons).where(and(
+    eq(learningLessons.id, lessonId), eq(learningLessons.courseId, courseId),
+  ));
+  if (!lesson) throw new BookingError(404, "This lesson is not part of the course.");
+
+  const now = new Date();
+  const [view, updatedEnrollment] = await db.transaction(async tx => {
+    const [recordedView] = await tx.insert(lessonAccess).values({
+      id: randomUUID(),
+      enrollmentId: enrollment.id,
+      lessonId: lesson.id,
+      lastViewedAt: now,
+    }).onConflictDoUpdate({
+      target: [lessonAccess.enrollmentId, lessonAccess.lessonId],
+      set: { lastViewedAt: now },
+    }).returning();
+    const [updated] = await tx.update(courseEnrollments).set({ lastAccessAt: now })
+      .where(eq(courseEnrollments.id, enrollment.id))
+      .returning({ lastAccessAt: courseEnrollments.lastAccessAt });
+    return [recordedView, updated];
+  });
+  res.json(RecordMemberCourseLessonViewResponse.parse({
+    lessonId: lesson.id,
+    firstViewedAt: view.firstViewedAt,
+    lastViewedAt: view.lastViewedAt,
+    lastAccessAt: updatedEnrollment.lastAccessAt,
+  }));
+});
+
+router.put("/courses/:id/lessons/:lessonId/playback-progress", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) { res.status(401).json({ message: "Sign in to save playback progress." }); return; }
+  if (await isAccessSuspended("member", userId)) {
+    throw new BookingError(403, "This account is temporarily restricted from course access. Contact MaydanGo support.");
+  }
+  const body = UpdateMemberCoursePlaybackProgressBody.parse(req.body);
+  if (body.positionSeconds > body.durationSeconds) {
+    throw new BookingError(400, "Playback position cannot exceed the recording duration.");
+  }
+  const courseId = String(req.params.id);
+  const lessonId = String(req.params.lessonId);
+  const [course] = await db.select({ id: learningCourses.id }).from(learningCourses).where(and(
+    eq(learningCourses.id, courseId), eq(learningCourses.published, true),
+  ));
+  if (!course) throw new BookingError(404, "This course is not available.");
+  if (!await currentDigitalCourseMembership(userId)) {
+    throw new BookingError(403, "An eligible membership with digital course access is required to save playback progress.");
+  }
+  const [enrollment] = await db.select({ id: courseEnrollments.id }).from(courseEnrollments).where(and(
+    eq(courseEnrollments.userId, userId), eq(courseEnrollments.courseId, courseId),
+  ));
+  if (!enrollment) throw new BookingError(403, "Enroll in this course before saving playback progress.");
+  const [lesson] = await db.select({ id: learningLessons.id, mediaUrl: learningLessons.mediaUrl })
+    .from(learningLessons).where(and(
+      eq(learningLessons.id, lessonId), eq(learningLessons.courseId, courseId),
+    ));
+  if (!lesson || !isPrivateCourseRecordingPath(lesson.mediaUrl)) {
+    throw new BookingError(404, "This course recording is unavailable.");
+  }
+
+  const now = new Date();
+  const [saved, updatedEnrollment] = await db.transaction(async tx => {
+    const [progress] = await tx.insert(lessonAccess).values({
+      id: randomUUID(),
+      enrollmentId: enrollment.id,
+      lessonId: lesson.id,
+      lastViewedAt: now,
+      playbackPositionSeconds: body.positionSeconds,
+      durationSeconds: body.durationSeconds,
+    }).onConflictDoUpdate({
+      target: [lessonAccess.enrollmentId, lessonAccess.lessonId],
+      set: {
+        lastViewedAt: now,
+        playbackPositionSeconds: body.positionSeconds,
+        durationSeconds: body.durationSeconds,
+      },
+    }).returning({
+      playbackPositionSeconds: lessonAccess.playbackPositionSeconds,
+      durationSeconds: lessonAccess.durationSeconds,
+    });
+    const [updated] = await tx.update(courseEnrollments).set({ lastAccessAt: now })
+      .where(eq(courseEnrollments.id, enrollment.id))
+      .returning({ lastAccessAt: courseEnrollments.lastAccessAt });
+    return [progress, updated];
+  });
+  res.json(UpdateMemberCoursePlaybackProgressResponse.parse({
+    lessonId: lesson.id,
+    positionSeconds: saved.playbackPositionSeconds,
+    durationSeconds: saved.durationSeconds,
+    lastAccessAt: updatedEnrollment.lastAccessAt,
+  }));
 });
 
 router.post("/courses/:id/enroll", async (req, res): Promise<void> => {

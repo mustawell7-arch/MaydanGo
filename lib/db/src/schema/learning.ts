@@ -43,6 +43,7 @@ export const courseEnrollments = pgTable("course_enrollments", {
   userId: text("user_id").notNull(),
   courseId: text("course_id").notNull().references(() => learningCourses.id, { onDelete: "cascade" }),
   enrolledAt: timestamp("enrolled_at", { withTimezone: true }).notNull().defaultNow(),
+  lastAccessAt: timestamp("last_access_at", { withTimezone: true }),
 }, table => [
   uniqueIndex("course_enrollment_owner").on(table.userId, table.courseId),
   index("course_enrollment_user").on(table.userId),
@@ -59,6 +60,19 @@ export const courseMaterials = pgTable("course_materials", {
   approvedAt: timestamp("approved_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => [
   index("course_materials_course").on(table.courseId),
+]);
+
+export const lessonAccess = pgTable("lesson_access", {
+  id: text("id").primaryKey(),
+  enrollmentId: text("enrollment_id").notNull().references(() => courseEnrollments.id, { onDelete: "cascade" }),
+  lessonId: text("lesson_id").notNull().references(() => learningLessons.id, { onDelete: "cascade" }),
+  firstViewedAt: timestamp("first_viewed_at", { withTimezone: true }).notNull().defaultNow(),
+  lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }).notNull().defaultNow(),
+  playbackPositionSeconds: integer("playback_position_seconds").notNull().default(0),
+  durationSeconds: integer("duration_seconds"),
+}, table => [
+  uniqueIndex("lesson_access_enrollment_lesson").on(table.enrollmentId, table.lessonId),
+  index("lesson_access_enrollment").on(table.enrollmentId),
 ]);
 
 export const lessonProgress = pgTable("lesson_progress", {

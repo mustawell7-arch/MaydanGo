@@ -574,6 +574,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1progress"
   /member/courses/{id}/lessons/{lessonId}/playback-link:
     $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1lessons~1{lessonId}~1playback-link"
+  /member/courses/{id}/lessons/{lessonId}/view:
+    $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1lessons~1{lessonId}~1view"
+  /member/courses/{id}/lessons/{lessonId}/playback-progress:
+    $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1lessons~1{lessonId}~1playback-progress"
   /member/courses/{id}/materials/{materialId}/download-link:
     $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1materials~1{materialId}~1download-link"
   /member/course-material-download:

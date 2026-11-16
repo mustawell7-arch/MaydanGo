@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { eq } from "drizzle-orm";
 import express from "express";
-import { db, courseEnrollments, courseMaterials, learningCourses, learningLessons, memberships, pool } from "@workspace/db";
+import { db, courseEnrollments, courseMaterials, lessonAccess, learningCourses, learningLessons, memberships, pool } from "@workspace/db";
 import learningRouter, { learningObjectStorage } from "./learning";
 import {
   createCoursePlaybackToken,
@@ -74,10 +74,14 @@ app.use((req, _res, next) => {
 });
 app.use("/api/member", learningRouter);
 
-async function call(path: string, memberId: string, method = "GET") {
+async function call(path: string, memberId: string, method = "GET", body?: unknown) {
   const response = await fetch(`http://127.0.0.1:${(server!.address() as { port: number }).port}${path}`, {
     method,
-    headers: { "x-test-user": memberId },
+    headers: {
+      "x-test-user": memberId,
+      ...(body === undefined ? {} : { "content-type": "application/json" }),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
   const contentType = response.headers.get("content-type") ?? "";
   const data = contentType.includes("application/json")
@@ -149,7 +153,11 @@ test("private course recordings require current membership and enrollment", asyn
   server = app.listen(0, "127.0.0.1");
   await new Promise<void>(resolve => server!.once("listening", resolve));
   const path = `/api/member/courses/${courseId}/lessons/${lessonId}/playback-link`;
+  const viewPath = `/api/member/courses/${courseId}/lessons/${lessonId}/view`;
+  const playbackProgressPath = `/api/member/courses/${courseId}/lessons/${lessonId}/playback-progress`;
   assert.equal((await call(path, userId, "POST")).response.status, 403);
+  assert.equal((await call(viewPath, userId, "POST")).response.status, 403);
+  assert.equal((await call(playbackProgressPath, userId, "PUT", { positionSeconds: 50, durationSeconds: 600 })).response.status, 403);
   assert.equal((await call(`/api/member/courses/${courseId}/materials/${materialId}/download-link`, userId, "POST")).response.status, 403);
 
   await db.insert(courseEnrollments).values({ id: enrollmentId, userId, courseId });
@@ -161,15 +169,49 @@ test("private course recordings require current membership and enrollment", asyn
   assert.equal(restrictedLesson.hasRecording, false);
   assert.equal((restrictedDetails.data as { materials: unknown[] }).materials.length, 0);
   assert.equal((await call(path, userId, "POST")).response.status, 403);
+  assert.equal((await call(viewPath, userId, "POST")).response.status, 403);
 
   await db.update(memberships).set({ rules: courseRules(true) }).where(eq(memberships.userId, userId));
   const details = await call(`/api/member/courses/${courseId}`, userId);
   assert.equal(details.response.status, 200);
   assert.equal((details.data as { accessState: string }).accessState, "ready");
-  const lesson = (details.data as { lessons: Array<{ mediaUrl: string | null; hasRecording: boolean }> }).lessons[0];
+  const lesson = (details.data as { lessons: Array<{ mediaUrl: string | null; hasRecording: boolean; recordingKind: string | null }> }).lessons[0];
   assert.equal(lesson.mediaUrl, null);
   assert.equal(lesson.hasRecording, true);
+  assert.equal(lesson.recordingKind, "video");
   assert.equal((details.data as { materials: Array<{ id: string; title: string }> }).materials[0]?.title, "Training plan");
+
+  const firstViewResponse = await call(viewPath, userId, "POST");
+  assert.equal(firstViewResponse.response.status, 200);
+  const firstView = firstViewResponse.data as { firstViewedAt: string; lastViewedAt: string; lastAccessAt: string };
+  const secondViewResponse = await call(viewPath, userId, "POST");
+  assert.equal(secondViewResponse.response.status, 200);
+  const secondView = secondViewResponse.data as { firstViewedAt: string; lastViewedAt: string; lastAccessAt: string };
+  assert.equal(secondView.firstViewedAt, firstView.firstViewedAt);
+  assert.ok(new Date(secondView.lastViewedAt).getTime() >= new Date(firstView.lastViewedAt).getTime());
+  assert.ok(new Date(secondView.lastAccessAt).getTime() >= new Date(firstView.lastAccessAt).getTime());
+  assert.equal((await call(viewPath, `${prefix}-other`, "POST")).response.status, 403);
+  const trackedDetails = await call(`/api/member/courses/${courseId}`, userId);
+  assert.ok((trackedDetails.data as { lastAccessAt: string | null }).lastAccessAt);
+  assert.equal((trackedDetails.data as { lessons: Array<{ viewed: boolean }> }).lessons[0]?.viewed, true);
+  const viewRows = await db.select().from(lessonAccess).where(eq(lessonAccess.enrollmentId, enrollmentId));
+  assert.equal(viewRows.length, 1, "reopening a lesson updates its existing view record");
+
+  const invalidProgress = await call(playbackProgressPath, userId, "PUT", { positionSeconds: 601, durationSeconds: 600 });
+  assert.equal(invalidProgress.response.status, 400);
+  const firstPlaybackProgress = await call(playbackProgressPath, userId, "PUT", { positionSeconds: 50, durationSeconds: 600 });
+  assert.equal(firstPlaybackProgress.response.status, 200);
+  const updatedPlaybackProgress = await call(playbackProgressPath, userId, "PUT", { positionSeconds: 89, durationSeconds: 600 });
+  assert.equal(updatedPlaybackProgress.response.status, 200);
+  assert.equal((updatedPlaybackProgress.data as { positionSeconds: number }).positionSeconds, 89);
+  assert.equal((await call(playbackProgressPath, `${prefix}-other`, "PUT", { positionSeconds: 20, durationSeconds: 600 })).response.status, 403);
+  const resumedDetails = await call(`/api/member/courses/${courseId}`, userId);
+  const resumedLesson = (resumedDetails.data as { lessons: Array<{ playbackPositionSeconds: number; durationSeconds: number | null }> }).lessons[0];
+  assert.equal(resumedLesson.playbackPositionSeconds, 89);
+  assert.equal(resumedLesson.durationSeconds, 600);
+  const updatedViewRows = await db.select().from(lessonAccess).where(eq(lessonAccess.enrollmentId, enrollmentId));
+  assert.equal(updatedViewRows.length, 1);
+  assert.equal(updatedViewRows[0]?.playbackPositionSeconds, 89);
 
   const materialLinkResponse = await call(
     `/api/member/courses/${courseId}/materials/${materialId}/download-link`,
