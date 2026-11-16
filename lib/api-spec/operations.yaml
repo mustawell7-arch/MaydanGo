@@ -1631,6 +1631,49 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/InstructorAccessDecisionResponse" }
+  /operations/instructor-content-drafts:
+    get:
+      operationId: getInstructorContentDraftsForReview
+      responses:
+        "200":
+          description: Submitted instructor profiles, courses, and live-class proposals awaiting content review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetInstructorContentReviewQueueResponse" }
+  /operations/instructor-content-drafts/{id}/decision:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: decideInstructorContentDraft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InstructorContentDecisionInput" }
+      responses:
+        "200":
+          description: Instructor content approved or returned with a reason
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InstructorContentDecisionResponse" }
+  /operations/instructor-content-drafts/{id}/uploads/{uploadId}/file:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: uploadId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: getInstructorContentReviewUpload
+      responses:
+        "200":
+          description: Private instructor draft asset for an authorized content reviewer
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+            video/mp4: { schema: { type: string, format: binary } }
+            application/pdf: { schema: { type: string, format: binary } }
+        "404": { description: Upload not found }
   /instructor/portal:
     get:
       operationId: getInstructorPortal
@@ -1640,6 +1683,102 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/InstructorPortalResponse" }
+  /instructor/content-drafts:
+    get:
+      operationId: getInstructorContentDrafts
+      responses:
+        "200":
+          description: Content drafts owned by the signed-in approved instructor
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetInstructorContentDraftsResponse" }
+    post:
+      operationId: createInstructorContentDraft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InstructorContentDraftInput" }
+      responses:
+        "201":
+          description: Unpublished instructor content draft created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InstructorContentDraft" }
+  /instructor/content-drafts/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    put:
+      operationId: updateInstructorContentDraft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InstructorContentDraftInput" }
+      responses:
+        "200":
+          description: Unpublished instructor content draft updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InstructorContentDraft" }
+  /instructor/content-drafts/{id}/submit:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: submitInstructorContentDraft
+      responses:
+        "200":
+          description: Complete instructor content draft submitted for review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InstructorContentDraft" }
+  /instructor/content-drafts/{id}/uploads:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: createInstructorContentDraftUpload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InstructorDraftUploadInput" }
+      responses:
+        "200":
+          description: Private upload URL for an instructor-owned draft asset
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InstructorDraftUploadUrlResponse" }
+  /instructor/content-drafts/{id}/uploads/{uploadId}/complete:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: uploadId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: completeInstructorContentDraftUpload
+      responses:
+        "200":
+          description: Uploaded file verified and attached to its private draft
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InstructorDraftUpload" }
+  /instructor/content-drafts/{id}/uploads/{uploadId}/file:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: uploadId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      operationId: getInstructorContentDraftUpload
+      responses:
+        "200":
+          description: Private asset belonging to the signed-in instructor's own draft
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+            video/mp4: { schema: { type: string, format: binary } }
+            application/pdf: { schema: { type: string, format: binary } }
+        "404": { description: Upload not found }
   /instructor/access-request:
     post:
       operationId: submitInstructorAccessRequest
@@ -4137,6 +4276,283 @@ components:
         courses:
           type: array
           items: { $ref: "#/components/schemas/CourseAdminRecord" }
+    InstructorProfileDraftPayload:
+      type: object
+      additionalProperties: false
+      required: [displayName, biography, qualifications, languages, specialties, photoUploadId]
+      properties:
+        displayName: { type: string, minLength: 1, maxLength: 120 }
+        biography: { type: string, maxLength: 3000 }
+        qualifications:
+          type: array
+          maxItems: 20
+          items: { type: string, minLength: 1, maxLength: 240 }
+        languages:
+          type: array
+          maxItems: 12
+          items: { type: string, minLength: 1, maxLength: 80 }
+        specialties:
+          type: array
+          maxItems: 20
+          items: { type: string, minLength: 1, maxLength: 120 }
+        photoUploadId: { type: ["string", "null"], format: uuid }
+    InstructorCourseLessonDraft:
+      type: object
+      additionalProperties: false
+      required: [localizedTitle, localizedContent, durationMinutes, recordingUploadId]
+      properties:
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedContent: { $ref: "#/components/schemas/LocalizedText" }
+        durationMinutes: { type: integer, minimum: 1, maximum: 1000 }
+        recordingUploadId: { type: ["string", "null"], format: uuid }
+    InstructorCourseMaterialDraft:
+      type: object
+      additionalProperties: false
+      required: [title, uploadId]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 160 }
+        uploadId: { type: ["string", "null"], format: uuid }
+    InstructorCourseDraftPayload:
+      type: object
+      additionalProperties: false
+      required: [localizedTitle, localizedSummary, localizedInstructor, category, level, durationMinutes, courseLanguages, subtitleLanguages, requiredEquipment, disclaimers, supportingMaterials, lessons, materials]
+      properties:
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedSummary: { $ref: "#/components/schemas/LocalizedText" }
+        localizedInstructor: { $ref: "#/components/schemas/LocalizedText" }
+        category: { type: string, maxLength: 120 }
+        level: { type: string, enum: [beginner, intermediate, advanced, all-levels] }
+        durationMinutes: { type: integer, minimum: 1, maximum: 10000 }
+        courseLanguages:
+          type: ["array", "null"]
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+          items: { $ref: "#/components/schemas/CourseLanguage" }
+        subtitleLanguages:
+          type: ["array", "null"]
+          maxItems: 3
+          uniqueItems: true
+          items: { $ref: "#/components/schemas/CourseLanguage" }
+        requiredEquipment:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedCourseDetail"
+            - type: "null"
+        disclaimers:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedCourseDetail"
+            - type: "null"
+        supportingMaterials:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedCourseDetail"
+            - type: "null"
+        lessons:
+          type: array
+          maxItems: 200
+          items: { $ref: "#/components/schemas/InstructorCourseLessonDraft" }
+        materials:
+          type: array
+          maxItems: 50
+          items: { $ref: "#/components/schemas/InstructorCourseMaterialDraft" }
+    InstructorLiveClassDraftPayload:
+      type: object
+      additionalProperties: false
+      required: [localizedTitle, localizedDescription, localizedInstructor, city, category, startsAt, endsAt, cancellationDeadline, capacity, tiers, difficultyLevel, instructionLanguage, requiredEquipment, joinUrl]
+      properties:
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedDescription: { $ref: "#/components/schemas/LocalizedText" }
+        localizedInstructor: { $ref: "#/components/schemas/LocalizedText" }
+        city: { type: string, minLength: 1, maxLength: 120 }
+        category: { type: string, minLength: 1, maxLength: 120 }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        cancellationDeadline: { type: string, format: date-time }
+        capacity: { type: integer, minimum: 1, maximum: 1000 }
+        tiers:
+          type: array
+          minItems: 1
+          maxItems: 20
+          uniqueItems: true
+          items: { type: string, minLength: 1, maxLength: 80 }
+        difficultyLevel: { type: string, enum: [beginner, intermediate, advanced, all-levels] }
+        instructionLanguage: { $ref: "#/components/schemas/CourseLanguage" }
+        requiredEquipment:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedCourseDetail"
+            - type: "null"
+        joinUrl: { type: string, format: uri, maxLength: 2048 }
+    InstructorContentDraftPayload:
+      oneOf:
+        - $ref: "#/components/schemas/InstructorProfileDraftPayload"
+        - $ref: "#/components/schemas/InstructorCourseDraftPayload"
+        - $ref: "#/components/schemas/InstructorLiveClassDraftPayload"
+    InstructorLiveClassReviewPayload:
+      type: object
+      additionalProperties: false
+      required: [localizedTitle, localizedDescription, localizedInstructor, city, category, startsAt, endsAt, cancellationDeadline, capacity, tiers, difficultyLevel, instructionLanguage, requiredEquipment]
+      properties:
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedDescription: { $ref: "#/components/schemas/LocalizedText" }
+        localizedInstructor: { $ref: "#/components/schemas/LocalizedText" }
+        city: { type: string }
+        category: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        cancellationDeadline: { type: string, format: date-time }
+        capacity: { type: integer }
+        tiers: { type: array, items: { type: string } }
+        difficultyLevel: { type: string }
+        instructionLanguage: { $ref: "#/components/schemas/CourseLanguage" }
+        requiredEquipment:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedCourseDetail"
+            - type: "null"
+    InstructorContentReviewPayload:
+      oneOf:
+        - $ref: "#/components/schemas/InstructorProfileDraftPayload"
+        - $ref: "#/components/schemas/InstructorCourseDraftPayload"
+        - $ref: "#/components/schemas/InstructorLiveClassReviewPayload"
+    InstructorContentDraftInput:
+      type: object
+      additionalProperties: false
+      required: [contentType, payload]
+      properties:
+        contentType: { type: string, enum: [profile, course, live_class] }
+        payload: { $ref: "#/components/schemas/InstructorContentDraftPayload" }
+    InstructorContentDraft:
+      type: object
+      additionalProperties: false
+      required: [id, contentType, status, payload, decisionReason, publishedCourseId, publishedOfferingId, submittedAt, reviewedAt, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        contentType: { type: string, enum: [profile, course, live_class] }
+        status: { type: string, enum: [draft, submitted, processing, changes_requested, rejected, approved] }
+        payload: { $ref: "#/components/schemas/InstructorContentDraftPayload" }
+        decisionReason: { type: ["string", "null"] }
+        publishedCourseId: { type: ["string", "null"] }
+        publishedOfferingId: { type: ["string", "null"] }
+        submittedAt: { type: ["string", "null"], format: date-time }
+        reviewedAt: { type: ["string", "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    GetInstructorContentDraftsResponse:
+      type: object
+      additionalProperties: false
+      required: [drafts]
+      properties:
+        drafts:
+          type: array
+          items: { $ref: "#/components/schemas/InstructorContentDraft" }
+    InstructorDraftUploadInput:
+      type: object
+      additionalProperties: false
+      required: [purpose, fileName, contentType, sizeBytes]
+      properties:
+        purpose: { type: string, enum: [profile_photo, course_recording, course_material] }
+        fileName: { type: string, minLength: 1, maxLength: 180 }
+        contentType: { type: string, minLength: 1, maxLength: 120 }
+        sizeBytes: { type: integer, minimum: 1, maximum: 524288000 }
+    InstructorDraftUploadUrlResponse:
+      type: object
+      additionalProperties: false
+      required: [uploadId, uploadURL, fileName, contentType]
+      properties:
+        uploadId: { type: string, format: uuid }
+        uploadURL: { type: string, format: uri }
+        fileName: { type: string }
+        contentType: { type: string }
+    InstructorDraftUpload:
+      type: object
+      additionalProperties: false
+      required: [id, purpose, fileName, contentType, sizeBytes, status]
+      properties:
+        id: { type: string, format: uuid }
+        purpose: { type: string, enum: [profile_photo, course_recording, course_material] }
+        fileName: { type: string }
+        contentType: { type: string }
+        sizeBytes: { type: integer }
+        status: { type: string, enum: [pending, ready, promoted] }
+    InstructorContentReviewDraft:
+      type: object
+      additionalProperties: false
+      required: [id, instructorUserId, contentType, status, payload, decisionReason, publishedCourseId, publishedOfferingId, submittedAt, reviewedAt, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        instructorUserId: { type: string }
+        contentType: { type: string, enum: [profile, course, live_class] }
+        status: { type: string, enum: [draft, submitted, processing, changes_requested, rejected, approved] }
+        payload: { $ref: "#/components/schemas/InstructorContentReviewPayload" }
+        decisionReason: { type: ["string", "null"] }
+        publishedCourseId: { type: ["string", "null"] }
+        publishedOfferingId: { type: ["string", "null"] }
+        submittedAt: { type: ["string", "null"], format: date-time }
+        reviewedAt: { type: ["string", "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    InstructorReviewPartner:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+    GetInstructorContentReviewQueueResponse:
+      type: object
+      additionalProperties: false
+      required: [drafts, partners]
+      properties:
+        drafts:
+          type: array
+          items: { $ref: "#/components/schemas/InstructorContentReviewDraft" }
+        partners:
+          type: array
+          items: { $ref: "#/components/schemas/InstructorReviewPartner" }
+    InstructorContentDecisionInput:
+      type: object
+      additionalProperties: false
+      required: [decision]
+      properties:
+        decision: { type: string, enum: [approve, request_changes, reject] }
+        reason: { type: string, minLength: 5, maxLength: 1000 }
+        partnerId: { type: string, minLength: 1, maxLength: 160 }
+    InstructorContentDecisionResponse:
+      type: object
+      additionalProperties: false
+      required: [id, status, publishedCourseId, publishedOfferingId, partnerReviewPending]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [changes_requested, rejected, approved] }
+        publishedCourseId: { type: ["string", "null"] }
+        publishedOfferingId: { type: ["string", "null"] }
+        partnerReviewPending: { type: boolean }
+    PublicInstructorProfileCourse:
+      type: object
+      additionalProperties: false
+      required: [id, localizedTitle, category]
+      properties:
+        id: { type: string }
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        category: { type: string }
+    PublicInstructorProfile:
+      type: object
+      additionalProperties: false
+      required: [id, displayName, biography, qualifications, languages, specialties, photoUrl, courses]
+      properties:
+        id: { type: string, format: uuid }
+        displayName: { type: string }
+        biography: { type: string }
+        qualifications: { type: array, items: { type: string } }
+        languages: { type: array, items: { type: string } }
+        specialties: { type: array, items: { type: string } }
+        photoUrl:
+          type: ["string", "null"]
+          pattern: "^/api/public/instructors/[0-9a-f-]{36}/photo$"
+        courses:
+          type: array
+          items: { $ref: "#/components/schemas/PublicInstructorProfileCourse" }
+    GetPublicInstructorProfilesResponse:
+      type: array
+      items: { $ref: "#/components/schemas/PublicInstructorProfile" }
     InstructorAccessRequestInput:
       type: object
       additionalProperties: false

@@ -5,6 +5,7 @@ import { db, instructorCourseAssignments, instructorOfferingAssignments, instruc
 import { randomUUID } from "node:crypto";
 import { GetInstructorPortalResponse, SubmitInstructorAccessRequestBody, SubmitInstructorAccessRequestResponse } from "@workspace/api-zod";
 import { instructorSupportRouter } from "./instructor-support";
+import instructorContentRouter from "./instructor-content";
 
 const router = Router();
 router.use("/support", instructorSupportRouter);
@@ -16,6 +17,7 @@ router.use((req, res, next) => {
   }
   next();
 });
+router.use("/content-drafts", instructorContentRouter);
 
 router.get("/portal", async (req, res) => {
   const userId = getAuth(req).userId!;

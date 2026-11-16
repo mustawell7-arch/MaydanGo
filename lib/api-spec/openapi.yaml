@@ -176,6 +176,31 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PublicCourse"
+  /public/instructors:
+    get:
+      operationId: getPublicInstructorProfiles
+      responses:
+        "200":
+          description: Approved instructor profiles and their published courses only
+          content:
+            application/json:
+              schema: { $ref: "./operations.yaml#/components/schemas/GetPublicInstructorProfilesResponse" }
+  /public/instructors/{id}/photo:
+    get:
+      operationId: getPublicInstructorProfilePhoto
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Public photo from an approved instructor profile
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+            image/webp:
+              schema: { type: string, format: binary }
+        "404": { description: Photo not found }
   /attendance:
     get:
       operationId: getAttendance
@@ -477,8 +502,26 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1instructor-access-requests"
   /operations/instructor-access-requests/{id}/decision:
     $ref: "./operations.yaml#/paths/~1operations~1instructor-access-requests~1{id}~1decision"
+  /operations/instructor-content-drafts:
+    $ref: "./operations.yaml#/paths/~1operations~1instructor-content-drafts"
+  /operations/instructor-content-drafts/{id}/decision:
+    $ref: "./operations.yaml#/paths/~1operations~1instructor-content-drafts~1{id}~1decision"
+  /operations/instructor-content-drafts/{id}/uploads/{uploadId}/file:
+    $ref: "./operations.yaml#/paths/~1operations~1instructor-content-drafts~1{id}~1uploads~1{uploadId}~1file"
   /instructor/portal:
     $ref: "./operations.yaml#/paths/~1instructor~1portal"
+  /instructor/content-drafts:
+    $ref: "./operations.yaml#/paths/~1instructor~1content-drafts"
+  /instructor/content-drafts/{id}:
+    $ref: "./operations.yaml#/paths/~1instructor~1content-drafts~1{id}"
+  /instructor/content-drafts/{id}/submit:
+    $ref: "./operations.yaml#/paths/~1instructor~1content-drafts~1{id}~1submit"
+  /instructor/content-drafts/{id}/uploads:
+    $ref: "./operations.yaml#/paths/~1instructor~1content-drafts~1{id}~1uploads"
+  /instructor/content-drafts/{id}/uploads/{uploadId}/complete:
+    $ref: "./operations.yaml#/paths/~1instructor~1content-drafts~1{id}~1uploads~1{uploadId}~1complete"
+  /instructor/content-drafts/{id}/uploads/{uploadId}/file:
+    $ref: "./operations.yaml#/paths/~1instructor~1content-drafts~1{id}~1uploads~1{uploadId}~1file"
   /instructor/access-request:
     $ref: "./operations.yaml#/paths/~1instructor~1access-request"
   /instructor/support/tickets:

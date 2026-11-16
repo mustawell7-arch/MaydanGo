@@ -20,6 +20,7 @@ import { downloadMemberSupportFile, supportAttachmentType, uploadMemberSupportAt
 import type { PortalLanguage } from '@/pages/partner-operations';
 import { AlertCircle, ArrowUpRight, CalendarDays, Check, Clock3, Dumbbell, LockKeyhole, MessageCircle, Plus, Send, ShieldCheck } from 'lucide-react';
 import { Link } from 'wouter';
+import { InstructorContentWorkspace } from '@/pages/instructor-content-workspace';
 
 type Language = PortalLanguage;
 type CopyKey = keyof typeof copy.en;
@@ -65,7 +66,7 @@ const copy = {
     requestRequired: 'Please write at least 10 characters about your work.', genericFailure: 'The request could not be completed. Please try again.',
     adminEyebrow: 'MAYDANGO · ADMINISTRATION', adminTitle: 'Instructor access review',
     adminIntro: 'Review each request and assign only the courses and future sessions this instructor should be able to access.',
-    adminQueue: 'Requests', pending: 'Pending', approved: 'Approved', rejected: 'Declined', submitted: 'Submitted',
+    adminQueue: 'Requests', contentReview: 'Review instructor content', pending: 'Pending', approved: 'Approved', rejected: 'Declined', submitted: 'Submitted',
     requestMessage: 'Instructor note', review: 'Review request', chooseRequest: 'Select a request to review.',
     assignCourses: 'Assign published courses', assignSessions: 'Assign future sessions',
     noCoursesAvailable: 'No published courses are available to assign.',
@@ -122,7 +123,7 @@ const copy = {
     requestRequired: 'يرجى كتابة 10 أحرف على الأقل عن عملك.', genericFailure: 'تعذر إكمال الطلب. حاول مرة أخرى.',
     adminEyebrow: 'مايدان جو · الإدارة', adminTitle: 'مراجعة صلاحية المدرّبين',
     adminIntro: 'راجع كل طلب وخصص فقط الدورات والجلسات المستقبلية التي ينبغي للمدرّب الوصول إليها.',
-    adminQueue: 'الطلبات', pending: 'قيد الانتظار', approved: 'تمت الموافقة', rejected: 'مرفوض', submitted: 'تاريخ الإرسال',
+    adminQueue: 'الطلبات', contentReview: 'مراجعة محتوى المدرّبين', pending: 'قيد الانتظار', approved: 'تمت الموافقة', rejected: 'مرفوض', submitted: 'تاريخ الإرسال',
     requestMessage: 'رسالة المدرّب', review: 'مراجعة الطلب', chooseRequest: 'اختر طلباً لمراجعته.',
     assignCourses: 'تخصيص الدورات المنشورة', assignSessions: 'تخصيص الجلسات المستقبلية',
     noCoursesAvailable: 'لا توجد دورات منشورة متاحة للتخصيص.',
@@ -179,7 +180,7 @@ const copy = {
     requestRequired: 'تکایە لانیکەم ١٠ پیت دەربارەی کارت بنووسە.', genericFailure: 'تەواوکردنی داواکە نەکرا. تکایە دووبارە هەوڵ بدەوە.',
     adminEyebrow: 'مەیدانگۆ · بەڕێوەبەرایەتی', adminTitle: 'پێداچوونەوەی دەسەڵاتی ڕاهێنەران',
     adminIntro: 'هەر داواکارییەک بپشکنە و تەنها ئەو کۆرس و وانە داهاتووانە دیاری بکە کە ڕاهێنەر دەبێت دەستی پێیان بگات.',
-    adminQueue: 'داواکارییەکان', pending: 'چاوەڕوان', approved: 'پەسەندکراو', rejected: 'ڕەتکراوەتەوە', submitted: 'نێردراوە',
+    adminQueue: 'داواکارییەکان', contentReview: 'پێداچوونەوە بە ناوەڕۆکی مامۆستایان', pending: 'چاوەڕوان', approved: 'پەسەندکراو', rejected: 'ڕەتکراوەتەوە', submitted: 'نێردراوە',
     requestMessage: 'پەیامی ڕاهێنەر', review: 'پێداچوونەوەی داواکاری', chooseRequest: 'داواکارییەک هەڵبژێرە بۆ پێداچوونەوە.',
     assignCourses: 'دیاریکردنی کۆرسە بڵاوکراوەکان', assignSessions: 'دیاریکردنی وانە داهاتووەکان',
     noCoursesAvailable: 'هیچ کۆرسێکی بڵاوکراوە بۆ دیاریکردن نییە.',
@@ -664,6 +665,7 @@ export function InstructorPortalPage() {
                       ))}
                     </div>}
                   </section>
+                  <InstructorContentWorkspace lang={lang} />
                 </>
               )}
             </>
@@ -778,6 +780,11 @@ export function AdminInstructorAccessPage() {
 
   return (
     <AccessPageFrame admin lang={lang} onLanguage={onLanguage}>
+      <div className="mb-5 flex justify-end">
+        <Link href="/admin/instructor-content" className="inline-flex rounded-full border border-[#174d43] px-4 py-2.5 text-sm font-bold text-[#174d43] hover:bg-[#edf3ec]">
+          {t(lang, 'contentReview')}
+        </Link>
+      </div>
       <div className="grid gap-6 lg:grid-cols-[minmax(260px,.75fr)_minmax(0,1.4fr)]">
         <section className="overflow-hidden rounded-3xl border border-[#d8d2c4] bg-[#fffdf7] shadow-sm">
           <div className="flex items-center justify-between border-b border-[#e3dfd3] px-5 py-4">

@@ -5,6 +5,7 @@ export type CourseLanguage = "en" | "ar" | "ku";
 
 export const learningCourses = pgTable("learning_courses", {
   id: text("id").primaryKey(),
+  instructorUserId: text("instructor_user_id"),
   title: text("title").notNull(),
   localizedTitle: jsonb("localized_title").$type<LocalizedText>().notNull(),
   localizedSummary: jsonb("localized_summary").$type<LocalizedText>().notNull(),
@@ -23,6 +24,7 @@ export const learningCourses = pgTable("learning_courses", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => [
   index("learning_courses_published").on(table.published),
+  index("learning_courses_instructor").on(table.instructorUserId),
 ]);
 
 export const learningLessons = pgTable("learning_lessons", {

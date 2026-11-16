@@ -117,6 +117,54 @@ export class ObjectStorageService {
     return { uploadURL, documentPath: `/objects/${objectName}` };
   }
 
+  async createInstructorDraftUpload(userId: string, draftId: string, uploadId: string, extension: string) {
+    if (!/^[A-Za-z0-9_-]{1,160}$/.test(userId)
+      || !/^[0-9a-f-]{36}$/i.test(draftId)
+      || !/^[0-9a-f-]{36}$/i.test(uploadId)
+      || !/^(jpg|png|webp|mp4|webm|m4v|mov|m4a|mp3|aac|ogg|pdf)$/.test(extension)) {
+      throw new Error("Invalid instructor draft upload identifier.");
+    }
+    const objectName = `instructor-draft-uploads/${userId}/${draftId}/${uploadId}.${extension}`;
+    const { bucketName, objectName: bucketObjectName } = parseObjectPath(`${this.privateDir()}/${objectName}`);
+    const uploadURL = await signUpload(bucketName, bucketObjectName);
+    return { uploadURL, objectPath: `/objects/${objectName}` };
+  }
+
+  async promoteInstructorDraftUpload(
+    stagingPath: string,
+    userId: string,
+    draftId: string,
+    uploadId: string,
+    extension: string,
+    destinationPath: string,
+  ) {
+    const expectedStagingPath =
+      `/objects/instructor-draft-uploads/${userId}/${draftId}/${uploadId}.${extension}`;
+    const allowedDestination = new RegExp(
+      `^/objects/(?:course-recordings/${uploadId}\\.(?:mp4|webm|m4v|mov|m4a|mp3|aac|ogg)|course-materials/[0-9a-f-]{36}/${uploadId}\\.pdf|instructor-profile-photos/${uploadId}\\.(?:jpg|png|webp))$`,
+      "i",
+    );
+    if (!/^[A-Za-z0-9_-]{1,160}$/.test(userId)
+      || !/^[0-9a-f-]{36}$/i.test(draftId)
+      || !/^[0-9a-f-]{36}$/i.test(uploadId)
+      || stagingPath !== expectedStagingPath
+      || !allowedDestination.test(destinationPath)) {
+      throw new ObjectNotFoundError();
+    }
+    const source = await this.getPrivateFile(stagingPath);
+    const { bucketName, objectName } = parseObjectPath(
+      `${this.privateDir()}/${destinationPath.slice("/objects/".length)}`,
+    );
+    const destination = objectStorageClient.bucket(bucketName).file(objectName);
+    await source.copy(destination);
+    try {
+      await source.delete({ ignoreNotFound: true });
+    } catch {
+      // The approved copy is separate; staging cleanup can retry later.
+    }
+    return destinationPath;
+  }
+
   async promoteCourseMaterialUpload(stagingPath: string, courseId: string, materialId: string) {
     const expectedStagingPath = `/objects/course-material-uploads/${courseId}/${materialId}.pdf`;
     const finalPath = `/objects/course-materials/${courseId}/${materialId}.pdf`;

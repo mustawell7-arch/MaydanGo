@@ -2715,6 +2715,402 @@ export interface GetOperationCoursesResponse {
   courses: CourseAdminRecord[];
 }
 
+export interface InstructorProfileDraftPayload {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  displayName: string;
+  /** @maxLength 3000 */
+  biography: string;
+  /**
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 240
+     */
+  qualifications: string[];
+  /**
+     * @maxItems 12
+     * @items.minLength 1
+     * @items.maxLength 80
+     */
+  languages: string[];
+  /**
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 120
+     */
+  specialties: string[];
+  /** @nullable */
+  photoUploadId: string | null;
+}
+
+export interface InstructorCourseLessonDraft {
+  localizedTitle: LocalizedText;
+  localizedContent: LocalizedText;
+  /**
+     * @minimum 1
+     * @maximum 1000
+     */
+  durationMinutes: number;
+  /** @nullable */
+  recordingUploadId: string | null;
+}
+
+export interface InstructorCourseMaterialDraft {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  title: string;
+  /** @nullable */
+  uploadId: string | null;
+}
+
+export type InstructorCourseDraftPayloadLevel = typeof InstructorCourseDraftPayloadLevel[keyof typeof InstructorCourseDraftPayloadLevel];
+
+
+export const InstructorCourseDraftPayloadLevel = {
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
+  'all-levels': 'all-levels',
+} as const;
+
+export interface InstructorCourseDraftPayload {
+  localizedTitle: LocalizedText;
+  localizedSummary: LocalizedText;
+  localizedInstructor: LocalizedText;
+  /** @maxLength 120 */
+  category: string;
+  level: InstructorCourseDraftPayloadLevel;
+  /**
+     * @minimum 1
+     * @maximum 10000
+     */
+  durationMinutes: number;
+  /**
+     * @minItems 1
+     * @maxItems 3
+     * @nullable
+     */
+  courseLanguages: CourseLanguage47d80cf[] | null;
+  /**
+     * @maxItems 3
+     * @nullable
+     */
+  subtitleLanguages: CourseLanguage47d80cf[] | null;
+  requiredEquipment: LocalizedCourseDetail47d80cf | null;
+  disclaimers: LocalizedCourseDetail47d80cf | null;
+  supportingMaterials: LocalizedCourseDetail47d80cf | null;
+  /** @maxItems 200 */
+  lessons: InstructorCourseLessonDraft[];
+  /** @maxItems 50 */
+  materials: InstructorCourseMaterialDraft[];
+}
+
+export type InstructorLiveClassDraftPayloadDifficultyLevel = typeof InstructorLiveClassDraftPayloadDifficultyLevel[keyof typeof InstructorLiveClassDraftPayloadDifficultyLevel];
+
+
+export const InstructorLiveClassDraftPayloadDifficultyLevel = {
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
+  'all-levels': 'all-levels',
+} as const;
+
+export interface InstructorLiveClassDraftPayload {
+  localizedTitle: LocalizedText;
+  localizedDescription: LocalizedText;
+  localizedInstructor: LocalizedText;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  city: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  category: string;
+  startsAt: string;
+  endsAt: string;
+  cancellationDeadline: string;
+  /**
+     * @minimum 1
+     * @maximum 1000
+     */
+  capacity: number;
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 80
+     */
+  tiers: string[];
+  difficultyLevel: InstructorLiveClassDraftPayloadDifficultyLevel;
+  instructionLanguage: CourseLanguage47d80cf;
+  requiredEquipment: LocalizedCourseDetail47d80cf | null;
+  /** @maxLength 2048 */
+  joinUrl: string;
+}
+
+export type InstructorContentDraftPayload = InstructorProfileDraftPayload | InstructorCourseDraftPayload | InstructorLiveClassDraftPayload;
+
+export interface InstructorLiveClassReviewPayload {
+  localizedTitle: LocalizedText;
+  localizedDescription: LocalizedText;
+  localizedInstructor: LocalizedText;
+  city: string;
+  category: string;
+  startsAt: string;
+  endsAt: string;
+  cancellationDeadline: string;
+  capacity: number;
+  tiers: string[];
+  difficultyLevel: string;
+  instructionLanguage: CourseLanguage47d80cf;
+  requiredEquipment: LocalizedCourseDetail47d80cf | null;
+}
+
+export type InstructorContentReviewPayload = InstructorProfileDraftPayload | InstructorCourseDraftPayload | InstructorLiveClassReviewPayload;
+
+export type InstructorContentDraftInputContentType = typeof InstructorContentDraftInputContentType[keyof typeof InstructorContentDraftInputContentType];
+
+
+export const InstructorContentDraftInputContentType = {
+  profile: 'profile',
+  course: 'course',
+  live_class: 'live_class',
+} as const;
+
+export interface InstructorContentDraftInput {
+  contentType: InstructorContentDraftInputContentType;
+  payload: InstructorContentDraftPayload;
+}
+
+export type InstructorContentDraftContentType = typeof InstructorContentDraftContentType[keyof typeof InstructorContentDraftContentType];
+
+
+export const InstructorContentDraftContentType = {
+  profile: 'profile',
+  course: 'course',
+  live_class: 'live_class',
+} as const;
+
+export type InstructorContentDraftStatus = typeof InstructorContentDraftStatus[keyof typeof InstructorContentDraftStatus];
+
+
+export const InstructorContentDraftStatus = {
+  draft: 'draft',
+  submitted: 'submitted',
+  processing: 'processing',
+  changes_requested: 'changes_requested',
+  rejected: 'rejected',
+  approved: 'approved',
+} as const;
+
+export interface InstructorContentDraft {
+  id: string;
+  contentType: InstructorContentDraftContentType;
+  status: InstructorContentDraftStatus;
+  payload: InstructorContentDraftPayload;
+  /** @nullable */
+  decisionReason: string | null;
+  /** @nullable */
+  publishedCourseId: string | null;
+  /** @nullable */
+  publishedOfferingId: string | null;
+  /** @nullable */
+  submittedAt: string | null;
+  /** @nullable */
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetInstructorContentDraftsResponse {
+  drafts: InstructorContentDraft[];
+}
+
+export type InstructorDraftUploadInputPurpose = typeof InstructorDraftUploadInputPurpose[keyof typeof InstructorDraftUploadInputPurpose];
+
+
+export const InstructorDraftUploadInputPurpose = {
+  profile_photo: 'profile_photo',
+  course_recording: 'course_recording',
+  course_material: 'course_material',
+} as const;
+
+export interface InstructorDraftUploadInput {
+  purpose: InstructorDraftUploadInputPurpose;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  fileName: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  contentType: string;
+  /**
+     * @minimum 1
+     * @maximum 524288000
+     */
+  sizeBytes: number;
+}
+
+export interface InstructorDraftUploadUrlResponse {
+  uploadId: string;
+  uploadURL: string;
+  fileName: string;
+  contentType: string;
+}
+
+export type InstructorDraftUploadPurpose = typeof InstructorDraftUploadPurpose[keyof typeof InstructorDraftUploadPurpose];
+
+
+export const InstructorDraftUploadPurpose = {
+  profile_photo: 'profile_photo',
+  course_recording: 'course_recording',
+  course_material: 'course_material',
+} as const;
+
+export type InstructorDraftUploadStatus = typeof InstructorDraftUploadStatus[keyof typeof InstructorDraftUploadStatus];
+
+
+export const InstructorDraftUploadStatus = {
+  pending: 'pending',
+  ready: 'ready',
+  promoted: 'promoted',
+} as const;
+
+export interface InstructorDraftUpload {
+  id: string;
+  purpose: InstructorDraftUploadPurpose;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  status: InstructorDraftUploadStatus;
+}
+
+export type InstructorContentReviewDraftContentType = typeof InstructorContentReviewDraftContentType[keyof typeof InstructorContentReviewDraftContentType];
+
+
+export const InstructorContentReviewDraftContentType = {
+  profile: 'profile',
+  course: 'course',
+  live_class: 'live_class',
+} as const;
+
+export type InstructorContentReviewDraftStatus = typeof InstructorContentReviewDraftStatus[keyof typeof InstructorContentReviewDraftStatus];
+
+
+export const InstructorContentReviewDraftStatus = {
+  draft: 'draft',
+  submitted: 'submitted',
+  processing: 'processing',
+  changes_requested: 'changes_requested',
+  rejected: 'rejected',
+  approved: 'approved',
+} as const;
+
+export interface InstructorContentReviewDraft {
+  id: string;
+  instructorUserId: string;
+  contentType: InstructorContentReviewDraftContentType;
+  status: InstructorContentReviewDraftStatus;
+  payload: InstructorContentReviewPayload;
+  /** @nullable */
+  decisionReason: string | null;
+  /** @nullable */
+  publishedCourseId: string | null;
+  /** @nullable */
+  publishedOfferingId: string | null;
+  /** @nullable */
+  submittedAt: string | null;
+  /** @nullable */
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InstructorReviewPartner {
+  id: string;
+  name: string;
+}
+
+export interface GetInstructorContentReviewQueueResponse {
+  drafts: InstructorContentReviewDraft[];
+  partners: InstructorReviewPartner[];
+}
+
+export type InstructorContentDecisionInputDecision = typeof InstructorContentDecisionInputDecision[keyof typeof InstructorContentDecisionInputDecision];
+
+
+export const InstructorContentDecisionInputDecision = {
+  approve: 'approve',
+  request_changes: 'request_changes',
+  reject: 'reject',
+} as const;
+
+export interface InstructorContentDecisionInput {
+  decision: InstructorContentDecisionInputDecision;
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  reason?: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  partnerId?: string;
+}
+
+export type InstructorContentDecisionResponseStatus = typeof InstructorContentDecisionResponseStatus[keyof typeof InstructorContentDecisionResponseStatus];
+
+
+export const InstructorContentDecisionResponseStatus = {
+  changes_requested: 'changes_requested',
+  rejected: 'rejected',
+  approved: 'approved',
+} as const;
+
+export interface InstructorContentDecisionResponse {
+  id: string;
+  status: InstructorContentDecisionResponseStatus;
+  /** @nullable */
+  publishedCourseId: string | null;
+  /** @nullable */
+  publishedOfferingId: string | null;
+  partnerReviewPending: boolean;
+}
+
+export interface PublicInstructorProfileCourse {
+  id: string;
+  localizedTitle: LocalizedText;
+  category: string;
+}
+
+export interface PublicInstructorProfile {
+  id: string;
+  displayName: string;
+  biography: string;
+  qualifications: string[];
+  languages: string[];
+  specialties: string[];
+  /**
+     * @nullable
+     * @pattern ^/api/public/instructors/[0-9a-f-]{36}/photo$
+     */
+  photoUrl: string | null;
+  courses: PublicInstructorProfileCourse[];
+}
+
+export type GetPublicInstructorProfilesResponse = PublicInstructorProfile[];
+
 export interface InstructorAccessRequestInput {
   /**
      * @minLength 10

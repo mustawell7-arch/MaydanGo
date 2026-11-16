@@ -117,11 +117,14 @@ import type {
   GetBookingCatalog200Item,
   GetFinanceSettlementsParams,
   GetInstructorAccessRequestsResponse,
+  GetInstructorContentDraftsResponse,
+  GetInstructorContentReviewQueueResponse,
   GetOperationCourseMaterialsResponse,
   GetOperationCoursesResponse,
   GetOperationsAnalyticsParams,
   GetPartnerSettlementSummaryParams,
   GetPartnerStaffResponse,
+  GetPublicInstructorProfilesResponse,
   GetPublicLegalPolicyVersionParams,
   GetSuperAdminAuditLogsParams,
   GetSuperAdminGuardianConsentsParams,
@@ -135,6 +138,13 @@ import type {
   InstructorAccessDecisionResponse,
   InstructorAccessRequestInput,
   InstructorAccessRequestStatus,
+  InstructorContentDecisionInput,
+  InstructorContentDecisionResponse,
+  InstructorContentDraft,
+  InstructorContentDraftInput,
+  InstructorDraftUpload,
+  InstructorDraftUploadInput,
+  InstructorDraftUploadUrlResponse,
   InstructorPortalResponse,
   InstructorSupportTicketInput,
   IssueCheckinQr200,
@@ -1516,6 +1526,196 @@ export function useGetPublicCourses<TData = Awaited<ReturnType<typeof getPublicC
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetPublicCoursesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicInstructorProfilesUrl = () => {
+
+
+
+
+  return `/api/public/instructors`
+}
+
+export const getPublicInstructorProfiles = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetPublicInstructorProfilesResponse> => {
+
+  return customFetch<GetPublicInstructorProfilesResponse>(getGetPublicInstructorProfilesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicInstructorProfilesQueryKey = () => {
+    return [
+    `/api/public/instructors`
+    ] as const;
+    }
+
+
+export const getGetPublicInstructorProfilesQueryOptions = <TData = Awaited<ReturnType<typeof getPublicInstructorProfiles>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicInstructorProfiles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicInstructorProfilesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicInstructorProfiles>>> = ({ signal }) => getPublicInstructorProfiles({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicInstructorProfiles>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPublicInstructorProfilesQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicInstructorProfiles>>>
+export type GetPublicInstructorProfilesQueryError = ErrorType<unknown>
+
+
+export function useGetPublicInstructorProfiles<TData = Awaited<ReturnType<typeof getPublicInstructorProfiles>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicInstructorProfiles>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicInstructorProfiles>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicInstructorProfiles>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicInstructorProfiles<TData = Awaited<ReturnType<typeof getPublicInstructorProfiles>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicInstructorProfiles>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicInstructorProfiles>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicInstructorProfiles>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicInstructorProfiles<TData = Awaited<ReturnType<typeof getPublicInstructorProfiles>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicInstructorProfiles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPublicInstructorProfiles<TData = Awaited<ReturnType<typeof getPublicInstructorProfiles>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicInstructorProfiles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPublicInstructorProfilesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicInstructorProfilePhotoUrl = (id: string,) => {
+
+
+
+
+  return `/api/public/instructors/${id}/photo`
+}
+
+export const getPublicInstructorProfilePhoto = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetPublicInstructorProfilePhotoUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicInstructorProfilePhotoQueryKey = (id: string,) => {
+    return [
+    `/api/public/instructors/${id}/photo`
+    ] as const;
+    }
+
+
+export const getGetPublicInstructorProfilePhotoQueryOptions = <TData = Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>, TError = ErrorType<void>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicInstructorProfilePhotoQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>> = ({ signal }) => getPublicInstructorProfilePhoto(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPublicInstructorProfilePhotoQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>>
+export type GetPublicInstructorProfilePhotoQueryError = ErrorType<void>
+
+
+export function useGetPublicInstructorProfilePhoto<TData = Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>, TError = ErrorType<void>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicInstructorProfilePhoto<TData = Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicInstructorProfilePhoto<TData = Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPublicInstructorProfilePhoto<TData = Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicInstructorProfilePhoto>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPublicInstructorProfilePhotoQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -7042,6 +7242,287 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getDecideInstructorAccessRequestMutationOptions(options), queryClient);
     }
 
+export const getGetInstructorContentDraftsForReviewUrl = () => {
+
+
+
+
+  return `/api/operations/instructor-content-drafts`
+}
+
+export const getInstructorContentDraftsForReview = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetInstructorContentReviewQueueResponse> => {
+
+  return customFetch<GetInstructorContentReviewQueueResponse>(getGetInstructorContentDraftsForReviewUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInstructorContentDraftsForReviewQueryKey = () => {
+    return [
+    `/api/operations/instructor-content-drafts`
+    ] as const;
+    }
+
+
+export const getGetInstructorContentDraftsForReviewQueryOptions = <TData = Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInstructorContentDraftsForReviewQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>> = ({ signal }) => getInstructorContentDraftsForReview({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetInstructorContentDraftsForReviewQueryResult = NonNullable<Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>>
+export type GetInstructorContentDraftsForReviewQueryError = ErrorType<unknown>
+
+
+export function useGetInstructorContentDraftsForReview<TData = Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorContentDraftsForReview<TData = Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorContentDraftsForReview<TData = Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetInstructorContentDraftsForReview<TData = Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDraftsForReview>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetInstructorContentDraftsForReviewQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDecideInstructorContentDraftUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/instructor-content-drafts/${id}/decision`
+}
+
+export const decideInstructorContentDraft = async (id: string,
+    instructorContentDecisionInput: InstructorContentDecisionInput, options?: Parameters<typeof customFetch>[1]): Promise<InstructorContentDecisionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<InstructorContentDecisionResponse>(getDecideInstructorContentDraftUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(instructorContentDecisionInput)
+  }
+);}
+
+
+
+
+
+export const getDecideInstructorContentDraftMutationKey = () => ['decideInstructorContentDraft'] as const;
+
+export const getDecideInstructorContentDraftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof decideInstructorContentDraft>>, TError,DecideInstructorContentDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof decideInstructorContentDraft>>, TError,DecideInstructorContentDraftMutationVariables, TContext> => {
+
+const mutationKey = getDecideInstructorContentDraftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof decideInstructorContentDraft>>, DecideInstructorContentDraftMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  decideInstructorContentDraft(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DecideInstructorContentDraftMutationResult = NonNullable<Awaited<ReturnType<typeof decideInstructorContentDraft>>>
+    export type DecideInstructorContentDraftMutationBody = BodyType<InstructorContentDecisionInput>
+    export type DecideInstructorContentDraftMutationError = ErrorType<unknown>
+    export type DecideInstructorContentDraftMutationVariables = {id: string;data: BodyType<InstructorContentDecisionInput>}
+
+    export const useDecideInstructorContentDraft = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof decideInstructorContentDraft>>, TError,DecideInstructorContentDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof decideInstructorContentDraft>>,
+        TError,
+        DecideInstructorContentDraftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDecideInstructorContentDraftMutationOptions(options), queryClient);
+    }
+
+export const getGetInstructorContentReviewUploadUrl = (id: string,
+    uploadId: string,) => {
+
+
+
+
+  return `/api/operations/instructor-content-drafts/${id}/uploads/${uploadId}/file`
+}
+
+export const getInstructorContentReviewUpload = async (id: string,
+    uploadId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetInstructorContentReviewUploadUrl(id,uploadId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInstructorContentReviewUploadQueryKey = (id: string,
+    uploadId: string,) => {
+    return [
+    `/api/operations/instructor-content-drafts/${id}/uploads/${uploadId}/file`
+    ] as const;
+    }
+
+
+export const getGetInstructorContentReviewUploadQueryOptions = <TData = Awaited<ReturnType<typeof getInstructorContentReviewUpload>>, TError = ErrorType<void>>(id: string,
+    uploadId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentReviewUpload>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInstructorContentReviewUploadQueryKey(id,uploadId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInstructorContentReviewUpload>>> = ({ signal }) => getInstructorContentReviewUpload(id,uploadId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && uploadId !== null && uploadId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentReviewUpload>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetInstructorContentReviewUploadQueryResult = NonNullable<Awaited<ReturnType<typeof getInstructorContentReviewUpload>>>
+export type GetInstructorContentReviewUploadQueryError = ErrorType<void>
+
+
+export function useGetInstructorContentReviewUpload<TData = Awaited<ReturnType<typeof getInstructorContentReviewUpload>>, TError = ErrorType<void>>(
+ id: string,
+    uploadId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentReviewUpload>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorContentReviewUpload>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorContentReviewUpload>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorContentReviewUpload<TData = Awaited<ReturnType<typeof getInstructorContentReviewUpload>>, TError = ErrorType<void>>(
+ id: string,
+    uploadId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentReviewUpload>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorContentReviewUpload>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorContentReviewUpload>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorContentReviewUpload<TData = Awaited<ReturnType<typeof getInstructorContentReviewUpload>>, TError = ErrorType<void>>(
+ id: string,
+    uploadId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentReviewUpload>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetInstructorContentReviewUpload<TData = Awaited<ReturnType<typeof getInstructorContentReviewUpload>>, TError = ErrorType<void>>(
+ id: string,
+    uploadId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentReviewUpload>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetInstructorContentReviewUploadQueryOptions(id,uploadId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetInstructorPortalUrl = () => {
 
 
@@ -7125,6 +7606,590 @@ export function useGetInstructorPortal<TData = Awaited<ReturnType<typeof getInst
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetInstructorPortalQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetInstructorContentDraftsUrl = () => {
+
+
+
+
+  return `/api/instructor/content-drafts`
+}
+
+export const getInstructorContentDrafts = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetInstructorContentDraftsResponse> => {
+
+  return customFetch<GetInstructorContentDraftsResponse>(getGetInstructorContentDraftsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInstructorContentDraftsQueryKey = () => {
+    return [
+    `/api/instructor/content-drafts`
+    ] as const;
+    }
+
+
+export const getGetInstructorContentDraftsQueryOptions = <TData = Awaited<ReturnType<typeof getInstructorContentDrafts>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDrafts>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInstructorContentDraftsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInstructorContentDrafts>>> = ({ signal }) => getInstructorContentDrafts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDrafts>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetInstructorContentDraftsQueryResult = NonNullable<Awaited<ReturnType<typeof getInstructorContentDrafts>>>
+export type GetInstructorContentDraftsQueryError = ErrorType<unknown>
+
+
+export function useGetInstructorContentDrafts<TData = Awaited<ReturnType<typeof getInstructorContentDrafts>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDrafts>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorContentDrafts>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorContentDrafts>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorContentDrafts<TData = Awaited<ReturnType<typeof getInstructorContentDrafts>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDrafts>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorContentDrafts>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorContentDrafts>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorContentDrafts<TData = Awaited<ReturnType<typeof getInstructorContentDrafts>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDrafts>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetInstructorContentDrafts<TData = Awaited<ReturnType<typeof getInstructorContentDrafts>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDrafts>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetInstructorContentDraftsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateInstructorContentDraftUrl = () => {
+
+
+
+
+  return `/api/instructor/content-drafts`
+}
+
+export const createInstructorContentDraft = async (instructorContentDraftInput: InstructorContentDraftInput, options?: Parameters<typeof customFetch>[1]): Promise<InstructorContentDraft> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<InstructorContentDraft>(getCreateInstructorContentDraftUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(instructorContentDraftInput)
+  }
+);}
+
+
+
+
+
+export const getCreateInstructorContentDraftMutationKey = () => ['createInstructorContentDraft'] as const;
+
+export const getCreateInstructorContentDraftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInstructorContentDraft>>, TError,CreateInstructorContentDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createInstructorContentDraft>>, TError,CreateInstructorContentDraftMutationVariables, TContext> => {
+
+const mutationKey = getCreateInstructorContentDraftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createInstructorContentDraft>>, CreateInstructorContentDraftMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createInstructorContentDraft(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateInstructorContentDraftMutationResult = NonNullable<Awaited<ReturnType<typeof createInstructorContentDraft>>>
+    export type CreateInstructorContentDraftMutationBody = BodyType<InstructorContentDraftInput>
+    export type CreateInstructorContentDraftMutationError = ErrorType<unknown>
+    export type CreateInstructorContentDraftMutationVariables = {data: BodyType<InstructorContentDraftInput>}
+
+    export const useCreateInstructorContentDraft = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInstructorContentDraft>>, TError,CreateInstructorContentDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createInstructorContentDraft>>,
+        TError,
+        CreateInstructorContentDraftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateInstructorContentDraftMutationOptions(options), queryClient);
+    }
+
+export const getUpdateInstructorContentDraftUrl = (id: string,) => {
+
+
+
+
+  return `/api/instructor/content-drafts/${id}`
+}
+
+export const updateInstructorContentDraft = async (id: string,
+    instructorContentDraftInput: InstructorContentDraftInput, options?: Parameters<typeof customFetch>[1]): Promise<InstructorContentDraft> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<InstructorContentDraft>(getUpdateInstructorContentDraftUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(instructorContentDraftInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateInstructorContentDraftMutationKey = () => ['updateInstructorContentDraft'] as const;
+
+export const getUpdateInstructorContentDraftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInstructorContentDraft>>, TError,UpdateInstructorContentDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateInstructorContentDraft>>, TError,UpdateInstructorContentDraftMutationVariables, TContext> => {
+
+const mutationKey = getUpdateInstructorContentDraftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateInstructorContentDraft>>, UpdateInstructorContentDraftMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateInstructorContentDraft(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateInstructorContentDraftMutationResult = NonNullable<Awaited<ReturnType<typeof updateInstructorContentDraft>>>
+    export type UpdateInstructorContentDraftMutationBody = BodyType<InstructorContentDraftInput>
+    export type UpdateInstructorContentDraftMutationError = ErrorType<unknown>
+    export type UpdateInstructorContentDraftMutationVariables = {id: string;data: BodyType<InstructorContentDraftInput>}
+
+    export const useUpdateInstructorContentDraft = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInstructorContentDraft>>, TError,UpdateInstructorContentDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateInstructorContentDraft>>,
+        TError,
+        UpdateInstructorContentDraftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateInstructorContentDraftMutationOptions(options), queryClient);
+    }
+
+export const getSubmitInstructorContentDraftUrl = (id: string,) => {
+
+
+
+
+  return `/api/instructor/content-drafts/${id}/submit`
+}
+
+export const submitInstructorContentDraft = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<InstructorContentDraft> => {
+
+  return customFetch<InstructorContentDraft>(getSubmitInstructorContentDraftUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSubmitInstructorContentDraftMutationKey = () => ['submitInstructorContentDraft'] as const;
+
+export const getSubmitInstructorContentDraftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitInstructorContentDraft>>, TError,SubmitInstructorContentDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitInstructorContentDraft>>, TError,SubmitInstructorContentDraftMutationVariables, TContext> => {
+
+const mutationKey = getSubmitInstructorContentDraftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitInstructorContentDraft>>, SubmitInstructorContentDraftMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  submitInstructorContentDraft(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitInstructorContentDraftMutationResult = NonNullable<Awaited<ReturnType<typeof submitInstructorContentDraft>>>
+
+    export type SubmitInstructorContentDraftMutationError = ErrorType<unknown>
+    export type SubmitInstructorContentDraftMutationVariables = {id: string}
+
+    export const useSubmitInstructorContentDraft = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitInstructorContentDraft>>, TError,SubmitInstructorContentDraftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof submitInstructorContentDraft>>,
+        TError,
+        SubmitInstructorContentDraftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSubmitInstructorContentDraftMutationOptions(options), queryClient);
+    }
+
+export const getCreateInstructorContentDraftUploadUrl = (id: string,) => {
+
+
+
+
+  return `/api/instructor/content-drafts/${id}/uploads`
+}
+
+export const createInstructorContentDraftUpload = async (id: string,
+    instructorDraftUploadInput: InstructorDraftUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<InstructorDraftUploadUrlResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<InstructorDraftUploadUrlResponse>(getCreateInstructorContentDraftUploadUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(instructorDraftUploadInput)
+  }
+);}
+
+
+
+
+
+export const getCreateInstructorContentDraftUploadMutationKey = () => ['createInstructorContentDraftUpload'] as const;
+
+export const getCreateInstructorContentDraftUploadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInstructorContentDraftUpload>>, TError,CreateInstructorContentDraftUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createInstructorContentDraftUpload>>, TError,CreateInstructorContentDraftUploadMutationVariables, TContext> => {
+
+const mutationKey = getCreateInstructorContentDraftUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createInstructorContentDraftUpload>>, CreateInstructorContentDraftUploadMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createInstructorContentDraftUpload(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateInstructorContentDraftUploadMutationResult = NonNullable<Awaited<ReturnType<typeof createInstructorContentDraftUpload>>>
+    export type CreateInstructorContentDraftUploadMutationBody = BodyType<InstructorDraftUploadInput>
+    export type CreateInstructorContentDraftUploadMutationError = ErrorType<unknown>
+    export type CreateInstructorContentDraftUploadMutationVariables = {id: string;data: BodyType<InstructorDraftUploadInput>}
+
+    export const useCreateInstructorContentDraftUpload = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInstructorContentDraftUpload>>, TError,CreateInstructorContentDraftUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createInstructorContentDraftUpload>>,
+        TError,
+        CreateInstructorContentDraftUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateInstructorContentDraftUploadMutationOptions(options), queryClient);
+    }
+
+export const getCompleteInstructorContentDraftUploadUrl = (id: string,
+    uploadId: string,) => {
+
+
+
+
+  return `/api/instructor/content-drafts/${id}/uploads/${uploadId}/complete`
+}
+
+export const completeInstructorContentDraftUpload = async (id: string,
+    uploadId: string, options?: Parameters<typeof customFetch>[1]): Promise<InstructorDraftUpload> => {
+
+  return customFetch<InstructorDraftUpload>(getCompleteInstructorContentDraftUploadUrl(id,uploadId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCompleteInstructorContentDraftUploadMutationKey = () => ['completeInstructorContentDraftUpload'] as const;
+
+export const getCompleteInstructorContentDraftUploadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeInstructorContentDraftUpload>>, TError,CompleteInstructorContentDraftUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeInstructorContentDraftUpload>>, TError,CompleteInstructorContentDraftUploadMutationVariables, TContext> => {
+
+const mutationKey = getCompleteInstructorContentDraftUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeInstructorContentDraftUpload>>, CompleteInstructorContentDraftUploadMutationVariables> = (props) => {
+          const {id,uploadId} = props ?? {};
+
+          return  completeInstructorContentDraftUpload(id,uploadId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteInstructorContentDraftUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completeInstructorContentDraftUpload>>>
+
+    export type CompleteInstructorContentDraftUploadMutationError = ErrorType<unknown>
+    export type CompleteInstructorContentDraftUploadMutationVariables = {id: string;uploadId: string}
+
+    export const useCompleteInstructorContentDraftUpload = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeInstructorContentDraftUpload>>, TError,CompleteInstructorContentDraftUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof completeInstructorContentDraftUpload>>,
+        TError,
+        CompleteInstructorContentDraftUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompleteInstructorContentDraftUploadMutationOptions(options), queryClient);
+    }
+
+export const getGetInstructorContentDraftUploadUrl = (id: string,
+    uploadId: string,) => {
+
+
+
+
+  return `/api/instructor/content-drafts/${id}/uploads/${uploadId}/file`
+}
+
+export const getInstructorContentDraftUpload = async (id: string,
+    uploadId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetInstructorContentDraftUploadUrl(id,uploadId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInstructorContentDraftUploadQueryKey = (id: string,
+    uploadId: string,) => {
+    return [
+    `/api/instructor/content-drafts/${id}/uploads/${uploadId}/file`
+    ] as const;
+    }
+
+
+export const getGetInstructorContentDraftUploadQueryOptions = <TData = Awaited<ReturnType<typeof getInstructorContentDraftUpload>>, TError = ErrorType<void>>(id: string,
+    uploadId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDraftUpload>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInstructorContentDraftUploadQueryKey(id,uploadId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInstructorContentDraftUpload>>> = ({ signal }) => getInstructorContentDraftUpload(id,uploadId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && uploadId !== null && uploadId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDraftUpload>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetInstructorContentDraftUploadQueryResult = NonNullable<Awaited<ReturnType<typeof getInstructorContentDraftUpload>>>
+export type GetInstructorContentDraftUploadQueryError = ErrorType<void>
+
+
+export function useGetInstructorContentDraftUpload<TData = Awaited<ReturnType<typeof getInstructorContentDraftUpload>>, TError = ErrorType<void>>(
+ id: string,
+    uploadId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDraftUpload>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorContentDraftUpload>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorContentDraftUpload>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorContentDraftUpload<TData = Awaited<ReturnType<typeof getInstructorContentDraftUpload>>, TError = ErrorType<void>>(
+ id: string,
+    uploadId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDraftUpload>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorContentDraftUpload>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorContentDraftUpload>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorContentDraftUpload<TData = Awaited<ReturnType<typeof getInstructorContentDraftUpload>>, TError = ErrorType<void>>(
+ id: string,
+    uploadId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDraftUpload>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetInstructorContentDraftUpload<TData = Awaited<ReturnType<typeof getInstructorContentDraftUpload>>, TError = ErrorType<void>>(
+ id: string,
+    uploadId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorContentDraftUpload>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetInstructorContentDraftUploadQueryOptions(id,uploadId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

@@ -8,15 +8,17 @@ import {
   getGetPublicFacilityQueryKey,
   getGetPublicFacilityReviewsQueryKey,
   getGetPublicSponsoredFacilitiesQueryKey,
+  getGetPublicInstructorProfilesQueryKey,
   useGetPublicCatalog,
   useGetPublicCourses,
   useGetPublicFacilities,
   useGetPublicFacility,
   useGetPublicFacilityReviews,
   useGetPublicSponsoredFacilities,
+  useGetPublicInstructorProfiles,
   useRecordPublicSponsoredFacilityEvent,
 } from '@workspace/api-client-react';
-import type { PublicFacility, PublicCourse } from '@workspace/api-client-react';
+import type { PublicFacility, PublicCourse, PublicInstructorProfile } from '@workspace/api-client-react';
 
 export type PublicCatalogLanguage = 'en' | 'ar' | 'ku';
 type CourseLanguageCode = 'en' | 'ar' | 'ku';
@@ -778,6 +780,7 @@ export function PublicFacilityBrowser({ language = 'en' }: { language?: PublicCa
 export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCatalogLanguage }) {
   const text = copy[language];
   const coursesQuery = useGetPublicCourses({ query: { queryKey: getGetPublicCoursesQueryKey() } });
+  const instructorProfilesQuery = useGetPublicInstructorProfiles({ query: { queryKey: getGetPublicInstructorProfilesQueryKey(), retry: false } });
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
   const courses = coursesQuery.data ?? [];
@@ -791,24 +794,7 @@ export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCata
     && [localized(course.localizedTitle, language), localized(course.localizedSummary, language), localized(course.localizedInstructor, language), course.category, course.level]
       .join(' ').toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
   );
-  const instructorProfiles = useMemo(() => {
-    const groups = new Map<string, { name: string; courses: PublicCourse[] }>();
-    for (const course of courses) {
-      const name = localized(course.localizedInstructor, language).trim();
-      if (!name) continue;
-      const key = JSON.stringify(course.localizedInstructor);
-      const group = groups.get(key) ?? { name, courses: [] };
-      group.courses.push(course);
-      groups.set(key, group);
-    }
-    return Array.from(groups.entries())
-      .map(([key, profile]) => ({
-        key,
-        ...profile,
-        categories: Array.from(new Set(profile.courses.map((course) => course.category.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, locale)),
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name, locale));
-  }, [courses, language, locale]);
+  const instructorProfiles = instructorProfilesQuery.data ?? [];
 
   return (
     <section id="public-courses" className="site-shell mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-10" dir={language === 'en' ? 'ltr' : 'rtl'} aria-labelledby="public-courses-title">
@@ -882,40 +868,45 @@ export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCata
           </div>
         )}
       </section>
-      {!coursesQuery.isLoading && !coursesQuery.isError ? <section className="mt-12" aria-labelledby="public-instructor-profiles-title" data-testid="section-public-instructor-profiles">
+      <section className="mt-12" aria-labelledby="public-instructor-profiles-title" data-testid="section-public-instructor-profiles">
         <header className="mb-6">
           <p className="text-xs font-bold uppercase tracking-[.18em] text-primary">{text.instructor}</p>
           <h2 id="public-instructor-profiles-title" className="font-display mt-2 text-2xl font-bold sm:text-3xl">{text.instructorProfiles}</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{text.instructorProfilesIntro}</p>
         </header>
-        {instructorProfiles.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {instructorProfiles.map((profile, profileIndex) => {
-            const visibleCourses = profile.courses.slice(0, 3);
-            const moreCount = profile.courses.length - visibleCourses.length;
-            return <article key={profile.key} className="rounded-2xl border border-border bg-card p-5 sm:p-6" data-testid={`card-public-instructor-${profileIndex + 1}`}>
-              <p className="text-xs font-semibold text-muted-foreground">{text.instructor}</p>
-              <h3 className="font-display mt-2 text-xl font-bold">{profile.name}</h3>
-              <p className="mt-2 text-xs text-muted-foreground" data-testid={`text-instructor-course-count-${profileIndex + 1}`}>
+        {instructorProfilesQuery.isLoading ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label={text.loadingCourses}>{[0, 1, 2].map((index) => <div key={index} className="h-56 animate-pulse rounded-2xl border border-border bg-card" />)}</div>
+          : instructorProfilesQuery.isError ? <QueryError message={text.failedCourses} retry={() => void instructorProfilesQuery.refetch()} retryLabel={text.retry} id="instructors" />
+            : instructorProfiles.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {instructorProfiles.map((profile: PublicInstructorProfile, profileIndex: number) => {
+            const visibleCourses = profile.courses.slice(0, 4);
+            return <article key={profile.id} className="rounded-2xl border border-border bg-card p-5 sm:p-6" data-testid={`card-public-instructor-${profileIndex + 1}`}>
+              <div className="flex items-start gap-4">
+                {profile.photoUrl ? <img src={profile.photoUrl} alt="" loading="lazy" className="h-16 w-16 rounded-2xl object-cover" data-testid={`img-public-instructor-${profile.id}`} /> : <div aria-hidden="true" className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-accent/70 font-display text-xl font-bold text-primary">{profile.displayName.trim().slice(0, 1)}</div>}
+                <div><p className="text-xs font-semibold text-muted-foreground">{text.instructor}</p><h3 className="font-display mt-1 text-xl font-bold">{profile.displayName}</h3></div>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-muted-foreground">{profile.biography}</p>
+              <p className="mt-3 text-xs text-muted-foreground" data-testid={`text-instructor-course-count-${profileIndex + 1}`}>
                 {profile.courses.length} {profile.courses.length === 1 ? text.onePublishedCourse : text.courseCountLabel}
               </p>
-              {profile.categories.length ? <div className="mt-4 flex flex-wrap gap-2" aria-label={text.categoryFilter}>
-                {profile.categories.map((category) => <span key={`${profile.key}-${category}`} className="rounded-full bg-accent/60 px-3 py-1 text-xs font-semibold">{category}</span>)}
+              {profile.specialties.length ? <div className="mt-4 flex flex-wrap gap-2" aria-label={text.categoryFilter}>
+                {profile.specialties.map((specialty) => <span key={`${profile.id}-${specialty}`} className="rounded-full bg-accent/60 px-3 py-1 text-xs font-semibold">{specialty}</span>)}
               </div> : null}
+              {profile.qualifications.length > 0 && <p className="mt-4 text-xs leading-5 text-muted-foreground">{profile.qualifications.join(' · ')}</p>}
+              {profile.languages.length > 0 && <p className="mt-2 text-xs font-semibold text-primary">{profile.languages.join(' · ')}</p>}
               <div className="mt-5 border-t border-border pt-4">
                 <p className="text-xs font-semibold text-muted-foreground">{text.courses}</p>
                 <ul className="mt-2 space-y-2">
                   {visibleCourses.map((course) => <li key={course.id} className="text-sm leading-5" data-testid={`row-instructor-course-${profileIndex + 1}-${course.id}`}>
-                    {localized(course.localizedTitle, language)}
+                    {localized(course.localizedTitle, language)} <span className="text-xs text-muted-foreground">· {course.category}</span>
                   </li>)}
                 </ul>
-                {moreCount > 0 ? <p className="mt-2 text-xs text-muted-foreground">{moreCount} {text.moreCourses}</p> : null}
               </div>
             </article>;
           })}
         </div> : <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-10 text-center" data-testid="empty-public-instructor-profiles">
           <p className="text-sm leading-6 text-muted-foreground">{text.noInstructorProfiles}</p>
         </div>}
-      </section> : null}
+      </section>
       <aside className="mt-8 rounded-2xl bg-muted/70 p-5 sm:px-7 sm:py-6"><p className="text-sm font-medium leading-6">{text.appNote}</p></aside>
     </section>
   );

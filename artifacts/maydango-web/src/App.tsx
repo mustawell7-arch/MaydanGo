@@ -45,6 +45,9 @@ const MembershipTermsDraftPage = lazy(() => import('@/pages/membership-terms-dra
 const AdminInstructorAccessPage = lazy(() =>
   import('@/pages/instructor-access').then(module => ({ default: module.AdminInstructorAccessPage })),
 );
+const AdminInstructorContentPage = lazy(() =>
+  import('@/pages/instructor-content-workspace').then(module => ({ default: module.AdminInstructorContentPage })),
+);
 const InstructorPortalPage = lazy(() =>
   import('@/pages/instructor-access').then(module => ({ default: module.InstructorPortalPage })),
 );
@@ -1376,7 +1379,9 @@ function Router() {
       <Route path="/partner-portal" component={PartnerPortal} />
       <Route path="/finance" component={FinanceConsole} />
       <Route path="/instructor-portal" component={InstructorPortalPage} />
+      <Route path="/instructor-access" component={InstructorPortalPage} />
       <Route path="/admin/instructor-access" component={AdminInstructorAccessPage} />
+      <Route path="/admin/instructor-content" component={AdminInstructorContentPage} />
       <Route path="/admin/sponsored-placements" component={SponsoredPlacementsManagerPage} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
@@ -1395,7 +1400,7 @@ function HomeRedirect() {
 function SignInPage() {
   const requestedPath = new URLSearchParams(window.location.search).get('redirect_url');
   const normalizedPath = requestedPath?.startsWith(basePath) ? requestedPath.slice(basePath.length) : requestedPath;
-  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access', '/admin/sponsored-placements', '/admin/corporate', '/corporate-portal', '/support-desk'].includes(normalizedPath ?? '')
+  const safePath = ['/account', '/instructor-portal', '/instructor-access', '/admin/instructor-access', '/admin/instructor-content', '/admin/sponsored-placements', '/admin/corporate', '/corporate-portal', '/support-desk'].includes(normalizedPath ?? '')
     ? normalizedPath!
     : normalizedPath?.startsWith('/corporate-invite?token=') ? normalizedPath : undefined;
   const redirectTo = safePath ? `${basePath}${safePath}` : undefined;
@@ -1406,7 +1411,7 @@ function SignInPage() {
 function SignUpPage() {
   const requestedPath = new URLSearchParams(window.location.search).get('redirect_url');
   const normalizedPath = requestedPath?.startsWith(basePath) ? requestedPath.slice(basePath.length) : requestedPath;
-  const safePath = ['/account', '/instructor-portal', '/admin/instructor-access', '/admin/sponsored-placements', '/admin/corporate', '/corporate-portal', '/support-desk'].includes(normalizedPath ?? '')
+  const safePath = ['/account', '/instructor-portal', '/instructor-access', '/admin/instructor-access', '/admin/instructor-content', '/admin/sponsored-placements', '/admin/corporate', '/corporate-portal', '/support-desk'].includes(normalizedPath ?? '')
     ? normalizedPath!
     : normalizedPath?.startsWith('/corporate-invite?token=') ? normalizedPath : undefined;
   const redirectTo = safePath ? `${basePath}${safePath}` : undefined;
