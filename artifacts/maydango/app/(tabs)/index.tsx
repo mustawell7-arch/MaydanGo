@@ -318,7 +318,7 @@ export default function HomeScreen() {
                   key={course.id}
                   accessibilityRole="button"
                   accessibilityLabel={`${t('continueCourse')}: ${localized(course.localizedTitle)}`}
-                  onPress={() => router.push({ pathname: '/course/[id]', params: { id: course.id } })}
+                  onPress={() => router.push({ pathname: '/course/[id]', params: { id: course.id, resume: '1' } })}
                   style={({ pressed }) => [
                     styles.courseProgressCard,
                     { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.9 : 1 },

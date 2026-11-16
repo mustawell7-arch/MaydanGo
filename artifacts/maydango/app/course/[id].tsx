@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, Pressable } from '@/components/Localized';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,16 +18,23 @@ export default function CourseDetailScreen() {
   const colors = useColors();
   const app = useApp();
   const queryClient = useQueryClient();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, resume } = useLocalSearchParams<{ id: string; resume?: string }>();
   const courseQuery = useGetMemberCourse(id);
   const course = courseQuery.data;
   const enrollMutation = useEnrollMemberCourse();
   const progressMutation = useUpdateCourseProgress();
   const playbackLinkMutation = useCreateMemberCoursePlaybackLink();
   const [openLesson, setOpenLesson] = useState<string | null>(null);
+  const resumedCourseId = useRef<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const t = (key: MessageKey) => translate(app.language, key);
   const align = app.language === 'en' ? 'left' : 'right';
+  useEffect(() => {
+    if (resume !== '1' || !course || course.accessState !== 'ready' || resumedCourseId.current === course.id) return;
+    resumedCourseId.current = course.id;
+    const nextLesson = course.lessons.find((lesson) => !lesson.completed);
+    if (nextLesson) setOpenLesson(nextLesson.id);
+  }, [course, resume]);
   const courseLanguageNames = {
     en: t('languageEnglish'),
     ar: t('languageArabic'),
@@ -69,7 +76,10 @@ export default function CourseDetailScreen() {
     detail?.[app.language]?.trim() || t('informationNotProvided');
   const saveProgress = async (lessonId: string, completed: boolean) => {
     try {
-      await progressMutation.mutateAsync({ id: course.id, data: { lessonId, completed } });
+      const updatedCourse = await progressMutation.mutateAsync({ id: course.id, data: { lessonId, completed } });
+      if (resume === '1' && completed) {
+        setOpenLesson(updatedCourse.lessons.find((lesson) => !lesson.completed)?.id ?? null);
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: getGetMemberCourseQueryKey(course.id) }),
         queryClient.invalidateQueries({ queryKey: getGetMemberCoursesQueryKey() }),
