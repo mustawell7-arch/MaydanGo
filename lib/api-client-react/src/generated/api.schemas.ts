@@ -5322,6 +5322,21 @@ export type GetAttendance200RowsItem = {
   facility: string;
   startsAt: string;
   endsAt: string;
+  /**
+     * Partner-only display name from the member account.
+     * @nullable
+     */
+  customerName?: string | null;
+  /**
+     * Partner-only profile image URL from the member account.
+     * @nullable
+     */
+  customerImageUrl?: string | null;
+  /**
+     * Partner-only membership plan name or tier.
+     * @nullable
+     */
+  membershipPlan?: string | null;
   bookingStatus: string;
   status: string;
   settlementEligible: boolean;

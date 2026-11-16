@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, desc, eq, gt, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
-import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, guardianConsentDocuments, manualCheckinChallenges, memberships, offerings, operators, partners, reservations, memberProfiles, memberConsentEvents } from "@workspace/db";
+import { clerkClient } from "@clerk/express";
+import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, guardianConsentDocuments, manualCheckinChallenges, memberships, membershipBilling, membershipPlans, offerings, operators, partners, reservations, memberProfiles, memberConsentEvents } from "@workspace/db";
 import { z } from "zod";
 import { BookingError, membershipCanAccess, processWaitlistQueue } from "./reservations";
 import { ageOnDate } from "./age";
@@ -471,6 +472,48 @@ export async function roster(actor: string) {
       dayEnd ? lt(offerings.startsAt, dayEnd) : undefined));
   const events = rows.length ? await db.select().from(attendanceEvents).where(inArray(attendanceEvents.reservationId, rows.map(x => x.r.id))) : [];
   const userIds = [...new Set(rows.map(({ r }) => r.userId))];
+  const memberDetailsById = new Map<string, {
+    name: string;
+    imageUrl: string | null;
+    membershipPlan: string | null;
+  }>();
+  if (isStaff && userIds.length) {
+    const userIdChunks = Array.from({ length: Math.ceil(userIds.length / 100) }, (_, index) =>
+      userIds.slice(index * 100, (index + 1) * 100));
+    const [membershipRows, clerkUserPages] = await Promise.all([
+      db.select({
+        userId: memberships.userId,
+        tier: memberships.tier,
+        planName: membershipPlans.name,
+      }).from(memberships)
+        .leftJoin(membershipBilling, eq(memberships.billingId, membershipBilling.id))
+        .leftJoin(membershipPlans, eq(membershipBilling.planId, membershipPlans.id))
+        .where(and(eq(memberships.scope, "live"), inArray(memberships.userId, userIds))),
+      Promise.all(userIdChunks.map(userIdChunk =>
+        clerkClient.users.getUserList({ userId: userIdChunk, limit: userIdChunk.length }))),
+    ]);
+    for (const userId of userIds) {
+      memberDetailsById.set(userId, {
+        name: "Member",
+        imageUrl: null,
+        membershipPlan: null,
+      });
+    }
+    for (const membership of membershipRows) {
+      const current = memberDetailsById.get(membership.userId);
+      if (current) {
+        current.membershipPlan = membership.planName ?? membership.tier;
+      }
+    }
+    for (const page of clerkUserPages) {
+      for (const user of page.data) {
+        const current = memberDetailsById.get(user.id);
+        if (!current) continue;
+        current.name = [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || "Member";
+        current.imageUrl = user.imageUrl || null;
+      }
+    }
+  }
   const manualVisitCounts = userIds.length ? await db.select({
     userId: reservations.userId,
     count: sql<number>`count(*)::int`,
@@ -486,6 +529,11 @@ export async function roster(actor: string) {
   const now = new Date();
   return { role: isStaff ? op.role : "member", rows: rows.map(({ r, o, a, p, profile, guardianConsent }) => ({
     reservationId: r.id, userId: r.userId, title: o.title, facility: o.facility, startsAt: o.startsAt, endsAt: o.endsAt,
+    ...(isStaff ? {
+      customerName: memberDetailsById.get(r.userId)?.name ?? "Member",
+      customerImageUrl: memberDetailsById.get(r.userId)?.imageUrl ?? null,
+      membershipPlan: memberDetailsById.get(r.userId)?.membershipPlan ?? null,
+    } : {}),
     bookingStatus: r.status, status: a?.status ?? "not_checked_in", reference: a?.id,
     checkedInAt: a?.verifiedBy ? a.checkedInAt : undefined,
     settlementEligible: a?.settlementEligible ?? false,

@@ -129,7 +129,13 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
       error instanceof BookingError && error.status === 400 && error.code !== "MEMBER_CONSENT_REQUIRED");
   });
   await t.test("saving a reservation creates no attendance; unauthenticated API denied", async () => {
-    assert.equal((await roster(member)).rows[0].status, "not_checked_in");
+    const memberRoster = await roster(member);
+    assert.equal(memberRoster.rows[0].status, "not_checked_in");
+    assert.equal("customerName" in memberRoster.rows[0], false);
+    const partnerRoster = await roster(staff);
+    assert.equal(partnerRoster.rows[0].customerName, "Member");
+    assert.equal(partnerRoster.rows[0].customerImageUrl, null);
+    assert.equal(partnerRoster.rows[0].membershipPlan, "M");
     const server = app.listen(0, "127.0.0.1");
     await new Promise<void>(resolve => server.once("listening", resolve));
     try {

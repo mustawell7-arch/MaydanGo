@@ -844,7 +844,15 @@ function partnerSupportSubject(lang: PortalLanguage, subject: string) {
   return subject;
 }
 
-export function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
+export function PartnerSupportPanel({
+  lang,
+  conductReportReference,
+  onConductReportSent,
+}: {
+  lang: PortalLanguage;
+  conductReportReference?: string;
+  onConductReportSent?: () => void;
+}) {
   const client = useQueryClient();
   const tickets = useGetMemberSupportTickets({ query: { retry: false } });
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
@@ -868,6 +876,14 @@ export function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
   const [replyFiles, setReplyFiles] = useState<File[]>([]);
   const [attachmentsBusy, setAttachmentsBusy] = useState(false);
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState('');
+  useEffect(() => {
+    if (!conductReportReference) return;
+    setCategory('safety');
+    setSubject('Member conduct report');
+    setReference(conductReportReference);
+    setMessage('');
+    setUrgentSafety(false);
+  }, [conductReportReference]);
   const attachmentCopy = lang === 'ar'
     ? { add: 'إضافة صور أو ملفات', hint: 'حتى 3 ملفات، 10 ميغابايت لكل ملف. PDF أو JPEG أو PNG أو WebP.', limit: 'يمكن إرفاق 3 ملفات كحد أقصى بالرسالة الواحدة.', failed: 'أُرسل الطلب أو الرد، لكن تعذر رفع أحد الملفات. أرفقه مرة أخرى في رد جديد.', remove: 'إزالة الملف', download: 'تنزيل المرفق' }
     : lang === 'ku'
@@ -903,6 +919,7 @@ export function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
       setReference('');
       setMessage('');
       setAttachmentFiles([]);
+      onConductReportSent?.();
       setNotice(attachmentFailed ? attachmentCopy.failed : 'Support request sent.');
     } catch {
       setNotice('Could not send the request. Please try again.');
@@ -953,7 +970,7 @@ export function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
     <form onSubmit={submit} className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-7" data-testid="partner-support-form">
       <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a76445]">MaydanGo support</p>
       <h2 className="mt-2 font-display text-xl font-bold">Help & safety</h2>
-      <p className="mt-2 text-sm leading-6 text-[#687a71]">Send a support request or report a safety concern.</p>
+      <p className="mt-2 text-sm leading-6 text-[#687a71]">Contact support, report member misconduct, or raise a safety concern. Include a booking reference when relevant.</p>
       <div className="mt-5 grid gap-4">
         <label className="block text-xs font-semibold text-[#51665e]">Support topic
           <select value={category} onChange={event => {
@@ -962,7 +979,7 @@ export function PartnerSupportPanel({ lang }: { lang: PortalLanguage }) {
             if (next !== 'safety') setUrgentSafety(false);
           }} className={fieldClass()} data-testid="select-partner-support-topic">
             <option value="booking">Booking question</option>
-            <option value="safety">Safety concern</option>
+            <option value="safety">Safety or conduct report</option>
             <option value="other">Other support</option>
           </select>
         </label>
@@ -1161,6 +1178,7 @@ export default function PartnerPortal() {
     return saved === 'ar' || saved === 'ku' ? saved : 'en';
   });
   const [tab, setTab] = useState<Tab>('overview');
+  const [conductReportReference, setConductReportReference] = useState('');
   useEffect(() => {
     if (isPartnerReception && !['attendance', 'overview', 'support'].includes(tab)) setTab('attendance');
     if (isPartnerFinance && !['settlements', 'invoices', 'support'].includes(tab)) setTab('settlements');
@@ -1326,7 +1344,7 @@ export default function PartnerPortal() {
          <Link href="/" className="inline-flex items-center gap-3"><img src={`${import.meta.env.BASE_URL}logo.svg`} alt="MaydanGo" className="h-10 w-10" /><span className="font-display text-lg font-bold tracking-tight">MaydanGo<span className="block font-sans text-[9px] font-bold uppercase tracking-[.18em] text-[#a76445]">{portalLabel(language, 'workspace')}</span></span></Link>
         <div className="mt-8 hidden rounded-2xl bg-[#f8f5eb] p-4 lg:block"><p className="text-[9px] font-bold uppercase tracking-[.17em] text-[#a76445]">Workspace</p><p className="mt-2 truncate text-sm font-bold">{title}</p><p className="mt-1 text-xs text-[#687a71]">{isAdmin ? 'Administrator access' : 'Partner access'}</p></div>
         <nav aria-label="Portal navigation" className="mt-5 flex gap-2 overflow-x-auto lg:mt-8 lg:flex-col">
-          {navigationItems.map(([id, Icon]) => <button data-testid={`tab-${id}`} key={id} onClick={() => setTab(id as Tab)} aria-current={tab === id ? 'page' : undefined} className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${tab === id ? 'bg-[#174d43] text-[#fff9e9]' : 'text-[#536b61] hover:bg-[#dedaca]'}`}><Icon size={16} />{portalLabel(language, id)}{id === 'waitlist' ? ` · ${waitlist.length}` : ''}</button>)}
+           {navigationItems.map(([id, Icon]) => <button data-testid={`tab-${id}`} key={id} onClick={() => { if (id === 'support') setConductReportReference(''); setTab(id as Tab); }} aria-current={tab === id ? 'page' : undefined} className={`flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${tab === id ? 'bg-[#174d43] text-[#fff9e9]' : 'text-[#536b61] hover:bg-[#dedaca]'}`}><Icon size={16} />{portalLabel(language, id)}{id === 'waitlist' ? ` · ${waitlist.length}` : ''}</button>)}
           {isAdmin && <Link data-testid="link-admin-corporate" href="/admin/corporate" className="flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold text-[#536b61] transition hover:bg-[#dedaca]"><Users size={16} />{language === 'ar' ? 'بوابة الشركات' : language === 'ku' ? 'پۆرتاڵی کۆمپانیاکان' : 'Corporate portal'}</Link>}
            {isAdmin && <Link data-testid="link-admin-partner-onboarding" href="/admin/partner-onboarding" className="flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold text-[#536b61] transition hover:bg-[#dedaca]"><Users size={16} />{language === 'ar' ? 'طلبات الشراكة' : language === 'ku' ? 'داواکارییەکانی هاوبەشی' : 'Partner applications'}</Link>}
           {isAdmin && <Link data-testid="link-support-desk-admin" href="/support-desk" className="flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold text-[#536b61] transition hover:bg-[#dedaca]"><Users size={16} />{language === 'ar' ? 'مكتب الدعم' : language === 'ku' ? 'مێزی پشتگیری' : 'Support desk'}</Link>}
@@ -1448,9 +1466,13 @@ export default function PartnerPortal() {
               <p className="mt-2 text-sm text-[#75847c]">Active queues for your upcoming offerings will appear here.</p>
             </div>}
           </section>}
-          {tab === 'support' && <PartnerSupportPanel lang={language} />}
+          {tab === 'support' && <PartnerSupportPanel
+            lang={language}
+            conductReportReference={conductReportReference}
+            onConductReportSent={() => setConductReportReference('')}
+          />}
           {tab === 'attendance' && (isPartnerOwner || isPartnerManager || isPartnerReception) && <GuardianConsentQueue rows={rows} lang={language} onUploaded={() => { void attendance.refetch(); }} />}
-          {tab === 'attendance' && canManageAttendance && <section><div className="mb-5 flex items-end justify-between"><p className="max-w-2xl text-sm leading-6 text-[#687a71]">Review reservations in the server-scoped roster. Member names are not returned or displayed; each decision requires a reason and is recorded by the service.</p><Button kind="quiet" onClick={() => void attendance.refetch()}><RefreshCw size={15} />Refresh</Button></div>{attendance.isLoading ? <div className="h-48 animate-pulse rounded-3xl bg-[#e5e0d1]" /> : attendance.isError ? <div role="alert" className="rounded-3xl border border-[#e0c4b9] bg-[#fff7f3] p-7"><p className="font-semibold">Attendance roster unavailable</p><Button onClick={() => void attendance.refetch()}>Retry</Button></div> : rows.length ? <div className="grid gap-4">{rows.map(row => {
+           {tab === 'attendance' && canManageAttendance && <section><div className="mb-5 flex items-end justify-between"><p className="max-w-2xl text-sm leading-6 text-[#687a71]">Review bookings in your server-scoped roster. Member identity and membership details are shown only to authorized staff; every attendance decision is recorded.</p><Button kind="quiet" onClick={() => void attendance.refetch()}><RefreshCw size={15} />Refresh</Button></div>{attendance.isLoading ? <div className="h-48 animate-pulse rounded-3xl bg-[#e5e0d1]" /> : attendance.isError ? <div role="alert" className="rounded-3xl border border-[#e0c4b9] bg-[#fff7f3] p-7"><p className="font-semibold">Attendance roster unavailable</p><Button onClick={() => void attendance.refetch()}>Retry</Button></div> : rows.length ? <div className="grid gap-4">{rows.map(row => {
             const state = `${row.status} ${row.bookingStatus}`.toLowerCase();
              const actions: ReviewAction[] = state.includes('disput')
                ? isAdmin ? ['resolve_confirm', 'resolve_void'] : []
@@ -1462,7 +1484,7 @@ export default function PartnerPortal() {
             const attendanceDetails = row as typeof row & { manualCheckin?: boolean; manualRepeatUse?: boolean };
             const hasCurrentPolicyWindow = row.policy !== undefined && Number.isFinite(Date.parse(row.policy.opensAt)) && Number.isFinite(Date.parse(row.policy.closesAt)) && Date.now() >= Date.parse(row.policy.opensAt) && Date.now() <= Date.parse(row.policy.closesAt);
              const canManualCheckin = canManageAttendance && !isAdmin && !row.locked && row.status === 'not_checked_in' && row.bookingStatus === 'reserved' && hasCurrentPolicyWindow;
-            return <article key={row.reservationId} className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5"><div className="flex flex-col justify-between gap-4 sm:flex-row"><div><div className="flex flex-wrap gap-2"><span className="rounded-full bg-[#eeeadc] px-2.5 py-1 text-[10px] font-bold text-[#536b61]">{row.status.replaceAll('_', ' ')}</span>{row.locked && <span className="rounded-full bg-[#f2dfd5] px-2.5 py-1 text-[10px] font-bold text-[#9a4435]">Locked</span>}{row.settlementEligible && <span className="rounded-full bg-[#e1efdf] px-2.5 py-1 text-[10px] font-bold text-[#2d6d4a]">Settlement eligible</span>}</div><h2 className="mt-3 font-display text-lg font-bold">{row.title}</h2><p className="mt-1 text-sm text-[#687a71]">{row.facility} · {formatDate(row.startsAt)}</p><p className="mt-2 font-mono text-[10px] text-[#8b9288]">Reservation {row.reference || row.reservationId}</p>{row.checkedInAt && <p className="mt-2 text-xs text-[#687a71]">Checked in {formatDate(row.checkedInAt)}{attendanceDetails.manualCheckin ? ' · staff-assisted audit' : ''}{attendanceDetails.manualRepeatUse ? ' · repeat use noted' : ''}</p>}</div><div className="flex flex-wrap items-center gap-2">{!row.locked && actions.map(action => <Button key={action} kind={action === 'dispute' || action === 'no_show' || action === 'resolve_void' ? 'quiet' : 'primary'} onClick={() => { setReviewing({ id: row.reservationId, action }); setReason(''); }}>{actionLabel[action]}</Button>)}{canManualCheckin && <Button kind="quiet" onClick={() => setManualChecking(row.reservationId)}>Verify member code</Button>}</div></div>{manualChecking === row.reservationId && <ManualCheckinForm reservationId={row.reservationId} lang={language} onClose={() => setManualChecking(null)} onSuccess={() => { setManualChecking(null); invalidate(); setNotice('Manual check-in recorded by the server.'); }} />}{row.events.length > 0 && <details className="mt-4 border-t border-[#ece7d9] pt-3"><summary className="cursor-pointer text-xs font-bold text-[#536b61]">Audit history · {row.events.length}</summary><ul className="mt-3 space-y-2">{row.events.map((event, index) => <li key={`${event.createdAt}-${index}`} className="text-xs text-[#687a71]"><span className="font-semibold">{event.action.replaceAll('_', ' ')}</span> · {event.reason} · {formatDate(event.createdAt)}</li>)}</ul></details>}
+             return <article key={row.reservationId} className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5"><div className="flex flex-col justify-between gap-4 sm:flex-row"><div><div className="flex flex-wrap gap-2"><span className="rounded-full bg-[#eeeadc] px-2.5 py-1 text-[10px] font-bold text-[#536b61]">Booking · {row.bookingStatus.replaceAll('_', ' ')}</span><span className="rounded-full bg-[#e3ebf4] px-2.5 py-1 text-[10px] font-bold text-[#355b7a]">Attendance · {row.status.replaceAll('_', ' ')}</span>{row.locked && <span className="rounded-full bg-[#f2dfd5] px-2.5 py-1 text-[10px] font-bold text-[#9a4435]">Locked</span>}{row.settlementEligible && <span className="rounded-full bg-[#e1efdf] px-2.5 py-1 text-[10px] font-bold text-[#2d6d4a]">Settlement eligible</span>}</div><div className="mt-3 flex items-center gap-3" data-testid={`attendance-member-${row.reservationId}`}>{row.customerImageUrl ? <img src={row.customerImageUrl} alt="" referrerPolicy="no-referrer" className="h-11 w-11 rounded-full object-cover" /> : <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e9e5d7] font-bold text-[#536b61]">{(row.customerName || 'M').slice(0, 1).toUpperCase()}</span>}<div><p className="font-semibold">{row.customerName || 'Member'}</p><p className="text-xs text-[#75847c]">{row.membershipPlan ? `Membership plan / tier: ${row.membershipPlan}` : 'Membership plan / tier: unavailable'}</p></div></div><h2 className="mt-3 font-display text-lg font-bold">{row.title}</h2><p className="mt-1 text-sm text-[#687a71]">{row.facility} · {formatDate(row.startsAt)}</p><p className="mt-2 font-mono text-[10px] text-[#8b9288]">Reservation {row.reference || row.reservationId}</p>{row.checkedInAt && <p className="mt-2 text-xs text-[#687a71]">Checked in {formatDate(row.checkedInAt)}{attendanceDetails.manualCheckin ? ' · staff-assisted audit' : ''}{attendanceDetails.manualRepeatUse ? ' · repeat use noted' : ''}</p>}</div><div className="flex flex-wrap items-center gap-2">{!row.locked && actions.map(action => <Button key={action} kind={action === 'dispute' || action === 'no_show' || action === 'resolve_void' ? 'quiet' : 'primary'} onClick={() => { setReviewing({ id: row.reservationId, action }); setReason(''); }}>{actionLabel[action]}</Button>)}{canManualCheckin && <Button kind="quiet" onClick={() => setManualChecking(row.reservationId)}>Verify member code</Button>}{!isAdmin && <Button kind="quiet" onClick={() => { setConductReportReference(''); setTab('support'); setNotice(''); }}>Contact support</Button>}{!isAdmin && <Button kind="quiet" onClick={() => { setConductReportReference(row.reservationId); setTab('support'); }}>Report misconduct</Button>}</div></div>{manualChecking === row.reservationId && <ManualCheckinForm reservationId={row.reservationId} lang={language} onClose={() => setManualChecking(null)} onSuccess={() => { setManualChecking(null); invalidate(); setNotice('Manual check-in recorded by the server.'); }} />}{row.events.length > 0 && <details className="mt-4 border-t border-[#ece7d9] pt-3"><summary className="cursor-pointer text-xs font-bold text-[#536b61]">Audit history · {row.events.length}</summary><ul className="mt-3 space-y-2">{row.events.map((event, index) => <li key={`${event.createdAt}-${index}`} className="text-xs text-[#687a71]"><span className="font-semibold">{event.action.replaceAll('_', ' ')}</span> · {event.reason} · {formatDate(event.createdAt)}</li>)}</ul></details>}
               {reviewing?.id === row.reservationId && <form onSubmit={runReview} className="mt-4 rounded-2xl bg-[#f2efe4] p-4"><label className="block text-xs font-semibold text-[#51665e]">{actionLabel[reviewing.action]} — audit reason (at least 5 characters)<textarea required minLength={5} maxLength={500} rows={3} value={reason} onChange={e => setReason(e.target.value)} className={fieldClass()} placeholder="Record the reason for this decision" /></label><div className="mt-3 flex justify-end gap-2"><Button kind="quiet" onClick={() => setReviewing(null)}>Dismiss</Button><Button type="submit" disabled={review.isPending || reason.trim().length < 5}>{review.isPending ? 'Recording…' : 'Record review'}</Button></div></form>}</article>;
           })}</div> : <div className="rounded-3xl border border-dashed border-[#d5cfbf] bg-[#fffdf7]/60 p-10 text-center"><CalendarDays className="mx-auto text-[#a76445]" /><h2 className="mt-4 font-display text-xl font-bold">Roster is clear</h2><p className="mt-2 text-sm text-[#75847c]">No attendance rows were returned for this account.</p></div>}</section>}
           {tab === 'partners' && isAdmin && <section className="grid gap-5 xl:grid-cols-[.8fr_1.2fr]">

@@ -12,6 +12,7 @@
 - [Expo web font loading](expo-web-font-loading.md) — Keep web routes visible while fonts load; waiting on font readiness can leave the preview blank.
 - [Expo web Clerk loading](expo-web-clerk-loading.md) — Keep Clerk active without blocking public routes on browser session restore; retain native auth and device gates.
 - [Partner operations platform](partner-operations-platform.md) — MaydanGo partner tools belong in the web portal.
+- [Partner roster privacy](partner-roster-privacy.md) — show profile details only in authorized partner rosters; defer membership payment status until the final payment milestone.
 - [Corporate portal scope](corporate-portal-scope.md) — Start with company employee enrollment only; keep HR away from member activity and finance.
 - [Instructor access approval](instructor-access-approval.md) — Instructors request access; admins approve and assign specific courses/sessions; instructor views stay limited to those items.
 - [Guardian verification](guardian-verification.md) — Partners verify guardian requirements at the venue; MaydanGo must not collect guardian information.

@@ -201,6 +201,9 @@ paths:
                         facility: { type: string }
                         startsAt: { type: string }
                         endsAt: { type: string }
+                        customerName: { type: [string, "null"], description: Partner-only display name from the member account. }
+                        customerImageUrl: { type: [string, "null"], format: uri, description: Partner-only profile image URL from the member account. }
+                        membershipPlan: { type: [string, "null"], description: Partner-only membership plan name or tier. }
                         bookingStatus: { type: string }
                         status: { type: string }
                         settlementEligible: { type: boolean }
