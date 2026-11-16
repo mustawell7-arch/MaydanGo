@@ -91,7 +91,13 @@ export default function CourseDetailScreen() {
     );
   }
 
-  const pct = course.lessonCount ? Math.round(course.completedLessons / course.lessonCount * 100) : 0;
+  const pct = course.completionPercentage;
+  const completionDate = course.courseCompletedAt
+    ? new Intl.DateTimeFormat(
+      app.language === 'ku' ? 'ckb-IQ' : app.language === 'ar' ? 'ar-IQ' : 'en-IQ',
+      { timeZone: 'Asia/Baghdad', dateStyle: 'medium' },
+    ).format(new Date(course.courseCompletedAt))
+    : null;
   const ready = course.accessState === 'ready';
   const languageList = (languages: Array<'en' | 'ar' | 'ku'> | null | undefined) =>
     languages?.length
@@ -300,6 +306,11 @@ export default function CourseDetailScreen() {
               <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align }]}>
                 {course.lessons.filter(lesson => lesson.viewed).length}/{course.lessonCount} {t('lessonsViewed')}
               </Text>
+              {completionDate ? (
+                <Text style={[styles.progressLabel, { color: colors.primary, textAlign: align }]}>
+                  {t('courseCompletedOn')} · {completionDate}
+                </Text>
+              ) : null}
             </View>
           ) : null}
           {course.accessState === 'membership_required' ? (

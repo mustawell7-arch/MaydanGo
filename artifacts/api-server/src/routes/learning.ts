@@ -54,7 +54,17 @@ async function currentDigitalCourseMembership(userId: string) {
   return membership;
 }
 
-function courseSummary(course: typeof learningCourses.$inferSelect, enrolled: boolean, completedLessons: number, lessonCount: number, isSaved: boolean) {
+function courseSummary(
+  course: typeof learningCourses.$inferSelect,
+  enrolled: boolean,
+  completedLessons: number,
+  lessonCount: number,
+  isSaved: boolean,
+  latestCompletedAt: Date | null,
+) {
+  const completionPercentage = lessonCount > 0
+    ? Math.min(100, Math.round(completedLessons / lessonCount * 100))
+    : 0;
   return {
     id: course.id,
     title: course.localizedTitle.en,
@@ -74,6 +84,8 @@ function courseSummary(course: typeof learningCourses.$inferSelect, enrolled: bo
     lessonCount,
     enrolled,
     completedLessons,
+    completionPercentage,
+    courseCompletedAt: lessonCount > 0 && completedLessons >= lessonCount ? latestCompletedAt : null,
     isSaved,
   };
 }
@@ -99,7 +111,7 @@ async function getCourseDetail(userId: string, id: string) {
     .where(eq(learningLessons.courseId, id)).orderBy(asc(learningLessons.position));
   const [completedRows, viewedRows] = enrolled
     ? await Promise.all([
-      db.select({ lessonId: lessonProgress.lessonId }).from(lessonProgress)
+      db.select({ lessonId: lessonProgress.lessonId, completedAt: lessonProgress.completedAt }).from(lessonProgress)
         .where(eq(lessonProgress.enrollmentId, enrolled.id)),
       db.select({
         lessonId: lessonAccess.lessonId,
@@ -110,6 +122,10 @@ async function getCourseDetail(userId: string, id: string) {
     ])
     : [[], []];
   const completed = new Set(completedRows.map(row => row.lessonId));
+  const latestCompletedAt = completedRows.reduce<Date | null>(
+    (latest, row) => !latest || row.completedAt > latest ? row.completedAt : latest,
+    null,
+  );
   const viewedByLesson = new Map(viewedRows.map(row => [row.lessonId, row]));
   const materials = accessState === "ready" && enrolled
     ? await db.select({
@@ -122,7 +138,7 @@ async function getCourseDetail(userId: string, id: string) {
       .where(eq(courseMaterials.courseId, id))
       .orderBy(asc(courseMaterials.approvedAt))
     : [];
-  const summary = courseSummary(course, !!enrolled, completed.size, lessons.length, savedCourse.length > 0);
+  const summary = courseSummary(course, !!enrolled, completed.size, lessons.length, savedCourse.length > 0, latestCompletedAt);
   return {
     ...summary,
     accessState,
@@ -158,9 +174,10 @@ router.get("/courses", async (req, res): Promise<void> => {
   const progressRows = enrollments.length ? await db.select({
     enrollmentId: lessonProgress.enrollmentId,
     count: sql<number>`count(*)::int`,
+    latestCompletedAt: sql<Date | null>`max(${lessonProgress.completedAt})`,
   }).from(lessonProgress).where(inArray(lessonProgress.enrollmentId, enrollments.map(row => row.id)))
     .groupBy(lessonProgress.enrollmentId) : [];
-  const progressByEnrollment = new Map(progressRows.map(row => [row.enrollmentId, row.count]));
+  const progressByEnrollment = new Map(progressRows.map(row => [row.enrollmentId, row]));
   const lessonCounts = published.length ? await db.select({
     courseId: learningLessons.courseId,
     count: sql<number>`count(*)::int`,
@@ -175,12 +192,14 @@ router.get("/courses", async (req, res): Promise<void> => {
   const savedCourseIds = new Set(savedRows.map(row => row.courseId));
   res.json(GetMemberCoursesResponse.parse(published.map(course => {
     const enrollment = enrollmentByCourse.get(course.id);
+    const progress = enrollment ? progressByEnrollment.get(enrollment.id) : undefined;
     return courseSummary(
       course,
       !!enrollment,
-      enrollment ? progressByEnrollment.get(enrollment.id) ?? 0 : 0,
+      progress?.count ?? 0,
       countByCourse.get(course.id) ?? 0,
       savedCourseIds.has(course.id),
+      progress?.latestCompletedAt ?? null,
     );
   })));
 });

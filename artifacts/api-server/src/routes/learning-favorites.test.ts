@@ -69,7 +69,9 @@ test("saved courses persist per member without granting course access", async ()
   const favoritePath = `/api/member/courses/${courseId}/favorite`;
   const initialList = await call(listPath, userId);
   assert.equal(initialList.response.status, 200);
-  assert.equal((initialList.data as Array<{ isSaved: boolean; enrolled: boolean }>)[0]?.isSaved, false);
+  const initialCourse = (initialList.data as Array<{ id: string; isSaved: boolean; enrolled: boolean }>)
+    .find(course => course.id === courseId);
+  assert.equal(initialCourse?.isSaved, false);
 
   const saved = await call(favoritePath, userId, "PUT", { isSaved: true });
   assert.equal(saved.response.status, 200);
@@ -84,7 +86,8 @@ test("saved courses persist per member without granting course access", async ()
   assert.equal(savedRows.length, 1, "saving the same course twice does not create duplicate bookmarks");
 
   const savedList = await call(listPath, userId);
-  const savedCourse = (savedList.data as Array<{ isSaved: boolean; enrolled: boolean }>)[0];
+  const savedCourse = (savedList.data as Array<{ id: string; isSaved: boolean; enrolled: boolean }>)
+    .find(course => course.id === courseId);
   assert.equal(savedCourse?.isSaved, true);
   assert.equal(savedCourse?.enrolled, false);
   const savedDetail = await call(detailPath, userId);
@@ -92,7 +95,9 @@ test("saved courses persist per member without granting course access", async ()
   assert.equal((savedDetail.data as { accessState: string }).accessState, "membership_required");
 
   const otherMemberList = await call(listPath, otherUserId);
-  assert.equal((otherMemberList.data as Array<{ isSaved: boolean }>)[0]?.isSaved, false);
+  const otherMemberCourse = (otherMemberList.data as Array<{ id: string; isSaved: boolean }>)
+    .find(course => course.id === courseId);
+  assert.equal(otherMemberCourse?.isSaved, false);
   const otherMemberDetail = await call(detailPath, otherUserId);
   assert.equal((otherMemberDetail.data as { isSaved: boolean }).isSaved, false);
 
@@ -101,6 +106,8 @@ test("saved courses persist per member without granting course access", async ()
   assert.equal((removed.data as { isSaved: boolean; savedAt: string | null }).isSaved, false);
   assert.equal((removed.data as { savedAt: string | null }).savedAt, null);
   const removedList = await call(listPath, userId);
-  assert.equal((removedList.data as Array<{ isSaved: boolean }>)[0]?.isSaved, false);
+  const removedCourse = (removedList.data as Array<{ id: string; isSaved: boolean }>)
+    .find(course => course.id === courseId);
+  assert.equal(removedCourse?.isSaved, false);
   assert.equal((await db.select().from(memberSavedCourses).where(eq(memberSavedCourses.userId, userId))).length, 0);
 });

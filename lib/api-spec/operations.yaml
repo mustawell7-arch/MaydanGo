@@ -4041,13 +4041,15 @@ components:
       allOf:
         - $ref: "#/components/schemas/CourseMetadataInput"
         - type: object
-          required: [id, title, lessonCount, enrolled, completedLessons, isSaved]
+          required: [id, title, lessonCount, enrolled, completedLessons, completionPercentage, courseCompletedAt, isSaved]
           properties:
             id: { type: string }
             title: { type: string }
             lessonCount: { type: integer }
             enrolled: { type: boolean }
             completedLessons: { type: integer }
+            completionPercentage: { type: integer, minimum: 0, maximum: 100 }
+            courseCompletedAt: { type: ["string", "null"], format: date-time }
             isSaved: { type: boolean }
     CourseFavoriteInput:
       type: object

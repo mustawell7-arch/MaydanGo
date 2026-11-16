@@ -213,6 +213,23 @@ test("private course recordings require current membership and enrollment", asyn
   assert.equal(updatedViewRows.length, 1);
   assert.equal(updatedViewRows[0]?.playbackPositionSeconds, 89);
 
+  const courseProgressPath = `/api/member/courses/${courseId}/progress`;
+  const completedCourse = await call(courseProgressPath, userId, "PUT", { lessonId, completed: true });
+  assert.equal(completedCourse.response.status, 200);
+  const completedDetail = completedCourse.data as { completionPercentage: number; courseCompletedAt: string | null };
+  assert.equal(completedDetail.completionPercentage, 100);
+  assert.ok(completedDetail.courseCompletedAt);
+  assert.ok(Number.isFinite(Date.parse(completedDetail.courseCompletedAt)));
+  const completedList = await call("/api/member/courses", userId);
+  const completedSummary = (completedList.data as Array<{ completionPercentage: number; courseCompletedAt: string | null }>)[0];
+  assert.equal(completedSummary?.completionPercentage, 100);
+  assert.equal(completedSummary?.courseCompletedAt, completedDetail.courseCompletedAt);
+
+  const reopenedCourse = await call(courseProgressPath, userId, "PUT", { lessonId, completed: false });
+  assert.equal(reopenedCourse.response.status, 200);
+  assert.equal((reopenedCourse.data as { completionPercentage: number }).completionPercentage, 0);
+  assert.equal((reopenedCourse.data as { courseCompletedAt: string | null }).courseCompletedAt, null);
+
   const materialLinkResponse = await call(
     `/api/member/courses/${courseId}/materials/${materialId}/download-link`,
     userId,

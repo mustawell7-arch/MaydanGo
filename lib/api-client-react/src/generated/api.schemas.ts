@@ -2791,14 +2791,21 @@ export interface CorporateEmployeeRemoval {
   status: CorporateEmployeeRemovalStatus;
 }
 
-export type CourseSummary = CourseMetadataInput & {
+export type CourseSummary = CourseMetadataInput & ({
   id: string;
   title: string;
   lessonCount: number;
   enrolled: boolean;
   completedLessons: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  completionPercentage: number;
+  /** @nullable */
+  courseCompletedAt: string | null;
   isSaved: boolean;
-};
+});
 
 export interface CourseFavoriteInput {
   isSaved: boolean;

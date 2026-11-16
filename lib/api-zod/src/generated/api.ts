@@ -6968,6 +6968,9 @@ export const getMemberCoursesResponseOneSupportingMaterialsOneArMax = 2000;
 
 export const getMemberCoursesResponseOneSupportingMaterialsOneKuMax = 2000;
 
+export const getMemberCoursesResponseTwoCompletionPercentageMin = 0;
+export const getMemberCoursesResponseTwoCompletionPercentageMax = 100;
+
 
 
 export const GetMemberCoursesResponseItem = zod.object({
@@ -7014,6 +7017,8 @@ export const GetMemberCoursesResponseItem = zod.object({
   "lessonCount": zod.int(),
   "enrolled": zod.boolean(),
   "completedLessons": zod.int(),
+  "completionPercentage": zod.int().min(getMemberCoursesResponseTwoCompletionPercentageMin).max(getMemberCoursesResponseTwoCompletionPercentageMax),
+  "courseCompletedAt": zod.coerce.date().nullable(),
   "isSaved": zod.boolean()
 }))
 export const GetMemberCoursesResponse = zod.array(GetMemberCoursesResponseItem)
@@ -7066,6 +7071,9 @@ export const getMemberCourseResponseOneOneSupportingMaterialsOneEnMax = 2000;
 export const getMemberCourseResponseOneOneSupportingMaterialsOneArMax = 2000;
 
 export const getMemberCourseResponseOneOneSupportingMaterialsOneKuMax = 2000;
+
+export const getMemberCourseResponseOneTwoCompletionPercentageMin = 0;
+export const getMemberCourseResponseOneTwoCompletionPercentageMax = 100;
 
 export const getMemberCourseResponseTwoLessonsItemLocalizedTitleEnMax = 240;
 
@@ -7133,6 +7141,8 @@ export const GetMemberCourseResponse = zod.object({
   "lessonCount": zod.int(),
   "enrolled": zod.boolean(),
   "completedLessons": zod.int(),
+  "completionPercentage": zod.int().min(getMemberCourseResponseOneTwoCompletionPercentageMin).max(getMemberCourseResponseOneTwoCompletionPercentageMax),
+  "courseCompletedAt": zod.coerce.date().nullable(),
   "isSaved": zod.boolean()
 })).and(zod.object({
   "accessState": zod.enum(['membership_required', 'enrollment_required', 'ready']),
@@ -7232,6 +7242,9 @@ export const enrollMemberCourseResponseOneOneSupportingMaterialsOneArMax = 2000;
 
 export const enrollMemberCourseResponseOneOneSupportingMaterialsOneKuMax = 2000;
 
+export const enrollMemberCourseResponseOneTwoCompletionPercentageMin = 0;
+export const enrollMemberCourseResponseOneTwoCompletionPercentageMax = 100;
+
 export const enrollMemberCourseResponseTwoLessonsItemLocalizedTitleEnMax = 240;
 
 export const enrollMemberCourseResponseTwoLessonsItemLocalizedTitleArMax = 240;
@@ -7298,6 +7311,8 @@ export const EnrollMemberCourseResponse = zod.object({
   "lessonCount": zod.int(),
   "enrolled": zod.boolean(),
   "completedLessons": zod.int(),
+  "completionPercentage": zod.int().min(enrollMemberCourseResponseOneTwoCompletionPercentageMin).max(enrollMemberCourseResponseOneTwoCompletionPercentageMax),
+  "courseCompletedAt": zod.coerce.date().nullable(),
   "isSaved": zod.boolean()
 })).and(zod.object({
   "accessState": zod.enum(['membership_required', 'enrollment_required', 'ready']),
@@ -7390,6 +7405,9 @@ export const updateCourseProgressResponseOneOneSupportingMaterialsOneArMax = 200
 
 export const updateCourseProgressResponseOneOneSupportingMaterialsOneKuMax = 2000;
 
+export const updateCourseProgressResponseOneTwoCompletionPercentageMin = 0;
+export const updateCourseProgressResponseOneTwoCompletionPercentageMax = 100;
+
 export const updateCourseProgressResponseTwoLessonsItemLocalizedTitleEnMax = 240;
 
 export const updateCourseProgressResponseTwoLessonsItemLocalizedTitleArMax = 240;
@@ -7456,6 +7474,8 @@ export const UpdateCourseProgressResponse = zod.object({
   "lessonCount": zod.int(),
   "enrolled": zod.boolean(),
   "completedLessons": zod.int(),
+  "completionPercentage": zod.int().min(updateCourseProgressResponseOneTwoCompletionPercentageMin).max(updateCourseProgressResponseOneTwoCompletionPercentageMax),
+  "courseCompletedAt": zod.coerce.date().nullable(),
   "isSaved": zod.boolean()
 })).and(zod.object({
   "accessState": zod.enum(['membership_required', 'enrollment_required', 'ready']),

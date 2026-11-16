@@ -172,7 +172,7 @@ export default function OnlineScreen() {
             {started.length > 0 ? <>
               <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: align }]}>{t('continueLearning')}</Text>
               {started.map((course) => {
-                const pct = course.lessonCount ? Math.round(course.completedLessons / course.lessonCount * 100) : 0;
+                const pct = course.completionPercentage;
                 return (
                   <View key={course.id} style={[styles.courseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                     <Pressable
