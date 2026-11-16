@@ -4,6 +4,7 @@ import { Text, Pressable } from '@/components/Localized';
 import { router } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
+import { translate } from '@/lib/i18n';
 
 export function MemberNotice() {
   const app = useApp();
@@ -15,7 +16,9 @@ export function MemberNotice() {
       Old device-only reservations have not been imported.
     </Text>
     {!app.signedIn ? <Pressable testID="member-sign-in" onPress={() => router.push('/account')}><Text style={{ color: c.primary, fontWeight: '700' }}>Sign in / Create account</Text></Pressable> :
-      <Pressable onPress={() => router.push('/account')}><Text style={{ color: c.primary }}>Account & membership eligibility</Text></Pressable>}
+      <Pressable onPress={() => router.push('/account')}><Text style={{ color: c.primary }}>
+        {app.memberConsentRequired ? translate(app.language, 'memberConsentsTitle') : 'Account & membership eligibility'}
+      </Text></Pressable>}
     {app.memberLoading ? <Text style={{ color: c.mutedForeground }}>Syncing…</Text> : null}
     {app.memberError ? <Text accessibilityRole="alert" style={{ color: c.destructive }}>{app.memberError}</Text> : null}
     {app.signedIn ? <Pressable testID="refresh-bookings" disabled={app.memberLoading} onPress={() => void app.refreshMember()}><Text style={{ color: c.primary }}>Refresh reservations</Text></Pressable> : null}

@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, desc, eq, gt, gte, inArray, isNull, lte, sql } from "drizzle-orm";
-import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, guardianConsentDocuments, manualCheckinChallenges, memberships, offerings, operators, partners, reservations, memberProfiles } from "@workspace/db";
+import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, guardianConsentDocuments, manualCheckinChallenges, memberships, offerings, operators, partners, reservations, memberProfiles, memberConsentEvents } from "@workspace/db";
 import { z } from "zod";
 import { BookingError, membershipCanAccess, processWaitlistQueue } from "./reservations";
 import { ageOnDate } from "./age";
@@ -9,9 +9,21 @@ import { isAccessSuspended, isVenueSafetyRestricted, lockVenueAccess } from "./a
 import { iraqCalendarDate, openingState, previousIraqCalendarDate } from "./facility-hours";
 import { getPlatformSafetyRules } from "./platform-rules";
 import type { PlatformSafetyRules } from "@workspace/db";
+import { getCurrentLegalPolicies } from "./legal-policies";
+import {
+  buildCurrentMemberConsentState,
+  hasCurrentRequiredMemberConsent,
+  MEMBER_CONSENT_REQUIRED_CODE,
+  MEMBER_CONSENT_REQUIRED_MESSAGE,
+} from "./member-consents";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const digest = (token: string) => createHash("sha256").update(token).digest("hex");
+async function requireCurrentMemberConsent(userId: string) {
+  if (!await hasCurrentRequiredMemberConsent(userId)) {
+    throw new BookingError(403, MEMBER_CONSENT_REQUIRED_MESSAGE, MEMBER_CONSENT_REQUIRED_CODE);
+  }
+}
 export const policyInput = z.object({
   latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180),
   radius: z.number().int().min(25).max(800),
@@ -211,6 +223,7 @@ export async function issueQr(actor: string, id: string, revoke = false) {
   });
 }
 export async function issueManualCheckinCode(actor: string, id: string) {
+  await requireCurrentMemberConsent(actor);
   return db.transaction(async tx => {
     const c = await context(tx, id);
     if (c.r.userId !== actor) throw new BookingError(403, "Only the member with this reservation can request its code.");
@@ -238,9 +251,16 @@ export async function issueManualCheckinCode(actor: string, id: string) {
   });
 }
 export async function recordManualCheckin(actor: string, id: string, input: z.infer<typeof manualCheckinInput>) {
+  const currentPolicies = await getCurrentLegalPolicies();
   return db.transaction(async tx => {
     const c = await context(tx, id), op = await staff(tx, actor, c.o.partnerId, undefined, c.o);
     if (op.role !== "partner") throw new BookingError(403, "Only assigned partner staff can record a manual arrival.");
+    const consentHistory = await tx.select().from(memberConsentEvents)
+      .where(eq(memberConsentEvents.userId, c.r.userId))
+      .orderBy(desc(memberConsentEvents.recordedAt), desc(memberConsentEvents.id));
+    if (!buildCurrentMemberConsentState(consentHistory, currentPolicies).requiredAccepted) {
+      throw new BookingError(403, MEMBER_CONSENT_REQUIRED_MESSAGE, MEMBER_CONSENT_REQUIRED_CODE);
+    }
     await eligible(tx, c);
     const now = new Date();
     if (!c.p || now < c.p.opensAt || now >= c.p.closesAt)
@@ -271,6 +291,7 @@ export async function recordManualCheckin(actor: string, id: string, input: z.in
   });
 }
 export async function scanQr(actor: string, input: z.infer<typeof scanInput>) {
+  await requireCurrentMemberConsent(actor);
   const rules = await getPlatformSafetyRules();
   return db.transaction(async tx => {
     const [challenge] = await tx.select().from(checkinChallenges).where(eq(checkinChallenges.digest, digest(input.token)));
@@ -400,6 +421,7 @@ export async function roster(actor: string) {
     hasAdminPermission(op.role, "partner_operations") || hasAdminPermission(op.role, "fraud_compliance")
   );
   const isStaff = isGlobalStaff || op?.role === "partner";
+  if (!isStaff) await requireCurrentMemberConsent(actor);
   const rows = await db.select({
     r: reservations,
     o: offerings,

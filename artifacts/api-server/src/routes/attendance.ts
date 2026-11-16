@@ -64,7 +64,10 @@ router.post("/:id/review", async (req, res) => {
 });
 router.use((error: unknown, _req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => {
   if (error instanceof z.ZodError) { res.status(400).json({ message: "Invalid check-in input. Check your dates, coordinates and reason." }); return; }
-  if (error instanceof BookingError) { res.status(error.status).json({ message: error.message }); return; }
+  if (error instanceof BookingError) {
+    res.status(error.status).json({ ...(error.code ? { code: error.code } : {}), message: error.message });
+    return;
+  }
   if (error instanceof DeviceSecurityError) { res.status(error.status).json({ code: error.code, message: error.message }); return; }
   next(error);
 });

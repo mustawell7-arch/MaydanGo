@@ -2088,6 +2088,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "./openapi.yaml#/components/schemas/MemberState" }
+        "403":
+          description: Current member consent is required before joining a waitlist
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberServiceError" }
   /member/waitlist/{id}:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     delete:
@@ -2098,6 +2103,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "./openapi.yaml#/components/schemas/MemberState" }
+        "403":
+          description: Current member consent is required before changing a waitlist
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberServiceError" }
   /member/waitlist/{id}/accept:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     post:
@@ -2108,6 +2118,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "./openapi.yaml#/components/schemas/MemberState" }
+        "403":
+          description: Current member consent is required before accepting a waitlist offer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberServiceError" }
   /member/plans:
     get:
       operationId: getLivePlans
@@ -2775,6 +2790,13 @@ components:
         history:
           type: array
           items: { $ref: "#/components/schemas/MemberConsentRecord" }
+    MemberServiceError:
+      type: object
+      additionalProperties: false
+      required: [message]
+      properties:
+        code: { type: string }
+        message: { type: string }
     MemberConsentInput:
       type: object
       additionalProperties: false

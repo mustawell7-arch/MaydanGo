@@ -209,6 +209,11 @@ paths:
                               reason: { type: string }
                               createdAt: { type: string }
                               actorId: { type: string }
+        "403":
+          description: Current member consent is required to view member attendance
+          content:
+            application/json:
+              schema: { $ref: "./operations.yaml#/components/schemas/MemberServiceError" }
   /attendance/{id}/policy:
     put:
       operationId: setCheckinPolicy
@@ -272,6 +277,11 @@ paths:
                 properties:
                   reference: { type: string }
                   status: { type: string }
+        "403":
+          description: Current member consent is required before check-in
+          content:
+            application/json:
+              schema: { $ref: "./operations.yaml#/components/schemas/MemberServiceError" }
   /attendance/{id}/manual-code:
     post:
       operationId: requestManualCheckinCode
@@ -289,6 +299,11 @@ paths:
                 properties:
                   code: { type: string, pattern: "^\\d{8}$" }
                   expiresAt: { type: string }
+        "403":
+          description: Current member consent is required before requesting a check-in code
+          content:
+            application/json:
+              schema: { $ref: "./operations.yaml#/components/schemas/MemberServiceError" }
   /attendance/{id}/manual:
     post:
       operationId: recordManualCheckin
@@ -317,6 +332,11 @@ paths:
                   ok: { type: boolean }
                   reference: { type: string }
                   status: { type: string, enum: [pending] }
+        "403":
+          description: The reservation owner must have current member consent
+          content:
+            application/json:
+              schema: { $ref: "./operations.yaml#/components/schemas/MemberServiceError" }
   /attendance/{id}/review:
     post:
       operationId: reviewAttendance
@@ -695,6 +715,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MemberState"
+        "403":
+          description: Current member consent is required to access account data
+          content:
+            application/json:
+              schema: { $ref: "./operations.yaml#/components/schemas/MemberServiceError" }
   /member/account:
     get:
       operationId: getMemberAccountSummary
@@ -705,6 +730,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MemberAccountSummary"
+        "403":
+          description: Current member consent is required to access account data
+          content:
+            application/json:
+              schema: { $ref: "./operations.yaml#/components/schemas/MemberServiceError" }
   /member/allowances:
     get:
       operationId: getMemberAllowances
@@ -715,6 +745,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MemberAllowances"
+        "403":
+          description: Current member consent is required to access account data
+          content:
+            application/json:
+              schema: { $ref: "./operations.yaml#/components/schemas/MemberServiceError" }
   /member/preview-membership:
     post:
       operationId: enablePreviewMembership
@@ -735,6 +770,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MemberState"
+        "403":
+          description: Current member consent is required before booking
+          content:
+            application/json:
+              schema: { $ref: "./operations.yaml#/components/schemas/MemberServiceError" }
   /member/bookings:
     post:
       operationId: createMemberBooking
@@ -761,6 +801,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MemberState"
+        "403":
+          description: Current member consent is required before changing a booking
+          content:
+            application/json:
+              schema: { $ref: "./operations.yaml#/components/schemas/MemberServiceError" }
   /member/bookings/{id}:
     delete:
       operationId: cancelMemberBooking

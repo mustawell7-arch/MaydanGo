@@ -9,6 +9,7 @@ import memberRouter from "../routes/member";
 import publicRouter from "../routes/public";
 import { createReservation, cancelReservation, memberState, memberAccountSummary, joinWaitlist, leaveWaitlist, acceptWaitlistOffer, processWaitlistQueue, BookingError } from "./reservations";
 import app from "../app";
+import { MEMBER_CONSENT_REQUIRED_CODE } from "./member-consents";
 
 const prefix = `test-${randomUUID()}`;
 const alice = `${prefix}-a`, bob = `${prefix}-b`, charlie = `${prefix}-c`;
@@ -64,12 +65,32 @@ test("authenticated booking service: ownership, durable history, eligibility and
   await t.test("current Terms and Privacy consent is required before a booking", async () => {
     await membership(consentless);
     await db.delete(memberConsentEvents).where(eq(memberConsentEvents.userId, consentless));
+    const consentOffer = await offer();
+    const requireConsent = (error: unknown) => error instanceof BookingError
+      && error.status === 403
+      && error.code === MEMBER_CONSENT_REQUIRED_CODE
+      && error.message.includes("Terms of Use and Privacy Policy");
     await assert.rejects(
-      createReservation(consentless, input(id)),
-      (error: unknown) => error instanceof BookingError
-        && error.status === 403
-        && error.message.includes("Terms of Use and Privacy Policy"),
+      createReservation(consentless, input(consentOffer)),
+      requireConsent,
     );
+    await db.insert(memberConsentEvents).values(["terms_of_use", "privacy_policy"].map(purpose => ({
+      id: `${prefix}-${consentless}-${purpose}-old`,
+      userId: consentless,
+      purpose: purpose as "terms_of_use" | "privacy_policy",
+      policyVersion: "expired-v0",
+      choice: "accepted" as const,
+    })));
+    await assert.rejects(createReservation(consentless, input(consentOffer)), requireConsent);
+    await db.delete(memberConsentEvents).where(eq(memberConsentEvents.userId, consentless));
+    await db.insert(memberConsentEvents).values(["terms_of_use", "privacy_policy"].map(purpose => ({
+      id: `${prefix}-${consentless}-${purpose}-current`,
+      userId: consentless,
+      purpose: purpose as "terms_of_use" | "privacy_policy",
+      policyVersion: "v1-draft",
+      choice: "accepted" as const,
+    })));
+    assert.equal((await createReservation(consentless, input(consentOffer))).status, "reserved");
   });
   await t.test("other accounts cannot list or cancel an owner's reservation", async () => {
     assert.equal((await memberState(bob)).bookings.length, 0);
@@ -270,7 +291,43 @@ test("web account summary is authenticated but does not require a registered mob
   const server = harness.listen(0);
   await new Promise<void>(resolve => server.once("listening", resolve));
   const address = server.address() as { port: number };
+  const staleUser = `${prefix}-stale-consent`;
+  const noConsentUser = `${prefix}-no-consent-http`;
   try {
+    for (const path of ["/account", "/allowances"]) {
+      const blocked = await fetch(`http://127.0.0.1:${address.port}/api/member${path}`, {
+        headers: { "x-test-user": noConsentUser },
+      });
+      assert.equal(blocked.status, 403);
+      assert.equal((await blocked.json() as { code: string }).code, MEMBER_CONSENT_REQUIRED_CODE);
+    }
+    const consentChoices = await fetch(`http://127.0.0.1:${address.port}/api/member/consents`, {
+      headers: { "x-test-user": noConsentUser },
+    });
+    assert.equal(consentChoices.status, 200);
+    assert.equal((await consentChoices.json() as { requiredAccepted: boolean }).requiredAccepted, false);
+    const privacyRequests = await fetch(`http://127.0.0.1:${address.port}/api/member/privacy-requests`, {
+      headers: { "x-test-user": noConsentUser },
+    });
+    assert.equal(privacyRequests.status, 200);
+    const unavailableExport = await fetch(`http://127.0.0.1:${address.port}/api/member/privacy-requests/not-found/export`, {
+      headers: { "x-test-user": noConsentUser },
+    });
+    assert.equal(unavailableExport.status, 404);
+
+    await db.insert(memberConsentEvents).values(["terms_of_use", "privacy_policy"].map(purpose => ({
+      id: `${staleUser}-${purpose}`,
+      userId: staleUser,
+      purpose: purpose as "terms_of_use" | "privacy_policy",
+      policyVersion: "expired-v0",
+      choice: "accepted" as const,
+    })));
+    const outdatedAccount = await fetch(`http://127.0.0.1:${address.port}/api/member/account`, {
+      headers: { "x-test-user": staleUser },
+    });
+    assert.equal(outdatedAccount.status, 403);
+    assert.equal((await outdatedAccount.json() as { code: string }).code, MEMBER_CONSENT_REQUIRED_CODE);
+
     const accountResponse = await fetch(`http://127.0.0.1:${address.port}/api/member/account`, {
       headers: { "x-test-user": alice },
     });
@@ -295,6 +352,7 @@ test("web account summary is authenticated but does not require a registered mob
     assert.equal(suspendedAccount.accessRestricted, true);
     assert.equal(JSON.stringify(suspendedAccount).includes(internalReason), false);
   } finally {
+    await db.delete(memberConsentEvents).where(eq(memberConsentEvents.userId, staleUser));
     await db.delete(accountAccessRestrictions).where(eq(accountAccessRestrictions.entityId, alice));
     await new Promise<void>(resolve => server.close(() => resolve()));
   }

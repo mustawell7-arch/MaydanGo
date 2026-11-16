@@ -144,6 +144,7 @@ import type {
   MemberDeviceStatus,
   MemberFacilityReviews,
   MemberLiveClass,
+  MemberServiceError,
   MemberState,
   MemberSubscriptionResponse,
   MembershipLifecycleInput,
@@ -1434,7 +1435,7 @@ export const getGetAttendanceQueryKey = () => {
     }
 
 
-export const getGetAttendanceQueryOptions = <TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+export const getGetAttendanceQueryOptions = <TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<MemberServiceError>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1453,10 +1454,10 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetAttendanceQueryResult = NonNullable<Awaited<ReturnType<typeof getAttendance>>>
-export type GetAttendanceQueryError = ErrorType<unknown>
+export type GetAttendanceQueryError = ErrorType<MemberServiceError>
 
 
-export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<unknown>>(
+export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<MemberServiceError>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getAttendance>>,
@@ -1466,7 +1467,7 @@ export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance
       >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<unknown>>(
+export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<MemberServiceError>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getAttendance>>,
@@ -1476,12 +1477,12 @@ export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance
       >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<unknown>>(
+export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<MemberServiceError>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
-export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<unknown>>(
+export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<MemberServiceError>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -1757,7 +1758,7 @@ return customFetch<ScanCheckinQr200>(getScanCheckinQrUrl(),
 
 export const getScanCheckinQrMutationKey = () => ['scanCheckinQr'] as const;
 
-export const getScanCheckinQrMutationOptions = <TError = ErrorType<unknown>,
+export const getScanCheckinQrMutationOptions = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof scanCheckinQr>>, TError,ScanCheckinQrMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof scanCheckinQr>>, TError,ScanCheckinQrMutationVariables, TContext> => {
 
@@ -1786,10 +1787,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type ScanCheckinQrMutationResult = NonNullable<Awaited<ReturnType<typeof scanCheckinQr>>>
     export type ScanCheckinQrMutationBody = BodyType<ScanCheckinQrBody>
-    export type ScanCheckinQrMutationError = ErrorType<unknown>
+    export type ScanCheckinQrMutationError = ErrorType<MemberServiceError>
     export type ScanCheckinQrMutationVariables = {data: BodyType<ScanCheckinQrBody>}
 
-    export const useScanCheckinQr = <TError = ErrorType<unknown>,
+    export const useScanCheckinQr = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof scanCheckinQr>>, TError,ScanCheckinQrMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof scanCheckinQr>>,
@@ -1828,7 +1829,7 @@ export const requestManualCheckinCode = async (id: string, options?: Parameters<
 
 export const getRequestManualCheckinCodeMutationKey = () => ['requestManualCheckinCode'] as const;
 
-export const getRequestManualCheckinCodeMutationOptions = <TError = ErrorType<unknown>,
+export const getRequestManualCheckinCodeMutationOptions = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestManualCheckinCode>>, TError,RequestManualCheckinCodeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof requestManualCheckinCode>>, TError,RequestManualCheckinCodeMutationVariables, TContext> => {
 
@@ -1857,13 +1858,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type RequestManualCheckinCodeMutationResult = NonNullable<Awaited<ReturnType<typeof requestManualCheckinCode>>>
 
-    export type RequestManualCheckinCodeMutationError = ErrorType<unknown>
+    export type RequestManualCheckinCodeMutationError = ErrorType<MemberServiceError>
     export type RequestManualCheckinCodeMutationVariables = {id: string}
 
     /**
  * @summary Request a short-lived code for the reservation owner
  */
-export const useRequestManualCheckinCode = <TError = ErrorType<unknown>,
+export const useRequestManualCheckinCode = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestManualCheckinCode>>, TError,RequestManualCheckinCodeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof requestManualCheckinCode>>,
@@ -1917,7 +1918,7 @@ return customFetch<RecordManualCheckin200>(getRecordManualCheckinUrl(id),
 
 export const getRecordManualCheckinMutationKey = () => ['recordManualCheckin'] as const;
 
-export const getRecordManualCheckinMutationOptions = <TError = ErrorType<unknown>,
+export const getRecordManualCheckinMutationOptions = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordManualCheckin>>, TError,RecordManualCheckinMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof recordManualCheckin>>, TError,RecordManualCheckinMutationVariables, TContext> => {
 
@@ -1946,13 +1947,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type RecordManualCheckinMutationResult = NonNullable<Awaited<ReturnType<typeof recordManualCheckin>>>
     export type RecordManualCheckinMutationBody = BodyType<RecordManualCheckinBody>
-    export type RecordManualCheckinMutationError = ErrorType<unknown>
+    export type RecordManualCheckinMutationError = ErrorType<MemberServiceError>
     export type RecordManualCheckinMutationVariables = {id: string;data: BodyType<RecordManualCheckinBody>}
 
     /**
  * @summary Record a staff-assisted arrival after one-time code verification
  */
-export const useRecordManualCheckin = <TError = ErrorType<unknown>,
+export const useRecordManualCheckin = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordManualCheckin>>, TError,RecordManualCheckinMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof recordManualCheckin>>,
@@ -12644,7 +12645,7 @@ export const joinMemberWaitlist = async (id: string, options?: Parameters<typeof
 
 export const getJoinMemberWaitlistMutationKey = () => ['joinMemberWaitlist'] as const;
 
-export const getJoinMemberWaitlistMutationOptions = <TError = ErrorType<unknown>,
+export const getJoinMemberWaitlistMutationOptions = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof joinMemberWaitlist>>, TError,JoinMemberWaitlistMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof joinMemberWaitlist>>, TError,JoinMemberWaitlistMutationVariables, TContext> => {
 
@@ -12673,10 +12674,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type JoinMemberWaitlistMutationResult = NonNullable<Awaited<ReturnType<typeof joinMemberWaitlist>>>
 
-    export type JoinMemberWaitlistMutationError = ErrorType<unknown>
+    export type JoinMemberWaitlistMutationError = ErrorType<MemberServiceError>
     export type JoinMemberWaitlistMutationVariables = {id: string}
 
-    export const useJoinMemberWaitlist = <TError = ErrorType<unknown>,
+    export const useJoinMemberWaitlist = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof joinMemberWaitlist>>, TError,JoinMemberWaitlistMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof joinMemberWaitlist>>,
@@ -12712,7 +12713,7 @@ export const leaveMemberWaitlist = async (id: string, options?: Parameters<typeo
 
 export const getLeaveMemberWaitlistMutationKey = () => ['leaveMemberWaitlist'] as const;
 
-export const getLeaveMemberWaitlistMutationOptions = <TError = ErrorType<unknown>,
+export const getLeaveMemberWaitlistMutationOptions = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof leaveMemberWaitlist>>, TError,LeaveMemberWaitlistMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof leaveMemberWaitlist>>, TError,LeaveMemberWaitlistMutationVariables, TContext> => {
 
@@ -12741,10 +12742,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type LeaveMemberWaitlistMutationResult = NonNullable<Awaited<ReturnType<typeof leaveMemberWaitlist>>>
 
-    export type LeaveMemberWaitlistMutationError = ErrorType<unknown>
+    export type LeaveMemberWaitlistMutationError = ErrorType<MemberServiceError>
     export type LeaveMemberWaitlistMutationVariables = {id: string}
 
-    export const useLeaveMemberWaitlist = <TError = ErrorType<unknown>,
+    export const useLeaveMemberWaitlist = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof leaveMemberWaitlist>>, TError,LeaveMemberWaitlistMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof leaveMemberWaitlist>>,
@@ -12780,7 +12781,7 @@ export const acceptMemberWaitlistOffer = async (id: string, options?: Parameters
 
 export const getAcceptMemberWaitlistOfferMutationKey = () => ['acceptMemberWaitlistOffer'] as const;
 
-export const getAcceptMemberWaitlistOfferMutationOptions = <TError = ErrorType<unknown>,
+export const getAcceptMemberWaitlistOfferMutationOptions = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptMemberWaitlistOffer>>, TError,AcceptMemberWaitlistOfferMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof acceptMemberWaitlistOffer>>, TError,AcceptMemberWaitlistOfferMutationVariables, TContext> => {
 
@@ -12809,10 +12810,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type AcceptMemberWaitlistOfferMutationResult = NonNullable<Awaited<ReturnType<typeof acceptMemberWaitlistOffer>>>
 
-    export type AcceptMemberWaitlistOfferMutationError = ErrorType<unknown>
+    export type AcceptMemberWaitlistOfferMutationError = ErrorType<MemberServiceError>
     export type AcceptMemberWaitlistOfferMutationVariables = {id: string}
 
-    export const useAcceptMemberWaitlistOffer = <TError = ErrorType<unknown>,
+    export const useAcceptMemberWaitlistOffer = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptMemberWaitlistOffer>>, TError,AcceptMemberWaitlistOfferMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof acceptMemberWaitlistOffer>>,
@@ -17516,7 +17517,7 @@ export const getGetMemberStateQueryKey = () => {
     }
 
 
-export const getGetMemberStateQueryOptions = <TData = Awaited<ReturnType<typeof getMemberState>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberState>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+export const getGetMemberStateQueryOptions = <TData = Awaited<ReturnType<typeof getMemberState>>, TError = ErrorType<MemberServiceError>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberState>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -17535,10 +17536,10 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetMemberStateQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberState>>>
-export type GetMemberStateQueryError = ErrorType<unknown>
+export type GetMemberStateQueryError = ErrorType<MemberServiceError>
 
 
-export function useGetMemberState<TData = Awaited<ReturnType<typeof getMemberState>>, TError = ErrorType<unknown>>(
+export function useGetMemberState<TData = Awaited<ReturnType<typeof getMemberState>>, TError = ErrorType<MemberServiceError>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberState>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getMemberState>>,
@@ -17548,7 +17549,7 @@ export function useGetMemberState<TData = Awaited<ReturnType<typeof getMemberSta
       >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetMemberState<TData = Awaited<ReturnType<typeof getMemberState>>, TError = ErrorType<unknown>>(
+export function useGetMemberState<TData = Awaited<ReturnType<typeof getMemberState>>, TError = ErrorType<MemberServiceError>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberState>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getMemberState>>,
@@ -17558,12 +17559,12 @@ export function useGetMemberState<TData = Awaited<ReturnType<typeof getMemberSta
       >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetMemberState<TData = Awaited<ReturnType<typeof getMemberState>>, TError = ErrorType<unknown>>(
+export function useGetMemberState<TData = Awaited<ReturnType<typeof getMemberState>>, TError = ErrorType<MemberServiceError>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberState>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
-export function useGetMemberState<TData = Awaited<ReturnType<typeof getMemberState>>, TError = ErrorType<unknown>>(
+export function useGetMemberState<TData = Awaited<ReturnType<typeof getMemberState>>, TError = ErrorType<MemberServiceError>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberState>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -17611,7 +17612,7 @@ export const getGetMemberAccountSummaryQueryKey = () => {
     }
 
 
-export const getGetMemberAccountSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAccountSummary>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+export const getGetMemberAccountSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<MemberServiceError>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAccountSummary>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -17630,10 +17631,10 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetMemberAccountSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberAccountSummary>>>
-export type GetMemberAccountSummaryQueryError = ErrorType<unknown>
+export type GetMemberAccountSummaryQueryError = ErrorType<MemberServiceError>
 
 
-export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<unknown>>(
+export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<MemberServiceError>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAccountSummary>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getMemberAccountSummary>>,
@@ -17643,7 +17644,7 @@ export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof get
       >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<unknown>>(
+export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<MemberServiceError>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAccountSummary>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getMemberAccountSummary>>,
@@ -17653,12 +17654,12 @@ export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof get
       >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<unknown>>(
+export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<MemberServiceError>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAccountSummary>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
-export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<unknown>>(
+export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof getMemberAccountSummary>>, TError = ErrorType<MemberServiceError>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAccountSummary>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -17706,7 +17707,7 @@ export const getGetMemberAllowancesQueryKey = () => {
     }
 
 
-export const getGetMemberAllowancesQueryOptions = <TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAllowances>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+export const getGetMemberAllowancesQueryOptions = <TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<MemberServiceError>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAllowances>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -17725,10 +17726,10 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetMemberAllowancesQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberAllowances>>>
-export type GetMemberAllowancesQueryError = ErrorType<unknown>
+export type GetMemberAllowancesQueryError = ErrorType<MemberServiceError>
 
 
-export function useGetMemberAllowances<TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<unknown>>(
+export function useGetMemberAllowances<TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<MemberServiceError>>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAllowances>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getMemberAllowances>>,
@@ -17738,7 +17739,7 @@ export function useGetMemberAllowances<TData = Awaited<ReturnType<typeof getMemb
       >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetMemberAllowances<TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<unknown>>(
+export function useGetMemberAllowances<TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<MemberServiceError>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAllowances>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getMemberAllowances>>,
@@ -17748,12 +17749,12 @@ export function useGetMemberAllowances<TData = Awaited<ReturnType<typeof getMemb
       >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetMemberAllowances<TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<unknown>>(
+export function useGetMemberAllowances<TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<MemberServiceError>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAllowances>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
-export function useGetMemberAllowances<TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<unknown>>(
+export function useGetMemberAllowances<TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<MemberServiceError>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAllowances>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -17810,7 +17811,7 @@ return customFetch<MemberState>(getEnablePreviewMembershipUrl(),
 
 export const getEnablePreviewMembershipMutationKey = () => ['enablePreviewMembership'] as const;
 
-export const getEnablePreviewMembershipMutationOptions = <TError = ErrorType<unknown>,
+export const getEnablePreviewMembershipMutationOptions = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof enablePreviewMembership>>, TError,EnablePreviewMembershipMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof enablePreviewMembership>>, TError,EnablePreviewMembershipMutationVariables, TContext> => {
 
@@ -17839,10 +17840,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type EnablePreviewMembershipMutationResult = NonNullable<Awaited<ReturnType<typeof enablePreviewMembership>>>
     export type EnablePreviewMembershipMutationBody = BodyType<EnablePreviewMembershipBody>
-    export type EnablePreviewMembershipMutationError = ErrorType<unknown>
+    export type EnablePreviewMembershipMutationError = ErrorType<MemberServiceError>
     export type EnablePreviewMembershipMutationVariables = {data: BodyType<EnablePreviewMembershipBody>}
 
-    export const useEnablePreviewMembership = <TError = ErrorType<unknown>,
+    export const useEnablePreviewMembership = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof enablePreviewMembership>>, TError,EnablePreviewMembershipMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof enablePreviewMembership>>,
@@ -17892,7 +17893,7 @@ return customFetch<MemberState>(getCreateMemberBookingUrl(),
 
 export const getCreateMemberBookingMutationKey = () => ['createMemberBooking'] as const;
 
-export const getCreateMemberBookingMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateMemberBookingMutationOptions = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMemberBooking>>, TError,CreateMemberBookingMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createMemberBooking>>, TError,CreateMemberBookingMutationVariables, TContext> => {
 
@@ -17921,10 +17922,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateMemberBookingMutationResult = NonNullable<Awaited<ReturnType<typeof createMemberBooking>>>
     export type CreateMemberBookingMutationBody = BodyType<CreateMemberBookingBody>
-    export type CreateMemberBookingMutationError = ErrorType<unknown>
+    export type CreateMemberBookingMutationError = ErrorType<MemberServiceError>
     export type CreateMemberBookingMutationVariables = {data: BodyType<CreateMemberBookingBody>}
 
-    export const useCreateMemberBooking = <TError = ErrorType<unknown>,
+    export const useCreateMemberBooking = <TError = ErrorType<MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMemberBooking>>, TError,CreateMemberBookingMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createMemberBooking>>,

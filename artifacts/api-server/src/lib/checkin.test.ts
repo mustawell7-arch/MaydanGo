@@ -91,11 +91,43 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
   await db.insert(memberConsentEvents).values((["terms_of_use", "privacy_policy"] as const).map(purpose => ({
     id: `${prefix}-${purpose}`, userId: member, purpose, policyVersion: "v1-draft", choice: "accepted" as const,
   })));
+  await db.insert(memberConsentEvents).values((["terms_of_use", "privacy_policy"] as const).map(purpose => ({
+    id: `${prefix}-${purpose}-stranger`, userId: stranger, purpose, policyVersion: "v1-draft", choice: "accepted" as const,
+  })));
   await db.insert(memberProfiles).values({ userId: member, gender: "unspecified", birthDate: "1990-01-01" });
   await db.insert(reservations).values({ id: r, userId: member, offeringId: o, status: "reserved" });
   await db.insert(offerings).values({ id: nextOffering, targetId: nextOffering, kind: "session", title: prefix, scope: "live", partnerId: p,
     active: true, city: "baghdad", facility: prefix, category: "gym", tiers: ["M"], capacity: 3,
     startsAt: new Date(now + 7200000), endsAt: new Date(now + 10800000), cancellationDeadline: new Date(now + 3600000) });
+  await t.test("member attendance requires current Terms and Privacy consent", async () => {
+    const scan = scanInput.parse({ token: `MDG1:${"a".repeat(64)}`, ...location() });
+    const consentRequired = (error: unknown) => error instanceof BookingError
+      && error.status === 403 && error.code === "MEMBER_CONSENT_REQUIRED";
+    await db.delete(memberConsentEvents).where(eq(memberConsentEvents.userId, member));
+    await assert.rejects(roster(member), consentRequired);
+    await assert.rejects(scanQr(member, scan), consentRequired);
+    await assert.rejects(issueManualCheckinCode(member, r), consentRequired);
+
+    await db.insert(memberConsentEvents).values((["terms_of_use", "privacy_policy"] as const).map(purpose => ({
+      id: `${prefix}-${purpose}-outdated`,
+      userId: member,
+      purpose,
+      policyVersion: "expired-v0",
+      choice: "accepted" as const,
+    })));
+    await assert.rejects(scanQr(member, scan), consentRequired);
+
+    await db.delete(memberConsentEvents).where(eq(memberConsentEvents.userId, member));
+    await db.insert(memberConsentEvents).values((["terms_of_use", "privacy_policy"] as const).map(purpose => ({
+      id: `${prefix}-${purpose}-current`,
+      userId: member,
+      purpose,
+      policyVersion: "v1-draft",
+      choice: "accepted" as const,
+    })));
+    await assert.rejects(scanQr(member, scan), error =>
+      error instanceof BookingError && error.status === 400 && error.code !== "MEMBER_CONSENT_REQUIRED");
+  });
   await t.test("saving a reservation creates no attendance; unauthenticated API denied", async () => {
     assert.equal((await roster(member)).rows[0].status, "not_checked_in");
     const server = app.listen(0, "127.0.0.1");
@@ -322,6 +354,18 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     await db.update(memberships).set({ status: "trial" }).where(eq(memberships.userId, member));
     const first = await issueManualCheckinCode(member, manualReservation);
     assert.match(first.code, /^\d{8}$/);
+    await db.delete(memberConsentEvents).where(eq(memberConsentEvents.userId, member));
+    await assert.rejects(recordManualCheckin(staff, manualReservation, {
+      code: first.code, reason: "Member is present at the desk",
+    }), error => error instanceof BookingError
+      && error.status === 403 && error.code === "MEMBER_CONSENT_REQUIRED");
+    await db.insert(memberConsentEvents).values((["terms_of_use", "privacy_policy"] as const).map(purpose => ({
+      id: `${prefix}-${purpose}-manual-current`,
+      userId: member,
+      purpose,
+      policyVersion: "v1-draft",
+      choice: "accepted" as const,
+    })));
     await reject(() => recordManualCheckin(stranger, manualReservation, {
       code: first.code, reason: "Member is present at the desk",
     }), 403);

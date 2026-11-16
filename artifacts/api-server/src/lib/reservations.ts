@@ -2,20 +2,21 @@ import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, gt, inArray, isNull, lte, sql } from "drizzle-orm";
 import { db, memberships, offerings, reservations, attendance, facilityProfiles, memberProfiles, partners, waitlistEntries, memberUpdates } from "@workspace/db";
 import { sendMemberNotification } from "./notifications";
-import { hasCurrentRequiredMemberConsent } from "./member-consents";
+import {
+  hasCurrentRequiredMemberConsent,
+  MEMBER_CONSENT_REQUIRED_CODE,
+  MEMBER_CONSENT_REQUIRED_MESSAGE,
+} from "./member-consents";
 import { isAccessSuspended, lockVenueAccess } from "./account-access-restrictions";
 
 export class BookingError extends Error {
-  constructor(public status: number, message: string) { super(message); }
+  constructor(public status: number, message: string, public code?: string) { super(message); }
 }
 type BookingTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 async function requireCurrentMemberConsent(userId: string) {
   if (!await hasCurrentRequiredMemberConsent(userId)) {
-    throw new BookingError(
-      403,
-      "Accept the current Terms of Use and Privacy Policy in Account before booking.",
-    );
+    throw new BookingError(403, MEMBER_CONSENT_REQUIRED_MESSAGE, MEMBER_CONSENT_REQUIRED_CODE);
   }
 }
 
@@ -326,6 +327,7 @@ export async function joinWaitlist(userId: string, offeringId: string) {
 }
 
 export async function leaveWaitlist(userId: string, entryId: string) {
+  await requireCurrentMemberConsent(userId);
   const [known] = await db.select({ offeringId: waitlistEntries.offeringId }).from(waitlistEntries)
     .where(and(eq(waitlistEntries.id, entryId), eq(waitlistEntries.userId, userId))).limit(1);
   if (!known) throw new BookingError(404, "Waitlist entry not found.");
@@ -439,6 +441,7 @@ export async function createReservation(userId: string, input: { kind: string; t
 }
 
 export async function cancelReservation(userId: string, id: string) {
+  await requireCurrentMemberConsent(userId);
   const result = await db.transaction(async tx => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
     const [initial] = await tx.select({ offeringId: reservations.offeringId }).from(reservations)

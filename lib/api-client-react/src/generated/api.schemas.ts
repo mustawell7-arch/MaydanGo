@@ -1091,6 +1091,11 @@ export interface MemberConsentState {
   history: MemberConsentRecord[];
 }
 
+export interface MemberServiceError {
+  code?: string;
+  message: string;
+}
+
 export interface MemberConsentInput {
   termsOfUseAccepted: boolean;
   privacyPolicyAccepted: boolean;

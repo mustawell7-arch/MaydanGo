@@ -26,7 +26,15 @@ import {
   recordMemberPrivacyExportDownload,
 } from "../lib/privacy-requests";
 import { createMemberDataExport } from "../lib/member-data-export";
-import { getMemberConsentState, saveMemberConsentChoices, RequiredMemberConsentError, StaleMemberConsentPolicyError } from "../lib/member-consents";
+import {
+  getMemberConsentState,
+  hasCurrentRequiredMemberConsent,
+  MEMBER_CONSENT_REQUIRED_CODE,
+  MEMBER_CONSENT_REQUIRED_MESSAGE,
+  saveMemberConsentChoices,
+  RequiredMemberConsentError,
+  StaleMemberConsentPolicyError,
+} from "../lib/member-consents";
 import learningRouter from "./learning";
 import { memberSupportRouter } from "./support";
 import memberReviewsRouter from "./member-reviews";
@@ -44,7 +52,16 @@ router.use((req, res, next) => {
   if (!getAuth(req).userId) { res.status(401).json({ message: "Sign in to manage your bookings." }); return; }
   next();
 });
+async function ensureCurrentMemberConsent(req: import("express").Request, res: import("express").Response) {
+  if (await hasCurrentRequiredMemberConsent(getAuth(req).userId!)) return true;
+  res.status(403).json({
+    code: MEMBER_CONSENT_REQUIRED_CODE,
+    message: MEMBER_CONSENT_REQUIRED_MESSAGE,
+  });
+  return false;
+}
 router.get("/account", async (req, res): Promise<void> => {
+  if (!await ensureCurrentMemberConsent(req, res)) return;
   const userId = getAuth(req).userId!;
   const [summary, accessRestricted] = await Promise.all([
     memberAccountSummary(userId),
@@ -68,6 +85,7 @@ router.get("/account", async (req, res): Promise<void> => {
   }));
 });
 router.get("/allowances", async (req, res) => {
+  if (!await ensureCurrentMemberConsent(req, res)) return;
   res.json(GetMemberAllowancesResponse.parse(await getMemberAllowances(getAuth(req).userId!)));
 });
 router.get("/consents", async (req, res) => {
@@ -161,7 +179,10 @@ router.use(requirePrimaryMemberDevice);
 router.use(learningRouter);
 router.use(memberSupportRouter);
 router.use(memberReviewsRouter);
-router.get("/", async (req, res) => { res.json(await memberState(getAuth(req).userId!)); });
+router.get("/", async (req, res) => {
+  if (!await ensureCurrentMemberConsent(req, res)) return;
+  res.json(await memberState(getAuth(req).userId!));
+});
 router.get("/plans", async (_req, res) => { res.json(await listMemberPlans()); });
 router.post("/checkout", async (req, res) => {
   const parsed = z.object({ planId: z.string().uuid() }).strict().safeParse(req.body);
@@ -282,7 +303,10 @@ router.post("/waitlist/:id/accept", async (req, res) => {
   res.json(await memberState(getAuth(req).userId!));
 });
 router.use((error: unknown, _req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => {
-  if (error instanceof BookingError) { res.status(error.status).json({ message: error.message }); return; }
+  if (error instanceof BookingError) {
+    res.status(error.status).json({ ...(error.code ? { code: error.code } : {}), message: error.message });
+    return;
+  }
   if (error instanceof PaymentError) { res.status(error.status).json({ message: error.message }); return; }
   if (error instanceof DeviceSecurityError) { res.status(error.status).json({ code: error.code, message: error.message }); return; }
   next(error);

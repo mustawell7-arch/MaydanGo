@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useAuth, useUser } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  ApiError,
   getGetMemberAccountSummaryQueryKey,
   getGetMemberConsentsQueryKey,
   getMemberPrivacyRequestExport,
@@ -15,6 +16,11 @@ import {
 import { Link, Redirect } from "wouter";
 
 type Language = "en" | "ar" | "ku";
+
+function isMemberConsentRequired(error: unknown) {
+  return error instanceof ApiError && !!error.data && typeof error.data === "object"
+    && "code" in error.data && error.data.code === "MEMBER_CONSENT_REQUIRED";
+}
 
 const copy: Record<Language, Record<string, string>> = {
   en: {
@@ -291,6 +297,7 @@ export default function MemberAccountPage({ language }: { language: Language }) 
   const createPrivacyRequest = useCreateMemberPrivacyRequest();
   const saveConsents = useSaveMemberConsents();
   const t = copy[language];
+  const memberConsentRequired = summary.isError && isMemberConsentRequired(summary.error);
   const rtl = language !== "en";
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -497,7 +504,14 @@ export default function MemberAccountPage({ language }: { language: Language }) 
               <Link href="/membership-plans" className="text-sm font-bold text-primary underline-offset-4 hover:underline">{t.plans}</Link>
             </div>
             {summary.isLoading ? <p className="mt-4 text-sm text-muted-foreground">{t.loading}</p>
-              : summary.isError ? <p className="mt-4 text-sm text-destructive" role="alert">{t.bookingsError}</p>
+              : summary.isError ? <div className="mt-4">
+                <p className="text-sm text-destructive" role="alert">
+                  {memberConsentRequired ? t.consentRequiredHint : t.bookingsError}
+                </p>
+                {memberConsentRequired ? <a href="#account-consents-heading" className="mt-2 inline-block text-sm font-bold text-primary underline-offset-4 hover:underline">
+                  {t.consentsTitle}
+                </a> : null}
+              </div>
                 : summary.data?.memberships.length ? <ul className="mt-5 space-y-3">
                   {summary.data.memberships.map((membership, index) => {
                     const preview = membership.scope === "preview";
@@ -518,8 +532,10 @@ export default function MemberAccountPage({ language }: { language: Language }) 
             <h2 id="account-bookings-heading" className="font-display text-2xl font-bold">{t.bookings}</h2>
             {summary.isLoading ? <p className="mt-4 text-sm text-muted-foreground">{t.loading}</p>
               : summary.isError ? <div className="mt-4">
-                <p className="text-sm text-destructive" role="alert">{t.bookingsError}</p>
-                <button type="button" onClick={() => void summary.refetch()} className="mt-3 text-sm font-bold text-primary underline-offset-4 hover:underline">{t.retry}</button>
+                <p className="text-sm text-destructive" role="alert">
+                  {memberConsentRequired ? t.consentRequiredHint : t.bookingsError}
+                </p>
+                {!memberConsentRequired ? <button type="button" onClick={() => void summary.refetch()} className="mt-3 text-sm font-bold text-primary underline-offset-4 hover:underline">{t.retry}</button> : null}
               </div>
                 : summary.data?.bookings.length ? <ul className="mt-5 space-y-3">
                   {[...summary.data.bookings].sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt)).map(booking => {

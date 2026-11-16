@@ -13,9 +13,13 @@ import { AttendanceCard } from '@/components/AttendanceCard';
 import { useColors } from '@/hooks/useColors';
 import { useApp } from '@/contexts/AppContext';
 import { dateTime } from '@/lib/content';
+import { translate } from '@/lib/i18n';
 
 export const checkinError = (e: unknown) => e instanceof ApiError && e.data && typeof e.data === 'object' && 'message' in e.data
   ? String(e.data.message) : e instanceof Error ? e.message : 'Check-in failed. Please try again.';
+const isMemberConsentRequired = (e: unknown) =>
+  e instanceof ApiError && !!e.data && typeof e.data === 'object'
+  && 'code' in e.data && e.data.code === 'MEMBER_CONSENT_REQUIRED';
 
 export default function CheckInScreen() {
   const c = useColors(), { language } = useApp();
@@ -23,6 +27,7 @@ export default function CheckInScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(false), [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [consentRequired, setConsentRequired] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
   const lock = useRef(false);
   const owner = useRef(userId); owner.current = userId;
@@ -30,7 +35,7 @@ export default function CheckInScreen() {
   useFocusEffect(useCallback(() => { if (isSignedIn) void roster.refetch(); }, [isSignedIn, userId]));
   const scan = async ({ data }: { data: string }) => {
     if (lock.current) return;
-    lock.current = true; setBusy(true); setError('');
+    lock.current = true; setBusy(true); setError(''); setConsentRequired(false);
     const who = userId;
     try {
       if (!/^MDG1:[a-f0-9]{64}$/.test(data)) throw new Error('Ask staff for a current MaydanGO QR code.');
@@ -50,7 +55,12 @@ export default function CheckInScreen() {
       if (owner.current !== who) return;
       setReference(result.reference); setScanning(false);
       await roster.refetch();
-    } catch (e) { if (owner.current === who) { setError(checkinError(e)); setScanning(false); } }
+    } catch (e) { if (owner.current === who) {
+      const needsConsent = isMemberConsentRequired(e);
+      setConsentRequired(needsConsent);
+      setError(needsConsent ? translate(language, 'memberConsentsRequiredHint') : checkinError(e));
+      setScanning(false);
+    } }
     finally { setBusy(false); lock.current = false; }
   };
   const ownRows = roster.data?.rows.filter(r => r.userId === userId) ?? [];
@@ -90,7 +100,14 @@ export default function CheckInScreen() {
           <Pressable onPress={() => setScanning(false)}><Text style={{ color: c.primary }}>Close camera</Text></Pressable>
         </View> : null}
         {busy || roster.isLoading ? <ActivityIndicator color={c.primary} /> : null}
-        {error || roster.error ? <Text accessibilityRole="alert" style={{ color: c.destructive }}>{error || checkinError(roster.error)}</Text> : null}
+        {error || roster.error ? <Text accessibilityRole="alert" style={{ color: c.destructive }}>
+          {consentRequired || isMemberConsentRequired(roster.error)
+            ? translate(language, 'memberConsentsRequiredHint')
+            : error || checkinError(roster.error)}
+        </Text> : null}
+        {consentRequired || isMemberConsentRequired(roster.error) ? <Pressable onPress={() => router.push('/account')}>
+          <Text style={{ color: c.primary, textDecorationLine: 'underline' }}>{translate(language, 'memberConsentsTitle')}</Text>
+        </Pressable> : null}
         <Pressable onPress={() => void roster.refetch()}><Text style={{ color: c.primary }}>Refresh attendance</Text></Pressable>
         <Text style={[s.heading, { color: c.foreground }]}>{roster.data?.role === 'member' ? 'Your attendance' : 'Partner attendance roster'}</Text>
         {roster.data?.rows.length === 0 ? <Text style={{ color: c.mutedForeground }}>No live reservations yet.</Text> : null}

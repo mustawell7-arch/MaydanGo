@@ -9,6 +9,10 @@ export const MEMBER_POLICY_VERSIONS: Record<MemberConsentPurpose, string> = {
   marketing: "v1-draft",
 };
 
+export const MEMBER_CONSENT_REQUIRED_CODE = "MEMBER_CONSENT_REQUIRED";
+export const MEMBER_CONSENT_REQUIRED_MESSAGE =
+  "Review and accept the current Terms of Use and Privacy Policy in Account before continuing.";
+
 export const MEMBER_CONSENT_POLICIES = [
   { purpose: "terms_of_use", version: MEMBER_POLICY_VERSIONS.terms_of_use, required: true },
   { purpose: "privacy_policy", version: MEMBER_POLICY_VERSIONS.privacy_policy, required: true },
@@ -89,6 +93,19 @@ export function buildMemberConsentState(
   };
 }
 
+export function buildCurrentMemberConsentState(
+  history: MemberConsentEvent[],
+  currentPolicies: Awaited<ReturnType<typeof getCurrentLegalPolicies>> = [],
+) {
+  const currentByKey = new Map(currentPolicies.map(policy => [policy.policyKey, policy]));
+  const versions: Record<MemberConsentPurpose, string> = {
+    ...MEMBER_POLICY_VERSIONS,
+    terms_of_use: currentByKey.get("terms_of_use")?.version ?? MEMBER_POLICY_VERSIONS.terms_of_use,
+    privacy_policy: currentByKey.get("privacy_policy")?.version ?? MEMBER_POLICY_VERSIONS.privacy_policy,
+  };
+  return buildMemberConsentState(history, versions, currentPolicies);
+}
+
 export async function listMemberConsentHistory(userId: string): Promise<MemberConsentEvent[]> {
   return db.select().from(memberConsentEvents)
     .where(eq(memberConsentEvents.userId, userId))
@@ -100,13 +117,7 @@ export async function getMemberConsentState(userId: string): Promise<MemberConse
     listMemberConsentHistory(userId),
     getCurrentLegalPolicies(),
   ]);
-  const currentByKey = new Map(currentPolicies.map(policy => [policy.policyKey, policy]));
-  const versions: Record<MemberConsentPurpose, string> = {
-    ...MEMBER_POLICY_VERSIONS,
-    terms_of_use: currentByKey.get("terms_of_use")?.version ?? MEMBER_POLICY_VERSIONS.terms_of_use,
-    privacy_policy: currentByKey.get("privacy_policy")?.version ?? MEMBER_POLICY_VERSIONS.privacy_policy,
-  };
-  return buildMemberConsentState(history, versions, currentPolicies);
+  return buildCurrentMemberConsentState(history, currentPolicies);
 }
 
 export async function hasCurrentRequiredMemberConsent(userId: string): Promise<boolean> {

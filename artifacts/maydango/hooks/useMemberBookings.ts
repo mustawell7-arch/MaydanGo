@@ -3,17 +3,21 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 import { router } from 'expo-router';
 import type { Language } from '@/lib/i18n';
+import { translate } from '@/lib/i18n';
 import { dateTime, errorCopy } from '@/lib/content';
 import {
   getMemberState, createMemberBooking, cancelMemberBooking, enablePreviewMembership,
   joinMemberWaitlist, leaveMemberWaitlist, acceptMemberWaitlistOffer,
   setBaseUrl, setAuthTokenGetter, type MemberState, type MemberBooking,
-  saveMemberProfile, getBookingCatalog,
+  saveMemberProfile, getBookingCatalog, ApiError,
 } from '@workspace/api-client-react';
 
 const domain = process.env.EXPO_PUBLIC_DOMAIN;
 if (domain) setBaseUrl(`https://${domain}`);
 const empty: MemberState = { memberships: [], bookings: [], waitlists: [], waitlistUpdates: [] };
+const isMemberConsentRequired = (error: unknown) =>
+  error instanceof ApiError && !!error.data && typeof error.data === 'object'
+  && 'code' in error.data && error.data.code === 'MEMBER_CONSENT_REQUIRED';
 
 export function useMemberBookings(language: Language) {
   const { userId, isSignedIn, getToken } = useAuth();
@@ -23,6 +27,7 @@ export function useMemberBookings(language: Language) {
   const [catalog, setCatalog] = useState<Awaited<ReturnType<typeof getBookingCatalog>>>([]);
   const version = useRef(0);
   const [memberError, setError] = useState<string | null>(null);
+  const [memberConsentRequired, setMemberConsentRequired] = useState(false);
   const [memberLoading, setLoading] = useState(false);
   const pending = useRef(false);
   // This is an Expo app, including its cross-origin Expo web preview.
@@ -34,14 +39,30 @@ export function useMemberBookings(language: Language) {
     const revision = ++version.current;
     setLoading(true);
     try {
-      const [value, entries] = await Promise.all([getMemberState(), getBookingCatalog()]);
-      if (identity.current === owner && revision === version.current) { setData({ owner, value }); setCatalog(entries); setError(null); }
+      const [stateResult, catalogResult] = await Promise.allSettled([getMemberState(), getBookingCatalog()]);
+      if (identity.current !== owner || revision !== version.current) return;
+      if (catalogResult.status === 'fulfilled') setCatalog(catalogResult.value);
+      if (stateResult.status === 'fulfilled') {
+        setData({ owner, value: stateResult.value });
+        setMemberConsentRequired(false);
+        setError(null);
+      } else if (isMemberConsentRequired(stateResult.reason)) {
+        setData(null);
+        setMemberConsentRequired(true);
+        setError(translate(language, 'memberConsentsRequiredHint'));
+      } else {
+        setMemberConsentRequired(false);
+        setError(errorCopy(stateResult.reason));
+      }
     } catch (error) {
-      if (identity.current === owner && revision === version.current) setError(errorCopy(error));
+      if (identity.current === owner && revision === version.current) {
+        setMemberConsentRequired(false);
+        setError(errorCopy(error));
+      }
     } finally { if (identity.current === owner && revision === version.current) setLoading(false); }
-  }, [userId]);
+  }, [userId, language]);
   useEffect(() => {
-    setData(null); setCatalog([]); setError(null); setLoading(false);
+    setData(null); setCatalog([]); setError(null); setMemberConsentRequired(false); setLoading(false);
     void refreshMember();
     const sub = AppState.addEventListener('change', s => { if (s === 'active') void refreshMember(); });
     const timer = setInterval(() => { if (AppState.currentState === 'active' || Platform.OS === 'web') void refreshMember(); }, 30000);
@@ -57,15 +78,25 @@ export function useMemberBookings(language: Language) {
       const value = await operation();
       if (identity.current !== owner) return { ok: false as const, reason: 'invalid' as const };
       setData({ owner, value });
+      setMemberConsentRequired(false);
       return { ok: true as const };
     } catch (error) {
-      if (identity.current === owner) setError(errorCopy(error));
+      if (identity.current === owner) {
+        if (isMemberConsentRequired(error)) {
+          setMemberConsentRequired(true);
+          setError(translate(language, 'memberConsentsRequiredHint'));
+          router.push('/account');
+        } else {
+          setMemberConsentRequired(false);
+          setError(errorCopy(error));
+        }
+      }
       return { ok: false as const, reason: 'invalid' as const };
     } finally {
       pending.current = false;
       if (identity.current === owner) setLoading(false);
     }
-  }, [userId]);
+  }, [userId, language]);
   const create = (kind: 'session' | 'event' | 'coach', targetId: string, slot = '') =>
     mutate(() => createMemberBooking({ kind, targetId, slot }));
   const cancel = (kind: string, targetId: string, slot = '') => {
@@ -86,7 +117,7 @@ export function useMemberBookings(language: Language) {
     coachId: b.targetId, slot: b.slot, requestedAt: b.createdAt, status: b.status === 'cancelled' || String(b.status) === 'partner_cancelled' ? 'cancelled' as const : 'requested' as const, cancelledAt: cancelledAt(b),
   }));
   return {
-    bookings, eventBookings, coachRequests, memberError, memberLoading, refreshMember,
+    bookings, eventBookings, coachRequests, memberError, memberConsentRequired, memberLoading, refreshMember,
     signedIn: !!isSignedIn, memberMemberships: current.memberships, serverBookings: deduped,
     memberProfile: current.profile, bookingCatalog: catalog,
     offeringTime: (kind: string, targetId: string, slot = '') => {
