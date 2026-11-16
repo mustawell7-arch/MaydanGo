@@ -2133,6 +2133,862 @@ export const ApprovePartnerResponse = zod.object({
 }))
 
 
+export const getPartnerOnboardingApplicationsResponseOneApplicantNameMin = 2;
+export const getPartnerOnboardingApplicationsResponseOneApplicantNameMax = 120;
+
+export const getPartnerOnboardingApplicationsResponseOneContactPhoneMin = 6;
+export const getPartnerOnboardingApplicationsResponseOneContactPhoneMax = 40;
+
+export const getPartnerOnboardingApplicationsResponseOneLegalBusinessNameMin = 2;
+export const getPartnerOnboardingApplicationsResponseOneLegalBusinessNameMax = 180;
+
+export const getPartnerOnboardingApplicationsResponseOneFacilityNameMin = 2;
+export const getPartnerOnboardingApplicationsResponseOneFacilityNameMax = 160;
+
+export const getPartnerOnboardingApplicationsResponseOneAddressMin = 3;
+export const getPartnerOnboardingApplicationsResponseOneAddressMax = 400;
+
+export const getPartnerOnboardingApplicationsResponseOneCityMin = 2;
+export const getPartnerOnboardingApplicationsResponseOneCityMax = 100;
+
+export const getPartnerOnboardingApplicationsResponseOneDistrictMax = 120;
+
+export const getPartnerOnboardingApplicationsResponseOneLatitudeMin = -90;
+export const getPartnerOnboardingApplicationsResponseOneLatitudeMax = 90;
+
+export const getPartnerOnboardingApplicationsResponseOneLongitudeMin = -180;
+export const getPartnerOnboardingApplicationsResponseOneLongitudeMax = 180;
+
+export const getPartnerOnboardingApplicationsResponseOneBusinessRegistrationReferenceMax = 120;
+
+export const getPartnerOnboardingApplicationsResponseOneTaxReferenceMax = 120;
+
+export const getPartnerOnboardingApplicationsResponseOneActivityCategoriesItemMin = 2;
+export const getPartnerOnboardingApplicationsResponseOneActivityCategoriesItemMax = 80;
+
+export const getPartnerOnboardingApplicationsResponseOneActivityCategoriesMax = 20;
+
+export const getPartnerOnboardingApplicationsResponseOneOpeningHoursItemDayMin = 0;
+export const getPartnerOnboardingApplicationsResponseOneOpeningHoursItemDayMax = 6;
+
+export const getPartnerOnboardingApplicationsResponseOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const getPartnerOnboardingApplicationsResponseOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const getPartnerOnboardingApplicationsResponseOneOpeningHoursMin = 7;
+export const getPartnerOnboardingApplicationsResponseOneOpeningHoursMax = 7;
+
+export const getPartnerOnboardingApplicationsResponseOneCapacityMax = 100000;
+
+export const getPartnerOnboardingApplicationsResponseOnePricingDetailsMax = 2000;
+
+
+
+export const GetPartnerOnboardingApplicationsResponseItem = zod.object({
+  "applicantName": zod.string().min(getPartnerOnboardingApplicationsResponseOneApplicantNameMin).max(getPartnerOnboardingApplicationsResponseOneApplicantNameMax),
+  "contactPhone": zod.string().min(getPartnerOnboardingApplicationsResponseOneContactPhoneMin).max(getPartnerOnboardingApplicationsResponseOneContactPhoneMax),
+  "legalBusinessName": zod.string().min(getPartnerOnboardingApplicationsResponseOneLegalBusinessNameMin).max(getPartnerOnboardingApplicationsResponseOneLegalBusinessNameMax),
+  "facilityName": zod.string().min(getPartnerOnboardingApplicationsResponseOneFacilityNameMin).max(getPartnerOnboardingApplicationsResponseOneFacilityNameMax),
+  "address": zod.string().min(getPartnerOnboardingApplicationsResponseOneAddressMin).max(getPartnerOnboardingApplicationsResponseOneAddressMax),
+  "city": zod.string().min(getPartnerOnboardingApplicationsResponseOneCityMin).max(getPartnerOnboardingApplicationsResponseOneCityMax),
+  "district": zod.string().max(getPartnerOnboardingApplicationsResponseOneDistrictMax).nullish(),
+  "latitude": zod.number().min(getPartnerOnboardingApplicationsResponseOneLatitudeMin).max(getPartnerOnboardingApplicationsResponseOneLatitudeMax).nullish(),
+  "longitude": zod.number().min(getPartnerOnboardingApplicationsResponseOneLongitudeMin).max(getPartnerOnboardingApplicationsResponseOneLongitudeMax).nullish(),
+  "businessRegistrationReference": zod.string().max(getPartnerOnboardingApplicationsResponseOneBusinessRegistrationReferenceMax).nullish(),
+  "taxReference": zod.string().max(getPartnerOnboardingApplicationsResponseOneTaxReferenceMax).nullish(),
+  "activityCategories": zod.array(zod.string().min(getPartnerOnboardingApplicationsResponseOneActivityCategoriesItemMin).max(getPartnerOnboardingApplicationsResponseOneActivityCategoriesItemMax)).min(1).max(getPartnerOnboardingApplicationsResponseOneActivityCategoriesMax),
+  "openingHours": zod.array(zod.object({
+  "day": zod.int().min(getPartnerOnboardingApplicationsResponseOneOpeningHoursItemDayMin).max(getPartnerOnboardingApplicationsResponseOneOpeningHoursItemDayMax),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(getPartnerOnboardingApplicationsResponseOneOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(getPartnerOnboardingApplicationsResponseOneOpeningHoursItemClosesAtRegExp).nullable()
+})).min(getPartnerOnboardingApplicationsResponseOneOpeningHoursMin).max(getPartnerOnboardingApplicationsResponseOneOpeningHoursMax),
+  "capacity": zod.int().min(1).max(getPartnerOnboardingApplicationsResponseOneCapacityMax).nullish(),
+  "pricingDetails": zod.string().max(getPartnerOnboardingApplicationsResponseOnePricingDetailsMax).nullish()
+}).and(zod.object({
+  "id": zod.uuid(),
+  "applicantUserId": zod.string(),
+  "contactEmail": zod.email(),
+  "status": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
+  "statusNote": zod.string().nullable(),
+  "partnerId": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+export const GetPartnerOnboardingApplicationsResponse = zod.array(GetPartnerOnboardingApplicationsResponseItem)
+
+
+export const GetPartnerOnboardingApplicationParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getPartnerOnboardingApplicationResponseApplicationOneApplicantNameMin = 2;
+export const getPartnerOnboardingApplicationResponseApplicationOneApplicantNameMax = 120;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneContactPhoneMin = 6;
+export const getPartnerOnboardingApplicationResponseApplicationOneContactPhoneMax = 40;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneLegalBusinessNameMin = 2;
+export const getPartnerOnboardingApplicationResponseApplicationOneLegalBusinessNameMax = 180;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneFacilityNameMin = 2;
+export const getPartnerOnboardingApplicationResponseApplicationOneFacilityNameMax = 160;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneAddressMin = 3;
+export const getPartnerOnboardingApplicationResponseApplicationOneAddressMax = 400;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneCityMin = 2;
+export const getPartnerOnboardingApplicationResponseApplicationOneCityMax = 100;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneDistrictMax = 120;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneLatitudeMin = -90;
+export const getPartnerOnboardingApplicationResponseApplicationOneLatitudeMax = 90;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneLongitudeMin = -180;
+export const getPartnerOnboardingApplicationResponseApplicationOneLongitudeMax = 180;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneBusinessRegistrationReferenceMax = 120;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneTaxReferenceMax = 120;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneActivityCategoriesItemMin = 2;
+export const getPartnerOnboardingApplicationResponseApplicationOneActivityCategoriesItemMax = 80;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneActivityCategoriesMax = 20;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneOpeningHoursItemDayMin = 0;
+export const getPartnerOnboardingApplicationResponseApplicationOneOpeningHoursItemDayMax = 6;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const getPartnerOnboardingApplicationResponseApplicationOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const getPartnerOnboardingApplicationResponseApplicationOneOpeningHoursMin = 7;
+export const getPartnerOnboardingApplicationResponseApplicationOneOpeningHoursMax = 7;
+
+export const getPartnerOnboardingApplicationResponseApplicationOneCapacityMax = 100000;
+
+export const getPartnerOnboardingApplicationResponseApplicationOnePricingDetailsMax = 2000;
+
+
+
+export const GetPartnerOnboardingApplicationResponse = zod.object({
+  "application": zod.object({
+  "applicantName": zod.string().min(getPartnerOnboardingApplicationResponseApplicationOneApplicantNameMin).max(getPartnerOnboardingApplicationResponseApplicationOneApplicantNameMax),
+  "contactPhone": zod.string().min(getPartnerOnboardingApplicationResponseApplicationOneContactPhoneMin).max(getPartnerOnboardingApplicationResponseApplicationOneContactPhoneMax),
+  "legalBusinessName": zod.string().min(getPartnerOnboardingApplicationResponseApplicationOneLegalBusinessNameMin).max(getPartnerOnboardingApplicationResponseApplicationOneLegalBusinessNameMax),
+  "facilityName": zod.string().min(getPartnerOnboardingApplicationResponseApplicationOneFacilityNameMin).max(getPartnerOnboardingApplicationResponseApplicationOneFacilityNameMax),
+  "address": zod.string().min(getPartnerOnboardingApplicationResponseApplicationOneAddressMin).max(getPartnerOnboardingApplicationResponseApplicationOneAddressMax),
+  "city": zod.string().min(getPartnerOnboardingApplicationResponseApplicationOneCityMin).max(getPartnerOnboardingApplicationResponseApplicationOneCityMax),
+  "district": zod.string().max(getPartnerOnboardingApplicationResponseApplicationOneDistrictMax).nullish(),
+  "latitude": zod.number().min(getPartnerOnboardingApplicationResponseApplicationOneLatitudeMin).max(getPartnerOnboardingApplicationResponseApplicationOneLatitudeMax).nullish(),
+  "longitude": zod.number().min(getPartnerOnboardingApplicationResponseApplicationOneLongitudeMin).max(getPartnerOnboardingApplicationResponseApplicationOneLongitudeMax).nullish(),
+  "businessRegistrationReference": zod.string().max(getPartnerOnboardingApplicationResponseApplicationOneBusinessRegistrationReferenceMax).nullish(),
+  "taxReference": zod.string().max(getPartnerOnboardingApplicationResponseApplicationOneTaxReferenceMax).nullish(),
+  "activityCategories": zod.array(zod.string().min(getPartnerOnboardingApplicationResponseApplicationOneActivityCategoriesItemMin).max(getPartnerOnboardingApplicationResponseApplicationOneActivityCategoriesItemMax)).min(1).max(getPartnerOnboardingApplicationResponseApplicationOneActivityCategoriesMax),
+  "openingHours": zod.array(zod.object({
+  "day": zod.int().min(getPartnerOnboardingApplicationResponseApplicationOneOpeningHoursItemDayMin).max(getPartnerOnboardingApplicationResponseApplicationOneOpeningHoursItemDayMax),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(getPartnerOnboardingApplicationResponseApplicationOneOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(getPartnerOnboardingApplicationResponseApplicationOneOpeningHoursItemClosesAtRegExp).nullable()
+})).min(getPartnerOnboardingApplicationResponseApplicationOneOpeningHoursMin).max(getPartnerOnboardingApplicationResponseApplicationOneOpeningHoursMax),
+  "capacity": zod.int().min(1).max(getPartnerOnboardingApplicationResponseApplicationOneCapacityMax).nullish(),
+  "pricingDetails": zod.string().max(getPartnerOnboardingApplicationResponseApplicationOnePricingDetailsMax).nullish()
+}).and(zod.object({
+  "id": zod.uuid(),
+  "applicantUserId": zod.string(),
+  "contactEmail": zod.email(),
+  "status": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
+  "statusNote": zod.string().nullable(),
+  "partnerId": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "documents": zod.array(zod.object({
+  "id": zod.uuid(),
+  "applicationId": zod.uuid(),
+  "documentType": zod.enum(['business_registration', 'tax_document', 'licence', 'insurance', 'facility_image', 'supporting_document']),
+  "documentName": zod.string(),
+  "contentType": zod.string().nullable(),
+  "fileSize": zod.int().nullable(),
+  "expiresOn": zod.coerce.date().nullable(),
+  "status": zod.enum(['upload_pending', 'submitted', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullable(),
+  "uploadedBy": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "history": zod.array(zod.object({
+  "id": zod.uuid(),
+  "fromStatus": zod.union([zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),zod.null()]),
+  "toStatus": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
+  "note": zod.string().nullable(),
+  "actorKind": zod.enum(['applicant', 'team']),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+export const UpdatePartnerOnboardingStatusParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updatePartnerOnboardingStatusBodyNoteMin = 4;
+export const updatePartnerOnboardingStatusBodyNoteMax = 1000;
+
+
+
+export const UpdatePartnerOnboardingStatusBody = zod.object({
+  "status": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
+  "note": zod.string().min(updatePartnerOnboardingStatusBodyNoteMin).max(updatePartnerOnboardingStatusBodyNoteMax)
+})
+
+export const updatePartnerOnboardingStatusResponseApplicationOneApplicantNameMin = 2;
+export const updatePartnerOnboardingStatusResponseApplicationOneApplicantNameMax = 120;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneContactPhoneMin = 6;
+export const updatePartnerOnboardingStatusResponseApplicationOneContactPhoneMax = 40;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneLegalBusinessNameMin = 2;
+export const updatePartnerOnboardingStatusResponseApplicationOneLegalBusinessNameMax = 180;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneFacilityNameMin = 2;
+export const updatePartnerOnboardingStatusResponseApplicationOneFacilityNameMax = 160;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneAddressMin = 3;
+export const updatePartnerOnboardingStatusResponseApplicationOneAddressMax = 400;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneCityMin = 2;
+export const updatePartnerOnboardingStatusResponseApplicationOneCityMax = 100;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneDistrictMax = 120;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneLatitudeMin = -90;
+export const updatePartnerOnboardingStatusResponseApplicationOneLatitudeMax = 90;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneLongitudeMin = -180;
+export const updatePartnerOnboardingStatusResponseApplicationOneLongitudeMax = 180;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneBusinessRegistrationReferenceMax = 120;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneTaxReferenceMax = 120;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneActivityCategoriesItemMin = 2;
+export const updatePartnerOnboardingStatusResponseApplicationOneActivityCategoriesItemMax = 80;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneActivityCategoriesMax = 20;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneOpeningHoursItemDayMin = 0;
+export const updatePartnerOnboardingStatusResponseApplicationOneOpeningHoursItemDayMax = 6;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const updatePartnerOnboardingStatusResponseApplicationOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const updatePartnerOnboardingStatusResponseApplicationOneOpeningHoursMin = 7;
+export const updatePartnerOnboardingStatusResponseApplicationOneOpeningHoursMax = 7;
+
+export const updatePartnerOnboardingStatusResponseApplicationOneCapacityMax = 100000;
+
+export const updatePartnerOnboardingStatusResponseApplicationOnePricingDetailsMax = 2000;
+
+
+
+export const UpdatePartnerOnboardingStatusResponse = zod.object({
+  "application": zod.object({
+  "applicantName": zod.string().min(updatePartnerOnboardingStatusResponseApplicationOneApplicantNameMin).max(updatePartnerOnboardingStatusResponseApplicationOneApplicantNameMax),
+  "contactPhone": zod.string().min(updatePartnerOnboardingStatusResponseApplicationOneContactPhoneMin).max(updatePartnerOnboardingStatusResponseApplicationOneContactPhoneMax),
+  "legalBusinessName": zod.string().min(updatePartnerOnboardingStatusResponseApplicationOneLegalBusinessNameMin).max(updatePartnerOnboardingStatusResponseApplicationOneLegalBusinessNameMax),
+  "facilityName": zod.string().min(updatePartnerOnboardingStatusResponseApplicationOneFacilityNameMin).max(updatePartnerOnboardingStatusResponseApplicationOneFacilityNameMax),
+  "address": zod.string().min(updatePartnerOnboardingStatusResponseApplicationOneAddressMin).max(updatePartnerOnboardingStatusResponseApplicationOneAddressMax),
+  "city": zod.string().min(updatePartnerOnboardingStatusResponseApplicationOneCityMin).max(updatePartnerOnboardingStatusResponseApplicationOneCityMax),
+  "district": zod.string().max(updatePartnerOnboardingStatusResponseApplicationOneDistrictMax).nullish(),
+  "latitude": zod.number().min(updatePartnerOnboardingStatusResponseApplicationOneLatitudeMin).max(updatePartnerOnboardingStatusResponseApplicationOneLatitudeMax).nullish(),
+  "longitude": zod.number().min(updatePartnerOnboardingStatusResponseApplicationOneLongitudeMin).max(updatePartnerOnboardingStatusResponseApplicationOneLongitudeMax).nullish(),
+  "businessRegistrationReference": zod.string().max(updatePartnerOnboardingStatusResponseApplicationOneBusinessRegistrationReferenceMax).nullish(),
+  "taxReference": zod.string().max(updatePartnerOnboardingStatusResponseApplicationOneTaxReferenceMax).nullish(),
+  "activityCategories": zod.array(zod.string().min(updatePartnerOnboardingStatusResponseApplicationOneActivityCategoriesItemMin).max(updatePartnerOnboardingStatusResponseApplicationOneActivityCategoriesItemMax)).min(1).max(updatePartnerOnboardingStatusResponseApplicationOneActivityCategoriesMax),
+  "openingHours": zod.array(zod.object({
+  "day": zod.int().min(updatePartnerOnboardingStatusResponseApplicationOneOpeningHoursItemDayMin).max(updatePartnerOnboardingStatusResponseApplicationOneOpeningHoursItemDayMax),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(updatePartnerOnboardingStatusResponseApplicationOneOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(updatePartnerOnboardingStatusResponseApplicationOneOpeningHoursItemClosesAtRegExp).nullable()
+})).min(updatePartnerOnboardingStatusResponseApplicationOneOpeningHoursMin).max(updatePartnerOnboardingStatusResponseApplicationOneOpeningHoursMax),
+  "capacity": zod.int().min(1).max(updatePartnerOnboardingStatusResponseApplicationOneCapacityMax).nullish(),
+  "pricingDetails": zod.string().max(updatePartnerOnboardingStatusResponseApplicationOnePricingDetailsMax).nullish()
+}).and(zod.object({
+  "id": zod.uuid(),
+  "applicantUserId": zod.string(),
+  "contactEmail": zod.email(),
+  "status": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
+  "statusNote": zod.string().nullable(),
+  "partnerId": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "documents": zod.array(zod.object({
+  "id": zod.uuid(),
+  "applicationId": zod.uuid(),
+  "documentType": zod.enum(['business_registration', 'tax_document', 'licence', 'insurance', 'facility_image', 'supporting_document']),
+  "documentName": zod.string(),
+  "contentType": zod.string().nullable(),
+  "fileSize": zod.int().nullable(),
+  "expiresOn": zod.coerce.date().nullable(),
+  "status": zod.enum(['upload_pending', 'submitted', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullable(),
+  "uploadedBy": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "history": zod.array(zod.object({
+  "id": zod.uuid(),
+  "fromStatus": zod.union([zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),zod.null()]),
+  "toStatus": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
+  "note": zod.string().nullable(),
+  "actorKind": zod.enum(['applicant', 'team']),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+export const ReviewPartnerApplicationDocumentParams = zod.object({
+  "id": zod.coerce.string(),
+  "documentId": zod.uuid()
+})
+
+export const reviewPartnerApplicationDocumentBodyNoteMin = 4;
+export const reviewPartnerApplicationDocumentBodyNoteMax = 1000;
+
+
+
+export const ReviewPartnerApplicationDocumentBody = zod.object({
+  "status": zod.enum(['approved', 'rejected']),
+  "note": zod.string().min(reviewPartnerApplicationDocumentBodyNoteMin).max(reviewPartnerApplicationDocumentBodyNoteMax)
+})
+
+export const ReviewPartnerApplicationDocumentResponse = zod.object({
+  "id": zod.uuid(),
+  "applicationId": zod.uuid(),
+  "documentType": zod.enum(['business_registration', 'tax_document', 'licence', 'insurance', 'facility_image', 'supporting_document']),
+  "documentName": zod.string(),
+  "contentType": zod.string().nullable(),
+  "fileSize": zod.int().nullable(),
+  "expiresOn": zod.coerce.date().nullable(),
+  "status": zod.enum(['upload_pending', 'submitted', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullable(),
+  "uploadedBy": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const getMyPartnerApplicationResponseApplicationOneOneApplicantNameMin = 2;
+export const getMyPartnerApplicationResponseApplicationOneOneApplicantNameMax = 120;
+
+export const getMyPartnerApplicationResponseApplicationOneOneContactPhoneMin = 6;
+export const getMyPartnerApplicationResponseApplicationOneOneContactPhoneMax = 40;
+
+export const getMyPartnerApplicationResponseApplicationOneOneLegalBusinessNameMin = 2;
+export const getMyPartnerApplicationResponseApplicationOneOneLegalBusinessNameMax = 180;
+
+export const getMyPartnerApplicationResponseApplicationOneOneFacilityNameMin = 2;
+export const getMyPartnerApplicationResponseApplicationOneOneFacilityNameMax = 160;
+
+export const getMyPartnerApplicationResponseApplicationOneOneAddressMin = 3;
+export const getMyPartnerApplicationResponseApplicationOneOneAddressMax = 400;
+
+export const getMyPartnerApplicationResponseApplicationOneOneCityMin = 2;
+export const getMyPartnerApplicationResponseApplicationOneOneCityMax = 100;
+
+export const getMyPartnerApplicationResponseApplicationOneOneDistrictMax = 120;
+
+export const getMyPartnerApplicationResponseApplicationOneOneLatitudeMin = -90;
+export const getMyPartnerApplicationResponseApplicationOneOneLatitudeMax = 90;
+
+export const getMyPartnerApplicationResponseApplicationOneOneLongitudeMin = -180;
+export const getMyPartnerApplicationResponseApplicationOneOneLongitudeMax = 180;
+
+export const getMyPartnerApplicationResponseApplicationOneOneBusinessRegistrationReferenceMax = 120;
+
+export const getMyPartnerApplicationResponseApplicationOneOneTaxReferenceMax = 120;
+
+export const getMyPartnerApplicationResponseApplicationOneOneActivityCategoriesItemMin = 2;
+export const getMyPartnerApplicationResponseApplicationOneOneActivityCategoriesItemMax = 80;
+
+export const getMyPartnerApplicationResponseApplicationOneOneActivityCategoriesMax = 20;
+
+export const getMyPartnerApplicationResponseApplicationOneOneOpeningHoursItemDayMin = 0;
+export const getMyPartnerApplicationResponseApplicationOneOneOpeningHoursItemDayMax = 6;
+
+export const getMyPartnerApplicationResponseApplicationOneOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const getMyPartnerApplicationResponseApplicationOneOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const getMyPartnerApplicationResponseApplicationOneOneOpeningHoursMin = 7;
+export const getMyPartnerApplicationResponseApplicationOneOneOpeningHoursMax = 7;
+
+export const getMyPartnerApplicationResponseApplicationOneOneCapacityMax = 100000;
+
+export const getMyPartnerApplicationResponseApplicationOneOnePricingDetailsMax = 2000;
+
+
+
+export const GetMyPartnerApplicationResponse = zod.object({
+  "application": zod.union([zod.object({
+  "applicantName": zod.string().min(getMyPartnerApplicationResponseApplicationOneOneApplicantNameMin).max(getMyPartnerApplicationResponseApplicationOneOneApplicantNameMax),
+  "contactPhone": zod.string().min(getMyPartnerApplicationResponseApplicationOneOneContactPhoneMin).max(getMyPartnerApplicationResponseApplicationOneOneContactPhoneMax),
+  "legalBusinessName": zod.string().min(getMyPartnerApplicationResponseApplicationOneOneLegalBusinessNameMin).max(getMyPartnerApplicationResponseApplicationOneOneLegalBusinessNameMax),
+  "facilityName": zod.string().min(getMyPartnerApplicationResponseApplicationOneOneFacilityNameMin).max(getMyPartnerApplicationResponseApplicationOneOneFacilityNameMax),
+  "address": zod.string().min(getMyPartnerApplicationResponseApplicationOneOneAddressMin).max(getMyPartnerApplicationResponseApplicationOneOneAddressMax),
+  "city": zod.string().min(getMyPartnerApplicationResponseApplicationOneOneCityMin).max(getMyPartnerApplicationResponseApplicationOneOneCityMax),
+  "district": zod.string().max(getMyPartnerApplicationResponseApplicationOneOneDistrictMax).nullish(),
+  "latitude": zod.number().min(getMyPartnerApplicationResponseApplicationOneOneLatitudeMin).max(getMyPartnerApplicationResponseApplicationOneOneLatitudeMax).nullish(),
+  "longitude": zod.number().min(getMyPartnerApplicationResponseApplicationOneOneLongitudeMin).max(getMyPartnerApplicationResponseApplicationOneOneLongitudeMax).nullish(),
+  "businessRegistrationReference": zod.string().max(getMyPartnerApplicationResponseApplicationOneOneBusinessRegistrationReferenceMax).nullish(),
+  "taxReference": zod.string().max(getMyPartnerApplicationResponseApplicationOneOneTaxReferenceMax).nullish(),
+  "activityCategories": zod.array(zod.string().min(getMyPartnerApplicationResponseApplicationOneOneActivityCategoriesItemMin).max(getMyPartnerApplicationResponseApplicationOneOneActivityCategoriesItemMax)).min(1).max(getMyPartnerApplicationResponseApplicationOneOneActivityCategoriesMax),
+  "openingHours": zod.array(zod.object({
+  "day": zod.int().min(getMyPartnerApplicationResponseApplicationOneOneOpeningHoursItemDayMin).max(getMyPartnerApplicationResponseApplicationOneOneOpeningHoursItemDayMax),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(getMyPartnerApplicationResponseApplicationOneOneOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(getMyPartnerApplicationResponseApplicationOneOneOpeningHoursItemClosesAtRegExp).nullable()
+})).min(getMyPartnerApplicationResponseApplicationOneOneOpeningHoursMin).max(getMyPartnerApplicationResponseApplicationOneOneOpeningHoursMax),
+  "capacity": zod.int().min(1).max(getMyPartnerApplicationResponseApplicationOneOneCapacityMax).nullish(),
+  "pricingDetails": zod.string().max(getMyPartnerApplicationResponseApplicationOneOnePricingDetailsMax).nullish()
+}).and(zod.object({
+  "id": zod.uuid(),
+  "applicantUserId": zod.string(),
+  "contactEmail": zod.email(),
+  "status": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
+  "statusNote": zod.string().nullable(),
+  "partnerId": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),zod.null()]),
+  "documents": zod.array(zod.object({
+  "id": zod.uuid(),
+  "applicationId": zod.uuid(),
+  "documentType": zod.enum(['business_registration', 'tax_document', 'licence', 'insurance', 'facility_image', 'supporting_document']),
+  "documentName": zod.string(),
+  "contentType": zod.string().nullable(),
+  "fileSize": zod.int().nullable(),
+  "expiresOn": zod.coerce.date().nullable(),
+  "status": zod.enum(['upload_pending', 'submitted', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullable(),
+  "uploadedBy": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "history": zod.array(zod.object({
+  "id": zod.uuid(),
+  "fromStatus": zod.union([zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),zod.null()]),
+  "toStatus": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
+  "note": zod.string().nullable(),
+  "actorKind": zod.enum(['applicant', 'team']),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+export const submitPartnerApplicationBodyApplicantNameMin = 2;
+export const submitPartnerApplicationBodyApplicantNameMax = 120;
+
+export const submitPartnerApplicationBodyContactPhoneMin = 6;
+export const submitPartnerApplicationBodyContactPhoneMax = 40;
+
+export const submitPartnerApplicationBodyLegalBusinessNameMin = 2;
+export const submitPartnerApplicationBodyLegalBusinessNameMax = 180;
+
+export const submitPartnerApplicationBodyFacilityNameMin = 2;
+export const submitPartnerApplicationBodyFacilityNameMax = 160;
+
+export const submitPartnerApplicationBodyAddressMin = 3;
+export const submitPartnerApplicationBodyAddressMax = 400;
+
+export const submitPartnerApplicationBodyCityMin = 2;
+export const submitPartnerApplicationBodyCityMax = 100;
+
+export const submitPartnerApplicationBodyDistrictMax = 120;
+
+export const submitPartnerApplicationBodyLatitudeMin = -90;
+export const submitPartnerApplicationBodyLatitudeMax = 90;
+
+export const submitPartnerApplicationBodyLongitudeMin = -180;
+export const submitPartnerApplicationBodyLongitudeMax = 180;
+
+export const submitPartnerApplicationBodyBusinessRegistrationReferenceMax = 120;
+
+export const submitPartnerApplicationBodyTaxReferenceMax = 120;
+
+export const submitPartnerApplicationBodyActivityCategoriesItemMin = 2;
+export const submitPartnerApplicationBodyActivityCategoriesItemMax = 80;
+
+export const submitPartnerApplicationBodyActivityCategoriesMax = 20;
+
+export const submitPartnerApplicationBodyOpeningHoursItemDayMin = 0;
+export const submitPartnerApplicationBodyOpeningHoursItemDayMax = 6;
+
+export const submitPartnerApplicationBodyOpeningHoursItemOpensAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const submitPartnerApplicationBodyOpeningHoursItemClosesAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const submitPartnerApplicationBodyOpeningHoursMin = 7;
+export const submitPartnerApplicationBodyOpeningHoursMax = 7;
+
+export const submitPartnerApplicationBodyCapacityMax = 100000;
+
+export const submitPartnerApplicationBodyPricingDetailsMax = 2000;
+
+
+
+export const SubmitPartnerApplicationBody = zod.object({
+  "applicantName": zod.string().min(submitPartnerApplicationBodyApplicantNameMin).max(submitPartnerApplicationBodyApplicantNameMax),
+  "contactPhone": zod.string().min(submitPartnerApplicationBodyContactPhoneMin).max(submitPartnerApplicationBodyContactPhoneMax),
+  "legalBusinessName": zod.string().min(submitPartnerApplicationBodyLegalBusinessNameMin).max(submitPartnerApplicationBodyLegalBusinessNameMax),
+  "facilityName": zod.string().min(submitPartnerApplicationBodyFacilityNameMin).max(submitPartnerApplicationBodyFacilityNameMax),
+  "address": zod.string().min(submitPartnerApplicationBodyAddressMin).max(submitPartnerApplicationBodyAddressMax),
+  "city": zod.string().min(submitPartnerApplicationBodyCityMin).max(submitPartnerApplicationBodyCityMax),
+  "district": zod.string().max(submitPartnerApplicationBodyDistrictMax).nullish(),
+  "latitude": zod.number().min(submitPartnerApplicationBodyLatitudeMin).max(submitPartnerApplicationBodyLatitudeMax).nullish(),
+  "longitude": zod.number().min(submitPartnerApplicationBodyLongitudeMin).max(submitPartnerApplicationBodyLongitudeMax).nullish(),
+  "businessRegistrationReference": zod.string().max(submitPartnerApplicationBodyBusinessRegistrationReferenceMax).nullish(),
+  "taxReference": zod.string().max(submitPartnerApplicationBodyTaxReferenceMax).nullish(),
+  "activityCategories": zod.array(zod.string().min(submitPartnerApplicationBodyActivityCategoriesItemMin).max(submitPartnerApplicationBodyActivityCategoriesItemMax)).min(1).max(submitPartnerApplicationBodyActivityCategoriesMax),
+  "openingHours": zod.array(zod.object({
+  "day": zod.int().min(submitPartnerApplicationBodyOpeningHoursItemDayMin).max(submitPartnerApplicationBodyOpeningHoursItemDayMax),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(submitPartnerApplicationBodyOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(submitPartnerApplicationBodyOpeningHoursItemClosesAtRegExp).nullable()
+})).min(submitPartnerApplicationBodyOpeningHoursMin).max(submitPartnerApplicationBodyOpeningHoursMax),
+  "capacity": zod.int().min(1).max(submitPartnerApplicationBodyCapacityMax).nullish(),
+  "pricingDetails": zod.string().max(submitPartnerApplicationBodyPricingDetailsMax).nullish()
+})
+
+export const submitPartnerApplicationResponseApplicationOneApplicantNameMin = 2;
+export const submitPartnerApplicationResponseApplicationOneApplicantNameMax = 120;
+
+export const submitPartnerApplicationResponseApplicationOneContactPhoneMin = 6;
+export const submitPartnerApplicationResponseApplicationOneContactPhoneMax = 40;
+
+export const submitPartnerApplicationResponseApplicationOneLegalBusinessNameMin = 2;
+export const submitPartnerApplicationResponseApplicationOneLegalBusinessNameMax = 180;
+
+export const submitPartnerApplicationResponseApplicationOneFacilityNameMin = 2;
+export const submitPartnerApplicationResponseApplicationOneFacilityNameMax = 160;
+
+export const submitPartnerApplicationResponseApplicationOneAddressMin = 3;
+export const submitPartnerApplicationResponseApplicationOneAddressMax = 400;
+
+export const submitPartnerApplicationResponseApplicationOneCityMin = 2;
+export const submitPartnerApplicationResponseApplicationOneCityMax = 100;
+
+export const submitPartnerApplicationResponseApplicationOneDistrictMax = 120;
+
+export const submitPartnerApplicationResponseApplicationOneLatitudeMin = -90;
+export const submitPartnerApplicationResponseApplicationOneLatitudeMax = 90;
+
+export const submitPartnerApplicationResponseApplicationOneLongitudeMin = -180;
+export const submitPartnerApplicationResponseApplicationOneLongitudeMax = 180;
+
+export const submitPartnerApplicationResponseApplicationOneBusinessRegistrationReferenceMax = 120;
+
+export const submitPartnerApplicationResponseApplicationOneTaxReferenceMax = 120;
+
+export const submitPartnerApplicationResponseApplicationOneActivityCategoriesItemMin = 2;
+export const submitPartnerApplicationResponseApplicationOneActivityCategoriesItemMax = 80;
+
+export const submitPartnerApplicationResponseApplicationOneActivityCategoriesMax = 20;
+
+export const submitPartnerApplicationResponseApplicationOneOpeningHoursItemDayMin = 0;
+export const submitPartnerApplicationResponseApplicationOneOpeningHoursItemDayMax = 6;
+
+export const submitPartnerApplicationResponseApplicationOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const submitPartnerApplicationResponseApplicationOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const submitPartnerApplicationResponseApplicationOneOpeningHoursMin = 7;
+export const submitPartnerApplicationResponseApplicationOneOpeningHoursMax = 7;
+
+export const submitPartnerApplicationResponseApplicationOneCapacityMax = 100000;
+
+export const submitPartnerApplicationResponseApplicationOnePricingDetailsMax = 2000;
+
+
+
+export const SubmitPartnerApplicationResponse = zod.object({
+  "application": zod.object({
+  "applicantName": zod.string().min(submitPartnerApplicationResponseApplicationOneApplicantNameMin).max(submitPartnerApplicationResponseApplicationOneApplicantNameMax),
+  "contactPhone": zod.string().min(submitPartnerApplicationResponseApplicationOneContactPhoneMin).max(submitPartnerApplicationResponseApplicationOneContactPhoneMax),
+  "legalBusinessName": zod.string().min(submitPartnerApplicationResponseApplicationOneLegalBusinessNameMin).max(submitPartnerApplicationResponseApplicationOneLegalBusinessNameMax),
+  "facilityName": zod.string().min(submitPartnerApplicationResponseApplicationOneFacilityNameMin).max(submitPartnerApplicationResponseApplicationOneFacilityNameMax),
+  "address": zod.string().min(submitPartnerApplicationResponseApplicationOneAddressMin).max(submitPartnerApplicationResponseApplicationOneAddressMax),
+  "city": zod.string().min(submitPartnerApplicationResponseApplicationOneCityMin).max(submitPartnerApplicationResponseApplicationOneCityMax),
+  "district": zod.string().max(submitPartnerApplicationResponseApplicationOneDistrictMax).nullish(),
+  "latitude": zod.number().min(submitPartnerApplicationResponseApplicationOneLatitudeMin).max(submitPartnerApplicationResponseApplicationOneLatitudeMax).nullish(),
+  "longitude": zod.number().min(submitPartnerApplicationResponseApplicationOneLongitudeMin).max(submitPartnerApplicationResponseApplicationOneLongitudeMax).nullish(),
+  "businessRegistrationReference": zod.string().max(submitPartnerApplicationResponseApplicationOneBusinessRegistrationReferenceMax).nullish(),
+  "taxReference": zod.string().max(submitPartnerApplicationResponseApplicationOneTaxReferenceMax).nullish(),
+  "activityCategories": zod.array(zod.string().min(submitPartnerApplicationResponseApplicationOneActivityCategoriesItemMin).max(submitPartnerApplicationResponseApplicationOneActivityCategoriesItemMax)).min(1).max(submitPartnerApplicationResponseApplicationOneActivityCategoriesMax),
+  "openingHours": zod.array(zod.object({
+  "day": zod.int().min(submitPartnerApplicationResponseApplicationOneOpeningHoursItemDayMin).max(submitPartnerApplicationResponseApplicationOneOpeningHoursItemDayMax),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(submitPartnerApplicationResponseApplicationOneOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(submitPartnerApplicationResponseApplicationOneOpeningHoursItemClosesAtRegExp).nullable()
+})).min(submitPartnerApplicationResponseApplicationOneOpeningHoursMin).max(submitPartnerApplicationResponseApplicationOneOpeningHoursMax),
+  "capacity": zod.int().min(1).max(submitPartnerApplicationResponseApplicationOneCapacityMax).nullish(),
+  "pricingDetails": zod.string().max(submitPartnerApplicationResponseApplicationOnePricingDetailsMax).nullish()
+}).and(zod.object({
+  "id": zod.uuid(),
+  "applicantUserId": zod.string(),
+  "contactEmail": zod.email(),
+  "status": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
+  "statusNote": zod.string().nullable(),
+  "partnerId": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "documents": zod.array(zod.object({
+  "id": zod.uuid(),
+  "applicationId": zod.uuid(),
+  "documentType": zod.enum(['business_registration', 'tax_document', 'licence', 'insurance', 'facility_image', 'supporting_document']),
+  "documentName": zod.string(),
+  "contentType": zod.string().nullable(),
+  "fileSize": zod.int().nullable(),
+  "expiresOn": zod.coerce.date().nullable(),
+  "status": zod.enum(['upload_pending', 'submitted', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullable(),
+  "uploadedBy": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "history": zod.array(zod.object({
+  "id": zod.uuid(),
+  "fromStatus": zod.union([zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),zod.null()]),
+  "toStatus": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
+  "note": zod.string().nullable(),
+  "actorKind": zod.enum(['applicant', 'team']),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+export const UpdateMyPartnerApplicationParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updateMyPartnerApplicationBodyApplicantNameMin = 2;
+export const updateMyPartnerApplicationBodyApplicantNameMax = 120;
+
+export const updateMyPartnerApplicationBodyContactPhoneMin = 6;
+export const updateMyPartnerApplicationBodyContactPhoneMax = 40;
+
+export const updateMyPartnerApplicationBodyLegalBusinessNameMin = 2;
+export const updateMyPartnerApplicationBodyLegalBusinessNameMax = 180;
+
+export const updateMyPartnerApplicationBodyFacilityNameMin = 2;
+export const updateMyPartnerApplicationBodyFacilityNameMax = 160;
+
+export const updateMyPartnerApplicationBodyAddressMin = 3;
+export const updateMyPartnerApplicationBodyAddressMax = 400;
+
+export const updateMyPartnerApplicationBodyCityMin = 2;
+export const updateMyPartnerApplicationBodyCityMax = 100;
+
+export const updateMyPartnerApplicationBodyDistrictMax = 120;
+
+export const updateMyPartnerApplicationBodyLatitudeMin = -90;
+export const updateMyPartnerApplicationBodyLatitudeMax = 90;
+
+export const updateMyPartnerApplicationBodyLongitudeMin = -180;
+export const updateMyPartnerApplicationBodyLongitudeMax = 180;
+
+export const updateMyPartnerApplicationBodyBusinessRegistrationReferenceMax = 120;
+
+export const updateMyPartnerApplicationBodyTaxReferenceMax = 120;
+
+export const updateMyPartnerApplicationBodyActivityCategoriesItemMin = 2;
+export const updateMyPartnerApplicationBodyActivityCategoriesItemMax = 80;
+
+export const updateMyPartnerApplicationBodyActivityCategoriesMax = 20;
+
+export const updateMyPartnerApplicationBodyOpeningHoursItemDayMin = 0;
+export const updateMyPartnerApplicationBodyOpeningHoursItemDayMax = 6;
+
+export const updateMyPartnerApplicationBodyOpeningHoursItemOpensAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const updateMyPartnerApplicationBodyOpeningHoursItemClosesAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const updateMyPartnerApplicationBodyOpeningHoursMin = 7;
+export const updateMyPartnerApplicationBodyOpeningHoursMax = 7;
+
+export const updateMyPartnerApplicationBodyCapacityMax = 100000;
+
+export const updateMyPartnerApplicationBodyPricingDetailsMax = 2000;
+
+
+
+export const UpdateMyPartnerApplicationBody = zod.object({
+  "applicantName": zod.string().min(updateMyPartnerApplicationBodyApplicantNameMin).max(updateMyPartnerApplicationBodyApplicantNameMax),
+  "contactPhone": zod.string().min(updateMyPartnerApplicationBodyContactPhoneMin).max(updateMyPartnerApplicationBodyContactPhoneMax),
+  "legalBusinessName": zod.string().min(updateMyPartnerApplicationBodyLegalBusinessNameMin).max(updateMyPartnerApplicationBodyLegalBusinessNameMax),
+  "facilityName": zod.string().min(updateMyPartnerApplicationBodyFacilityNameMin).max(updateMyPartnerApplicationBodyFacilityNameMax),
+  "address": zod.string().min(updateMyPartnerApplicationBodyAddressMin).max(updateMyPartnerApplicationBodyAddressMax),
+  "city": zod.string().min(updateMyPartnerApplicationBodyCityMin).max(updateMyPartnerApplicationBodyCityMax),
+  "district": zod.string().max(updateMyPartnerApplicationBodyDistrictMax).nullish(),
+  "latitude": zod.number().min(updateMyPartnerApplicationBodyLatitudeMin).max(updateMyPartnerApplicationBodyLatitudeMax).nullish(),
+  "longitude": zod.number().min(updateMyPartnerApplicationBodyLongitudeMin).max(updateMyPartnerApplicationBodyLongitudeMax).nullish(),
+  "businessRegistrationReference": zod.string().max(updateMyPartnerApplicationBodyBusinessRegistrationReferenceMax).nullish(),
+  "taxReference": zod.string().max(updateMyPartnerApplicationBodyTaxReferenceMax).nullish(),
+  "activityCategories": zod.array(zod.string().min(updateMyPartnerApplicationBodyActivityCategoriesItemMin).max(updateMyPartnerApplicationBodyActivityCategoriesItemMax)).min(1).max(updateMyPartnerApplicationBodyActivityCategoriesMax),
+  "openingHours": zod.array(zod.object({
+  "day": zod.int().min(updateMyPartnerApplicationBodyOpeningHoursItemDayMin).max(updateMyPartnerApplicationBodyOpeningHoursItemDayMax),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(updateMyPartnerApplicationBodyOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(updateMyPartnerApplicationBodyOpeningHoursItemClosesAtRegExp).nullable()
+})).min(updateMyPartnerApplicationBodyOpeningHoursMin).max(updateMyPartnerApplicationBodyOpeningHoursMax),
+  "capacity": zod.int().min(1).max(updateMyPartnerApplicationBodyCapacityMax).nullish(),
+  "pricingDetails": zod.string().max(updateMyPartnerApplicationBodyPricingDetailsMax).nullish()
+})
+
+export const updateMyPartnerApplicationResponseApplicationOneApplicantNameMin = 2;
+export const updateMyPartnerApplicationResponseApplicationOneApplicantNameMax = 120;
+
+export const updateMyPartnerApplicationResponseApplicationOneContactPhoneMin = 6;
+export const updateMyPartnerApplicationResponseApplicationOneContactPhoneMax = 40;
+
+export const updateMyPartnerApplicationResponseApplicationOneLegalBusinessNameMin = 2;
+export const updateMyPartnerApplicationResponseApplicationOneLegalBusinessNameMax = 180;
+
+export const updateMyPartnerApplicationResponseApplicationOneFacilityNameMin = 2;
+export const updateMyPartnerApplicationResponseApplicationOneFacilityNameMax = 160;
+
+export const updateMyPartnerApplicationResponseApplicationOneAddressMin = 3;
+export const updateMyPartnerApplicationResponseApplicationOneAddressMax = 400;
+
+export const updateMyPartnerApplicationResponseApplicationOneCityMin = 2;
+export const updateMyPartnerApplicationResponseApplicationOneCityMax = 100;
+
+export const updateMyPartnerApplicationResponseApplicationOneDistrictMax = 120;
+
+export const updateMyPartnerApplicationResponseApplicationOneLatitudeMin = -90;
+export const updateMyPartnerApplicationResponseApplicationOneLatitudeMax = 90;
+
+export const updateMyPartnerApplicationResponseApplicationOneLongitudeMin = -180;
+export const updateMyPartnerApplicationResponseApplicationOneLongitudeMax = 180;
+
+export const updateMyPartnerApplicationResponseApplicationOneBusinessRegistrationReferenceMax = 120;
+
+export const updateMyPartnerApplicationResponseApplicationOneTaxReferenceMax = 120;
+
+export const updateMyPartnerApplicationResponseApplicationOneActivityCategoriesItemMin = 2;
+export const updateMyPartnerApplicationResponseApplicationOneActivityCategoriesItemMax = 80;
+
+export const updateMyPartnerApplicationResponseApplicationOneActivityCategoriesMax = 20;
+
+export const updateMyPartnerApplicationResponseApplicationOneOpeningHoursItemDayMin = 0;
+export const updateMyPartnerApplicationResponseApplicationOneOpeningHoursItemDayMax = 6;
+
+export const updateMyPartnerApplicationResponseApplicationOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const updateMyPartnerApplicationResponseApplicationOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
+export const updateMyPartnerApplicationResponseApplicationOneOpeningHoursMin = 7;
+export const updateMyPartnerApplicationResponseApplicationOneOpeningHoursMax = 7;
+
+export const updateMyPartnerApplicationResponseApplicationOneCapacityMax = 100000;
+
+export const updateMyPartnerApplicationResponseApplicationOnePricingDetailsMax = 2000;
+
+
+
+export const UpdateMyPartnerApplicationResponse = zod.object({
+  "application": zod.object({
+  "applicantName": zod.string().min(updateMyPartnerApplicationResponseApplicationOneApplicantNameMin).max(updateMyPartnerApplicationResponseApplicationOneApplicantNameMax),
+  "contactPhone": zod.string().min(updateMyPartnerApplicationResponseApplicationOneContactPhoneMin).max(updateMyPartnerApplicationResponseApplicationOneContactPhoneMax),
+  "legalBusinessName": zod.string().min(updateMyPartnerApplicationResponseApplicationOneLegalBusinessNameMin).max(updateMyPartnerApplicationResponseApplicationOneLegalBusinessNameMax),
+  "facilityName": zod.string().min(updateMyPartnerApplicationResponseApplicationOneFacilityNameMin).max(updateMyPartnerApplicationResponseApplicationOneFacilityNameMax),
+  "address": zod.string().min(updateMyPartnerApplicationResponseApplicationOneAddressMin).max(updateMyPartnerApplicationResponseApplicationOneAddressMax),
+  "city": zod.string().min(updateMyPartnerApplicationResponseApplicationOneCityMin).max(updateMyPartnerApplicationResponseApplicationOneCityMax),
+  "district": zod.string().max(updateMyPartnerApplicationResponseApplicationOneDistrictMax).nullish(),
+  "latitude": zod.number().min(updateMyPartnerApplicationResponseApplicationOneLatitudeMin).max(updateMyPartnerApplicationResponseApplicationOneLatitudeMax).nullish(),
+  "longitude": zod.number().min(updateMyPartnerApplicationResponseApplicationOneLongitudeMin).max(updateMyPartnerApplicationResponseApplicationOneLongitudeMax).nullish(),
+  "businessRegistrationReference": zod.string().max(updateMyPartnerApplicationResponseApplicationOneBusinessRegistrationReferenceMax).nullish(),
+  "taxReference": zod.string().max(updateMyPartnerApplicationResponseApplicationOneTaxReferenceMax).nullish(),
+  "activityCategories": zod.array(zod.string().min(updateMyPartnerApplicationResponseApplicationOneActivityCategoriesItemMin).max(updateMyPartnerApplicationResponseApplicationOneActivityCategoriesItemMax)).min(1).max(updateMyPartnerApplicationResponseApplicationOneActivityCategoriesMax),
+  "openingHours": zod.array(zod.object({
+  "day": zod.int().min(updateMyPartnerApplicationResponseApplicationOneOpeningHoursItemDayMin).max(updateMyPartnerApplicationResponseApplicationOneOpeningHoursItemDayMax),
+  "closed": zod.boolean(),
+  "opensAt": zod.string().regex(updateMyPartnerApplicationResponseApplicationOneOpeningHoursItemOpensAtRegExp).nullable(),
+  "closesAt": zod.string().regex(updateMyPartnerApplicationResponseApplicationOneOpeningHoursItemClosesAtRegExp).nullable()
+})).min(updateMyPartnerApplicationResponseApplicationOneOpeningHoursMin).max(updateMyPartnerApplicationResponseApplicationOneOpeningHoursMax),
+  "capacity": zod.int().min(1).max(updateMyPartnerApplicationResponseApplicationOneCapacityMax).nullish(),
+  "pricingDetails": zod.string().max(updateMyPartnerApplicationResponseApplicationOnePricingDetailsMax).nullish()
+}).and(zod.object({
+  "id": zod.uuid(),
+  "applicantUserId": zod.string(),
+  "contactEmail": zod.email(),
+  "status": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
+  "statusNote": zod.string().nullable(),
+  "partnerId": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "documents": zod.array(zod.object({
+  "id": zod.uuid(),
+  "applicationId": zod.uuid(),
+  "documentType": zod.enum(['business_registration', 'tax_document', 'licence', 'insurance', 'facility_image', 'supporting_document']),
+  "documentName": zod.string(),
+  "contentType": zod.string().nullable(),
+  "fileSize": zod.int().nullable(),
+  "expiresOn": zod.coerce.date().nullable(),
+  "status": zod.enum(['upload_pending', 'submitted', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullable(),
+  "uploadedBy": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "history": zod.array(zod.object({
+  "id": zod.uuid(),
+  "fromStatus": zod.union([zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),zod.null()]),
+  "toStatus": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
+  "note": zod.string().nullable(),
+  "actorKind": zod.enum(['applicant', 'team']),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+export const RequestPartnerApplicationUploadUrlParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const requestPartnerApplicationUploadUrlBodyDocumentNameMax = 180;
+
+export const requestPartnerApplicationUploadUrlBodySizeMax = 10485760;
+
+
+
+export const RequestPartnerApplicationUploadUrlBody = zod.object({
+  "documentName": zod.string().min(1).max(requestPartnerApplicationUploadUrlBodyDocumentNameMax),
+  "documentType": zod.enum(['business_registration', 'tax_document', 'licence', 'insurance', 'facility_image', 'supporting_document']),
+  "contentType": zod.enum(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']),
+  "size": zod.int().min(1).max(requestPartnerApplicationUploadUrlBodySizeMax),
+  "expiresOn": zod.coerce.date().nullable()
+})
+
+export const RequestPartnerApplicationUploadUrlResponse = zod.object({
+  "id": zod.uuid(),
+  "uploadURL": zod.url()
+})
+
+
+export const CompletePartnerApplicationUploadParams = zod.object({
+  "id": zod.coerce.string(),
+  "documentId": zod.uuid()
+})
+
+export const CompletePartnerApplicationUploadResponse = zod.object({
+  "id": zod.uuid(),
+  "applicationId": zod.uuid(),
+  "documentType": zod.enum(['business_registration', 'tax_document', 'licence', 'insurance', 'facility_image', 'supporting_document']),
+  "documentName": zod.string(),
+  "contentType": zod.string().nullable(),
+  "fileSize": zod.int().nullable(),
+  "expiresOn": zod.coerce.date().nullable(),
+  "status": zod.enum(['upload_pending', 'submitted', 'approved', 'rejected']),
+  "reviewNote": zod.string().nullable(),
+  "uploadedBy": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const DownloadPartnerApplicationDocumentParams = zod.object({
+  "id": zod.coerce.string(),
+  "documentId": zod.uuid()
+})
+
+export const DownloadPartnerApplicationDocumentResponse = zod.unknown()
+
+
 export const addLiveOfferingBodyLocalizedTitleOneEnMax = 240;
 
 export const addLiveOfferingBodyLocalizedTitleOneArMax = 240;

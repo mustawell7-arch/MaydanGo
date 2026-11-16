@@ -386,6 +386,26 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1analytics"
   /operations/partners/{id}:
     $ref: "./operations.yaml#/paths/~1operations~1partners~1{id}"
+  /operations/partner-onboarding/applications:
+    $ref: "./operations.yaml#/paths/~1operations~1partner-onboarding~1applications"
+  /operations/partner-onboarding/applications/{id}:
+    $ref: "./operations.yaml#/paths/~1operations~1partner-onboarding~1applications~1{id}"
+  /operations/partner-onboarding/applications/{id}/status:
+    $ref: "./operations.yaml#/paths/~1operations~1partner-onboarding~1applications~1{id}~1status"
+  /operations/partner-onboarding/applications/{id}/documents/{documentId}/review:
+    $ref: "./operations.yaml#/paths/~1operations~1partner-onboarding~1applications~1{id}~1documents~1{documentId}~1review"
+  /partner-onboarding/mine:
+    $ref: "./operations.yaml#/paths/~1partner-onboarding~1mine"
+  /partner-onboarding/applications:
+    $ref: "./operations.yaml#/paths/~1partner-onboarding~1applications"
+  /partner-onboarding/applications/{id}:
+    $ref: "./operations.yaml#/paths/~1partner-onboarding~1applications~1{id}"
+  /partner-onboarding/applications/{id}/documents/upload-url:
+    $ref: "./operations.yaml#/paths/~1partner-onboarding~1applications~1{id}~1documents~1upload-url"
+  /partner-onboarding/applications/{id}/documents/{documentId}/complete:
+    $ref: "./operations.yaml#/paths/~1partner-onboarding~1applications~1{id}~1documents~1{documentId}~1complete"
+  /partner-onboarding/applications/{id}/documents/{documentId}/download:
+    $ref: "./operations.yaml#/paths/~1partner-onboarding~1applications~1{id}~1documents~1{documentId}~1download"
   /operations/offerings:
     $ref: "./operations.yaml#/paths/~1operations~1offerings"
   /operations/offerings/recurring:

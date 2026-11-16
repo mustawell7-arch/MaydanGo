@@ -1716,6 +1716,268 @@ export interface PartnerApproval {
   approved: boolean;
 }
 
+export type PartnerOnboardingStatus = typeof PartnerOnboardingStatus[keyof typeof PartnerOnboardingStatus];
+
+
+export const PartnerOnboardingStatus = {
+  application_received: 'application_received',
+  under_review: 'under_review',
+  additional_documents_required: 'additional_documents_required',
+  commercial_negotiation: 'commercial_negotiation',
+  contract_issued: 'contract_issued',
+  contract_signed: 'contract_signed',
+  facility_setup: 'facility_setup',
+  qr_code_issued: 'qr_code_issued',
+  staff_training_completed: 'staff_training_completed',
+  test_checkin_completed: 'test_checkin_completed',
+  approved: 'approved',
+  live: 'live',
+  rejected: 'rejected',
+} as const;
+
+export type PartnerApplicationDocumentType = typeof PartnerApplicationDocumentType[keyof typeof PartnerApplicationDocumentType];
+
+
+export const PartnerApplicationDocumentType = {
+  business_registration: 'business_registration',
+  tax_document: 'tax_document',
+  licence: 'licence',
+  insurance: 'insurance',
+  facility_image: 'facility_image',
+  supporting_document: 'supporting_document',
+} as const;
+
+export interface PartnerApplicationHours {
+  /**
+     * @minimum 0
+     * @maximum 6
+     */
+  day: number;
+  closed: boolean;
+  /**
+     * @nullable
+     * @pattern ^([01]\d|2[0-3]):[0-5]\d$
+     */
+  opensAt: string | null;
+  /**
+     * @nullable
+     * @pattern ^([01]\d|2[0-3]):[0-5]\d$
+     */
+  closesAt: string | null;
+}
+
+export interface PartnerApplicationInput {
+  /**
+     * @minLength 2
+     * @maxLength 120
+     */
+  applicantName: string;
+  /**
+     * @minLength 6
+     * @maxLength 40
+     */
+  contactPhone: string;
+  /**
+     * @minLength 2
+     * @maxLength 180
+     */
+  legalBusinessName: string;
+  /**
+     * @minLength 2
+     * @maxLength 160
+     */
+  facilityName: string;
+  /**
+     * @minLength 3
+     * @maxLength 400
+     */
+  address: string;
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
+  city: string;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  district?: string | null;
+  /**
+     * @minimum -90
+     * @maximum 90
+     * @nullable
+     */
+  latitude?: number | null;
+  /**
+     * @minimum -180
+     * @maximum 180
+     * @nullable
+     */
+  longitude?: number | null;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  businessRegistrationReference?: string | null;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  taxReference?: string | null;
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 2
+     * @items.maxLength 80
+     */
+  activityCategories: string[];
+  /**
+     * @minItems 7
+     * @maxItems 7
+     */
+  openingHours: PartnerApplicationHours[];
+  /**
+     * @minimum 1
+     * @maximum 100000
+     * @nullable
+     */
+  capacity?: number | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  pricingDetails?: string | null;
+}
+
+export type PartnerApplication = PartnerApplicationInput & ({
+  id: string;
+  applicantUserId: string;
+  contactEmail: string;
+  status: PartnerOnboardingStatus;
+  /** @nullable */
+  statusNote: string | null;
+  /** @nullable */
+  partnerId: string | null;
+  createdAt: string;
+  updatedAt: string;
+});
+
+export type PartnerApplicationDocumentStatus = typeof PartnerApplicationDocumentStatus[keyof typeof PartnerApplicationDocumentStatus];
+
+
+export const PartnerApplicationDocumentStatus = {
+  upload_pending: 'upload_pending',
+  submitted: 'submitted',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface PartnerApplicationDocument {
+  id: string;
+  applicationId: string;
+  documentType: PartnerApplicationDocumentType;
+  documentName: string;
+  /** @nullable */
+  contentType: string | null;
+  /** @nullable */
+  fileSize: number | null;
+  /** @nullable */
+  expiresOn: string | null;
+  status: PartnerApplicationDocumentStatus;
+  /** @nullable */
+  reviewNote: string | null;
+  uploadedBy: string;
+  createdAt: string;
+}
+
+export type PartnerApplicationEventActorKind = typeof PartnerApplicationEventActorKind[keyof typeof PartnerApplicationEventActorKind];
+
+
+export const PartnerApplicationEventActorKind = {
+  applicant: 'applicant',
+  team: 'team',
+} as const;
+
+export interface PartnerApplicationEvent {
+  id: string;
+  fromStatus: PartnerOnboardingStatus | null;
+  toStatus: PartnerOnboardingStatus;
+  /** @nullable */
+  note: string | null;
+  actorKind: PartnerApplicationEventActorKind;
+  createdAt: string;
+}
+
+export interface PartnerApplicationDetails {
+  application: PartnerApplication;
+  documents: PartnerApplicationDocument[];
+  history: PartnerApplicationEvent[];
+}
+
+export interface PartnerApplicationDetailsResponse {
+  application: PartnerApplication | null;
+  documents: PartnerApplicationDocument[];
+  history: PartnerApplicationEvent[];
+}
+
+export interface PartnerApplicationStatusUpdate {
+  status: PartnerOnboardingStatus;
+  /**
+     * @minLength 4
+     * @maxLength 1000
+     */
+  note: string;
+}
+
+export type PartnerApplicationDocumentReviewInputStatus = typeof PartnerApplicationDocumentReviewInputStatus[keyof typeof PartnerApplicationDocumentReviewInputStatus];
+
+
+export const PartnerApplicationDocumentReviewInputStatus = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface PartnerApplicationDocumentReviewInput {
+  status: PartnerApplicationDocumentReviewInputStatus;
+  /**
+     * @minLength 4
+     * @maxLength 1000
+     */
+  note: string;
+}
+
+export type PartnerApplicationUploadInputContentType = typeof PartnerApplicationUploadInputContentType[keyof typeof PartnerApplicationUploadInputContentType];
+
+
+export const PartnerApplicationUploadInputContentType = {
+  'application/pdf': 'application/pdf',
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export interface PartnerApplicationUploadInput {
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  documentName: string;
+  documentType: PartnerApplicationDocumentType;
+  contentType: PartnerApplicationUploadInputContentType;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+  /** @nullable */
+  expiresOn: string | null;
+}
+
+export interface PartnerApplicationUploadUrl {
+  id: string;
+  uploadURL: string;
+}
+
 export interface PartnerMarketingProfile {
   partnerId: string;
   partnerName: string;

@@ -8,6 +8,7 @@ export * from "./payments";
 export * from "./partner-invoices";
 export * from "./partner-compliance-documents";
 export * from "./partner-contract-versions";
+export * from "./partner-onboarding";
 export * from "./finance";
 export * from "./member-devices";
 export * from "./quality-control";

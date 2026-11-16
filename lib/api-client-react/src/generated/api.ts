@@ -175,6 +175,15 @@ import type {
   OperationsFacilityReviews,
   OperationsState,
   Partner,
+  PartnerApplication,
+  PartnerApplicationDetails,
+  PartnerApplicationDetailsResponse,
+  PartnerApplicationDocument,
+  PartnerApplicationDocumentReviewInput,
+  PartnerApplicationInput,
+  PartnerApplicationStatusUpdate,
+  PartnerApplicationUploadInput,
+  PartnerApplicationUploadUrl,
   PartnerApproval,
   PartnerComplianceDocument,
   PartnerComplianceDocumentReviewInput,
@@ -3682,6 +3691,880 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getApprovePartnerMutationOptions(options), queryClient);
     }
+
+export const getGetPartnerOnboardingApplicationsUrl = () => {
+
+
+
+
+  return `/api/operations/partner-onboarding/applications`
+}
+
+export const getPartnerOnboardingApplications = async ( options?: Parameters<typeof customFetch>[1]): Promise<PartnerApplication[]> => {
+
+  return customFetch<PartnerApplication[]>(getGetPartnerOnboardingApplicationsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPartnerOnboardingApplicationsQueryKey = () => {
+    return [
+    `/api/operations/partner-onboarding/applications`
+    ] as const;
+    }
+
+
+export const getGetPartnerOnboardingApplicationsQueryOptions = <TData = Awaited<ReturnType<typeof getPartnerOnboardingApplications>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerOnboardingApplications>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPartnerOnboardingApplicationsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPartnerOnboardingApplications>>> = ({ signal }) => getPartnerOnboardingApplications({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPartnerOnboardingApplications>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPartnerOnboardingApplicationsQueryResult = NonNullable<Awaited<ReturnType<typeof getPartnerOnboardingApplications>>>
+export type GetPartnerOnboardingApplicationsQueryError = ErrorType<void>
+
+
+export function useGetPartnerOnboardingApplications<TData = Awaited<ReturnType<typeof getPartnerOnboardingApplications>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerOnboardingApplications>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPartnerOnboardingApplications>>,
+          TError,
+          Awaited<ReturnType<typeof getPartnerOnboardingApplications>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPartnerOnboardingApplications<TData = Awaited<ReturnType<typeof getPartnerOnboardingApplications>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerOnboardingApplications>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPartnerOnboardingApplications>>,
+          TError,
+          Awaited<ReturnType<typeof getPartnerOnboardingApplications>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPartnerOnboardingApplications<TData = Awaited<ReturnType<typeof getPartnerOnboardingApplications>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerOnboardingApplications>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPartnerOnboardingApplications<TData = Awaited<ReturnType<typeof getPartnerOnboardingApplications>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerOnboardingApplications>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPartnerOnboardingApplicationsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPartnerOnboardingApplicationUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/partner-onboarding/applications/${id}`
+}
+
+export const getPartnerOnboardingApplication = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<PartnerApplicationDetails> => {
+
+  return customFetch<PartnerApplicationDetails>(getGetPartnerOnboardingApplicationUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPartnerOnboardingApplicationQueryKey = (id: string,) => {
+    return [
+    `/api/operations/partner-onboarding/applications/${id}`
+    ] as const;
+    }
+
+
+export const getGetPartnerOnboardingApplicationQueryOptions = <TData = Awaited<ReturnType<typeof getPartnerOnboardingApplication>>, TError = ErrorType<void>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerOnboardingApplication>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPartnerOnboardingApplicationQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPartnerOnboardingApplication>>> = ({ signal }) => getPartnerOnboardingApplication(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPartnerOnboardingApplication>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPartnerOnboardingApplicationQueryResult = NonNullable<Awaited<ReturnType<typeof getPartnerOnboardingApplication>>>
+export type GetPartnerOnboardingApplicationQueryError = ErrorType<void>
+
+
+export function useGetPartnerOnboardingApplication<TData = Awaited<ReturnType<typeof getPartnerOnboardingApplication>>, TError = ErrorType<void>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerOnboardingApplication>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPartnerOnboardingApplication>>,
+          TError,
+          Awaited<ReturnType<typeof getPartnerOnboardingApplication>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPartnerOnboardingApplication<TData = Awaited<ReturnType<typeof getPartnerOnboardingApplication>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerOnboardingApplication>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPartnerOnboardingApplication>>,
+          TError,
+          Awaited<ReturnType<typeof getPartnerOnboardingApplication>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPartnerOnboardingApplication<TData = Awaited<ReturnType<typeof getPartnerOnboardingApplication>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerOnboardingApplication>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPartnerOnboardingApplication<TData = Awaited<ReturnType<typeof getPartnerOnboardingApplication>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerOnboardingApplication>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPartnerOnboardingApplicationQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdatePartnerOnboardingStatusUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/partner-onboarding/applications/${id}/status`
+}
+
+export const updatePartnerOnboardingStatus = async (id: string,
+    partnerApplicationStatusUpdate: PartnerApplicationStatusUpdate, options?: Parameters<typeof customFetch>[1]): Promise<PartnerApplicationDetails> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PartnerApplicationDetails>(getUpdatePartnerOnboardingStatusUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(partnerApplicationStatusUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdatePartnerOnboardingStatusMutationKey = () => ['updatePartnerOnboardingStatus'] as const;
+
+export const getUpdatePartnerOnboardingStatusMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePartnerOnboardingStatus>>, TError,UpdatePartnerOnboardingStatusMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePartnerOnboardingStatus>>, TError,UpdatePartnerOnboardingStatusMutationVariables, TContext> => {
+
+const mutationKey = getUpdatePartnerOnboardingStatusMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePartnerOnboardingStatus>>, UpdatePartnerOnboardingStatusMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updatePartnerOnboardingStatus(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePartnerOnboardingStatusMutationResult = NonNullable<Awaited<ReturnType<typeof updatePartnerOnboardingStatus>>>
+    export type UpdatePartnerOnboardingStatusMutationBody = BodyType<PartnerApplicationStatusUpdate>
+    export type UpdatePartnerOnboardingStatusMutationError = ErrorType<void>
+    export type UpdatePartnerOnboardingStatusMutationVariables = {id: string;data: BodyType<PartnerApplicationStatusUpdate>}
+
+    export const useUpdatePartnerOnboardingStatus = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePartnerOnboardingStatus>>, TError,UpdatePartnerOnboardingStatusMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updatePartnerOnboardingStatus>>,
+        TError,
+        UpdatePartnerOnboardingStatusMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdatePartnerOnboardingStatusMutationOptions(options), queryClient);
+    }
+
+export const getReviewPartnerApplicationDocumentUrl = (id: string,
+    documentId: string,) => {
+
+
+
+
+  return `/api/operations/partner-onboarding/applications/${id}/documents/${documentId}/review`
+}
+
+export const reviewPartnerApplicationDocument = async (id: string,
+    documentId: string,
+    partnerApplicationDocumentReviewInput: PartnerApplicationDocumentReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<PartnerApplicationDocument> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PartnerApplicationDocument>(getReviewPartnerApplicationDocumentUrl(id,documentId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(partnerApplicationDocumentReviewInput)
+  }
+);}
+
+
+
+
+
+export const getReviewPartnerApplicationDocumentMutationKey = () => ['reviewPartnerApplicationDocument'] as const;
+
+export const getReviewPartnerApplicationDocumentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewPartnerApplicationDocument>>, TError,ReviewPartnerApplicationDocumentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewPartnerApplicationDocument>>, TError,ReviewPartnerApplicationDocumentMutationVariables, TContext> => {
+
+const mutationKey = getReviewPartnerApplicationDocumentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewPartnerApplicationDocument>>, ReviewPartnerApplicationDocumentMutationVariables> = (props) => {
+          const {id,documentId,data} = props ?? {};
+
+          return  reviewPartnerApplicationDocument(id,documentId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewPartnerApplicationDocumentMutationResult = NonNullable<Awaited<ReturnType<typeof reviewPartnerApplicationDocument>>>
+    export type ReviewPartnerApplicationDocumentMutationBody = BodyType<PartnerApplicationDocumentReviewInput>
+    export type ReviewPartnerApplicationDocumentMutationError = ErrorType<void>
+    export type ReviewPartnerApplicationDocumentMutationVariables = {id: string;documentId: string;data: BodyType<PartnerApplicationDocumentReviewInput>}
+
+    export const useReviewPartnerApplicationDocument = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewPartnerApplicationDocument>>, TError,ReviewPartnerApplicationDocumentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reviewPartnerApplicationDocument>>,
+        TError,
+        ReviewPartnerApplicationDocumentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReviewPartnerApplicationDocumentMutationOptions(options), queryClient);
+    }
+
+export const getGetMyPartnerApplicationUrl = () => {
+
+
+
+
+  return `/api/partner-onboarding/mine`
+}
+
+export const getMyPartnerApplication = async ( options?: Parameters<typeof customFetch>[1]): Promise<PartnerApplicationDetailsResponse> => {
+
+  return customFetch<PartnerApplicationDetailsResponse>(getGetMyPartnerApplicationUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyPartnerApplicationQueryKey = () => {
+    return [
+    `/api/partner-onboarding/mine`
+    ] as const;
+    }
+
+
+export const getGetMyPartnerApplicationQueryOptions = <TData = Awaited<ReturnType<typeof getMyPartnerApplication>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyPartnerApplication>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyPartnerApplicationQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyPartnerApplication>>> = ({ signal }) => getMyPartnerApplication({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyPartnerApplication>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMyPartnerApplicationQueryResult = NonNullable<Awaited<ReturnType<typeof getMyPartnerApplication>>>
+export type GetMyPartnerApplicationQueryError = ErrorType<void>
+
+
+export function useGetMyPartnerApplication<TData = Awaited<ReturnType<typeof getMyPartnerApplication>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyPartnerApplication>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyPartnerApplication>>,
+          TError,
+          Awaited<ReturnType<typeof getMyPartnerApplication>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMyPartnerApplication<TData = Awaited<ReturnType<typeof getMyPartnerApplication>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyPartnerApplication>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyPartnerApplication>>,
+          TError,
+          Awaited<ReturnType<typeof getMyPartnerApplication>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMyPartnerApplication<TData = Awaited<ReturnType<typeof getMyPartnerApplication>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyPartnerApplication>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMyPartnerApplication<TData = Awaited<ReturnType<typeof getMyPartnerApplication>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyPartnerApplication>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMyPartnerApplicationQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSubmitPartnerApplicationUrl = () => {
+
+
+
+
+  return `/api/partner-onboarding/applications`
+}
+
+export const submitPartnerApplication = async (partnerApplicationInput: PartnerApplicationInput, options?: Parameters<typeof customFetch>[1]): Promise<PartnerApplicationDetails> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PartnerApplicationDetails>(getSubmitPartnerApplicationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(partnerApplicationInput)
+  }
+);}
+
+
+
+
+
+export const getSubmitPartnerApplicationMutationKey = () => ['submitPartnerApplication'] as const;
+
+export const getSubmitPartnerApplicationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitPartnerApplication>>, TError,SubmitPartnerApplicationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitPartnerApplication>>, TError,SubmitPartnerApplicationMutationVariables, TContext> => {
+
+const mutationKey = getSubmitPartnerApplicationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitPartnerApplication>>, SubmitPartnerApplicationMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  submitPartnerApplication(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitPartnerApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof submitPartnerApplication>>>
+    export type SubmitPartnerApplicationMutationBody = BodyType<PartnerApplicationInput>
+    export type SubmitPartnerApplicationMutationError = ErrorType<void>
+    export type SubmitPartnerApplicationMutationVariables = {data: BodyType<PartnerApplicationInput>}
+
+    export const useSubmitPartnerApplication = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitPartnerApplication>>, TError,SubmitPartnerApplicationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof submitPartnerApplication>>,
+        TError,
+        SubmitPartnerApplicationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSubmitPartnerApplicationMutationOptions(options), queryClient);
+    }
+
+export const getUpdateMyPartnerApplicationUrl = (id: string,) => {
+
+
+
+
+  return `/api/partner-onboarding/applications/${id}`
+}
+
+export const updateMyPartnerApplication = async (id: string,
+    partnerApplicationInput: PartnerApplicationInput, options?: Parameters<typeof customFetch>[1]): Promise<PartnerApplicationDetails> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PartnerApplicationDetails>(getUpdateMyPartnerApplicationUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(partnerApplicationInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateMyPartnerApplicationMutationKey = () => ['updateMyPartnerApplication'] as const;
+
+export const getUpdateMyPartnerApplicationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyPartnerApplication>>, TError,UpdateMyPartnerApplicationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMyPartnerApplication>>, TError,UpdateMyPartnerApplicationMutationVariables, TContext> => {
+
+const mutationKey = getUpdateMyPartnerApplicationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMyPartnerApplication>>, UpdateMyPartnerApplicationMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateMyPartnerApplication(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMyPartnerApplicationMutationResult = NonNullable<Awaited<ReturnType<typeof updateMyPartnerApplication>>>
+    export type UpdateMyPartnerApplicationMutationBody = BodyType<PartnerApplicationInput>
+    export type UpdateMyPartnerApplicationMutationError = ErrorType<void>
+    export type UpdateMyPartnerApplicationMutationVariables = {id: string;data: BodyType<PartnerApplicationInput>}
+
+    export const useUpdateMyPartnerApplication = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyPartnerApplication>>, TError,UpdateMyPartnerApplicationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateMyPartnerApplication>>,
+        TError,
+        UpdateMyPartnerApplicationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateMyPartnerApplicationMutationOptions(options), queryClient);
+    }
+
+export const getRequestPartnerApplicationUploadUrlUrl = (id: string,) => {
+
+
+
+
+  return `/api/partner-onboarding/applications/${id}/documents/upload-url`
+}
+
+export const requestPartnerApplicationUploadUrl = async (id: string,
+    partnerApplicationUploadInput: PartnerApplicationUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<PartnerApplicationUploadUrl> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PartnerApplicationUploadUrl>(getRequestPartnerApplicationUploadUrlUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(partnerApplicationUploadInput)
+  }
+);}
+
+
+
+
+
+export const getRequestPartnerApplicationUploadUrlMutationKey = () => ['requestPartnerApplicationUploadUrl'] as const;
+
+export const getRequestPartnerApplicationUploadUrlMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestPartnerApplicationUploadUrl>>, TError,RequestPartnerApplicationUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestPartnerApplicationUploadUrl>>, TError,RequestPartnerApplicationUploadUrlMutationVariables, TContext> => {
+
+const mutationKey = getRequestPartnerApplicationUploadUrlMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestPartnerApplicationUploadUrl>>, RequestPartnerApplicationUploadUrlMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  requestPartnerApplicationUploadUrl(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestPartnerApplicationUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestPartnerApplicationUploadUrl>>>
+    export type RequestPartnerApplicationUploadUrlMutationBody = BodyType<PartnerApplicationUploadInput>
+    export type RequestPartnerApplicationUploadUrlMutationError = ErrorType<void>
+    export type RequestPartnerApplicationUploadUrlMutationVariables = {id: string;data: BodyType<PartnerApplicationUploadInput>}
+
+    export const useRequestPartnerApplicationUploadUrl = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestPartnerApplicationUploadUrl>>, TError,RequestPartnerApplicationUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof requestPartnerApplicationUploadUrl>>,
+        TError,
+        RequestPartnerApplicationUploadUrlMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestPartnerApplicationUploadUrlMutationOptions(options), queryClient);
+    }
+
+export const getCompletePartnerApplicationUploadUrl = (id: string,
+    documentId: string,) => {
+
+
+
+
+  return `/api/partner-onboarding/applications/${id}/documents/${documentId}/complete`
+}
+
+export const completePartnerApplicationUpload = async (id: string,
+    documentId: string, options?: Parameters<typeof customFetch>[1]): Promise<PartnerApplicationDocument> => {
+
+  return customFetch<PartnerApplicationDocument>(getCompletePartnerApplicationUploadUrl(id,documentId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCompletePartnerApplicationUploadMutationKey = () => ['completePartnerApplicationUpload'] as const;
+
+export const getCompletePartnerApplicationUploadMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completePartnerApplicationUpload>>, TError,CompletePartnerApplicationUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completePartnerApplicationUpload>>, TError,CompletePartnerApplicationUploadMutationVariables, TContext> => {
+
+const mutationKey = getCompletePartnerApplicationUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completePartnerApplicationUpload>>, CompletePartnerApplicationUploadMutationVariables> = (props) => {
+          const {id,documentId} = props ?? {};
+
+          return  completePartnerApplicationUpload(id,documentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompletePartnerApplicationUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completePartnerApplicationUpload>>>
+
+    export type CompletePartnerApplicationUploadMutationError = ErrorType<void>
+    export type CompletePartnerApplicationUploadMutationVariables = {id: string;documentId: string}
+
+    export const useCompletePartnerApplicationUpload = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completePartnerApplicationUpload>>, TError,CompletePartnerApplicationUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof completePartnerApplicationUpload>>,
+        TError,
+        CompletePartnerApplicationUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompletePartnerApplicationUploadMutationOptions(options), queryClient);
+    }
+
+export const getDownloadPartnerApplicationDocumentUrl = (id: string,
+    documentId: string,) => {
+
+
+
+
+  return `/api/partner-onboarding/applications/${id}/documents/${documentId}/download`
+}
+
+export const downloadPartnerApplicationDocument = async (id: string,
+    documentId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadPartnerApplicationDocumentUrl(id,documentId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadPartnerApplicationDocumentQueryKey = (id: string,
+    documentId: string,) => {
+    return [
+    `/api/partner-onboarding/applications/${id}/documents/${documentId}/download`
+    ] as const;
+    }
+
+
+export const getDownloadPartnerApplicationDocumentQueryOptions = <TData = Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>, TError = ErrorType<void>>(id: string,
+    documentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadPartnerApplicationDocumentQueryKey(id,documentId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>> = ({ signal }) => downloadPartnerApplicationDocument(id,documentId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && documentId !== null && documentId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DownloadPartnerApplicationDocumentQueryResult = NonNullable<Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>>
+export type DownloadPartnerApplicationDocumentQueryError = ErrorType<void>
+
+
+export function useDownloadPartnerApplicationDocument<TData = Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>, TError = ErrorType<void>>(
+ id: string,
+    documentId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>,
+          TError,
+          Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadPartnerApplicationDocument<TData = Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>, TError = ErrorType<void>>(
+ id: string,
+    documentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>,
+          TError,
+          Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDownloadPartnerApplicationDocument<TData = Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>, TError = ErrorType<void>>(
+ id: string,
+    documentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useDownloadPartnerApplicationDocument<TData = Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>, TError = ErrorType<void>>(
+ id: string,
+    documentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadPartnerApplicationDocument>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDownloadPartnerApplicationDocumentQueryOptions(id,documentId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getAddLiveOfferingUrl = () => {
 

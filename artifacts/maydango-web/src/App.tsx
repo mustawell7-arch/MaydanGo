@@ -32,6 +32,12 @@ import {
 import './index.css';
 
 const PartnerPortal = lazy(() => import('@/pages/partner-portal'));
+const PartnerApplicationPage = lazy(() =>
+  import('@/pages/partner-onboarding').then(module => ({ default: module.PartnerApplicationPage })),
+);
+const PartnerOnboardingAdminPage = lazy(() =>
+  import('@/pages/partner-onboarding').then(module => ({ default: module.PartnerOnboardingAdminPage })),
+);
 const SponsoredPlacementsManagerPage = lazy(() => import('@/pages/sponsored-placements-manager'));
 const FinanceConsole = lazy(() => import('@/pages/finance-console'));
 const MemberAccountPage = lazy(() => import('@/pages/member-account'));
@@ -1137,7 +1143,7 @@ function EnquiryPage({ type, t }: { type: 'partner' | 'instructor' | 'corporate'
     <PageWrap className="py-14 md:py-20">
       <div className="grid gap-12 md:grid-cols-[1fr_.75fr]">
         <div className="grid gap-0">{content.bullets.map((key, index) => <div className="flex gap-4 border-b border-border py-6 first:border-t" key={key}><span className="font-mono text-xs text-primary">0{index + 1}</span><p className="max-w-lg text-lg leading-7">{t[key]}</p><Check className="ms-auto mt-1 shrink-0 text-primary" size={18} /></div>)}</div>
-        <aside className="rounded-[2rem] bg-[#eadfcd] p-7 md:p-9"><SectionKicker>{t.contact}</SectionKicker><h2 className="font-display text-3xl font-bold tracking-[-.05em]">{t[content.cta]}</h2><p className="mt-4 text-sm leading-6 text-foreground/65">{t.availabilityD}</p><Link href={`/contact?topic=${content.topic}`} className="mt-7 inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground" data-testid={`link-${type}-enquiry`}>{t[content.cta]}<MoveUpRight size={16} /></Link>{type === 'partner' && <div className="mt-8 border-t border-[#cdbba5] pt-5"><p className="text-xs leading-5 text-foreground/65">{t.approved_partner_prompt}</p><Link href="/sign-in" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-partner-portal-sign-in">{t.partner_operations_sign_in}<ArrowRight size={15} /></Link></div>}{type === 'corporate' && <div className="mt-8 border-t border-[#cdbba5] pt-5"><p className="text-xs leading-5 text-foreground/65">{t.corporatePortalPrompt}</p><Link href="/corporate-portal" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-corporate-portal-sign-in">{t.corporatePortalSignIn}<ArrowRight size={15} /></Link></div>}</aside>
+        <aside className="rounded-[2rem] bg-[#eadfcd] p-7 md:p-9"><SectionKicker>{t.contact}</SectionKicker><h2 className="font-display text-3xl font-bold tracking-[-.05em]">{t[content.cta]}</h2><p className="mt-4 text-sm leading-6 text-foreground/65">{t.availabilityD}</p><Link href={`/contact?topic=${content.topic}`} className="mt-7 inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground" data-testid={`link-${type}-enquiry`}>{t[content.cta]}<MoveUpRight size={16} /></Link>{type === 'partner' && <><div className="mt-7 border-t border-[#cdbba5] pt-5"><p className="text-sm leading-6 text-foreground/70">{t.partner_application_prompt}</p><Link href="/partner-application" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-partner-application">{t.partner_application_cta}<ArrowRight size={15} /></Link></div><div className="mt-6 border-t border-[#cdbba5] pt-5"><p className="text-xs leading-5 text-foreground/65">{t.approved_partner_prompt}</p><Link href="/sign-in" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-partner-portal-sign-in">{t.partner_operations_sign_in}<ArrowRight size={15} /></Link></div></>}{type === 'corporate' && <div className="mt-8 border-t border-[#cdbba5] pt-5"><p className="text-xs leading-5 text-foreground/65">{t.corporatePortalPrompt}</p><Link href="/corporate-portal" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-primary" data-testid="link-corporate-portal-sign-in">{t.corporatePortalSignIn}<ArrowRight size={15} /></Link></div>}</aside>
       </div>
     </PageWrap>
   </>;
@@ -1365,6 +1371,8 @@ function Router() {
       <Route path="/corporate-portal" component={CorporatePortalPage} />
       <Route path="/corporate-invite" component={CorporateInvitePage} />
       <Route path="/support-desk" component={SupportDeskPage} />
+      <Route path="/partner-application" component={PartnerApplicationPage} />
+      <Route path="/admin/partner-onboarding" component={PartnerOnboardingAdminPage} />
       <Route path="/partner-portal" component={PartnerPortal} />
       <Route path="/finance" component={FinanceConsole} />
       <Route path="/instructor-portal" component={InstructorPortalPage} />

@@ -87,6 +87,16 @@ export class ObjectStorageService {
     return { uploadURL, documentPath: `/objects/${objectName}` };
   }
 
+  async createPartnerApplicationUpload(applicationId: string, documentId: string) {
+    if (!/^[0-9a-f-]{36}$/i.test(applicationId) || !/^[0-9a-f-]{36}$/i.test(documentId)) {
+      throw new Error("Invalid partner application document identifier.");
+    }
+    const objectName = `partner-onboarding/${applicationId}/${documentId}`;
+    const { bucketName, objectName: bucketObjectName } = parseObjectPath(`${this.privateDir()}/${objectName}`);
+    const uploadURL = await signUpload(bucketName, bucketObjectName);
+    return { uploadURL, documentPath: `/objects/${objectName}` };
+  }
+
   async createCourseMaterialUpload(courseId: string, materialId: string) {
     if (!/^[0-9a-f-]{36}$/i.test(courseId) || !/^[0-9a-f-]{36}$/i.test(materialId)) {
       throw new Error("Invalid course material identifier.");
