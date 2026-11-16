@@ -2,12 +2,13 @@ import { Router, type IRouter } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, gt, inArray, or } from "drizzle-orm";
-import { db, adminRolePermissions, attendance, guardianConsentDocuments, legalPolicyVersions, memberConsentEvents, operationAudit, operators, offerings, partners, platformSafetyRules } from "@workspace/db";
+import { db, accountAccessRestrictions, adminRolePermissions, attendance, facilityProfiles, guardianConsentDocuments, legalPolicyVersions, memberConsentEvents, operationAudit, operators, offerings, partners, platformSafetyRules } from "@workspace/db";
 import { z } from "zod";
 import {
   GetSuperAdminPlatformRulesResponse,
   GetSuperAdminRolePermissionsResponse,
   GetSuperAdminAccountsResponse,
+  GetSuperAdminAccountRestrictionsResponse,
   GetSuperAdminAuditLogsQueryParams,
   GetSuperAdminAuditLogsResponse,
   GetSuperAdminMemberConsentHistoryQueryParams,
@@ -25,6 +26,8 @@ import {
   UpdateSuperAdminRolePermissionsResponse,
   UpsertSuperAdminAccountBody,
   UpsertSuperAdminAccountResponse,
+  UpdateSuperAdminAccountRestrictionBody,
+  UpdateSuperAdminAccountRestrictionResponse,
 } from "@workspace/api-zod";
 import {
   ADMIN_ACTIONS,
@@ -119,6 +122,134 @@ export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirector
     })));
 
     res.json(GetSuperAdminAccountsResponse.parse(accounts));
+  });
+
+  router.get("/account-restrictions", async (_req, res): Promise<void> => {
+    const [restrictions, partnerRows, facilityRows] = await Promise.all([
+      db.select().from(accountAccessRestrictions).orderBy(desc(accountAccessRestrictions.updatedAt)),
+      db.select({ id: partners.id, label: partners.name }).from(partners).orderBy(partners.name),
+      db.select({
+        id: facilityProfiles.id,
+        partnerId: facilityProfiles.partnerId,
+        facility: facilityProfiles.facility,
+        city: facilityProfiles.city,
+      }).from(facilityProfiles).orderBy(facilityProfiles.city, facilityProfiles.facility),
+    ]);
+    const partnerById = new Map(partnerRows.map(row => [row.id, row.label]));
+    const facilityById = new Map(facilityRows.map(row => [
+      row.id,
+      `${row.facility} · ${row.city} · ${partnerById.get(row.partnerId) ?? "Partner"}`,
+    ]));
+    const items = await Promise.all(restrictions.map(async row => ({
+      entityType: row.entityType as "member" | "partner" | "facility",
+      entityId: row.entityId,
+      targetLabel: row.entityType === "member"
+        ? await directory.getEmail(row.entityId) ?? row.entityId
+        : row.entityType === "partner"
+          ? partnerById.get(row.entityId) ?? row.entityId
+          : facilityById.get(row.entityId) ?? row.entityId,
+      status: row.status as "active" | "suspended",
+      reason: row.reason,
+      updatedBy: row.updatedBy,
+      updatedAt: row.updatedAt,
+    })));
+    const targets = [
+      ...partnerRows.map(row => ({ entityType: "partner" as const, entityId: row.id, label: row.label })),
+      ...facilityRows.map(row => ({
+        entityType: "facility" as const,
+        entityId: row.id,
+        label: facilityById.get(row.id)!,
+      })),
+    ];
+    res.json(GetSuperAdminAccountRestrictionsResponse.parse({ items, targets }));
+  });
+
+  router.put("/account-restrictions", async (req, res): Promise<void> => {
+    const parsed = UpdateSuperAdminAccountRestrictionBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: "Choose a target, status, and a clear reason." });
+      return;
+    }
+    const input = parsed.data;
+    let entityId = input.target.trim();
+    let targetLabel = entityId;
+    if (input.entityType === "member") {
+      if (input.status === "suspended" || entityId.includes("@")) {
+        const account = await directory.findVerifiedByEmail(entityId.toLowerCase());
+        if (!account) {
+          res.status(404).json({ message: "No existing account with this verified email was found." });
+          return;
+        }
+        entityId = account.userId;
+        targetLabel = account.email;
+      } else {
+        const email = await directory.getEmail(entityId);
+        if (!email) {
+          res.status(404).json({ message: "The member account could not be found." });
+          return;
+        }
+        targetLabel = email;
+      }
+    } else if (input.entityType === "partner") {
+      const [partner] = await db.select({ id: partners.id, name: partners.name })
+        .from(partners).where(eq(partners.id, entityId)).limit(1);
+      if (!partner) {
+        res.status(404).json({ message: "Partner account not found." });
+        return;
+      }
+      targetLabel = partner.name;
+    } else {
+      const [facility] = await db.select({
+        id: facilityProfiles.id,
+        facility: facilityProfiles.facility,
+        city: facilityProfiles.city,
+        partnerId: facilityProfiles.partnerId,
+      }).from(facilityProfiles).where(eq(facilityProfiles.id, entityId)).limit(1);
+      if (!facility) {
+        res.status(404).json({ message: "Facility not found." });
+        return;
+      }
+      const [partner] = await db.select({ name: partners.name }).from(partners)
+        .where(eq(partners.id, facility.partnerId)).limit(1);
+      targetLabel = `${facility.facility} · ${facility.city} · ${partner?.name ?? "Partner"}`;
+    }
+
+    const actorId = res.locals.superAdminUserId as string;
+    const saved = await db.transaction(async tx => {
+      const [row] = await tx.insert(accountAccessRestrictions).values({
+        entityType: input.entityType,
+        entityId,
+        status: input.status,
+        reason: input.reason.trim(),
+        updatedBy: actorId,
+        updatedAt: new Date(),
+      }).onConflictDoUpdate({
+        target: [accountAccessRestrictions.entityType, accountAccessRestrictions.entityId],
+        set: {
+          status: input.status,
+          reason: input.reason.trim(),
+          updatedBy: actorId,
+          updatedAt: new Date(),
+        },
+      }).returning();
+      await tx.insert(operationAudit).values({
+        id: randomUUID(),
+        actorId,
+        action: `super_admin.account_access.${input.status === "suspended" ? "suspend" : "restore"}`,
+        targetId: `${input.entityType}:${entityId}`,
+        detail: `reason=${input.reason.trim()}`,
+      });
+      return row;
+    });
+    res.json(UpdateSuperAdminAccountRestrictionResponse.parse({
+      entityType: input.entityType,
+      entityId,
+      targetLabel,
+      status: saved.status,
+      reason: saved.reason,
+      updatedBy: saved.updatedBy,
+      updatedAt: saved.updatedAt,
+    }));
   });
 
   router.get("/role-permissions", async (_req, res): Promise<void> => {
@@ -321,6 +452,11 @@ export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirector
 
       const previousRole = existing ? roleFromRow(existing) : null;
       const previousStatus = existing?.role === "admin_suspended" ? "suspended" : existing ? "active" : "not_assigned";
+      if ((parsed.data.status === "suspended" || previousStatus === "suspended")
+        && (parsed.data.reason?.trim().length ?? 0) < 5) {
+        res.status(400).json({ message: "Enter a clear reason of at least five characters for suspension or restoration." });
+        return null;
+      }
       const removesSuperAdmin = previousRole === "super_admin"
         && (parsed.data.status === "suspended" || parsed.data.role !== "super_admin");
 
@@ -349,7 +485,7 @@ export function createSuperAdminRouter(directory: ClerkDirectory = clerkDirector
         actorId,
         action: "super_admin.admin_account.updated",
         targetId: account.userId,
-        detail: `role:${previousRole ?? "none"}->${parsed.data.role};status:${previousStatus}->${parsed.data.status}`,
+        detail: `role:${previousRole ?? "none"}->${parsed.data.role};status:${previousStatus}->${parsed.data.status}${parsed.data.reason ? `;reason=${parsed.data.reason.trim()}` : ""}`,
       });
 
       return saved;

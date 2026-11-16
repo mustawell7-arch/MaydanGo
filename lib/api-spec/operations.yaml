@@ -2020,6 +2020,28 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AdminAccount" }
+  /super-admin/account-restrictions:
+    get:
+      operationId: getSuperAdminAccountRestrictions
+      responses:
+        "200":
+          description: Current restriction states and selectable partner/facility targets
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountAccessRestrictionsResponse" }
+    put:
+      operationId: updateSuperAdminAccountRestriction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountAccessRestrictionUpdateInput" }
+      responses:
+        "200":
+          description: Account or facility restriction updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountAccessRestriction" }
   /super-admin/role-permissions:
     get:
       operationId: getSuperAdminRolePermissions
@@ -4405,6 +4427,7 @@ components:
         email: { type: string, format: email, maxLength: 320 }
         role: { $ref: "#/components/schemas/AdminRole" }
         status: { type: string, enum: [active, suspended] }
+        reason: { type: string, minLength: 5, maxLength: 500 }
     AdminAccount:
       type: object
       additionalProperties: false
@@ -4414,6 +4437,52 @@ components:
         email: { type: ["string", "null"], format: email }
         role: { $ref: "#/components/schemas/AdminRole" }
         status: { type: string, enum: [active, suspended] }
+    AccountRestrictionEntityType:
+      type: string
+      enum: [member, partner, facility]
+    AccountRestrictionStatus:
+      type: string
+      enum: [active, suspended]
+    AccountRestrictionTarget:
+      type: object
+      additionalProperties: false
+      required: [entityType, entityId, label]
+      properties:
+        entityType: { $ref: "#/components/schemas/AccountRestrictionEntityType" }
+        entityId: { type: string }
+        label: { type: string }
+    AccountAccessRestriction:
+      type: object
+      additionalProperties: false
+      required: [entityType, entityId, targetLabel, status, reason, updatedBy, updatedAt]
+      properties:
+        entityType: { $ref: "#/components/schemas/AccountRestrictionEntityType" }
+        entityId: { type: string }
+        targetLabel: { type: string }
+        status: { $ref: "#/components/schemas/AccountRestrictionStatus" }
+        reason: { type: string }
+        updatedBy: { type: string }
+        updatedAt: { type: string, format: date-time }
+    AccountAccessRestrictionsResponse:
+      type: object
+      additionalProperties: false
+      required: [items, targets]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AccountAccessRestriction" }
+        targets:
+          type: array
+          items: { $ref: "#/components/schemas/AccountRestrictionTarget" }
+    AccountAccessRestrictionUpdateInput:
+      type: object
+      additionalProperties: false
+      required: [entityType, target, status, reason]
+      properties:
+        entityType: { $ref: "#/components/schemas/AccountRestrictionEntityType" }
+        target: { type: string, minLength: 1, maxLength: 320, description: "Verified email for members; target ID for partners and facilities." }
+        status: { $ref: "#/components/schemas/AccountRestrictionStatus" }
+        reason: { type: string, minLength: 5, maxLength: 500 }
     AdminAction:
       type: string
       enum: [view, create, edit, approve, reject, suspend, refund, export, delete, publish, manage_payments, manage_users, view_sensitive_data]

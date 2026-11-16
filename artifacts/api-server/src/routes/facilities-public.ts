@@ -13,15 +13,22 @@ import {
   GetPublicFacilityResponse,
 } from "@workspace/api-zod";
 import { iraqCalendarDate, openingState } from "../lib/facility-hours";
+import { filterSuspendedOfferings, suspendedEntityIds } from "../lib/account-access-restrictions";
 
 const router = Router();
 
 async function publishedFacilities(id?: string) {
-  const profiles = await db.select({ profile: facilityProfiles, partnerName: partners.name })
+  const [allProfiles, suspendedPartners, suspendedFacilities] = await Promise.all([
+    db.select({ profile: facilityProfiles, partnerName: partners.name })
     .from(facilityProfiles)
     .innerJoin(partners, eq(facilityProfiles.partnerId, partners.id))
     .where(and(eq(partners.approved, true), id ? eq(facilityProfiles.id, id) : undefined))
-    .orderBy(asc(facilityProfiles.city), asc(facilityProfiles.facility));
+    .orderBy(asc(facilityProfiles.city), asc(facilityProfiles.facility)),
+    suspendedEntityIds("partner"),
+    suspendedEntityIds("facility"),
+  ]);
+  const profiles = allProfiles.filter(row =>
+    !suspendedPartners.has(row.profile.partnerId) && !suspendedFacilities.has(row.profile.id));
   if (!profiles.length) return [];
 
   const partnerIds = [...new Set(profiles.map(row => row.profile.partnerId))];
@@ -38,7 +45,7 @@ async function publishedFacilities(id?: string) {
     current.push(override);
     hoursOverridesByFacility.set(override.facilityId, current);
   }
-  const liveSessions = await db.select({
+  const sessionRows = await db.select({
     id: offerings.id,
     partnerId: offerings.partnerId,
     city: offerings.city,
@@ -64,6 +71,7 @@ async function publishedFacilities(id?: string) {
       inArray(offerings.partnerId, partnerIds),
     ))
     .orderBy(asc(offerings.startsAt));
+  const liveSessions = await filterSuspendedOfferings(sessionRows);
   const normalized = (value: string) => value.trim().toLocaleLowerCase("en");
 
   return profiles.map(({ profile, partnerName }) => {

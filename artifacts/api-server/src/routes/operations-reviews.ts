@@ -7,6 +7,7 @@ import {
   facilityReviewResponses, facilityReviews, operationAudit, operators, partners,
 } from "@workspace/db";
 import { hasAdminPermission } from "../lib/admin-roles";
+import { isAccessSuspended } from "../lib/account-access-restrictions";
 import {
   GetOperationsFacilityReviewsResponse, ModerateFacilityReviewBody,
   ModerateFacilityReviewParams, ModerateFacilityReviewResponse,
@@ -38,6 +39,10 @@ router.use(async (req, res, next) => {
       .from(partners).where(eq(partners.id, operator.partnerId)).limit(1);
     if (!partner?.approved) {
       res.status(403).json({ message: "Partner approval is required to respond to reviews." });
+      return;
+    }
+    if (await isAccessSuspended("partner", operator.partnerId)) {
+      res.status(403).json({ message: "Partner operations are temporarily restricted. Contact MaydanGo support." });
       return;
     }
   }

@@ -37,3 +37,9 @@ Membership access settings are snapshots: event booking follows the saved `event
 **Why:** Plan access must control bookings and course playback without silently changing existing grants or opening checkout before the final payment milestone.
 
 **How to apply:** Enforce saved rules for every booking and course endpoint, including playback. Do not use current plan edits to rewrite existing memberships, and do not treat `additionalPaymentAllowed` as payment authorization.
+
+Suspension keeps sign-in and support access available while blocking restricted actions. Member suspensions block new bookings, course enrollment/playback, and check-in; partner suspensions block operational actions except safety reads and incident reports; facility suspensions hide new discovery and pause check-in. Existing records and bookings remain saved and are not automatically cancelled. Require a reason for every suspension and restoration and record the actor, target, and time.
+
+**Why:** The user chose to allow sign-in while blocking actions and preserving records.
+
+**How to apply:** Keep restrictions reversible and separate from membership/payment history. Make the handling of upcoming bookings clear before changing their treatment.

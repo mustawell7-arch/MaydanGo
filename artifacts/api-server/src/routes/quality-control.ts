@@ -6,6 +6,7 @@ import { Readable } from "node:stream";
 import { hasAdminPermission } from "../lib/admin-roles";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 import { listExpiringPartnerDocuments } from "../lib/partner-document-expiry";
+import { isAccessSuspended } from "../lib/account-access-restrictions";
 import {
   db, facilityProfiles, facilityQualityAssessments, facilityQualityEmergencyContacts, facilityQualityIncidents,
   operationAudit, operators, partners, partnerComplianceDocuments,
@@ -99,6 +100,12 @@ router.use(async (req, res, next) => {
       .from(partners).where(eq(partners.id, operator.partnerId)).limit(1);
     if (!partner?.approved) {
       res.status(403).json({ message: "Partner approval is required for quality records." });
+      return;
+    }
+    const safetyReadOrReport = (req.method === "GET" && req.path === "/")
+      || (req.method === "POST" && req.path === "/incidents");
+    if (!safetyReadOrReport && await isAccessSuspended("partner", operator.partnerId)) {
+      res.status(403).json({ message: "Partner operations are temporarily restricted. Contact MaydanGo support." });
       return;
     }
   }

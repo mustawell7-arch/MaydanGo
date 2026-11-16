@@ -5,6 +5,7 @@ import { z } from "zod";
 import { BookingError, membershipCanAccess, processWaitlistQueue } from "./reservations";
 import { ageOnDate } from "./age";
 import { hasAdminPermission, type AdminPermission } from "./admin-roles";
+import { isAccessSuspended } from "./account-access-restrictions";
 import { iraqCalendarDate, openingState, previousIraqCalendarDate } from "./facility-hours";
 import { getPlatformSafetyRules } from "./platform-rules";
 import type { PlatformSafetyRules } from "@workspace/db";
@@ -63,15 +64,48 @@ async function context(tx: Tx, id: string) {
   const [a] = await tx.select().from(attendance).where(eq(attendance.reservationId, id));
   return { r, o, p, a };
 }
-async function staff(tx: Tx, actor: string, partnerId: string | null, permissions: AdminPermission[] = ["partner_operations"]) {
+async function staff(
+  tx: Tx,
+  actor: string,
+  partnerId: string | null,
+  permissions: AdminPermission[] = ["partner_operations"],
+  offering?: typeof offerings.$inferSelect,
+) {
   const [op] = await tx.select().from(operators).where(eq(operators.userId, actor)).for("share");
   const hasRequiredPermission = !!op && permissions.some(permission => hasAdminPermission(op.role, permission));
   if (!op || (!hasRequiredPermission && !(op.role === "partner" && partnerId && op.partnerId === partnerId)))
     throw new BookingError(403, "Authorized staff for this partner are required.");
+  if (op.role === "partner" && partnerId && await isAccessSuspended("partner", partnerId)) {
+    throw new BookingError(403, "Partner attendance actions are temporarily restricted. Contact MaydanGo support.");
+  }
+  if (op.role === "partner" && offering && partnerId) {
+    const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
+      eq(facilityProfiles.partnerId, partnerId),
+      eq(facilityProfiles.city, offering.city),
+      eq(facilityProfiles.facility, offering.facility),
+    )).limit(1);
+    if (facility && await isAccessSuspended("facility", facility.id)) {
+      throw new BookingError(403, "Facility attendance actions are temporarily restricted.");
+    }
+  }
   return op;
 }
 async function eligible(tx: Tx, c: Awaited<ReturnType<typeof context>>) {
   const { r, o } = c;
+  if (await isAccessSuspended("member", r.userId)) {
+    throw new BookingError(403, "This account is temporarily restricted from check-in. Contact MaydanGo support.");
+  }
+  if (o.partnerId && await isAccessSuspended("partner", o.partnerId)) {
+    throw new BookingError(403, "This partner is temporarily restricted from check-in.");
+  }
+  const [facility] = o.partnerId ? await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
+    eq(facilityProfiles.partnerId, o.partnerId),
+    eq(facilityProfiles.city, o.city),
+    eq(facilityProfiles.facility, o.facility),
+  )).limit(1) : [];
+  if (facility && await isAccessSuspended("facility", facility.id)) {
+    throw new BookingError(403, "This facility is temporarily restricted from check-in.");
+  }
   const otherArrivals = await tx.select().from(attendance).where(and(eq(attendance.userId, r.userId),
     eq(attendance.offeringId, o.id), inArray(attendance.status, ["pending", "confirmed", "disputed"])));
   if (otherArrivals.some(a => a.reservationId !== r.id))
@@ -144,7 +178,7 @@ async function requireFacilityOpen(tx: Tx, c: Awaited<ReturnType<typeof context>
 }
 export async function savePolicy(actor: string, id: string, input: z.infer<typeof policyInput>) {
   return db.transaction(async tx => {
-    const c = await context(tx, id); await staff(tx, actor, c.o.partnerId);
+    const c = await context(tx, id); await staff(tx, actor, c.o.partnerId, undefined, c.o);
     const opensAt = new Date(input.opensAt), closesAt = new Date(input.closesAt), correctionEndsAt = new Date(input.correctionEndsAt);
     if (opensAt >= closesAt || opensAt < new Date(c.o.startsAt.getTime() - 3600000) || closesAt > c.o.endsAt ||
         correctionEndsAt < c.o.endsAt || correctionEndsAt > new Date(c.o.endsAt.getTime() + 7 * 86400000))
@@ -156,7 +190,7 @@ export async function savePolicy(actor: string, id: string, input: z.infer<typeo
 }
 export async function issueQr(actor: string, id: string, revoke = false) {
   return db.transaction(async tx => {
-    const c = await context(tx, id); await staff(tx, actor, c.o.partnerId);
+    const c = await context(tx, id); await staff(tx, actor, c.o.partnerId, undefined, c.o);
     const now = new Date();
     if (!revoke) await requireFacilityOpen(tx, c, now);
     await tx.update(checkinChallenges).set({ consumedAt: now }).where(eq(checkinChallenges.reservationId, id));
@@ -201,7 +235,7 @@ export async function issueManualCheckinCode(actor: string, id: string) {
 }
 export async function recordManualCheckin(actor: string, id: string, input: z.infer<typeof manualCheckinInput>) {
   return db.transaction(async tx => {
-    const c = await context(tx, id), op = await staff(tx, actor, c.o.partnerId);
+    const c = await context(tx, id), op = await staff(tx, actor, c.o.partnerId, undefined, c.o);
     if (op.role !== "partner") throw new BookingError(403, "Only assigned partner staff can record a manual arrival.");
     await eligible(tx, c);
     const now = new Date();
@@ -274,7 +308,7 @@ export async function review(actor: string, id: string, input: z.infer<typeof re
     const now = new Date();
     const ownDispute = action === "dispute" && c.r.userId === actor;
     const requiredPermission = action.startsWith("resolve_") ? "fraud_compliance" : "partner_operations";
-    const op = ownDispute ? null : await staff(tx, actor, c.o.partnerId, [requiredPermission]);
+    const op = ownDispute ? null : await staff(tx, actor, c.o.partnerId, [requiredPermission], c.o);
     if (action === "reject_request") {
       if (c.r.status !== "requested" || c.o.startsAt <= now || !c.o.active || c.o.cancelledAt)
         throw new BookingError(409, "Only upcoming active booking requests may be rejected.");

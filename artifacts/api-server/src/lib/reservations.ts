@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, gt, inArray, isNull, lte, sql } from "drizzle-orm";
-import { db, memberships, offerings, reservations, attendance, memberProfiles, partners, waitlistEntries, memberUpdates } from "@workspace/db";
+import { db, memberships, offerings, reservations, attendance, facilityProfiles, memberProfiles, partners, waitlistEntries, memberUpdates } from "@workspace/db";
 import { sendMemberNotification } from "./notifications";
 import { hasCurrentRequiredMemberConsent } from "./member-consents";
+import { isAccessSuspended } from "./account-access-restrictions";
 
 export class BookingError extends Error {
   constructor(public status: number, message: string) { super(message); }
@@ -37,10 +38,25 @@ export function effectiveMembershipStatus(membership: {
 }
 
 export async function assertMemberEligibleForOffering(tx: BookingTx, userId: string, o: typeof offerings.$inferSelect) {
+  if (await isAccessSuspended("member", userId)) {
+    throw new BookingError(403, "This account is temporarily restricted from making new bookings. Contact MaydanGo support.");
+  }
   const now = new Date();
   if (o.scope === "live") {
     const [partner] = o.partnerId ? await tx.select().from(partners).where(eq(partners.id, o.partnerId)).for("share") : [];
     if (!partner?.approved) throw new BookingError(403, "This partner is not approved for live bookings.");
+    if (o.partnerId && await isAccessSuspended("partner", o.partnerId)) {
+      throw new BookingError(403, "This partner is temporarily unavailable for bookings.");
+    }
+    const [facility] = o.partnerId ? await tx.select({ id: facilityProfiles.id }).from(facilityProfiles)
+      .where(and(
+        eq(facilityProfiles.partnerId, o.partnerId),
+        eq(facilityProfiles.city, o.city),
+        eq(facilityProfiles.facility, o.facility),
+      )).limit(1) : [];
+    if (facility && await isAccessSuspended("facility", facility.id)) {
+      throw new BookingError(403, "This facility is temporarily unavailable for bookings.");
+    }
   }
   const [m] = await tx.select().from(memberships).where(and(eq(memberships.userId, userId), eq(memberships.scope, o.scope)));
   const paymentEligible = m && (o.scope === "live"

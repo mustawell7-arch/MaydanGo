@@ -10,6 +10,14 @@ export const partners = pgTable("partners", {
   approved: boolean("approved").notNull().default(false),
   logoUrl: text("logo_url"),
 });
+export const accountAccessRestrictions = pgTable("account_access_restrictions", {
+  entityType: text("entity_type").notNull(),
+  entityId: text("entity_id").notNull(),
+  status: text("status").notNull().default("suspended"),
+  reason: text("reason").notNull(),
+  updatedBy: text("updated_by").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [uniqueIndex("account_access_restrictions_entity").on(t.entityType, t.entityId)]);
 // Provisioned by a trusted operator, never from profile/client metadata.
 export const operators = pgTable("operators", {
   userId: text("user_id").primaryKey(),

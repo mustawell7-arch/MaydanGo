@@ -4721,12 +4721,16 @@ export const GetSuperAdminAccountsResponse = zod.array(GetSuperAdminAccountsResp
 
 export const upsertSuperAdminAccountBodyEmailMax = 320;
 
+export const upsertSuperAdminAccountBodyReasonMin = 5;
+export const upsertSuperAdminAccountBodyReasonMax = 500;
+
 
 
 export const UpsertSuperAdminAccountBody = zod.object({
   "email": zod.email().max(upsertSuperAdminAccountBodyEmailMax),
   "role": zod.enum(['customer_support_admin', 'partner_operations_admin', 'finance_admin', 'content_admin', 'marketing_admin', 'corporate_admin', 'fraud_compliance_admin', 'technical_admin', 'super_admin']),
-  "status": zod.enum(['active', 'suspended'])
+  "status": zod.enum(['active', 'suspended']),
+  "reason": zod.string().min(upsertSuperAdminAccountBodyReasonMin).max(upsertSuperAdminAccountBodyReasonMax).optional()
 })
 
 export const UpsertSuperAdminAccountResponse = zod.object({
@@ -4734,6 +4738,49 @@ export const UpsertSuperAdminAccountResponse = zod.object({
   "email": zod.email().nullable(),
   "role": zod.enum(['customer_support_admin', 'partner_operations_admin', 'finance_admin', 'content_admin', 'marketing_admin', 'corporate_admin', 'fraud_compliance_admin', 'technical_admin', 'super_admin']),
   "status": zod.enum(['active', 'suspended'])
+})
+
+
+export const GetSuperAdminAccountRestrictionsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "entityType": zod.enum(['member', 'partner', 'facility']),
+  "entityId": zod.string(),
+  "targetLabel": zod.string(),
+  "status": zod.enum(['active', 'suspended']),
+  "reason": zod.string(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date()
+})),
+  "targets": zod.array(zod.object({
+  "entityType": zod.enum(['member', 'partner', 'facility']),
+  "entityId": zod.string(),
+  "label": zod.string()
+}))
+})
+
+
+export const updateSuperAdminAccountRestrictionBodyTargetMax = 320;
+
+export const updateSuperAdminAccountRestrictionBodyReasonMin = 5;
+export const updateSuperAdminAccountRestrictionBodyReasonMax = 500;
+
+
+
+export const UpdateSuperAdminAccountRestrictionBody = zod.object({
+  "entityType": zod.enum(['member', 'partner', 'facility']),
+  "target": zod.string().min(1).max(updateSuperAdminAccountRestrictionBodyTargetMax).describe('Verified email for members; target ID for partners and facilities.'),
+  "status": zod.enum(['active', 'suspended']),
+  "reason": zod.string().min(updateSuperAdminAccountRestrictionBodyReasonMin).max(updateSuperAdminAccountRestrictionBodyReasonMax)
+})
+
+export const UpdateSuperAdminAccountRestrictionResponse = zod.object({
+  "entityType": zod.enum(['member', 'partner', 'facility']),
+  "entityId": zod.string(),
+  "targetLabel": zod.string(),
+  "status": zod.enum(['active', 'suspended']),
+  "reason": zod.string(),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.coerce.date()
 })
 
 

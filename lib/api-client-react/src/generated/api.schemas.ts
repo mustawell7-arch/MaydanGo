@@ -4079,6 +4079,11 @@ export interface AdminAccountInput {
   email: string;
   role: AdminRole;
   status: AdminAccountInputStatus;
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason?: string;
 }
 
 export type AdminAccountStatus = typeof AdminAccountStatus[keyof typeof AdminAccountStatus];
@@ -4095,6 +4100,60 @@ export interface AdminAccount {
   email: string | null;
   role: AdminRole;
   status: AdminAccountStatus;
+}
+
+export type AccountRestrictionEntityType = typeof AccountRestrictionEntityType[keyof typeof AccountRestrictionEntityType];
+
+
+export const AccountRestrictionEntityType = {
+  member: 'member',
+  partner: 'partner',
+  facility: 'facility',
+} as const;
+
+export type AccountRestrictionStatus = typeof AccountRestrictionStatus[keyof typeof AccountRestrictionStatus];
+
+
+export const AccountRestrictionStatus = {
+  active: 'active',
+  suspended: 'suspended',
+} as const;
+
+export interface AccountRestrictionTarget {
+  entityType: AccountRestrictionEntityType;
+  entityId: string;
+  label: string;
+}
+
+export interface AccountAccessRestriction {
+  entityType: AccountRestrictionEntityType;
+  entityId: string;
+  targetLabel: string;
+  status: AccountRestrictionStatus;
+  reason: string;
+  updatedBy: string;
+  updatedAt: string;
+}
+
+export interface AccountAccessRestrictionsResponse {
+  items: AccountAccessRestriction[];
+  targets: AccountRestrictionTarget[];
+}
+
+export interface AccountAccessRestrictionUpdateInput {
+  entityType: AccountRestrictionEntityType;
+  /**
+     * Verified email for members; target ID for partners and facilities.
+     * @minLength 1
+     * @maxLength 320
+     */
+  target: string;
+  status: AccountRestrictionStatus;
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  reason: string;
 }
 
 export type AdminAction = typeof AdminAction[keyof typeof AdminAction];

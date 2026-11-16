@@ -6,6 +6,7 @@ import {
   db, facilityProfiles, memberships, operationAudit, operators, partners,
   sponsoredFacilityCampaigns, sponsoredPlacementEvents,
 } from "@workspace/db";
+import { isAccessSuspended, suspendedEntityIds } from "../lib/account-access-restrictions";
 import {
   CreateSponsoredFacilityCampaignBody, CreateSponsoredFacilityCampaignResponse,
   GetPublicSponsoredFacilitiesResponse, GetSponsoredFacilityCampaignsResponse,
@@ -68,6 +69,8 @@ async function approvedFacility(facilityId: string) {
     .innerJoin(partners, eq(partners.id, facilityProfiles.partnerId))
     .where(and(eq(facilityProfiles.id, facilityId), eq(partners.approved, true)))
     .limit(1);
+  if (!facility || await isAccessSuspended("partner", facility.partnerId)
+    || await isAccessSuspended("facility", facility.id)) return null;
   return facility;
 }
 
@@ -270,6 +273,7 @@ router.get("/public/sponsored-facilities", async (req, res): Promise<void> => {
     targetCity: sponsoredFacilityCampaigns.targetCity,
     targetActivity: sponsoredFacilityCampaigns.targetActivity,
     targetMembershipTiers: sponsoredFacilityCampaigns.targetMembershipTiers,
+    partnerId: sponsoredFacilityCampaigns.partnerId,
     city: facilityProfiles.city,
     activities: facilityProfiles.activities,
   }).from(sponsoredFacilityCampaigns)
@@ -282,9 +286,14 @@ router.get("/public/sponsored-facilities", async (req, res): Promise<void> => {
       gte(sponsoredFacilityCampaigns.endsAt, now),
     ))
     .orderBy(asc(sponsoredFacilityCampaigns.startsAt));
+  const [suspendedPartners, suspendedFacilities] = await Promise.all([
+    suspendedEntityIds("partner"),
+    suspendedEntityIds("facility"),
+  ]);
   const tiers = await activeMembershipTiers(getAuth(req).userId, now);
   const normalize = (value: string) => value.trim().toLocaleLowerCase("en");
   const visible = campaigns.filter(campaign => {
+    if (suspendedPartners.has(campaign.partnerId) || suspendedFacilities.has(campaign.facilityId)) return false;
     if (campaign.targetCity && normalize(campaign.targetCity) !== normalize(campaign.city)) return false;
     if (campaign.targetActivity) {
       const match = campaign.activities.some(activity =>
@@ -314,6 +323,8 @@ router.post("/public/sponsored-facilities/:id/events", async (req, res): Promise
   const now = new Date();
   const [campaign] = await db.select({
     id: sponsoredFacilityCampaigns.id,
+    facilityId: sponsoredFacilityCampaigns.facilityId,
+    partnerId: sponsoredFacilityCampaigns.partnerId,
     placementTypes: sponsoredFacilityCampaigns.placementTypes,
     targetMembershipTiers: sponsoredFacilityCampaigns.targetMembershipTiers,
   }).from(sponsoredFacilityCampaigns)
@@ -327,6 +338,11 @@ router.post("/public/sponsored-facilities/:id/events", async (req, res): Promise
     ))
     .limit(1);
   if (!campaign || !campaign.placementTypes.includes(parsed.data.placementType)) {
+    res.status(404).json({ message: "Active sponsored placement not found." });
+    return;
+  }
+  if (await isAccessSuspended("partner", campaign.partnerId)
+    || await isAccessSuspended("facility", campaign.facilityId)) {
     res.status(404).json({ message: "Active sponsored placement not found." });
     return;
   }

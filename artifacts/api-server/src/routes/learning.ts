@@ -16,6 +16,7 @@ import { BookingError, membershipCanAccess } from "../lib/reservations";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 import { courseRecordingContentType, isPrivateCourseRecordingPath } from "../lib/course-recordings";
 import { createCoursePlaybackToken, verifyCoursePlaybackToken } from "../lib/course-playback-token";
+import { isAccessSuspended } from "../lib/account-access-restrictions";
 
 const router = Router();
 export const learningObjectStorage = new ObjectStorageService();
@@ -138,6 +139,9 @@ router.get("/courses/:id", async (req, res): Promise<void> => {
 router.post("/courses/:id/enroll", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) { res.status(401).json({ message: "Sign in to enroll." }); return; }
+  if (await isAccessSuspended("member", userId)) {
+    throw new BookingError(403, "This account is temporarily restricted from course enrollment. Contact MaydanGo support.");
+  }
   if (!await currentDigitalCourseMembership(userId)) {
     throw new BookingError(403, "An eligible membership with digital course access is required to enroll.");
   }
@@ -152,6 +156,9 @@ router.post("/courses/:id/enroll", async (req, res): Promise<void> => {
 router.put("/courses/:id/progress", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) { res.status(401).json({ message: "Sign in to save course progress." }); return; }
+  if (await isAccessSuspended("member", userId)) {
+    throw new BookingError(403, "This account is temporarily restricted from course changes. Contact MaydanGo support.");
+  }
   const parsed = UpdateCourseProgressBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ message: "Choose a valid lesson and completion state." }); return; }
   const courseId = String(req.params.id);
@@ -182,6 +189,9 @@ router.put("/courses/:id/progress", async (req, res): Promise<void> => {
 router.post("/courses/:id/lessons/:lessonId/playback-link", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) { res.status(401).json({ message: "Sign in to play this recording." }); return; }
+  if (await isAccessSuspended("member", userId)) {
+    throw new BookingError(403, "This account is temporarily restricted from course access. Contact MaydanGo support.");
+  }
   const courseId = String(req.params.id);
   const lessonId = String(req.params.lessonId);
   const [course] = await db.select({ id: learningCourses.id }).from(learningCourses).where(and(

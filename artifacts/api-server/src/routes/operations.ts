@@ -35,6 +35,7 @@ import { cancelPaidSubscriptionImmediately, requestFullRefund, validatePaidPlan 
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 import { financeRecordRetentionUntil } from "../lib/finance-record-retention";
 import { isPrivateCourseRecordingPath } from "../lib/course-recordings";
+import { hasAccessRestrictionRecord, isAccessSuspended } from "../lib/account-access-restrictions";
 import { completeGuardianConsentUpload, requestGuardianConsentUpload } from "../lib/guardian-consents";
 import {
   GetPartnerInvoicesResponse, GetPartnerSettlementSummaryResponse, RequestPartnerInvoiceUploadUrlBody,
@@ -59,6 +60,9 @@ router.use(async (req, res, next) => {
     if (!operator.partnerId) { res.status(403).json({ message: "This partner account is not assigned to an approved partner." }); return; }
     const [partner] = await db.select({ approved: partners.approved }).from(partners).where(eq(partners.id, operator.partnerId));
     if (!partner?.approved) { res.status(403).json({ message: "Partner approval is required for portal access." }); return; }
+    if (await isAccessSuspended("partner", operator.partnerId)) {
+      res.status(403).json({ message: "Partner operations are temporarily restricted. Contact MaydanGo support." }); return;
+    }
   }
   res.locals.operator = operator; next();
 });
@@ -247,6 +251,9 @@ router.put("/facilities/:id", async (req, res) => {
     const [existing] = await tx.select().from(facilityProfiles).where(eq(facilityProfiles.id, id)).for("update");
     if (!existing) throw new BookingError(404, "Facility profile not found.");
     own(res, existing.partnerId);
+    if (res.locals.operator.role === "partner" && await isAccessSuspended("facility", id)) {
+      throw new BookingError(403, "This facility is temporarily restricted from changes.");
+    }
     if (existing.city !== data.city || existing.facility !== data.facility) {
       const [linked] = await tx.select({ id: offerings.id }).from(offerings).where(and(
         eq(offerings.partnerId, existing.partnerId),
@@ -274,6 +281,9 @@ router.delete("/facilities/:id", async (req, res) => {
     const [existing] = await tx.select().from(facilityProfiles).where(eq(facilityProfiles.id, id)).for("update");
     if (!existing) throw new BookingError(404, "Facility profile not found.");
     own(res, existing.partnerId);
+    if (await hasAccessRestrictionRecord("facility", id)) {
+      throw new BookingError(409, "Remove this facility’s access history before deleting it.");
+    }
     const [linked] = await tx.select({ id: offerings.id }).from(offerings).where(and(
       eq(offerings.partnerId, existing.partnerId),
       eq(offerings.city, existing.city),
@@ -301,6 +311,9 @@ router.post("/facilities/:id/hours-overrides", async (req, res) => {
       .where(eq(facilityProfiles.id, params.id)).for("update");
     if (!facility) throw new BookingError(404, "Facility profile not found.");
     own(res, facility.partnerId);
+    if (res.locals.operator.role === "partner" && await isAccessSuspended("facility", params.id)) {
+      throw new BookingError(403, "This facility is temporarily restricted from changes.");
+    }
     const [conflict] = await tx.select({ id: facilityHoursOverrides.id })
       .from(facilityHoursOverrides)
       .where(and(
@@ -327,6 +340,9 @@ router.delete("/facilities/:id/hours-overrides/:overrideId", async (req, res) =>
       .where(eq(facilityProfiles.id, params.id)).for("update");
     if (!facility) throw new BookingError(404, "Facility profile not found.");
     own(res, facility.partnerId);
+    if (res.locals.operator.role === "partner" && await isAccessSuspended("facility", params.id)) {
+      throw new BookingError(403, "This facility is temporarily restricted from changes.");
+    }
     const [override] = await tx.select({ id: facilityHoursOverrides.id })
       .from(facilityHoursOverrides)
       .where(and(
@@ -355,6 +371,9 @@ router.post("/offerings", async (req, res) => {
       eq(facilityProfiles.facility, data.facility),
     )).limit(1);
     if (!facility) throw new BookingError(400, "Choose a facility from your approved facility profiles.");
+    if (res.locals.operator.role === "partner" && await isAccessSuspended("facility", facility.id)) {
+      throw new BookingError(403, "This facility is temporarily restricted from new activities.");
+    }
     const id = randomUUID();
     if (data.accessType === "live" && data.active) ensureHttps(data.joinUrl, "Live class join link");
     if (data.joinUrl) ensureHttps(data.joinUrl, "Live class join link");
@@ -400,6 +419,9 @@ router.post("/offerings/recurring", async (req, res) => {
       eq(facilityProfiles.facility, template.facility),
     )).limit(1);
     if (!facility) throw new BookingError(400, "Choose a facility from your approved facility profiles.");
+    if (res.locals.operator.role === "partner" && await isAccessSuspended("facility", facility.id)) {
+      throw new BookingError(403, "This facility is temporarily restricted from new activities.");
+    }
     if (template.accessType === "live" && template.active) ensureHttps(template.joinUrl, "Live class join link");
     if (template.joinUrl) ensureHttps(template.joinUrl, "Live class join link");
 
@@ -486,6 +508,12 @@ async function assertOfferingReadyForReview(tx: Tx, row: OfferingRow) {
     eq(facilityProfiles.facility, row.facility),
   )).limit(1);
   if (!facility) throw new BookingError(409, "This activity must use an approved facility profile.");
+  if (row.partnerId && await isAccessSuspended("partner", row.partnerId)) {
+    throw new BookingError(403, "This partner is temporarily restricted from publishing activities.");
+  }
+  if (await isAccessSuspended("facility", facility.id)) {
+    throw new BookingError(403, "This facility is temporarily restricted from publishing activities.");
+  }
   if (row.accessType === "live") {
     if (!row.localizedTitle || !row.localizedDescription) {
       throw new BookingError(400, "Live classes need English, Arabic and Sorani details.");
@@ -637,6 +665,16 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
     own(res, selected.partnerId);
     if (selected.cancelledAt) throw new BookingError(409, "Cancelled offerings cannot be edited or republished. Create a replacement.");
     if (selected.startsAt <= new Date()) throw new BookingError(409, "Past offerings cannot be edited.");
+    if (res.locals.operator.role === "partner" && selected.partnerId) {
+      const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
+        eq(facilityProfiles.partnerId, selected.partnerId),
+        eq(facilityProfiles.city, selected.city),
+        eq(facilityProfiles.facility, selected.facility),
+      )).limit(1);
+      if (facility && await isAccessSuspended("facility", facility.id)) {
+        throw new BookingError(403, "This facility is temporarily restricted from activity changes.");
+      }
+    }
     if (series && !selected.recurrenceGroupId) {
       throw new BookingError(409, "This session is not part of a recurring series.");
     }

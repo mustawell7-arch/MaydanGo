@@ -4,11 +4,13 @@ import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
 import { eq, inArray } from "drizzle-orm";
 import express from "express";
-import { db, adminRolePermissions, legalPolicyVersions, memberConsentEvents, operationAudit, operators, platformSafetyRules, pool } from "@workspace/db";
+import { db, accountAccessRestrictions, adminRolePermissions, facilityProfiles, legalPolicyVersions, memberConsentEvents, offerings, operationAudit, operators, partners, platformSafetyRules, pool } from "@workspace/db";
 import { createSuperAdminRouter } from "./super-admin";
 import superAdminMemberRouter from "./member";
 import publicPoliciesRouter from "./legal-policies";
 import { DEFAULT_ADMIN_ACTIONS } from "../lib/admin-roles";
+import { filterSuspendedOfferings, isAccessSuspended } from "../lib/account-access-restrictions";
+import { BookingError, assertMemberEligibleForOffering } from "../lib/reservations";
 
 const prefix = `super-admin-${randomUUID()}`;
 const superAdminId = `${prefix}-root`;
@@ -18,6 +20,7 @@ const consentMemberId = `${prefix}-consent-member`;
 const superAdminEmail = `${prefix}@example.com`;
 const targetEmail = `operator-${prefix}@example.com`;
 const partnerEmail = `partner-${prefix}@example.com`;
+const facilityId = `${prefix}-facility`;
 let server: Server | null = null;
 let originalFinancePolicy: typeof adminRolePermissions.$inferSelect | null = null;
 let originalPlatformRules: typeof platformSafetyRules.$inferSelect | null = null;
@@ -93,6 +96,9 @@ after(async () => {
     await db.delete(platformSafetyRules).where(eq(platformSafetyRules.id, "global"));
   }
   await db.delete(operators).where(inArray(operators.userId, [superAdminId, targetId, partnerId]));
+  await db.delete(accountAccessRestrictions).where(inArray(accountAccessRestrictions.entityId, [targetId, partnerId, facilityId]));
+  await db.delete(facilityProfiles).where(eq(facilityProfiles.id, facilityId));
+  await db.delete(partners).where(eq(partners.id, partnerId));
   if (createdPolicyIds.length) {
     await db.delete(legalPolicyVersions).where(inArray(legalPolicyVersions.id, createdPolicyIds));
   }
@@ -191,6 +197,12 @@ test("Super Admin role management is protected, auditable, and preserves other s
   assert.equal(created.suspendedRole, null);
 
   assert.equal((await call("/super-admin/admin-accounts", "PUT", superAdminId, {
+    email: targetEmail,
+    role: "finance_admin",
+    status: "suspended",
+  })).status, 400);
+
+  assert.equal((await call("/super-admin/admin-accounts", "PUT", superAdminId, {
     email: partnerEmail,
     role: "super_admin",
     status: "active",
@@ -200,6 +212,7 @@ test("Super Admin role management is protected, auditable, and preserves other s
     email: targetEmail,
     role: "corporate_admin",
     status: "suspended",
+    reason: "Role access review",
   });
   assert.equal(suspended.status, 200);
   const [suspendedRow] = await db.select().from(operators).where(eq(operators.userId, targetId));
@@ -220,6 +233,7 @@ test("Super Admin role management is protected, auditable, and preserves other s
     email: targetEmail,
     role: "corporate_admin",
     status: "active",
+    reason: "Review completed",
   });
   assert.equal(restored.status, 200);
   const [restoredRow] = await db.select().from(operators).where(eq(operators.userId, targetId));
@@ -239,6 +253,80 @@ test("Super Admin role management is protected, auditable, and preserves other s
   assert.equal(events.filter(event => event.action === "super_admin.admin_account.updated" && event.targetId === targetId).length, 3);
   assert.equal(events.some(event => event.targetId === targetId && event.detail.includes("corporate_admin")), true);
   assert.equal((await call("/super-admin/audit-logs?limit=0", "GET", superAdminId)).status, 400);
+
+  assert.equal((await call("/super-admin/account-restrictions", "GET", partnerId)).status, 403);
+  await db.insert(partners).values({
+    id: partnerId,
+    name: "Restriction test partner",
+    groupId: `${prefix}-group`,
+    ownerUserId: partnerId,
+    approved: true,
+  });
+  await db.insert(facilityProfiles).values({
+    id: facilityId,
+    partnerId,
+    city: "Erbil",
+    facility: "Restriction test facility",
+    localizedName: { en: "Test facility", ar: "مرفق تجريبي", ku: "شوێنی تاقیکردنەوە" },
+    localizedDistrict: { en: "Central", ar: "الوسط", ku: "ناوەند" },
+    localizedAddress: { en: "Test address", ar: "عنوان تجريبي", ku: "ناونیشانی تاقیکردنەوە" },
+    localizedDescription: { en: "Test", ar: "اختبار", ku: "تاقیکردنەوە" },
+    openingHours: [],
+  });
+  const restrictionsBefore = await call("/super-admin/account-restrictions", "GET", superAdminId);
+  assert.equal(restrictionsBefore.status, 200);
+  const targetOptions = (restrictionsBefore.data as { targets: Array<{ entityId: string }> }).targets;
+  assert.equal(targetOptions.some(row => row.entityId === partnerId), true);
+  assert.equal(targetOptions.some(row => row.entityId === facilityId), true);
+  const memberSuspended = await call("/super-admin/account-restrictions", "PUT", superAdminId, {
+    entityType: "member",
+    target: targetEmail,
+    status: "suspended",
+    reason: "Verified abuse report",
+  });
+  assert.equal(memberSuspended.status, 200);
+  assert.equal(await isAccessSuspended("member", targetId), true);
+  await assert.rejects(
+    () => db.transaction(tx => assertMemberEligibleForOffering(tx, targetId, {} as typeof offerings.$inferSelect)),
+    (error: unknown) => error instanceof BookingError && error.status === 403,
+  );
+  const memberRestored = await call("/super-admin/account-restrictions", "PUT", superAdminId, {
+    entityType: "member",
+    target: targetId,
+    status: "active",
+    reason: "Review completed",
+  });
+  assert.equal(memberRestored.status, 200);
+  assert.equal(await isAccessSuspended("member", targetId), false);
+  const partnerSuspended = await call("/super-admin/account-restrictions", "PUT", superAdminId, {
+    entityType: "partner",
+    target: partnerId,
+    status: "suspended",
+    reason: "Compliance review",
+  });
+  assert.equal(partnerSuspended.status, 200);
+  assert.equal(await isAccessSuspended("partner", partnerId), true);
+  const facilitySuspended = await call("/super-admin/account-restrictions", "PUT", superAdminId, {
+    entityType: "facility",
+    target: facilityId,
+    status: "suspended",
+    reason: "Safety inspection",
+  });
+  assert.equal(facilitySuspended.status, 200);
+  assert.equal(await isAccessSuspended("facility", facilityId), true);
+  const filtered = await filterSuspendedOfferings([{
+    partnerId,
+    city: "Erbil",
+    facility: "Restriction test facility",
+    title: "Restricted session",
+  }]);
+  assert.deepEqual(filtered, []);
+  const restrictionAudit = await db.select().from(operationAudit)
+    .where(eq(operationAudit.actorId, superAdminId));
+  assert.equal(restrictionAudit.some(row =>
+    row.action === "super_admin.account_access.suspend"
+    && row.targetId === `facility:${facilityId}`
+    && row.detail.includes("Safety inspection")), true);
 
   const consentId = randomUUID();
   await db.insert(memberConsentEvents).values({

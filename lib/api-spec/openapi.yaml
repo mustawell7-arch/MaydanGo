@@ -458,6 +458,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1finance~1audit"
   /super-admin/admin-accounts:
     $ref: "./operations.yaml#/paths/~1super-admin~1admin-accounts"
+  /super-admin/account-restrictions:
+    $ref: "./operations.yaml#/paths/~1super-admin~1account-restrictions"
   /super-admin/role-permissions:
     $ref: "./operations.yaml#/paths/~1super-admin~1role-permissions"
   /super-admin/platform-rules:

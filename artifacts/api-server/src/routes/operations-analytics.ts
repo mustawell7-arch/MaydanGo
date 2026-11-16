@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { db, operators, partners, pool } from "@workspace/db";
 import { GetOperationsAnalyticsResponse } from "@workspace/api-zod";
 import { hasAdminPermission } from "../lib/admin-roles";
+import { isAccessSuspended } from "../lib/account-access-restrictions";
 
 const router = Router();
 const IRAQ_TIME_ZONE = "Asia/Baghdad";
@@ -106,6 +107,10 @@ router.use(async (req, res, next) => {
       }).from(partners).where(eq(partners.id, operator.partnerId)).limit(1);
       if (!partner?.approved) {
         res.status(403).json({ message: "Partner approval is required to view analytics." });
+        return;
+      }
+      if (await isAccessSuspended("partner", operator.partnerId)) {
+        res.status(403).json({ message: "Partner operations are temporarily restricted. Contact MaydanGo support." });
         return;
       }
       res.locals.analyticsPartner = partner;

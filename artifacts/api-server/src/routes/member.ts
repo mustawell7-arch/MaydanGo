@@ -30,6 +30,7 @@ import learningRouter from "./learning";
 import { memberSupportRouter } from "./support";
 import memberReviewsRouter from "./member-reviews";
 import { sendMemberNotification } from "../lib/notifications";
+import { filterSuspendedOfferings, isAccessSuspended } from "../lib/account-access-restrictions";
 import { PaymentError } from "../lib/payment-config";
 import { cancelMemberSubscription, createMemberCheckout, listMemberPlans, memberSubscription } from "../lib/payments-paytabs";
 import {
@@ -144,7 +145,12 @@ router.get("/plans", async (_req, res) => { res.json(await listMemberPlans()); }
 router.post("/checkout", async (req, res) => {
   const parsed = z.object({ planId: z.string().uuid() }).strict().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ message: "Choose a valid membership plan." }); return; }
-  res.json(await createMemberCheckout(getAuth(req).userId!, parsed.data.planId));
+  const userId = getAuth(req).userId!;
+  if (await isAccessSuspended("member", userId)) {
+    res.status(403).json({ message: "This account is temporarily restricted from starting a membership. Contact MaydanGo support." });
+    return;
+  }
+  res.json(await createMemberCheckout(userId, parsed.data.planId));
 });
 router.get("/subscription", async (req, res) => {
   res.json(await memberSubscription(getAuth(req).userId!));
@@ -172,7 +178,9 @@ router.get("/live-catalog", async (_req, res) => {
     .where(and(eq(waitlistEntries.status, "offered"), gt(waitlistEntries.offerExpiresAt, now)))
     .groupBy(waitlistEntries.offeringId);
   const offeredByClass = new Map(activeOffers.map(row => [row.offeringId, Number(row.count)]));
-  res.json(rows.map(({ offering: o, partnerName, reserved }) => ({
+  const visibleOfferings = await filterSuspendedOfferings(rows.map(({ offering }) => offering));
+  const visibleIds = new Set(visibleOfferings.map(offering => offering.id));
+  res.json(rows.filter(({ offering }) => visibleIds.has(offering.id)).map(({ offering: o, partnerName, reserved }) => ({
     id: o.id, targetId: o.targetId, slot: o.slot, scope: o.scope,
     partnerId: o.partnerId, partnerName, title: o.title,
     localizedTitle: o.localizedTitle, localizedDescription: o.localizedDescription,
@@ -208,6 +216,10 @@ router.get("/catalog", async (_req, res) => {
 });
 router.post("/preview-membership", async (req, res) => {
   if (req.body?.acknowledgeSampleData !== true) { res.status(400).json({ message: "Acknowledge that preview partners and bookings are not live." }); return; }
+  if (await isAccessSuspended("member", getAuth(req).userId!)) {
+    res.status(403).json({ message: "This account is temporarily restricted from starting new access. Contact MaydanGo support." });
+    return;
+  }
   // Explicit opt-in, isolated scope. Never upgrades or modifies a real membership.
   const now = new Date();
   await db.insert(memberships).values({

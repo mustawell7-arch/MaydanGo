@@ -3,6 +3,7 @@ import { getAuth } from "@clerk/express";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { hasAdminPermission } from "../lib/admin-roles";
+import { isAccessSuspended } from "../lib/account-access-restrictions";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 import {
   db, operationAudit, operators, partnerContractVersions, partners,
@@ -100,6 +101,10 @@ export function createPartnerContractsRouter(storage: PartnerContractStorage = n
         .from(partners).where(eq(partners.id, operator.partnerId)).limit(1);
       if (!partner?.approved) {
         res.status(403).json({ message: "Partner approval is required for contract access." });
+        return;
+      }
+      if (await isAccessSuspended("partner", operator.partnerId)) {
+        res.status(403).json({ message: "Partner operations are temporarily restricted. Contact MaydanGo support." });
         return;
       }
     }

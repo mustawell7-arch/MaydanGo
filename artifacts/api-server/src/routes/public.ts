@@ -2,6 +2,7 @@ import { Router } from "express";
 import { and, asc, eq, gt, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { db, membershipPlans, offerings, partners, reservations } from "@workspace/db";
 import facilitiesPublicRouter from "./facilities-public";
+import { filterSuspendedOfferings } from "../lib/account-access-restrictions";
 
 const router = Router();
 router.use(facilitiesPublicRouter);
@@ -30,6 +31,7 @@ router.get("/catalog", async (_req, res) => {
       capacity: offerings.capacity,
       additionalPayment: offerings.additionalPayment,
       partnerName: partners.name,
+      partnerId: offerings.partnerId,
       reserved: sql<number>`count(${reservations.id})::int`,
     })
     .from(offerings)
@@ -54,7 +56,8 @@ router.get("/catalog", async (_req, res) => {
     .groupBy(offerings.id, partners.id)
     .orderBy(asc(offerings.startsAt));
 
-  res.json(rows.map(({ capacity, reserved, ...offering }) => ({
+  const visible = await filterSuspendedOfferings(rows);
+  res.json(visible.map(({ capacity, reserved, partnerId: _partnerId, ...offering }) => ({
     ...offering,
     remaining: Math.max(0, capacity - reserved),
   })));

@@ -2,12 +2,14 @@ import { useState, type FormEvent } from "react";
 import { useAuth } from "@clerk/react";
 import {
   getGetSuperAdminAccountsQueryKey,
+  getGetSuperAdminAccountRestrictionsQueryKey,
   getGetSuperAdminAuditLogsQueryKey,
   getGetSuperAdminGuardianConsentsQueryKey,
   getGetSuperAdminMemberConsentHistoryQueryKey,
   getGetSuperAdminPlatformRulesQueryKey,
   getGetSuperAdminRolePermissionsQueryKey,
   useGetSuperAdminAccounts,
+  useGetSuperAdminAccountRestrictions,
   useGetSuperAdminAuditLogs,
   useGetSuperAdminGuardianConsents,
   useGetSuperAdminMemberConsentHistory,
@@ -15,9 +17,12 @@ import {
   useGetSuperAdminRolePermissions,
   useUpdateSuperAdminPlatformRules,
   useUpsertSuperAdminAccount,
+  useUpdateSuperAdminAccountRestriction,
   useUpdateSuperAdminRolePermissions,
   type AdminAction,
   type AdminAccount,
+  type AccountRestrictionEntityType,
+  type AccountAccessRestriction,
   type AdminRole,
   type AdminRolePermission,
   type PlatformSafetyRulesRecord,
@@ -91,6 +96,12 @@ export default function SuperAdminPage() {
       queryKey: getGetSuperAdminAccountsQueryKey(),
     },
   });
+  const restrictionsQuery = useGetSuperAdminAccountRestrictions({
+    query: {
+      enabled: isLoaded && !!isSignedIn,
+      queryKey: getGetSuperAdminAccountRestrictionsQueryKey(),
+    },
+  });
   const rolePermissionsQuery = useGetSuperAdminRolePermissions({
     query: {
       enabled: isLoaded && !!isSignedIn,
@@ -130,6 +141,7 @@ export default function SuperAdminPage() {
     },
   });
   const saveAccount = useUpsertSuperAdminAccount();
+  const saveRestriction = useUpdateSuperAdminAccountRestriction();
   const saveRolePermissions = useUpdateSuperAdminRolePermissions();
   const savePlatformRules = useUpdateSuperAdminPlatformRules();
   const [email, setEmail] = useState("");
@@ -138,6 +150,12 @@ export default function SuperAdminPage() {
   const [permissionChoices, setPermissionChoices] = useState<Record<string, AdminAction[]>>({});
   const [platformRuleDraft, setPlatformRuleDraft] = useState<PlatformRules | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [restrictionType, setRestrictionType] = useState<AccountRestrictionEntityType>("member");
+  const [restrictionTarget, setRestrictionTarget] = useState("");
+  const [restrictionStatus, setRestrictionStatus] = useState<"active" | "suspended">("suspended");
+  const [restrictionReason, setRestrictionReason] = useState("");
+  const [adminReason, setAdminReason] = useState("");
+  const [restrictionFeedback, setRestrictionFeedback] = useState("");
   const [permissionFeedback, setPermissionFeedback] = useState("");
   const [platformRulesFeedback, setPlatformRulesFeedback] = useState("");
   const [guardianDownloadId, setGuardianDownloadId] = useState<string | null>(null);
@@ -147,21 +165,23 @@ export default function SuperAdminPage() {
   const refresh = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: getGetSuperAdminAccountsQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: getGetSuperAdminAccountRestrictionsQueryKey() }),
       queryClient.invalidateQueries({ queryKey: getGetSuperAdminAuditLogsQueryKey(auditParams) }),
       queryClient.invalidateQueries({ queryKey: getGetSuperAdminRolePermissionsQueryKey() }),
       queryClient.invalidateQueries({ queryKey: getGetSuperAdminPlatformRulesQueryKey() }),
     ]);
   };
 
-  const submitAccount = (account: Pick<AdminAccount, "email" | "role">, status: "active" | "suspended", key: string, afterSave?: () => void) => {
+  const submitAccount = (account: Pick<AdminAccount, "email" | "role">, status: "active" | "suspended", key: string, afterSave?: () => void, reason?: string) => {
     if (!account.email) return;
     setBusyId(key);
     setFeedback("");
     saveAccount.mutate(
-      { data: { email: account.email, role: account.role, status } },
+      { data: { email: account.email, role: account.role, status, ...(reason ? { reason } : {}) } },
       {
         onSuccess: async () => {
           setFeedback("Administrator access was updated and recorded in the audit log.");
+          if (reason) setAdminReason("");
           setAuditPage(0);
           setRoleChoices(previous => {
             const next = { ...previous };
@@ -183,6 +203,43 @@ export default function SuperAdminPage() {
   const addAccount = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     submitAccount({ email: email.trim(), role: newRole }, "active", "new-account", () => setEmail(""));
+  };
+
+  const submitRestriction = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!restrictionTarget.trim() || restrictionReason.trim().length < 5) return;
+    setBusyId("account-restriction");
+    setRestrictionFeedback("");
+    saveRestriction.mutate(
+      { data: {
+        entityType: restrictionType,
+        target: restrictionTarget.trim(),
+        status: restrictionStatus,
+        reason: restrictionReason.trim(),
+      } },
+      {
+        onSuccess: async () => {
+          setRestrictionFeedback(`${restrictionType === "member" ? "Member account" : restrictionType === "partner" ? "Partner" : "Facility"} access was ${restrictionStatus === "suspended" ? "suspended" : "restored"}. Existing records were preserved.`);
+          setRestrictionReason("");
+          setRestrictionTarget("");
+          setAuditPage(0);
+          await refresh();
+          setBusyId("");
+        },
+        onError: () => {
+          setRestrictionFeedback("The access change was not saved. Confirm the target and try again.");
+          setBusyId("");
+        },
+      },
+    );
+  };
+
+  const prepareRestrictionChange = (restriction: AccountAccessRestriction) => {
+    setRestrictionType(restriction.entityType);
+    setRestrictionTarget(restriction.entityType === "member" ? restriction.entityId : restriction.entityId);
+    setRestrictionStatus(restriction.status === "suspended" ? "active" : "suspended");
+    setRestrictionReason("");
+    setRestrictionFeedback("");
   };
 
   const updatePermissions = (policy: AdminRolePermission, actions: AdminAction[] | null) => {
@@ -383,7 +440,7 @@ export default function SuperAdminPage() {
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,.8fr)]">
           <section className="rounded-3xl border border-[#e1dccf] bg-[#fffdf7] p-5 sm:p-6" aria-labelledby="admin-accounts-title">
-            <div className="mb-5"><h2 id="admin-accounts-title" className="font-display text-xl font-bold">Administrator accounts</h2><p className="mt-1 text-sm leading-5 text-[#60756b]">Assign roles only to existing accounts with a verified email. Suspending an account removes its MaydanGo staff permissions without deleting its member account.</p></div>
+            <div className="mb-5"><h2 id="admin-accounts-title" className="font-display text-xl font-bold">Administrator accounts</h2><p className="mt-1 text-sm leading-5 text-[#60756b]">Assign roles only to existing accounts with a verified email. Suspension preserves the account and sign-in, removes staff permissions, and requires a reason that is recorded in the audit history.</p></div>
 
             <form onSubmit={addAccount} className="mb-6 grid gap-3 rounded-2xl border border-[#e5dfd1] bg-[#faf8f1] p-4 sm:grid-cols-[minmax(0,1fr)_minmax(180px,.8fr)_auto] sm:items-end" data-testid="form-add-admin-account">
               <label className="text-xs font-semibold">Verified account email
@@ -399,6 +456,10 @@ export default function SuperAdminPage() {
 
             {feedback && <p className="mb-4 rounded-xl border border-[#c8d9ca] bg-[#edf5ec] px-4 py-3 text-sm text-[#315e42]" role="status" data-testid="status-admin-account-feedback">{feedback}</p>}
 
+            <label className="mb-4 block max-w-xl text-xs font-semibold">Reason for suspension or restoration
+              <textarea value={adminReason} onChange={event => setAdminReason(event.target.value)} minLength={5} maxLength={500} className="mt-1.5 min-h-16 w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm" placeholder="Enter the reason before suspending or restoring access." data-testid="input-admin-access-reason" />
+            </label>
+
             <div className="overflow-x-auto">
               <table className="w-full min-w-[680px] text-left text-sm">
                 <thead><tr className="border-b border-[#e7e2d6] text-[10px] uppercase tracking-[.1em] text-[#78857c]"><th className="px-2 py-3">Account</th><th className="px-2 py-3">Role</th><th className="px-2 py-3">Status</th><th className="px-2 py-3">Actions</th></tr></thead>
@@ -413,14 +474,70 @@ export default function SuperAdminPage() {
                       <td className="px-2 py-4"><div className="flex flex-wrap gap-2">
                         <button disabled={!account.email || !!busyId || isSelf && selectedRole !== account.role} onClick={() => submitAccount({ email: account.email, role: selectedRole }, account.status, account.userId)} className="rounded-lg border border-[#d8d2c4] px-3 py-2 text-[11px] font-bold text-[#36564b] disabled:cursor-not-allowed disabled:opacity-40" data-testid={`button-save-admin-${account.userId}`}>{busyId === account.userId ? "Saving…" : "Save role"}</button>
                         {account.status === "active"
-                          ? <button disabled={!account.email || !!busyId || isSelf} onClick={() => submitAccount({ email: account.email, role: selectedRole }, "suspended", account.userId)} className="rounded-lg border border-[#d9a89a] px-3 py-2 text-[11px] font-bold text-[#9a4435] disabled:cursor-not-allowed disabled:opacity-40" data-testid={`button-suspend-admin-${account.userId}`}>Suspend</button>
-                          : <button disabled={!account.email || !!busyId} onClick={() => submitAccount({ email: account.email, role: selectedRole }, "active", account.userId)} className="rounded-lg bg-[#174d43] px-3 py-2 text-[11px] font-bold text-[#fff9e9] disabled:cursor-not-allowed disabled:opacity-40" data-testid={`button-restore-admin-${account.userId}`}>Restore</button>}
+                          ? <button disabled={!account.email || !!busyId || isSelf || adminReason.trim().length < 5} onClick={() => submitAccount({ email: account.email, role: selectedRole }, "suspended", account.userId, undefined, adminReason.trim())} className="rounded-lg border border-[#d9a89a] px-3 py-2 text-[11px] font-bold text-[#9a4435] disabled:cursor-not-allowed disabled:opacity-40" data-testid={`button-suspend-admin-${account.userId}`}>Suspend</button>
+                          : <button disabled={!account.email || !!busyId || adminReason.trim().length < 5} onClick={() => submitAccount({ email: account.email, role: selectedRole }, "active", account.userId, undefined, adminReason.trim())} className="rounded-lg bg-[#174d43] px-3 py-2 text-[11px] font-bold text-[#fff9e9] disabled:cursor-not-allowed disabled:opacity-40" data-testid={`button-restore-admin-${account.userId}`}>Restore</button>}
                       </div></td>
                     </tr>;
                   })}
                   {!accounts.length && <tr><td colSpan={4} className="px-2 py-8 text-center text-sm text-[#748279]" data-testid="text-no-admin-accounts">No administrator accounts are assigned yet.</td></tr>}
                 </tbody>
               </table>
+            </div>
+          </section>
+
+          <section className="mb-8 rounded-3xl border border-[#e1dccf] bg-[#fffdf7] p-5 sm:p-6" aria-labelledby="account-restrictions-title" data-testid="section-account-restrictions">
+            <div className="mb-5">
+              <h2 id="account-restrictions-title" className="font-display text-xl font-bold">Customer, partner and facility access</h2>
+              <p className="mt-1 max-w-3xl text-sm leading-5 text-[#60756b]">Suspension does not block sign-in or delete records. It prevents new member bookings and course access and removes partner operations access. Check-ins at suspended partners or facilities remain paused; existing bookings are kept and are not automatically cancelled. Members and partners can still contact support. Add a clear reason for every suspension or restoration.</p>
+            </div>
+            <form onSubmit={submitRestriction} className="grid gap-3 rounded-2xl border border-[#e5dfd1] bg-[#faf8f1] p-4 md:grid-cols-2" data-testid="form-account-restriction">
+              <label className="text-xs font-semibold">Account type
+                <select value={restrictionType} onChange={event => { setRestrictionType(event.target.value as AccountRestrictionEntityType); setRestrictionTarget(""); }} className="mt-1.5 w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm" data-testid="select-restriction-entity-type">
+                  <option value="member">Member account</option><option value="partner">Partner</option><option value="facility">Facility</option>
+                </select>
+              </label>
+              {restrictionType === "member"
+                ? <label className="text-xs font-semibold">Verified email to suspend; account ID to restore
+                    <input required maxLength={320} value={restrictionTarget} onChange={event => setRestrictionTarget(event.target.value)} className="mt-1.5 w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm" placeholder="member@example.com" data-testid="input-restriction-member-target" />
+                  </label>
+                : <label className="text-xs font-semibold">Choose a {restrictionType}
+                    <select required value={restrictionTarget} onChange={event => setRestrictionTarget(event.target.value)} className="mt-1.5 w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm" data-testid="select-restriction-target">
+                      <option value="">Select…</option>
+                      {(restrictionsQuery.data?.targets ?? []).filter(target => target.entityType === restrictionType).map(target => <option key={target.entityId} value={target.entityId}>{target.label}</option>)}
+                    </select>
+                  </label>}
+              <label className="text-xs font-semibold">Access status
+                <select value={restrictionStatus} onChange={event => setRestrictionStatus(event.target.value as "active" | "suspended")} className="mt-1.5 w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm" data-testid="select-restriction-status">
+                  <option value="suspended">Suspend access</option><option value="active">Restore access</option>
+                </select>
+              </label>
+              <label className="text-xs font-semibold">Reason
+                <textarea required minLength={5} maxLength={500} value={restrictionReason} onChange={event => setRestrictionReason(event.target.value)} className="mt-1.5 min-h-20 w-full rounded-xl border border-[#d8d2c4] bg-white px-3 py-2.5 text-sm" placeholder="Enter the reason for this access change." data-testid="input-restriction-reason" />
+              </label>
+              <div className="md:col-span-2 flex flex-wrap items-center gap-3">
+                <button type="submit" disabled={!!busyId || !restrictionTarget.trim() || restrictionReason.trim().length < 5} className="rounded-xl bg-[#174d43] px-4 py-2.5 text-sm font-bold text-[#fff9e9] disabled:opacity-50" data-testid="button-save-account-restriction">{busyId === "account-restriction" ? "Saving…" : restrictionStatus === "suspended" ? "Suspend access" : "Restore access"}</button>
+                {restrictionFeedback && <p className="text-sm text-[#536b61]" role="status" data-testid="status-account-restriction-feedback">{restrictionFeedback}</p>}
+              </div>
+            </form>
+            <div className="mt-5 overflow-x-auto">
+              {restrictionsQuery.isLoading
+                ? <p className="py-5 text-center text-sm text-[#748279]" role="status">Loading access records…</p>
+                : restrictionsQuery.isError
+                  ? <p className="rounded-xl border border-[#e8c5ba] bg-[#fff5f1] p-4 text-sm text-[#9a4435]" role="alert">Access records could not be loaded.</p>
+                  : <table className="w-full min-w-[680px] text-left text-sm">
+                    <thead><tr className="border-b border-[#e7e2d6] text-[10px] uppercase tracking-[.1em] text-[#78857c]"><th className="px-2 py-3">Target</th><th className="px-2 py-3">Type</th><th className="px-2 py-3">Status</th><th className="px-2 py-3">Reason</th><th className="px-2 py-3">Updated</th><th className="px-2 py-3">Action</th></tr></thead>
+                    <tbody>
+                      {(restrictionsQuery.data?.items ?? []).map(restriction => <tr key={`${restriction.entityType}:${restriction.entityId}`} className="border-b border-[#eee9de] align-top" data-testid={`row-account-restriction-${restriction.entityType}-${restriction.entityId}`}>
+                        <td className="px-2 py-3"><p className="font-semibold">{restriction.targetLabel}</p><p className="mt-1 break-all font-mono text-[10px] text-[#839087]">{restriction.entityId}</p></td>
+                        <td className="px-2 py-3 capitalize">{restriction.entityType}</td>
+                        <td className="px-2 py-3"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${restriction.status === "active" ? "bg-[#e4f0e6] text-[#315e42]" : "bg-[#f6e7e2] text-[#9a4435]"}`}>{restriction.status === "active" ? "Active" : "Suspended"}</span></td>
+                        <td className="max-w-[260px] whitespace-normal px-2 py-3 text-xs text-[#536b61]">{restriction.reason}</td>
+                        <td className="px-2 py-3 text-xs text-[#748279]">{new Date(restriction.updatedAt).toLocaleString()}</td>
+                        <td className="px-2 py-3"><button type="button" onClick={() => prepareRestrictionChange(restriction)} className="rounded-lg border border-[#d8d2c4] px-3 py-2 text-[11px] font-bold text-[#36564b]" data-testid={`button-change-restriction-${restriction.entityType}-${restriction.entityId}`}>{restriction.status === "suspended" ? "Prepare restore" : "Prepare suspension"}</button></td>
+                      </tr>)}
+                      {!restrictionsQuery.data?.items.length && <tr><td colSpan={6} className="px-2 py-8 text-center text-sm text-[#748279]">No member, partner or facility access changes have been recorded.</td></tr>}
+                    </tbody>
+                  </table>}
             </div>
           </section>
 
