@@ -506,6 +506,24 @@ export interface PublicPlan {
   access: PublicPlanAccess;
 }
 
+export type CourseLanguage = typeof CourseLanguage[keyof typeof CourseLanguage];
+
+
+export const CourseLanguage = {
+  en: 'en',
+  ar: 'ar',
+  ku: 'ku',
+} as const;
+
+export interface LocalizedCourseDetail {
+  /** @maxLength 2000 */
+  en: string;
+  /** @maxLength 2000 */
+  ar: string;
+  /** @maxLength 2000 */
+  ku: string;
+}
+
 export type PublicCourseLocalizedTitle = {
   en: string;
   ar: string;
@@ -533,6 +551,22 @@ export interface PublicCourse {
   level: string;
   /** @minimum 1 */
   durationMinutes: number;
+  /** @minimum 0 */
+  lessonCount: number;
+  /**
+     * @minItems 1
+     * @maxItems 3
+     * @nullable
+     */
+  courseLanguages: CourseLanguage[] | null;
+  /**
+     * @maxItems 3
+     * @nullable
+     */
+  subtitleLanguages: CourseLanguage[] | null;
+  requiredEquipment: LocalizedCourseDetail | null;
+  disclaimers: LocalizedCourseDetail | null;
+  supportingMaterials: LocalizedCourseDetail | null;
 }
 
 export interface CheckinPolicy {
@@ -2165,6 +2199,33 @@ export interface OfferingUpdate {
   cancellationDeadline?: string;
 }
 
+export interface LocalizedCourseDetail47d80cf {
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  en: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  ar: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  ku: string;
+}
+
+export type CourseLanguage47d80cf = typeof CourseLanguage47d80cf[keyof typeof CourseLanguage47d80cf];
+
+
+export const CourseLanguage47d80cf = {
+  en: 'en',
+  ar: 'ar',
+  ku: 'ku',
+} as const;
+
 export type CourseMetadataInputLevel = typeof CourseMetadataInputLevel[keyof typeof CourseMetadataInputLevel];
 
 
@@ -2193,6 +2254,20 @@ export interface CourseMetadataInput {
   /** @nullable */
   thumbnailUrl: string | null;
   published: boolean;
+  /**
+     * @minItems 1
+     * @maxItems 3
+     * @nullable
+     */
+  courseLanguages?: CourseLanguage47d80cf[] | null;
+  /**
+     * @maxItems 3
+     * @nullable
+     */
+  subtitleLanguages?: CourseLanguage47d80cf[] | null;
+  requiredEquipment?: LocalizedCourseDetail47d80cf | null;
+  disclaimers?: LocalizedCourseDetail47d80cf | null;
+  supportingMaterials?: LocalizedCourseDetail47d80cf | null;
 }
 
 export interface LessonInput {

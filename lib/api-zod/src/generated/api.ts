@@ -1096,6 +1096,30 @@ export const GetPublicPlansResponse = zod.array(GetPublicPlansResponseItem)
 
 
 
+export const getPublicCoursesResponseLessonCountMin = 0;
+
+export const getPublicCoursesResponseCourseLanguagesMax = 3;
+
+export const getPublicCoursesResponseSubtitleLanguagesMax = 3;
+
+export const getPublicCoursesResponseRequiredEquipmentOneEnMax = 2000;
+
+export const getPublicCoursesResponseRequiredEquipmentOneArMax = 2000;
+
+export const getPublicCoursesResponseRequiredEquipmentOneKuMax = 2000;
+
+export const getPublicCoursesResponseDisclaimersOneEnMax = 2000;
+
+export const getPublicCoursesResponseDisclaimersOneArMax = 2000;
+
+export const getPublicCoursesResponseDisclaimersOneKuMax = 2000;
+
+export const getPublicCoursesResponseSupportingMaterialsOneEnMax = 2000;
+
+export const getPublicCoursesResponseSupportingMaterialsOneArMax = 2000;
+
+export const getPublicCoursesResponseSupportingMaterialsOneKuMax = 2000;
+
 
 
 export const GetPublicCoursesResponseItem = zod.object({
@@ -1117,7 +1141,25 @@ export const GetPublicCoursesResponseItem = zod.object({
 }),
   "category": zod.string(),
   "level": zod.string(),
-  "durationMinutes": zod.int().min(1)
+  "durationMinutes": zod.int().min(1),
+  "lessonCount": zod.int().min(getPublicCoursesResponseLessonCountMin),
+  "courseLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).min(1).max(getPublicCoursesResponseCourseLanguagesMax).nullable(),
+  "subtitleLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).max(getPublicCoursesResponseSubtitleLanguagesMax).nullable(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().max(getPublicCoursesResponseRequiredEquipmentOneEnMax),
+  "ar": zod.string().max(getPublicCoursesResponseRequiredEquipmentOneArMax),
+  "ku": zod.string().max(getPublicCoursesResponseRequiredEquipmentOneKuMax)
+}),zod.null()]),
+  "disclaimers": zod.union([zod.object({
+  "en": zod.string().max(getPublicCoursesResponseDisclaimersOneEnMax),
+  "ar": zod.string().max(getPublicCoursesResponseDisclaimersOneArMax),
+  "ku": zod.string().max(getPublicCoursesResponseDisclaimersOneKuMax)
+}),zod.null()]),
+  "supportingMaterials": zod.union([zod.object({
+  "en": zod.string().max(getPublicCoursesResponseSupportingMaterialsOneEnMax),
+  "ar": zod.string().max(getPublicCoursesResponseSupportingMaterialsOneArMax),
+  "ku": zod.string().max(getPublicCoursesResponseSupportingMaterialsOneKuMax)
+}),zod.null()])
 })
 export const GetPublicCoursesResponse = zod.array(GetPublicCoursesResponseItem)
 
@@ -3084,6 +3126,28 @@ export const getOperationCoursesResponseCoursesItemOneCategoryMax = 120;
 
 export const getOperationCoursesResponseCoursesItemOneDurationMinutesMax = 10000;
 
+export const getOperationCoursesResponseCoursesItemOneCourseLanguagesMax = 3;
+
+export const getOperationCoursesResponseCoursesItemOneSubtitleLanguagesMax = 3;
+
+export const getOperationCoursesResponseCoursesItemOneRequiredEquipmentOneEnMax = 2000;
+
+export const getOperationCoursesResponseCoursesItemOneRequiredEquipmentOneArMax = 2000;
+
+export const getOperationCoursesResponseCoursesItemOneRequiredEquipmentOneKuMax = 2000;
+
+export const getOperationCoursesResponseCoursesItemOneDisclaimersOneEnMax = 2000;
+
+export const getOperationCoursesResponseCoursesItemOneDisclaimersOneArMax = 2000;
+
+export const getOperationCoursesResponseCoursesItemOneDisclaimersOneKuMax = 2000;
+
+export const getOperationCoursesResponseCoursesItemOneSupportingMaterialsOneEnMax = 2000;
+
+export const getOperationCoursesResponseCoursesItemOneSupportingMaterialsOneArMax = 2000;
+
+export const getOperationCoursesResponseCoursesItemOneSupportingMaterialsOneKuMax = 2000;
+
 
 
 export const GetOperationCoursesResponse = zod.object({
@@ -3107,7 +3171,24 @@ export const GetOperationCoursesResponse = zod.object({
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
   "durationMinutes": zod.int().min(1).max(getOperationCoursesResponseCoursesItemOneDurationMinutesMax),
   "thumbnailUrl": zod.url().nullable(),
-  "published": zod.boolean()
+  "published": zod.boolean(),
+  "courseLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).min(1).max(getOperationCoursesResponseCoursesItemOneCourseLanguagesMax).nullish(),
+  "subtitleLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).max(getOperationCoursesResponseCoursesItemOneSubtitleLanguagesMax).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneRequiredEquipmentOneKuMax)
+}),zod.null()]).optional(),
+  "disclaimers": zod.union([zod.object({
+  "en": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneDisclaimersOneEnMax),
+  "ar": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneDisclaimersOneArMax),
+  "ku": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneDisclaimersOneKuMax)
+}),zod.null()]).optional(),
+  "supportingMaterials": zod.union([zod.object({
+  "en": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneSupportingMaterialsOneEnMax),
+  "ar": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneSupportingMaterialsOneArMax),
+  "ku": zod.string().min(1).max(getOperationCoursesResponseCoursesItemOneSupportingMaterialsOneKuMax)
+}),zod.null()]).optional()
 }).and(zod.object({
   "id": zod.string(),
   "title": zod.string(),
@@ -3139,6 +3220,28 @@ export const createLearningCourseBodyOneLocalizedInstructorKuMax = 240;
 export const createLearningCourseBodyOneCategoryMax = 120;
 
 export const createLearningCourseBodyOneDurationMinutesMax = 10000;
+
+export const createLearningCourseBodyOneCourseLanguagesMax = 3;
+
+export const createLearningCourseBodyOneSubtitleLanguagesMax = 3;
+
+export const createLearningCourseBodyOneRequiredEquipmentOneEnMax = 2000;
+
+export const createLearningCourseBodyOneRequiredEquipmentOneArMax = 2000;
+
+export const createLearningCourseBodyOneRequiredEquipmentOneKuMax = 2000;
+
+export const createLearningCourseBodyOneDisclaimersOneEnMax = 2000;
+
+export const createLearningCourseBodyOneDisclaimersOneArMax = 2000;
+
+export const createLearningCourseBodyOneDisclaimersOneKuMax = 2000;
+
+export const createLearningCourseBodyOneSupportingMaterialsOneEnMax = 2000;
+
+export const createLearningCourseBodyOneSupportingMaterialsOneArMax = 2000;
+
+export const createLearningCourseBodyOneSupportingMaterialsOneKuMax = 2000;
 
 
 export const createLearningCourseBodyTwoLessonsItemLocalizedTitleEnMax = 240;
@@ -3179,7 +3282,24 @@ export const CreateLearningCourseBody = zod.object({
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
   "durationMinutes": zod.int().min(1).max(createLearningCourseBodyOneDurationMinutesMax),
   "thumbnailUrl": zod.url().nullable(),
-  "published": zod.boolean()
+  "published": zod.boolean(),
+  "courseLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).min(1).max(createLearningCourseBodyOneCourseLanguagesMax).nullish(),
+  "subtitleLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).max(createLearningCourseBodyOneSubtitleLanguagesMax).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(createLearningCourseBodyOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(createLearningCourseBodyOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(createLearningCourseBodyOneRequiredEquipmentOneKuMax)
+}),zod.null()]).optional(),
+  "disclaimers": zod.union([zod.object({
+  "en": zod.string().min(1).max(createLearningCourseBodyOneDisclaimersOneEnMax),
+  "ar": zod.string().min(1).max(createLearningCourseBodyOneDisclaimersOneArMax),
+  "ku": zod.string().min(1).max(createLearningCourseBodyOneDisclaimersOneKuMax)
+}),zod.null()]).optional(),
+  "supportingMaterials": zod.union([zod.object({
+  "en": zod.string().min(1).max(createLearningCourseBodyOneSupportingMaterialsOneEnMax),
+  "ar": zod.string().min(1).max(createLearningCourseBodyOneSupportingMaterialsOneArMax),
+  "ku": zod.string().min(1).max(createLearningCourseBodyOneSupportingMaterialsOneKuMax)
+}),zod.null()]).optional()
 }).and(zod.object({
   "lessons": zod.array(zod.object({
   "position": zod.int().min(1),
@@ -3220,6 +3340,28 @@ export const createLearningCourseResponseOneCategoryMax = 120;
 
 export const createLearningCourseResponseOneDurationMinutesMax = 10000;
 
+export const createLearningCourseResponseOneCourseLanguagesMax = 3;
+
+export const createLearningCourseResponseOneSubtitleLanguagesMax = 3;
+
+export const createLearningCourseResponseOneRequiredEquipmentOneEnMax = 2000;
+
+export const createLearningCourseResponseOneRequiredEquipmentOneArMax = 2000;
+
+export const createLearningCourseResponseOneRequiredEquipmentOneKuMax = 2000;
+
+export const createLearningCourseResponseOneDisclaimersOneEnMax = 2000;
+
+export const createLearningCourseResponseOneDisclaimersOneArMax = 2000;
+
+export const createLearningCourseResponseOneDisclaimersOneKuMax = 2000;
+
+export const createLearningCourseResponseOneSupportingMaterialsOneEnMax = 2000;
+
+export const createLearningCourseResponseOneSupportingMaterialsOneArMax = 2000;
+
+export const createLearningCourseResponseOneSupportingMaterialsOneKuMax = 2000;
+
 
 
 export const CreateLearningCourseResponse = zod.object({
@@ -3242,7 +3384,24 @@ export const CreateLearningCourseResponse = zod.object({
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
   "durationMinutes": zod.int().min(1).max(createLearningCourseResponseOneDurationMinutesMax),
   "thumbnailUrl": zod.url().nullable(),
-  "published": zod.boolean()
+  "published": zod.boolean(),
+  "courseLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).min(1).max(createLearningCourseResponseOneCourseLanguagesMax).nullish(),
+  "subtitleLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).max(createLearningCourseResponseOneSubtitleLanguagesMax).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(createLearningCourseResponseOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(createLearningCourseResponseOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(createLearningCourseResponseOneRequiredEquipmentOneKuMax)
+}),zod.null()]).optional(),
+  "disclaimers": zod.union([zod.object({
+  "en": zod.string().min(1).max(createLearningCourseResponseOneDisclaimersOneEnMax),
+  "ar": zod.string().min(1).max(createLearningCourseResponseOneDisclaimersOneArMax),
+  "ku": zod.string().min(1).max(createLearningCourseResponseOneDisclaimersOneKuMax)
+}),zod.null()]).optional(),
+  "supportingMaterials": zod.union([zod.object({
+  "en": zod.string().min(1).max(createLearningCourseResponseOneSupportingMaterialsOneEnMax),
+  "ar": zod.string().min(1).max(createLearningCourseResponseOneSupportingMaterialsOneArMax),
+  "ku": zod.string().min(1).max(createLearningCourseResponseOneSupportingMaterialsOneKuMax)
+}),zod.null()]).optional()
 }).and(zod.object({
   "id": zod.string(),
   "title": zod.string(),
@@ -3278,6 +3437,28 @@ export const updateLearningCourseBodyCategoryMax = 120;
 
 export const updateLearningCourseBodyDurationMinutesMax = 10000;
 
+export const updateLearningCourseBodyCourseLanguagesMax = 3;
+
+export const updateLearningCourseBodySubtitleLanguagesMax = 3;
+
+export const updateLearningCourseBodyRequiredEquipmentOneEnMax = 2000;
+
+export const updateLearningCourseBodyRequiredEquipmentOneArMax = 2000;
+
+export const updateLearningCourseBodyRequiredEquipmentOneKuMax = 2000;
+
+export const updateLearningCourseBodyDisclaimersOneEnMax = 2000;
+
+export const updateLearningCourseBodyDisclaimersOneArMax = 2000;
+
+export const updateLearningCourseBodyDisclaimersOneKuMax = 2000;
+
+export const updateLearningCourseBodySupportingMaterialsOneEnMax = 2000;
+
+export const updateLearningCourseBodySupportingMaterialsOneArMax = 2000;
+
+export const updateLearningCourseBodySupportingMaterialsOneKuMax = 2000;
+
 
 
 export const UpdateLearningCourseBody = zod.object({
@@ -3300,7 +3481,24 @@ export const UpdateLearningCourseBody = zod.object({
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
   "durationMinutes": zod.int().min(1).max(updateLearningCourseBodyDurationMinutesMax),
   "thumbnailUrl": zod.url().nullable(),
-  "published": zod.boolean()
+  "published": zod.boolean(),
+  "courseLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).min(1).max(updateLearningCourseBodyCourseLanguagesMax).nullish(),
+  "subtitleLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).max(updateLearningCourseBodySubtitleLanguagesMax).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(updateLearningCourseBodyRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(updateLearningCourseBodyRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(updateLearningCourseBodyRequiredEquipmentOneKuMax)
+}),zod.null()]).optional(),
+  "disclaimers": zod.union([zod.object({
+  "en": zod.string().min(1).max(updateLearningCourseBodyDisclaimersOneEnMax),
+  "ar": zod.string().min(1).max(updateLearningCourseBodyDisclaimersOneArMax),
+  "ku": zod.string().min(1).max(updateLearningCourseBodyDisclaimersOneKuMax)
+}),zod.null()]).optional(),
+  "supportingMaterials": zod.union([zod.object({
+  "en": zod.string().min(1).max(updateLearningCourseBodySupportingMaterialsOneEnMax),
+  "ar": zod.string().min(1).max(updateLearningCourseBodySupportingMaterialsOneArMax),
+  "ku": zod.string().min(1).max(updateLearningCourseBodySupportingMaterialsOneKuMax)
+}),zod.null()]).optional()
 })
 
 export const updateLearningCourseResponseOneLocalizedTitleEnMax = 240;
@@ -3325,6 +3523,28 @@ export const updateLearningCourseResponseOneCategoryMax = 120;
 
 export const updateLearningCourseResponseOneDurationMinutesMax = 10000;
 
+export const updateLearningCourseResponseOneCourseLanguagesMax = 3;
+
+export const updateLearningCourseResponseOneSubtitleLanguagesMax = 3;
+
+export const updateLearningCourseResponseOneRequiredEquipmentOneEnMax = 2000;
+
+export const updateLearningCourseResponseOneRequiredEquipmentOneArMax = 2000;
+
+export const updateLearningCourseResponseOneRequiredEquipmentOneKuMax = 2000;
+
+export const updateLearningCourseResponseOneDisclaimersOneEnMax = 2000;
+
+export const updateLearningCourseResponseOneDisclaimersOneArMax = 2000;
+
+export const updateLearningCourseResponseOneDisclaimersOneKuMax = 2000;
+
+export const updateLearningCourseResponseOneSupportingMaterialsOneEnMax = 2000;
+
+export const updateLearningCourseResponseOneSupportingMaterialsOneArMax = 2000;
+
+export const updateLearningCourseResponseOneSupportingMaterialsOneKuMax = 2000;
+
 
 
 export const UpdateLearningCourseResponse = zod.object({
@@ -3347,7 +3567,24 @@ export const UpdateLearningCourseResponse = zod.object({
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
   "durationMinutes": zod.int().min(1).max(updateLearningCourseResponseOneDurationMinutesMax),
   "thumbnailUrl": zod.url().nullable(),
-  "published": zod.boolean()
+  "published": zod.boolean(),
+  "courseLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).min(1).max(updateLearningCourseResponseOneCourseLanguagesMax).nullish(),
+  "subtitleLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).max(updateLearningCourseResponseOneSubtitleLanguagesMax).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(updateLearningCourseResponseOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(updateLearningCourseResponseOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(updateLearningCourseResponseOneRequiredEquipmentOneKuMax)
+}),zod.null()]).optional(),
+  "disclaimers": zod.union([zod.object({
+  "en": zod.string().min(1).max(updateLearningCourseResponseOneDisclaimersOneEnMax),
+  "ar": zod.string().min(1).max(updateLearningCourseResponseOneDisclaimersOneArMax),
+  "ku": zod.string().min(1).max(updateLearningCourseResponseOneDisclaimersOneKuMax)
+}),zod.null()]).optional(),
+  "supportingMaterials": zod.union([zod.object({
+  "en": zod.string().min(1).max(updateLearningCourseResponseOneSupportingMaterialsOneEnMax),
+  "ar": zod.string().min(1).max(updateLearningCourseResponseOneSupportingMaterialsOneArMax),
+  "ku": zod.string().min(1).max(updateLearningCourseResponseOneSupportingMaterialsOneKuMax)
+}),zod.null()]).optional()
 }).and(zod.object({
   "id": zod.string(),
   "title": zod.string(),
@@ -6609,6 +6846,28 @@ export const getMemberCoursesResponseOneCategoryMax = 120;
 
 export const getMemberCoursesResponseOneDurationMinutesMax = 10000;
 
+export const getMemberCoursesResponseOneCourseLanguagesMax = 3;
+
+export const getMemberCoursesResponseOneSubtitleLanguagesMax = 3;
+
+export const getMemberCoursesResponseOneRequiredEquipmentOneEnMax = 2000;
+
+export const getMemberCoursesResponseOneRequiredEquipmentOneArMax = 2000;
+
+export const getMemberCoursesResponseOneRequiredEquipmentOneKuMax = 2000;
+
+export const getMemberCoursesResponseOneDisclaimersOneEnMax = 2000;
+
+export const getMemberCoursesResponseOneDisclaimersOneArMax = 2000;
+
+export const getMemberCoursesResponseOneDisclaimersOneKuMax = 2000;
+
+export const getMemberCoursesResponseOneSupportingMaterialsOneEnMax = 2000;
+
+export const getMemberCoursesResponseOneSupportingMaterialsOneArMax = 2000;
+
+export const getMemberCoursesResponseOneSupportingMaterialsOneKuMax = 2000;
+
 
 
 export const GetMemberCoursesResponseItem = zod.object({
@@ -6631,7 +6890,24 @@ export const GetMemberCoursesResponseItem = zod.object({
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
   "durationMinutes": zod.int().min(1).max(getMemberCoursesResponseOneDurationMinutesMax),
   "thumbnailUrl": zod.url().nullable(),
-  "published": zod.boolean()
+  "published": zod.boolean(),
+  "courseLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).min(1).max(getMemberCoursesResponseOneCourseLanguagesMax).nullish(),
+  "subtitleLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).max(getMemberCoursesResponseOneSubtitleLanguagesMax).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberCoursesResponseOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(getMemberCoursesResponseOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(getMemberCoursesResponseOneRequiredEquipmentOneKuMax)
+}),zod.null()]).optional(),
+  "disclaimers": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberCoursesResponseOneDisclaimersOneEnMax),
+  "ar": zod.string().min(1).max(getMemberCoursesResponseOneDisclaimersOneArMax),
+  "ku": zod.string().min(1).max(getMemberCoursesResponseOneDisclaimersOneKuMax)
+}),zod.null()]).optional(),
+  "supportingMaterials": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberCoursesResponseOneSupportingMaterialsOneEnMax),
+  "ar": zod.string().min(1).max(getMemberCoursesResponseOneSupportingMaterialsOneArMax),
+  "ku": zod.string().min(1).max(getMemberCoursesResponseOneSupportingMaterialsOneKuMax)
+}),zod.null()]).optional()
 }).and(zod.object({
   "id": zod.string(),
   "title": zod.string(),
@@ -6668,6 +6944,28 @@ export const getMemberCourseResponseOneOneCategoryMax = 120;
 
 export const getMemberCourseResponseOneOneDurationMinutesMax = 10000;
 
+export const getMemberCourseResponseOneOneCourseLanguagesMax = 3;
+
+export const getMemberCourseResponseOneOneSubtitleLanguagesMax = 3;
+
+export const getMemberCourseResponseOneOneRequiredEquipmentOneEnMax = 2000;
+
+export const getMemberCourseResponseOneOneRequiredEquipmentOneArMax = 2000;
+
+export const getMemberCourseResponseOneOneRequiredEquipmentOneKuMax = 2000;
+
+export const getMemberCourseResponseOneOneDisclaimersOneEnMax = 2000;
+
+export const getMemberCourseResponseOneOneDisclaimersOneArMax = 2000;
+
+export const getMemberCourseResponseOneOneDisclaimersOneKuMax = 2000;
+
+export const getMemberCourseResponseOneOneSupportingMaterialsOneEnMax = 2000;
+
+export const getMemberCourseResponseOneOneSupportingMaterialsOneArMax = 2000;
+
+export const getMemberCourseResponseOneOneSupportingMaterialsOneKuMax = 2000;
+
 export const getMemberCourseResponseTwoLessonsItemLocalizedTitleEnMax = 240;
 
 export const getMemberCourseResponseTwoLessonsItemLocalizedTitleArMax = 240;
@@ -6702,7 +7000,24 @@ export const GetMemberCourseResponse = zod.object({
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
   "durationMinutes": zod.int().min(1).max(getMemberCourseResponseOneOneDurationMinutesMax),
   "thumbnailUrl": zod.url().nullable(),
-  "published": zod.boolean()
+  "published": zod.boolean(),
+  "courseLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).min(1).max(getMemberCourseResponseOneOneCourseLanguagesMax).nullish(),
+  "subtitleLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).max(getMemberCourseResponseOneOneSubtitleLanguagesMax).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberCourseResponseOneOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseResponseOneOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(getMemberCourseResponseOneOneRequiredEquipmentOneKuMax)
+}),zod.null()]).optional(),
+  "disclaimers": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberCourseResponseOneOneDisclaimersOneEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseResponseOneOneDisclaimersOneArMax),
+  "ku": zod.string().min(1).max(getMemberCourseResponseOneOneDisclaimersOneKuMax)
+}),zod.null()]).optional(),
+  "supportingMaterials": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberCourseResponseOneOneSupportingMaterialsOneEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseResponseOneOneSupportingMaterialsOneArMax),
+  "ku": zod.string().min(1).max(getMemberCourseResponseOneOneSupportingMaterialsOneKuMax)
+}),zod.null()]).optional()
 }).and(zod.object({
   "id": zod.string(),
   "title": zod.string(),
@@ -6758,6 +7073,28 @@ export const enrollMemberCourseResponseOneOneCategoryMax = 120;
 
 export const enrollMemberCourseResponseOneOneDurationMinutesMax = 10000;
 
+export const enrollMemberCourseResponseOneOneCourseLanguagesMax = 3;
+
+export const enrollMemberCourseResponseOneOneSubtitleLanguagesMax = 3;
+
+export const enrollMemberCourseResponseOneOneRequiredEquipmentOneEnMax = 2000;
+
+export const enrollMemberCourseResponseOneOneRequiredEquipmentOneArMax = 2000;
+
+export const enrollMemberCourseResponseOneOneRequiredEquipmentOneKuMax = 2000;
+
+export const enrollMemberCourseResponseOneOneDisclaimersOneEnMax = 2000;
+
+export const enrollMemberCourseResponseOneOneDisclaimersOneArMax = 2000;
+
+export const enrollMemberCourseResponseOneOneDisclaimersOneKuMax = 2000;
+
+export const enrollMemberCourseResponseOneOneSupportingMaterialsOneEnMax = 2000;
+
+export const enrollMemberCourseResponseOneOneSupportingMaterialsOneArMax = 2000;
+
+export const enrollMemberCourseResponseOneOneSupportingMaterialsOneKuMax = 2000;
+
 export const enrollMemberCourseResponseTwoLessonsItemLocalizedTitleEnMax = 240;
 
 export const enrollMemberCourseResponseTwoLessonsItemLocalizedTitleArMax = 240;
@@ -6792,7 +7129,24 @@ export const EnrollMemberCourseResponse = zod.object({
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
   "durationMinutes": zod.int().min(1).max(enrollMemberCourseResponseOneOneDurationMinutesMax),
   "thumbnailUrl": zod.url().nullable(),
-  "published": zod.boolean()
+  "published": zod.boolean(),
+  "courseLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).min(1).max(enrollMemberCourseResponseOneOneCourseLanguagesMax).nullish(),
+  "subtitleLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).max(enrollMemberCourseResponseOneOneSubtitleLanguagesMax).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(enrollMemberCourseResponseOneOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(enrollMemberCourseResponseOneOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(enrollMemberCourseResponseOneOneRequiredEquipmentOneKuMax)
+}),zod.null()]).optional(),
+  "disclaimers": zod.union([zod.object({
+  "en": zod.string().min(1).max(enrollMemberCourseResponseOneOneDisclaimersOneEnMax),
+  "ar": zod.string().min(1).max(enrollMemberCourseResponseOneOneDisclaimersOneArMax),
+  "ku": zod.string().min(1).max(enrollMemberCourseResponseOneOneDisclaimersOneKuMax)
+}),zod.null()]).optional(),
+  "supportingMaterials": zod.union([zod.object({
+  "en": zod.string().min(1).max(enrollMemberCourseResponseOneOneSupportingMaterialsOneEnMax),
+  "ar": zod.string().min(1).max(enrollMemberCourseResponseOneOneSupportingMaterialsOneArMax),
+  "ku": zod.string().min(1).max(enrollMemberCourseResponseOneOneSupportingMaterialsOneKuMax)
+}),zod.null()]).optional()
 }).and(zod.object({
   "id": zod.string(),
   "title": zod.string(),
@@ -6856,6 +7210,28 @@ export const updateCourseProgressResponseOneOneCategoryMax = 120;
 
 export const updateCourseProgressResponseOneOneDurationMinutesMax = 10000;
 
+export const updateCourseProgressResponseOneOneCourseLanguagesMax = 3;
+
+export const updateCourseProgressResponseOneOneSubtitleLanguagesMax = 3;
+
+export const updateCourseProgressResponseOneOneRequiredEquipmentOneEnMax = 2000;
+
+export const updateCourseProgressResponseOneOneRequiredEquipmentOneArMax = 2000;
+
+export const updateCourseProgressResponseOneOneRequiredEquipmentOneKuMax = 2000;
+
+export const updateCourseProgressResponseOneOneDisclaimersOneEnMax = 2000;
+
+export const updateCourseProgressResponseOneOneDisclaimersOneArMax = 2000;
+
+export const updateCourseProgressResponseOneOneDisclaimersOneKuMax = 2000;
+
+export const updateCourseProgressResponseOneOneSupportingMaterialsOneEnMax = 2000;
+
+export const updateCourseProgressResponseOneOneSupportingMaterialsOneArMax = 2000;
+
+export const updateCourseProgressResponseOneOneSupportingMaterialsOneKuMax = 2000;
+
 export const updateCourseProgressResponseTwoLessonsItemLocalizedTitleEnMax = 240;
 
 export const updateCourseProgressResponseTwoLessonsItemLocalizedTitleArMax = 240;
@@ -6890,7 +7266,24 @@ export const UpdateCourseProgressResponse = zod.object({
   "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
   "durationMinutes": zod.int().min(1).max(updateCourseProgressResponseOneOneDurationMinutesMax),
   "thumbnailUrl": zod.url().nullable(),
-  "published": zod.boolean()
+  "published": zod.boolean(),
+  "courseLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).min(1).max(updateCourseProgressResponseOneOneCourseLanguagesMax).nullish(),
+  "subtitleLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).max(updateCourseProgressResponseOneOneSubtitleLanguagesMax).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(updateCourseProgressResponseOneOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(updateCourseProgressResponseOneOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(updateCourseProgressResponseOneOneRequiredEquipmentOneKuMax)
+}),zod.null()]).optional(),
+  "disclaimers": zod.union([zod.object({
+  "en": zod.string().min(1).max(updateCourseProgressResponseOneOneDisclaimersOneEnMax),
+  "ar": zod.string().min(1).max(updateCourseProgressResponseOneOneDisclaimersOneArMax),
+  "ku": zod.string().min(1).max(updateCourseProgressResponseOneOneDisclaimersOneKuMax)
+}),zod.null()]).optional(),
+  "supportingMaterials": zod.union([zod.object({
+  "en": zod.string().min(1).max(updateCourseProgressResponseOneOneSupportingMaterialsOneEnMax),
+  "ar": zod.string().min(1).max(updateCourseProgressResponseOneOneSupportingMaterialsOneArMax),
+  "ku": zod.string().min(1).max(updateCourseProgressResponseOneOneSupportingMaterialsOneKuMax)
+}),zod.null()]).optional()
 }).and(zod.object({
   "id": zod.string(),
   "title": zod.string(),

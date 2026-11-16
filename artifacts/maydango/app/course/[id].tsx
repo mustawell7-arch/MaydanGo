@@ -28,6 +28,11 @@ export default function CourseDetailScreen() {
   const [message, setMessage] = useState<string | null>(null);
   const t = (key: MessageKey) => translate(app.language, key);
   const align = app.language === 'en' ? 'left' : 'right';
+  const courseLanguageNames = {
+    en: t('languageEnglish'),
+    ar: t('languageArabic'),
+    ku: t('languageSoraniKurdish'),
+  };
 
   const back = (
     <Pressable accessibilityRole="button" accessibilityLabel={t('back')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/online'))} style={styles.backButton}>
@@ -51,6 +56,17 @@ export default function CourseDetailScreen() {
 
   const pct = course.lessonCount ? Math.round(course.completedLessons / course.lessonCount * 100) : 0;
   const ready = course.accessState === 'ready';
+  const languageList = (languages: Array<'en' | 'ar' | 'ku'> | null | undefined) =>
+    languages?.length
+      ? languages.map(language => courseLanguageNames[language]).join(app.language === 'en' ? ', ' : '، ')
+      : t('informationNotProvided');
+  const subtitleSummary = course.subtitleLanguages == null
+    ? t('informationNotProvided')
+    : course.subtitleLanguages.length
+      ? languageList(course.subtitleLanguages)
+      : t('noSubtitles');
+  const localizedDetail = (detail: { en: string; ar: string; ku: string } | null | undefined) =>
+    detail?.[app.language]?.trim() || t('informationNotProvided');
   const saveProgress = async (lessonId: string, completed: boolean) => {
     try {
       await progressMutation.mutateAsync({ id: course.id, data: { lessonId, completed } });
@@ -90,12 +106,29 @@ export default function CourseDetailScreen() {
           <View style={styles.shade} />
           <View style={styles.heroTop}>{back}</View>
           <View style={styles.heroText}>
-            <Text style={[styles.kicker, { textAlign: align }]}>{t(course.level === 'all-levels' ? 'allLevels' : course.level)} · {course.durationMinutes} {t('minutesShort')} · {course.localizedInstructor[app.language] || course.localizedInstructor.en}</Text>
+            <Text style={[styles.kicker, { textAlign: align }]}>{t(course.level === 'all-levels' ? 'allLevels' : course.level)} · {course.durationMinutes} {t('minutesShort')} · {course.lessonCount} {t('lessons')} · {course.localizedInstructor[app.language] || course.localizedInstructor.en}</Text>
             <Text style={[styles.heroTitle, { textAlign: align }]}>{course.localizedTitle[app.language] || course.localizedTitle.en}</Text>
           </View>
         </View>
         <View style={styles.body}>
           <Text style={[styles.summary, { color: colors.foreground, textAlign: align }]}>{course.localizedSummary[app.language] || course.localizedSummary.en}</Text>
+          <View style={{ marginTop: 14, marginBottom: 12, padding: 15, borderRadius: 14, backgroundColor: colors.secondary, gap: 12 }}>
+            <Text style={{ color: colors.foreground, fontWeight: '800', fontSize: 16, textAlign: align }}>{t('courseDetailsTitle')}</Text>
+            <View style={{ gap: 10 }}>
+              {[
+                [t('instructionLanguages'), languageList(course.courseLanguages)],
+                [t('subtitleLanguages'), subtitleSummary],
+                [t('requiredEquipment'), localizedDetail(course.requiredEquipment)],
+                [t('courseDisclaimers'), localizedDetail(course.disclaimers)],
+                [t('supportingMaterials'), localizedDetail(course.supportingMaterials)],
+              ].map(([label, value]) => (
+                <View key={label} style={{ gap: 3 }}>
+                  <Text style={{ color: colors.mutedForeground, fontSize: 12, fontWeight: '700', textAlign: align }}>{label}</Text>
+                  <Text style={{ color: colors.foreground, fontSize: 14, lineHeight: 21, textAlign: align }}>{value}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
 
           {course.enrolled ? (
             <View style={[styles.progressCard, { backgroundColor: colors.secondary }]}>

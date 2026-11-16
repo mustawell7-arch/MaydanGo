@@ -1,6 +1,7 @@
 import { pgTable, text, jsonb, integer, boolean, timestamp, uniqueIndex, index } from "drizzle-orm/pg-core";
 
 export type LocalizedText = { en: string; ar: string; ku: string };
+export type CourseLanguage = "en" | "ar" | "ku";
 
 export const learningCourses = pgTable("learning_courses", {
   id: text("id").primaryKey(),
@@ -12,6 +13,11 @@ export const learningCourses = pgTable("learning_courses", {
   level: text("level").notNull(),
   durationMinutes: integer("duration_minutes").notNull(),
   thumbnailUrl: text("thumbnail_url"),
+  courseLanguages: jsonb("course_languages").$type<CourseLanguage[] | null>(),
+  subtitleLanguages: jsonb("subtitle_languages").$type<CourseLanguage[] | null>(),
+  requiredEquipment: jsonb("required_equipment").$type<LocalizedText | null>(),
+  disclaimers: jsonb("disclaimers").$type<LocalizedText | null>(),
+  supportingMaterials: jsonb("supporting_materials").$type<LocalizedText | null>(),
   published: boolean("published").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

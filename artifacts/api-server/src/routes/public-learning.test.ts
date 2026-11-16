@@ -9,6 +9,7 @@ import publicLearningRouter from "./public-learning";
 
 const prefix = `public-courses-${randomUUID()}`;
 const publishedId = `${prefix}-published`;
+const unreportedId = `${prefix}-unreported`;
 const hiddenId = `${prefix}-hidden`;
 let server: Server | null = null;
 
@@ -17,8 +18,8 @@ app.use("/public", publicLearningRouter);
 
 after(async () => {
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
-  await db.delete(learningLessons).where(inArray(learningLessons.courseId, [publishedId, hiddenId]));
-  await db.delete(learningCourses).where(inArray(learningCourses.id, [publishedId, hiddenId]));
+  await db.delete(learningLessons).where(inArray(learningLessons.courseId, [publishedId, unreportedId, hiddenId]));
+  await db.delete(learningCourses).where(inArray(learningCourses.id, [publishedId, unreportedId, hiddenId]));
   await pool.end();
 });
 
@@ -33,6 +34,22 @@ test("public course catalogue returns published metadata without lesson media", 
       category: "mobility",
       level: "beginner",
       durationMinutes: 45,
+      courseLanguages: ["en", "ar"],
+      subtitleLanguages: [],
+      requiredEquipment: { en: "A mat", ar: "بساط", ku: "مەت" },
+      disclaimers: { en: "Train within your comfort.", ar: "تمرّن ضمن حدود راحتك.", ku: "لە سنووری ئاسوودەیی خۆت ڕاهێنان بکە." },
+      supportingMaterials: null,
+      published: true,
+    },
+    {
+      id: unreportedId,
+      title: "Course details not supplied test",
+      localizedTitle: { en: "Details not supplied", ar: "التفاصيل غير متوفرة", ku: "وردەکاری بەردەست نییە" },
+      localizedSummary: { en: "A summary", ar: "ملخص", ku: "پوختە" },
+      localizedInstructor: { en: "Instructor", ar: "المدرب", ku: "ڕاهێنەر" },
+      category: "pilates",
+      level: "all-levels",
+      durationMinutes: 20,
       published: true,
     },
     {
@@ -44,6 +61,11 @@ test("public course catalogue returns published metadata without lesson media", 
       category: "strength",
       level: "beginner",
       durationMinutes: 30,
+      courseLanguages: ["ku"],
+      subtitleLanguages: ["ar"],
+      requiredEquipment: null,
+      disclaimers: null,
+      supportingMaterials: null,
       published: false,
     },
   ]);
@@ -62,12 +84,24 @@ test("public course catalogue returns published metadata without lesson media", 
   const response = await fetch(`http://127.0.0.1:${(server!.address() as { port: number }).port}/public/courses`);
   assert.equal(response.status, 200);
   const data = await response.json() as Array<Record<string, unknown>>;
-  assert.equal(data.length, 1);
-  assert.equal(data[0].id, publishedId);
-  assert.equal(data[0].category, "mobility");
-  assert.deepEqual(Object.keys(data[0]).sort(), [
-    "category", "durationMinutes", "id", "level", "localizedInstructor", "localizedSummary", "localizedTitle",
+  assert.equal(data.length, 2);
+  const publishedCourse = data.find(course => course.id === publishedId)!;
+  const unreportedCourse = data.find(course => course.id === unreportedId)!;
+  assert.equal(publishedCourse.category, "mobility");
+  assert.equal(publishedCourse.lessonCount, 1);
+  assert.deepEqual(publishedCourse.courseLanguages, ["en", "ar"]);
+  assert.deepEqual(publishedCourse.subtitleLanguages, []);
+  assert.deepEqual(publishedCourse.requiredEquipment, { en: "A mat", ar: "بساط", ku: "مەت" });
+  assert.equal(unreportedCourse.lessonCount, 0);
+  assert.equal(unreportedCourse.courseLanguages, null);
+  assert.equal(unreportedCourse.subtitleLanguages, null);
+  assert.equal(unreportedCourse.requiredEquipment, null);
+  assert.deepEqual(Object.keys(publishedCourse).sort(), [
+    "category", "courseLanguages", "disclaimers", "durationMinutes", "id", "lessonCount", "level",
+    "localizedInstructor", "localizedSummary", "localizedTitle", "requiredEquipment", "subtitleLanguages",
+    "supportingMaterials",
   ]);
   assert.ok(!JSON.stringify(data).includes("private.example.test"));
   assert.ok(!JSON.stringify(data).includes("Private lesson"));
+  assert.ok(!JSON.stringify(data).includes(hiddenId));
 });

@@ -1848,6 +1848,11 @@ router.post("/courses", async (req, res) => {
       level: data.level,
       durationMinutes: data.durationMinutes,
       thumbnailUrl: data.thumbnailUrl,
+      courseLanguages: data.courseLanguages ?? null,
+      subtitleLanguages: data.subtitleLanguages ?? null,
+      requiredEquipment: data.requiredEquipment ?? null,
+      disclaimers: data.disclaimers ?? null,
+      supportingMaterials: data.supportingMaterials ?? null,
       published: data.published,
     }).returning();
     await tx.insert(learningLessons).values(data.lessons.map(lesson => ({
@@ -1887,6 +1892,11 @@ router.put("/courses/:id", async (req, res) => {
       level: data.level,
       durationMinutes: data.durationMinutes,
       thumbnailUrl: data.thumbnailUrl,
+      ...(data.courseLanguages !== undefined ? { courseLanguages: data.courseLanguages } : {}),
+      ...(data.subtitleLanguages !== undefined ? { subtitleLanguages: data.subtitleLanguages } : {}),
+      ...(data.requiredEquipment !== undefined ? { requiredEquipment: data.requiredEquipment } : {}),
+      ...(data.disclaimers !== undefined ? { disclaimers: data.disclaimers } : {}),
+      ...(data.supportingMaterials !== undefined ? { supportingMaterials: data.supportingMaterials } : {}),
       published: data.published,
       updatedAt: new Date(),
     }).where(eq(learningCourses.id, id)).returning();

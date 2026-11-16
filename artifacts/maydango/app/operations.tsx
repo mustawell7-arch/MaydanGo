@@ -392,10 +392,17 @@ function AccessTab({ c, d, api }: Omit<TabProps, 'refresh'>) {
 }
 
 type LocalizedDraft = { en: string; ar: string; ku: string };
+type CourseLanguage = 'en' | 'ar' | 'ku';
 type CourseDraft = {
   localizedTitle: LocalizedDraft;
   localizedSummary: LocalizedDraft;
   localizedInstructor: LocalizedDraft;
+  courseLanguages: CourseLanguage[];
+  subtitleMode: 'not-provided' | 'none' | 'available';
+  subtitleLanguages: CourseLanguage[];
+  requiredEquipment: LocalizedDraft;
+  disclaimers: LocalizedDraft;
+  supportingMaterials: LocalizedDraft;
   category: string;
   level: CourseMetadataInput['level'];
   durationMinutes: string;
@@ -411,6 +418,8 @@ type LessonDraft = {
 const emptyLocalized = (): LocalizedDraft => ({ en: '', ar: '', ku: '' });
 const emptyCourseDraft = (): CourseDraft => ({
   localizedTitle: emptyLocalized(), localizedSummary: emptyLocalized(), localizedInstructor: emptyLocalized(),
+  courseLanguages: [], subtitleMode: 'not-provided', subtitleLanguages: [],
+  requiredEquipment: emptyLocalized(), disclaimers: emptyLocalized(), supportingMaterials: emptyLocalized(),
   category: '', level: 'all-levels', durationMinutes: '', thumbnailUrl: '', published: false,
 });
 const emptyLessonDraft = (): LessonDraft => ({
@@ -423,10 +432,19 @@ const isHttpsUrl = (value: string) => {
 const isPrivateRecordingPath = (value: string) =>
   /^\/objects\/course-recordings\/[A-Za-z0-9_-]{1,180}\.(mp4|webm|m4v|mov|m4a|mp3|aac|ogg)$/.test(value.trim());
 const validLocalized = (values: LocalizedDraft) => !!values.en.trim() && !!values.ar.trim() && !!values.ku.trim();
+const optionalLocalized = (values: LocalizedDraft) => Object.values(values).some(value => value.trim())
+  ? { en: values.en.trim(), ar: values.ar.trim(), ku: values.ku.trim() }
+  : null;
 const toMetadata = (draft: CourseDraft): CourseMetadataInput => ({
   localizedTitle: { en: draft.localizedTitle.en.trim(), ar: draft.localizedTitle.ar.trim(), ku: draft.localizedTitle.ku.trim() },
   localizedSummary: { en: draft.localizedSummary.en.trim(), ar: draft.localizedSummary.ar.trim(), ku: draft.localizedSummary.ku.trim() },
   localizedInstructor: { en: draft.localizedInstructor.en.trim(), ar: draft.localizedInstructor.ar.trim(), ku: draft.localizedInstructor.ku.trim() },
+  courseLanguages: draft.courseLanguages.length ? draft.courseLanguages : null,
+  subtitleLanguages: draft.subtitleMode === 'not-provided' ? null
+    : draft.subtitleMode === 'none' ? [] : draft.subtitleLanguages,
+  requiredEquipment: optionalLocalized(draft.requiredEquipment),
+  disclaimers: optionalLocalized(draft.disclaimers),
+  supportingMaterials: optionalLocalized(draft.supportingMaterials),
   category: draft.category.trim(),
   level: draft.level,
   durationMinutes: Number(draft.durationMinutes),
@@ -435,6 +453,12 @@ const toMetadata = (draft: CourseDraft): CourseMetadataInput => ({
 });
 const toCourseDraft = (course: CourseAdminRecord): CourseDraft => ({
   localizedTitle: course.localizedTitle, localizedSummary: course.localizedSummary, localizedInstructor: course.localizedInstructor,
+  courseLanguages: course.courseLanguages ?? [],
+  subtitleMode: course.subtitleLanguages == null ? 'not-provided' : course.subtitleLanguages.length ? 'available' : 'none',
+  subtitleLanguages: course.subtitleLanguages ?? [],
+  requiredEquipment: course.requiredEquipment ?? emptyLocalized(),
+  disclaimers: course.disclaimers ?? emptyLocalized(),
+  supportingMaterials: course.supportingMaterials ?? emptyLocalized(),
   category: course.category, level: course.level, durationMinutes: String(course.durationMinutes),
   thumbnailUrl: course.thumbnailUrl ?? '', published: course.published,
 });
@@ -464,14 +488,32 @@ function LocalizedFields({ c, label, values, onChange, multiline = false }: {
 function CourseMetadataFields({ c, draft, setDraft }: {
   c: Colors; draft: CourseDraft; setDraft: React.Dispatch<React.SetStateAction<CourseDraft>>;
 }) {
-  const setLocalized = (key: 'localizedTitle' | 'localizedSummary' | 'localizedInstructor') =>
+  const setLocalized = (key: 'localizedTitle' | 'localizedSummary' | 'localizedInstructor' | 'requiredEquipment' | 'disclaimers' | 'supportingMaterials') =>
     (language: keyof LocalizedDraft, value: string) => setDraft(current => ({
       ...current, [key]: { ...current[key], [language]: value },
     }));
+  const toggleLanguages = (key: 'courseLanguages' | 'subtitleLanguages') => (language: CourseLanguage) => setDraft(current => ({
+    ...current,
+    [key]: current[key].includes(language)
+      ? current[key].filter(item => item !== language)
+      : [...current[key], language],
+  }));
+  const languageNames = { en: 'English', ar: 'Arabic', ku: 'Sorani Kurdish' };
   return <>
     <LocalizedFields c={c} label="COURSE TITLE" values={draft.localizedTitle} onChange={setLocalized('localizedTitle')} />
     <LocalizedFields c={c} label="COURSE SUMMARY" values={draft.localizedSummary} onChange={setLocalized('localizedSummary')} multiline />
     <LocalizedFields c={c} label="INSTRUCTOR" values={draft.localizedInstructor} onChange={setLocalized('localizedInstructor')} />
+    <Choice c={c} label="INSTRUCTION LANGUAGES · SELECT ALL THAT APPLY" options={['en', 'ar', 'ku'] as const}
+      value={draft.courseLanguages} onChange={toggleLanguages('courseLanguages')} names={languageNames} />
+    <Choice c={c} label="SUBTITLE INFORMATION" options={['not-provided', 'none', 'available'] as const}
+      value={draft.subtitleMode} onChange={subtitleMode => setDraft(current => ({ ...current, subtitleMode }))} names={{
+        'not-provided': 'Not provided', none: 'No subtitles', available: 'Available',
+      }} />
+    {draft.subtitleMode === 'available' ? <Choice c={c} label="SUBTITLE LANGUAGES · SELECT ALL THAT APPLY" options={['en', 'ar', 'ku'] as const}
+      value={draft.subtitleLanguages} onChange={toggleLanguages('subtitleLanguages')} names={languageNames} /> : null}
+    <LocalizedFields c={c} label="REQUIRED EQUIPMENT · OPTIONAL" values={draft.requiredEquipment} onChange={setLocalized('requiredEquipment')} multiline />
+    <LocalizedFields c={c} label="DISCLAIMERS · OPTIONAL" values={draft.disclaimers} onChange={setLocalized('disclaimers')} multiline />
+    <LocalizedFields c={c} label="SUPPORTING MATERIALS · OPTIONAL" values={draft.supportingMaterials} onChange={setLocalized('supportingMaterials')} multiline />
     <View style={s.wrap}>
       <Field c={c} label="CATEGORY" value={draft.category} onChange={value => setDraft(current => ({ ...current, category: value }))} placeholder="mobility, strength…" />
       <Field c={c} label="COURSE MINUTES" value={draft.durationMinutes} onChange={value => setDraft(current => ({ ...current, durationMinutes: value }))} numeric />
@@ -529,6 +571,13 @@ function CoursesTab({ c }: { c: Colors }) {
   const validateMetadata = (value: CourseDraft) => {
     if (!validLocalized(value.localizedTitle) || !validLocalized(value.localizedSummary) || !validLocalized(value.localizedInstructor)) {
       return 'Add the title, summary and instructor in English, Iraqi Arabic and Sorani Kurdish.';
+    }
+    const optionalDetails = [value.requiredEquipment, value.disclaimers, value.supportingMaterials];
+    if (optionalDetails.some(detail => Object.values(detail).some(text => text.trim()) && !validLocalized(detail))) {
+      return 'Complete each optional course detail in English, Iraqi Arabic and Sorani Kurdish, or leave it blank.';
+    }
+    if (value.subtitleMode === 'available' && !value.subtitleLanguages.length) {
+      return 'Select at least one subtitle language, or choose “No subtitles” or “Not provided.”';
     }
     if (!value.category.trim()) return 'Add a course category.';
     if (!isInt(value.durationMinutes, 1)) return 'Course duration must be a whole number of at least 1 minute.';

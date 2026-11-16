@@ -54,6 +54,11 @@ const courseMetadata = (published: boolean) => ({
   level: "beginner",
   durationMinutes: 30,
   thumbnailUrl: null,
+  courseLanguages: ["en", "ar", "ku"],
+  subtitleLanguages: [],
+  requiredEquipment: localized("A mat", "بساط", "مەت"),
+  disclaimers: localized("Train at your own pace.", "تمرّن حسب قدرتك.", "بەپێی توانای خۆت ڕاهێنان بکە."),
+  supportingMaterials: localized("Printable guide.", "دليل قابل للطباعة.", "ڕێبەری چاپکراو."),
   published,
 });
 
@@ -101,15 +106,29 @@ test("only administrators can list, edit, publish, or add lessons to courses", a
     lessons: [initialLesson],
   });
   assert.equal(created.status, 201);
-  const course = created.data as { id: string; published: boolean; lessonCount: number };
+  const course = created.data as {
+    id: string;
+    published: boolean;
+    lessonCount: number;
+    courseLanguages: string[];
+    subtitleLanguages: string[];
+    requiredEquipment: { en: string; ar: string; ku: string };
+  };
   courseIds = [course.id];
   assert.equal(course.published, false);
   assert.equal(course.lessonCount, 1);
+  assert.deepEqual(course.courseLanguages, ["en", "ar", "ku"]);
+  assert.deepEqual(course.subtitleLanguages, []);
+  assert.equal(course.requiredEquipment.en, "A mat");
 
   const listing = await call("/operations/courses", adminUserId);
   assert.equal(listing.status, 200);
-  const courses = (listing.data as { courses: Array<{ id: string; lessonCount: number }> }).courses;
-  assert.equal(courses.find(item => item.id === course.id)?.lessonCount, 1);
+  const courses = (listing.data as {
+    courses: Array<{ id: string; lessonCount: number; supportingMaterials: { en: string } | null }>;
+  }).courses;
+  const listedCourse = courses.find(item => item.id === course.id);
+  assert.equal(listedCourse?.lessonCount, 1);
+  assert.equal(listedCourse?.supportingMaterials?.en, "Printable guide.");
 
   assert.equal((await call(`/operations/courses/${course.id}`, financeUserId, "PUT", courseMetadata(true))).status, 403);
   assert.equal((await call(`/operations/courses/${course.id}/lessons`, partnerUserId, "POST", {

@@ -1188,10 +1188,21 @@ components:
             en: { type: string, maxLength: 1000 }
             ar: { type: string, maxLength: 1000 }
             ku: { type: string, maxLength: 1000 }
+    CourseLanguage:
+      type: string
+      enum: [en, ar, ku]
+    LocalizedCourseDetail:
+      type: object
+      additionalProperties: false
+      required: [en, ar, ku]
+      properties:
+        en: { type: string, maxLength: 2000 }
+        ar: { type: string, maxLength: 2000 }
+        ku: { type: string, maxLength: 2000 }
     PublicCourse:
       type: object
       additionalProperties: false
-      required: [id, localizedTitle, localizedSummary, localizedInstructor, category, level, durationMinutes]
+      required: [id, localizedTitle, localizedSummary, localizedInstructor, category, level, durationMinutes, lessonCount, courseLanguages, subtitleLanguages, requiredEquipment, disclaimers, supportingMaterials]
       properties:
         id: { type: string }
         localizedTitle:
@@ -1221,6 +1232,30 @@ components:
         category: { type: string }
         level: { type: string }
         durationMinutes: { type: integer, minimum: 1 }
+        lessonCount: { type: integer, minimum: 0 }
+        courseLanguages:
+          type: ["array", "null"]
+          minItems: 1
+          maxItems: 3
+          uniqueItems: true
+          items: { $ref: "#/components/schemas/CourseLanguage" }
+        subtitleLanguages:
+          type: ["array", "null"]
+          maxItems: 3
+          uniqueItems: true
+          items: { $ref: "#/components/schemas/CourseLanguage" }
+        requiredEquipment:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedCourseDetail"
+            - type: "null"
+        disclaimers:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedCourseDetail"
+            - type: "null"
+        supportingMaterials:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedCourseDetail"
+            - type: "null"
     CheckinPolicy:
       type: object
       required: [latitude, longitude, radius, opensAt, closesAt, correctionEndsAt]

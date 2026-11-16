@@ -19,6 +19,7 @@ import {
 import type { PublicFacility, PublicCourse } from '@workspace/api-client-react';
 
 export type PublicCatalogLanguage = 'en' | 'ar' | 'ku';
+type CourseLanguageCode = 'en' | 'ar' | 'ku';
 
 type Copy = {
   [key: string]: string;
@@ -116,6 +117,18 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     membershipRequirementTitle: 'Accessing course lessons',
     membershipRequirement: 'To watch lessons in the MaydanGo app, you need an active membership that includes digital-course access.',
     viewMembershipPlans: 'View membership information',
+    courseDetails: 'Course details',
+    lessonCount: 'Lessons',
+    instructionLanguages: 'Instruction languages',
+    subtitleLanguages: 'Subtitles',
+    requiredEquipment: 'Required equipment',
+    disclaimers: 'Disclaimers',
+    supportingMaterials: 'Supporting materials',
+    informationNotProvided: 'Information not provided',
+    noSubtitles: 'No subtitles',
+    languageEnglish: 'English',
+    languageArabic: 'Arabic',
+    languageSoraniKurdish: 'Sorani Kurdish',
   },
   ar: {
     region: 'العراق · كردستان · الغرب · الجنوب',
@@ -208,6 +221,18 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     membershipRequirementTitle: 'متطلبات الوصول إلى الدورات',
     membershipRequirement: 'تتطلب مشاهدة الدروس عضوية فعالة تشمل الوصول إلى الدورات الرقمية. يعرض هذا الموقع معلومات الدورات، لكنه لا يفعّل العضويات ولا يفتح الدروس.',
     viewMembershipPlans: 'عرض معلومات العضوية',
+    courseDetails: 'تفاصيل الدورة',
+    lessonCount: 'عدد الدروس',
+    instructionLanguages: 'لغة التدريب',
+    subtitleLanguages: 'الترجمة النصية',
+    requiredEquipment: 'المعدات المطلوبة',
+    disclaimers: 'تنبيهات',
+    supportingMaterials: 'مواد مساندة',
+    informationNotProvided: 'لم تُقدَّم معلومات',
+    noSubtitles: 'لا تتوفر ترجمة نصية',
+    languageEnglish: 'الإنجليزية',
+    languageArabic: 'العربية',
+    languageSoraniKurdish: 'الكردية السورانية',
   },
   ku: {
     region: 'عێراق · کوردستان · ڕۆژئاوا · باشوور',
@@ -300,7 +325,25 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     membershipRequirementTitle: 'مەرجەکانی دەستگەیشتن بە کۆرس',
     membershipRequirement: 'بینینی وانە پێویستی بە ئەندامێتی چالاک هەیە کە دەستگەیشتن بە کۆرسی دیجیتاڵی لەخۆبگرێت. ئەم ماڵپەڕە زانیاریی کۆرس پیشان دەدات، بەڵام ئەندامێتی چالاک ناکات و وانەکان ناکاتەوە.',
     viewMembershipPlans: 'زانیاریی ئەندامێتی ببینە',
+    courseDetails: 'وردەکارییەکانی کۆرس',
+    lessonCount: 'ژمارەی وانەکان',
+    instructionLanguages: 'زمانەکانی وانە',
+    subtitleLanguages: 'ژێرنووس',
+    requiredEquipment: 'کەلوپەلی پێویست',
+    disclaimers: 'ئاگادارییەکان',
+    supportingMaterials: 'کەرەستەی یارمەتیدەر',
+    informationNotProvided: 'زانیارییەک نەدراوە',
+    noSubtitles: 'ژێرنووس بەردەست نییە',
+    languageEnglish: 'ئینگلیزی',
+    languageArabic: 'عەرەبی',
+    languageSoraniKurdish: 'کوردیی سۆرانی',
   },
+};
+
+const courseLanguageNames: Record<PublicCatalogLanguage, Record<CourseLanguageCode, string>> = {
+  en: { en: 'English', ar: 'Arabic', ku: 'Sorani Kurdish' },
+  ar: { en: 'الإنجليزية', ar: 'العربية', ku: 'الكردية السورانية' },
+  ku: { en: 'ئینگلیزی', ar: 'عەرەبی', ku: 'کوردیی سۆرانی' },
 };
 
 function localized(value: { en: string; ar: string; ku: string } | null | undefined, language: PublicCatalogLanguage) {
@@ -815,6 +858,23 @@ export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCata
                 <div><p className="text-xs font-semibold text-muted-foreground">{text.courseLevel}</p><p className="mt-1 font-medium">{course.level}</p></div>
               </div>
               <p className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground"><Clock3 className="h-4 w-4 text-primary" aria-hidden="true" />{course.durationMinutes} {text.duration}</p>
+              <div className="mt-5 rounded-xl bg-muted/50 p-4" data-testid={`course-details-${course.id}`}>
+                <h4 className="text-sm font-bold">{text.courseDetails}</h4>
+                <dl className="mt-3 grid gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
+                  <div><dt className="text-xs font-semibold text-muted-foreground">{text.lessonCount}</dt><dd className="mt-1">{course.lessonCount}</dd></div>
+                  <div><dt className="text-xs font-semibold text-muted-foreground">{text.instructionLanguages}</dt><dd className="mt-1">{course.courseLanguages?.length
+                    ? course.courseLanguages.map((code) => courseLanguageNames[language][code]).join(language === 'en' ? ', ' : '، ')
+                    : text.informationNotProvided}</dd></div>
+                  <div><dt className="text-xs font-semibold text-muted-foreground">{text.subtitleLanguages}</dt><dd className="mt-1">{course.subtitleLanguages == null
+                    ? text.informationNotProvided
+                    : course.subtitleLanguages.length
+                      ? course.subtitleLanguages.map((code) => courseLanguageNames[language][code]).join(language === 'en' ? ', ' : '، ')
+                      : text.noSubtitles}</dd></div>
+                  <div><dt className="text-xs font-semibold text-muted-foreground">{text.requiredEquipment}</dt><dd className="mt-1 whitespace-pre-line">{course.requiredEquipment ? localized(course.requiredEquipment, language) : text.informationNotProvided}</dd></div>
+                  <div><dt className="text-xs font-semibold text-muted-foreground">{text.disclaimers}</dt><dd className="mt-1 whitespace-pre-line">{course.disclaimers ? localized(course.disclaimers, language) : text.informationNotProvided}</dd></div>
+                  <div><dt className="text-xs font-semibold text-muted-foreground">{text.supportingMaterials}</dt><dd className="mt-1 whitespace-pre-line">{course.supportingMaterials ? localized(course.supportingMaterials, language) : text.informationNotProvided}</dd></div>
+                </dl>
+              </div>
             </article>)}
           </div>
         )}
