@@ -35,6 +35,7 @@ const PartnerPortal = lazy(() => import('@/pages/partner-portal'));
 const SponsoredPlacementsManagerPage = lazy(() => import('@/pages/sponsored-placements-manager'));
 const FinanceConsole = lazy(() => import('@/pages/finance-console'));
 const MemberAccountPage = lazy(() => import('@/pages/member-account'));
+const MembershipTermsDraftPage = lazy(() => import('@/pages/membership-terms-draft'));
 const AdminInstructorAccessPage = lazy(() =>
   import('@/pages/instructor-access').then(module => ({ default: module.AdminInstructorAccessPage })),
 );
@@ -1340,6 +1341,7 @@ function ContentRouter() {
         <Route path="/contact" component={() => <ContactPage t={t} />} />
         <Route path="/legal" component={() => <LegalPage t={t} language={language} />} />
         <Route path="/privacy" component={() => <PrivacyPolicyPage language={language} />} />
+        <Route path="/membership-terms-draft" component={MembershipTermsDraftPage} />
         <Route path="/policies/:policyKey">{params => <PolicyDocumentPage policyKey={params.policyKey ?? ''} language={language} />}</Route>
         <Route path="/account" component={() => <MemberAccountPage language={language} />} />
         <Route component={() => <NotFound title={t.not_found_title} description={t.not_found_description} />} />

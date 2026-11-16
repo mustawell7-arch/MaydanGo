@@ -549,6 +549,7 @@ export default function MemberAccountPage({ language }: { language: Language }) 
             <div className="mt-3 flex flex-wrap gap-3 text-sm font-semibold">
               <Link href={consents.data?.policies.find(policy => policy.purpose === "terms_of_use")?.documentPath ?? "/legal"} className="text-primary underline underline-offset-2">{t.readTerms}</Link>
               <Link href={consents.data?.policies.find(policy => policy.purpose === "privacy_policy")?.documentPath ?? "/privacy"} className="text-primary underline underline-offset-2">{t.readPrivacy}</Link>
+              <Link href="/membership-terms-draft?version=draft-0.1" className="text-primary underline underline-offset-2">Membership terms draft · draft-0.1 (English; not active)</Link>
             </div>
             {consents.isLoading ? <p className="mt-4 text-sm text-muted-foreground" role="status">{t.loading}</p>
               : consents.isError ? <p className="mt-4 text-sm text-destructive" role="alert">{t.consentLoadError}</p>

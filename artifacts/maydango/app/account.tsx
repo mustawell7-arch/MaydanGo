@@ -229,6 +229,14 @@ export default function AccountScreen() {
                     )}
                   </View>
                 ))}
+                <Pressable
+                  accessibilityRole="link"
+                  onPress={() => router.push({ pathname: '/membership-terms-draft', params: { version: 'draft-0.1' } })}
+                >
+                  <Text style={{ color: c.primary, textDecorationLine: 'underline' }}>
+                    Membership terms draft · draft-0.1 (English; not active)
+                  </Text>
+                </Pressable>
                 <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: termsAccepted, disabled: consents.data?.currentChoices.termsOfUse === 'accepted' }} onPress={() => {
                   if (consents.data?.currentChoices.termsOfUse !== 'accepted') setTermsAccepted(value => !value);
                 }}>
