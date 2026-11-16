@@ -6,6 +6,7 @@ import { eq, and, inArray, sql, gt, asc, isNull, ne, or } from "drizzle-orm";
 import {
   CreateMemberPrivacyRequestBody,
   CreateMemberPrivacyRequestResponse,
+  GetMemberAccountSummaryResponse,
   GetMemberConsentsResponse,
   GetMemberAllowancesResponse,
   GetMemberPrivacyRequestsResponse,
@@ -43,8 +44,28 @@ router.use((req, res, next) => {
   if (!getAuth(req).userId) { res.status(401).json({ message: "Sign in to manage your bookings." }); return; }
   next();
 });
-router.get("/account", async (req, res) => {
-  res.json(await memberAccountSummary(getAuth(req).userId!));
+router.get("/account", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId!;
+  const [summary, accessRestricted] = await Promise.all([
+    memberAccountSummary(userId),
+    isAccessSuspended("member", userId),
+  ]);
+  const asIso = (value: Date | string | null) => value instanceof Date ? value.toISOString() : value;
+  res.json(GetMemberAccountSummaryResponse.parse({
+    ...summary,
+    memberships: summary.memberships.map(membership => ({
+      ...membership,
+      endsAt: asIso(membership.endsAt),
+    })),
+    bookings: summary.bookings.map(booking => ({
+      ...booking,
+      cancellationDeadline: asIso(booking.cancellationDeadline),
+      startsAt: asIso(booking.startsAt),
+      createdAt: asIso(booking.createdAt),
+      cancelledAt: asIso(booking.cancelledAt),
+    })),
+    accessRestricted,
+  }));
 });
 router.get("/allowances", async (req, res) => {
   res.json(GetMemberAllowancesResponse.parse(await getMemberAllowances(getAuth(req).userId!)));

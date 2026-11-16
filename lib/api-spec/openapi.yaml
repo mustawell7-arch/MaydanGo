@@ -682,7 +682,7 @@ paths:
       operationId: getMemberAccountSummary
       responses:
         "200":
-          description: Signed-in member's own membership summaries and bookings; no profile or payment data
+          description: Signed-in member's own membership summaries, bookings, and access status; no administrator notes or payment data
           content:
             application/json:
               schema:
@@ -1203,7 +1203,7 @@ components:
             $ref: "#/components/schemas/MemberWaitlistUpdate"
     MemberAccountSummary:
       type: object
-      required: [memberships, bookings]
+      required: [memberships, bookings, accessRestricted]
       properties:
         memberships:
           type: array
@@ -1215,6 +1215,13 @@ components:
               status: { type: string }
               tier: { type: string }
               endsAt: { type: string, format: date-time }
+        bookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemberBooking"
+        accessRestricted:
+          type: boolean
+          description: Whether restricted member actions are currently paused; never includes internal staff notes.
     MemberAllowanceBalance:
       type: object
       required: [limit, remaining, resetsAt]

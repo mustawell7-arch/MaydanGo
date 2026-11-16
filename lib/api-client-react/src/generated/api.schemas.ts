@@ -641,6 +641,9 @@ export type MemberAccountSummaryMembershipsItem = {
 
 export interface MemberAccountSummary {
   memberships: MemberAccountSummaryMembershipsItem[];
+  bookings: MemberBooking[];
+  /** Whether restricted member actions are currently paused; never includes internal staff notes. */
+  accessRestricted: boolean;
 }
 
 export interface MemberAllowanceBalance {

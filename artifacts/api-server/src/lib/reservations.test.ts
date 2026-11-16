@@ -2,7 +2,7 @@ import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
-import { db, pool, offerings, memberships, reservations, waitlistEntries, attendance, memberProfiles, memberConsentEvents, partners, operators, membershipPlans, accessGrants, operationAudit, learningCourses, learningLessons, courseEnrollments, lessonProgress, facilityProfiles } from "@workspace/db";
+import { db, pool, offerings, memberships, reservations, waitlistEntries, attendance, memberProfiles, memberConsentEvents, partners, operators, membershipPlans, accessGrants, operationAudit, learningCourses, learningLessons, courseEnrollments, lessonProgress, facilityProfiles, accountAccessRestrictions } from "@workspace/db";
 import express from "express";
 import operationsRouter from "../routes/operations";
 import memberRouter from "../routes/member";
@@ -276,8 +276,28 @@ test("web account summary is authenticated but does not require a registered mob
     });
     assert.equal(accountResponse.status, 200);
     const account = await accountResponse.json() as Record<string, unknown>;
-    assert.deepEqual(Object.keys(account).sort(), ["bookings", "memberships"]);
-  } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
+    assert.deepEqual(Object.keys(account).sort(), ["accessRestricted", "bookings", "memberships"]);
+    assert.equal(account.accessRestricted, false);
+
+    const internalReason = "internal administrator review note";
+    await db.insert(accountAccessRestrictions).values({
+      entityType: "member",
+      entityId: alice,
+      status: "suspended",
+      reason: internalReason,
+      updatedBy: `${prefix}-admin`,
+    });
+    const suspendedResponse = await fetch(`http://127.0.0.1:${address.port}/api/member/account`, {
+      headers: { "x-test-user": alice },
+    });
+    assert.equal(suspendedResponse.status, 200);
+    const suspendedAccount = await suspendedResponse.json() as Record<string, unknown>;
+    assert.equal(suspendedAccount.accessRestricted, true);
+    assert.equal(JSON.stringify(suspendedAccount).includes(internalReason), false);
+  } finally {
+    await db.delete(accountAccessRestrictions).where(eq(accountAccessRestrictions.entityId, alice));
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
 });
 test("live operations: staff scope, approved inventory, server grants and quota models", async t => {
   const adminId = `${prefix}-partner-ops-admin`, partnerUser = `${prefix}-partner`;

@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useAuth, useUser } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  getGetMemberAccountSummaryQueryKey,
   getGetMemberConsentsQueryKey,
   getMemberPrivacyRequestExport,
   getGetMemberPrivacyRequestsQueryKey,
@@ -19,6 +20,10 @@ const copy: Record<Language, Record<string, string>> = {
   en: {
     title: "Your MaydanGo account",
     intro: "Review your membership and bookings, update your name, or find help.",
+    accessRestrictionTitle: "Some account actions are temporarily unavailable",
+    accessRestrictionBody: "You can still sign in and contact MaydanGo. Your bookings and records are kept and are not cancelled automatically. If you have questions or an upcoming visit, contact us.",
+    accessRestrictionContact: "Email MaydanGo support",
+    accessRestrictionHelp: "Visit the Help Center",
     profile: "Account details",
     firstName: "First name",
     lastName: "Last name",
@@ -93,6 +98,10 @@ const copy: Record<Language, Record<string, string>> = {
   ar: {
     title: "حسابك في MaydanGo",
     intro: "راجع عضويتك وحجوزاتك، حدّث اسمك، أو اعثر على المساعدة.",
+    accessRestrictionTitle: "بعض إجراءات الحساب غير متاحة مؤقتاً",
+    accessRestrictionBody: "لا يزال بإمكانك تسجيل الدخول والتواصل مع فريق MaydanGo. تبقى حجوزاتك وسجلاتك محفوظة ولا تُلغى تلقائياً. إذا كان لديك استفسار أو حجز قادم، تواصل معنا.",
+    accessRestrictionContact: "تواصل مع دعم MaydanGo",
+    accessRestrictionHelp: "زيارة مركز المساعدة",
     profile: "تفاصيل الحساب",
     firstName: "الاسم الأول",
     lastName: "اسم العائلة",
@@ -167,6 +176,10 @@ const copy: Record<Language, Record<string, string>> = {
   ku: {
     title: "هەژماری MaydanGo ـی تۆ",
     intro: "ئەندامێتی و حجزەکانت ببینە، ناوت نوێ بکەرەوە، یان یارمەتی بدۆزەوە.",
+    accessRestrictionTitle: "هەندێک کردار لە هەژمارەکەتدا بە کاتی ناچالاکن",
+    accessRestrictionBody: "هێشتا دەتوانیت بچیتە ژوورەوە و پەیوەندی بە تیمی MaydanGo بکەیت. حجز و تۆمارەکانت دەپارێزرێن و بە شێوەی ئۆتۆماتیکی هەڵناوەشێنرێن. بۆ زانیاری زیاتر یان پرسیار لەبارەی حجزێکی داهاتوو، پەیوەندیمان پێوە بکە.",
+    accessRestrictionContact: "پەیوەندی بە پشتگیریی MaydanGo بکە",
+    accessRestrictionHelp: "سەردانی ناوەندی یارمەتی",
     profile: "وردەکاریی هەژمار",
     firstName: "ناوی یەکەم",
     lastName: "ناوی خێزان",
@@ -262,7 +275,12 @@ export default function MemberAccountPage({ language }: { language: Language }) 
   const { isLoaded: userLoaded, user } = useUser();
   const queryClient = useQueryClient();
   const summary = useGetMemberAccountSummary({
-    query: { enabled: isLoaded && isSignedIn === true },
+    query: {
+      queryKey: [...getGetMemberAccountSummaryQueryKey(), user?.id ?? "signed-out"],
+      enabled: isLoaded && userLoaded && isSignedIn === true && !!user?.id,
+      refetchInterval: 30_000,
+      refetchOnWindowFocus: true,
+    },
   });
   const privacyRequests = useGetMemberPrivacyRequests({
     query: { enabled: isLoaded && isSignedIn === true, retry: false, refetchInterval: 30_000 },
@@ -427,6 +445,27 @@ export default function MemberAccountPage({ language }: { language: Language }) 
         <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight text-foreground md:text-5xl">{t.title}</h1>
         <p className="mt-4 text-base leading-7 text-muted-foreground">{t.intro}</p>
       </header>
+
+      {summary.data?.accessRestricted && (
+        <aside
+          className="mb-8 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-sm sm:p-6"
+          role="status"
+          aria-live="polite"
+          aria-labelledby="account-restriction-heading"
+          data-testid="status-account-restricted"
+        >
+          <h2 id="account-restriction-heading" className="font-display text-xl font-bold">{t.accessRestrictionTitle}</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6">{t.accessRestrictionBody}</p>
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold">
+            <a href="mailto:maydangoing@gmail.com" className="underline underline-offset-2" data-testid="link-access-restriction-contact">
+              {t.accessRestrictionContact}
+            </a>
+            <Link href="/help" className="underline underline-offset-2" data-testid="link-access-restriction-help">
+              {t.accessRestrictionHelp}
+            </Link>
+          </div>
+        </aside>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[.85fr_1.15fr]">
         <div className="space-y-6">
