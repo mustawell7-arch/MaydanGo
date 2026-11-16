@@ -641,7 +641,42 @@ export type MemberAccountSummaryMembershipsItem = {
 
 export interface MemberAccountSummary {
   memberships: MemberAccountSummaryMembershipsItem[];
-  bookings: MemberBooking[];
+}
+
+export interface MemberAllowanceBalance {
+  /** @minimum 0 */
+  limit: number;
+  /** @minimum 0 */
+  remaining: number;
+  resetsAt: string;
+}
+
+export interface MemberAllowanceBuckets {
+  physical: MemberAllowanceBalance | null;
+  premium: MemberAllowanceBalance | null;
+  live: MemberAllowanceBalance | null;
+}
+
+export type MemberAllowanceMembershipQuotaMode = typeof MemberAllowanceMembershipQuotaMode[keyof typeof MemberAllowanceMembershipQuotaMode];
+
+
+export const MemberAllowanceMembershipQuotaMode = {
+  shared: 'shared',
+  separate: 'separate',
+} as const;
+
+export interface MemberAllowanceMembership {
+  tier: string;
+  endsAt: string;
+  quotaMode: MemberAllowanceMembershipQuotaMode;
+  daily: MemberAllowanceBalance | null;
+  shared: MemberAllowanceBalance | null;
+  separate: MemberAllowanceBuckets;
+}
+
+export interface MemberAllowances {
+  membership: MemberAllowanceMembership | null;
+  bookings?: MemberBooking[];
 }
 
 export interface HealthStatus {

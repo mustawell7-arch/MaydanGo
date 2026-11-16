@@ -121,6 +121,7 @@ import type {
   LiveOffering,
   LivePlan,
   MemberAccountSummary,
+  MemberAllowances,
   MemberCancellationResult,
   MemberCheckoutInput,
   MemberCheckoutResult,
@@ -16561,6 +16562,101 @@ export function useGetMemberAccountSummary<TData = Awaited<ReturnType<typeof get
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetMemberAccountSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMemberAllowancesUrl = () => {
+
+
+
+
+  return `/api/member/allowances`
+}
+
+export const getMemberAllowances = async ( options?: Parameters<typeof customFetch>[1]): Promise<MemberAllowances> => {
+
+  return customFetch<MemberAllowances>(getGetMemberAllowancesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberAllowancesQueryKey = () => {
+    return [
+    `/api/member/allowances`
+    ] as const;
+    }
+
+
+export const getGetMemberAllowancesQueryOptions = <TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAllowances>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberAllowancesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberAllowances>>> = ({ signal }) => getMemberAllowances({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberAllowances>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberAllowancesQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberAllowances>>>
+export type GetMemberAllowancesQueryError = ErrorType<unknown>
+
+
+export function useGetMemberAllowances<TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAllowances>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberAllowances>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberAllowances>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberAllowances<TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAllowances>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberAllowances>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberAllowances>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberAllowances<TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAllowances>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberAllowances<TData = Awaited<ReturnType<typeof getMemberAllowances>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberAllowances>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberAllowancesQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

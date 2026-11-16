@@ -21,6 +21,7 @@ import {
   getGetPublicFacilitiesQueryKey,
   useGetMemberCourses,
   useGetMemberLiveClasses,
+  useGetMemberAllowances,
   useGetPublicCatalog,
   useGetPublicFacilities,
 } from '@workspace/api-client-react';
@@ -40,11 +41,39 @@ export default function HomeScreen() {
   const liveQuery = useGetMemberLiveClasses({
     query: { enabled: app.signedIn, refetchInterval: 30_000 },
   });
+  const allowancesQuery = useGetMemberAllowances({
+    query: { enabled: app.signedIn, refetchInterval: 60_000, retry: false },
+  });
   const activeMembership = app.memberMemberships.find((membership) =>
     membership.scope !== 'preview' &&
     ['active', 'trial', 'scheduled_cancellation'].includes(membership.status) &&
     Date.parse(membership.endsAt) > Date.now(),
   );
+  const allowance = allowancesQuery.data?.membership;
+  const allowanceRows = allowance
+    ? allowance.quotaMode === 'shared'
+      ? allowance.shared ? [{ label: t('sharedVisits'), balance: allowance.shared }] : []
+      : [
+          { label: t('physicalVisits'), balance: allowance.separate.physical },
+          { label: t('premiumVisits'), balance: allowance.separate.premium },
+          { label: t('onlineVisits'), balance: allowance.separate.live },
+        ].filter((row): row is { label: string; balance: NonNullable<typeof row.balance> } => row.balance !== null)
+    : [];
+  const numberFormat = new Intl.NumberFormat(
+    app.language === 'en' ? 'en-IQ' : app.language === 'ar' ? 'ar-IQ' : 'ku-IQ',
+  );
+  const dailyResetTime = allowance?.daily
+    ? new Intl.DateTimeFormat(
+        app.language === 'en' ? 'en-IQ' : app.language === 'ar' ? 'ar-IQ' : 'ku-IQ',
+        { timeStyle: 'short', timeZone: 'Asia/Baghdad' },
+      ).format(new Date(allowance.daily.resetsAt))
+    : null;
+  const membershipResetDate = allowance
+    ? new Intl.DateTimeFormat(
+        app.language === 'en' ? 'en-IQ' : app.language === 'ar' ? 'ar-IQ' : 'ku-IQ',
+        { dateStyle: 'medium', timeZone: 'Asia/Baghdad' },
+      ).format(new Date(allowance.endsAt))
+    : null;
   const nearbyFacilities = useMemo(() => {
     const rows = (facilitiesQuery.data ?? []).filter((facility) =>
       app.selectedCityId === 'all' || cityIdForFacility(facility.city) === app.selectedCityId,
@@ -147,6 +176,52 @@ export default function HomeScreen() {
               ? `${t('managePass')} · ${dateTime(activeMembership.endsAt, app.language, true)}`
               : t('planNote')}
           </Text>
+          {app.signedIn && allowancesQuery.isLoading && activeMembership && (
+            <ActivityIndicator
+              accessibilityLabel={t('loadingAllowances')}
+              color={colors.primaryForeground}
+              size="small"
+              style={styles.allowanceLoading}
+            />
+          )}
+          {allowance && (allowanceRows.length > 0 || allowance.daily !== null) && (
+            <View
+              style={[styles.allowanceContent, { borderTopColor: colors.primaryForeground }]}
+              testID="home-membership-allowances"
+            >
+              <Text style={[styles.allowanceHeading, { color: colors.primaryForeground }]}>
+                {t('accessBalance')}
+              </Text>
+              <View style={styles.allowanceRows}>
+                {allowanceRows.map(row => (
+                  <View key={row.label} style={styles.allowanceRow}>
+                    <Text style={[styles.allowanceLabel, { color: colors.primaryForeground }]}>
+                      {row.label}
+                    </Text>
+                    <Text style={[styles.allowanceValue, { color: colors.primaryForeground }]}>
+                      {numberFormat.format(row.balance.remaining)}/{numberFormat.format(row.balance.limit)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              {allowance.daily && dailyResetTime && (
+                <Text style={[styles.allowanceReset, { color: colors.primaryForeground }]}>
+                  {t('dailyVisits')}: {numberFormat.format(allowance.daily.remaining)}/
+                  {numberFormat.format(allowance.daily.limit)} · {t('resetsDaily')} {dailyResetTime}
+                </Text>
+              )}
+              {membershipResetDate && (
+                <Text style={[styles.allowanceReset, { color: colors.primaryForeground }]}>
+                  {t('resetsWithMembership')} {membershipResetDate}
+                </Text>
+              )}
+            </View>
+          )}
+          {allowancesQuery.isError && activeMembership && (
+            <Text style={[styles.allowanceUnavailable, { color: colors.primaryForeground }]} role="alert">
+              {t('allowancesUnavailable')}
+            </Text>
+          )}
         </Pressable>
 
         <View style={styles.sectionHeader}>
@@ -461,6 +536,15 @@ const styles = StyleSheet.create({
   },
   membershipTier: { color: '#f5f7ee', fontSize: 22, fontWeight: '800', marginTop: 9 },
   membershipDetails: { color: '#c7d6c8', fontSize: 10, lineHeight: 15, marginTop: 5 },
+  allowanceLoading: { alignSelf: 'flex-start', marginTop: 12 },
+  allowanceContent: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: 14, paddingTop: 11 },
+  allowanceHeading: { fontSize: 11, fontWeight: '800', marginBottom: 8 },
+  allowanceRows: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  allowanceRow: { minWidth: '30%', flexGrow: 1 },
+  allowanceLabel: { fontSize: 9, fontWeight: '600', opacity: 0.82 },
+  allowanceValue: { fontSize: 14, fontWeight: '800', marginTop: 2 },
+  allowanceReset: { fontSize: 9, lineHeight: 14, marginTop: 7, opacity: 0.85 },
+  allowanceUnavailable: { fontSize: 10, lineHeight: 15, marginTop: 12, opacity: 0.88 },
   sectionHeader: {
     justifyContent: 'space-between',
     alignItems: 'flex-end',

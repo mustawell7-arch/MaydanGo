@@ -685,6 +685,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MemberAccountSummary"
+  /member/allowances:
+    get:
+      operationId: getMemberAllowances
+      responses:
+        "200":
+          description: Server-calculated balances for a current, eligible live membership; preview access is excluded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberAllowances"
   /member/preview-membership:
     post:
       operationId: enablePreviewMembership
@@ -1203,6 +1213,54 @@ components:
               status: { type: string }
               tier: { type: string }
               endsAt: { type: string, format: date-time }
+    MemberAllowanceBalance:
+      type: object
+      required: [limit, remaining, resetsAt]
+      properties:
+        limit: { type: integer, minimum: 0 }
+        remaining: { type: integer, minimum: 0 }
+        resetsAt: { type: string, format: date-time }
+    MemberAllowanceBuckets:
+      type: object
+      required: [physical, premium, live]
+      properties:
+        physical:
+          anyOf:
+            - $ref: "#/components/schemas/MemberAllowanceBalance"
+            - type: "null"
+        premium:
+          anyOf:
+            - $ref: "#/components/schemas/MemberAllowanceBalance"
+            - type: "null"
+        live:
+          anyOf:
+            - $ref: "#/components/schemas/MemberAllowanceBalance"
+            - type: "null"
+    MemberAllowanceMembership:
+      type: object
+      required: [tier, endsAt, quotaMode, daily, shared, separate]
+      properties:
+        tier: { type: string }
+        endsAt: { type: string, format: date-time }
+        quotaMode: { type: string, enum: [shared, separate] }
+        daily:
+          anyOf:
+            - $ref: "#/components/schemas/MemberAllowanceBalance"
+            - type: "null"
+        shared:
+          anyOf:
+            - $ref: "#/components/schemas/MemberAllowanceBalance"
+            - type: "null"
+        separate:
+          $ref: "#/components/schemas/MemberAllowanceBuckets"
+    MemberAllowances:
+      type: object
+      required: [membership]
+      properties:
+        membership:
+          anyOf:
+            - $ref: "#/components/schemas/MemberAllowanceMembership"
+            - type: "null"
         bookings:
           type: array
           items:

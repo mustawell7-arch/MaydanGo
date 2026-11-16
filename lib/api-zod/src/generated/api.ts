@@ -8490,21 +8490,77 @@ export const GetMemberStateResponse = zod.object({
 })
 
 
-export const getMemberAccountSummaryResponseBookingsItemLocalizedTitleOneEnMax = 500;
-
-export const getMemberAccountSummaryResponseBookingsItemLocalizedTitleOneArMax = 500;
-
-export const getMemberAccountSummaryResponseBookingsItemLocalizedTitleOneKuMax = 500;
-
-
-
 export const GetMemberAccountSummaryResponse = zod.object({
   "memberships": zod.array(zod.object({
   "scope": zod.string(),
   "status": zod.string(),
   "tier": zod.string(),
   "endsAt": zod.coerce.date()
-})),
+}))
+})
+
+
+export const getMemberAllowancesResponseMembershipOneDailyOneLimitMin = 0;
+
+export const getMemberAllowancesResponseMembershipOneDailyOneRemainingMin = 0;
+
+export const getMemberAllowancesResponseMembershipOneSharedOneLimitMin = 0;
+
+export const getMemberAllowancesResponseMembershipOneSharedOneRemainingMin = 0;
+
+export const getMemberAllowancesResponseMembershipOneSeparatePhysicalOneLimitMin = 0;
+
+export const getMemberAllowancesResponseMembershipOneSeparatePhysicalOneRemainingMin = 0;
+
+export const getMemberAllowancesResponseMembershipOneSeparatePremiumOneLimitMin = 0;
+
+export const getMemberAllowancesResponseMembershipOneSeparatePremiumOneRemainingMin = 0;
+
+export const getMemberAllowancesResponseMembershipOneSeparateLiveOneLimitMin = 0;
+
+export const getMemberAllowancesResponseMembershipOneSeparateLiveOneRemainingMin = 0;
+
+export const getMemberAllowancesResponseBookingsItemLocalizedTitleOneEnMax = 500;
+
+export const getMemberAllowancesResponseBookingsItemLocalizedTitleOneArMax = 500;
+
+export const getMemberAllowancesResponseBookingsItemLocalizedTitleOneKuMax = 500;
+
+
+
+export const GetMemberAllowancesResponse = zod.object({
+  "membership": zod.union([zod.object({
+  "tier": zod.string(),
+  "endsAt": zod.coerce.date(),
+  "quotaMode": zod.enum(['shared', 'separate']),
+  "daily": zod.union([zod.object({
+  "limit": zod.int().min(getMemberAllowancesResponseMembershipOneDailyOneLimitMin),
+  "remaining": zod.int().min(getMemberAllowancesResponseMembershipOneDailyOneRemainingMin),
+  "resetsAt": zod.coerce.date()
+}),zod.null()]),
+  "shared": zod.union([zod.object({
+  "limit": zod.int().min(getMemberAllowancesResponseMembershipOneSharedOneLimitMin),
+  "remaining": zod.int().min(getMemberAllowancesResponseMembershipOneSharedOneRemainingMin),
+  "resetsAt": zod.coerce.date()
+}),zod.null()]),
+  "separate": zod.object({
+  "physical": zod.union([zod.object({
+  "limit": zod.int().min(getMemberAllowancesResponseMembershipOneSeparatePhysicalOneLimitMin),
+  "remaining": zod.int().min(getMemberAllowancesResponseMembershipOneSeparatePhysicalOneRemainingMin),
+  "resetsAt": zod.coerce.date()
+}),zod.null()]),
+  "premium": zod.union([zod.object({
+  "limit": zod.int().min(getMemberAllowancesResponseMembershipOneSeparatePremiumOneLimitMin),
+  "remaining": zod.int().min(getMemberAllowancesResponseMembershipOneSeparatePremiumOneRemainingMin),
+  "resetsAt": zod.coerce.date()
+}),zod.null()]),
+  "live": zod.union([zod.object({
+  "limit": zod.int().min(getMemberAllowancesResponseMembershipOneSeparateLiveOneLimitMin),
+  "remaining": zod.int().min(getMemberAllowancesResponseMembershipOneSeparateLiveOneRemainingMin),
+  "resetsAt": zod.coerce.date()
+}),zod.null()])
+})
+}),zod.null()]),
   "bookings": zod.array(zod.object({
   "id": zod.string(),
   "kind": zod.string(),
@@ -8512,9 +8568,9 @@ export const GetMemberAccountSummaryResponse = zod.object({
   "slot": zod.string(),
   "title": zod.string(),
   "localizedTitle": zod.union([zod.object({
-  "en": zod.string().min(1).max(getMemberAccountSummaryResponseBookingsItemLocalizedTitleOneEnMax),
-  "ar": zod.string().min(1).max(getMemberAccountSummaryResponseBookingsItemLocalizedTitleOneArMax),
-  "ku": zod.string().min(1).max(getMemberAccountSummaryResponseBookingsItemLocalizedTitleOneKuMax)
+  "en": zod.string().min(1).max(getMemberAllowancesResponseBookingsItemLocalizedTitleOneEnMax),
+  "ar": zod.string().min(1).max(getMemberAllowancesResponseBookingsItemLocalizedTitleOneArMax),
+  "ku": zod.string().min(1).max(getMemberAllowancesResponseBookingsItemLocalizedTitleOneKuMax)
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
@@ -8524,7 +8580,7 @@ export const GetMemberAccountSummaryResponse = zod.object({
   "status": zod.string(),
   "createdAt": zod.string(),
   "cancelledAt": zod.string().nullish()
-}))
+})).optional()
 })
 
 

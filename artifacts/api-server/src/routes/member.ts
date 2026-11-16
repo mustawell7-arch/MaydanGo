@@ -7,6 +7,7 @@ import {
   CreateMemberPrivacyRequestBody,
   CreateMemberPrivacyRequestResponse,
   GetMemberConsentsResponse,
+  GetMemberAllowancesResponse,
   GetMemberPrivacyRequestsResponse,
   SaveMemberConsentsBody,
   SaveMemberConsentsResponse,
@@ -15,6 +16,7 @@ import {
   BookingError, memberState, memberAccountSummary, createReservation, cancelReservation,
   acceptWaitlistOffer, joinWaitlist, leaveWaitlist,
 } from "../lib/reservations";
+import { getMemberAllowances } from "../lib/member-allowances";
 import {
   ActivePrivacyRequestError,
   createMemberPrivacyRequest,
@@ -42,6 +44,9 @@ router.use((req, res, next) => {
 });
 router.get("/account", async (req, res) => {
   res.json(await memberAccountSummary(getAuth(req).userId!));
+});
+router.get("/allowances", async (req, res) => {
+  res.json(GetMemberAllowancesResponse.parse(await getMemberAllowances(getAuth(req).userId!)));
 });
 router.get("/consents", async (req, res) => {
   const state = await getMemberConsentState(getAuth(req).userId!);
