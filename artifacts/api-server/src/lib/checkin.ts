@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
-import { and, desc, eq, gt, gte, inArray, isNull, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, guardianConsentDocuments, manualCheckinChallenges, memberships, offerings, operators, partners, reservations, memberProfiles, memberConsentEvents } from "@workspace/db";
 import { z } from "zod";
 import { BookingError, membershipCanAccess, processWaitlistQueue } from "./reservations";
@@ -10,6 +10,7 @@ import { iraqCalendarDate, openingState, previousIraqCalendarDate } from "./faci
 import { getPlatformSafetyRules } from "./platform-rules";
 import type { PlatformSafetyRules } from "@workspace/db";
 import { getCurrentLegalPolicies } from "./legal-policies";
+import { hasPartnerPermission, isPartnerOperatorRole } from "./partner-roles";
 import {
   buildCurrentMemberConsentState,
   hasCurrentRequiredMemberConsent,
@@ -85,15 +86,17 @@ async function staff(
 ) {
   const [op] = await tx.select().from(operators).where(eq(operators.userId, actor)).for("share");
   const hasRequiredPermission = !!op && permissions.some(permission => hasAdminPermission(op.role, permission));
-  if (!op || (!hasRequiredPermission && !(op.role === "partner" && partnerId && op.partnerId === partnerId)))
+  const assignedPartnerStaff = !!op && isPartnerOperatorRole(op.role) && !!partnerId
+    && op.partnerId === partnerId && hasPartnerPermission(op.role, "attendance");
+  if (!op || (!hasRequiredPermission && !assignedPartnerStaff))
     throw new BookingError(403, "Authorized staff for this partner are required.");
-  if (op.role === "partner" && partnerId) {
+  if (isPartnerOperatorRole(op.role) && partnerId) {
     await lockVenueAccess(tx, partnerId, offering?.city, offering?.facility);
   }
-  if (op.role === "partner" && partnerId && await isVenueSafetyRestricted("partner", partnerId)) {
+  if (isPartnerOperatorRole(op.role) && partnerId && await isVenueSafetyRestricted("partner", partnerId)) {
     throw new BookingError(403, "Partner attendance actions are temporarily restricted. Contact MaydanGo support.");
   }
-  if (op.role === "partner" && offering && partnerId) {
+  if (isPartnerOperatorRole(op.role) && offering && partnerId) {
     const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
       eq(facilityProfiles.partnerId, partnerId),
       eq(facilityProfiles.city, offering.city),
@@ -194,7 +197,10 @@ async function requireFacilityOpen(tx: Tx, c: Awaited<ReturnType<typeof context>
 }
 export async function savePolicy(actor: string, id: string, input: z.infer<typeof policyInput>) {
   return db.transaction(async tx => {
-    const c = await context(tx, id); await staff(tx, actor, c.o.partnerId, undefined, c.o);
+    const c = await context(tx, id);
+    const op = await staff(tx, actor, c.o.partnerId, undefined, c.o);
+    if (isPartnerOperatorRole(op.role) && !hasPartnerPermission(op.role, "sessions"))
+      throw new BookingError(403, "Only partner owners and managers can change check-in policies.");
     const opensAt = new Date(input.opensAt), closesAt = new Date(input.closesAt), correctionEndsAt = new Date(input.correctionEndsAt);
     if (opensAt >= closesAt || opensAt < new Date(c.o.startsAt.getTime() - 3600000) || closesAt > c.o.endsAt ||
         correctionEndsAt < c.o.endsAt || correctionEndsAt > new Date(c.o.endsAt.getTime() + 7 * 86400000))
@@ -206,7 +212,10 @@ export async function savePolicy(actor: string, id: string, input: z.infer<typeo
 }
 export async function issueQr(actor: string, id: string, revoke = false) {
   return db.transaction(async tx => {
-    const c = await context(tx, id); await staff(tx, actor, c.o.partnerId, undefined, c.o);
+    const c = await context(tx, id);
+    const op = await staff(tx, actor, c.o.partnerId, undefined, c.o);
+    if (isPartnerOperatorRole(op.role) && !hasPartnerPermission(op.role, "sessions"))
+      throw new BookingError(403, "Only partner owners and managers can manage check-in QR codes.");
     const now = new Date();
     if (!revoke) await requireFacilityOpen(tx, c, now);
     await tx.update(checkinChallenges).set({ consumedAt: now }).where(eq(checkinChallenges.reservationId, id));
@@ -254,7 +263,8 @@ export async function recordManualCheckin(actor: string, id: string, input: z.in
   const currentPolicies = await getCurrentLegalPolicies();
   return db.transaction(async tx => {
     const c = await context(tx, id), op = await staff(tx, actor, c.o.partnerId, undefined, c.o);
-    if (op.role !== "partner") throw new BookingError(403, "Only assigned partner staff can record a manual arrival.");
+    if (!isPartnerOperatorRole(op.role) || !hasPartnerPermission(op.role, "attendance"))
+      throw new BookingError(403, "Only assigned partner staff can record a manual arrival.");
     const consentHistory = await tx.select().from(memberConsentEvents)
       .where(eq(memberConsentEvents.userId, c.r.userId))
       .orderBy(desc(memberConsentEvents.recordedAt), desc(memberConsentEvents.id));
@@ -334,6 +344,10 @@ export async function review(actor: string, id: string, input: z.infer<typeof re
     const ownDispute = action === "dispute" && c.r.userId === actor;
     const requiredPermission = action.startsWith("resolve_") ? "fraud_compliance" : "partner_operations";
     const op = ownDispute ? null : await staff(tx, actor, c.o.partnerId, [requiredPermission], c.o);
+    if (op?.role === "partner_reception"
+      && !["confirm", "no_show", "accept_request", "reject_request"].includes(action)) {
+      throw new BookingError(403, "Reception staff may confirm attendance or booking requests, but cannot dispute or resolve cases.");
+    }
     if (action === "reject_request") {
       if (c.r.status !== "requested" || c.o.startsAt <= now || !c.o.active || c.o.cancelledAt)
         throw new BookingError(409, "Only upcoming active booking requests may be rejected.");
@@ -420,7 +434,22 @@ export async function roster(actor: string) {
   const isGlobalStaff = !!op && (
     hasAdminPermission(op.role, "partner_operations") || hasAdminPermission(op.role, "fraud_compliance")
   );
-  const isStaff = isGlobalStaff || op?.role === "partner";
+  const isPartnerStaff = !!op && isPartnerOperatorRole(op.role)
+    && hasPartnerPermission(op.role, "attendance");
+  if (op && isPartnerOperatorRole(op.role) && !isPartnerStaff)
+    throw new BookingError(403, "Your partner role does not allow attendance access.");
+  const isStaff = isGlobalStaff || isPartnerStaff;
+  const isReception = op?.role === "partner_reception";
+  if (isPartnerStaff) {
+    if (!op?.partnerId) throw new BookingError(403, "This partner staff account is not assigned to an approved partner.");
+    const [partner] = await db.select({ approved: partners.approved }).from(partners)
+      .where(eq(partners.id, op.partnerId)).limit(1);
+    if (!partner?.approved) throw new BookingError(403, "Partner approval is required for attendance access.");
+    if (await isAccessSuspended("partner", op.partnerId))
+      throw new BookingError(403, "Partner operations are temporarily restricted. Contact MaydanGo support.");
+  }
+  const dayStart = isReception ? new Date(`${iraqCalendarDate(new Date())}T00:00:00+03:00`) : null;
+  const dayEnd = dayStart ? new Date(dayStart.getTime() + 86_400_000) : null;
   if (!isStaff) await requireCurrentMemberConsent(actor);
   const rows = await db.select({
     r: reservations,
@@ -437,14 +466,21 @@ export async function roster(actor: string) {
     .leftJoin(guardianConsentDocuments, eq(guardianConsentDocuments.attendanceId, attendance.id))
     .where(and(eq(offerings.scope, "live"), isStaff
       ? isGlobalStaff ? undefined : eq(offerings.partnerId, op?.partnerId ?? "")
-      : eq(reservations.userId, actor)));
+      : eq(reservations.userId, actor),
+      dayStart ? gte(offerings.startsAt, dayStart) : undefined,
+      dayEnd ? lt(offerings.startsAt, dayEnd) : undefined));
   const events = rows.length ? await db.select().from(attendanceEvents).where(inArray(attendanceEvents.reservationId, rows.map(x => x.r.id))) : [];
   const userIds = [...new Set(rows.map(({ r }) => r.userId))];
   const manualVisitCounts = userIds.length ? await db.select({
     userId: reservations.userId,
     count: sql<number>`count(*)::int`,
   }).from(attendanceEvents).innerJoin(reservations, eq(attendanceEvents.reservationId, reservations.id))
-    .where(and(inArray(reservations.userId, userIds), eq(attendanceEvents.action, "manual.checkin")))
+    .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
+    .where(and(
+      inArray(reservations.userId, userIds),
+      eq(attendanceEvents.action, "manual.checkin"),
+      isPartnerStaff ? eq(offerings.partnerId, op!.partnerId!) : undefined,
+    ))
     .groupBy(reservations.userId) : [];
   const manualCountByUser = new Map(manualVisitCounts.map(({ userId, count }) => [userId, count]));
   const now = new Date();

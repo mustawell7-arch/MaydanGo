@@ -121,6 +121,7 @@ import type {
   GetOperationCoursesResponse,
   GetOperationsAnalyticsParams,
   GetPartnerSettlementSummaryParams,
+  GetPartnerStaffResponse,
   GetPublicLegalPolicyVersionParams,
   GetSuperAdminAuditLogsParams,
   GetSuperAdminGuardianConsentsParams,
@@ -191,6 +192,9 @@ import type {
   PartnerMarketingProfile,
   PartnerMarketingProfileUpdate,
   PartnerSettlementSummary,
+  PartnerStaffAssignmentInput,
+  PartnerStaffMember,
+  PartnerStaffRemovalResponse,
   PlanInput,
   PlatformSafetyRulesRecord,
   PlatformSafetyRulesUpdateInput,
@@ -2657,6 +2661,251 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getAddPartnerMutationOptions(options), queryClient);
+    }
+
+export const getGetPartnerStaffUrl = () => {
+
+
+
+
+  return `/api/operations/partner-staff`
+}
+
+export const getPartnerStaff = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetPartnerStaffResponse> => {
+
+  return customFetch<GetPartnerStaffResponse>(getGetPartnerStaffUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPartnerStaffQueryKey = () => {
+    return [
+    `/api/operations/partner-staff`
+    ] as const;
+    }
+
+
+export const getGetPartnerStaffQueryOptions = <TData = Awaited<ReturnType<typeof getPartnerStaff>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerStaff>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPartnerStaffQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPartnerStaff>>> = ({ signal }) => getPartnerStaff({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPartnerStaff>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPartnerStaffQueryResult = NonNullable<Awaited<ReturnType<typeof getPartnerStaff>>>
+export type GetPartnerStaffQueryError = ErrorType<void>
+
+
+export function useGetPartnerStaff<TData = Awaited<ReturnType<typeof getPartnerStaff>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerStaff>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPartnerStaff>>,
+          TError,
+          Awaited<ReturnType<typeof getPartnerStaff>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPartnerStaff<TData = Awaited<ReturnType<typeof getPartnerStaff>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerStaff>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPartnerStaff>>,
+          TError,
+          Awaited<ReturnType<typeof getPartnerStaff>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPartnerStaff<TData = Awaited<ReturnType<typeof getPartnerStaff>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerStaff>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPartnerStaff<TData = Awaited<ReturnType<typeof getPartnerStaff>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPartnerStaff>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPartnerStaffQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAssignPartnerStaffUrl = () => {
+
+
+
+
+  return `/api/operations/partner-staff`
+}
+
+export const assignPartnerStaff = async (partnerStaffAssignmentInput: PartnerStaffAssignmentInput, options?: Parameters<typeof customFetch>[1]): Promise<PartnerStaffMember> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PartnerStaffMember>(getAssignPartnerStaffUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(partnerStaffAssignmentInput)
+  }
+);}
+
+
+
+
+
+export const getAssignPartnerStaffMutationKey = () => ['assignPartnerStaff'] as const;
+
+export const getAssignPartnerStaffMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof assignPartnerStaff>>, TError,AssignPartnerStaffMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof assignPartnerStaff>>, TError,AssignPartnerStaffMutationVariables, TContext> => {
+
+const mutationKey = getAssignPartnerStaffMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof assignPartnerStaff>>, AssignPartnerStaffMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  assignPartnerStaff(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AssignPartnerStaffMutationResult = NonNullable<Awaited<ReturnType<typeof assignPartnerStaff>>>
+    export type AssignPartnerStaffMutationBody = BodyType<PartnerStaffAssignmentInput>
+    export type AssignPartnerStaffMutationError = ErrorType<void>
+    export type AssignPartnerStaffMutationVariables = {data: BodyType<PartnerStaffAssignmentInput>}
+
+    export const useAssignPartnerStaff = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof assignPartnerStaff>>, TError,AssignPartnerStaffMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof assignPartnerStaff>>,
+        TError,
+        AssignPartnerStaffMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAssignPartnerStaffMutationOptions(options), queryClient);
+    }
+
+export const getRemovePartnerStaffUrl = (userId: string,) => {
+
+
+
+
+  return `/api/operations/partner-staff/${userId}`
+}
+
+export const removePartnerStaff = async (userId: string, options?: Parameters<typeof customFetch>[1]): Promise<PartnerStaffRemovalResponse> => {
+
+  return customFetch<PartnerStaffRemovalResponse>(getRemovePartnerStaffUrl(userId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRemovePartnerStaffMutationKey = () => ['removePartnerStaff'] as const;
+
+export const getRemovePartnerStaffMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removePartnerStaff>>, TError,RemovePartnerStaffMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removePartnerStaff>>, TError,RemovePartnerStaffMutationVariables, TContext> => {
+
+const mutationKey = getRemovePartnerStaffMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removePartnerStaff>>, RemovePartnerStaffMutationVariables> = (props) => {
+          const {userId} = props ?? {};
+
+          return  removePartnerStaff(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemovePartnerStaffMutationResult = NonNullable<Awaited<ReturnType<typeof removePartnerStaff>>>
+
+    export type RemovePartnerStaffMutationError = ErrorType<void>
+    export type RemovePartnerStaffMutationVariables = {userId: string}
+
+    export const useRemovePartnerStaff = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removePartnerStaff>>, TError,RemovePartnerStaffMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof removePartnerStaff>>,
+        TError,
+        RemovePartnerStaffMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemovePartnerStaffMutationOptions(options), queryClient);
     }
 
 export const getRequestPartnerGuardianConsentUploadUrlUrl = (id: string,) => {

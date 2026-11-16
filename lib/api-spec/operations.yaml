@@ -694,6 +694,55 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/OperationsState" }
+  /operations/partner-staff:
+    get:
+      operationId: getPartnerStaff
+      responses:
+        "200":
+          description: Staff assigned to the signed-in partner owner
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetPartnerStaffResponse" }
+        "403": { description: Partner-owner access is required }
+    post:
+      operationId: assignPartnerStaff
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerStaffAssignmentInput" }
+      responses:
+        "200":
+          description: Existing partner staff member assigned a different role
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerStaffMember" }
+        "201":
+          description: Partner role assigned to a verified MaydanGo account
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerStaffMember" }
+        "400": { description: Invalid email or role }
+        "403": { description: Partner-owner access is required }
+        "404": { description: Verified MaydanGo account not found }
+        "409": { description: Account already has another staff role or partner assignment }
+  /operations/partner-staff/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema: { type: string }
+    delete:
+      operationId: removePartnerStaff
+      responses:
+        "200":
+          description: Partner access removed without deleting the MaydanGo account
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerStaffRemovalResponse" }
+        "400": { description: The partner owner cannot be removed }
+        "403": { description: Partner-owner access is required }
+        "404": { description: Partner staff member not found }
   /operations/quality:
     get:
       operationId: getFacilityQualityControl
@@ -4376,7 +4425,7 @@ components:
       type: object
       required: [role, partnerId, partners, offerings, waitlist, plans]
       properties:
-        role: { type: string, enum: [partner_operations_admin, partner, marketing_admin, super_admin] }
+        role: { type: string, enum: [partner_operations_admin, partner, partner_manager, partner_reception, partner_finance, marketing_admin, super_admin] }
         partnerId: { type: [string, "null"] }
         partners: { type: array, items: { $ref: "#/components/schemas/Partner" } }
         offerings: { type: array, items: { $ref: "#/components/schemas/LiveOffering" } }
@@ -5221,3 +5270,39 @@ components:
               visitAt: { type: string, format: date-time }
               verifiedAt: { type: string, format: date-time }
               expiresAt: { type: string, format: date-time }
+    PartnerStaffRole:
+      type: string
+      enum: [partner, partner_manager, partner_reception, partner_finance]
+    PartnerStaffMember:
+      type: object
+      additionalProperties: false
+      required: [userId, email, role, owner]
+      properties:
+        userId: { type: string }
+        email: { type: ["string", "null"], format: email }
+        role: { $ref: "#/components/schemas/PartnerStaffRole" }
+        owner: { type: boolean }
+    GetPartnerStaffResponse:
+      type: object
+      additionalProperties: false
+      required: [partnerId, members]
+      properties:
+        partnerId: { type: string }
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/PartnerStaffMember" }
+    PartnerStaffAssignmentInput:
+      type: object
+      additionalProperties: false
+      required: [email, role]
+      properties:
+        email: { type: string, format: email, minLength: 3, maxLength: 254 }
+        role:
+          type: string
+          enum: [partner_manager, partner_reception, partner_finance]
+    PartnerStaffRemovalResponse:
+      type: object
+      additionalProperties: false
+      required: [ok]
+      properties:
+        ok: { type: boolean, const: true }

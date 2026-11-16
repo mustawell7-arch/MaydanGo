@@ -2,18 +2,31 @@ import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { attendance, db, reservations } from "@workspace/db";
+import { attendance, db, operators, reservations } from "@workspace/db";
 import { BookingError } from "../lib/reservations";
 import { sendMemberNotification } from "../lib/notifications";
 import { DeviceSecurityError, requirePrimaryMemberDevice } from "../lib/member-device-security";
 import { roster, savePolicy, issueQr, scanQr, review, policyInput, scanInput, reviewInput, issueManualCheckinCode, recordManualCheckin, manualCheckinInput } from "../lib/checkin";
+import { hasPartnerPermission, isPartnerOperatorRole } from "../lib/partner-roles";
 
 const router = Router();
 router.use((req, res, next) => {
   if (!getAuth(req).userId) { res.status(401).json({ message: "Sign in to access attendance." }); return; }
   next();
 });
-router.get("/", requirePrimaryMemberDevice, async (req, res) => { res.json(await roster(getAuth(req).userId!)); });
+router.get("/", async (req, res, next) => {
+  const userId = getAuth(req).userId!;
+  const [operator] = await db.select().from(operators).where(eq(operators.userId, userId)).limit(1);
+  if (!operator || !isPartnerOperatorRole(operator.role)) {
+    next();
+    return;
+  }
+  if (!hasPartnerPermission(operator.role, "attendance")) {
+    res.status(403).json({ message: "Your partner role does not allow attendance access." });
+    return;
+  }
+  res.json(await roster(userId));
+}, requirePrimaryMemberDevice, async (req, res) => { res.json(await roster(getAuth(req).userId!)); });
 router.post("/scan", requirePrimaryMemberDevice, async (req, res) => {
   const ownerId = getAuth(req).userId!;
   const result = await scanQr(ownerId, scanInput.parse(req.body));

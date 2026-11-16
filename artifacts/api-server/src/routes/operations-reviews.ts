@@ -7,6 +7,7 @@ import {
   facilityReviewResponses, facilityReviews, operationAudit, operators, partners,
 } from "@workspace/db";
 import { hasAdminPermission } from "../lib/admin-roles";
+import { hasPartnerPermission, isPartnerOperatorRole } from "../lib/partner-roles";
 import { isAccessSuspended } from "../lib/account-access-restrictions";
 import {
   GetOperationsFacilityReviewsResponse, ModerateFacilityReviewBody,
@@ -20,17 +21,22 @@ const router = Router();
 type Operator = typeof operators.$inferSelect;
 
 router.use(async (req, res, next) => {
+  if (!/^\/(reviews(?:\/|$)|review-privileges(?:\/|$))/.test(req.path)) {
+    next();
+    return;
+  }
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ message: "Sign in to access facility reviews." });
     return;
   }
   const [operator] = await db.select().from(operators).where(eq(operators.userId, userId)).limit(1);
-  if (!operator || (!hasAdminPermission(operator.role, "fraud_compliance") && operator.role !== "partner")) {
+  if (!operator || (!hasAdminPermission(operator.role, "fraud_compliance")
+    && (!isPartnerOperatorRole(operator.role) || !hasPartnerPermission(operator.role, "reviews")))) {
     res.status(403).json({ message: "Administrator or approved partner access is required." });
     return;
   }
-  if (operator.role === "partner") {
+  if (isPartnerOperatorRole(operator.role)) {
     if (!operator.partnerId) {
       res.status(403).json({ message: "This partner account is not assigned to a partner." });
       return;
@@ -56,7 +62,7 @@ function operatorFor(res: Response): Operator {
 
 async function reviewRows(ids?: string[], operator?: Operator) {
   if (ids && !ids.length) return [];
-  const scope = operator?.role === "partner"
+  const scope = operator && isPartnerOperatorRole(operator.role)
     ? and(eq(facilityReviews.partnerId, operator.partnerId!), eq(facilityReviews.status, "published"))
     : undefined;
   const rows = await db.select({
@@ -200,7 +206,7 @@ router.patch("/reviews/:id/moderation", async (req, res): Promise<void> => {
 
 router.put("/reviews/:id/response", async (req, res): Promise<void> => {
   const operator = operatorFor(res);
-  if (operator.role !== "partner" || !operator.partnerId) {
+  if (!isPartnerOperatorRole(operator.role) || !hasPartnerPermission(operator.role, "reviews") || !operator.partnerId) {
     res.status(403).json({ message: "Only the facility's approved partner can respond." });
     return;
   }

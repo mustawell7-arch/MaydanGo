@@ -3299,6 +3299,9 @@ export type OperationsStateRole = typeof OperationsStateRole[keyof typeof Operat
 export const OperationsStateRole = {
   partner_operations_admin: 'partner_operations_admin',
   partner: 'partner',
+  partner_manager: 'partner_manager',
+  partner_reception: 'partner_reception',
+  partner_finance: 'partner_finance',
   marketing_admin: 'marketing_admin',
   super_admin: 'super_admin',
 } as const;
@@ -4885,6 +4888,52 @@ export type GetSuperAdminGuardianConsentsResponseItemsItem = {
 export interface GetSuperAdminGuardianConsentsResponse {
   items: GetSuperAdminGuardianConsentsResponseItemsItem[];
 }
+
+export type PartnerStaffRole = typeof PartnerStaffRole[keyof typeof PartnerStaffRole];
+
+
+export const PartnerStaffRole = {
+  partner: 'partner',
+  partner_manager: 'partner_manager',
+  partner_reception: 'partner_reception',
+  partner_finance: 'partner_finance',
+} as const;
+
+export interface PartnerStaffMember {
+  userId: string;
+  /** @nullable */
+  email: string | null;
+  role: PartnerStaffRole;
+  owner: boolean;
+}
+
+export interface GetPartnerStaffResponse {
+  partnerId: string;
+  members: PartnerStaffMember[];
+}
+
+export type PartnerStaffAssignmentInputRole = typeof PartnerStaffAssignmentInputRole[keyof typeof PartnerStaffAssignmentInputRole];
+
+
+export const PartnerStaffAssignmentInputRole = {
+  partner_manager: 'partner_manager',
+  partner_reception: 'partner_reception',
+  partner_finance: 'partner_finance',
+} as const;
+
+export interface PartnerStaffAssignmentInput {
+  /**
+     * @minLength 3
+     * @maxLength 254
+     */
+  email: string;
+  role: PartnerStaffAssignmentInputRole;
+}
+
+export const PartnerStaffRemovalResponseValue = {
+  ok: true,
+} as const;
+export type PartnerStaffRemovalResponse = typeof PartnerStaffRemovalResponseValue;
 
 /**
  * Partner-only status; no birth date or guardian details are exposed.

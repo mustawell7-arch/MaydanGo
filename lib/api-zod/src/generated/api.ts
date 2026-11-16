@@ -1402,7 +1402,7 @@ export const getOperationsResponsePlansItemOnePriceIqdMax = 1000000000;
 
 
 export const GetOperationsResponse = zod.object({
-  "role": zod.enum(['partner_operations_admin', 'partner', 'marketing_admin', 'super_admin']),
+  "role": zod.enum(['partner_operations_admin', 'partner', 'partner_manager', 'partner_reception', 'partner_finance', 'marketing_admin', 'super_admin']),
   "partnerId": zod.string().nullable(),
   "partners": zod.array(zod.object({
   "name": zod.string(),
@@ -1689,6 +1689,44 @@ export const AddPartnerResponse = zod.object({
   "id": zod.string(),
   "approved": zod.boolean()
 }))
+
+
+export const GetPartnerStaffResponse = zod.object({
+  "partnerId": zod.string(),
+  "members": zod.array(zod.object({
+  "userId": zod.string(),
+  "email": zod.email().nullable(),
+  "role": zod.enum(['partner', 'partner_manager', 'partner_reception', 'partner_finance']),
+  "owner": zod.boolean()
+}))
+})
+
+
+export const assignPartnerStaffBodyEmailMin = 3;
+export const assignPartnerStaffBodyEmailMax = 254;
+
+
+
+export const AssignPartnerStaffBody = zod.object({
+  "email": zod.email().min(assignPartnerStaffBodyEmailMin).max(assignPartnerStaffBodyEmailMax),
+  "role": zod.enum(['partner_manager', 'partner_reception', 'partner_finance'])
+})
+
+export const AssignPartnerStaffResponse = zod.object({
+  "userId": zod.string(),
+  "email": zod.email().nullable(),
+  "role": zod.enum(['partner', 'partner_manager', 'partner_reception', 'partner_finance']),
+  "owner": zod.boolean()
+})
+
+
+export const RemovePartnerStaffParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const RemovePartnerStaffResponse = zod.object({
+  "ok": zod.literal(true)
+})
 
 
 export const RequestPartnerGuardianConsentUploadUrlParams = zod.object({

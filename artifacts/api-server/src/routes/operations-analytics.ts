@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { db, operators, partners, pool } from "@workspace/db";
 import { GetOperationsAnalyticsResponse } from "@workspace/api-zod";
 import { hasAdminPermission } from "../lib/admin-roles";
+import { hasPartnerPermission, isPartnerOperatorRole } from "../lib/partner-roles";
 import { isAccessSuspended } from "../lib/account-access-restrictions";
 
 const router = Router();
@@ -84,6 +85,10 @@ function buildBuckets(from: string, to: string, monthly: boolean): string[] {
 }
 
 router.use(async (req, res, next) => {
+  if (req.path !== "/analytics") {
+    next();
+    return;
+  }
   try {
     const userId = getAuth(req).userId;
     if (!userId) {
@@ -91,11 +96,12 @@ router.use(async (req, res, next) => {
       return;
     }
     const [operator] = await db.select().from(operators).where(eq(operators.userId, userId)).limit(1);
-    if (!operator || (!hasAdminPermission(operator.role, "partner_operations") && operator.role !== "partner")) {
+    if (!operator || (!hasAdminPermission(operator.role, "partner_operations")
+      && (!isPartnerOperatorRole(operator.role) || !hasPartnerPermission(operator.role, "analytics")))) {
       res.status(403).json({ message: "Administrator or approved partner access is required." });
       return;
     }
-    if (operator.role === "partner") {
+    if (isPartnerOperatorRole(operator.role)) {
       if (!operator.partnerId) {
         res.status(403).json({ message: "An approved partner account is required." });
         return;

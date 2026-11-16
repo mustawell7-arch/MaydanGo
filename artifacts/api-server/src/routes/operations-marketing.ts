@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db, operationAudit, operators, partners } from "@workspace/db";
 import { isAccessSuspended } from "../lib/account-access-restrictions";
+import { hasPartnerPermission, isPartnerOperatorRole } from "../lib/partner-roles";
 import {
   GetPartnerMarketingProfileResponse, UpdatePartnerMarketingProfileBody,
   UpdatePartnerMarketingProfileResponse,
@@ -13,13 +14,18 @@ const router = Router();
 type Operator = typeof operators.$inferSelect;
 
 router.use(async (req, res, next) => {
+  if (req.path !== "/marketing-profile") {
+    next();
+    return;
+  }
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ message: "Sign in to access partner marketing materials." });
     return;
   }
   const [operator] = await db.select().from(operators).where(eq(operators.userId, userId)).limit(1);
-  if (!operator || operator.role !== "partner" || !operator.partnerId) {
+  if (!operator || !isPartnerOperatorRole(operator.role)
+    || !hasPartnerPermission(operator.role, "marketing") || !operator.partnerId) {
     res.status(403).json({ message: "An approved partner account is required." });
     return;
   }

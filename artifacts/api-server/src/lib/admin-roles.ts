@@ -1,3 +1,5 @@
+import { isPartnerOperatorRole } from "./partner-roles";
+
 export const ADMIN_ROLE_PERMISSIONS = {
   customer_support_admin: ["support", "membership_support"],
   partner_operations_admin: ["partner_operations"],
@@ -106,5 +108,5 @@ export function isScopedAdministrator(role: string): boolean {
 
 // The legacy "admin" role intentionally receives no permission implicitly.
 export function isOperationsPortalRole(role: string): boolean {
-  return role === "partner" || role === "finance" || isScopedAdministrator(role);
+  return isPartnerOperatorRole(role) || role === "finance" || isScopedAdministrator(role);
 }

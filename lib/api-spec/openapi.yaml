@@ -368,6 +368,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1contracts~1{id}~1review"
   /operations/partners:
     $ref: "./operations.yaml#/paths/~1operations~1partners"
+  /operations/partner-staff:
+    $ref: "./operations.yaml#/paths/~1operations~1partner-staff"
+  /operations/partner-staff/{userId}:
+    $ref: "./operations.yaml#/paths/~1operations~1partner-staff~1{userId}"
   /operations/attendance/{id}/guardian-consent/upload-url:
     $ref: "./operations.yaml#/paths/~1operations~1attendance~1{id}~1guardian-consent~1upload-url"
   /operations/attendance/{id}/guardian-consent/{documentId}/complete:

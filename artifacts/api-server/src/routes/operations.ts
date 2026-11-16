@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { getAuth } from "@clerk/express";
+import { clerkClient, getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lte, lt } from "drizzle-orm";
@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, courseMaterials, facilityProfiles, facilityHoursOverrides, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents, financeInvoiceCorrections, instructorPortalRequests, instructorCourseAssignments, instructorOfferingAssignments } from "@workspace/db";
 import { BookingError, effectiveMembershipStatus, processWaitlistQueue } from "../lib/reservations";
 import { hasAdminPermission, isOperationsPortalRole, type AdminPermission } from "../lib/admin-roles";
+import { canPartnerUseOperationsRoute, isPartnerOperatorRole } from "../lib/partner-roles";
 import { createFacilityProfileInput, facilityHoursOverrideInput, facilityProfileFields, offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
 import {
   AddLearningLessonBody, AddLearningLessonResponse, ChangeLiveOfferingBody,
@@ -60,12 +61,15 @@ router.use(async (req, res, next) => {
     || (!isOperationsPortalRole(operator.role) && !marketingHomeOnly)) {
     res.status(403).json({ message: "Authorized staff access is required." }); return;
   }
-  if (operator.role === "partner") {
+  if (isPartnerOperatorRole(operator.role)) {
     if (!operator.partnerId) { res.status(403).json({ message: "This partner account is not assigned to an approved partner." }); return; }
     const [partner] = await db.select({ approved: partners.approved }).from(partners).where(eq(partners.id, operator.partnerId));
     if (!partner?.approved) { res.status(403).json({ message: "Partner approval is required for portal access." }); return; }
     if (await isAccessSuspended("partner", operator.partnerId)) {
       res.status(403).json({ message: "Partner operations are temporarily restricted. Contact MaydanGo support." }); return;
+    }
+    if (!canPartnerUseOperationsRoute(operator.role, req.method, req.path)) {
+      res.status(403).json({ message: "Your partner role does not allow this action." }); return;
     }
   }
   res.locals.operator = operator; next();
@@ -129,7 +133,7 @@ function own(res: import("express").Response, partnerId: string | null) {
     throw new BookingError(403, "This partner is not assigned to your account.");
 }
 function partnerOnly(res: import("express").Response) {
-  if (res.locals.operator.role !== "partner" || !res.locals.operator.partnerId)
+  if (!isPartnerOperatorRole(res.locals.operator.role) || !res.locals.operator.partnerId)
     throw new BookingError(403, "This partner-only view is not available to administrators.");
   return res.locals.operator.partnerId as string;
 }
@@ -141,23 +145,33 @@ router.get("/", async (_req, res) => {
   const op = res.locals.operator;
   const isStaff = hasAdminPermission(op.role, "partner_operations");
   const isMarketingAdmin = hasAdminPermission(op.role, "marketing");
-  if (!isStaff && !isMarketingAdmin && op.role !== "partner") throw new BookingError(403, "This operations view requires a partner operations role.");
+  const isPartner = isPartnerOperatorRole(op.role);
+  const isPartnerFinance = op.role === "partner_finance";
+  const isReception = op.role === "partner_reception";
+  if (!isStaff && !isMarketingAdmin && !isPartner) throw new BookingError(403, "This operations view requires a partner operations role.");
   if (!isStaff && isMarketingAdmin) {
     res.json({ role: op.role, partnerId: null, partners: [], offerings: [], waitlist: [], plans: [] });
     return;
   }
+  const receptionStart = isReception ? new Date(`${iraqCalendarDate(new Date())}T00:00:00+03:00`) : null;
+  const receptionEnd = receptionStart ? new Date(receptionStart.getTime() + 86_400_000) : null;
   const [partnerRows, offeringRows, plans, queueRows] = await Promise.all([
     db.select().from(partners).where(isStaff ? undefined : eq(partners.id, op.partnerId ?? "")),
-    db.select().from(offerings).where(and(eq(offerings.scope, "live"), isStaff ? undefined : eq(offerings.partnerId, op.partnerId ?? ""))),
+    isPartnerFinance ? Promise.resolve([]) : db.select().from(offerings).where(and(
+      eq(offerings.scope, "live"),
+      isStaff ? undefined : eq(offerings.partnerId, op.partnerId ?? ""),
+      receptionStart ? gte(offerings.startsAt, receptionStart) : undefined,
+      receptionEnd ? lt(offerings.startsAt, receptionEnd) : undefined,
+    )),
     isStaff ? db.select().from(membershipPlans) : Promise.resolve([]),
-    db.select({
+    isPartnerFinance || isReception ? Promise.resolve([]) : db.select({
       id: waitlistEntries.id, offeringId: waitlistEntries.offeringId, joinedAt: waitlistEntries.createdAt,
       title: offerings.title, localizedTitle: offerings.localizedTitle, city: offerings.city, facility: offerings.facility,
       startsAt: offerings.startsAt,
     }).from(waitlistEntries).innerJoin(offerings, eq(waitlistEntries.offeringId, offerings.id))
       .where(and(eq(waitlistEntries.status, "waiting"), eq(offerings.scope, "live"), eq(offerings.active, true),
         isNull(offerings.cancelledAt), gt(offerings.startsAt, new Date()),
-         isStaff ? undefined : eq(offerings.partnerId, op.partnerId ?? "")))
+        isStaff ? undefined : eq(offerings.partnerId, op.partnerId ?? "")))
       .orderBy(asc(offerings.startsAt), asc(waitlistEntries.createdAt), asc(waitlistEntries.id)),
   ]);
   const policyRows = offeringRows.length ? await db.select().from(checkinPolicies)
@@ -255,7 +269,7 @@ router.put("/facilities/:id", async (req, res) => {
     const [existing] = await tx.select().from(facilityProfiles).where(eq(facilityProfiles.id, id)).for("update");
     if (!existing) throw new BookingError(404, "Facility profile not found.");
     own(res, existing.partnerId);
-    if (res.locals.operator.role === "partner" && await isAccessSuspended("facility", id)) {
+    if (isPartnerOperatorRole(res.locals.operator.role) && await isAccessSuspended("facility", id)) {
       throw new BookingError(403, "This facility is temporarily restricted from changes.");
     }
     if (existing.city !== data.city || existing.facility !== data.facility) {
@@ -315,7 +329,7 @@ router.post("/facilities/:id/hours-overrides", async (req, res) => {
       .where(eq(facilityProfiles.id, params.id)).for("update");
     if (!facility) throw new BookingError(404, "Facility profile not found.");
     own(res, facility.partnerId);
-    if (res.locals.operator.role === "partner" && await isAccessSuspended("facility", params.id)) {
+    if (isPartnerOperatorRole(res.locals.operator.role) && await isAccessSuspended("facility", params.id)) {
       throw new BookingError(403, "This facility is temporarily restricted from changes.");
     }
     const [conflict] = await tx.select({ id: facilityHoursOverrides.id })
@@ -344,7 +358,7 @@ router.delete("/facilities/:id/hours-overrides/:overrideId", async (req, res) =>
       .where(eq(facilityProfiles.id, params.id)).for("update");
     if (!facility) throw new BookingError(404, "Facility profile not found.");
     own(res, facility.partnerId);
-    if (res.locals.operator.role === "partner" && await isAccessSuspended("facility", params.id)) {
+    if (isPartnerOperatorRole(res.locals.operator.role) && await isAccessSuspended("facility", params.id)) {
       throw new BookingError(403, "This facility is temporarily restricted from changes.");
     }
     const [override] = await tx.select({ id: facilityHoursOverrides.id })
@@ -366,7 +380,7 @@ router.post("/offerings", async (req, res) => {
   const row = await db.transaction(async tx => {
     const [p] = await tx.select().from(partners).where(eq(partners.id, data.partnerId)).for("share");
     if (!p) throw new BookingError(404, "Partner not found.");
-    if (res.locals.operator.role === "partner" && data.active)
+    if (isPartnerOperatorRole(res.locals.operator.role) && data.active)
       throw new BookingError(403, "Partner activities must be reviewed and published by an administrator.");
     if (data.active && !p.approved) throw new BookingError(403, "Partner approval is required before publishing.");
     const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
@@ -375,7 +389,7 @@ router.post("/offerings", async (req, res) => {
       eq(facilityProfiles.facility, data.facility),
     )).limit(1);
     if (!facility) throw new BookingError(400, "Choose a facility from your approved facility profiles.");
-    if (res.locals.operator.role === "partner" && await isAccessSuspended("facility", facility.id)) {
+    if (isPartnerOperatorRole(res.locals.operator.role) && await isAccessSuspended("facility", facility.id)) {
       throw new BookingError(403, "This facility is temporarily restricted from new activities.");
     }
     const id = randomUUID();
@@ -414,7 +428,7 @@ router.post("/offerings/recurring", async (req, res) => {
 
     const [partner] = await tx.select().from(partners).where(eq(partners.id, template.partnerId)).for("share");
     if (!partner) throw new BookingError(404, "Partner not found.");
-    if (res.locals.operator.role === "partner" && template.active)
+    if (isPartnerOperatorRole(res.locals.operator.role) && template.active)
       throw new BookingError(403, "Only an administrator can approve and publish a partner activity.");
     if (template.active && !partner.approved) throw new BookingError(403, "Partner approval is required before publishing.");
     const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
@@ -423,7 +437,7 @@ router.post("/offerings/recurring", async (req, res) => {
       eq(facilityProfiles.facility, template.facility),
     )).limit(1);
     if (!facility) throw new BookingError(400, "Choose a facility from your approved facility profiles.");
-    if (res.locals.operator.role === "partner" && await isAccessSuspended("facility", facility.id)) {
+    if (isPartnerOperatorRole(res.locals.operator.role) && await isAccessSuspended("facility", facility.id)) {
       throw new BookingError(403, "This facility is temporarily restricted from new activities.");
     }
     if (template.accessType === "live" && template.active) ensureHttps(template.joinUrl, "Live class join link");
@@ -670,7 +684,7 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
     own(res, selected.partnerId);
     if (selected.cancelledAt) throw new BookingError(409, "Cancelled offerings cannot be edited or republished. Create a replacement.");
     if (selected.startsAt <= new Date()) throw new BookingError(409, "Past offerings cannot be edited.");
-    if (res.locals.operator.role === "partner" && selected.partnerId) {
+    if (isPartnerOperatorRole(res.locals.operator.role) && selected.partnerId) {
       const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
         eq(facilityProfiles.partnerId, selected.partnerId),
         eq(facilityProfiles.city, selected.city),
@@ -704,7 +718,7 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
 
     const contentChanged = data.localizedTitle !== undefined
       || data.localizedDescription !== undefined || data.joinUrl !== undefined;
-    const partnerContentEdit = res.locals.operator.role === "partner" && contentChanged;
+    const partnerContentEdit = isPartnerOperatorRole(res.locals.operator.role) && contentChanged;
     if (partnerContentEdit && rows.some(row =>
       ["submitted", "under_review", "rejected", "archived"].includes(row.approvalStatus))) {
       throw new BookingError(409, "Wait for the administrator decision before changing a submitted or closed activity.");

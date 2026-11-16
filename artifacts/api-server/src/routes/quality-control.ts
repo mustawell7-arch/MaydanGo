@@ -7,6 +7,7 @@ import { hasAdminPermission } from "../lib/admin-roles";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 import { listExpiringPartnerDocuments } from "../lib/partner-document-expiry";
 import { isAccessSuspended } from "../lib/account-access-restrictions";
+import { hasPartnerPermission, isPartnerOperatorRole } from "../lib/partner-roles";
 import {
   db, facilityProfiles, facilityQualityAssessments, facilityQualityEmergencyContacts, facilityQualityIncidents,
   operationAudit, operators, partners, partnerComplianceDocuments,
@@ -87,11 +88,12 @@ router.use(async (req, res, next) => {
     return;
   }
   const [operator] = await db.select().from(operators).where(eq(operators.userId, userId)).limit(1);
-  if (!operator || (!hasAdminPermission(operator.role, "fraud_compliance") && operator.role !== "partner")) {
+  if (!operator || (!hasAdminPermission(operator.role, "fraud_compliance")
+    && (!isPartnerOperatorRole(operator.role) || !hasPartnerPermission(operator.role, "quality")))) {
     res.status(403).json({ message: "Administrator or approved partner access is required." });
     return;
   }
-  if (operator.role === "partner") {
+  if (isPartnerOperatorRole(operator.role)) {
     if (!operator.partnerId) {
       res.status(403).json({ message: "This partner account is not assigned to a partner." });
       return;
@@ -238,7 +240,7 @@ async function emergencyContactDetail(facilityId: string) {
 
 router.get("/", async (_req, res): Promise<void> => {
   const operator = operatorFor(res);
-  const partnerScope = operator.role === "partner" ? operator.partnerId : null;
+  const partnerScope = isPartnerOperatorRole(operator.role) ? operator.partnerId : null;
   const facilityCondition = partnerScope ? eq(facilityProfiles.partnerId, partnerScope) : undefined;
   const assessmentCondition = partnerScope ? eq(facilityQualityAssessments.partnerId, partnerScope) : undefined;
   const incidentCondition = partnerScope ? eq(facilityQualityIncidents.partnerId, partnerScope) : undefined;
@@ -365,7 +367,7 @@ router.get("/", async (_req, res): Promise<void> => {
 
 router.post("/documents/upload-url", async (req, res): Promise<void> => {
   const operator = operatorFor(res);
-  if (operator.role !== "partner" || !operator.partnerId) {
+  if (!isPartnerOperatorRole(operator.role) || !hasPartnerPermission(operator.role, "quality") || !operator.partnerId) {
     res.status(403).json({ message: "Only an approved partner can upload compliance documents." });
     return;
   }
@@ -409,7 +411,7 @@ router.post("/documents/upload-url", async (req, res): Promise<void> => {
 
 router.post("/documents/:id/complete", async (req, res): Promise<void> => {
   const operator = operatorFor(res);
-  if (operator.role !== "partner" || !operator.partnerId) {
+  if (!isPartnerOperatorRole(operator.role) || !hasPartnerPermission(operator.role, "quality") || !operator.partnerId) {
     res.status(403).json({ message: "Only the owning partner can complete this upload." });
     return;
   }
@@ -507,11 +509,11 @@ router.get("/documents/:id/file", async (req, res): Promise<void> => {
   const [document] = await db.select().from(partnerComplianceDocuments)
     .where(eq(partnerComplianceDocuments.id, params.data.id)).limit(1);
   if (!document || document.status === "upload_pending" || !document.contentType
-    || (operator.role === "partner" && document.partnerId !== operator.partnerId)) {
+    || (isPartnerOperatorRole(operator.role) && document.partnerId !== operator.partnerId)) {
     res.status(404).json({ message: "Document not found within the operator's scope." });
     return;
   }
-  if (operator.role !== "partner" && !hasAdminPermission(operator.role, "fraud_compliance")) {
+  if (!isPartnerOperatorRole(operator.role) && !hasAdminPermission(operator.role, "fraud_compliance")) {
     res.status(403).json({ message: "Safety administrator access is required to open partner documents." });
     return;
   }
@@ -619,7 +621,7 @@ router.put("/emergency-contacts/:id", async (req, res): Promise<void> => {
     id: facilityProfiles.id,
     partnerId: facilityProfiles.partnerId,
   }).from(facilityProfiles).where(eq(facilityProfiles.id, params.data.id)).limit(1);
-  if (!facility || (operator.role === "partner" && facility.partnerId !== operator.partnerId)) {
+  if (!facility || (isPartnerOperatorRole(operator.role) && facility.partnerId !== operator.partnerId)) {
     res.status(404).json({ message: "Facility not found." });
     return;
   }
@@ -640,7 +642,7 @@ router.put("/emergency-contacts/:id", async (req, res): Promise<void> => {
     if (isSafetyAdmin && input.verified) {
       verifiedAt = fieldsChanged || !current?.verifiedAt ? now : current.verifiedAt;
       verifiedBy = fieldsChanged || !current?.verifiedBy ? actorId : current.verifiedBy;
-    } else if (operator.role === "partner" && !fieldsChanged && current?.verifiedAt) {
+    } else if (isPartnerOperatorRole(operator.role) && !fieldsChanged && current?.verifiedAt) {
       verifiedAt = current.verifiedAt;
       verifiedBy = current.verifiedBy;
     }
@@ -846,7 +848,7 @@ router.post("/incidents", async (req, res): Promise<void> => {
     id: facilityProfiles.id,
     partnerId: facilityProfiles.partnerId,
   }).from(facilityProfiles).where(eq(facilityProfiles.id, parsed.data.facilityId)).limit(1);
-  if (!facility || (operator.role === "partner" && facility.partnerId !== operator.partnerId)) {
+  if (!facility || (isPartnerOperatorRole(operator.role) && facility.partnerId !== operator.partnerId)) {
     res.status(404).json({ message: "Facility not found." });
     return;
   }
