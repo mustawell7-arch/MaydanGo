@@ -38,4 +38,6 @@ test("daily-visit maximum applies only to new or changed plan rules", () => {
 test("partner submissions follow the Super Admin approval policy", () => {
   assert.deepEqual(partnerSubmissionOutcome(true), { approvalStatus: "submitted", active: false });
   assert.deepEqual(partnerSubmissionOutcome(false), { approvalStatus: "published", active: true });
+  assert.deepEqual(partnerSubmissionOutcome(false, "activity_approval_required"), { approvalStatus: "submitted", active: false });
+  assert.deepEqual(partnerSubmissionOutcome(true, "trusted_direct_publish"), { approvalStatus: "published", active: true });
 });

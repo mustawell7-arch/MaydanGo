@@ -15,12 +15,13 @@ const partnerUserId = `${prefix}-operator`;
 const otherPartnerId = `${prefix}-other-partner`;
 const otherPartnerUserId = `${prefix}-other-operator`;
 const adminUserId = `${prefix}-admin`;
+const superAdminUserId = `${prefix}-super-admin`;
 const memberId = `${prefix}-member`;
 const facilityId = `${prefix}-facility`;
 const otherFacilityId = `${prefix}-other-facility`;
 let server: Server | null = null;
 let createdOfferingIds: string[] = [];
-const actorIds = [partnerUserId, otherPartnerUserId, adminUserId];
+const actorIds = [partnerUserId, otherPartnerUserId, adminUserId, superAdminUserId];
 
 const app = express();
 app.use(express.json());
@@ -54,7 +55,7 @@ const facilityValues = (id: string, ownerPartnerId: string) => ({
   localizedDistrict: { en: "Test district", ar: "منطقة اختبار", ku: "ناوچەی تاقیکردنەوە" },
   localizedAddress: { en: "Test address", ar: "عنوان اختبار", ku: "ناونیشانی تاقیکردنەوە" },
   localizedDescription: { en: "Test facility", ar: "مرفق اختبار", ku: "شوێنی تاقیکردنەوە" },
-  activities: [], amenities: [], accessibility: [],
+  activities: [{ en: "fitness", ar: "لياقة", ku: "وەرزش" }], amenities: [], accessibility: [],
   openingHours: Array.from({ length: 7 }, (_, day) => ({ day, closed: true, opensAt: null, closesAt: null })),
   contactPhone: null, websiteUrl: null, latitude: null, longitude: null,
 });
@@ -81,6 +82,7 @@ test("activity review is scoped, audited, and cannot bypass booking safeguards",
     { userId: partnerUserId, role: "partner", partnerId },
     { userId: otherPartnerUserId, role: "partner", partnerId: otherPartnerId },
     { userId: adminUserId, role: "partner_operations_admin", partnerId: null },
+    { userId: superAdminUserId, role: "super_admin", partnerId: null },
   ]);
   await db.insert(facilityProfiles).values([
     facilityValues(facilityId, partnerId),
@@ -104,6 +106,10 @@ test("activity review is scoped, audited, and cannot bypass booking safeguards",
     capacity: 2,
     active: false,
   };
+  const unlistedCategory = await call("/operations/offerings", partnerUserId, "POST", {
+    ...payload, category: "unlisted",
+  });
+  assert.equal(unlistedCategory.status, 400);
   const created = await call("/operations/offerings", partnerUserId, "POST", payload);
   assert.equal(created.status, 201);
   const activity = created.data as { id: string; approvalStatus: string; active: boolean };
@@ -182,6 +188,26 @@ test("activity review is scoped, audited, and cannot bypass booking safeguards",
   assert.equal(archivedActivity.active, false);
   const [reservation] = await db.select().from(reservations).where(eq(reservations.id, `${prefix}-reservation`));
   assert.equal(reservation.status, "partner_cancelled");
+
+  const policyPath = `/operations/partners/${partnerId}/activity-approval-mode`;
+  assert.equal((await call(policyPath, adminUserId, "PATCH", {
+    activityApprovalMode: "trusted_direct_publish",
+  })).status, 403);
+  const changedPolicy = await call(policyPath, superAdminUserId, "PATCH", {
+    activityApprovalMode: "trusted_direct_publish",
+  });
+  assert.equal(changedPolicy.status, 200);
+  assert.equal((changedPolicy.data as { activityApprovalMode: string }).activityApprovalMode, "trusted_direct_publish");
+  const trustedDraft = await call("/operations/offerings", partnerUserId, "POST", {
+    ...payload, title: "Trusted partner session",
+  });
+  assert.equal(trustedDraft.status, 201);
+  const trustedId = (trustedDraft.data as { id: string }).id;
+  createdOfferingIds.push(trustedId);
+  const directPublish = await call(`/operations/offerings/${trustedId}/submit`, partnerUserId, "POST");
+  assert.equal(directPublish.status, 200);
+  assert.equal((directPublish.data as { approvalStatus: string; active: boolean }).approvalStatus, "published");
+  assert.equal((directPublish.data as { active: boolean }).active, true);
 
   const auditRows = await db.select().from(operationAudit).where(eq(operationAudit.targetId, activity.id));
   assert.ok(auditRows.some(row => row.action === "offering.approval.submit"));

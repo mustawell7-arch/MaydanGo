@@ -90,7 +90,7 @@ test("recurring sessions stay bounded, approved, booking-safe, editable, cancell
     localizedDistrict: { en: "Test district", ar: "منطقة اختبار", ku: "ناوچەی تاقیکردنەوە" },
     localizedAddress: { en: "Test address", ar: "عنوان اختبار", ku: "ناونیشانی تاقیکردنەوە" },
     localizedDescription: { en: "Test facility", ar: "مرفق اختبار", ku: "شوێنی تاقیکردنەوە" },
-    activities: [], amenities: [], accessibility: [],
+    activities: [{ en: "fitness", ar: "لياقة", ku: "وەرزش" }], amenities: [], accessibility: [],
     openingHours: Array.from({ length: 7 }, (_, day) => ({ day, closed: true, opensAt: null, closesAt: null })),
     contactPhone: null, websiteUrl: null, latitude: null, longitude: null,
   });

@@ -52,7 +52,20 @@ export function exceedsPlatformDailyVisitLimit(
   return proposedLimit > platformMaximum && proposedLimit !== currentLimit;
 }
 
-export function partnerSubmissionOutcome(approvalRequired: boolean) {
+export type PartnerActivityApprovalMode =
+  | "platform_default"
+  | "activity_approval_required"
+  | "trusted_direct_publish";
+
+export function partnerSubmissionOutcome(
+  platformApprovalRequired: boolean,
+  mode: PartnerActivityApprovalMode = "platform_default",
+) {
+  const approvalRequired = mode === "activity_approval_required"
+    ? true
+    : mode === "trusted_direct_publish"
+      ? false
+      : platformApprovalRequired;
   return approvalRequired
     ? { approvalStatus: "submitted" as const, active: false }
     : { approvalStatus: "published" as const, active: true };

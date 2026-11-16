@@ -150,6 +150,16 @@ test("authenticated booking service: ownership, durable history, eligibility and
     const late = await createReservation(alice, input(await offer({ cancellationDeadline: new Date(now - 1) })));
     await rejects(() => cancelReservation(alice, late.id), 409);
   });
+  await t.test("a booking cutoff closes reservations before the activity starts", async () => {
+    const startsAt = new Date(Date.now() + 30 * 60_000);
+    const cutoffOffer = await offer({
+      startsAt,
+      endsAt: new Date(startsAt.getTime() + 60 * 60_000),
+      cancellationDeadline: new Date(startsAt.getTime() - 15 * 60_000),
+      bookingCutoffMinutes: 60,
+    });
+    await rejects(() => createReservation(alice, input(cutoffOffer)), 409);
+  });
   await t.test("live booking requires a verified paid grant while trial access remains unpaid", async () => {
     const livePartner = `${prefix}-payment-partner`;
     partnerIds.push(livePartner);
@@ -428,7 +438,7 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       localizedDistrict: { en: "Central", ar: "الوسط", ku: "ناوەند" },
       localizedAddress: { en: "Test address", ar: "عنوان تجريبي", ku: "ناونیشانی تاقیکردنەوە" },
       localizedDescription: { en: "Test facility", ar: "مرفق تجريبي", ku: "شوێنی تاقیکردنەوە" },
-      activities: [], amenities: [], accessibility: [],
+      activities: [{ en: "fitness", ar: "لياقة", ku: "وەرزش" }], amenities: [], accessibility: [],
       openingHours: Array.from({ length: 7 }, (_, day) => ({ day, closed: false, opensAt: "08:00", closesAt: "20:00" })),
       contactPhone: null, websiteUrl: null, latitude: null, longitude: null,
     });

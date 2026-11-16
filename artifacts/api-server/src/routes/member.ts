@@ -250,11 +250,17 @@ router.get("/catalog", async (_req, res) => {
   const rows = await db.select({
     id: offerings.id, kind: offerings.kind, targetId: offerings.targetId, slot: offerings.slot,
     title: offerings.title, startsAt: offerings.startsAt, cancellationDeadline: offerings.cancellationDeadline,
+    instructions: offerings.instructions, imagePath: offerings.imagePath,
+    bookingCutoffMinutes: offerings.bookingCutoffMinutes,
     scope: offerings.scope, capacity: offerings.capacity,
     reserved: sql<number>`count(${reservations.id})::int`,
   }).from(offerings).leftJoin(reservations, and(eq(reservations.offeringId, offerings.id), inArray(reservations.status, ["reserved", "requested"])))
     .where(and(eq(offerings.active, true), eq(offerings.scope, "preview"))).groupBy(offerings.id);
-  res.json(rows.map(r => ({ ...r, remaining: Math.max(0, r.capacity - r.reserved) })));
+  res.json(rows.map(({ imagePath, ...r }) => ({
+    ...r,
+    imageUrl: imagePath ? `/api/public/offerings/${r.id}/image` : null,
+    remaining: Math.max(0, r.capacity - r.reserved),
+  })));
 });
 router.post("/preview-membership", async (req, res) => {
   if (req.body?.acknowledgeSampleData !== true) { res.status(400).json({ message: "Acknowledge that preview partners and bookings are not live." }); return; }

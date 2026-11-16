@@ -19,3 +19,4 @@
 - [Development schema drift](development-schema-drift.md) — Resolve existing dev database conflicts before pushing schema; never auto-approve data-loss changes.
 - [Urgent alert fallback](urgent-alert-fallback.md) — Public mailbox is the intended destination, but Gmail sending is not connected; current fallback is in-app only.
 - [Finance record retention](maydango-finance-record-retention.md) — Use ten years as the minimum product default; confirm Iraqi legal/accounting rules before automatic deletion.
+- [Partner activity approval](partner-activity-approval.md) — Activity review modes never bypass partner onboarding approval; trusted publishing only affects activity review.

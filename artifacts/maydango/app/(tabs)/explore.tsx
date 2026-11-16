@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { MemberNotice } from '@/components/MemberNotice';
 import {
   Linking,
+  Image,
   Platform,
   ScrollView,
   StyleSheet,
@@ -20,6 +21,7 @@ import { translate } from '@/lib/i18n';
 import { facilityText, cityIdForFacility, eligibilityKey, eligibilityLabel } from '@/lib/facility-content';
 import { directionsUrl, distanceKm, formatDistance, type Coordinates } from '@/lib/location';
 import { dateTime, timeOnly } from '@/lib/content';
+import { absoluteApiAssetUrl } from '@/lib/live-api';
 import {
   getGetPublicCatalogQueryKey,
   getGetPublicFacilitiesQueryKey,
@@ -352,6 +354,7 @@ export default function ExploreScreen() {
               return (
                 <View key={event.id} style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <View style={styles.eventBody}>
+                    {event.imageUrl ? <Image source={{ uri: absoluteApiAssetUrl(event.imageUrl) }} accessibilityLabel={title} resizeMode="cover" style={{ width: '100%', height: 160, borderRadius: 14, marginBottom: 12 }} /> : null}
                     <View style={styles.eventHeader}>
                       <View style={[styles.eventIcon, { backgroundColor: colors.secondary }]}>
                         <Ionicons name="calendar-outline" size={21} color={colors.primary} />
@@ -364,6 +367,7 @@ export default function ExploreScreen() {
                     <Text style={[styles.eventMeta, { color: colors.mutedForeground, textAlign: align }]}>{event.facility} · {event.partnerName}</Text>
                     <Text style={[styles.eventMeta, { color: colors.mutedForeground, textAlign: align }]}>{event.category}</Text>
                     {description ? <Text style={[styles.eventDesc, { color: colors.foreground, textAlign: align }]}>{description}</Text> : null}
+                    {event.instructions ? <Text style={[styles.eventMeta, { color: colors.foreground, textAlign: align }]}>{event.instructions}</Text> : null}
                     <View style={[styles.eventDetails, { backgroundColor: colors.secondary }]}>
                       <Text style={[styles.eventDetailText, { color: colors.foreground, textAlign: align }]}>
                         {t('eventEndsAt').replace('{time}', timeOnly(event.endsAt, app.language))}

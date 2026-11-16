@@ -56,6 +56,8 @@ test("only the approved primary partner owner can manage its own staff", () => {
 
 test("operations routes are denied unless a partner role explicitly has the matching permission", () => {
   assert.equal(canPartnerUseOperationsRoute("partner_manager", "POST", "/offerings"), true);
+  assert.equal(canPartnerUseOperationsRoute("partner_manager", "POST", "/offerings/image-upload-url"), true);
+  assert.equal(canPartnerUseOperationsRoute("partner_manager", "GET", "/offerings/123/image"), true);
   assert.equal(canPartnerUseOperationsRoute("partner_reception", "POST", "/offerings"), false);
   assert.equal(canPartnerUseOperationsRoute("partner_reception", "POST", "/attendance/123/guardian-consent/upload-url"), true);
   assert.equal(canPartnerUseOperationsRoute("partner_finance", "GET", "/invoices"), true);

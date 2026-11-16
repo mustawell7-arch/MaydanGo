@@ -97,6 +97,16 @@ export class ObjectStorageService {
     return { uploadURL, documentPath: `/objects/${objectName}` };
   }
 
+  async createPartnerOfferingImageUpload(partnerId: string, uploadId: string) {
+    if (!/^[A-Za-z0-9_-]{1,160}$/.test(partnerId) || !/^[0-9a-f-]{36}$/i.test(uploadId)) {
+      throw new Error("Invalid offering image upload identifier.");
+    }
+    const objectName = `partner-activity-images/${partnerId}/${uploadId}`;
+    const { bucketName, objectName: bucketObjectName } = parseObjectPath(`${this.privateDir()}/${objectName}`);
+    const uploadURL = await signUpload(bucketName, bucketObjectName);
+    return { uploadURL, imagePath: `/objects/${objectName}` };
+  }
+
   async createCourseMaterialUpload(courseId: string, materialId: string) {
     if (!/^[0-9a-f-]{36}$/i.test(courseId) || !/^[0-9a-f-]{36}$/i.test(materialId)) {
       throw new Error("Invalid course material identifier.");

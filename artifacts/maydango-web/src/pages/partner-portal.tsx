@@ -1,6 +1,6 @@
 import { Children, cloneElement, isValidElement, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetMemberSupportTicketQueryKey, getGetMemberSupportTicketsQueryKey, getGetOperationFacilitiesQueryKey, getGetOperationsQueryKey, useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useCancelRecurringOfferingSeries, useChangeLiveOffering, useChangeRecurringOfferingSeries, useCreateRecurringOfferings, useCreateMemberSupportTicket, useGetAttendance, useGetMemberSupportTicket, useGetMemberSupportTickets, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReplyMemberSupportTicket, useReviewAttendance, useRespondToOfferingCorrection, useReviewOfferingApproval, useSubmitLiveOffering } from '@workspace/api-client-react';
+import { getGetMemberSupportTicketQueryKey, getGetMemberSupportTicketsQueryKey, getGetOperationFacilitiesQueryKey, getGetOperationsQueryKey, useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useCancelRecurringOfferingSeries, useChangeLiveOffering, useChangeRecurringOfferingSeries, useCreateRecurringOfferings, useCreateMemberSupportTicket, useGetAttendance, useGetMemberSupportTicket, useGetMemberSupportTickets, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReplyMemberSupportTicket, useReviewAttendance, useRespondToOfferingCorrection, useReviewOfferingApproval, useRequestOfferingImageUploadUrl, useSubmitLiveOffering, useUpdatePartnerActivityApprovalMode } from '@workspace/api-client-react';
 import type { GetAttendanceQueryResult, OfferingApprovalStatus, OfferingInput, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody, RecurringOfferingsInput, RecurringScheduleMode } from '@workspace/api-client-react';
 import { getGetMemberSupportTicketAttachmentsQueryKey, useGetMemberSupportTicketAttachments } from '@workspace/api-client-react';
 import { downloadMemberSupportFile, supportAttachmentType, uploadMemberSupportAttachments } from '@/lib/support-attachments';
@@ -497,8 +497,11 @@ const validCalendarDate = (value: string) => {
 function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: { partnerId: string; partners: { id: string; name: string }[]; isAdmin: boolean; lang: PortalLanguage; onClose: () => void; onSaved: () => void }) {
   const add = useAddLiveOffering();
   const addRecurring = useCreateRecurringOfferings();
+  const requestImageUpload = useRequestOfferingImageUploadUrl();
   const facilitiesQuery = useGetOperationFacilities({ query: { enabled: true, queryKey: getGetOperationFacilitiesQueryKey() } });
   const [message, setMessage] = useState('');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [recurring, setRecurring] = useState(false);
   const [repeatMode, setRepeatMode] = useState<RecurringScheduleMode>('weekly');
   const [weekdays, setWeekdays] = useState<number[]>([]);
@@ -510,9 +513,13 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
   const [selectedPartnerId, setSelectedPartnerId] = useState(partnerId);
   const [form, setForm] = useState({
     title: '', kind: 'session' as OfferingInput['kind'], facilityProfileId: '', city: '', facility: '', category: '', accessType: 'physical' as OfferingInput['accessType'],
-    startsAt: '', endsAt: '', cancellationDeadline: '', capacity: '', waitlistOfferMinutes: '30', gender: 'all' as NonNullable<OfferingInput['gender']>, minAge: '', maxAge: '', joinUrl: '', tiers: '', active: false,
+    startsAt: '', endsAt: '', cancellationDeadline: '', bookingCutoffMinutes: '0', capacity: '', waitlistOfferMinutes: '30', gender: 'all' as NonNullable<OfferingInput['gender']>, minAge: '', maxAge: '', joinUrl: '', tiers: '', instructions: '', active: false,
     localizedTitleEn: '', localizedTitleAr: '', localizedTitleKu: '',
     localizedDescriptionEn: '', localizedDescriptionAr: '', localizedDescriptionKu: '',
+    localizedInstructorEn: '', localizedInstructorAr: '', localizedInstructorKu: '',
+    difficultyLevel: 'all-levels' as NonNullable<OfferingInput['difficultyLevel']>,
+    instructionLanguage: 'mixed' as NonNullable<OfferingInput['instructionLanguage']>,
+    requiredEquipmentEn: '', requiredEquipmentAr: '', requiredEquipmentKu: '',
   });
   const facilityRecords = (facilitiesQuery.data ?? []).filter(item => item.partnerId === selectedPartnerId);
   const selectedFacility = facilityRecords.find(item => item.id === form.facilityProfileId);
@@ -562,8 +569,8 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
                       : previewDates.length > 90 ? 'This schedule creates more than 90 occurrences. Choose fewer dates or an earlier end date.'
               : previewDates.length === 0 ? 'No sessions match the selected weekdays and date range.'
                 : '' : '';
-  const pending = add.isPending || addRecurring.isPending;
-  const submit = (event: FormEvent) => {
+  const pending = add.isPending || addRecurring.isPending || requestImageUpload.isPending || uploadingImage;
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
     setMessage('');
     setConflictingDates([]);
@@ -575,25 +582,62 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
     if (recurring && recurrenceIssue) { setMessage(recurrenceIssue); return; }
     if (!selectedPartnerId) { setMessage('Select a partner before creating this offering.'); return; }
     if (!selectedFacility) { setMessage('Choose a shared facility record before creating this offering.'); return; }
+    if (!selectedFacility.activities.length) { setMessage('Add at least one activity to the facility profile before creating an offering.'); return; }
     const isLive = form.accessType === 'live';
-    if (isLive && [form.localizedTitleEn, form.localizedTitleAr, form.localizedTitleKu, form.localizedDescriptionEn, form.localizedDescriptionAr, form.localizedDescriptionKu].some(value => !value.trim())) {
-      setMessage('Live online offerings need a title and description in English, Iraqi Arabic, and Sorani.');
+    if (isLive && [form.localizedTitleEn, form.localizedTitleAr, form.localizedTitleKu, form.localizedDescriptionEn, form.localizedDescriptionAr, form.localizedDescriptionKu, form.localizedInstructorEn, form.localizedInstructorAr, form.localizedInstructorKu, form.requiredEquipmentEn, form.requiredEquipmentAr, form.requiredEquipmentKu].some(value => !value.trim())) {
+      setMessage('Live online offerings need a title, description, instructor name, and equipment details in English, Iraqi Arabic, and Sorani.');
       return;
     }
     if (isLive && !/^https:\/\//i.test(form.joinUrl.trim())) {
       setMessage('Live online offerings require a secure HTTPS join URL.');
       return;
     }
+    if (selectedImage && (!['image/jpeg', 'image/png', 'image/webp'].includes(selectedImage.type) || selectedImage.size > 10 * 1024 * 1024)) {
+      setMessage('Choose a JPEG, PNG, or WebP image no larger than 10 MB.');
+      return;
+    }
+    let imagePath: string | null = null;
+    if (selectedImage) {
+      setUploadingImage(true);
+      try {
+        const upload = await requestImageUpload.mutateAsync({
+          data: {
+            partnerId: selectedPartnerId,
+            uploadId: crypto.randomUUID(),
+            contentType: selectedImage.type as 'image/jpeg' | 'image/png' | 'image/webp',
+            size: selectedImage.size,
+          },
+        });
+        const uploaded = await fetch(upload.uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': selectedImage.type },
+          body: selectedImage,
+        });
+        if (!uploaded.ok) throw new Error('Activity image upload failed.');
+        imagePath = upload.imagePath;
+      } catch {
+        setMessage('The image could not be uploaded. Check the file and try again.');
+        setUploadingImage(false);
+        return;
+      }
+      setUploadingImage(false);
+    }
     const data: OfferingInput = {
       partnerId: selectedPartnerId, title: form.title.trim(), kind: form.kind, city: selectedFacility.city, facility: selectedFacility.facility, category: form.category.trim(),
       accessType: form.accessType, tiers: splitLocalizedCommaList(form.tiers),
       startsAt: localIso(form.startsAt), endsAt: localIso(form.endsAt), cancellationDeadline: localIso(form.cancellationDeadline),
+      bookingCutoffMinutes: Number(form.bookingCutoffMinutes), instructions: form.instructions.trim() || null,
+      imagePath,
       capacity: Number(form.capacity), waitlistOfferMinutes: Number(form.waitlistOfferMinutes),
       gender: form.gender, ...(form.minAge ? { minAge: Number(form.minAge) } : {}), maxAge: form.maxAge ? Number(form.maxAge) : null,
       joinUrl: form.joinUrl.trim() || null, active: isAdmin && form.active,
       ...(isLive ? {
         localizedTitle: { en: form.localizedTitleEn.trim(), ar: form.localizedTitleAr.trim(), ku: form.localizedTitleKu.trim() },
         localizedDescription: { en: form.localizedDescriptionEn.trim(), ar: form.localizedDescriptionAr.trim(), ku: form.localizedDescriptionKu.trim() },
+        localizedInstructor: { en: form.localizedInstructorEn.trim(), ar: form.localizedInstructorAr.trim(), ku: form.localizedInstructorKu.trim() },
+        difficultyLevel: form.difficultyLevel,
+        instructionLanguage: form.instructionLanguage,
+        requiredEquipment: { en: form.requiredEquipmentEn.trim(), ar: form.requiredEquipmentAr.trim(), ku: form.requiredEquipmentKu.trim() },
       } : {}),
     };
     const onSuccess = () => { onSaved(); onClose(); };
@@ -642,9 +686,9 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
         <LabelField label="Format"><select data-testid="select-offering-kind" className={fieldClass()} value={form.kind} onChange={e => { update('kind', e.target.value); if (e.target.value !== 'session') { setRecurring(false); setWeekdays([]); setRepeatUntil(''); } }}><option value="session">Session</option><option value="event">Event</option><option value="coach">Coaching</option></select></LabelField>
         <LabelField label="Shared facility"><select required className={fieldClass()} value={form.facilityProfileId} disabled={facilitiesQuery.isLoading || !facilityRecords.length} onChange={e => {
           const next = facilityRecords.find(item => item.id === e.target.value);
-          setForm(current => ({ ...current, facilityProfileId: e.target.value, city: next?.city ?? '', facility: next?.facility ?? '' }));
+          setForm(current => ({ ...current, facilityProfileId: e.target.value, city: next?.city ?? '', facility: next?.facility ?? '', category: next?.activities[0]?.en ?? '' }));
         }}><option value="">{facilitiesQuery.isLoading ? 'Loading shared facilities…' : 'Choose a shared facility'}</option>{facilityRecords.map(item => <option key={item.id} value={item.id}>{item.localizedName[lang] || item.facility} · {item.city}</option>)}</select>{!facilitiesQuery.isLoading && facilityRecords.length === 0 && <span className="mt-1 block text-[11px] font-normal text-[#9a4435]">Create a shared facility record before adding sessions.</span>}{selectedFacility && <span className="mt-1 block text-[11px] font-normal text-[#75847c]">{selectedFacility.localizedAddress[lang]}</span>}</LabelField>
-        <LabelField label="Category"><input required className={fieldClass()} value={form.category} onChange={e => update('category', e.target.value)} /></LabelField>
+        <LabelField label="Approved activity category">{selectedFacility?.activities.length ? <select required className={fieldClass()} value={form.category} onChange={e => update('category', e.target.value)}><option value="">Choose a facility activity</option>{selectedFacility.activities.map(activity => <option key={activity.en} value={activity.en}>{activity[lang] || activity.en}</option>)}</select> : <p className="rounded-xl bg-[#f2dfd5] px-3 py-2 text-xs leading-5 text-[#9a4435]">Add activity categories to this facility profile before creating an offering.</p>}</LabelField>
         <LabelField label="Access"><select className={fieldClass()} value={form.accessType} onChange={e => update('accessType', e.target.value)}><option value="physical">In person</option><option value="premium">Premium</option><option value="live">Live online</option></select></LabelField>
         {form.accessType === 'live' && <div className="rounded-2xl border border-[#dbcbb1] bg-[#f2ebda] p-4 sm:col-span-2">
           <p className="text-sm font-bold text-[#36564b]">Online class details</p>
@@ -656,9 +700,22 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
             <LabelField label="Description · English"><textarea required maxLength={240} rows={3} className={fieldClass()} value={form.localizedDescriptionEn} onChange={e => update('localizedDescriptionEn', e.target.value)} /></LabelField>
             <LabelField label="Description · Iraqi Arabic"><textarea required maxLength={240} rows={3} dir="rtl" className={fieldClass()} value={form.localizedDescriptionAr} onChange={e => update('localizedDescriptionAr', e.target.value)} /></LabelField>
             <LabelField label="Description · Sorani Kurdish"><textarea required maxLength={240} rows={3} dir="rtl" className={fieldClass()} value={form.localizedDescriptionKu} onChange={e => update('localizedDescriptionKu', e.target.value)} /></LabelField>
+            <LabelField label="Instructor name · English"><input required maxLength={240} className={fieldClass()} value={form.localizedInstructorEn} onChange={e => update('localizedInstructorEn', e.target.value)} /></LabelField>
+            <LabelField label="Instructor name · Iraqi Arabic"><input required maxLength={240} dir="rtl" className={fieldClass()} value={form.localizedInstructorAr} onChange={e => update('localizedInstructorAr', e.target.value)} /></LabelField>
+            <LabelField label="Instructor name · Sorani Kurdish"><input required maxLength={240} dir="rtl" className={fieldClass()} value={form.localizedInstructorKu} onChange={e => update('localizedInstructorKu', e.target.value)} /></LabelField>
+            <LabelField label="Difficulty"><select className={fieldClass()} value={form.difficultyLevel} onChange={e => update('difficultyLevel', e.target.value)}><option value="all-levels">All levels</option><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></LabelField>
+            <LabelField label="Class language"><select className={fieldClass()} value={form.instructionLanguage} onChange={e => update('instructionLanguage', e.target.value)}><option value="en">English</option><option value="ar">Iraqi Arabic</option><option value="ku">Sorani Kurdish</option><option value="mixed">Mixed</option></select></LabelField>
+            <span className="hidden sm:block" />
+            <LabelField label="Required equipment · English"><textarea required maxLength={240} rows={2} className={fieldClass()} value={form.requiredEquipmentEn} onChange={e => update('requiredEquipmentEn', e.target.value)} /></LabelField>
+            <LabelField label="Required equipment · Iraqi Arabic"><textarea required maxLength={240} rows={2} dir="rtl" className={fieldClass()} value={form.requiredEquipmentAr} onChange={e => update('requiredEquipmentAr', e.target.value)} /></LabelField>
+            <LabelField label="Required equipment · Sorani Kurdish"><textarea required maxLength={240} rows={2} dir="rtl" className={fieldClass()} value={form.requiredEquipmentKu} onChange={e => update('requiredEquipmentKu', e.target.value)} /></LabelField>
           </div>
+          <p className="mt-3 text-xs leading-5 text-[#687a71]">MaydanGo staff assign the instructor’s account access after approval. The name above is the member-facing display name.</p>
         </div>}
         {dateInput('startsAt', 'Starts at')}{dateInput('endsAt', 'Ends at')}{dateInput('cancellationDeadline', 'Cancellation deadline')}
+        <LabelField label="Booking cutoff · minutes before start"><input required min="0" max="10080" step="15" type="number" className={fieldClass()} value={form.bookingCutoffMinutes} onChange={e => update('bookingCutoffMinutes', e.target.value)} /><span className="mt-1 block text-[11px] font-normal text-[#75847c]">Set 0 to allow booking until the activity starts.</span></LabelField>
+        <LabelField label="Participant instructions"><textarea maxLength={2000} rows={3} className={fieldClass()} value={form.instructions} onChange={e => update('instructions', e.target.value)} placeholder="Arrival, clothing, equipment, or preparation information" /></LabelField>
+        <LabelField label="Activity image · JPEG, PNG, or WebP"><input type="file" accept="image/jpeg,image/png,image/webp" className={fieldClass()} onChange={e => setSelectedImage(e.target.files?.[0] ?? null)} /><span className="mt-1 block text-[11px] font-normal text-[#75847c]">Optional, up to 10 MB. Draft images stay private until the activity is published.</span>{selectedImage && <span className="mt-1 block text-[11px] font-semibold text-[#36564b]">{selectedImage.name}</span>}</LabelField>
         {form.kind === 'session' && <div className="rounded-2xl border border-[#d8d2c4] bg-[#f2efe4] p-4 sm:col-span-2" data-testid="panel-recurring-schedule">
           <label className="flex cursor-pointer items-start gap-3 text-sm font-semibold text-[#36564b]">
             <input data-testid="toggle-recurring-session" type="checkbox" checked={recurring} onChange={event => { setRecurring(event.target.checked); setMessage(''); setConflictingDates([]); }} className="mt-0.5 accent-[#174d43]" />
@@ -706,9 +763,9 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
         <LabelField label="Maximum age (optional)"><input type="number" min="0" className={fieldClass()} value={form.maxAge} onChange={e => update('maxAge', e.target.value)} /></LabelField>
         <LabelField label="Membership tiers (comma separated)"><input required placeholder="Use tiers configured for your offering" className={fieldClass()} value={form.tiers} onChange={e => update('tiers', e.target.value)} /></LabelField>
         <LabelField label="Join URL (optional)"><input type="url" className={fieldClass()} value={form.joinUrl} onChange={e => update('joinUrl', e.target.value)} /></LabelField>
-        {isAdmin ? <label className="flex items-center gap-3 rounded-xl bg-[#eeeadc] px-4 py-3 text-sm font-medium text-[#36564b] sm:col-span-2"><input type="checkbox" checked={form.active} onChange={e => update('active', e.target.checked)} className="accent-[#174d43]" />Publish as active</label> : <p className="rounded-xl bg-[#eeeadc] px-4 py-3 text-sm text-[#36564b] sm:col-span-2">New activities are saved as drafts and must be approved by an administrator before publishing.</p>}
+        {isAdmin ? <label className="flex items-center gap-3 rounded-xl bg-[#eeeadc] px-4 py-3 text-sm font-medium text-[#36564b] sm:col-span-2"><input type="checkbox" checked={form.active} onChange={e => update('active', e.target.checked)} className="accent-[#174d43]" />Publish as active</label> : <p className="rounded-xl bg-[#eeeadc] px-4 py-3 text-sm text-[#36564b] sm:col-span-2">New activities are saved as drafts. Submit them to apply this partner’s activity-review mode.</p>}
          {message && <p data-testid="status-offering-error" role="alert" className="text-sm text-[#a33d2e] sm:col-span-2">{message}</p>}
-         <div className="flex justify-end gap-3 pt-2 sm:col-span-2"><Button kind="quiet" onClick={onClose}>Cancel</Button><Button type="submit" disabled={pending || Boolean(recurrenceIssue)}><Plus size={16} />{pending ? 'Saving…' : recurring ? 'Create recurring sessions' : 'Create offering'}</Button></div>
+         <div className="flex justify-end gap-3 pt-2 sm:col-span-2"><Button kind="quiet" onClick={onClose}>Cancel</Button><Button type="submit" disabled={pending || Boolean(recurrenceIssue)}><Plus size={16} />{uploadingImage ? 'Uploading image…' : pending ? 'Saving…' : recurring ? 'Create recurring sessions' : 'Create offering'}</Button></div>
       </form>
     </section>
   </div></LocalizedContent>;
@@ -1067,6 +1124,7 @@ export default function PartnerPortal() {
   const attendance = useGetAttendance({ query: { retry: false, enabled: isLoaded && isSignedIn && canManageAttendance } });
   const addPartner = useAddPartner();
   const approvePartner = useApprovePartner();
+  const updatePartnerActivityApprovalMode = useUpdatePartnerActivityApprovalMode();
   const updateOffering = useChangeLiveOffering();
   const cancelOffering = useCancelLiveOffering();
   const updateOfferingSeries = useChangeRecurringOfferingSeries();
@@ -1117,10 +1175,16 @@ export default function PartnerPortal() {
 
   if (String(operations.data.role) === 'marketing_admin') return <Redirect to="/admin/sponsored-placements" />;
   const isAdmin = isOperationsAdmin;
+  const isSuperAdmin = role === 'super_admin';
   const partner = operations.data.partners.find(item => item.id === operations.data.partnerId);
   const title = isAdmin ? 'Operations desk' : partner?.name ?? 'Partner workspace';
   const mutationError = (label: string) => setNotice(formatPartnerPortalSentence(language, 'mutationFailed', { action: portalText(language, label) }));
   const handleApproval = (id: string, approved: boolean) => approvePartner.mutate({ id, data: { approved } }, { onSuccess: invalidate, onError: () => mutationError('Partner review') });
+  const handleActivityApprovalMode = (id: string, activityApprovalMode: 'platform_default' | 'activity_approval_required' | 'trusted_direct_publish') =>
+    updatePartnerActivityApprovalMode.mutate({ id, data: { activityApprovalMode } }, {
+      onSuccess: () => { invalidate(); setNotice('Partner activity publishing mode updated.'); },
+      onError: () => mutationError('Partner publishing mode'),
+    });
   const handleStatus = (id: string, capacity: number, waitlistOfferMinutes?: number) => {
     const data: OfferingUpdate = { capacity, ...(waitlistOfferMinutes === undefined ? {} : { waitlistOfferMinutes }) };
     updateOffering.mutate({ id, data }, { onSuccess: invalidate, onError: () => mutationError('Offering update') });
@@ -1296,6 +1360,8 @@ export default function PartnerPortal() {
                     </div>
                     <h2 className="mt-3 font-display text-xl font-bold">{item.localizedTitle?.[language] || item.title}</h2>
                     <p className="mt-1 text-sm text-[#687a71]">{item.facility}, {item.city} · {item.category}</p>
+                    {item.imageUrl && <img src={item.imageUrl} alt={item.localizedTitle?.[language] || item.title} loading="lazy" referrerPolicy="no-referrer" className="mt-3 aspect-[16/8] max-h-48 w-full rounded-xl object-cover sm:max-w-sm" />}
+                    {item.instructions && <p className="mt-2 whitespace-pre-line text-xs leading-5 text-[#687a71]">{item.instructions}</p>}
                     <p className="mt-3 text-xs text-[#75847c]">{formatDate(item.startsAt)} – {formatDate(item.endsAt)}{item.remaining !== undefined ? ` · ${item.remaining} remaining` : ''}</p>
                     <p className="mt-2 text-xs text-[#75847c]">Waitlist offers expire after {item.waitlistOfferMinutes ?? 30} minutes.</p>
                     {isAdmin && item.partnerName && <p className="mt-2 text-xs text-[#75847c]">Partner: {item.partnerName}</p>}
@@ -1399,6 +1465,16 @@ export default function PartnerPortal() {
                     <span aria-hidden="true"> · </span>
                     <span>{portalText(language, 'Group ID')} {partnerItem.groupId}</span>
                   </p>
+                  {isSuperAdmin && <div className="mt-3 max-w-md">
+                    <label className="text-xs font-semibold text-[#536b61]">Activity publishing mode
+                      <select aria-label={`Activity publishing mode for ${partnerItem.name}`} value={partnerItem.activityApprovalMode ?? 'platform_default'} disabled={updatePartnerActivityApprovalMode.isPending} onChange={event => handleActivityApprovalMode(partnerItem.id, event.target.value as 'platform_default' | 'activity_approval_required' | 'trusted_direct_publish')} className={`mt-1 ${fieldClass()}`}>
+                        <option value="platform_default">Use platform default</option>
+                        <option value="activity_approval_required">Review every activity</option>
+                        <option value="trusted_direct_publish">Trusted direct publishing</option>
+                      </select>
+                    </label>
+                    <p className="mt-1 text-[11px] leading-5 text-[#75847c]">Partner onboarding approval remains required in every mode. The platform default follows the global activity-review setting; trusted publishing removes the second review for approved partners.</p>
+                  </div>}
                 </div>
                 <Button kind={partnerItem.approved ? 'quiet' : 'primary'} disabled={approvePartner.isPending} onClick={() => handleApproval(partnerItem.id, !partnerItem.approved)}>
                   {partnerItem.approved ? <X size={15} /> : <Check size={15} />}{partnerItem.approved ? 'Revoke approval' : 'Approve partner'}
@@ -1419,6 +1495,6 @@ export default function PartnerPortal() {
          </LocalizedContent>
       </section>
     </div>
-     {showCreate && <OfferingForm partnerId={isAdmin ? '' : operations.data.partnerId ?? ''} partners={operations.data.partners.filter(item => item.approved)} isAdmin={isAdmin} lang={language} onClose={() => setShowCreate(false)} onSaved={() => { invalidate(); setNotice(isAdmin ? 'Offering created.' : 'Saved as draft. An administrator must approve and publish the activity.'); }} />}
+     {showCreate && <OfferingForm partnerId={isAdmin ? '' : operations.data.partnerId ?? ''} partners={operations.data.partners.filter(item => item.approved)} isAdmin={isAdmin} lang={language} onClose={() => setShowCreate(false)} onSaved={() => { invalidate(); setNotice(isAdmin ? 'Offering created.' : 'Saved as draft. Submit it to apply this partner’s activity-review mode.'); }} />}
   </main>;
 }

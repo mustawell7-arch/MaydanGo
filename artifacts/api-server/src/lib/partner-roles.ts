@@ -80,6 +80,8 @@ const OPERATIONS_ROUTE_PERMISSIONS: Array<{
   { method: "DELETE", path: /^\/facilities\/[^/]+\/hours-overrides\/[^/]+$/, permission: "facilities" },
   { method: "POST", path: /^\/offerings$/, permission: "sessions" },
   { method: "POST", path: /^\/offerings\/recurring$/, permission: "sessions" },
+  { method: "POST", path: /^\/offerings\/image-upload-url$/, permission: "sessions" },
+  { method: "GET", path: /^\/offerings\/[^/]+\/image$/, permission: "sessions" },
   { method: "POST", path: /^\/offerings\/[^/]+\/submit$/, permission: "sessions" },
   { method: "POST", path: /^\/offerings\/[^/]+\/respond$/, permission: "sessions" },
   { method: "PATCH", path: /^\/offerings\/[^/]+$/, permission: "sessions" },

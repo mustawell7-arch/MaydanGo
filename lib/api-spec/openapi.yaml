@@ -136,6 +136,22 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PublicOffering"
+  /public/offerings/{id}/image:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getPublicOfferingImage
+      responses:
+        "200":
+          description: Image streamed only for a currently published live offering
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+        "404": { description: Published offering image not found }
   /public/plans:
     get:
       operationId: getPublicPlans
@@ -386,6 +402,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1analytics"
   /operations/partners/{id}:
     $ref: "./operations.yaml#/paths/~1operations~1partners~1{id}"
+  /operations/partners/{id}/activity-approval-mode:
+    $ref: "./operations.yaml#/paths/~1operations~1partners~1{id}~1activity-approval-mode"
   /operations/partner-onboarding/applications:
     $ref: "./operations.yaml#/paths/~1operations~1partner-onboarding~1applications"
   /operations/partner-onboarding/applications/{id}:
@@ -408,6 +426,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1partner-onboarding~1applications~1{id}~1documents~1{documentId}~1download"
   /operations/offerings:
     $ref: "./operations.yaml#/paths/~1operations~1offerings"
+  /operations/offerings/image-upload-url:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings~1image-upload-url"
+  /operations/offerings/{id}/image:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1image"
   /operations/offerings/recurring:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1recurring"
   /operations/offerings/{id}:
@@ -1147,7 +1169,7 @@ components:
               items: { $ref: "#/components/schemas/PublicFacilitySession" }
     PublicOffering:
       type: object
-      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, city, facility, category, accessType, tiers, startsAt, endsAt, cancellationDeadline, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
+      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, city, facility, category, accessType, tiers, startsAt, endsAt, cancellationDeadline, bookingCutoffMinutes, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
       properties:
         id: { type: string }
         kind: { type: string, enum: [session, event, coach] }
@@ -1162,6 +1184,8 @@ components:
           anyOf:
             - { $ref: "#/components/schemas/LocalizedFacilityText" }
             - { type: "null" }
+        instructions: { type: ["string", "null"], maxLength: 2000 }
+        imageUrl: { type: ["string", "null"] }
         city: { type: string }
         facility: { type: string }
         category: { type: string }
@@ -1172,6 +1196,7 @@ components:
         startsAt: { type: string, format: date-time }
         endsAt: { type: string, format: date-time }
         cancellationDeadline: { type: string, format: date-time }
+        bookingCutoffMinutes: { type: integer, minimum: 0, maximum: 10080 }
         gender: { type: string, enum: [all, female, male] }
         minAge: { type: integer, minimum: 0 }
         maxAge: { type: ["integer", "null"], minimum: 0 }

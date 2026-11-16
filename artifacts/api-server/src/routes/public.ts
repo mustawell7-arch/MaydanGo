@@ -3,8 +3,10 @@ import { and, asc, eq, gt, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { db, membershipPlans, offerings, partners, reservations } from "@workspace/db";
 import facilitiesPublicRouter from "./facilities-public";
 import { filterSuspendedOfferings } from "../lib/account-access-restrictions";
+import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 
 const router = Router();
+const objectStorage = new ObjectStorageService();
 router.use(facilitiesPublicRouter);
 
 router.get("/catalog", async (_req, res) => {
@@ -17,6 +19,8 @@ router.get("/catalog", async (_req, res) => {
       title: offerings.title,
       localizedTitle: offerings.localizedTitle,
       localizedDescription: offerings.localizedDescription,
+      instructions: offerings.instructions,
+      imagePath: offerings.imagePath,
       city: offerings.city,
       facility: offerings.facility,
       category: offerings.category,
@@ -25,6 +29,7 @@ router.get("/catalog", async (_req, res) => {
       startsAt: offerings.startsAt,
       endsAt: offerings.endsAt,
       cancellationDeadline: offerings.cancellationDeadline,
+      bookingCutoffMinutes: offerings.bookingCutoffMinutes,
       gender: offerings.gender,
       minAge: offerings.minAge,
       maxAge: offerings.maxAge,
@@ -57,10 +62,43 @@ router.get("/catalog", async (_req, res) => {
     .orderBy(asc(offerings.startsAt));
 
   const visible = await filterSuspendedOfferings(rows);
-  res.json(visible.map(({ capacity, reserved, partnerId: _partnerId, ...offering }) => ({
+  res.json(visible.map(({ capacity, reserved, imagePath, partnerId: _partnerId, ...offering }) => ({
     ...offering,
+    imageUrl: imagePath ? `/api/public/offerings/${offering.id}/image` : null,
     remaining: Math.max(0, capacity - reserved),
   })));
+});
+
+router.get("/offerings/:id/image", async (req, res): Promise<void> => {
+  const [offering] = await db.select({ imagePath: offerings.imagePath }).from(offerings)
+    .innerJoin(partners, eq(offerings.partnerId, partners.id))
+    .where(and(
+      eq(offerings.id, String(req.params.id)),
+      eq(offerings.scope, "live"),
+      eq(offerings.active, true),
+      isNull(offerings.cancelledAt),
+      eq(partners.approved, true),
+    )).limit(1);
+  if (!offering?.imagePath) { res.status(404).end(); return; }
+  let file;
+  try {
+    file = await objectStorage.getPrivateFile(offering.imagePath);
+  } catch (error) {
+    if (error instanceof ObjectNotFoundError) { res.status(404).end(); return; }
+    throw error;
+  }
+  const [metadata] = await file.getMetadata();
+  const contentType = String(metadata.contentType ?? "");
+  if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)) { res.status(404).end(); return; }
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Content-Disposition", "inline");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Cache-Control", "public, max-age=300");
+  file.createReadStream().on("error", error => {
+    req.log.error({ err: error, offeringId: String(req.params.id) }, "Failed to stream public activity image");
+    if (!res.headersSent) res.status(404).end();
+    else res.end();
+  }).pipe(res);
 });
 
 router.get("/plans", async (_req, res) => {

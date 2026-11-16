@@ -163,6 +163,8 @@ import type {
   NotificationFailure,
   NotificationSettings,
   NotificationSettingsInput,
+  OfferingImageUpload,
+  OfferingImageUploadInput,
   OfferingInput,
   OfferingPartnerResponse,
   OfferingReviewInput,
@@ -175,6 +177,7 @@ import type {
   OperationsFacilityReviews,
   OperationsState,
   Partner,
+  PartnerActivityApprovalModeInput,
   PartnerApplication,
   PartnerApplicationDetails,
   PartnerApplicationDetailsResponse,
@@ -1228,6 +1231,101 @@ export function useGetPublicCatalog<TData = Awaited<ReturnType<typeof getPublicC
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetPublicCatalogQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicOfferingImageUrl = (id: string,) => {
+
+
+
+
+  return `/api/public/offerings/${id}/image`
+}
+
+export const getPublicOfferingImage = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetPublicOfferingImageUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicOfferingImageQueryKey = (id: string,) => {
+    return [
+    `/api/public/offerings/${id}/image`
+    ] as const;
+    }
+
+
+export const getGetPublicOfferingImageQueryOptions = <TData = Awaited<ReturnType<typeof getPublicOfferingImage>>, TError = ErrorType<void>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicOfferingImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicOfferingImageQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicOfferingImage>>> = ({ signal }) => getPublicOfferingImage(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicOfferingImage>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPublicOfferingImageQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicOfferingImage>>>
+export type GetPublicOfferingImageQueryError = ErrorType<void>
+
+
+export function useGetPublicOfferingImage<TData = Awaited<ReturnType<typeof getPublicOfferingImage>>, TError = ErrorType<void>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicOfferingImage>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicOfferingImage>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicOfferingImage>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicOfferingImage<TData = Awaited<ReturnType<typeof getPublicOfferingImage>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicOfferingImage>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicOfferingImage>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicOfferingImage>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicOfferingImage<TData = Awaited<ReturnType<typeof getPublicOfferingImage>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicOfferingImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPublicOfferingImage<TData = Awaited<ReturnType<typeof getPublicOfferingImage>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicOfferingImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPublicOfferingImageQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -3692,6 +3790,89 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getApprovePartnerMutationOptions(options), queryClient);
     }
 
+export const getUpdatePartnerActivityApprovalModeUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/partners/${id}/activity-approval-mode`
+}
+
+export const updatePartnerActivityApprovalMode = async (id: string,
+    partnerActivityApprovalModeInput: PartnerActivityApprovalModeInput, options?: Parameters<typeof customFetch>[1]): Promise<Partner> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Partner>(getUpdatePartnerActivityApprovalModeUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(partnerActivityApprovalModeInput)
+  }
+);}
+
+
+
+
+
+export const getUpdatePartnerActivityApprovalModeMutationKey = () => ['updatePartnerActivityApprovalMode'] as const;
+
+export const getUpdatePartnerActivityApprovalModeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePartnerActivityApprovalMode>>, TError,UpdatePartnerActivityApprovalModeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePartnerActivityApprovalMode>>, TError,UpdatePartnerActivityApprovalModeMutationVariables, TContext> => {
+
+const mutationKey = getUpdatePartnerActivityApprovalModeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePartnerActivityApprovalMode>>, UpdatePartnerActivityApprovalModeMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updatePartnerActivityApprovalMode(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePartnerActivityApprovalModeMutationResult = NonNullable<Awaited<ReturnType<typeof updatePartnerActivityApprovalMode>>>
+    export type UpdatePartnerActivityApprovalModeMutationBody = BodyType<PartnerActivityApprovalModeInput>
+    export type UpdatePartnerActivityApprovalModeMutationError = ErrorType<void>
+    export type UpdatePartnerActivityApprovalModeMutationVariables = {id: string;data: BodyType<PartnerActivityApprovalModeInput>}
+
+    export const useUpdatePartnerActivityApprovalMode = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePartnerActivityApprovalMode>>, TError,UpdatePartnerActivityApprovalModeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updatePartnerActivityApprovalMode>>,
+        TError,
+        UpdatePartnerActivityApprovalModeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdatePartnerActivityApprovalModeMutationOptions(options), queryClient);
+    }
+
 export const getGetPartnerOnboardingApplicationsUrl = () => {
 
 
@@ -4647,6 +4828,183 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getAddLiveOfferingMutationOptions(options), queryClient);
     }
+
+export const getRequestOfferingImageUploadUrlUrl = () => {
+
+
+
+
+  return `/api/operations/offerings/image-upload-url`
+}
+
+export const requestOfferingImageUploadUrl = async (offeringImageUploadInput: OfferingImageUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<OfferingImageUpload> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<OfferingImageUpload>(getRequestOfferingImageUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(offeringImageUploadInput)
+  }
+);}
+
+
+
+
+
+export const getRequestOfferingImageUploadUrlMutationKey = () => ['requestOfferingImageUploadUrl'] as const;
+
+export const getRequestOfferingImageUploadUrlMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestOfferingImageUploadUrl>>, TError,RequestOfferingImageUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestOfferingImageUploadUrl>>, TError,RequestOfferingImageUploadUrlMutationVariables, TContext> => {
+
+const mutationKey = getRequestOfferingImageUploadUrlMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestOfferingImageUploadUrl>>, RequestOfferingImageUploadUrlMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestOfferingImageUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestOfferingImageUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestOfferingImageUploadUrl>>>
+    export type RequestOfferingImageUploadUrlMutationBody = BodyType<OfferingImageUploadInput>
+    export type RequestOfferingImageUploadUrlMutationError = ErrorType<void>
+    export type RequestOfferingImageUploadUrlMutationVariables = {data: BodyType<OfferingImageUploadInput>}
+
+    export const useRequestOfferingImageUploadUrl = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestOfferingImageUploadUrl>>, TError,RequestOfferingImageUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof requestOfferingImageUploadUrl>>,
+        TError,
+        RequestOfferingImageUploadUrlMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestOfferingImageUploadUrlMutationOptions(options), queryClient);
+    }
+
+export const getGetOperationOfferingImageUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/offerings/${id}/image`
+}
+
+export const getOperationOfferingImage = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetOperationOfferingImageUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationOfferingImageQueryKey = (id: string,) => {
+    return [
+    `/api/operations/offerings/${id}/image`
+    ] as const;
+    }
+
+
+export const getGetOperationOfferingImageQueryOptions = <TData = Awaited<ReturnType<typeof getOperationOfferingImage>>, TError = ErrorType<void>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationOfferingImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationOfferingImageQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationOfferingImage>>> = ({ signal }) => getOperationOfferingImage(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationOfferingImage>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOperationOfferingImageQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationOfferingImage>>>
+export type GetOperationOfferingImageQueryError = ErrorType<void>
+
+
+export function useGetOperationOfferingImage<TData = Awaited<ReturnType<typeof getOperationOfferingImage>>, TError = ErrorType<void>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationOfferingImage>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOperationOfferingImage>>,
+          TError,
+          Awaited<ReturnType<typeof getOperationOfferingImage>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOperationOfferingImage<TData = Awaited<ReturnType<typeof getOperationOfferingImage>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationOfferingImage>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOperationOfferingImage>>,
+          TError,
+          Awaited<ReturnType<typeof getOperationOfferingImage>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOperationOfferingImage<TData = Awaited<ReturnType<typeof getOperationOfferingImage>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationOfferingImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetOperationOfferingImage<TData = Awaited<ReturnType<typeof getOperationOfferingImage>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationOfferingImage>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOperationOfferingImageQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getCreateRecurringOfferingsUrl = () => {
 

@@ -1003,6 +1003,11 @@ export const getPublicCatalogResponseLocalizedDescriptionOneArMax = 500;
 
 export const getPublicCatalogResponseLocalizedDescriptionOneKuMax = 500;
 
+export const getPublicCatalogResponseInstructionsMax = 2000;
+
+export const getPublicCatalogResponseBookingCutoffMinutesMin = 0;
+export const getPublicCatalogResponseBookingCutoffMinutesMax = 10080;
+
 export const getPublicCatalogResponseMinAgeMin = 0;
 
 export const getPublicCatalogResponseMaxAgeMin = 0;
@@ -1027,6 +1032,8 @@ export const GetPublicCatalogResponseItem = zod.object({
   "ar": zod.string().min(1).max(getPublicCatalogResponseLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(getPublicCatalogResponseLocalizedDescriptionOneKuMax)
 }),zod.null()]),
+  "instructions": zod.string().max(getPublicCatalogResponseInstructionsMax).nullish(),
+  "imageUrl": zod.string().nullish(),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -1035,6 +1042,7 @@ export const GetPublicCatalogResponseItem = zod.object({
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
   "cancellationDeadline": zod.coerce.date(),
+  "bookingCutoffMinutes": zod.int().min(getPublicCatalogResponseBookingCutoffMinutesMin).max(getPublicCatalogResponseBookingCutoffMinutesMax),
   "gender": zod.enum(['all', 'female', 'male']),
   "minAge": zod.int().min(getPublicCatalogResponseMinAgeMin),
   "maxAge": zod.int().min(getPublicCatalogResponseMaxAgeMin).nullable(),
@@ -1043,6 +1051,13 @@ export const GetPublicCatalogResponseItem = zod.object({
   "partnerName": zod.string()
 })
 export const GetPublicCatalogResponse = zod.array(GetPublicCatalogResponseItem)
+
+
+export const GetPublicOfferingImageParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetPublicOfferingImageResponse = zod.unknown()
 
 
 
@@ -1313,6 +1328,14 @@ export const getOperationsResponseOfferingsItemOneLocalizedDescriptionOneArMax =
 
 export const getOperationsResponseOfferingsItemOneLocalizedDescriptionOneKuMax = 240;
 
+export const getOperationsResponseOfferingsItemOneInstructionsMax = 2000;
+
+export const getOperationsResponseOfferingsItemOneImagePathMax = 1000;
+
+export const getOperationsResponseOfferingsItemOneBookingCutoffMinutesDefault = 0;
+export const getOperationsResponseOfferingsItemOneBookingCutoffMinutesMin = 0;
+export const getOperationsResponseOfferingsItemOneBookingCutoffMinutesMax = 10080;
+
 export const getOperationsResponseOfferingsItemOneLocalizedInstructorOneEnMax = 240;
 
 export const getOperationsResponseOfferingsItemOneLocalizedInstructorOneArMax = 240;
@@ -1410,7 +1433,8 @@ export const GetOperationsResponse = zod.object({
   "ownerUserId": zod.string()
 }).and(zod.object({
   "id": zod.string(),
-  "approved": zod.boolean()
+  "approved": zod.boolean(),
+  "activityApprovalMode": zod.enum(['platform_default', 'activity_approval_required', 'trusted_direct_publish'])
 }))),
   "offerings": zod.array(zod.object({
   "partnerId": zod.string(),
@@ -1425,6 +1449,9 @@ export const GetOperationsResponse = zod.object({
   "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "instructions": zod.string().max(getOperationsResponseOfferingsItemOneInstructionsMax).nullish(),
+  "imagePath": zod.string().max(getOperationsResponseOfferingsItemOneImagePathMax).nullish(),
+  "bookingCutoffMinutes": zod.int().min(getOperationsResponseOfferingsItemOneBookingCutoffMinutesMin).max(getOperationsResponseOfferingsItemOneBookingCutoffMinutesMax).default(getOperationsResponseOfferingsItemOneBookingCutoffMinutesDefault),
   "localizedInstructor": zod.union([zod.object({
   "en": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedInstructorOneArMax),
@@ -1469,6 +1496,7 @@ export const GetOperationsResponse = zod.object({
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.int().optional(),
+  "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
   "waitlistOfferMinutes": zod.int().min(getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMin).max(getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
@@ -1687,7 +1715,8 @@ export const AddPartnerResponse = zod.object({
   "ownerUserId": zod.string()
 }).and(zod.object({
   "id": zod.string(),
-  "approved": zod.boolean()
+  "approved": zod.boolean(),
+  "activityApprovalMode": zod.enum(['platform_default', 'activity_approval_required', 'trusted_direct_publish'])
 }))
 
 
@@ -2129,7 +2158,27 @@ export const ApprovePartnerResponse = zod.object({
   "ownerUserId": zod.string()
 }).and(zod.object({
   "id": zod.string(),
-  "approved": zod.boolean()
+  "approved": zod.boolean(),
+  "activityApprovalMode": zod.enum(['platform_default', 'activity_approval_required', 'trusted_direct_publish'])
+}))
+
+
+export const UpdatePartnerActivityApprovalModeParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdatePartnerActivityApprovalModeBody = zod.object({
+  "activityApprovalMode": zod.enum(['platform_default', 'activity_approval_required', 'trusted_direct_publish'])
+})
+
+export const UpdatePartnerActivityApprovalModeResponse = zod.object({
+  "name": zod.string(),
+  "groupId": zod.string(),
+  "ownerUserId": zod.string()
+}).and(zod.object({
+  "id": zod.string(),
+  "approved": zod.boolean(),
+  "activityApprovalMode": zod.enum(['platform_default', 'activity_approval_required', 'trusted_direct_publish'])
 }))
 
 
@@ -3001,6 +3050,14 @@ export const addLiveOfferingBodyLocalizedDescriptionOneArMax = 240;
 
 export const addLiveOfferingBodyLocalizedDescriptionOneKuMax = 240;
 
+export const addLiveOfferingBodyInstructionsMax = 2000;
+
+export const addLiveOfferingBodyImagePathMax = 1000;
+
+export const addLiveOfferingBodyBookingCutoffMinutesDefault = 0;
+export const addLiveOfferingBodyBookingCutoffMinutesMin = 0;
+export const addLiveOfferingBodyBookingCutoffMinutesMax = 10080;
+
 export const addLiveOfferingBodyLocalizedInstructorOneEnMax = 240;
 
 export const addLiveOfferingBodyLocalizedInstructorOneArMax = 240;
@@ -3036,6 +3093,9 @@ export const AddLiveOfferingBody = zod.object({
   "ar": zod.string().min(1).max(addLiveOfferingBodyLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(addLiveOfferingBodyLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "instructions": zod.string().max(addLiveOfferingBodyInstructionsMax).nullish(),
+  "imagePath": zod.string().max(addLiveOfferingBodyImagePathMax).nullish(),
+  "bookingCutoffMinutes": zod.int().min(addLiveOfferingBodyBookingCutoffMinutesMin).max(addLiveOfferingBodyBookingCutoffMinutesMax).default(addLiveOfferingBodyBookingCutoffMinutesDefault),
   "localizedInstructor": zod.union([zod.object({
   "en": zod.string().min(1).max(addLiveOfferingBodyLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(addLiveOfferingBodyLocalizedInstructorOneArMax),
@@ -3079,6 +3139,14 @@ export const addLiveOfferingResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const addLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const addLiveOfferingResponseOneInstructionsMax = 2000;
+
+export const addLiveOfferingResponseOneImagePathMax = 1000;
+
+export const addLiveOfferingResponseOneBookingCutoffMinutesDefault = 0;
+export const addLiveOfferingResponseOneBookingCutoffMinutesMin = 0;
+export const addLiveOfferingResponseOneBookingCutoffMinutesMax = 10080;
+
 export const addLiveOfferingResponseOneLocalizedInstructorOneEnMax = 240;
 
 export const addLiveOfferingResponseOneLocalizedInstructorOneArMax = 240;
@@ -3121,6 +3189,9 @@ export const AddLiveOfferingResponse = zod.object({
   "ar": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "instructions": zod.string().max(addLiveOfferingResponseOneInstructionsMax).nullish(),
+  "imagePath": zod.string().max(addLiveOfferingResponseOneImagePathMax).nullish(),
+  "bookingCutoffMinutes": zod.int().min(addLiveOfferingResponseOneBookingCutoffMinutesMin).max(addLiveOfferingResponseOneBookingCutoffMinutesMax).default(addLiveOfferingResponseOneBookingCutoffMinutesDefault),
   "localizedInstructor": zod.union([zod.object({
   "en": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedInstructorOneArMax),
@@ -3165,6 +3236,7 @@ export const AddLiveOfferingResponse = zod.object({
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.int().optional(),
+  "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
   "waitlistOfferMinutes": zod.int().min(addLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(addLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
@@ -3178,6 +3250,32 @@ export const AddLiveOfferingResponse = zod.object({
 }))
 
 
+export const requestOfferingImageUploadUrlBodyPartnerIdMax = 160;
+
+export const requestOfferingImageUploadUrlBodySizeMax = 10485760;
+
+
+
+export const RequestOfferingImageUploadUrlBody = zod.object({
+  "partnerId": zod.string().min(1).max(requestOfferingImageUploadUrlBodyPartnerIdMax),
+  "uploadId": zod.uuid(),
+  "contentType": zod.enum(['image/jpeg', 'image/png', 'image/webp']),
+  "size": zod.int().min(1).max(requestOfferingImageUploadUrlBodySizeMax)
+})
+
+export const RequestOfferingImageUploadUrlResponse = zod.object({
+  "uploadUrl": zod.url(),
+  "imagePath": zod.string()
+})
+
+
+export const GetOperationOfferingImageParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetOperationOfferingImageResponse = zod.unknown()
+
+
 export const createRecurringOfferingsBodyTemplateLocalizedTitleOneEnMax = 240;
 
 export const createRecurringOfferingsBodyTemplateLocalizedTitleOneArMax = 240;
@@ -3189,6 +3287,14 @@ export const createRecurringOfferingsBodyTemplateLocalizedDescriptionOneEnMax = 
 export const createRecurringOfferingsBodyTemplateLocalizedDescriptionOneArMax = 240;
 
 export const createRecurringOfferingsBodyTemplateLocalizedDescriptionOneKuMax = 240;
+
+export const createRecurringOfferingsBodyTemplateInstructionsMax = 2000;
+
+export const createRecurringOfferingsBodyTemplateImagePathMax = 1000;
+
+export const createRecurringOfferingsBodyTemplateBookingCutoffMinutesDefault = 0;
+export const createRecurringOfferingsBodyTemplateBookingCutoffMinutesMin = 0;
+export const createRecurringOfferingsBodyTemplateBookingCutoffMinutesMax = 10080;
 
 export const createRecurringOfferingsBodyTemplateLocalizedInstructorOneEnMax = 240;
 
@@ -3239,6 +3345,9 @@ export const CreateRecurringOfferingsBody = zod.object({
   "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "instructions": zod.string().max(createRecurringOfferingsBodyTemplateInstructionsMax).nullish(),
+  "imagePath": zod.string().max(createRecurringOfferingsBodyTemplateImagePathMax).nullish(),
+  "bookingCutoffMinutes": zod.int().min(createRecurringOfferingsBodyTemplateBookingCutoffMinutesMin).max(createRecurringOfferingsBodyTemplateBookingCutoffMinutesMax).default(createRecurringOfferingsBodyTemplateBookingCutoffMinutesDefault),
   "localizedInstructor": zod.union([zod.object({
   "en": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedInstructorOneArMax),
@@ -3291,6 +3400,14 @@ export const createRecurringOfferingsResponseOneLocalizedDescriptionOneArMax = 2
 
 export const createRecurringOfferingsResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const createRecurringOfferingsResponseOneInstructionsMax = 2000;
+
+export const createRecurringOfferingsResponseOneImagePathMax = 1000;
+
+export const createRecurringOfferingsResponseOneBookingCutoffMinutesDefault = 0;
+export const createRecurringOfferingsResponseOneBookingCutoffMinutesMin = 0;
+export const createRecurringOfferingsResponseOneBookingCutoffMinutesMax = 10080;
+
 export const createRecurringOfferingsResponseOneLocalizedInstructorOneEnMax = 240;
 
 export const createRecurringOfferingsResponseOneLocalizedInstructorOneArMax = 240;
@@ -3333,6 +3450,9 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "instructions": zod.string().max(createRecurringOfferingsResponseOneInstructionsMax).nullish(),
+  "imagePath": zod.string().max(createRecurringOfferingsResponseOneImagePathMax).nullish(),
+  "bookingCutoffMinutes": zod.int().min(createRecurringOfferingsResponseOneBookingCutoffMinutesMin).max(createRecurringOfferingsResponseOneBookingCutoffMinutesMax).default(createRecurringOfferingsResponseOneBookingCutoffMinutesDefault),
   "localizedInstructor": zod.union([zod.object({
   "en": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedInstructorOneArMax),
@@ -3377,6 +3497,7 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.int().optional(),
+  "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
   "waitlistOfferMinutes": zod.int().min(createRecurringOfferingsResponseTwoWaitlistOfferMinutesMin).max(createRecurringOfferingsResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
@@ -3444,6 +3565,14 @@ export const changeLiveOfferingResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const changeLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const changeLiveOfferingResponseOneInstructionsMax = 2000;
+
+export const changeLiveOfferingResponseOneImagePathMax = 1000;
+
+export const changeLiveOfferingResponseOneBookingCutoffMinutesDefault = 0;
+export const changeLiveOfferingResponseOneBookingCutoffMinutesMin = 0;
+export const changeLiveOfferingResponseOneBookingCutoffMinutesMax = 10080;
+
 export const changeLiveOfferingResponseOneLocalizedInstructorOneEnMax = 240;
 
 export const changeLiveOfferingResponseOneLocalizedInstructorOneArMax = 240;
@@ -3486,6 +3615,9 @@ export const ChangeLiveOfferingResponse = zod.object({
   "ar": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "instructions": zod.string().max(changeLiveOfferingResponseOneInstructionsMax).nullish(),
+  "imagePath": zod.string().max(changeLiveOfferingResponseOneImagePathMax).nullish(),
+  "bookingCutoffMinutes": zod.int().min(changeLiveOfferingResponseOneBookingCutoffMinutesMin).max(changeLiveOfferingResponseOneBookingCutoffMinutesMax).default(changeLiveOfferingResponseOneBookingCutoffMinutesDefault),
   "localizedInstructor": zod.union([zod.object({
   "en": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedInstructorOneArMax),
@@ -3530,6 +3662,7 @@ export const ChangeLiveOfferingResponse = zod.object({
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.int().optional(),
+  "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
   "waitlistOfferMinutes": zod.int().min(changeLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(changeLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
@@ -3623,6 +3756,14 @@ export const changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneArMa
 
 export const changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const changeRecurringOfferingSeriesResponseOneInstructionsMax = 2000;
+
+export const changeRecurringOfferingSeriesResponseOneImagePathMax = 1000;
+
+export const changeRecurringOfferingSeriesResponseOneBookingCutoffMinutesDefault = 0;
+export const changeRecurringOfferingSeriesResponseOneBookingCutoffMinutesMin = 0;
+export const changeRecurringOfferingSeriesResponseOneBookingCutoffMinutesMax = 10080;
+
 export const changeRecurringOfferingSeriesResponseOneLocalizedInstructorOneEnMax = 240;
 
 export const changeRecurringOfferingSeriesResponseOneLocalizedInstructorOneArMax = 240;
@@ -3665,6 +3806,9 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
   "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "instructions": zod.string().max(changeRecurringOfferingSeriesResponseOneInstructionsMax).nullish(),
+  "imagePath": zod.string().max(changeRecurringOfferingSeriesResponseOneImagePathMax).nullish(),
+  "bookingCutoffMinutes": zod.int().min(changeRecurringOfferingSeriesResponseOneBookingCutoffMinutesMin).max(changeRecurringOfferingSeriesResponseOneBookingCutoffMinutesMax).default(changeRecurringOfferingSeriesResponseOneBookingCutoffMinutesDefault),
   "localizedInstructor": zod.union([zod.object({
   "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedInstructorOneArMax),
@@ -3709,6 +3853,7 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.int().optional(),
+  "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
   "waitlistOfferMinutes": zod.int().min(changeRecurringOfferingSeriesResponseTwoWaitlistOfferMinutesMin).max(changeRecurringOfferingSeriesResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
@@ -3749,6 +3894,14 @@ export const submitLiveOfferingResponseOneLocalizedDescriptionOneEnMax = 240;
 export const submitLiveOfferingResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const submitLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
+
+export const submitLiveOfferingResponseOneInstructionsMax = 2000;
+
+export const submitLiveOfferingResponseOneImagePathMax = 1000;
+
+export const submitLiveOfferingResponseOneBookingCutoffMinutesDefault = 0;
+export const submitLiveOfferingResponseOneBookingCutoffMinutesMin = 0;
+export const submitLiveOfferingResponseOneBookingCutoffMinutesMax = 10080;
 
 export const submitLiveOfferingResponseOneLocalizedInstructorOneEnMax = 240;
 
@@ -3792,6 +3945,9 @@ export const SubmitLiveOfferingResponse = zod.object({
   "ar": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "instructions": zod.string().max(submitLiveOfferingResponseOneInstructionsMax).nullish(),
+  "imagePath": zod.string().max(submitLiveOfferingResponseOneImagePathMax).nullish(),
+  "bookingCutoffMinutes": zod.int().min(submitLiveOfferingResponseOneBookingCutoffMinutesMin).max(submitLiveOfferingResponseOneBookingCutoffMinutesMax).default(submitLiveOfferingResponseOneBookingCutoffMinutesDefault),
   "localizedInstructor": zod.union([zod.object({
   "en": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedInstructorOneArMax),
@@ -3836,6 +3992,7 @@ export const SubmitLiveOfferingResponse = zod.object({
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.int().optional(),
+  "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
   "waitlistOfferMinutes": zod.int().min(submitLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(submitLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
@@ -3873,6 +4030,14 @@ export const respondToOfferingCorrectionResponseOneLocalizedDescriptionOneEnMax 
 export const respondToOfferingCorrectionResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const respondToOfferingCorrectionResponseOneLocalizedDescriptionOneKuMax = 240;
+
+export const respondToOfferingCorrectionResponseOneInstructionsMax = 2000;
+
+export const respondToOfferingCorrectionResponseOneImagePathMax = 1000;
+
+export const respondToOfferingCorrectionResponseOneBookingCutoffMinutesDefault = 0;
+export const respondToOfferingCorrectionResponseOneBookingCutoffMinutesMin = 0;
+export const respondToOfferingCorrectionResponseOneBookingCutoffMinutesMax = 10080;
 
 export const respondToOfferingCorrectionResponseOneLocalizedInstructorOneEnMax = 240;
 
@@ -3916,6 +4081,9 @@ export const RespondToOfferingCorrectionResponse = zod.object({
   "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "instructions": zod.string().max(respondToOfferingCorrectionResponseOneInstructionsMax).nullish(),
+  "imagePath": zod.string().max(respondToOfferingCorrectionResponseOneImagePathMax).nullish(),
+  "bookingCutoffMinutes": zod.int().min(respondToOfferingCorrectionResponseOneBookingCutoffMinutesMin).max(respondToOfferingCorrectionResponseOneBookingCutoffMinutesMax).default(respondToOfferingCorrectionResponseOneBookingCutoffMinutesDefault),
   "localizedInstructor": zod.union([zod.object({
   "en": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedInstructorOneArMax),
@@ -3960,6 +4128,7 @@ export const RespondToOfferingCorrectionResponse = zod.object({
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.int().optional(),
+  "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
   "waitlistOfferMinutes": zod.int().min(respondToOfferingCorrectionResponseTwoWaitlistOfferMinutesMin).max(respondToOfferingCorrectionResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
@@ -3998,6 +4167,14 @@ export const reviewOfferingApprovalResponseOneLocalizedDescriptionOneEnMax = 240
 export const reviewOfferingApprovalResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const reviewOfferingApprovalResponseOneLocalizedDescriptionOneKuMax = 240;
+
+export const reviewOfferingApprovalResponseOneInstructionsMax = 2000;
+
+export const reviewOfferingApprovalResponseOneImagePathMax = 1000;
+
+export const reviewOfferingApprovalResponseOneBookingCutoffMinutesDefault = 0;
+export const reviewOfferingApprovalResponseOneBookingCutoffMinutesMin = 0;
+export const reviewOfferingApprovalResponseOneBookingCutoffMinutesMax = 10080;
 
 export const reviewOfferingApprovalResponseOneLocalizedInstructorOneEnMax = 240;
 
@@ -4041,6 +4218,9 @@ export const ReviewOfferingApprovalResponse = zod.object({
   "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "instructions": zod.string().max(reviewOfferingApprovalResponseOneInstructionsMax).nullish(),
+  "imagePath": zod.string().max(reviewOfferingApprovalResponseOneImagePathMax).nullish(),
+  "bookingCutoffMinutes": zod.int().min(reviewOfferingApprovalResponseOneBookingCutoffMinutesMin).max(reviewOfferingApprovalResponseOneBookingCutoffMinutesMax).default(reviewOfferingApprovalResponseOneBookingCutoffMinutesDefault),
   "localizedInstructor": zod.union([zod.object({
   "en": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedInstructorOneArMax),
@@ -4085,6 +4265,7 @@ export const ReviewOfferingApprovalResponse = zod.object({
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.int().optional(),
+  "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
   "waitlistOfferMinutes": zod.int().min(reviewOfferingApprovalResponseTwoWaitlistOfferMinutesMin).max(reviewOfferingApprovalResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
@@ -6135,7 +6316,8 @@ export const GetFinanceOverviewResponse = zod.object({
   "ownerUserId": zod.string()
 }).and(zod.object({
   "id": zod.string(),
-  "approved": zod.boolean()
+  "approved": zod.boolean(),
+  "activityApprovalMode": zod.enum(['platform_default', 'activity_approval_required', 'trusted_direct_publish'])
 }))),
   "facilities": zod.array(zod.record(zod.string(), zod.unknown())),
   "customers": zod.array(zod.object({
@@ -7824,6 +8006,14 @@ export const getLiveCatalogResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const getLiveCatalogResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const getLiveCatalogResponseOneInstructionsMax = 2000;
+
+export const getLiveCatalogResponseOneImagePathMax = 1000;
+
+export const getLiveCatalogResponseOneBookingCutoffMinutesDefault = 0;
+export const getLiveCatalogResponseOneBookingCutoffMinutesMin = 0;
+export const getLiveCatalogResponseOneBookingCutoffMinutesMax = 10080;
+
 export const getLiveCatalogResponseOneLocalizedInstructorOneEnMax = 240;
 
 export const getLiveCatalogResponseOneLocalizedInstructorOneArMax = 240;
@@ -7866,6 +8056,9 @@ export const GetLiveCatalogResponseItem = zod.object({
   "ar": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "instructions": zod.string().max(getLiveCatalogResponseOneInstructionsMax).nullish(),
+  "imagePath": zod.string().max(getLiveCatalogResponseOneImagePathMax).nullish(),
+  "bookingCutoffMinutes": zod.int().min(getLiveCatalogResponseOneBookingCutoffMinutesMin).max(getLiveCatalogResponseOneBookingCutoffMinutesMax).default(getLiveCatalogResponseOneBookingCutoffMinutesDefault),
   "localizedInstructor": zod.union([zod.object({
   "en": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedInstructorOneArMax),
@@ -7910,6 +8103,7 @@ export const GetLiveCatalogResponseItem = zod.object({
   "reviewedBy": zod.string().nullish(),
   "partnerName": zod.string().optional(),
   "remaining": zod.int().optional(),
+  "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
   "waitlistOfferMinutes": zod.int().min(getLiveCatalogResponseTwoWaitlistOfferMinutesMin).max(getLiveCatalogResponseTwoWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({

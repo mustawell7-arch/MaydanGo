@@ -406,6 +406,13 @@ export interface PublicOffering {
   title: string;
   localizedTitle: LocalizedFacilityText | null;
   localizedDescription: LocalizedFacilityText | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  instructions?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
   city: string;
   facility: string;
   category: string;
@@ -414,6 +421,11 @@ export interface PublicOffering {
   startsAt: string;
   endsAt: string;
   cancellationDeadline: string;
+  /**
+     * @minimum 0
+     * @maximum 10080
+     */
+  bookingCutoffMinutes: number;
   gender: PublicOfferingGender;
   /** @minimum 0 */
   minAge: number;
@@ -1707,13 +1719,65 @@ export interface PartnerInput {
   ownerUserId: string;
 }
 
+export type PartnerActivityApprovalMode = typeof PartnerActivityApprovalMode[keyof typeof PartnerActivityApprovalMode];
+
+
+export const PartnerActivityApprovalMode = {
+  platform_default: 'platform_default',
+  activity_approval_required: 'activity_approval_required',
+  trusted_direct_publish: 'trusted_direct_publish',
+} as const;
+
 export type Partner = PartnerInput & {
   id: string;
   approved: boolean;
+  activityApprovalMode: PartnerActivityApprovalMode;
 };
 
 export interface PartnerApproval {
   approved: boolean;
+}
+
+export type PartnerActivityApprovalModeInputActivityApprovalMode = typeof PartnerActivityApprovalModeInputActivityApprovalMode[keyof typeof PartnerActivityApprovalModeInputActivityApprovalMode];
+
+
+export const PartnerActivityApprovalModeInputActivityApprovalMode = {
+  platform_default: 'platform_default',
+  activity_approval_required: 'activity_approval_required',
+  trusted_direct_publish: 'trusted_direct_publish',
+} as const;
+
+export interface PartnerActivityApprovalModeInput {
+  activityApprovalMode: PartnerActivityApprovalModeInputActivityApprovalMode;
+}
+
+export type OfferingImageUploadInputContentType = typeof OfferingImageUploadInputContentType[keyof typeof OfferingImageUploadInputContentType];
+
+
+export const OfferingImageUploadInputContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export interface OfferingImageUploadInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  partnerId: string;
+  uploadId: string;
+  contentType: OfferingImageUploadInputContentType;
+  /**
+     * @minimum 1
+     * @maximum 10485760
+     */
+  size: number;
+}
+
+export interface OfferingImageUpload {
+  uploadUrl: string;
+  imagePath: string;
 }
 
 export type PartnerOnboardingStatus = typeof PartnerOnboardingStatus[keyof typeof PartnerOnboardingStatus];
@@ -2308,6 +2372,21 @@ export interface OfferingInput {
   title: string;
   localizedTitle?: LocalizedText | null;
   localizedDescription?: LocalizedText | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  instructions?: string | null;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  imagePath?: string | null;
+  /**
+     * @minimum 0
+     * @maximum 10080
+     */
+  bookingCutoffMinutes?: number;
   localizedInstructor?: LocalizedText | null;
   /** @nullable */
   difficultyLevel?: OfferingInputDifficultyLevel;
@@ -2434,6 +2513,8 @@ export type LiveOffering = OfferingInput & ({
   reviewedBy?: string | null;
   partnerName?: string;
   remaining?: number;
+  /** @nullable */
+  imageUrl?: string | null;
   canJoin?: boolean;
   /**
      * @minimum 5

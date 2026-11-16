@@ -22,6 +22,8 @@ import {
   UpdateLearningCourseBody, UpdateLearningCourseResponse,
   DecideInstructorAccessRequestBody, DecideInstructorAccessRequestResponse,
   GetInstructorAccessRequestsResponse,
+  RequestOfferingImageUploadUrlBody, UpdatePartnerActivityApprovalModeBody,
+  UpdatePartnerActivityApprovalModeParams,
 } from "@workspace/api-zod";
 import { sendMemberNotification } from "../lib/notifications";
 import { expandRecurringOffering } from "../lib/recurring-offerings";
@@ -111,6 +113,25 @@ const secureHttps = (value: string | null | undefined) => {
 function ensureHttps(value: string | null | undefined, label: string) {
   if (!secureHttps(value)) throw new BookingError(400, `${label} must be an HTTPS link.`);
 }
+const maxOfferingImageBytes = 10 * 1024 * 1024;
+const offeringImageContentTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+async function verifyOfferingImageUpload(imagePath: string | null | undefined, partnerId: string) {
+  if (!imagePath) return;
+  const match = imagePath.match(/^\/objects\/partner-activity-images\/([A-Za-z0-9_-]{1,160})\/([0-9a-f-]{36})$/i);
+  if (!match || match[1] !== partnerId) throw new BookingError(400, "Choose an image uploaded for this partner.");
+  let file;
+  try {
+    file = await objectStorage.getPrivateFile(imagePath);
+  } catch (error) {
+    if (error instanceof ObjectNotFoundError) throw new BookingError(400, "Upload the activity image before saving.");
+    throw error;
+  }
+  const [metadata] = await file.getMetadata();
+  const size = Number(metadata.size);
+  if (!offeringImageContentTypes.has(String(metadata.contentType ?? "")) || !Number.isFinite(size) || size < 1 || size > maxOfferingImageBytes) {
+    throw new BookingError(400, "Activity images must be JPEG, PNG or WebP files no larger than 10 MB.");
+  }
+}
 async function audit(tx: Tx, actorId: string, action: string, targetId: string, detail = "") {
   await tx.insert(operationAudit).values({ id: randomUUID(), actorId, action, targetId, detail });
 }
@@ -184,8 +205,9 @@ router.get("/", async (_req, res) => {
     return { ...row, position };
   });
   res.json({ role: op.role, partnerId: op.partnerId,
-    partners: partnerRows, offerings: offeringRows.map(row => ({
+    partners: partnerRows, offerings: offeringRows.map(({ imagePath, ...row }) => ({
       ...row,
+      imageUrl: imagePath ? `/api/operations/offerings/${row.id}/image` : null,
       checkinPolicy: policyByOffering.get(row.id) ?? null,
     })), waitlist,
     plans: plans.map(({ whopPlanId: _legacyProviderId, ...plan }) => plan),
@@ -214,6 +236,22 @@ router.patch("/partners/:id", async (req, res) => {
     if (!p) throw new BookingError(404, "Partner not found.");
     await audit(tx, res.locals.operator.userId, "partner.approval", id, String(data.approved));
     return p;
+  });
+  res.json(row);
+});
+router.patch("/partners/:id/activity-approval-mode", async (req, res) => {
+  if (res.locals.operator.role !== "super_admin") {
+    throw new BookingError(403, "Super Admin access is required to change a partner's publishing mode.");
+  }
+  const params = UpdatePartnerActivityApprovalModeParams.parse(req.params);
+  const data = UpdatePartnerActivityApprovalModeBody.parse(req.body);
+  const row = await db.transaction(async tx => {
+    const [partner] = await tx.update(partners).set({
+      activityApprovalMode: data.activityApprovalMode,
+    }).where(eq(partners.id, params.id)).returning();
+    if (!partner) throw new BookingError(404, "Partner not found.");
+    await audit(tx, res.locals.operator.userId, "partner.activityApprovalMode", params.id, data.activityApprovalMode);
+    return partner;
   });
   res.json(row);
 });
@@ -377,18 +415,25 @@ router.delete("/facilities/:id/hours-overrides/:overrideId", async (req, res) =>
 router.post("/offerings", async (req, res) => {
   const data = offeringInput.parse(req.body);
   own(res, data.partnerId);
+  await verifyOfferingImageUpload(data.imagePath, data.partnerId);
   const row = await db.transaction(async tx => {
     const [p] = await tx.select().from(partners).where(eq(partners.id, data.partnerId)).for("share");
     if (!p) throw new BookingError(404, "Partner not found.");
     if (isPartnerOperatorRole(res.locals.operator.role) && data.active)
       throw new BookingError(403, "Partner activities must be reviewed and published by an administrator.");
     if (data.active && !p.approved) throw new BookingError(403, "Partner approval is required before publishing.");
-    const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
+    const [facility] = await tx.select({ id: facilityProfiles.id, activities: facilityProfiles.activities }).from(facilityProfiles).where(and(
       eq(facilityProfiles.partnerId, data.partnerId),
       eq(facilityProfiles.city, data.city),
       eq(facilityProfiles.facility, data.facility),
     )).limit(1);
     if (!facility) throw new BookingError(400, "Choose a facility from your approved facility profiles.");
+    if (!facility.activities.length) {
+      throw new BookingError(400, "Add an activity to the facility profile before creating an offering.");
+    }
+    if (!facility.activities.some(activity => activity.en.trim().toLowerCase() === data.category.trim().toLowerCase())) {
+      throw new BookingError(400, "Choose an activity category listed on this facility profile.");
+    }
     if (isPartnerOperatorRole(res.locals.operator.role) && await isAccessSuspended("facility", facility.id)) {
       throw new BookingError(403, "This facility is temporarily restricted from new activities.");
     }
@@ -399,14 +444,27 @@ router.post("/offerings", async (req, res) => {
       approvalStatus: data.active ? "published" : "draft",
       reviewedAt: data.active ? new Date() : null,
       reviewedBy: data.active ? res.locals.operator.userId : null,
-      localizedTitle: data.localizedTitle ?? null, localizedDescription: data.localizedDescription ?? null, joinUrl: data.joinUrl ?? null,
+      localizedTitle: data.localizedTitle ?? null, localizedDescription: data.localizedDescription ?? null,
+      instructions: data.instructions ?? null, imagePath: data.imagePath ?? null,
+      bookingCutoffMinutes: data.bookingCutoffMinutes, joinUrl: data.joinUrl ?? null,
       partnerGroup: p.groupId, startsAt: new Date(data.startsAt), endsAt: new Date(data.endsAt),
       cancellationDeadline: new Date(data.cancellationDeadline) }).returning();
     await audit(tx, res.locals.operator.userId, "offering.create", id);
     if (data.active) await audit(tx, res.locals.operator.userId, "offering.approval.decision", id, "from=none;to=published");
     return o;
   });
-  res.status(201).json(row);
+  res.status(201).json(serializeOffering(row));
+});
+router.post("/offerings/image-upload-url", async (req, res) => {
+  const data = RequestOfferingImageUploadUrlBody.parse(req.body);
+  own(res, data.partnerId);
+  const [partner] = await db.select({ approved: partners.approved }).from(partners).where(eq(partners.id, data.partnerId));
+  if (!partner?.approved) throw new BookingError(403, "Partner approval is required before uploading an activity image.");
+  if (data.size > maxOfferingImageBytes || !offeringImageContentTypes.has(data.contentType)) {
+    throw new BookingError(400, "Activity images must be JPEG, PNG or WebP files no larger than 10 MB.");
+  }
+  const upload = await objectStorage.createPartnerOfferingImageUpload(data.partnerId, data.uploadId);
+  res.json({ uploadUrl: upload.uploadURL, imagePath: upload.imagePath });
 });
 router.post("/offerings/recurring", async (req, res) => {
   const body = CreateRecurringOfferingsBody.parse(req.body);
@@ -421,6 +479,7 @@ router.post("/offerings/recurring", async (req, res) => {
   };
   const occurrences = expandRecurringOffering(template, schedule);
   own(res, template.partnerId);
+  await verifyOfferingImageUpload(template.imagePath, template.partnerId);
 
   const created = await db.transaction(async tx => {
     const venueKey = `${template.city.trim().toLowerCase()}|${template.facility.trim().toLowerCase()}`;
@@ -431,12 +490,18 @@ router.post("/offerings/recurring", async (req, res) => {
     if (isPartnerOperatorRole(res.locals.operator.role) && template.active)
       throw new BookingError(403, "Only an administrator can approve and publish a partner activity.");
     if (template.active && !partner.approved) throw new BookingError(403, "Partner approval is required before publishing.");
-    const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
+    const [facility] = await tx.select({ id: facilityProfiles.id, activities: facilityProfiles.activities }).from(facilityProfiles).where(and(
       eq(facilityProfiles.partnerId, template.partnerId),
       eq(facilityProfiles.city, template.city),
       eq(facilityProfiles.facility, template.facility),
     )).limit(1);
     if (!facility) throw new BookingError(400, "Choose a facility from your approved facility profiles.");
+    if (!facility.activities.length) {
+      throw new BookingError(400, "Add an activity to the facility profile before creating an offering.");
+    }
+    if (!facility.activities.some(activity => activity.en.trim().toLowerCase() === template.category.trim().toLowerCase())) {
+      throw new BookingError(400, "Choose an activity category listed on this facility profile.");
+    }
     if (isPartnerOperatorRole(res.locals.operator.role) && await isAccessSuspended("facility", facility.id)) {
       throw new BookingError(403, "This facility is temporarily restricted from new activities.");
     }
@@ -473,6 +538,8 @@ router.post("/offerings/recurring", async (req, res) => {
         reviewedAt: template.active ? new Date() : null,
         reviewedBy: template.active ? res.locals.operator.userId : null,
         localizedTitle: data.localizedTitle ?? null, localizedDescription: data.localizedDescription ?? null,
+        instructions: data.instructions ?? null, imagePath: data.imagePath ?? null,
+        bookingCutoffMinutes: data.bookingCutoffMinutes,
         joinUrl: data.joinUrl ?? null, startsAt: new Date(data.startsAt), endsAt: new Date(data.endsAt),
         cancellationDeadline: new Date(data.cancellationDeadline),
       }).returning();
@@ -489,12 +556,7 @@ router.post("/offerings/recurring", async (req, res) => {
     return;
   }
 
-  const response = created.rows.map(row => ({
-    ...row,
-    startsAt: row.startsAt.toISOString(),
-    endsAt: row.endsAt.toISOString(),
-    cancellationDeadline: row.cancellationDeadline.toISOString(),
-  }));
+  const response = created.rows.map(serializeOffering);
   res.status(201).json(CreateRecurringOfferingsResponse.parse(response));
 });
 type OfferingChangeInput = z.infer<typeof ChangeLiveOfferingBody>;
@@ -539,15 +601,18 @@ async function assertOfferingReadyForReview(tx: Tx, row: OfferingRow) {
     }
     ensureHttps(row.joinUrl, "Live class join link");
   }
+  return partner;
 }
 
 function serializeOffering(row: OfferingRow) {
+  const { imagePath, ...visibleRow } = row;
   return {
-    ...row,
+    ...visibleRow,
     startsAt: row.startsAt.toISOString(),
     endsAt: row.endsAt.toISOString(),
     cancellationDeadline: row.cancellationDeadline.toISOString(),
     cancelledAt: row.cancelledAt?.toISOString() ?? null,
+    imageUrl: imagePath ? `/api/operations/offerings/${row.id}/image` : null,
   };
 }
 
@@ -564,14 +629,14 @@ router.post("/offerings/:id/submit", async (req, res) => {
     if (current.approvalStatus !== "draft" || current.active) {
       throw new BookingError(409, "Only an inactive draft can be submitted. Use the correction response for requested changes.");
     }
-    await assertOfferingReadyForReview(tx, current);
+    const partner = await assertOfferingReadyForReview(tx, current);
     const now = new Date();
-    const outcome = partnerSubmissionOutcome(rules.offeringApprovalRequired);
+    const outcome = partnerSubmissionOutcome(rules.offeringApprovalRequired, partner.activityApprovalMode);
     const [updated] = await tx.update(offerings).set({
       approvalStatus: outcome.approvalStatus,
       active: outcome.active,
       submittedAt: now,
-      reviewedAt: rules.offeringApprovalRequired ? null : now,
+      reviewedAt: outcome.active ? now : null,
       reviewedBy: null,
       approvalReason: null,
       partnerResponse: null,
@@ -579,15 +644,45 @@ router.post("/offerings/:id/submit", async (req, res) => {
     await audit(
       tx,
       res.locals.operator.userId,
-      rules.offeringApprovalRequired ? "offering.approval.submit" : "offering.approval.self_publish",
+      outcome.active ? "offering.approval.self_publish" : "offering.approval.submit",
       current.id,
-      rules.offeringApprovalRequired
-        ? "from=draft;to=submitted"
-        : "from=draft;to=published;admin_approval_required=false",
+      outcome.active
+        ? `from=draft;to=published;mode=${partner.activityApprovalMode}`
+        : `from=draft;to=submitted;mode=${partner.activityApprovalMode}`,
     );
     return updated;
   });
   res.json(serializeOffering(row));
+});
+
+router.get("/offerings/:id/image", async (req, res): Promise<void> => {
+  const id = String(req.params.id);
+  const [offering] = await db.select({
+    partnerId: offerings.partnerId,
+    imagePath: offerings.imagePath,
+  }).from(offerings).where(and(eq(offerings.id, id), eq(offerings.scope, "live"))).limit(1);
+  if (!offering) { res.status(404).json({ message: "Activity image not found." }); return; }
+  own(res, offering.partnerId);
+  if (!offering.imagePath) { res.status(404).json({ message: "Activity image not found." }); return; }
+  let file;
+  try {
+    file = await objectStorage.getPrivateFile(offering.imagePath);
+  } catch (error) {
+    if (error instanceof ObjectNotFoundError) { res.status(404).end(); return; }
+    throw error;
+  }
+  const [metadata] = await file.getMetadata();
+  const contentType = String(metadata.contentType ?? "");
+  if (!offeringImageContentTypes.has(contentType)) { res.status(404).end(); return; }
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Content-Disposition", "inline");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Cache-Control", "private, no-store");
+  file.createReadStream().on("error", error => {
+    req.log.error({ err: error, offeringId: id }, "Failed to stream private activity image");
+    if (!res.headersSent) res.status(404).end();
+    else res.end();
+  }).pipe(res);
 });
 
 router.post("/offerings/:id/respond", async (req, res) => {

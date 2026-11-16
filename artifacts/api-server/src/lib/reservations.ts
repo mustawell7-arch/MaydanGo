@@ -43,6 +43,10 @@ export async function assertMemberEligibleForOffering(tx: BookingTx, userId: str
     throw new BookingError(403, "This account is temporarily restricted from making new bookings. Contact MaydanGo support.");
   }
   const now = new Date();
+  if (o.bookingCutoffMinutes > 0
+    && now.getTime() >= o.startsAt.getTime() - o.bookingCutoffMinutes * 60_000) {
+    throw new BookingError(409, "Booking has closed for this activity.");
+  }
   if (o.scope === "live") {
     await lockVenueAccess(tx, o.partnerId, o.city, o.facility);
     const [partner] = o.partnerId ? await tx.select().from(partners).where(eq(partners.id, o.partnerId)).for("share") : [];

@@ -582,12 +582,15 @@ export function PublicHomeShowcase({ language = 'en' }: { language?: PublicCatal
           ) : upcoming.length ? (
             <div className="grid gap-3 sm:grid-cols-2">
               {upcoming.map((offering) => <article key={offering.id} className="offering-card rounded-xl border border-border bg-card p-4" data-testid={`card-home-offering-${offering.id}`}>
+                {offering.imageUrl && <img src={offering.imageUrl} alt={localized(offering.localizedTitle, language) || offering.title} loading="lazy" referrerPolicy="no-referrer" className="mb-3 aspect-[16/8] w-full rounded-lg object-cover" />}
                 <div className="flex items-center justify-between gap-3">
                   <span className="rounded-full bg-accent/70 px-2.5 py-1 text-[11px] font-bold">{offering.kind === 'session' ? text.class : offering.kind === 'event' ? text.event : text.coaching}</span>
                   <span className="text-xs text-muted-foreground">{new Date(offering.startsAt).toLocaleDateString(language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ', { month: 'short', day: 'numeric' })}</span>
                 </div>
                 <h4 className="font-display mt-3 text-lg font-bold leading-snug">{localized(offering.localizedTitle, language) || offering.title}</h4>
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />{offering.city} · {offering.facility}</p>
+                {offering.localizedDescription && <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">{localized(offering.localizedDescription, language)}</p>}
+                {offering.instructions && <p className="mt-2 whitespace-pre-line text-xs leading-5 text-muted-foreground">{offering.instructions}</p>}
               </article>)}
             </div>
           ) : (

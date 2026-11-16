@@ -1170,6 +1170,23 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Partner" }
+  /operations/partners/{id}/activity-approval-mode:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: updatePartnerActivityApprovalMode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerActivityApprovalModeInput" }
+      responses:
+        "200":
+          description: Activity publishing policy updated by a Super Admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Partner" }
+        "403": { description: Super Admin access is required }
+        "404": { description: Partner not found }
   /operations/partner-onboarding/applications:
     get:
       operationId: getPartnerOnboardingApplications
@@ -1331,6 +1348,21 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/LiveOffering" }
+  /operations/offerings/image-upload-url:
+    post:
+      operationId: requestOfferingImageUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OfferingImageUploadInput" }
+      responses:
+        "200":
+          description: Short-lived upload URL for a private partner-supplied activity image
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OfferingImageUpload" }
+        "403": { description: Partner access is not approved or assigned }
   /operations/offerings/recurring:
     post:
       operationId: createRecurringOfferings
@@ -1350,6 +1382,19 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/RecurringOfferingConflict" }
+  /operations/offerings/{id}/image:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getOperationOfferingImage
+      responses:
+        "200":
+          description: Private activity image streamed to its partner or an authorized administrator
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+        "403": { description: Activity is outside the user's access scope }
+        "404": { description: Activity image not found }
   /operations/offerings/{id}:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     patch:
@@ -3535,13 +3580,41 @@ components:
       allOf:
         - $ref: "#/components/schemas/PartnerInput"
         - type: object
-          required: [id, approved]
-          properties: { id: { type: string }, approved: { type: boolean } }
+          required: [id, approved, activityApprovalMode]
+          properties:
+            id: { type: string }
+            approved: { type: boolean }
+            activityApprovalMode:
+              type: string
+              enum: [platform_default, activity_approval_required, trusted_direct_publish]
     PartnerApproval:
       type: object
       additionalProperties: false
       required: [approved]
       properties: { approved: { type: boolean } }
+    PartnerActivityApprovalModeInput:
+      type: object
+      additionalProperties: false
+      required: [activityApprovalMode]
+      properties:
+        activityApprovalMode:
+          type: string
+          enum: [platform_default, activity_approval_required, trusted_direct_publish]
+    OfferingImageUploadInput:
+      type: object
+      additionalProperties: false
+      required: [partnerId, uploadId, contentType, size]
+      properties:
+        partnerId: { type: string, minLength: 1, maxLength: 160 }
+        uploadId: { type: string, format: uuid }
+        contentType: { type: string, enum: [image/jpeg, image/png, image/webp] }
+        size: { type: integer, minimum: 1, maximum: 10485760 }
+    OfferingImageUpload:
+      type: object
+      required: [uploadUrl, imagePath]
+      properties:
+        uploadUrl: { type: string, format: uri }
+        imagePath: { type: string }
     PartnerOnboardingStatus:
       type: string
       enum: [application_received, under_review, additional_documents_required, commercial_negotiation, contract_issued, contract_signed, facility_setup, qr_code_issued, staff_training_completed, test_checkin_completed, approved, live, rejected]
@@ -3811,6 +3884,9 @@ components:
           anyOf:
             - $ref: "#/components/schemas/LocalizedText"
             - type: "null"
+        instructions: { type: ["string", "null"], maxLength: 2000 }
+        imagePath: { type: ["string", "null"], maxLength: 1000 }
+        bookingCutoffMinutes: { type: integer, minimum: 0, maximum: 10080, default: 0 }
         localizedInstructor:
           anyOf:
             - $ref: "#/components/schemas/LocalizedText"
@@ -3908,6 +3984,7 @@ components:
             reviewedBy: { type: ["string", "null"] }
             partnerName: { type: string }
             remaining: { type: integer }
+            imageUrl: { type: ["string", "null"] }
             canJoin: { type: boolean }
             waitlistOfferMinutes: { type: integer, minimum: 5, maximum: 1440 }
             checkinPolicy:

@@ -8,6 +8,9 @@ export const partners = pgTable("partners", {
   groupId: text("group_id").notNull(),
   ownerUserId: text("owner_user_id").notNull(),
   approved: boolean("approved").notNull().default(false),
+  activityApprovalMode: text("activity_approval_mode")
+    .$type<"platform_default" | "activity_approval_required" | "trusted_direct_publish">()
+    .notNull().default("platform_default"),
   logoUrl: text("logo_url"),
 });
 export const accountAccessRestrictions = pgTable("account_access_restrictions", {

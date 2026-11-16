@@ -32,6 +32,11 @@ export type Offering = {
   capacity: number; waitlistOfferMinutes?: number; gender: 'all' | 'female' | 'male'; minAge: number; maxAge: number | null; additionalPayment: boolean; active: boolean;
   targetId: string; slot: string; scope: string; cancelledAt: string | null; partnerName?: string; remaining?: number;
 };
+export function absoluteApiAssetUrl(path: string | null | undefined) {
+  if (!path) return undefined;
+  const domain = process.env.EXPO_PUBLIC_DOMAIN;
+  return `${domain ? `https://${domain}` : ''}${path}`;
+}
 export type Plan = { id: string; name: string; tier: string; kind: 'paid' | 'trial' | 'corporate'; durationDays: number; active: boolean; rules: Rules; priceIqd?: number | null; purchasable?: boolean; priceLabel?: string | null; availabilityMessage?: string | null };
 export type Subscription = { status: string; paymentStatus: string; cancelAtPeriodEnd: boolean; periodEndsAt: string | null; recoveryUrl: string | null };
 export type Operations = { role: 'admin' | 'finance' | 'partner'; partnerId: string | null; partners: Partner[]; offerings: Offering[]; plans: Plan[] };
