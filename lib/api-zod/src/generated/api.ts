@@ -6844,6 +6844,10 @@ export const GetMemberPrivacyRequestExportResponse = zod.object({
   "durationSeconds": zod.int().min(1).nullable()
 }))
 })),
+  "savedCourses": zod.array(zod.object({
+  "title": zod.string(),
+  "savedAt": zod.coerce.date()
+})),
   "reviews": zod.array(zod.object({
   "overallRating": zod.int(),
   "categoryRatings": zod.object({
@@ -7009,7 +7013,8 @@ export const GetMemberCoursesResponseItem = zod.object({
   "title": zod.string(),
   "lessonCount": zod.int(),
   "enrolled": zod.boolean(),
-  "completedLessons": zod.int()
+  "completedLessons": zod.int(),
+  "isSaved": zod.boolean()
 }))
 export const GetMemberCoursesResponse = zod.array(GetMemberCoursesResponseItem)
 
@@ -7127,7 +7132,8 @@ export const GetMemberCourseResponse = zod.object({
   "title": zod.string(),
   "lessonCount": zod.int(),
   "enrolled": zod.boolean(),
-  "completedLessons": zod.int()
+  "completedLessons": zod.int(),
+  "isSaved": zod.boolean()
 })).and(zod.object({
   "accessState": zod.enum(['membership_required', 'enrollment_required', 'ready']),
   "lessons": zod.array(zod.object({
@@ -7161,6 +7167,21 @@ export const GetMemberCourseResponse = zod.object({
 })),
   "lastAccessAt": zod.coerce.date().nullable()
 }))
+
+
+export const SetMemberCourseFavoriteParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const SetMemberCourseFavoriteBody = zod.object({
+  "isSaved": zod.boolean()
+})
+
+export const SetMemberCourseFavoriteResponse = zod.object({
+  "courseId": zod.string(),
+  "isSaved": zod.boolean(),
+  "savedAt": zod.coerce.date().nullable()
+})
 
 
 export const EnrollMemberCourseParams = zod.object({
@@ -7276,7 +7297,8 @@ export const EnrollMemberCourseResponse = zod.object({
   "title": zod.string(),
   "lessonCount": zod.int(),
   "enrolled": zod.boolean(),
-  "completedLessons": zod.int()
+  "completedLessons": zod.int(),
+  "isSaved": zod.boolean()
 })).and(zod.object({
   "accessState": zod.enum(['membership_required', 'enrollment_required', 'ready']),
   "lessons": zod.array(zod.object({
@@ -7433,7 +7455,8 @@ export const UpdateCourseProgressResponse = zod.object({
   "title": zod.string(),
   "lessonCount": zod.int(),
   "enrolled": zod.boolean(),
-  "completedLessons": zod.int()
+  "completedLessons": zod.int(),
+  "isSaved": zod.boolean()
 })).and(zod.object({
   "accessState": zod.enum(['membership_required', 'enrollment_required', 'ready']),
   "lessons": zod.array(zod.object({

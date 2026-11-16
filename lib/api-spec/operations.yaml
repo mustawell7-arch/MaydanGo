@@ -2041,6 +2041,21 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CourseDetail" }
+  /member/courses/{id}/favorite:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    put:
+      operationId: setMemberCourseFavorite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CourseFavoriteInput" }
+      responses:
+        "200":
+          description: This member’s saved-course preference
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CourseFavoriteResponse" }
   /member/courses/{id}/enroll:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     post:
@@ -2682,6 +2697,13 @@ components:
         viewedLessons:
           type: array
           items: { $ref: "#/components/schemas/MemberDataExportViewedLesson" }
+    MemberDataExportSavedCourse:
+      type: object
+      additionalProperties: false
+      required: [title, savedAt]
+      properties:
+        title: { type: string }
+        savedAt: { type: string, format: date-time }
     MemberDataExportReviewRatings:
       type: object
       additionalProperties: false
@@ -2724,7 +2746,7 @@ components:
     MemberDataExport:
       type: object
       additionalProperties: false
-      required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, reviews, privacyRequests, notificationPreferences, excludedData]
+      required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, savedCourses, reviews, privacyRequests, notificationPreferences, excludedData]
       properties:
         formatVersion: { type: string, enum: ["1.0"] }
         generatedAt: { type: string, format: date-time }
@@ -2744,6 +2766,9 @@ components:
         courses:
           type: array
           items: { $ref: "#/components/schemas/MemberDataExportCourse" }
+        savedCourses:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportSavedCourse" }
         reviews:
           type: array
           items: { $ref: "#/components/schemas/MemberDataExportReview" }
@@ -4016,13 +4041,28 @@ components:
       allOf:
         - $ref: "#/components/schemas/CourseMetadataInput"
         - type: object
-          required: [id, title, lessonCount, enrolled, completedLessons]
+          required: [id, title, lessonCount, enrolled, completedLessons, isSaved]
           properties:
             id: { type: string }
             title: { type: string }
             lessonCount: { type: integer }
             enrolled: { type: boolean }
             completedLessons: { type: integer }
+            isSaved: { type: boolean }
+    CourseFavoriteInput:
+      type: object
+      additionalProperties: false
+      required: [isSaved]
+      properties:
+        isSaved: { type: boolean }
+    CourseFavoriteResponse:
+      type: object
+      additionalProperties: false
+      required: [courseId, isSaved, savedAt]
+      properties:
+        courseId: { type: string }
+        isSaved: { type: boolean }
+        savedAt: { type: ["string", "null"], format: date-time }
     CourseLesson:
       type: object
       required: [id, position, localizedTitle, localizedContent, durationMinutes, mediaUrl, hasRecording, recordingKind, completed, viewed, playbackPositionSeconds, durationSeconds]

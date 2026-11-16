@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq, gt, gte, inArray, isNull, sql } from "drizzle-orm";
 import {
   db, courseEnrollments, courseMaterials, lessonAccess, learningCourses, learningLessons, lessonProgress,
+  memberSavedCourses,
   memberships, offerings, partners, reservations,
 } from "@workspace/db";
 import {
@@ -13,6 +14,7 @@ import {
   GetMemberCoursesResponse, GetMemberLiveClassesResponse, UpdateCourseProgressBody,
   UpdateCourseProgressResponse, RecordMemberCourseLessonViewResponse,
   UpdateMemberCoursePlaybackProgressBody, UpdateMemberCoursePlaybackProgressResponse,
+  SetMemberCourseFavoriteBody, SetMemberCourseFavoriteParams, SetMemberCourseFavoriteResponse,
 } from "@workspace/api-zod";
 import { BookingError, membershipCanAccess } from "../lib/reservations";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
@@ -52,7 +54,7 @@ async function currentDigitalCourseMembership(userId: string) {
   return membership;
 }
 
-function courseSummary(course: typeof learningCourses.$inferSelect, enrolled: boolean, completedLessons: number, lessonCount: number) {
+function courseSummary(course: typeof learningCourses.$inferSelect, enrolled: boolean, completedLessons: number, lessonCount: number, isSaved: boolean) {
   return {
     id: course.id,
     title: course.localizedTitle.en,
@@ -72,6 +74,7 @@ function courseSummary(course: typeof learningCourses.$inferSelect, enrolled: bo
     lessonCount,
     enrolled,
     completedLessons,
+    isSaved,
   };
 }
 
@@ -81,10 +84,13 @@ async function getCourseDetail(userId: string, id: string) {
   );
   if (!course) throw new BookingError(404, "This course is not available.");
 
-  const [membership, enrollment] = await Promise.all([
+  const [membership, enrollment, savedCourse] = await Promise.all([
     currentDigitalCourseMembership(userId),
     db.select().from(courseEnrollments).where(and(
       eq(courseEnrollments.userId, userId), eq(courseEnrollments.courseId, id),
+    )),
+    db.select({ id: memberSavedCourses.id }).from(memberSavedCourses).where(and(
+      eq(memberSavedCourses.userId, userId), eq(memberSavedCourses.courseId, id),
     )),
   ]);
   const enrolled = enrollment[0];
@@ -116,7 +122,7 @@ async function getCourseDetail(userId: string, id: string) {
       .where(eq(courseMaterials.courseId, id))
       .orderBy(asc(courseMaterials.approvedAt))
     : [];
-  const summary = courseSummary(course, !!enrolled, completed.size, lessons.length);
+  const summary = courseSummary(course, !!enrolled, completed.size, lessons.length, savedCourse.length > 0);
   return {
     ...summary,
     accessState,
@@ -161,9 +167,21 @@ router.get("/courses", async (req, res): Promise<void> => {
   }).from(learningLessons).where(inArray(learningLessons.courseId, published.map(course => course.id)))
     .groupBy(learningLessons.courseId) : [];
   const countByCourse = new Map(lessonCounts.map(row => [row.courseId, row.count]));
+  const savedRows = published.length ? await db.select({ courseId: memberSavedCourses.courseId })
+    .from(memberSavedCourses).where(and(
+      eq(memberSavedCourses.userId, userId),
+      inArray(memberSavedCourses.courseId, published.map(course => course.id)),
+    )) : [];
+  const savedCourseIds = new Set(savedRows.map(row => row.courseId));
   res.json(GetMemberCoursesResponse.parse(published.map(course => {
     const enrollment = enrollmentByCourse.get(course.id);
-    return courseSummary(course, !!enrollment, enrollment ? progressByEnrollment.get(enrollment.id) ?? 0 : 0, countByCourse.get(course.id) ?? 0);
+    return courseSummary(
+      course,
+      !!enrollment,
+      enrollment ? progressByEnrollment.get(enrollment.id) ?? 0 : 0,
+      countByCourse.get(course.id) ?? 0,
+      savedCourseIds.has(course.id),
+    );
   })));
 });
 
@@ -171,6 +189,45 @@ router.get("/courses/:id", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) { res.status(401).json({ message: "Sign in to view this course." }); return; }
   res.json(GetMemberCourseResponse.parse(await getCourseDetail(userId, String(req.params.id))));
+});
+
+router.put("/courses/:id/favorite", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) { res.status(401).json({ message: "Sign in to save courses." }); return; }
+  if (await isAccessSuspended("member", userId)) {
+    throw new BookingError(403, "This account is temporarily restricted from account changes. Contact MaydanGo support.");
+  }
+  const { id: courseId } = SetMemberCourseFavoriteParams.parse(req.params);
+  const body = SetMemberCourseFavoriteBody.parse(req.body);
+  const [course] = await db.select({ id: learningCourses.id }).from(learningCourses).where(and(
+    eq(learningCourses.id, courseId), eq(learningCourses.published, true),
+  ));
+  if (!course) throw new BookingError(404, "This course is not available.");
+
+  let savedAt: Date | null = null;
+  if (body.isSaved) {
+    await db.insert(memberSavedCourses).values({
+      id: randomUUID(),
+      userId,
+      courseId,
+    }).onConflictDoNothing({
+      target: [memberSavedCourses.userId, memberSavedCourses.courseId],
+    });
+    const [saved] = await db.select({ savedAt: memberSavedCourses.savedAt }).from(memberSavedCourses).where(and(
+      eq(memberSavedCourses.userId, userId), eq(memberSavedCourses.courseId, courseId),
+    ));
+    savedAt = saved?.savedAt ?? null;
+  } else {
+    await db.delete(memberSavedCourses).where(and(
+      eq(memberSavedCourses.userId, userId), eq(memberSavedCourses.courseId, courseId),
+    ));
+  }
+
+  res.json(SetMemberCourseFavoriteResponse.parse({
+    courseId,
+    isSaved: body.isSaved,
+    savedAt,
+  }));
 });
 
 router.post("/courses/:id/lessons/:lessonId/view", async (req, res): Promise<void> => {

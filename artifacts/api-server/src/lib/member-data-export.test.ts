@@ -41,6 +41,7 @@ test("member export response contains only the declared, non-secret fields", () 
         durationSeconds: 600,
       }],
     }],
+    savedCourses: [{ title: "Strength basics", savedAt: now }],
     reviews: [],
     privacyRequests: [],
     notificationPreferences: null,
@@ -58,6 +59,7 @@ test("member export response contains only the declared, non-secret fields", () 
   assert.equal("billingId" in parsed.memberships[0], false);
   assert.equal("rules" in parsed.memberships[0], false);
   assert.equal(parsed.courses[0]?.viewedLessons[0]?.playbackPositionSeconds, 45);
+  assert.equal(parsed.savedCourses[0]?.title, "Strength basics");
   assert.deepEqual(parsed.excludedData, [
     "payment_instrument_details",
     "login_credentials",

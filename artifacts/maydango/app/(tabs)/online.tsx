@@ -6,7 +6,8 @@ import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetMemberCoursesQueryKey, getGetMemberLiveClassesQueryKey,
-  useCreateLiveClassJoin, useGetMemberCourses, useGetMemberLiveClasses,
+  getGetMemberCourseQueryKey, useCreateLiveClassJoin, useGetMemberCourses,
+  useGetMemberLiveClasses, useSetMemberCourseFavorite,
 } from '@workspace/api-client-react';
 import { MemberNotice } from '@/components/MemberNotice';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
@@ -30,6 +31,7 @@ export default function OnlineScreen() {
   const app = useApp();
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<Mode>('courses');
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [slotChoice, setSlotChoice] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const t = (key: MessageKey) => translate(app.language, key);
@@ -37,14 +39,47 @@ export default function OnlineScreen() {
   const coursesQuery = useGetMemberCourses({ query: { enabled: mode === 'courses' } });
   const liveQuery = useGetMemberLiveClasses({ query: { enabled: mode === 'live', refetchInterval: 30_000 } });
   const joinMutation = useCreateLiveClassJoin();
+  const favoriteMutation = useSetMemberCourseFavorite();
   const courseRows = coursesQuery.data ?? [];
+  const savedCourseRows = courseRows.filter((course) => course.isSaved);
+  const visibleCourseRows = showSavedOnly ? savedCourseRows : courseRows;
   const liveClasses = liveQuery.data ?? [];
-  const started = courseRows.filter((course) => course.enrolled && course.completedLessons < course.lessonCount);
-  const recommendations = recommendOnlineCourses(courseRows);
+  const started = showSavedOnly ? [] : courseRows.filter((course) => course.enrolled && course.completedLessons < course.lessonCount);
+  const recommendations = showSavedOnly ? [] : recommendOnlineCourses(courseRows);
   const openCourse = (id: string, resume = false) => router.push({
     pathname: '/course/[id]',
     params: { id, ...(resume ? { resume: '1' } : {}) },
   });
+
+  const toggleSavedCourse = async (courseId: string, isSaved: boolean) => {
+    try {
+      const result = await favoriteMutation.mutateAsync({ id: courseId, data: { isSaved: !isSaved } });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetMemberCoursesQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: getGetMemberCourseQueryKey(courseId) }),
+      ]);
+      setMessage(t(result.isSaved ? 'courseSaved' : 'courseUnsaved'));
+    } catch (error) {
+      setMessage(errorCopy(error));
+    }
+  };
+  const saveCourseButton = (courseId: string, isSaved: boolean, overlay = false) => (
+    <Pressable
+      testID={`button-save-course-${courseId}`}
+      accessibilityRole="button"
+      accessibilityLabel={t(isSaved ? 'removeSavedCourse' : 'saveCourse')}
+      accessibilityState={{ selected: isSaved, disabled: favoriteMutation.isPending }}
+      disabled={favoriteMutation.isPending}
+      onPress={() => void toggleSavedCourse(courseId, isSaved)}
+      style={({ pressed }) => [
+        styles.saveCourseButton,
+        overlay && styles.saveCourseOverlay,
+        { backgroundColor: overlay ? colors.card : colors.secondary, opacity: pressed || favoriteMutation.isPending ? 0.65 : 1 },
+      ]}
+    >
+      <Ionicons name={isSaved ? 'bookmark' : 'bookmark-outline'} size={19} color={isSaved ? colors.primary : colors.mutedForeground} />
+    </Pressable>
+  );
 
   const toggleLive = async (id: string, was: boolean) => {
     const r = await (was ? app.cancelBooking(id) : app.bookSession(id));
@@ -109,34 +144,61 @@ export default function OnlineScreen() {
           <>
             {coursesQuery.isLoading ? <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={{ color: colors.mutedForeground }}>{t('coursesLoading')}</Text></View> : null}
             {coursesQuery.isError ? <Text style={[styles.catalogMeta, { color: colors.destructive, textAlign: align }]}>{t('catalogLoadError')}</Text> : null}
-            {!coursesQuery.isLoading && !coursesQuery.isError && courseRows.length === 0
-              ? <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{t('noPublishedCourses')}</Text> : null}
+            {!coursesQuery.isLoading && !coursesQuery.isError && courseRows.length > 0 ? (
+              <View accessibilityRole="tablist" style={[styles.segment, styles.courseFilter, { backgroundColor: colors.secondary }]}>
+                <Pressable
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: !showSavedOnly }}
+                  onPress={() => setShowSavedOnly(false)}
+                  style={[styles.segmentOption, !showSavedOnly && { backgroundColor: colors.card }]}
+                >
+                  <Text style={[styles.segmentText, { color: !showSavedOnly ? colors.primary : colors.mutedForeground }]}>{t('allCourses')} · {courseRows.length}</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: showSavedOnly }}
+                  onPress={() => setShowSavedOnly(true)}
+                  style={[styles.segmentOption, showSavedOnly && { backgroundColor: colors.card }]}
+                >
+                  <Text style={[styles.segmentText, { color: showSavedOnly ? colors.primary : colors.mutedForeground }]}>{t('savedCourses')} · {savedCourseRows.length}</Text>
+                </Pressable>
+              </View>
+            ) : null}
+            {!coursesQuery.isLoading && !coursesQuery.isError
+              && (showSavedOnly ? savedCourseRows.length === 0 : courseRows.length === 0)
+              ? <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
+                {showSavedOnly ? t('noSavedCourses') : t('noPublishedCourses')}
+              </Text> : null}
             {started.length > 0 ? <>
               <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: align }]}>{t('continueLearning')}</Text>
               {started.map((course) => {
                 const pct = course.lessonCount ? Math.round(course.completedLessons / course.lessonCount * 100) : 0;
                 return (
-                  <Pressable key={course.id} accessibilityRole="button"
-                    accessibilityLabel={`${t('continueCourse')}: ${localText(course.localizedTitle, app.language)}, ${pct}% ${t('complete')}`}
-                    onPress={() => openCourse(course.id, true)}
-                    style={[styles.courseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                    {course.thumbnailUrl
-                      ? <Image source={{ uri: course.thumbnailUrl }} style={styles.courseImage} />
-                      : <View style={[styles.courseImage, styles.courseImageFallback, { backgroundColor: colors.secondary }]}><Ionicons name="fitness-outline" size={30} color={colors.primary} /></View>}
-                    <View style={styles.courseBody}>
-                      <Text style={[styles.courseKicker, { color: colors.mutedForeground, textAlign: align }]}>{t(course.level === 'all-levels' ? 'allLevels' : course.level)} · {course.durationMinutes} {t('minutesShort')}</Text>
-                      <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{localText(course.localizedTitle, app.language)}</Text>
-                      <View style={[styles.courseProgressTrack, { backgroundColor: colors.secondary }]}>
-                        <View style={[styles.courseProgressFill, { width: `${pct}%`, backgroundColor: colors.primary }]} />
-                      </View>
-                      <View style={styles.courseFooter}>
-                        <Text style={[styles.progressLabel, { color: colors.mutedForeground }]}>{course.completedLessons}/{course.lessonCount} {t('lessons')} · {pct}% {t('complete')}</Text>
-                        <View style={[styles.continueButton, { backgroundColor: colors.accent }]}>
-                          <Text style={[styles.continueText, { color: colors.accentForeground }]}>{t('continueCourse')}</Text>
+                  <View key={course.id} style={[styles.courseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${t('continueCourse')}: ${localText(course.localizedTitle, app.language)}, ${pct}% ${t('complete')}`}
+                      onPress={() => openCourse(course.id, true)}
+                    >
+                      {course.thumbnailUrl
+                        ? <Image source={{ uri: course.thumbnailUrl }} style={styles.courseImage} />
+                        : <View style={[styles.courseImage, styles.courseImageFallback, { backgroundColor: colors.secondary }]}><Ionicons name="fitness-outline" size={30} color={colors.primary} /></View>}
+                      <View style={styles.courseBody}>
+                        <Text style={[styles.courseKicker, { color: colors.mutedForeground, textAlign: align }]}>{t(course.level === 'all-levels' ? 'allLevels' : course.level)} · {course.durationMinutes} {t('minutesShort')}</Text>
+                        <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{localText(course.localizedTitle, app.language)}</Text>
+                        <View style={[styles.courseProgressTrack, { backgroundColor: colors.secondary }]}>
+                          <View style={[styles.courseProgressFill, { width: `${pct}%`, backgroundColor: colors.primary }]} />
+                        </View>
+                        <View style={styles.courseFooter}>
+                          <Text style={[styles.progressLabel, { color: colors.mutedForeground }]}>{course.completedLessons}/{course.lessonCount} {t('lessons')} · {pct}% {t('complete')}</Text>
+                          <View style={[styles.continueButton, { backgroundColor: colors.accent }]}>
+                            <Text style={[styles.continueText, { color: colors.accentForeground }]}>{t('continueCourse')}</Text>
+                          </View>
                         </View>
                       </View>
-                    </View>
-                  </Pressable>
+                    </Pressable>
+                    {saveCourseButton(course.id, course.isSaved, true)}
+                  </View>
                 );
               })}
             </> : null}
@@ -144,47 +206,58 @@ export default function OnlineScreen() {
               <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 18, textAlign: align }]}>{t('recommendedForYou')}</Text>
               <Text style={[styles.catalogMeta, { color: colors.mutedForeground, marginBottom: 8, textAlign: align }]}>{t('recommendationReason')}</Text>
               {recommendations.map((course) => (
-                <Pressable key={`recommended-${course.id}`} accessibilityRole="button"
-                  accessibilityLabel={`${t('recommendedForYou')}: ${localText(course.localizedTitle, app.language)}`}
-                  onPress={() => openCourse(course.id)}
-                  style={[styles.catalogRow, { borderBottomColor: colors.border }]}>
+                <View key={`recommended-${course.id}`} style={[styles.catalogRow, { borderBottomColor: colors.border }]}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t('recommendedForYou')}: ${localText(course.localizedTitle, app.language)}`}
+                    onPress={() => openCourse(course.id)}
+                    style={styles.courseRowMain}
+                  >
+                    {course.thumbnailUrl
+                      ? <Image source={{ uri: course.thumbnailUrl }} style={styles.catalogImage} />
+                      : <View style={[styles.catalogImage, styles.catalogImageFallback, { backgroundColor: colors.secondary }]}><Ionicons name="sparkles-outline" size={20} color={colors.primary} /></View>}
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{localText(course.localizedTitle, app.language)}</Text>
+                      <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
+                        {localText(course.localizedInstructor, app.language)} · {course.category}
+                      </Text>
+                      <Text numberOfLines={2} style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{localText(course.localizedSummary, app.language)}</Text>
+                    </View>
+                    <View style={[styles.playButton, { backgroundColor: colors.secondary }]}>
+                      <Ionicons name="chevron-forward" size={15} color={colors.primary} style={app.language !== 'en' ? { transform: [{ scaleX: -1 }] } : undefined} />
+                    </View>
+                  </Pressable>
+                  {saveCourseButton(course.id, course.isSaved)}
+                </View>
+              ))}
+            </> : null}
+            {visibleCourseRows.length > 0 ? <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 18, textAlign: align }]}>{showSavedOnly ? t('savedCourses') : t('courses')}</Text> : null}
+            {!showSavedOnly && !courseRows.some((course) => course.enrolled) && courseRows.length > 0
+              ? <Text style={[styles.catalogMeta, { color: colors.mutedForeground, marginBottom: 10, textAlign: align }]}>{t('notStartedYet')}</Text> : null}
+            {visibleCourseRows.map((course) => (
+              <View key={course.id} style={[styles.catalogRow, { borderBottomColor: colors.border }]}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t('viewCourse')}: ${localText(course.localizedTitle, app.language)}`}
+                  onPress={() => openCourse(course.id, course.enrolled)}
+                  style={styles.courseRowMain}
+                >
                   {course.thumbnailUrl
                     ? <Image source={{ uri: course.thumbnailUrl }} style={styles.catalogImage} />
-                    : <View style={[styles.catalogImage, styles.catalogImageFallback, { backgroundColor: colors.secondary }]}><Ionicons name="sparkles-outline" size={20} color={colors.primary} /></View>}
+                    : <View style={[styles.catalogImage, styles.catalogImageFallback, { backgroundColor: colors.secondary }]}><Ionicons name="fitness-outline" size={20} color={colors.primary} /></View>}
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{localText(course.localizedTitle, app.language)}</Text>
                     <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
-                      {localText(course.localizedInstructor, app.language)} · {course.category}
+                      {localText(course.localizedInstructor, app.language)} · {course.lessonCount} {t('lessons')}{course.enrolled ? ` · ${t('enrolled')}` : ''}
                     </Text>
                     <Text numberOfLines={2} style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{localText(course.localizedSummary, app.language)}</Text>
                   </View>
                   <View style={[styles.playButton, { backgroundColor: colors.secondary }]}>
-                    <Ionicons name="chevron-forward" size={15} color={colors.primary} style={app.language !== 'en' ? { transform: [{ scaleX: -1 }] } : undefined} />
+                    <Ionicons name={course.enrolled ? 'play' : 'chevron-forward'} size={15} color={colors.primary} style={app.language !== 'en' && !course.enrolled ? { transform: [{ scaleX: -1 }] } : undefined} />
                   </View>
                 </Pressable>
-              ))}
-            </> : null}
-            {courseRows.length > 0 ? <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 18, textAlign: align }]}>{t('courses')}</Text> : null}
-            {!courseRows.some((course) => course.enrolled) && courseRows.length > 0
-              ? <Text style={[styles.catalogMeta, { color: colors.mutedForeground, marginBottom: 10, textAlign: align }]}>{t('notStartedYet')}</Text> : null}
-            {courseRows.map((course) => (
-              <Pressable key={course.id} accessibilityRole="button"
-                accessibilityLabel={`${t('viewCourse')}: ${localText(course.localizedTitle, app.language)}`}
-                onPress={() => openCourse(course.id, course.enrolled)} style={[styles.catalogRow, { borderBottomColor: colors.border }]}>
-                {course.thumbnailUrl
-                  ? <Image source={{ uri: course.thumbnailUrl }} style={styles.catalogImage} />
-                  : <View style={[styles.catalogImage, styles.catalogImageFallback, { backgroundColor: colors.secondary }]}><Ionicons name="fitness-outline" size={20} color={colors.primary} /></View>}
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{localText(course.localizedTitle, app.language)}</Text>
-                  <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
-                    {localText(course.localizedInstructor, app.language)} · {course.lessonCount} {t('lessons')}{course.enrolled ? ` · ${t('enrolled')}` : ''}
-                  </Text>
-                  <Text numberOfLines={2} style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{localText(course.localizedSummary, app.language)}</Text>
-                </View>
-                <View style={[styles.playButton, { backgroundColor: colors.secondary }]}>
-                  <Ionicons name={course.enrolled ? 'play' : 'chevron-forward'} size={15} color={colors.primary} style={app.language !== 'en' && !course.enrolled ? { transform: [{ scaleX: -1 }] } : undefined} />
-                </View>
-              </Pressable>
+                {saveCourseButton(course.id, course.isSaved)}
+              </View>
             ))}
             <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align, marginTop: 12 }]}>{t('courseNotice')}</Text>
           </>
@@ -325,13 +398,15 @@ const styles = StyleSheet.create({
   introMark: { position: 'absolute', right: 18, bottom: 18, width: 38, height: 38, borderRadius: 14, backgroundColor: '#c6e57d', alignItems: 'center', justifyContent: 'center' },
   segment: { flexDirection: 'row', padding: 4, borderRadius: 15, marginBottom: 16 },
   segmentOption: { flex: 1, minHeight: 40, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 },
+  courseFilter: { marginTop: -5, marginBottom: 14 },
   segmentText: { fontSize: 11, fontWeight: '800' },
   liveDot: { width: 6, height: 6, borderRadius: 4, backgroundColor: '#d85c4e' },
   loading: { minHeight: 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   toast: { borderRadius: 12, padding: 10, marginBottom: 12 },
   toastText: { fontSize: 11, fontWeight: '800' },
   sectionTitle: { fontSize: 16, fontWeight: '800', marginBottom: 11 },
-  courseCard: { borderRadius: 20, borderWidth: 1, overflow: 'hidden', marginBottom: 11 },
+  courseCard: { position: 'relative', borderRadius: 20, borderWidth: 1, overflow: 'hidden', marginBottom: 11 },
+  saveCourseOverlay: { position: 'absolute', top: 9, right: 9, zIndex: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 4, elevation: 2 },
   courseImage: { width: '100%', height: 127 },
   courseImageFallback: { alignItems: 'center', justifyContent: 'center' },
   courseBody: { padding: 14 },
@@ -344,6 +419,8 @@ const styles = StyleSheet.create({
   continueButton: { paddingHorizontal: 11, paddingVertical: 7, borderRadius: 10 },
   continueText: { fontSize: 10, fontWeight: '800' },
   catalogRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, borderBottomWidth: 1 },
+  courseRowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 11 },
+  saveCourseButton: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   catalogImage: { width: 51, height: 51, borderRadius: 15 },
   catalogImageFallback: { alignItems: 'center', justifyContent: 'center' },
   catalogMeta: { fontSize: 10, marginTop: 4 },

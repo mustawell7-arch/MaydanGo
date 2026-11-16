@@ -568,6 +568,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1courses"
   /member/courses/{id}:
     $ref: "./operations.yaml#/paths/~1member~1courses~1{id}"
+  /member/courses/{id}/favorite:
+    $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1favorite"
   /member/courses/{id}/enroll:
     $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1enroll"
   /member/courses/{id}/progress:

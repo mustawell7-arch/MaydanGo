@@ -49,6 +49,16 @@ export const courseEnrollments = pgTable("course_enrollments", {
   index("course_enrollment_user").on(table.userId),
 ]);
 
+export const memberSavedCourses = pgTable("member_saved_courses", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  courseId: text("course_id").notNull().references(() => learningCourses.id, { onDelete: "cascade" }),
+  savedAt: timestamp("saved_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  uniqueIndex("member_saved_courses_owner_course").on(table.userId, table.courseId),
+  index("member_saved_courses_user").on(table.userId),
+]);
+
 export const courseMaterials = pgTable("course_materials", {
   id: text("id").primaryKey(),
   courseId: text("course_id").notNull().references(() => learningCourses.id, { onDelete: "cascade" }),

@@ -61,6 +61,8 @@ import type {
   CorporatePortalResponse,
   CourseAdminRecord,
   CourseDetail,
+  CourseFavoriteInput,
+  CourseFavoriteResponse,
   CourseInput,
   CourseLesson,
   CourseMaterialAdmin,
@@ -12406,6 +12408,89 @@ export function useGetMemberCourse<TData = Awaited<ReturnType<typeof getMemberCo
 
 
 
+
+export const getSetMemberCourseFavoriteUrl = (id: string,) => {
+
+
+
+
+  return `/api/member/courses/${id}/favorite`
+}
+
+export const setMemberCourseFavorite = async (id: string,
+    courseFavoriteInput: CourseFavoriteInput, options?: Parameters<typeof customFetch>[1]): Promise<CourseFavoriteResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CourseFavoriteResponse>(getSetMemberCourseFavoriteUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(courseFavoriteInput)
+  }
+);}
+
+
+
+
+
+export const getSetMemberCourseFavoriteMutationKey = () => ['setMemberCourseFavorite'] as const;
+
+export const getSetMemberCourseFavoriteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMemberCourseFavorite>>, TError,SetMemberCourseFavoriteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setMemberCourseFavorite>>, TError,SetMemberCourseFavoriteMutationVariables, TContext> => {
+
+const mutationKey = getSetMemberCourseFavoriteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setMemberCourseFavorite>>, SetMemberCourseFavoriteMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  setMemberCourseFavorite(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetMemberCourseFavoriteMutationResult = NonNullable<Awaited<ReturnType<typeof setMemberCourseFavorite>>>
+    export type SetMemberCourseFavoriteMutationBody = BodyType<CourseFavoriteInput>
+    export type SetMemberCourseFavoriteMutationError = ErrorType<unknown>
+    export type SetMemberCourseFavoriteMutationVariables = {id: string;data: BodyType<CourseFavoriteInput>}
+
+    export const useSetMemberCourseFavorite = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMemberCourseFavorite>>, TError,SetMemberCourseFavoriteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setMemberCourseFavorite>>,
+        TError,
+        SetMemberCourseFavoriteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetMemberCourseFavoriteMutationOptions(options), queryClient);
+    }
 
 export const getEnrollMemberCourseUrl = (id: string,) => {
 

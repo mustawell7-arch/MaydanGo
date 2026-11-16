@@ -10,7 +10,8 @@ import {
   getGetMemberCourseQueryKey, getGetMemberCoursesQueryKey,
   useCreateMemberCourseMaterialDownloadLink, useCreateMemberCoursePlaybackLink,
   useEnrollMemberCourse, useGetMemberCourse, useRecordMemberCourseLessonView,
-  useUpdateCourseProgress, useUpdateMemberCoursePlaybackProgress,
+  useSetMemberCourseFavorite, useUpdateCourseProgress,
+  useUpdateMemberCoursePlaybackProgress,
 } from '@workspace/api-client-react';
 import type { CourseDetail } from '@workspace/api-client-react';
 import { useApp } from '@/contexts/AppContext';
@@ -31,6 +32,7 @@ export default function CourseDetailScreen() {
   const playbackProgressMutation = useUpdateMemberCoursePlaybackProgress();
   const materialDownloadMutation = useCreateMemberCourseMaterialDownloadLink();
   const lessonViewMutation = useRecordMemberCourseLessonView();
+  const favoriteMutation = useSetMemberCourseFavorite();
   const [activePlayback, setActivePlayback] = useState<{
     lessonId: string;
     url: string;
@@ -190,6 +192,19 @@ export default function CourseDetailScreen() {
       setMessage(t('enrolled'));
     } catch (error) { setMessage(errorCopy(error)); }
   };
+  const toggleSavedCourse = async () => {
+    try {
+      const result = await favoriteMutation.mutateAsync({
+        id: course.id,
+        data: { isSaved: !course.isSaved },
+      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetMemberCourseQueryKey(course.id) }),
+        queryClient.invalidateQueries({ queryKey: getGetMemberCoursesQueryKey() }),
+      ]);
+      setMessage(t(result.isSaved ? 'courseSaved' : 'courseUnsaved'));
+    } catch (error) { setMessage(errorCopy(error)); }
+  };
 
   return (
     <ScreenShell>
@@ -199,7 +214,20 @@ export default function CourseDetailScreen() {
             ? <Image source={{ uri: course.thumbnailUrl }} style={styles.heroImage} resizeMode="cover" />
             : <View style={[styles.heroImage, styles.heroFallback, { backgroundColor: colors.secondary }]}><Ionicons name="fitness-outline" size={42} color={colors.primary} /></View>}
           <View style={styles.shade} />
-          <View style={styles.heroTop}>{back}</View>
+          <View style={styles.heroTop}>
+            {back}
+            <Pressable
+              testID="button-toggle-course-save"
+              accessibilityRole="button"
+              accessibilityLabel={t(course.isSaved ? 'removeSavedCourse' : 'saveCourse')}
+              accessibilityState={{ selected: course.isSaved, disabled: favoriteMutation.isPending }}
+              disabled={favoriteMutation.isPending}
+              onPress={() => void toggleSavedCourse()}
+              style={({ pressed }) => [styles.favoriteButton, { backgroundColor: colors.accent, opacity: pressed || favoriteMutation.isPending ? 0.65 : 1 }]}
+            >
+              <Ionicons name={course.isSaved ? 'bookmark' : 'bookmark-outline'} size={19} color={colors.accentForeground} />
+            </Pressable>
+          </View>
           <View style={styles.heroText}>
             <Text style={[styles.kicker, { textAlign: align }]}>{t(course.level === 'all-levels' ? 'allLevels' : course.level)} · {course.durationMinutes} {t('minutesShort')} · {course.lessonCount} {t('lessons')} · {course.localizedInstructor[app.language] || course.localizedInstructor.en}</Text>
             <Text style={[styles.heroTitle, { textAlign: align }]}>{course.localizedTitle[app.language] || course.localizedTitle.en}</Text>
@@ -385,8 +413,9 @@ const styles = StyleSheet.create({
   heroImage: { width: '100%', height: '100%' },
   heroFallback: { alignItems: 'center', justifyContent: 'center' },
   shade: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(16,40,31,0.48)' },
-  heroTop: { position: 'absolute', top: 14, left: 14, right: 14, flexDirection: 'row' },
+  heroTop: { position: 'absolute', top: 14, left: 14, right: 14, flexDirection: 'row', justifyContent: 'space-between' },
   backButton: { width: 42, height: 42, borderRadius: 15, backgroundColor: '#c6e57d', alignItems: 'center', justifyContent: 'center' },
+  favoriteButton: { width: 42, height: 42, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   heroText: { position: 'absolute', left: 18, right: 18, bottom: 18 },
   kicker: { color: '#c6e57d', fontSize: 10, fontWeight: '800' },
   heroTitle: { color: '#ffffff', fontSize: 25, fontWeight: '800', marginTop: 6 },

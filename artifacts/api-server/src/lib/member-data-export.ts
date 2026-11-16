@@ -9,6 +9,7 @@ import {
   learningLessons,
   lessonAccess,
   lessonProgress,
+  memberSavedCourses,
   memberNotificationPreferences,
   memberProfiles,
   memberships,
@@ -29,6 +30,7 @@ export async function createMemberDataExport(userId: string) {
     waitlistRows,
     attendanceRows,
     enrollmentRows,
+    savedCourseRows,
     reviewRows,
     notificationRows,
     privacyRows,
@@ -94,6 +96,13 @@ export async function createMemberDataExport(userId: string) {
       .innerJoin(learningCourses, eq(courseEnrollments.courseId, learningCourses.id))
       .where(eq(courseEnrollments.userId, userId))
       .orderBy(desc(courseEnrollments.enrolledAt)),
+    db.select({
+      title: learningCourses.title,
+      savedAt: memberSavedCourses.savedAt,
+    }).from(memberSavedCourses)
+      .innerJoin(learningCourses, eq(memberSavedCourses.courseId, learningCourses.id))
+      .where(eq(memberSavedCourses.userId, userId))
+      .orderBy(desc(memberSavedCourses.savedAt)),
     db.select({
       overallRating: facilityReviews.overallRating,
       categoryRatings: facilityReviews.categoryRatings,
@@ -196,6 +205,7 @@ export async function createMemberDataExport(userId: string) {
       completedLessons: completedLessons.get(row.id) ?? [],
       viewedLessons: viewedLessons.get(row.id) ?? [],
     })),
+    savedCourses: savedCourseRows,
     reviews: reviewRows,
     privacyRequests: privacyRows.map(row => ({
       ...row,

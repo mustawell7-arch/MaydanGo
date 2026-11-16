@@ -938,6 +938,11 @@ export interface MemberDataExportCourse {
   viewedLessons: MemberDataExportViewedLesson[];
 }
 
+export interface MemberDataExportSavedCourse {
+  title: string;
+  savedAt: string;
+}
+
 export interface MemberDataExportReviewRatings {
   /** @nullable */
   cleanliness: number | null;
@@ -1004,6 +1009,7 @@ export interface MemberDataExport {
   waitlist: MemberDataExportWaitlistEntry[];
   attendance: MemberDataExportAttendance[];
   courses: MemberDataExportCourse[];
+  savedCourses: MemberDataExportSavedCourse[];
   reviews: MemberDataExportReview[];
   privacyRequests: MemberDataExportPrivacyRequest[];
   notificationPreferences: MemberDataExportNotificationPreferences | null;
@@ -2791,7 +2797,19 @@ export type CourseSummary = CourseMetadataInput & {
   lessonCount: number;
   enrolled: boolean;
   completedLessons: number;
+  isSaved: boolean;
 };
+
+export interface CourseFavoriteInput {
+  isSaved: boolean;
+}
+
+export interface CourseFavoriteResponse {
+  courseId: string;
+  isSaved: boolean;
+  /** @nullable */
+  savedAt: string | null;
+}
 
 /**
  * @nullable
