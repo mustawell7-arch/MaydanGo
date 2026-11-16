@@ -27,6 +27,10 @@ test("activity reviews follow the submitted, review, and publish lifecycle", () 
   assert.deepEqual(transitionOfferingActivity("approved", "publish"), {
     activityStatus: "published", reviewNote: null,
   });
+  assert.equal(transitionOfferingActivity("published", "suspend", "no"), null);
+  assert.deepEqual(transitionOfferingActivity("published", "suspend", "Safety review"), {
+    activityStatus: "suspended", reviewNote: "Safety review",
+  });
   assert.equal(transitionOfferingActivity("submitted", "publish"), null);
 });
 
@@ -45,8 +49,11 @@ test("session statuses reflect activity approval, booking capacity, dates, and c
   assert.equal(deriveOfferingSessionStatus({ ...baseOffering, activityStatus: "approved", active: false }, 0), "scheduled");
   assert.equal(deriveOfferingSessionStatus(baseOffering, 9), "open_for_booking");
   assert.equal(deriveOfferingSessionStatus(baseOffering, 10), "fully_booked");
+  assert.equal(deriveOfferingSessionStatus({ ...baseOffering, bookingCutoffMinutes: 30 }, 0,
+    new Date(future.getTime() - 20 * 60 * 1000)), "scheduled");
   assert.equal(deriveOfferingSessionStatus({ ...baseOffering, cancelledAt: new Date() }, 0), "cancelled");
   assert.equal(deriveOfferingSessionStatus({ ...baseOffering, activityStatus: "suspended", active: false }, 0), "suspended");
+  assert.equal(deriveOfferingSessionStatus({ ...baseOffering, approvalStatus: "suspended", activityStatus: "published" }, 0), "suspended");
   assert.equal(deriveOfferingSessionStatus(baseOffering, 0, new Date(Date.now() + 90 * 60 * 1000)), "in_progress");
   assert.equal(deriveOfferingSessionStatus(baseOffering, 0, new Date(Date.now() + 3 * 60 * 60 * 1000)), "completed");
 });

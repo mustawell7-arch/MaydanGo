@@ -170,6 +170,11 @@ test("activity review is scoped, audited, and cannot bypass booking safeguards",
   await db.insert(reservations).values({
     id: `${prefix}-reservation`, userId: memberId, offeringId: activity.id, status: "reserved",
   });
+  const blockedSuspension = await call(`/operations/offerings/${activity.id}/review`, adminUserId, "PATCH", {
+    status: "suspended",
+    reason: "Review the current safety concern.",
+  });
+  assert.equal(blockedSuspension.status, 409);
   const editWithReservation = await call(`/operations/offerings/${activity.id}`, partnerUserId, "PATCH", {
     capacity: 2,
     localizedTitle: { en: "Changed title", ar: "عنوان جديد", ku: "ناونیشانی نوێ" },
@@ -208,6 +213,29 @@ test("activity review is scoped, audited, and cannot bypass booking safeguards",
   assert.equal(directPublish.status, 200);
   assert.equal((directPublish.data as { approvalStatus: string; active: boolean }).approvalStatus, "published");
   assert.equal((directPublish.data as { active: boolean }).active, true);
+  const suspension = await call(`/operations/offerings/${trustedId}/review`, adminUserId, "PATCH", {
+    status: "suspended",
+    reason: "Pause this activity while the details are reviewed.",
+  });
+  assert.equal(suspension.status, 200);
+  assert.equal((suspension.data as { approvalStatus: string; activityStatus: string; active: boolean }).approvalStatus, "suspended");
+  assert.equal((suspension.data as { activityStatus: string }).activityStatus, "suspended");
+  assert.equal((suspension.data as { active: boolean }).active, false);
+  const suspendedListing = await call("/operations", partnerUserId);
+  const suspendedOffering = (suspendedListing.data as { offerings: Array<{ id: string; sessionStatus: string; remaining: number }> })
+    .offerings.find(item => item.id === trustedId);
+  assert.equal(suspendedOffering?.sessionStatus, "suspended");
+  assert.equal(suspendedOffering?.remaining, 2);
+  const restored = await call(`/operations/offerings/${trustedId}/review`, adminUserId, "PATCH", {
+    status: "approved",
+  });
+  assert.equal(restored.status, 200, JSON.stringify(restored.data));
+  const republished = await call(`/operations/offerings/${trustedId}/review`, adminUserId, "PATCH", {
+    status: "published",
+  });
+  assert.equal(republished.status, 200);
+  assert.equal((republished.data as { approvalStatus: string; active: boolean }).approvalStatus, "published");
+  assert.equal((republished.data as { active: boolean }).active, true);
 
   const auditRows = await db.select().from(operationAudit).where(eq(operationAudit.targetId, activity.id));
   assert.ok(auditRows.some(row => row.action === "offering.approval.submit"));

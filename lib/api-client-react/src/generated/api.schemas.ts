@@ -2469,8 +2469,23 @@ export const OfferingApprovalStatus = {
   changes_requested: 'changes_requested',
   approved: 'approved',
   published: 'published',
+  suspended: 'suspended',
   rejected: 'rejected',
   archived: 'archived',
+} as const;
+
+export type OfferingSessionStatus = typeof OfferingSessionStatus[keyof typeof OfferingSessionStatus];
+
+
+export const OfferingSessionStatus = {
+  draft: 'draft',
+  scheduled: 'scheduled',
+  open_for_booking: 'open_for_booking',
+  fully_booked: 'fully_booked',
+  in_progress: 'in_progress',
+  completed: 'completed',
+  cancelled: 'cancelled',
+  suspended: 'suspended',
 } as const;
 
 export interface SessionCheckinPolicy {
@@ -2482,7 +2497,7 @@ export interface SessionCheckinPolicy {
   correctionEndsAt: string;
 }
 
-export type LiveOffering = OfferingInput & ({
+export type LiveOffering = OfferingInput & { [key: string]: unknown } & ({
   id: string;
   targetId: string;
   slot: string;
@@ -2495,6 +2510,8 @@ export type LiveOffering = OfferingInput & ({
      */
   recurrenceGroupId?: string | null;
   approvalStatus: OfferingApprovalStatus;
+  activityStatus: OfferingApprovalStatus;
+  sessionStatus?: OfferingSessionStatus;
   /**
      * @maxLength 1000
      * @nullable

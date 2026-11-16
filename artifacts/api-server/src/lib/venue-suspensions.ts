@@ -102,6 +102,7 @@ export async function cancelUpcomingVenueSessions(
       active: false,
       cancelledAt: now,
       approvalStatus: "archived",
+      activityStatus: "archived",
     }).where(eq(offerings.id, offering.id));
     await tx.update(reservations).set({
       status: "admin_cancelled",

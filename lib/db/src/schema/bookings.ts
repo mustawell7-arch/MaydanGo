@@ -37,6 +37,7 @@ export type OfferingApprovalStatus =
   | "changes_requested"
   | "approved"
   | "published"
+  | "suspended"
   | "rejected"
   | "archived";
 export const memberProfiles = pgTable("member_profiles", {
@@ -81,7 +82,7 @@ export const offerings = pgTable("booking_offerings", {
   partnerId: text("partner_id"),
   partnerGroup: text("partner_group"),
   recurrenceGroupId: text("recurrence_group_id"),
-  activityStatus: text("activity_status").notNull().default("draft"),
+  activityStatus: text("activity_status").$type<OfferingApprovalStatus>().notNull().default("draft"),
   reviewNote: text("review_note"),
   approvalStatus: text("approval_status").$type<OfferingApprovalStatus>().notNull().default("draft"),
   approvalReason: text("approval_reason"),

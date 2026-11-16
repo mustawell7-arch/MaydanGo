@@ -1356,12 +1356,12 @@ export const getOperationsResponseOfferingsItemOneWaitlistOfferMinutesMax = 1440
 
 export const getOperationsResponseOfferingsItemOneMinAgeMin = 0;
 
-export const getOperationsResponseOfferingsItemTwoApprovalReasonMax = 1000;
+export const getOperationsResponseOfferingsItemThreeApprovalReasonMax = 1000;
 
-export const getOperationsResponseOfferingsItemTwoPartnerResponseMax = 1000;
+export const getOperationsResponseOfferingsItemThreePartnerResponseMax = 1000;
 
-export const getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMin = 5;
-export const getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMax = 1440;
+export const getOperationsResponseOfferingsItemThreeWaitlistOfferMinutesMin = 5;
+export const getOperationsResponseOfferingsItemThreeWaitlistOfferMinutesMax = 1440;
 
 export const getOperationsResponseWaitlistItemLocalizedTitleOneEnMax = 240;
 
@@ -1481,16 +1481,20 @@ export const GetOperationsResponse = zod.object({
   "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
-}).and(zod.object({
+}).and(zod.looseObject({
+
+})).and(zod.object({
   "id": zod.string(),
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
-  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
-  "approvalReason": zod.string().max(getOperationsResponseOfferingsItemTwoApprovalReasonMax).nullish(),
-  "partnerResponse": zod.string().max(getOperationsResponseOfferingsItemTwoPartnerResponseMax).nullish(),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "activityStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "sessionStatus": zod.enum(['draft', 'scheduled', 'open_for_booking', 'fully_booked', 'in_progress', 'completed', 'cancelled', 'suspended']).optional(),
+  "approvalReason": zod.string().max(getOperationsResponseOfferingsItemThreeApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(getOperationsResponseOfferingsItemThreePartnerResponseMax).nullish(),
   "submittedAt": zod.coerce.date().nullish(),
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
@@ -1498,7 +1502,7 @@ export const GetOperationsResponse = zod.object({
   "remaining": zod.int().optional(),
   "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.int().min(getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMin).max(getOperationsResponseOfferingsItemTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(getOperationsResponseOfferingsItemThreeWaitlistOfferMinutesMin).max(getOperationsResponseOfferingsItemThreeWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
@@ -3167,12 +3171,12 @@ export const addLiveOfferingResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const addLiveOfferingResponseOneMinAgeMin = 0;
 
-export const addLiveOfferingResponseTwoApprovalReasonMax = 1000;
+export const addLiveOfferingResponseThreeApprovalReasonMax = 1000;
 
-export const addLiveOfferingResponseTwoPartnerResponseMax = 1000;
+export const addLiveOfferingResponseThreePartnerResponseMax = 1000;
 
-export const addLiveOfferingResponseTwoWaitlistOfferMinutesMin = 5;
-export const addLiveOfferingResponseTwoWaitlistOfferMinutesMax = 1440;
+export const addLiveOfferingResponseThreeWaitlistOfferMinutesMin = 5;
+export const addLiveOfferingResponseThreeWaitlistOfferMinutesMax = 1440;
 
 
 
@@ -3221,16 +3225,20 @@ export const AddLiveOfferingResponse = zod.object({
   "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
-}).and(zod.object({
+}).and(zod.looseObject({
+
+})).and(zod.object({
   "id": zod.string(),
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
-  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
-  "approvalReason": zod.string().max(addLiveOfferingResponseTwoApprovalReasonMax).nullish(),
-  "partnerResponse": zod.string().max(addLiveOfferingResponseTwoPartnerResponseMax).nullish(),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "activityStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "sessionStatus": zod.enum(['draft', 'scheduled', 'open_for_booking', 'fully_booked', 'in_progress', 'completed', 'cancelled', 'suspended']).optional(),
+  "approvalReason": zod.string().max(addLiveOfferingResponseThreeApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(addLiveOfferingResponseThreePartnerResponseMax).nullish(),
   "submittedAt": zod.coerce.date().nullish(),
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
@@ -3238,7 +3246,7 @@ export const AddLiveOfferingResponse = zod.object({
   "remaining": zod.int().optional(),
   "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.int().min(addLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(addLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(addLiveOfferingResponseThreeWaitlistOfferMinutesMin).max(addLiveOfferingResponseThreeWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
@@ -3428,12 +3436,12 @@ export const createRecurringOfferingsResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const createRecurringOfferingsResponseOneMinAgeMin = 0;
 
-export const createRecurringOfferingsResponseTwoApprovalReasonMax = 1000;
+export const createRecurringOfferingsResponseThreeApprovalReasonMax = 1000;
 
-export const createRecurringOfferingsResponseTwoPartnerResponseMax = 1000;
+export const createRecurringOfferingsResponseThreePartnerResponseMax = 1000;
 
-export const createRecurringOfferingsResponseTwoWaitlistOfferMinutesMin = 5;
-export const createRecurringOfferingsResponseTwoWaitlistOfferMinutesMax = 1440;
+export const createRecurringOfferingsResponseThreeWaitlistOfferMinutesMin = 5;
+export const createRecurringOfferingsResponseThreeWaitlistOfferMinutesMax = 1440;
 
 
 
@@ -3482,16 +3490,20 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
-}).and(zod.object({
+}).and(zod.looseObject({
+
+})).and(zod.object({
   "id": zod.string(),
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
-  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
-  "approvalReason": zod.string().max(createRecurringOfferingsResponseTwoApprovalReasonMax).nullish(),
-  "partnerResponse": zod.string().max(createRecurringOfferingsResponseTwoPartnerResponseMax).nullish(),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "activityStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "sessionStatus": zod.enum(['draft', 'scheduled', 'open_for_booking', 'fully_booked', 'in_progress', 'completed', 'cancelled', 'suspended']).optional(),
+  "approvalReason": zod.string().max(createRecurringOfferingsResponseThreeApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(createRecurringOfferingsResponseThreePartnerResponseMax).nullish(),
   "submittedAt": zod.coerce.date().nullish(),
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
@@ -3499,7 +3511,7 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "remaining": zod.int().optional(),
   "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.int().min(createRecurringOfferingsResponseTwoWaitlistOfferMinutesMin).max(createRecurringOfferingsResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(createRecurringOfferingsResponseThreeWaitlistOfferMinutesMin).max(createRecurringOfferingsResponseThreeWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
@@ -3593,12 +3605,12 @@ export const changeLiveOfferingResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const changeLiveOfferingResponseOneMinAgeMin = 0;
 
-export const changeLiveOfferingResponseTwoApprovalReasonMax = 1000;
+export const changeLiveOfferingResponseThreeApprovalReasonMax = 1000;
 
-export const changeLiveOfferingResponseTwoPartnerResponseMax = 1000;
+export const changeLiveOfferingResponseThreePartnerResponseMax = 1000;
 
-export const changeLiveOfferingResponseTwoWaitlistOfferMinutesMin = 5;
-export const changeLiveOfferingResponseTwoWaitlistOfferMinutesMax = 1440;
+export const changeLiveOfferingResponseThreeWaitlistOfferMinutesMin = 5;
+export const changeLiveOfferingResponseThreeWaitlistOfferMinutesMax = 1440;
 
 
 
@@ -3647,16 +3659,20 @@ export const ChangeLiveOfferingResponse = zod.object({
   "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
-}).and(zod.object({
+}).and(zod.looseObject({
+
+})).and(zod.object({
   "id": zod.string(),
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
-  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
-  "approvalReason": zod.string().max(changeLiveOfferingResponseTwoApprovalReasonMax).nullish(),
-  "partnerResponse": zod.string().max(changeLiveOfferingResponseTwoPartnerResponseMax).nullish(),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "activityStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "sessionStatus": zod.enum(['draft', 'scheduled', 'open_for_booking', 'fully_booked', 'in_progress', 'completed', 'cancelled', 'suspended']).optional(),
+  "approvalReason": zod.string().max(changeLiveOfferingResponseThreeApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(changeLiveOfferingResponseThreePartnerResponseMax).nullish(),
   "submittedAt": zod.coerce.date().nullish(),
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
@@ -3664,7 +3680,7 @@ export const ChangeLiveOfferingResponse = zod.object({
   "remaining": zod.int().optional(),
   "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.int().min(changeLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(changeLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(changeLiveOfferingResponseThreeWaitlistOfferMinutesMin).max(changeLiveOfferingResponseThreeWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
@@ -3784,12 +3800,12 @@ export const changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesMax = 1
 
 export const changeRecurringOfferingSeriesResponseOneMinAgeMin = 0;
 
-export const changeRecurringOfferingSeriesResponseTwoApprovalReasonMax = 1000;
+export const changeRecurringOfferingSeriesResponseThreeApprovalReasonMax = 1000;
 
-export const changeRecurringOfferingSeriesResponseTwoPartnerResponseMax = 1000;
+export const changeRecurringOfferingSeriesResponseThreePartnerResponseMax = 1000;
 
-export const changeRecurringOfferingSeriesResponseTwoWaitlistOfferMinutesMin = 5;
-export const changeRecurringOfferingSeriesResponseTwoWaitlistOfferMinutesMax = 1440;
+export const changeRecurringOfferingSeriesResponseThreeWaitlistOfferMinutesMin = 5;
+export const changeRecurringOfferingSeriesResponseThreeWaitlistOfferMinutesMax = 1440;
 
 
 
@@ -3838,16 +3854,20 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
   "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
-}).and(zod.object({
+}).and(zod.looseObject({
+
+})).and(zod.object({
   "id": zod.string(),
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
-  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
-  "approvalReason": zod.string().max(changeRecurringOfferingSeriesResponseTwoApprovalReasonMax).nullish(),
-  "partnerResponse": zod.string().max(changeRecurringOfferingSeriesResponseTwoPartnerResponseMax).nullish(),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "activityStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "sessionStatus": zod.enum(['draft', 'scheduled', 'open_for_booking', 'fully_booked', 'in_progress', 'completed', 'cancelled', 'suspended']).optional(),
+  "approvalReason": zod.string().max(changeRecurringOfferingSeriesResponseThreeApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(changeRecurringOfferingSeriesResponseThreePartnerResponseMax).nullish(),
   "submittedAt": zod.coerce.date().nullish(),
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
@@ -3855,7 +3875,7 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
   "remaining": zod.int().optional(),
   "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.int().min(changeRecurringOfferingSeriesResponseTwoWaitlistOfferMinutesMin).max(changeRecurringOfferingSeriesResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(changeRecurringOfferingSeriesResponseThreeWaitlistOfferMinutesMin).max(changeRecurringOfferingSeriesResponseThreeWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
@@ -3923,12 +3943,12 @@ export const submitLiveOfferingResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const submitLiveOfferingResponseOneMinAgeMin = 0;
 
-export const submitLiveOfferingResponseTwoApprovalReasonMax = 1000;
+export const submitLiveOfferingResponseThreeApprovalReasonMax = 1000;
 
-export const submitLiveOfferingResponseTwoPartnerResponseMax = 1000;
+export const submitLiveOfferingResponseThreePartnerResponseMax = 1000;
 
-export const submitLiveOfferingResponseTwoWaitlistOfferMinutesMin = 5;
-export const submitLiveOfferingResponseTwoWaitlistOfferMinutesMax = 1440;
+export const submitLiveOfferingResponseThreeWaitlistOfferMinutesMin = 5;
+export const submitLiveOfferingResponseThreeWaitlistOfferMinutesMax = 1440;
 
 
 
@@ -3977,16 +3997,20 @@ export const SubmitLiveOfferingResponse = zod.object({
   "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
-}).and(zod.object({
+}).and(zod.looseObject({
+
+})).and(zod.object({
   "id": zod.string(),
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
-  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
-  "approvalReason": zod.string().max(submitLiveOfferingResponseTwoApprovalReasonMax).nullish(),
-  "partnerResponse": zod.string().max(submitLiveOfferingResponseTwoPartnerResponseMax).nullish(),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "activityStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "sessionStatus": zod.enum(['draft', 'scheduled', 'open_for_booking', 'fully_booked', 'in_progress', 'completed', 'cancelled', 'suspended']).optional(),
+  "approvalReason": zod.string().max(submitLiveOfferingResponseThreeApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(submitLiveOfferingResponseThreePartnerResponseMax).nullish(),
   "submittedAt": zod.coerce.date().nullish(),
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
@@ -3994,7 +4018,7 @@ export const SubmitLiveOfferingResponse = zod.object({
   "remaining": zod.int().optional(),
   "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.int().min(submitLiveOfferingResponseTwoWaitlistOfferMinutesMin).max(submitLiveOfferingResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(submitLiveOfferingResponseThreeWaitlistOfferMinutesMin).max(submitLiveOfferingResponseThreeWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
@@ -4059,12 +4083,12 @@ export const respondToOfferingCorrectionResponseOneWaitlistOfferMinutesMax = 144
 
 export const respondToOfferingCorrectionResponseOneMinAgeMin = 0;
 
-export const respondToOfferingCorrectionResponseTwoApprovalReasonMax = 1000;
+export const respondToOfferingCorrectionResponseThreeApprovalReasonMax = 1000;
 
-export const respondToOfferingCorrectionResponseTwoPartnerResponseMax = 1000;
+export const respondToOfferingCorrectionResponseThreePartnerResponseMax = 1000;
 
-export const respondToOfferingCorrectionResponseTwoWaitlistOfferMinutesMin = 5;
-export const respondToOfferingCorrectionResponseTwoWaitlistOfferMinutesMax = 1440;
+export const respondToOfferingCorrectionResponseThreeWaitlistOfferMinutesMin = 5;
+export const respondToOfferingCorrectionResponseThreeWaitlistOfferMinutesMax = 1440;
 
 
 
@@ -4113,16 +4137,20 @@ export const RespondToOfferingCorrectionResponse = zod.object({
   "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
-}).and(zod.object({
+}).and(zod.looseObject({
+
+})).and(zod.object({
   "id": zod.string(),
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
-  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
-  "approvalReason": zod.string().max(respondToOfferingCorrectionResponseTwoApprovalReasonMax).nullish(),
-  "partnerResponse": zod.string().max(respondToOfferingCorrectionResponseTwoPartnerResponseMax).nullish(),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "activityStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "sessionStatus": zod.enum(['draft', 'scheduled', 'open_for_booking', 'fully_booked', 'in_progress', 'completed', 'cancelled', 'suspended']).optional(),
+  "approvalReason": zod.string().max(respondToOfferingCorrectionResponseThreeApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(respondToOfferingCorrectionResponseThreePartnerResponseMax).nullish(),
   "submittedAt": zod.coerce.date().nullish(),
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
@@ -4130,7 +4158,7 @@ export const RespondToOfferingCorrectionResponse = zod.object({
   "remaining": zod.int().optional(),
   "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.int().min(respondToOfferingCorrectionResponseTwoWaitlistOfferMinutesMin).max(respondToOfferingCorrectionResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(respondToOfferingCorrectionResponseThreeWaitlistOfferMinutesMin).max(respondToOfferingCorrectionResponseThreeWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
@@ -4152,7 +4180,7 @@ export const reviewOfferingApprovalBodyReasonMax = 1000;
 
 
 export const ReviewOfferingApprovalBody = zod.object({
-  "status": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
+  "status": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
   "reason": zod.string().min(reviewOfferingApprovalBodyReasonMin).max(reviewOfferingApprovalBodyReasonMax).optional()
 })
 
@@ -4196,12 +4224,12 @@ export const reviewOfferingApprovalResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const reviewOfferingApprovalResponseOneMinAgeMin = 0;
 
-export const reviewOfferingApprovalResponseTwoApprovalReasonMax = 1000;
+export const reviewOfferingApprovalResponseThreeApprovalReasonMax = 1000;
 
-export const reviewOfferingApprovalResponseTwoPartnerResponseMax = 1000;
+export const reviewOfferingApprovalResponseThreePartnerResponseMax = 1000;
 
-export const reviewOfferingApprovalResponseTwoWaitlistOfferMinutesMin = 5;
-export const reviewOfferingApprovalResponseTwoWaitlistOfferMinutesMax = 1440;
+export const reviewOfferingApprovalResponseThreeWaitlistOfferMinutesMin = 5;
+export const reviewOfferingApprovalResponseThreeWaitlistOfferMinutesMax = 1440;
 
 
 
@@ -4250,16 +4278,20 @@ export const ReviewOfferingApprovalResponse = zod.object({
   "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
-}).and(zod.object({
+}).and(zod.looseObject({
+
+})).and(zod.object({
   "id": zod.string(),
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
-  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
-  "approvalReason": zod.string().max(reviewOfferingApprovalResponseTwoApprovalReasonMax).nullish(),
-  "partnerResponse": zod.string().max(reviewOfferingApprovalResponseTwoPartnerResponseMax).nullish(),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "activityStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "sessionStatus": zod.enum(['draft', 'scheduled', 'open_for_booking', 'fully_booked', 'in_progress', 'completed', 'cancelled', 'suspended']).optional(),
+  "approvalReason": zod.string().max(reviewOfferingApprovalResponseThreeApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(reviewOfferingApprovalResponseThreePartnerResponseMax).nullish(),
   "submittedAt": zod.coerce.date().nullish(),
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
@@ -4267,7 +4299,7 @@ export const ReviewOfferingApprovalResponse = zod.object({
   "remaining": zod.int().optional(),
   "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.int().min(reviewOfferingApprovalResponseTwoWaitlistOfferMinutesMin).max(reviewOfferingApprovalResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(reviewOfferingApprovalResponseThreeWaitlistOfferMinutesMin).max(reviewOfferingApprovalResponseThreeWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),
@@ -8034,12 +8066,12 @@ export const getLiveCatalogResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const getLiveCatalogResponseOneMinAgeMin = 0;
 
-export const getLiveCatalogResponseTwoApprovalReasonMax = 1000;
+export const getLiveCatalogResponseThreeApprovalReasonMax = 1000;
 
-export const getLiveCatalogResponseTwoPartnerResponseMax = 1000;
+export const getLiveCatalogResponseThreePartnerResponseMax = 1000;
 
-export const getLiveCatalogResponseTwoWaitlistOfferMinutesMin = 5;
-export const getLiveCatalogResponseTwoWaitlistOfferMinutesMax = 1440;
+export const getLiveCatalogResponseThreeWaitlistOfferMinutesMin = 5;
+export const getLiveCatalogResponseThreeWaitlistOfferMinutesMax = 1440;
 
 
 
@@ -8088,16 +8120,20 @@ export const GetLiveCatalogResponseItem = zod.object({
   "maxAge": zod.int().nullish(),
   "additionalPayment": zod.boolean().optional(),
   "active": zod.boolean()
-}).and(zod.object({
+}).and(zod.looseObject({
+
+})).and(zod.object({
   "id": zod.string(),
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
-  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'rejected', 'archived']),
-  "approvalReason": zod.string().max(getLiveCatalogResponseTwoApprovalReasonMax).nullish(),
-  "partnerResponse": zod.string().max(getLiveCatalogResponseTwoPartnerResponseMax).nullish(),
+  "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "activityStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
+  "sessionStatus": zod.enum(['draft', 'scheduled', 'open_for_booking', 'fully_booked', 'in_progress', 'completed', 'cancelled', 'suspended']).optional(),
+  "approvalReason": zod.string().max(getLiveCatalogResponseThreeApprovalReasonMax).nullish(),
+  "partnerResponse": zod.string().max(getLiveCatalogResponseThreePartnerResponseMax).nullish(),
   "submittedAt": zod.coerce.date().nullish(),
   "reviewedAt": zod.coerce.date().nullish(),
   "reviewedBy": zod.string().nullish(),
@@ -8105,7 +8141,7 @@ export const GetLiveCatalogResponseItem = zod.object({
   "remaining": zod.int().optional(),
   "imageUrl": zod.string().nullish(),
   "canJoin": zod.boolean().optional(),
-  "waitlistOfferMinutes": zod.int().min(getLiveCatalogResponseTwoWaitlistOfferMinutesMin).max(getLiveCatalogResponseTwoWaitlistOfferMinutesMax).optional(),
+  "waitlistOfferMinutes": zod.int().min(getLiveCatalogResponseThreeWaitlistOfferMinutesMin).max(getLiveCatalogResponseThreeWaitlistOfferMinutesMax).optional(),
   "checkinPolicy": zod.union([zod.object({
   "latitude": zod.number(),
   "longitude": zod.number(),

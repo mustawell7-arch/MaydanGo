@@ -3968,32 +3968,37 @@ components:
       allOf:
         - $ref: "#/components/schemas/OfferingInput"
         - type: object
-          required: [id, targetId, slot, scope, approvalStatus]
-          properties:
-            id: { type: string }
-            targetId: { type: string }
-            slot: { type: string }
-            scope: { type: string }
-            cancelledAt: { type: [string, "null"] }
-            recurrenceGroupId: { type: [string, "null"], description: "Shared identifier for sessions created as one recurring series." }
-            approvalStatus: { $ref: "#/components/schemas/OfferingApprovalStatus" }
-            approvalReason: { type: ["string", "null"], maxLength: 1000 }
-            partnerResponse: { type: ["string", "null"], maxLength: 1000 }
-            submittedAt: { type: ["string", "null"], format: date-time }
-            reviewedAt: { type: ["string", "null"], format: date-time }
-            reviewedBy: { type: ["string", "null"] }
-            partnerName: { type: string }
-            remaining: { type: integer }
-            imageUrl: { type: ["string", "null"] }
-            canJoin: { type: boolean }
-            waitlistOfferMinutes: { type: integer, minimum: 5, maximum: 1440 }
-            checkinPolicy:
-              oneOf:
-                - $ref: "#/components/schemas/SessionCheckinPolicy"
-                - type: "null"
+      required: [id, targetId, slot, scope, approvalStatus, activityStatus]
+      properties:
+        id: { type: string }
+        targetId: { type: string }
+        slot: { type: string }
+        scope: { type: string }
+        cancelledAt: { type: [string, "null"] }
+        recurrenceGroupId: { type: [string, "null"], description: "Shared identifier for sessions created as one recurring series." }
+        approvalStatus: { $ref: "#/components/schemas/OfferingApprovalStatus" }
+        activityStatus: { $ref: "#/components/schemas/OfferingApprovalStatus" }
+        sessionStatus: { $ref: "#/components/schemas/OfferingSessionStatus" }
+        approvalReason: { type: ["string", "null"], maxLength: 1000 }
+        partnerResponse: { type: ["string", "null"], maxLength: 1000 }
+        submittedAt: { type: ["string", "null"], format: date-time }
+        reviewedAt: { type: ["string", "null"], format: date-time }
+        reviewedBy: { type: ["string", "null"] }
+        partnerName: { type: string }
+        remaining: { type: integer }
+        imageUrl: { type: ["string", "null"] }
+        canJoin: { type: boolean }
+        waitlistOfferMinutes: { type: integer, minimum: 5, maximum: 1440 }
+        checkinPolicy:
+          oneOf:
+            - $ref: "#/components/schemas/SessionCheckinPolicy"
+            - type: "null"
     OfferingApprovalStatus:
       type: string
-      enum: [draft, submitted, under_review, changes_requested, approved, published, rejected, archived]
+      enum: [draft, submitted, under_review, changes_requested, approved, published, suspended, rejected, archived]
+    OfferingSessionStatus:
+      type: string
+      enum: [draft, scheduled, open_for_booking, fully_booked, in_progress, completed, cancelled, suspended]
     OfferingReviewInput:
       type: object
       additionalProperties: false

@@ -1,7 +1,7 @@
 import { Children, cloneElement, isValidElement, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetMemberSupportTicketQueryKey, getGetMemberSupportTicketsQueryKey, getGetOperationFacilitiesQueryKey, getGetOperationsQueryKey, useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useCancelRecurringOfferingSeries, useChangeLiveOffering, useChangeRecurringOfferingSeries, useCreateRecurringOfferings, useCreateMemberSupportTicket, useGetAttendance, useGetMemberSupportTicket, useGetMemberSupportTickets, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReplyMemberSupportTicket, useReviewAttendance, useRespondToOfferingCorrection, useReviewOfferingApproval, useRequestOfferingImageUploadUrl, useSubmitLiveOffering, useUpdatePartnerActivityApprovalMode } from '@workspace/api-client-react';
-import type { GetAttendanceQueryResult, OfferingApprovalStatus, OfferingInput, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody, RecurringOfferingsInput, RecurringScheduleMode } from '@workspace/api-client-react';
+import type { GetAttendanceQueryResult, OfferingApprovalStatus, OfferingInput, OfferingSessionStatus, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody, RecurringOfferingsInput, RecurringScheduleMode } from '@workspace/api-client-react';
 import { getGetMemberSupportTicketAttachmentsQueryKey, useGetMemberSupportTicketAttachments } from '@workspace/api-client-react';
 import { downloadMemberSupportFile, supportAttachmentType, uploadMemberSupportAttachments } from '@/lib/support-attachments';
 import { uploadGuardianConsentImage } from '@/lib/guardian-consent-documents';
@@ -27,6 +27,7 @@ const approvalStatusLabels: Record<OfferingApprovalStatus, string> = {
   changes_requested: 'Changes requested',
   approved: 'Approved',
   published: 'Published',
+  suspended: 'Suspended',
   rejected: 'Rejected',
   archived: 'Archived',
 };
@@ -37,8 +38,29 @@ const approvalStatusStyles: Record<OfferingApprovalStatus, string> = {
   changes_requested: 'bg-[#f8ead2] text-[#8a5b20]',
   approved: 'bg-[#e1efdf] text-[#2d6d4a]',
   published: 'bg-[#e1efdf] text-[#2d6d4a]',
+  suspended: 'bg-[#f8ead2] text-[#8a5b20]',
   rejected: 'bg-[#f2dfd5] text-[#9a4435]',
   archived: 'bg-[#eeeadc] text-[#756e5b]',
+};
+const sessionStatusLabels: Record<OfferingSessionStatus, string> = {
+  draft: 'Draft session',
+  scheduled: 'Scheduled',
+  open_for_booking: 'Open for booking',
+  fully_booked: 'Fully booked',
+  in_progress: 'In progress',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+  suspended: 'Suspended',
+};
+const sessionStatusStyles: Record<OfferingSessionStatus, string> = {
+  draft: 'bg-[#eeeadc] text-[#756e5b]',
+  scheduled: 'bg-[#e3ebf4] text-[#355b7a]',
+  open_for_booking: 'bg-[#e1efdf] text-[#2d6d4a]',
+  fully_booked: 'bg-[#f8ead2] text-[#8a5b20]',
+  in_progress: 'bg-[#e3ebf4] text-[#355b7a]',
+  completed: 'bg-[#eeeadc] text-[#756e5b]',
+  cancelled: 'bg-[#f2dfd5] text-[#9a4435]',
+  suspended: 'bg-[#f8ead2] text-[#8a5b20]',
 };
 const approvalReviewTargets: Record<OfferingApprovalStatus, OfferingApprovalStatus[]> = {
   draft: ['archived'],
@@ -46,12 +68,13 @@ const approvalReviewTargets: Record<OfferingApprovalStatus, OfferingApprovalStat
   under_review: ['changes_requested', 'approved', 'rejected', 'archived'],
   changes_requested: ['under_review', 'rejected', 'archived'],
   approved: ['published', 'changes_requested', 'rejected', 'archived'],
-  published: ['archived'],
+  published: ['suspended', 'archived'],
+  suspended: ['approved', 'archived'],
   rejected: ['archived'],
   archived: [],
 };
 const approvalReasonRequired = (status: OfferingApprovalStatus) =>
-  status === 'changes_requested' || status === 'rejected' || status === 'archived';
+  status === 'changes_requested' || status === 'rejected' || status === 'archived' || status === 'suspended';
 const portalDateLocale = (lang: PortalLanguage) => lang === 'ar' ? 'ar-IQ' : lang === 'ku' ? 'ckb-IQ' : 'en-IQ';
 const savedPortalLanguage = (): PortalLanguage => {
   if (typeof window === 'undefined') return 'en';
@@ -1354,7 +1377,8 @@ export default function PartnerPortal() {
                 <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${item.cancelledAt ? approvalStatusStyles.archived : approvalStatusStyles[item.approvalStatus]}`}>{item.cancelledAt ? 'Cancelled' : approvalStatusLabels[item.approvalStatus]}</span>
+                       <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${item.cancelledAt ? approvalStatusStyles.archived : approvalStatusStyles[item.approvalStatus]}`}>{item.cancelledAt ? 'Cancelled' : approvalStatusLabels[item.approvalStatus]}</span>
+                       {item.sessionStatus && item.sessionStatus !== 'draft' && !item.cancelledAt && <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${sessionStatusStyles[item.sessionStatus]}`}>{sessionStatusLabels[item.sessionStatus]}</span>}
                       <span className="text-[10px] font-bold uppercase tracking-wide text-[#a76445]">{item.kind}</span>
                       {item.recurrenceGroupId && <span className="rounded-full bg-[#e9e5d7] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#536b61]">Recurring series</span>}
                     </div>
@@ -1385,7 +1409,7 @@ export default function PartnerPortal() {
                 </form>}
                 {isAdmin && !item.cancelledAt && approvalReviewTargets[item.approvalStatus].length > 0 && <form className="mt-4 grid gap-3 rounded-2xl bg-[#f2efe4] p-4 sm:grid-cols-[1fr_2fr_auto]" onSubmit={event => saveApprovalDecision(event, item)}>
                   <label className="grid gap-1.5 text-sm font-medium"><span>Administrator decision</span><select required name="status" defaultValue="" className={fieldClass()}><option value="" disabled>Choose a decision</option>{approvalReviewTargets[item.approvalStatus].map(status => <option key={status} value={status}>{approvalStatusLabels[status]}</option>)}</select></label>
-                  <label className="grid gap-1.5 text-sm font-medium"><span>Decision reason</span><textarea name="reason" rows={2} maxLength={1000} defaultValue={item.approvalReason ?? ''} className={fieldClass()} placeholder="Required for corrections, rejection, or archiving." /></label>
+                  <label className="grid gap-1.5 text-sm font-medium"><span>Decision reason</span><textarea name="reason" rows={2} maxLength={1000} defaultValue={item.approvalReason ?? ''} className={fieldClass()} placeholder="Required for correction, rejection, suspension, or archiving." /></label>
                   <Button type="submit" disabled={reviewOfferingApproval.isPending}>Save decision</Button>
                 </form>}
                 {editing?.id === item.id && <form className="mt-5 grid gap-3 rounded-2xl bg-[#f2efe4] p-4 sm:grid-cols-2" onSubmit={event => saveOfferingEdit(event, item, editing?.id === item.id ? editing.scope : 'session')}>

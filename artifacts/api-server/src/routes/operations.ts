@@ -6,6 +6,7 @@ import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lte, lt } from "driz
 import { z } from "zod";
 import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, courseMaterials, facilityProfiles, facilityHoursOverrides, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents, financeInvoiceCorrections, instructorPortalRequests, instructorCourseAssignments, instructorOfferingAssignments } from "@workspace/db";
 import { BookingError, effectiveMembershipStatus, processWaitlistQueue } from "../lib/reservations";
+import { deriveOfferingSessionStatus, effectiveOfferingActivityStatus, type OfferingActivityStatus } from "../lib/offering-status";
 import { hasAdminPermission, isOperationsPortalRole, type AdminPermission } from "../lib/admin-roles";
 import { canPartnerUseOperationsRoute, isPartnerOperatorRole } from "../lib/partner-roles";
 import { createFacilityProfileInput, facilityHoursOverrideInput, facilityProfileFields, offeringInput, partnerInput, planInput } from "../lib/operation-inputs";
@@ -81,13 +82,13 @@ const admin = (res: import("express").Response, permission: AdminPermission) => 
     throw new BookingError(403, "Your assigned administrator role does not allow this action.");
 };
 const offeringApprovalStatus = z.enum([
-  "draft", "submitted", "under_review", "changes_requested", "approved", "published", "rejected", "archived",
+  "draft", "submitted", "under_review", "changes_requested", "approved", "published", "suspended", "rejected", "archived",
 ]);
 const offeringReviewBody = z.object({
   status: offeringApprovalStatus,
   reason: z.string().trim().min(5).max(1000).optional(),
 }).strict().superRefine((value, context) => {
-  if (["changes_requested", "rejected", "archived"].includes(value.status) && !value.reason) {
+  if (["changes_requested", "rejected", "archived", "suspended"].includes(value.status) && !value.reason) {
     context.addIssue({ code: "custom", path: ["reason"], message: "A clear reason is required for this decision." });
   }
 });
@@ -195,9 +196,29 @@ router.get("/", async (_req, res) => {
         isStaff ? undefined : eq(offerings.partnerId, op.partnerId ?? "")))
       .orderBy(asc(offerings.startsAt), asc(waitlistEntries.createdAt), asc(waitlistEntries.id)),
   ]);
-  const policyRows = offeringRows.length ? await db.select().from(checkinPolicies)
-    .where(inArray(checkinPolicies.offeringId, offeringRows.map(row => row.id))) : [];
+  const offeringIds = offeringRows.map(row => row.id);
+  const statusNow = new Date();
+  const [policyRows, reservationCounts, waitlistOfferCounts] = offeringIds.length ? await Promise.all([
+    db.select().from(checkinPolicies).where(inArray(checkinPolicies.offeringId, offeringIds)),
+    db.select({
+      offeringId: reservations.offeringId,
+      count: sql<number>`count(*)::int`,
+    }).from(reservations).where(and(
+      inArray(reservations.offeringId, offeringIds),
+      inArray(reservations.status, ["reserved", "requested"]),
+    )).groupBy(reservations.offeringId),
+    db.select({
+      offeringId: waitlistEntries.offeringId,
+      count: sql<number>`count(*)::int`,
+    }).from(waitlistEntries).where(and(
+      inArray(waitlistEntries.offeringId, offeringIds),
+      eq(waitlistEntries.status, "offered"),
+      gt(waitlistEntries.offerExpiresAt, statusNow),
+    )).groupBy(waitlistEntries.offeringId),
+  ]) : [[], [], []];
   const policyByOffering = new Map(policyRows.map(policy => [policy.offeringId, policy]));
+  const reservedByOffering = new Map(reservationCounts.map(row => [row.offeringId, Number(row.count)]));
+  const offeredByOffering = new Map(waitlistOfferCounts.map(row => [row.offeringId, Number(row.count)]));
   const queueCounts = new Map<string, number>();
   const waitlist = queueRows.map(row => {
     const position = (queueCounts.get(row.offeringId) ?? 0) + 1;
@@ -205,11 +226,26 @@ router.get("/", async (_req, res) => {
     return { ...row, position };
   });
   res.json({ role: op.role, partnerId: op.partnerId,
-    partners: partnerRows, offerings: offeringRows.map(({ imagePath, ...row }) => ({
-      ...row,
-      imageUrl: imagePath ? `/api/operations/offerings/${row.id}/image` : null,
-      checkinPolicy: policyByOffering.get(row.id) ?? null,
-    })), waitlist,
+    partners: partnerRows, offerings: offeringRows.map(({ imagePath, ...row }) => {
+      const occupiedPlaces = (reservedByOffering.get(row.id) ?? 0) + (offeredByOffering.get(row.id) ?? 0);
+      const activityStatus = effectiveOfferingActivityStatus({
+        activityStatus: row.activityStatus as OfferingActivityStatus,
+        approvalStatus: row.approvalStatus,
+        active: row.active,
+      });
+      return {
+        ...row,
+        activityStatus,
+        sessionStatus: deriveOfferingSessionStatus({
+          activityStatus, approvalStatus: row.approvalStatus, active: row.active,
+          cancelledAt: row.cancelledAt, startsAt: row.startsAt, endsAt: row.endsAt,
+          capacity: row.capacity, bookingCutoffMinutes: row.bookingCutoffMinutes,
+        }, occupiedPlaces, statusNow),
+        remaining: Math.max(0, row.capacity - occupiedPlaces),
+        imageUrl: imagePath ? `/api/operations/offerings/${row.id}/image` : null,
+        checkinPolicy: policyByOffering.get(row.id) ?? null,
+      };
+    }), waitlist,
     plans: plans.map(({ whopPlanId: _legacyProviderId, ...plan }) => plan),
   });
 });
@@ -442,6 +478,7 @@ router.post("/offerings", async (req, res) => {
     if (data.joinUrl) ensureHttps(data.joinUrl, "Live class join link");
     const [o] = await tx.insert(offerings).values({ ...data, id, targetId: id, slot: "", scope: "live",
       approvalStatus: data.active ? "published" : "draft",
+      activityStatus: data.active ? "published" : "draft",
       reviewedAt: data.active ? new Date() : null,
       reviewedBy: data.active ? res.locals.operator.userId : null,
       localizedTitle: data.localizedTitle ?? null, localizedDescription: data.localizedDescription ?? null,
@@ -535,6 +572,7 @@ router.post("/offerings/recurring", async (req, res) => {
       const [row] = await tx.insert(offerings).values({
         ...data, id, targetId: id, slot: "", scope: "live", partnerGroup: partner.groupId, recurrenceGroupId,
         approvalStatus: template.active ? "published" : "draft",
+        activityStatus: template.active ? "published" : "draft",
         reviewedAt: template.active ? new Date() : null,
         reviewedBy: template.active ? res.locals.operator.userId : null,
         localizedTitle: data.localizedTitle ?? null, localizedDescription: data.localizedDescription ?? null,
@@ -570,7 +608,8 @@ const approvalTransitions: Record<OfferingApprovalStatusValue, OfferingApprovalS
   under_review: ["changes_requested", "approved", "rejected", "archived"],
   changes_requested: ["rejected", "archived"],
   approved: ["published", "changes_requested", "rejected", "archived"],
-  published: ["archived"],
+  published: ["suspended", "archived"],
+  suspended: ["approved", "archived"],
   rejected: ["archived"],
   archived: [],
 };
@@ -606,8 +645,19 @@ async function assertOfferingReadyForReview(tx: Tx, row: OfferingRow) {
 
 function serializeOffering(row: OfferingRow) {
   const { imagePath, ...visibleRow } = row;
+  const activityStatus = effectiveOfferingActivityStatus({
+    activityStatus: row.activityStatus as OfferingActivityStatus,
+    approvalStatus: row.approvalStatus,
+    active: row.active,
+  });
   return {
     ...visibleRow,
+    activityStatus,
+    sessionStatus: deriveOfferingSessionStatus({
+      activityStatus, approvalStatus: row.approvalStatus, active: row.active,
+      cancelledAt: row.cancelledAt, startsAt: row.startsAt, endsAt: row.endsAt,
+      capacity: row.capacity, bookingCutoffMinutes: row.bookingCutoffMinutes,
+    }, 0),
     startsAt: row.startsAt.toISOString(),
     endsAt: row.endsAt.toISOString(),
     cancellationDeadline: row.cancellationDeadline.toISOString(),
@@ -634,6 +684,8 @@ router.post("/offerings/:id/submit", async (req, res) => {
     const outcome = partnerSubmissionOutcome(rules.offeringApprovalRequired, partner.activityApprovalMode);
     const [updated] = await tx.update(offerings).set({
       approvalStatus: outcome.approvalStatus,
+      activityStatus: outcome.approvalStatus,
+      reviewNote: null,
       active: outcome.active,
       submittedAt: now,
       reviewedAt: outcome.active ? now : null,
@@ -701,6 +753,8 @@ router.post("/offerings/:id/respond", async (req, res) => {
     await assertOfferingReadyForReview(tx, current);
     const [updated] = await tx.update(offerings).set({
       approvalStatus: "submitted",
+      activityStatus: "submitted",
+      reviewNote: null,
       submittedAt: new Date(),
       partnerResponse: response,
     }).where(eq(offerings.id, current.id)).returning();
@@ -744,6 +798,8 @@ router.patch("/offerings/:id/review", async (req, res) => {
     }
     const [updated] = await tx.update(offerings).set({
       approvalStatus: decision.status,
+      activityStatus: decision.status,
+      reviewNote: decision.reason ?? null,
       approvalReason: decision.reason ?? null,
       ...(decision.status === "changes_requested" ? { partnerResponse: null } : {}),
       active: decision.status === "published",
@@ -958,6 +1014,8 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
         ...(needsReview ? {
           active: false,
           approvalStatus: "submitted" as const,
+          activityStatus: "submitted",
+          reviewNote: null,
           approvalReason: null,
           partnerResponse: null,
           submittedAt: new Date(),
@@ -1087,7 +1145,7 @@ async function cancelOfferingSet(id: string, res: Response, series: boolean) {
         offeringId: row.id, userId: reservation.userId, startsAt: row.startsAt,
       })));
       await tx.update(offerings).set({
-        active: false, cancelledAt, approvalStatus: "archived",
+        active: false, cancelledAt, approvalStatus: "archived", activityStatus: "archived",
       }).where(eq(offerings.id, row.id));
       const arrivals = await tx.select().from(attendance).where(eq(attendance.offeringId, row.id));
       for (const arrival of arrivals) {
