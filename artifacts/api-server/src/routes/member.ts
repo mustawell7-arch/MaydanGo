@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { clerkClient, getAuth } from "@clerk/express";
 import { z } from "zod";
 import { db, memberships, memberProfiles, offerings, reservations, partners, waitlistEntries } from "@workspace/db";
 import { eq, and, inArray, sql, gt, asc, isNull, ne, or } from "drizzle-orm";
@@ -12,6 +12,9 @@ import {
   GetMemberPrivacyRequestsResponse,
   SaveMemberConsentsBody,
   SaveMemberConsentsResponse,
+  GetMemberReferralsResponse,
+  AttributeMemberReferralBody,
+  AttributeMemberReferralResponse,
 } from "@workspace/api-zod";
 import {
   BookingError, memberState, memberAccountSummary, createReservation, cancelReservation,
@@ -42,6 +45,13 @@ import { sendMemberNotification } from "../lib/notifications";
 import { filterSuspendedOfferings, isAccessSuspended } from "../lib/account-access-restrictions";
 import { PaymentError } from "../lib/payment-config";
 import { cancelMemberSubscription, createMemberCheckout, listMemberPlans, memberSubscription } from "../lib/payments-paytabs";
+import {
+  ExistingMemberReferralError,
+  getMemberReferralSummary,
+  InvalidMemberReferralCodeError,
+  recordMemberReferralAttribution,
+  SelfMemberReferralError,
+} from "../lib/member-referrals";
 import {
   cancelMemberDeviceChange, DeviceSecurityError, getMemberDeviceStatus,
   readMemberDeviceToken, requirePrimaryMemberDevice,
@@ -108,6 +118,47 @@ router.post("/consents", async (req, res) => {
     }
     if (error instanceof StaleMemberConsentPolicyError) {
       res.status(409).json({ code: "POLICY_VERSION_CHANGED", message: error.message });
+      return;
+    }
+    throw error;
+  }
+});
+router.get("/referrals", async (req, res) => {
+  if (!await ensureCurrentMemberConsent(req, res)) return;
+  res.json(GetMemberReferralsResponse.parse(
+    await getMemberReferralSummary(getAuth(req).userId!),
+  ));
+});
+router.post("/referrals/attribute", async (req, res) => {
+  if (!await ensureCurrentMemberConsent(req, res)) return;
+  const parsed = AttributeMemberReferralBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Enter a valid MaydanGo referral code." });
+    return;
+  }
+
+  const userId = getAuth(req).userId!;
+  const user = await clerkClient.users.getUser(userId);
+  const primaryEmail = user.emailAddresses.find(email => email.id === user.primaryEmailAddressId);
+  if (primaryEmail?.verification?.status !== "verified") {
+    res.status(403).json({ message: "Verify your account email before applying a referral code." });
+    return;
+  }
+
+  try {
+    await recordMemberReferralAttribution(userId, parsed.data.code);
+    res.status(201).json(AttributeMemberReferralResponse.parse({ attributed: true }));
+  } catch (error) {
+    if (error instanceof InvalidMemberReferralCodeError) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+    if (error instanceof SelfMemberReferralError) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+    if (error instanceof ExistingMemberReferralError) {
+      res.status(409).json({ message: error.message });
       return;
     }
     throw error;

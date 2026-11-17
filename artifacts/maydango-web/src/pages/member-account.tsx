@@ -5,11 +5,14 @@ import {
   ApiError,
   getGetMemberAccountSummaryQueryKey,
   getGetMemberConsentsQueryKey,
+  getGetMemberReferralsQueryKey,
   getMemberPrivacyRequestExport,
   getGetMemberPrivacyRequestsQueryKey,
+  useAttributeMemberReferral,
   useCreateMemberPrivacyRequest,
   useGetMemberConsents,
   useGetMemberAccountSummary,
+  useGetMemberReferrals,
   useGetMemberPrivacyRequests,
   useSaveMemberConsents,
 } from "@workspace/api-client-react";
@@ -60,7 +63,7 @@ const copy: Record<Language, Record<string, string>> = {
     mobileNote: "The mobile app remains the intended place for QR scanning, GPS check-in, push notifications, live-class participation, and your membership card.",
     privacyTitle: "Privacy requests",
     privacyIntro: "Request a copy of your account information, or ask MaydanGo to review account deletion.",
-    privacyNotice: "Support staff verify your identity first. Once approved, the download is available for 24 hours. It excludes payment details, passwords, device tokens, private class links, support messages, and staff-only notes.",
+    privacyNotice: "Support staff verify your identity first. Once approved, the download is available for 24 hours. It includes consent history, member-visible support conversations, your invite code, its aggregate sign-up count, and any code applied to your account. It excludes payment details, passwords, device tokens, private class links, other members’ identities, staff-only notes, and attachment contents.",
     privacyExport: "Request a copy of my data",
     privacyExporting: "Sending request…",
     privacyExportReady: "Your data copy is downloading.",
@@ -97,6 +100,17 @@ const copy: Record<Language, Record<string, string>> = {
     consentAccepted: "Accepted",
     consentDeclined: "Declined",
     consentRequiredHint: "Both required choices must be accepted for member services. Marketing updates remain optional.",
+    referralsTitle: "Invite friends",
+    referralsIntro: "Share your MaydanGo code. We count a sign-up after the invited member verifies their email and accepts the required policies. No rewards or messages are sent.",
+    referralsCode: "Your invite code",
+    referralsCount: "Verified sign-ups",
+    referralsShare: "Share invite link",
+    referralsCodeInput: "Enter an invite code",
+    referralsApply: "Apply code",
+    referralsApplied: "Invite code recorded.",
+    referralsAlreadyApplied: "An invite code has already been applied to this account.",
+    referralsError: "We could not apply that code. Check it and try again.",
+    referralsShareError: "We could not share the invite link. Copy the code instead.",
     help: "Visit Help",
     backToPlans: "Explore plans",
     signIn: "Sign in to view your account",
@@ -138,7 +152,7 @@ const copy: Record<Language, Record<string, string>> = {
     mobileNote: "يبقى تطبيق الهاتف المكان المقصود لمسح رمز QR وتسجيل الحضور عبر GPS والإشعارات الفورية والمشاركة في الصفوف المباشرة وبطاقة العضوية.",
     privacyTitle: "طلبات الخصوصية",
     privacyIntro: "اطلب نسخة من معلومات حسابك، أو اطلب من MaydanGo مراجعة حذف الحساب.",
-    privacyNotice: "يتحقق فريق الدعم من هويتك أولاً. بعد الموافقة، يتاح التنزيل لمدة 24 ساعة. لا تتضمن النسخة تفاصيل الدفع أو كلمات المرور أو رموز الأجهزة أو روابط الصفوف الخاصة أو رسائل الدعم أو ملاحظات الموظفين الداخلية.",
+    privacyNotice: "يتحقق فريق الدعم من هويتك أولاً. بعد الموافقة، يتاح التنزيل لمدة 24 ساعة. تتضمن النسخة سجل الموافقات ومحادثات الدعم الظاهرة لك ورمز دعوتك وعدد التسجيلات الإجمالي وأي رمز طُبق على حسابك. ولا تتضمن تفاصيل الدفع أو كلمات المرور أو رموز الأجهزة أو روابط الصفوف الخاصة أو هويات الأعضاء الآخرين أو ملاحظات الموظفين الداخلية أو محتوى المرفقات.",
     privacyExport: "طلب نسخة من بياناتي",
     privacyExporting: "جارٍ إرسال الطلب…",
     privacyExportReady: "جارٍ تنزيل نسخة بياناتك.",
@@ -175,6 +189,17 @@ const copy: Record<Language, Record<string, string>> = {
     consentAccepted: "موافق عليه",
     consentDeclined: "غير موافق عليه",
     consentRequiredHint: "يلزم قبول الخيارين المطلوبين لاستخدام خدمات الأعضاء. تظل الرسائل التسويقية اختيارية.",
+    referralsTitle: "دعوة الأصدقاء",
+    referralsIntro: "شارك رمز MaydanGo الخاص بك. نحتسب التسجيل بعد أن يؤكد العضو المدعو بريده الإلكتروني ويوافق على السياسات المطلوبة. لا تُرسل مكافآت أو رسائل.",
+    referralsCode: "رمز الدعوة الخاص بك",
+    referralsCount: "التسجيلات المؤكدة",
+    referralsShare: "مشاركة رابط الدعوة",
+    referralsCodeInput: "أدخل رمز دعوة",
+    referralsApply: "تطبيق الرمز",
+    referralsApplied: "تم تسجيل رمز الدعوة.",
+    referralsAlreadyApplied: "سبق تطبيق رمز دعوة على هذا الحساب.",
+    referralsError: "تعذر تطبيق الرمز. تحقق منه ثم حاول مرة أخرى.",
+    referralsShareError: "تعذرت مشاركة الرابط. يمكنك نسخ الرمز بدلاً من ذلك.",
     help: "زيارة المساعدة",
     backToPlans: "استكشف الخطط",
     signIn: "سجّل الدخول لعرض حسابك",
@@ -216,7 +241,7 @@ const copy: Record<Language, Record<string, string>> = {
     mobileNote: "ئەپی مۆبایل شوێنی سەرەکیی پێشنیارکراوە بۆ سکانی QR، حزووری GPS، ئاگادارکردنەوە، بەشداری لە وانەی ڕاستەوخۆ و کارتی ئەندامێتی.",
     privacyTitle: "داواکارییەکانی تایبەتمەندی",
     privacyIntro: "داوای کۆپیی زانیاریی هەژمارەکەت بکە، یان داوای پێداچوونەوە بۆ سڕینەوەی هەژمارەکەت بکە.",
-    privacyNotice: "تیمی پشتگیری سەرەتا ناسنامەکەت پشتڕاست دەکاتەوە. دوای پەسەندکردن، داگرتنەکە بۆ ٢٤ کاتژمێر بەردەستە. وردەکاریی پارەدان، وشەی نهێنی، تۆکنی ئامێر، بەستەری وانەی تایبەت، پەیامەکانی پشتگیری و تێبینیی ناوخۆی کارمەندان تێدا نییە.",
+    privacyNotice: "تیمی پشتگیری سەرەتا ناسنامەکەت پشتڕاست دەکاتەوە. دوای پەسەندکردن، داگرتنەکە بۆ ٢٤ کاتژمێر بەردەستە. کۆپییەکە مێژووی ڕەزامەندی، گفتوگۆکانی پشتگیریی بینراو بۆ تۆ، کۆدی بانگهێشتکردنت، کۆی گشتیی تۆمارکردنەکان و هەر کۆدێکی بەکارهاتوو لە هەژمارەکەت دەگرێتەوە. وردەکاریی پارەدان، وشەی نهێنی، تۆکنی ئامێر، بەستەری وانەی تایبەت، ناسنامەی ئەندامانی تر، تێبینیی ناوخۆی کارمەندان و ناوەڕۆکی هاوپێچەکان تێدا نییە.",
     privacyExport: "داوای کۆپیی داتاکەم بکە",
     privacyExporting: "داواکاری دەنێردرێت…",
     privacyExportReady: "کۆپیی داتاکەت دادەبەزێت.",
@@ -253,6 +278,17 @@ const copy: Record<Language, Record<string, string>> = {
     consentAccepted: "پەسەندکراوە",
     consentDeclined: "پەسەند نەکراوە",
     consentRequiredHint: "بۆ بەکارهێنانی خزمەتگوزاریی ئەندامان پێویستە هەردوو هەڵبژاردەی پێویست پەسەند بکرێن. نوێکاریی بازاڕکردن ئارەزوومەندانەیە.",
+    referralsTitle: "هاوڕێکانت بانگهێشت بکە",
+    referralsIntro: "کۆدی بانگهێشتکردنی MaydanGo ـی خۆت هاوبەش بکە. دوای پشتڕاستکردنەوەی ئیمەیڵ و پەسەندکردنی سیاسەتە پێویستەکان، تۆمارکردنەکە دەژمێرین. هیچ خەڵات یان پەیامێک نانێردرێت.",
+    referralsCode: "کۆدی بانگهێشتکردنی تۆ",
+    referralsCount: "تۆمارکردنی پشتڕاستکراوە",
+    referralsShare: "هاوبەشکردنی بەستەری بانگهێشت",
+    referralsCodeInput: "کۆدی بانگهێشتکردن بنووسە",
+    referralsApply: "کۆدەکە بەکاربهێنە",
+    referralsApplied: "کۆدی بانگهێشتکردن تۆمار کرا.",
+    referralsAlreadyApplied: "پێشتر کۆدی بانگهێشتکردنێک بۆ ئەم هەژمارە بەکار هاتووە.",
+    referralsError: "نەتوانرا ئەو کۆدە بەکاربهێنرێت. پشکنینی بکە و دووبارە هەوڵ بدەوە.",
+    referralsShareError: "نەتوانرا بەستەرەکە هاوبەش بکرێت. لە جیاتی ئەوە کۆدەکە کۆپی بکە.",
     help: "سەردانی یارمەتی",
     backToPlans: "پلانەکان ببینە",
     signIn: "بچۆ ژوورەوە بۆ بینینی هەژمارەکەت",
@@ -294,8 +330,14 @@ export default function MemberAccountPage({ language }: { language: Language }) 
   const consents = useGetMemberConsents({
     query: { enabled: isLoaded && isSignedIn === true, retry: false, refetchInterval: 30_000 },
   });
+  const hasCurrentRequiredConsent = consents.data?.currentChoices.termsOfUse === "accepted"
+    && consents.data.currentChoices.privacyPolicy === "accepted";
+  const referrals = useGetMemberReferrals({
+    query: { enabled: isLoaded && isSignedIn === true && hasCurrentRequiredConsent, retry: false },
+  });
   const createPrivacyRequest = useCreateMemberPrivacyRequest();
   const saveConsents = useSaveMemberConsents();
+  const attributeReferral = useAttributeMemberReferral();
   const t = copy[language];
   const memberConsentRequired = summary.isError && isMemberConsentRequired(summary.error);
   const rtl = language !== "en";
@@ -312,6 +354,9 @@ export default function MemberAccountPage({ language }: { language: Language }) 
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [consentMessage, setConsentMessage] = useState("");
   const [consentError, setConsentError] = useState(false);
+  const [referralCode, setReferralCode] = useState(() => new URLSearchParams(window.location.search).get("ref") ?? "");
+  const [referralMessage, setReferralMessage] = useState("");
+  const [referralError, setReferralError] = useState(false);
   const activePrivacyRequest = privacyRequests.data?.find(request =>
     request.kind === "account_deletion" &&
     ["open", "in_progress", "waiting_member"].includes(request.status)
@@ -409,6 +454,41 @@ export default function MemberAccountPage({ language }: { language: Language }) 
       if (policyChanged) await queryClient.invalidateQueries({ queryKey: getGetMemberConsentsQueryKey() });
       setConsentMessage(policyChanged ? t.consentPolicyChanged : t.consentError);
       setConsentError(true);
+    }
+  }
+
+  async function submitReferralCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setReferralMessage("");
+    setReferralError(false);
+    try {
+      await attributeReferral.mutateAsync({ data: { code: referralCode.trim().toUpperCase() } });
+      await queryClient.invalidateQueries({ queryKey: getGetMemberReferralsQueryKey() });
+      setReferralCode("");
+      setReferralMessage(t.referralsApplied);
+    } catch (error) {
+      const status = typeof error === "object" && error !== null && "status" in error
+        ? (error as { status?: unknown }).status : undefined;
+      setReferralMessage(status === 409 ? t.referralsAlreadyApplied : t.referralsError);
+      setReferralError(true);
+    }
+  }
+
+  async function shareReferralLink() {
+    const code = referrals.data?.code;
+    if (!code) return;
+    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    const url = new URL(`${base}/sign-up`, window.location.origin);
+    url.searchParams.set("ref", code);
+    try {
+      if (navigator.share) await navigator.share({ title: "MaydanGo", text: t.referralsIntro, url: url.toString() });
+      else {
+        await navigator.clipboard.writeText(url.toString());
+        setReferralMessage(url.toString());
+      }
+    } catch {
+      setReferralMessage(t.referralsShareError);
+      setReferralError(true);
     }
   }
 
@@ -524,6 +604,32 @@ export default function MemberAccountPage({ language }: { language: Language }) 
                     </li>;
                   })}
                 </ul> : <p className="mt-4 text-sm leading-6 text-muted-foreground">{t.noMembership}</p>}
+          </section>
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7" aria-labelledby="account-referrals-heading">
+            <h2 id="account-referrals-heading" className="font-display text-2xl font-bold">{t.referralsTitle}</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{t.referralsIntro}</p>
+            {!hasCurrentRequiredConsent ? <p className="mt-4 rounded-xl bg-muted p-3 text-sm leading-6">{t.consentRequiredHint}</p>
+              : referrals.isLoading ? <p className="mt-4 text-sm text-muted-foreground">{t.loading}</p>
+                : referrals.isError ? <p className="mt-4 text-sm text-destructive" role="alert">{t.referralsError}</p>
+                  : referrals.data ? <>
+                    <div className="mt-4 rounded-xl border border-border bg-muted/40 p-4">
+                      <p className="text-xs font-semibold text-muted-foreground">{t.referralsCode}</p>
+                      <p className="mt-1 font-mono text-xl font-bold tracking-wider" dir="ltr">{referrals.data.code}</p>
+                      <p className="mt-3 text-sm">{t.referralsCount}: <strong>{referrals.data.signups}</strong></p>
+                    </div>
+                    <button type="button" onClick={() => void shareReferralLink()} className="mt-4 rounded-full bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground">
+                      {t.referralsShare}
+                    </button>
+                    {referrals.data.hasAppliedCode ? <p className="mt-4 text-sm text-muted-foreground" role="status">{t.referralsAlreadyApplied}</p>
+                      : <form onSubmit={event => void submitReferralCode(event)} className="mt-4 flex flex-wrap gap-2">
+                        <label className="sr-only" htmlFor="member-referral-code">{t.referralsCodeInput}</label>
+                        <input id="member-referral-code" value={referralCode} onChange={event => setReferralCode(event.target.value.toUpperCase())} maxLength={10} autoCapitalize="characters" autoComplete="off" className="min-w-48 flex-1 rounded-xl border border-border bg-background px-4 py-3 font-mono uppercase" placeholder={t.referralsCodeInput} dir="ltr" />
+                        <button type="submit" disabled={attributeReferral.isPending || referralCode.trim().length !== 10} className="rounded-full border border-border px-4 py-2.5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60">
+                          {t.referralsApply}
+                        </button>
+                      </form>}
+                    {referralMessage && <p className={`mt-3 break-all text-sm ${referralError ? "text-destructive" : "text-primary"}`} role={referralError ? "alert" : "status"}>{referralMessage}</p>}
+                  </> : null}
           </section>
         </div>
 

@@ -167,6 +167,9 @@ import type {
   MemberDeviceStatus,
   MemberFacilityReviews,
   MemberLiveClass,
+  MemberReferralAttributionInput,
+  MemberReferralAttributionResponse,
+  MemberReferralSummary,
   MemberServiceError,
   MemberState,
   MemberSubscriptionResponse,
@@ -17643,6 +17646,183 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getSaveMemberConsentsMutationOptions(options), queryClient);
+    }
+
+export const getGetMemberReferralsUrl = () => {
+
+
+
+
+  return `/api/member/referrals`
+}
+
+export const getMemberReferrals = async ( options?: Parameters<typeof customFetch>[1]): Promise<MemberReferralSummary> => {
+
+  return customFetch<MemberReferralSummary>(getGetMemberReferralsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberReferralsQueryKey = () => {
+    return [
+    `/api/member/referrals`
+    ] as const;
+    }
+
+
+export const getGetMemberReferralsQueryOptions = <TData = Awaited<ReturnType<typeof getMemberReferrals>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberReferrals>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberReferralsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberReferrals>>> = ({ signal }) => getMemberReferrals({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberReferrals>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberReferralsQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberReferrals>>>
+export type GetMemberReferralsQueryError = ErrorType<void>
+
+
+export function useGetMemberReferrals<TData = Awaited<ReturnType<typeof getMemberReferrals>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberReferrals>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberReferrals>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberReferrals>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberReferrals<TData = Awaited<ReturnType<typeof getMemberReferrals>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberReferrals>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberReferrals>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberReferrals>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberReferrals<TData = Awaited<ReturnType<typeof getMemberReferrals>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberReferrals>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberReferrals<TData = Awaited<ReturnType<typeof getMemberReferrals>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberReferrals>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberReferralsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAttributeMemberReferralUrl = () => {
+
+
+
+
+  return `/api/member/referrals/attribute`
+}
+
+export const attributeMemberReferral = async (memberReferralAttributionInput: MemberReferralAttributionInput, options?: Parameters<typeof customFetch>[1]): Promise<MemberReferralAttributionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MemberReferralAttributionResponse>(getAttributeMemberReferralUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(memberReferralAttributionInput)
+  }
+);}
+
+
+
+
+
+export const getAttributeMemberReferralMutationKey = () => ['attributeMemberReferral'] as const;
+
+export const getAttributeMemberReferralMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attributeMemberReferral>>, TError,AttributeMemberReferralMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof attributeMemberReferral>>, TError,AttributeMemberReferralMutationVariables, TContext> => {
+
+const mutationKey = getAttributeMemberReferralMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof attributeMemberReferral>>, AttributeMemberReferralMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  attributeMemberReferral(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AttributeMemberReferralMutationResult = NonNullable<Awaited<ReturnType<typeof attributeMemberReferral>>>
+    export type AttributeMemberReferralMutationBody = BodyType<MemberReferralAttributionInput>
+    export type AttributeMemberReferralMutationError = ErrorType<void>
+    export type AttributeMemberReferralMutationVariables = {data: BodyType<MemberReferralAttributionInput>}
+
+    export const useAttributeMemberReferral = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attributeMemberReferral>>, TError,AttributeMemberReferralMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof attributeMemberReferral>>,
+        TError,
+        AttributeMemberReferralMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAttributeMemberReferralMutationOptions(options), queryClient);
     }
 
 export const getGetMemberNotificationSettingsUrl = () => {

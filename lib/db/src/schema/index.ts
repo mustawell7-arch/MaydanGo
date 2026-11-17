@@ -21,6 +21,7 @@ export * from "./corporate-agreement-versions";
 export * from "./member-consents";
 export * from "./legal-policy-versions";
 export * from "./guardian-consents";
+export * from "./referrals";
 // Export your models here. Add one export per file
 // export * from "./posts";
 //

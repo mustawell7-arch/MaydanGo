@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Platform, View, StyleSheet } from 'react-native';
+import { Platform, Share, View, StyleSheet } from 'react-native';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetMemberConsentsQueryKey,
+  getGetMemberReferralsQueryKey,
   getMemberPrivacyRequestExport,
   getGetMemberPrivacyRequestsQueryKey,
+  useAttributeMemberReferral,
   useCreateMemberPrivacyRequest,
   useGetMemberConsents,
   useGetMemberPrivacyRequests,
+  useGetMemberReferrals,
   useSaveMemberConsents,
 } from '@workspace/api-client-react';
 import { Text, TextInput, Pressable } from '@/components/Localized';
@@ -17,7 +20,7 @@ import { dateTime, errorCopy } from '@/lib/content';
 import { useAuth, useClerk, useUser, useSignIn, useSignUp, useSSO } from '@clerk/expo';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ScreenShell, ScreenHeader } from '@/components/ScreenShell';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { useApp } from '@/contexts/AppContext';
@@ -35,15 +38,25 @@ export default function AccountScreen() {
   const { signIn } = useSignIn();
   const { signUp } = useSignUp();
   const { startSSOFlow } = useSSO();
+  const params = useLocalSearchParams<{ ref?: string | string[] }>();
+  const incomingReferralCode = Array.isArray(params.ref) ? params.ref[0] : params.ref;
   const queryClient = useQueryClient();
   const consents = useGetMemberConsents({ query: { enabled: isSignedIn === true, refetchInterval: 30_000 } });
+  const hasCurrentRequiredConsent = consents.data?.currentChoices.termsOfUse === 'accepted'
+    && consents.data.currentChoices.privacyPolicy === 'accepted';
+  const referrals = useGetMemberReferrals({
+    query: { enabled: isSignedIn === true && hasCurrentRequiredConsent, retry: false },
+  });
   const privacyRequests = useGetMemberPrivacyRequests({ query: { enabled: isSignedIn === true, refetchInterval: 30_000 } });
   const createPrivacyRequest = useCreateMemberPrivacyRequest();
   const saveConsents = useSaveMemberConsents();
+  const attributeReferral = useAttributeMemberReferral();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
+  const [referralCode, setReferralCode] = useState(incomingReferralCode?.toUpperCase() ?? '');
+  const [referralNotice, setReferralNotice] = useState('');
   const [verify, setVerify] = useState(false);
   const [reset, setReset] = useState<'none' | 'code' | 'password'>('none');
   const [busy, setBusy] = useState(false);
@@ -55,6 +68,9 @@ export default function AccountScreen() {
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState<'female' | 'male' | 'unspecified'>('unspecified');
+  useEffect(() => {
+    if (incomingReferralCode) setReferralCode(incomingReferralCode.toUpperCase());
+  }, [incomingReferralCode]);
   const run = async (fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(true); setError('');
@@ -69,7 +85,9 @@ export default function AccountScreen() {
     if (attempt.status !== 'complete') throw new Error('Additional verification is required. Check your details or use another sign-in method.');
     check(await attempt.finalize({ navigate: ({ session }) => {
       if (session?.currentTask) { setError('Your account requires an additional verification step.'); return; }
-      router.replace(mode === 'signup' ? '/account' : '/(tabs)/bookings');
+      router.replace(mode === 'signup' && referralCode.trim()
+        ? { pathname: '/account', params: { ref: referralCode.trim().toUpperCase() } }
+        : mode === 'signup' ? '/account' : '/(tabs)/bookings');
     } }));
   };
   const submit = () => run(async () => {
@@ -161,6 +179,30 @@ export default function AccountScreen() {
     } catch {
       await queryClient.invalidateQueries({ queryKey: getGetMemberPrivacyRequestsQueryKey() });
       setPrivacyNotice(translate(app.language, 'privacyRequestError'));
+    }
+  };
+  const submitReferralCode = async () => {
+    setReferralNotice('');
+    try {
+      await attributeReferral.mutateAsync({ data: { code: referralCode.trim().toUpperCase() } });
+      await queryClient.invalidateQueries({ queryKey: getGetMemberReferralsQueryKey() });
+      setReferralCode('');
+      setReferralNotice(translate(app.language, 'memberReferralsApplied'));
+    } catch (e: unknown) {
+      const status = typeof e === 'object' && e !== null && 'status' in e ? (e as { status?: unknown }).status : undefined;
+      setReferralNotice(translate(app.language, status === 409 ? 'memberReferralsAlreadyApplied' : 'memberReferralsError'));
+    }
+  };
+  const shareReferralCode = async () => {
+    const ownCode = referrals.data?.code;
+    if (!ownCode) return;
+    const link = `maydango://account?ref=${encodeURIComponent(ownCode)}`;
+    try {
+      await Share.share({
+        message: `${translate(app.language, 'memberReferralsShareMessage')} ${ownCode}\n${link}`,
+      });
+    } catch {
+      setReferralNotice(translate(app.language, 'memberReferralsShareError'));
     }
   };
   const downloadAccountData = async (requestId: string) => {
@@ -278,6 +320,31 @@ export default function AccountScreen() {
               </>}
           {privacyNotice ? <Text accessibilityRole="alert" style={{ color: c.primary }}>{privacyNotice}</Text> : null}
         </View>
+        <View style={[styles.privacyCard, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={{ color: c.foreground, fontWeight: '800', fontSize: 18 }}>{translate(app.language, 'memberReferralsTitle')}</Text>
+          <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'memberReferralsIntro')}</Text>
+          {!hasCurrentRequiredConsent ? <Text style={{ color: c.mutedForeground }}>{translate(app.language, 'memberConsentsRequiredHint')}</Text>
+            : referrals.isLoading ? <Text style={{ color: c.mutedForeground }}>{translate(app.language, 'memberConsentsLoading')}</Text>
+              : referrals.isError ? <Text accessibilityRole="alert" style={{ color: c.destructive }}>{translate(app.language, 'memberReferralsError')}</Text>
+                : referrals.data ? <>
+                  <View style={{ borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, borderRadius: 12, padding: 12 }}>
+                    <Text style={{ color: c.mutedForeground }}>{translate(app.language, 'memberReferralsCode')}</Text>
+                    <Text selectable style={{ color: c.foreground, fontSize: 20, fontWeight: '800', letterSpacing: 2 }}>{referrals.data.code}</Text>
+                    <Text style={{ color: c.foreground, marginTop: 8 }}>{translate(app.language, 'memberReferralsSignups')}: {referrals.data.signups}</Text>
+                  </View>
+                  <Pressable accessibilityRole="button" onPress={() => void shareReferralCode()} style={[styles.button, { backgroundColor: c.primary }]}>
+                    <Text style={{ color: c.primaryForeground, fontWeight: '700' }}>{translate(app.language, 'memberReferralsShare')}</Text>
+                  </Pressable>
+                  {referrals.data.hasAppliedCode ? <Text style={{ color: c.mutedForeground }}>{translate(app.language, 'memberReferralsAlreadyApplied')}</Text>
+                    : <>
+                      <TextInput inputDirection="ltr" accessibilityLabel={translate(app.language, 'memberReferralsInput')} placeholder={translate(app.language, 'memberReferralsInput')} placeholderTextColor={c.mutedForeground} value={referralCode} onChangeText={value => setReferralCode(value.toUpperCase())} autoCapitalize="characters" maxLength={10} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
+                      <Pressable accessibilityRole="button" disabled={attributeReferral.isPending || referralCode.trim().length !== 10} onPress={() => void submitReferralCode()} style={[styles.button, { backgroundColor: c.secondary, opacity: attributeReferral.isPending || referralCode.trim().length !== 10 ? .6 : 1 }]}>
+                        <Text style={{ color: c.secondaryForeground, fontWeight: '700' }}>{translate(app.language, 'memberReferralsApply')}</Text>
+                      </Pressable>
+                    </>}
+                </> : null}
+          {referralNotice ? <Text accessibilityRole="alert" style={{ color: c.primary }}>{referralNotice}</Text> : null}
+        </View>
         <Text style={{ color: c.foreground, fontWeight: '700' }}>Server-verified memberships</Text>
         {app.memberMemberships.length ? app.memberMemberships.map(m => <Text key={m.scope} style={{ color: c.foreground }}>{m.scope === 'preview' ? 'Sample-only trial' : m.source === 'corporate' ? 'Corporate' : m.source === 'trial' ? 'Trial' : 'Real membership'} · {m.tier} · {m.status.replaceAll('_', ' ')} · ends {dateTime(m.endsAt, app.language, true)}</Text>) : <Text style={{ color: c.mutedForeground }}>No active membership. Local plan selections do not grant access.</Text>}
         <MemberNotice />
@@ -372,6 +439,7 @@ export default function AccountScreen() {
       </> : <>
         <Text style={{ color: c.mutedForeground }}>Sign in to keep reservations securely on your account across devices.</Text>
         {!verify && reset !== 'code' ? <>
+           {mode === 'signup' ? <TextInput inputDirection="ltr" testID="auth-referral-code" accessibilityLabel={translate(app.language, 'memberReferralsInput')} placeholder={translate(app.language, 'memberReferralsInput')} placeholderTextColor={c.mutedForeground} value={referralCode} onChangeText={value => setReferralCode(value.toUpperCase())} autoCapitalize="characters" maxLength={10} style={[styles.input, { color: c.foreground, borderColor: c.border }]} /> : null}
           <TextInput inputDirection="ltr" testID="auth-email" accessibilityLabel="Email address" placeholder="Email address" placeholderTextColor={c.mutedForeground} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
           <TextInput testID="auth-password" accessibilityLabel="Password" placeholder="Password" placeholderTextColor={c.mutedForeground} secureTextEntry value={password} onChangeText={setPassword} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
         </> : <TextInput testID="auth-code" accessibilityLabel="Email verification code" placeholder="Email verification code" placeholderTextColor={c.mutedForeground} value={code} onChangeText={setCode} keyboardType="number-pad" style={[styles.input, { color: c.foreground, borderColor: c.border }]} />}
@@ -386,7 +454,9 @@ export default function AccountScreen() {
           const result = await startSSOFlow({ strategy: 'oauth_google', redirectUrl: AuthSession.makeRedirectUri() });
           if (!result.createdSessionId || !result.setActive) throw new Error('Sign-in was not completed. Try email and password.');
           await result.setActive({ session: result.createdSessionId });
-          router.replace(mode === 'signup' ? '/account' : '/(tabs)/bookings');
+          router.replace(mode === 'signup' && referralCode.trim()
+            ? { pathname: '/account', params: { ref: referralCode.trim().toUpperCase() } }
+            : mode === 'signup' ? '/account' : '/(tabs)/bookings');
         }))}
         <Pressable onPress={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setVerify(false); setReset('none'); setError(''); signIn.reset(); signUp.reset(); }}>
           <Text style={{ color: c.primary }}>{mode === 'signin' ? 'New here? Create account' : 'Already registered? Sign in'}</Text>

@@ -1432,14 +1432,31 @@ function SignInPage() {
 }
 
 function SignUpPage() {
-  const requestedPath = new URLSearchParams(window.location.search).get('redirect_url');
+  const search = new URLSearchParams(window.location.search);
+  const requestedPath = search.get('redirect_url');
   const normalizedPath = requestedPath?.startsWith(basePath) ? requestedPath.slice(basePath.length) : requestedPath;
   const safePath = ['/account', '/instructor-portal', '/instructor-access', '/admin/instructor-access', '/admin/instructor-content', '/admin/sponsored-placements', '/admin/corporate', '/corporate-portal', '/support-desk'].includes(normalizedPath ?? '')
     ? normalizedPath!
     : normalizedPath?.startsWith('/corporate-invite?token=') ? normalizedPath : undefined;
-  const redirectTo = safePath ? `${basePath}${safePath}` : undefined;
+  const [referralCode, setReferralCode] = useState(() => search.get('ref')?.toUpperCase() ?? '');
+  const referralTarget = referralCode.trim()
+    ? `/account?ref=${encodeURIComponent(referralCode.trim().toUpperCase())}`
+    : undefined;
+  const redirectTo = referralTarget
+    ? `${basePath}${referralTarget}`
+    : safePath ? `${basePath}${safePath}` : undefined;
   const redirectQuery = safePath ? `?redirect_url=${encodeURIComponent(safePath)}` : '';
-  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f3f0e5] px-4 py-10"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in${redirectQuery}`} forceRedirectUrl={redirectTo} /></div>;
+  const language = savedLanguage();
+  const referralLabel = language === 'ar' ? 'رمز دعوة (اختياري)' : language === 'ku' ? 'کۆدی بانگهێشتکردن (ئارەزوومەندانە)' : 'Invite code (optional)';
+  const referralHint = language === 'ar' ? 'أدخل الرمز الذي شاركه معك أحد أعضاء MaydanGo.' : language === 'ku' ? 'ئەو کۆدە بنووسە کە ئەندامێکی MaydanGo لەگەڵت هاوبەشی کردووە.' : 'Enter the code shared with you by a MaydanGo member.';
+  return <div className="flex min-h-[100dvh] items-center justify-center bg-[#f3f0e5] px-4 py-10">
+    <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7">
+      <label htmlFor="signup-referral-code" className="mb-1 block text-sm font-semibold">{referralLabel}</label>
+      <p className="mb-2 text-xs leading-5 text-muted-foreground">{referralHint}</p>
+      <input id="signup-referral-code" value={referralCode} onChange={event => setReferralCode(event.target.value.toUpperCase().slice(0, 10))} autoCapitalize="characters" autoComplete="off" maxLength={10} dir="ltr" className="mb-5 w-full rounded-xl border border-border bg-background px-4 py-3 font-mono uppercase tracking-wider" />
+      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in${redirectQuery}`} forceRedirectUrl={redirectTo} />
+    </div>
+  </div>;
 }
 
 function ClerkQueryClientCacheInvalidator() {

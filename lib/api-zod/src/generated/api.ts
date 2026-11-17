@@ -2204,6 +2204,8 @@ export const getOperationsAnalyticsResponseSummaryActiveSubscriptionsMin = 0;
 
 export const getOperationsAnalyticsResponseSummaryCorporateActiveMembersMin = 0;
 
+export const getOperationsAnalyticsResponseSummaryAttributedSignupsMin = 0;
+
 export const getOperationsAnalyticsResponseSummaryDailyVisitsMin = 0;
 
 export const getOperationsAnalyticsResponseSummaryMonthlyVisitsMin = 0;
@@ -2349,6 +2351,7 @@ export const GetOperationsAnalyticsResponse = zod.object({
   "courseCompletions": zod.int().min(getOperationsAnalyticsResponseSummaryCourseCompletionsMin).nullable(),
   "activeSubscriptions": zod.int().min(getOperationsAnalyticsResponseSummaryActiveSubscriptionsMin).nullable(),
   "corporateActiveMembers": zod.int().min(getOperationsAnalyticsResponseSummaryCorporateActiveMembersMin).nullable(),
+  "attributedSignups": zod.int().min(getOperationsAnalyticsResponseSummaryAttributedSignupsMin).nullable(),
   "dailyVisits": zod.int().min(getOperationsAnalyticsResponseSummaryDailyVisitsMin),
   "monthlyVisits": zod.int().min(getOperationsAnalyticsResponseSummaryMonthlyVisitsMin),
   "uniqueCustomers": zod.int().min(getOperationsAnalyticsResponseSummaryUniqueCustomersMin),
@@ -10096,10 +10099,14 @@ export const getMemberPrivacyRequestExportResponseCoursesItemViewedLessonsItemPl
 
 export const getMemberPrivacyRequestExportResponseSupportConversationsItemMessagesItemAttachmentsItemSizeMin = 0;
 
+export const getMemberPrivacyRequestExportResponseReferralsInviteCodeRegExp = new RegExp('^[A-HJ-NP-Z2-9]{10}$');
+export const getMemberPrivacyRequestExportResponseReferralsAttributedSignupsMin = 0;
+
+export const getMemberPrivacyRequestExportResponseReferralsCodeUsedRegExp = new RegExp('^[A-HJ-NP-Z2-9]{10}$');
 
 
 export const GetMemberPrivacyRequestExportResponse = zod.object({
-  "formatVersion": zod.enum(['1.1']),
+  "formatVersion": zod.enum(['1.2']),
   "generatedAt": zod.coerce.date(),
   "account": zod.object({
   "email": zod.string().nullable(),
@@ -10213,6 +10220,12 @@ export const GetMemberPrivacyRequestExportResponse = zod.object({
 }))
 }))
 })),
+  "referrals": zod.object({
+  "inviteCode": zod.string().regex(getMemberPrivacyRequestExportResponseReferralsInviteCodeRegExp).nullable(),
+  "attributedSignups": zod.int().min(getMemberPrivacyRequestExportResponseReferralsAttributedSignupsMin),
+  "codeUsed": zod.string().regex(getMemberPrivacyRequestExportResponseReferralsCodeUsedRegExp).nullable(),
+  "attributedAt": zod.coerce.date().nullable()
+}),
   "privacyRequests": zod.array(zod.object({
   "kind": zod.enum(['data_export', 'account_deletion']),
   "subject": zod.string(),
@@ -11614,6 +11627,34 @@ export const SaveMemberConsentsResponse = zod.object({
   "choice": zod.enum(['accepted', 'declined']),
   "recordedAt": zod.coerce.date()
 }))
+})
+
+
+export const getMemberReferralsResponseCodeRegExp = new RegExp('^[A-HJ-NP-Z2-9]{10}$');
+export const getMemberReferralsResponseSignupsMin = 0;
+
+
+
+export const GetMemberReferralsResponse = zod.object({
+  "code": zod.string().regex(getMemberReferralsResponseCodeRegExp),
+  "signups": zod.int().min(getMemberReferralsResponseSignupsMin),
+  "hasAppliedCode": zod.boolean()
+})
+
+
+export const attributeMemberReferralBodyCodeMin = 10;
+export const attributeMemberReferralBodyCodeMax = 10;
+
+
+export const attributeMemberReferralBodyCodeRegExp = new RegExp('^[A-HJ-NP-Z2-9a-hj-np-z2-9]{10}$');
+
+
+export const AttributeMemberReferralBody = zod.object({
+  "code": zod.string().min(attributeMemberReferralBodyCodeMin).max(attributeMemberReferralBodyCodeMax).regex(attributeMemberReferralBodyCodeRegExp)
+})
+
+export const AttributeMemberReferralResponse = zod.object({
+  "attributed": zod.literal(true)
 })
 
 

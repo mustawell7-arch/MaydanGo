@@ -1,5 +1,5 @@
 import { clerkClient } from "@clerk/express";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 import {
   attendance,
   courseEnrollments,
@@ -13,6 +13,8 @@ import {
   memberSavedCourses,
   memberNotificationPreferences,
   memberProfiles,
+  memberReferralAttributions,
+  memberReferralCodes,
   memberships,
   offerings,
   reservations,
@@ -39,6 +41,9 @@ export async function createMemberDataExport(userId: string) {
     privacyRows,
     consentRows,
     supportTicketRows,
+    ownReferralRows,
+    referralCountRows,
+    appliedReferralRows,
   ] = await Promise.all([
     clerkClient.users.getUser(userId),
     db.select({ gender: memberProfiles.gender, birthDate: memberProfiles.birthDate })
@@ -153,6 +158,16 @@ export async function createMemberDataExport(userId: string) {
     }).from(supportTickets)
       .where(eq(supportTickets.userId, userId))
       .orderBy(desc(supportTickets.createdAt)),
+    db.select({ code: memberReferralCodes.code }).from(memberReferralCodes)
+      .where(eq(memberReferralCodes.ownerUserId, userId)).limit(1),
+    db.select({ count: count() }).from(memberReferralAttributions)
+      .where(eq(memberReferralAttributions.referrerUserId, userId)),
+    db.select({
+      code: memberReferralCodes.code,
+      attributedAt: memberReferralAttributions.attributedAt,
+    }).from(memberReferralAttributions)
+      .innerJoin(memberReferralCodes, eq(memberReferralAttributions.codeId, memberReferralCodes.id))
+      .where(eq(memberReferralAttributions.referredUserId, userId)).limit(1),
   ]);
 
   const enrollmentIds = enrollmentRows.map(row => row.id);
@@ -248,7 +263,7 @@ export async function createMemberDataExport(userId: string) {
   }
 
   return GetMemberPrivacyRequestExportResponse.parse({
-    formatVersion: "1.1",
+    formatVersion: "1.2",
     generatedAt: new Date(),
     account: {
       email: account.primaryEmailAddress?.emailAddress ?? null,
@@ -292,6 +307,12 @@ export async function createMemberDataExport(userId: string) {
         })),
       })),
     })),
+    referrals: {
+      inviteCode: ownReferralRows[0]?.code ?? null,
+      attributedSignups: referralCountRows[0]?.count ?? 0,
+      codeUsed: appliedReferralRows[0]?.code ?? null,
+      attributedAt: appliedReferralRows[0]?.attributedAt ?? null,
+    },
     privacyRequests: privacyRows.map(row => ({
       ...row,
       kind: getPrivacyRequestKind(row.subject),

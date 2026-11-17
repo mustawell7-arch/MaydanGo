@@ -25,13 +25,13 @@ const copy = {
     operational: 'Operational metrics', financial: 'Financial reporting',
     operationalNote: 'Visits, bookings, attendance and engagement in the selected period.',
     deferredTitle: 'Financial metrics are deferred', deferred: 'Financial reporting will be available after the payments milestone. These figures are not represented as zero.',
-    notTracked: 'Not tracked yet', notTrackedNote: 'Fraud alerts and referral performance are not tracked yet.',
+     notTracked: 'Not tracked yet', notTrackedNote: 'Fraud alerts and referral performance beyond verified sign-up counts are not tracked. No rewards or messages are sent.',
     refresh: 'Refresh', autoRefresh: 'Auto-refresh', off: 'Off', every5: 'Every 5 minutes', every15: 'Every 15 minutes', every60: 'Every hour',
     lastUpdated: 'Last updated', from: 'From · Baghdad date', to: 'To · Baghdad date', apply: 'Apply dates',
     period: 'Selected period', baghdad: 'Asia/Baghdad calendar dates',
     visits: 'Visits', physical: 'Physical check-ins', premium: 'Premium check-ins', liveBookings: 'Live class bookings',
     enrollments: 'Course enrollments', completions: 'Course completions', activeSubs: 'Active subscriptions',
-    corporateMembers: 'Corporate active members', dailyVisits: 'Daily visits', monthlyVisits: 'Monthly visits',
+     corporateMembers: 'Corporate active members', referralSignups: 'Attributed sign-ups', referralSignupsHint: 'Verified referral attributions in the selected date range', dailyVisits: 'Daily visits', monthlyVisits: 'Monthly visits',
     unique: 'Unique customers', repeat: 'Repeat customers', retention: 'Repeat-visit rate', noShow: 'No-show rate',
     cancellation: 'Cancellation rate', occupancy: 'Occupancy rate', rating: 'Average rating', ratingCount: 'Ratings',
     trendTitle: 'Activity over time', trendDesc: 'Daily visits, live bookings and course activity',
@@ -67,13 +67,13 @@ const copy = {
     operational: 'المؤشرات التشغيلية', financial: 'التقارير المالية',
     operationalNote: 'الزيارات والحجوزات والحضور والتفاعل خلال الفترة المحددة.',
     deferredTitle: 'المؤشرات المالية مؤجلة', deferred: 'ستتوفر التقارير المالية بعد إنجاز مرحلة المدفوعات. لا تُمثل هذه القيم على أنها صفر.',
-    notTracked: 'غير متتبعة بعد', notTrackedNote: 'تنبيهات الاحتيال وأداء الإحالات غير متتبعين بعد.',
+     notTracked: 'غير متتبعة بعد', notTrackedNote: 'لا تتوفر تنبيهات الاحتيال أو مؤشرات أداء الإحالات التي تتجاوز عدد التسجيلات المؤكدة. لا توجد مكافآت أو رسائل.',
     refresh: 'تحديث', autoRefresh: 'التحديث التلقائي', off: 'إيقاف', every5: 'كل ٥ دقائق', every15: 'كل ١٥ دقيقة', every60: 'كل ساعة',
     lastUpdated: 'آخر تحديث', from: 'من · تاريخ بغداد', to: 'إلى · تاريخ بغداد', apply: 'تطبيق التواريخ',
     period: 'الفترة المحددة', baghdad: 'تواريخ تقويمية بتوقيت آسيا/بغداد',
     visits: 'الزيارات', physical: 'تسجيلات الحضور الحضورية', premium: 'تسجيلات الحضور المميزة', liveBookings: 'حجوزات الصفوف المباشرة',
     enrollments: 'التسجيلات في الدورات', completions: 'إكمال الدورات', activeSubs: 'الاشتراكات النشطة',
-    corporateMembers: 'الأعضاء النشطون للمؤسسات', dailyVisits: 'الزيارات اليومية', monthlyVisits: 'الزيارات الشهرية',
+     corporateMembers: 'الأعضاء النشطون للمؤسسات', referralSignups: 'التسجيلات المنسوبة', referralSignupsHint: 'الإحالات المؤكدة ضمن الفترة المحددة', dailyVisits: 'الزيارات اليومية', monthlyVisits: 'الزيارات الشهرية',
     unique: 'الأعضاء الفريدون', repeat: 'الأعضاء المتكررون', retention: 'معدل تكرار الزيارة', noShow: 'معدل عدم الحضور',
     cancellation: 'معدل الإلغاء', occupancy: 'الإشغال', rating: 'متوسط التقييم', ratingCount: 'التقييمات',
     trendTitle: 'النشاط عبر الوقت', trendDesc: 'الزيارات اليومية والحجوزات المباشرة ونشاط الدورات',
@@ -109,13 +109,13 @@ const copy = {
     operational: 'پێوەرە کارگێڕییەکان', financial: 'ڕاپۆرتی دارایی',
     operationalNote: 'سەردان، حجز، ئامادەبوون و بەشداری لە ماوەی دیاریکراودا.',
     deferredTitle: 'پێوەرە داراییەکان دواخراون', deferred: 'ڕاپۆرتی دارایی دوای تەواوبوونی قۆناغی پارەدان بەردەست دەبێت. ئەم نرخانە وەک سفر نیشان نادرێن.',
-    notTracked: 'هێشتا چاودێری ناکرێت', notTrackedNote: 'ئاگادارکردنەوەی ساختەکاری و کارایی ڕەوانەکردن هێشتا چاودێری ناکرێت.',
+     notTracked: 'هێشتا چاودێری ناکرێت', notTrackedNote: 'ئاگادارکردنەوەی ساختەکاری و پێوەری کارایی بانگهێشتکردن زیاتر لە ژمارەی تۆمارکردنی پشتڕاستکراو بەردەست نین. خەڵات یان پەیام نانێردرێت.',
     refresh: 'نوێکردنەوە', autoRefresh: 'نوێکردنەوەی خۆکار', off: 'ناچالاک', every5: 'هەر ٥ خولەک', every15: 'هەر ١٥ خولەک', every60: 'هەر کاتژمێرێک',
     lastUpdated: 'دوایین نوێکردنەوە', from: 'لە · بەرواری بەغدا', to: 'تا · بەرواری بەغدا', apply: 'جێبەجێکردنی بەروار',
     period: 'ماوەی هەڵبژێردراو', baghdad: 'بەرواری ڕۆژژمێریی بەغدا',
     visits: 'سەردانەکان', physical: 'ئامادەبوونی ڕووبەڕوو', premium: 'ئامادەبوونی تایبەت', liveBookings: 'حجزەکانی وانەی ڕاستەوخۆ',
     enrollments: 'تۆماربوون لە کۆرس', completions: 'تەواوکردنی کۆرس', activeSubs: 'ئەندامێتیی چالاک',
-    corporateMembers: 'ئەندامانی چالاکی دامەزراوە', dailyVisits: 'سەردانی ڕۆژانە', monthlyVisits: 'سەردانی مانگانە',
+     corporateMembers: 'ئەندامانی چالاکی دامەزراوە', referralSignups: 'تۆمارکردنی پەیوەست بە بانگهێشت', referralSignupsHint: 'بانگهێشتە پشتڕاستکراوەکان لە ماوەی دیاریکراودا', dailyVisits: 'سەردانی ڕۆژانە', monthlyVisits: 'سەردانی مانگانە',
     unique: 'ئەندامی جیاواز', repeat: 'ئەندامی دووبارە', retention: 'ڕێژەی دووبارەسەردان', noShow: 'ڕێژەی نەهاتن',
     cancellation: 'ڕێژەی هەڵوەشاندنەوە', occupancy: 'ڕێژەی پڕبوون', rating: 'تێکڕای هەڵسەنگاندن', ratingCount: 'هەڵسەنگاندنەکان',
     trendTitle: 'چالاکی بە درێژایی کات', trendDesc: 'سەردانی ڕۆژانە، حجزە ڕاستەوخۆکان و چالاکیی کۆرس',
@@ -442,6 +442,7 @@ export function OperationsAnalytics({ language = 'en' }: { language?: Language }
                {data?.role === 'partner_operations_admin' && metric('completions', summary.courseCompletions)}
               {data?.role === 'partner_operations_admin' && summary.activeSubscriptions !== null && metric('activeSubs', summary.activeSubscriptions)}
               {data?.role === 'partner_operations_admin' && summary.corporateActiveMembers !== null && metric('corporateMembers', summary.corporateActiveMembers)}
+               {data?.role === 'partner_operations_admin' && summary.attributedSignups !== null && metric('referralSignups', summary.attributedSignups, t('referralSignupsHint'))}
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
               {rateMetric('retention', summary.retentionRate, t('repeatDefinition'))}

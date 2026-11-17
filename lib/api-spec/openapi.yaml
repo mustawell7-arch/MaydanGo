@@ -716,6 +716,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1privacy-requests"
   /member/consents:
     $ref: "./operations.yaml#/paths/~1member~1consents"
+  /member/referrals:
+    $ref: "./operations.yaml#/paths/~1member~1referrals"
+  /member/referrals/attribute:
+    $ref: "./operations.yaml#/paths/~1member~1referrals~1attribute"
   /member/notifications/settings:
     $ref: "./operations.yaml#/paths/~1member~1notifications~1settings"
   /member/notifications/devices:

@@ -6,7 +6,7 @@ import { eq, inArray } from "drizzle-orm";
 import express from "express";
 import {
   attendance, corporateOrganizations, db, instructorContentDrafts, instructorOfferingAssignments,
-  instructorProfiles, memberships, offerings, operators, partners, pool, reservations,
+  instructorProfiles, memberReferralAttributions, memberReferralCodes, memberships, offerings, operators, partners, pool, reservations,
   sponsoredContentCampaigns, sponsoredContentPlacementEvents,
 } from "@workspace/db";
 import operationsAnalyticsRouter from "./operations-analytics";
@@ -24,6 +24,12 @@ const instructorDraftId = randomUUID();
 const instructorProfileId = randomUUID();
 const corporateId = `${prefix}-corporate`;
 const sponsoredCampaignId = randomUUID();
+const referralCodeId = randomUUID();
+const referralAttributionId = randomUUID();
+const referralInviterId = `${prefix}-referrer`;
+const referralInviteeId = `${prefix}-invitee`;
+const referralCode = randomUUID().replaceAll("-", "").slice(0, 10).split("")
+  .map(character => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Number.parseInt(character, 16) * 2]).join("");
 const offeringIds = [1, 2, 3].map(() => randomUUID());
 const reservationIds = offeringIds.map(() => randomUUID());
 let server: Server | null = null;
@@ -63,6 +69,8 @@ after(async () => {
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
   await db.delete(sponsoredContentPlacementEvents).where(eq(sponsoredContentPlacementEvents.campaignId, sponsoredCampaignId));
   await db.delete(sponsoredContentCampaigns).where(eq(sponsoredContentCampaigns.id, sponsoredCampaignId));
+  await db.delete(memberReferralAttributions).where(eq(memberReferralAttributions.id, referralAttributionId));
+  await db.delete(memberReferralCodes).where(eq(memberReferralCodes.id, referralCodeId));
   await db.delete(instructorOfferingAssignments).where(inArray(instructorOfferingAssignments.offeringId, offeringIds));
   await db.delete(memberships).where(eq(memberships.userId, userId));
   await db.delete(instructorProfiles).where(eq(instructorProfiles.id, instructorProfileId));
@@ -109,6 +117,18 @@ test("analytics are aggregated, date-bounded, and scoped to each approved partne
     startsAt: new Date(now.getTime() - 60_000),
     endsAt: new Date(now.getTime() + 86_400_000),
     rules: { quota: 1, dailyLimit: 1, corporateId },
+  });
+  await db.insert(memberReferralCodes).values({
+    id: referralCodeId,
+    ownerUserId: referralInviterId,
+    code: referralCode,
+  });
+  await db.insert(memberReferralAttributions).values({
+    id: referralAttributionId,
+    codeId: referralCodeId,
+    referrerUserId: referralInviterId,
+    referredUserId: referralInviteeId,
+    attributedAt: now,
   });
   await db.insert(instructorContentDrafts).values({
     id: instructorDraftId,
@@ -204,6 +224,7 @@ test("analytics are aggregated, date-bounded, and scoped to each approved partne
   assert.equal(partnerResult.data.summary.repeatCustomers, 1);
   assert.equal(partnerResult.data.summary.retentionRate, 100);
   assert.equal(partnerResult.data.summary.courseEnrollments, null);
+  assert.equal(partnerResult.data.summary.attributedSignups, null);
   assert.equal(partnerResult.data.partnerPerformance.length, 0);
   assert.equal(partnerResult.data.corporateUsage.length, 0);
   assert.equal(partnerResult.data.instructorPerformance.length, 0);
@@ -215,6 +236,7 @@ test("analytics are aggregated, date-bounded, and scoped to each approved partne
   assert.equal(adminResult.data.role, "partner_operations_admin");
   assert.equal(adminResult.data.summary.visits, 3);
   assert.equal(adminResult.data.summary.activeSubscriptions >= 0, true);
+  assert.equal(adminResult.data.summary.attributedSignups, 1);
   assert.ok(adminResult.data.unavailableMetrics.includes("revenue"));
   assert.equal(adminResult.data.unavailableMetrics.includes("instructor_performance"), false);
   assert.equal(adminResult.data.unavailableMetrics.includes("promotion_performance"), false);
@@ -251,6 +273,8 @@ test("analytics are aggregated, date-bounded, and scoped to each approved partne
     conversionRate: 100,
   });
   assert.ok(!JSON.stringify(adminResult.data).includes(userId));
+  assert.ok(!JSON.stringify(adminResult.data).includes(referralInviterId));
+  assert.ok(!JSON.stringify(adminResult.data).includes(referralInviteeId));
 
   const invalidRange = await call(adminUser, "2026-02-31");
   assert.equal(invalidRange.status, 400);

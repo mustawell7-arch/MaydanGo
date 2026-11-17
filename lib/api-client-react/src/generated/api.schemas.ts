@@ -1049,7 +1049,7 @@ export type MemberDataExportFormatVersion = typeof MemberDataExportFormatVersion
 
 
 export const MemberDataExportFormatVersion = {
-  '11': '1.1',
+  '12': '1.2',
 } as const;
 
 export type MemberDataExportExcludedDataItem = typeof MemberDataExportExcludedDataItem[keyof typeof MemberDataExportExcludedDataItem];
@@ -1065,6 +1065,23 @@ export const MemberDataExportExcludedDataItem = {
   browser_local_cookie_choice: 'browser_local_cookie_choice',
 } as const;
 
+export interface MemberDataExportReferrals {
+  /**
+     * @nullable
+     * @pattern ^[A-HJ-NP-Z2-9]{10}$
+     */
+  inviteCode: string | null;
+  /** @minimum 0 */
+  attributedSignups: number;
+  /**
+     * @nullable
+     * @pattern ^[A-HJ-NP-Z2-9]{10}$
+     */
+  codeUsed: string | null;
+  /** @nullable */
+  attributedAt: string | null;
+}
+
 export interface MemberDataExport {
   formatVersion: MemberDataExportFormatVersion;
   generatedAt: string;
@@ -1078,9 +1095,31 @@ export interface MemberDataExport {
   reviews: MemberDataExportReview[];
   consentHistory: MemberDataExportConsent[];
   supportConversations: MemberDataExportSupportConversation[];
+  referrals: MemberDataExportReferrals;
   privacyRequests: MemberDataExportPrivacyRequest[];
   notificationPreferences: MemberDataExportNotificationPreferences | null;
   excludedData: MemberDataExportExcludedDataItem[];
+}
+
+export interface MemberReferralSummary {
+  /** @pattern ^[A-HJ-NP-Z2-9]{10}$ */
+  code: string;
+  /** @minimum 0 */
+  signups: number;
+  hasAppliedCode: boolean;
+}
+
+export interface MemberReferralAttributionInput {
+  /**
+     * @minLength 10
+     * @maxLength 10
+     * @pattern ^[A-HJ-NP-Z2-9a-hj-np-z2-9]{10}$
+     */
+  code: string;
+}
+
+export interface MemberReferralAttributionResponse {
+  attributed: true;
 }
 
 export interface PrivacyRequest {
@@ -2145,6 +2184,11 @@ export type OperationsAnalyticsResponseSummary = {
      * @nullable
      */
   corporateActiveMembers: number | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  attributedSignups: number | null;
   /** @minimum 0 */
   dailyVisits: number;
   /** @minimum 0 */

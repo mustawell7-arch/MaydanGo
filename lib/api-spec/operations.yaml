@@ -126,6 +126,37 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/MemberConsentState" }
+  /member/referrals:
+    get:
+      operationId: getMemberReferrals
+      responses:
+        "200":
+          description: The signed-in member's invite code and attributed sign-up count
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberReferralSummary" }
+        "403":
+          description: Current Terms of Use and Privacy Policy consent is required
+  /member/referrals/attribute:
+    post:
+      operationId: attributeMemberReferral
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemberReferralAttributionInput" }
+      responses:
+        "201":
+          description: A verified account was attributed once to a valid inviter
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberReferralAttributionResponse" }
+        "400":
+          description: Referral code is invalid or belongs to the signed-in member
+        "403":
+          description: Verified email and current policy consent are required
+        "409":
+          description: A referral was already applied to this account
   /policies:
     get:
       operationId: getPublicLegalPolicies
@@ -3241,9 +3272,9 @@ components:
     MemberDataExport:
       type: object
       additionalProperties: false
-      required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, savedCourses, reviews, consentHistory, supportConversations, privacyRequests, notificationPreferences, excludedData]
+      required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, savedCourses, reviews, consentHistory, supportConversations, referrals, privacyRequests, notificationPreferences, excludedData]
       properties:
-        formatVersion: { type: string, enum: ["1.1"] }
+        formatVersion: { type: string, enum: ["1.2"] }
         generatedAt: { type: string, format: date-time }
         account: { $ref: "#/components/schemas/MemberDataExportAccount" }
         memberships:
@@ -3273,6 +3304,7 @@ components:
         supportConversations:
           type: array
           items: { $ref: "#/components/schemas/MemberDataExportSupportConversation" }
+        referrals: { $ref: "#/components/schemas/MemberDataExportReferrals" }
         privacyRequests:
           type: array
           items: { $ref: "#/components/schemas/MemberDataExportPrivacyRequest" }
@@ -3285,6 +3317,35 @@ components:
           items:
             type: string
             enum: [payment_instrument_details, login_credentials, push_tokens, private_class_links, internal_support_notes, support_attachment_contents, browser_local_cookie_choice]
+    MemberDataExportReferrals:
+      type: object
+      additionalProperties: false
+      required: [inviteCode, attributedSignups, codeUsed, attributedAt]
+      properties:
+        inviteCode: { type: ["string", "null"], pattern: '^[A-HJ-NP-Z2-9]{10}$' }
+        attributedSignups: { type: integer, minimum: 0 }
+        codeUsed: { type: ["string", "null"], pattern: '^[A-HJ-NP-Z2-9]{10}$' }
+        attributedAt: { type: ["string", "null"], format: date-time }
+    MemberReferralSummary:
+      type: object
+      additionalProperties: false
+      required: [code, signups, hasAppliedCode]
+      properties:
+        code: { type: string, pattern: '^[A-HJ-NP-Z2-9]{10}$' }
+        signups: { type: integer, minimum: 0 }
+        hasAppliedCode: { type: boolean }
+    MemberReferralAttributionInput:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code: { type: string, minLength: 10, maxLength: 10, pattern: '^[A-HJ-NP-Z2-9a-hj-np-z2-9]{10}$' }
+    MemberReferralAttributionResponse:
+      type: object
+      additionalProperties: false
+      required: [attributed]
+      properties:
+        attributed: { type: boolean, enum: [true] }
     PrivacyRequest:
       type: object
       additionalProperties: false
@@ -4034,7 +4095,7 @@ components:
         summary:
           type: object
           additionalProperties: false
-          required: [visits, physicalCheckIns, premiumCheckIns, liveClassBookings, courseEnrollments, courseCompletions, activeSubscriptions, corporateActiveMembers, dailyVisits, monthlyVisits, uniqueCustomers, repeatCustomers, retentionRate, noShowRate, cancellationRate, occupancyRate, averageRating, ratingCount]
+          required: [visits, physicalCheckIns, premiumCheckIns, liveClassBookings, courseEnrollments, courseCompletions, activeSubscriptions, corporateActiveMembers, attributedSignups, dailyVisits, monthlyVisits, uniqueCustomers, repeatCustomers, retentionRate, noShowRate, cancellationRate, occupancyRate, averageRating, ratingCount]
           properties:
             visits: { type: integer, minimum: 0 }
             physicalCheckIns: { type: integer, minimum: 0 }
@@ -4044,6 +4105,7 @@ components:
             courseCompletions: { type: ["integer", "null"], minimum: 0 }
             activeSubscriptions: { type: ["integer", "null"], minimum: 0 }
             corporateActiveMembers: { type: ["integer", "null"], minimum: 0 }
+            attributedSignups: { type: ["integer", "null"], minimum: 0 }
             dailyVisits: { type: integer, minimum: 0 }
             monthlyVisits: { type: integer, minimum: 0 }
             uniqueCustomers: { type: integer, minimum: 0 }

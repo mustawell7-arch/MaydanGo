@@ -5,7 +5,7 @@ import { GetMemberPrivacyRequestExportResponse } from "@workspace/api-zod";
 test("member export response contains only the declared, non-secret fields", () => {
   const now = new Date("2026-11-14T12:00:00.000Z");
   const parsed = GetMemberPrivacyRequestExportResponse.parse({
-    formatVersion: "1.1",
+    formatVersion: "1.2",
     generatedAt: now,
     account: {
       email: "member@example.test",
@@ -70,6 +70,13 @@ test("member export response contains only the declared, non-secret fields", () 
         }],
       }],
     }],
+    referrals: {
+      inviteCode: "ABCDEFG234",
+      attributedSignups: 2,
+      codeUsed: "JKLMNPQ234",
+      attributedAt: now,
+      inviteeIds: ["must-not-be-exported"],
+    },
     privacyRequests: [],
     notificationPreferences: null,
     excludedData: [
@@ -91,6 +98,12 @@ test("member export response contains only the declared, non-secret fields", () 
   assert.equal(parsed.consentHistory[0]?.choice, "declined");
   assert.equal(parsed.supportConversations[0]?.messages[0]?.body, "Please help with my booking.");
   assert.equal(parsed.supportConversations[0]?.messages[0]?.attachments[0]?.fileName, "schedule.jpg");
+  assert.deepEqual(parsed.referrals, {
+    inviteCode: "ABCDEFG234",
+    attributedSignups: 2,
+    codeUsed: "JKLMNPQ234",
+    attributedAt: now,
+  });
   assert.deepEqual(parsed.excludedData, [
     "payment_instrument_details",
     "login_credentials",

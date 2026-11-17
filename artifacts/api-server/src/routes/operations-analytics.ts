@@ -158,7 +158,7 @@ router.get("/analytics", async (req, res, next) => {
     const reservationBucketExpr = `to_char(date_trunc('${bucket}', r.created_at AT TIME ZONE 'Asia/Baghdad')::date, 'YYYY-MM-DD')`;
     const enrollmentBucketExpr = `to_char(date_trunc('${bucket}', ce.enrolled_at AT TIME ZONE 'Asia/Baghdad')::date, 'YYYY-MM-DD')`;
 
-    const [visitTotals, bookingTotals, ratings, visitTrend, bookingTrend, courseTrend, facilities, classes, courses, currentVisits, activeMemberships, partnerPerformance, corporateUsage, instructorPerformance, promotionPerformance] = await Promise.all([
+    const [visitTotals, bookingTotals, ratings, visitTrend, bookingTrend, courseTrend, facilities, classes, courses, currentVisits, activeMemberships, partnerPerformance, corporateUsage, instructorPerformance, promotionPerformance, referralTotals] = await Promise.all([
       pool.query(`
         WITH scoped_attendance AS (
           SELECT a.user_id, a.status, a.settlement_eligible, o.access_type
@@ -589,6 +589,11 @@ router.get("/analytics", async (req, res, next) => {
         ORDER BY impressions DESC, campaign_name
         LIMIT 100
       `, [fromTimestamp, toTimestamp]) : Promise.resolve({ rows: [] }),
+      role === "partner_operations_admin" ? pool.query(`
+        SELECT COUNT(*)::int AS attributed_signups
+        FROM member_referral_attributions
+        WHERE attributed_at >= $1 AND attributed_at < $2
+      `, [fromTimestamp, toTimestamp]) : Promise.resolve({ rows: [] }),
     ]);
 
     const visit = visitTotals.rows[0] ?? {};
@@ -643,6 +648,7 @@ router.get("/analytics", async (req, res, next) => {
         courseCompletions: role === "partner_operations_admin" ? completionTotals.completions : null,
         activeSubscriptions: role === "partner_operations_admin" ? count(activeMemberships.rows[0]?.active_subscriptions) : null,
         corporateActiveMembers: role === "partner_operations_admin" ? count(activeMemberships.rows[0]?.corporate_active_members) : null,
+        attributedSignups: role === "partner_operations_admin" ? count(referralTotals.rows[0]?.attributed_signups) : null,
         dailyVisits: count(current.daily_visits),
         monthlyVisits: count(monthVisitsResult.rows[0]?.monthly_visits),
         uniqueCustomers,
