@@ -12,8 +12,7 @@ const IRAQ_TIME_ZONE = "Asia/Baghdad";
 const ADMIN_UNAVAILABLE = [
   "membership_sales", "renewals", "membership_cancellations", "churn", "revenue",
   "failed_payments", "partner_cost", "gross_margin", "event_revenue",
-  "instructor_performance", "referral_performance", "promotion_performance",
-  "fraud_alerts", "refund_rate", "chargeback_rate", "accounting_export",
+  "referral_performance", "fraud_alerts", "refund_rate", "chargeback_rate", "accounting_export",
 ] as const;
 const PARTNER_UNAVAILABLE = [
   "estimated_earnings", "instructor_performance", "accounting_export",
@@ -159,7 +158,7 @@ router.get("/analytics", async (req, res, next) => {
     const reservationBucketExpr = `to_char(date_trunc('${bucket}', r.created_at AT TIME ZONE 'Asia/Baghdad')::date, 'YYYY-MM-DD')`;
     const enrollmentBucketExpr = `to_char(date_trunc('${bucket}', ce.enrolled_at AT TIME ZONE 'Asia/Baghdad')::date, 'YYYY-MM-DD')`;
 
-    const [visitTotals, bookingTotals, ratings, visitTrend, bookingTrend, courseTrend, facilities, classes, courses, currentVisits, activeMemberships, partnerPerformance] = await Promise.all([
+    const [visitTotals, bookingTotals, ratings, visitTrend, bookingTrend, courseTrend, facilities, classes, courses, currentVisits, activeMemberships, partnerPerformance, corporateUsage, instructorPerformance, promotionPerformance] = await Promise.all([
       pool.query(`
         WITH scoped_attendance AS (
           SELECT a.user_id, a.status, a.settlement_eligible, o.access_type
@@ -436,6 +435,160 @@ router.get("/analytics", async (req, res, next) => {
         ORDER BY COALESCE(v.visits, 0) DESC, p.name
         LIMIT 50
       `, [fromTimestamp, toTimestamp]) : Promise.resolve({ rows: [] }),
+      role === "partner_operations_admin" ? pool.query(`
+        WITH live_corporate_members AS (
+          SELECT m.corporate_id, m.user_id
+          FROM memberships m
+          JOIN corporate_organizations co ON co.id = m.corporate_id AND co.status = 'active'
+          WHERE m.scope = 'live' AND m.corporate_id IS NOT NULL
+            AND m.status = 'active' AND m.ends_at > NOW()
+        ),
+        attendance_by_org AS (
+          SELECT cm.corporate_id,
+            COUNT(a.id) FILTER (WHERE a.status = 'confirmed' AND a.settlement_eligible)::int AS visits,
+            COUNT(DISTINCT a.user_id) FILTER (WHERE a.status = 'confirmed' AND a.settlement_eligible)::int AS unique_visitors
+          FROM live_corporate_members cm
+          JOIN attendance a ON a.user_id = cm.user_id AND a.checked_in_at >= $1 AND a.checked_in_at < $2
+          JOIN booking_offerings o ON o.id = a.offering_id AND o.scope = 'live' AND o.cancelled_at IS NULL
+          GROUP BY cm.corporate_id
+        ),
+        bookings_by_org AS (
+          SELECT cm.corporate_id, COUNT(r.id)::int AS bookings
+          FROM live_corporate_members cm
+          JOIN reservations r ON r.user_id = cm.user_id AND r.created_at >= $1 AND r.created_at < $2
+          JOIN booking_offerings o ON o.id = r.offering_id AND o.scope = 'live' AND o.cancelled_at IS NULL
+          GROUP BY cm.corporate_id
+        ),
+        courses_by_org AS (
+          SELECT cm.corporate_id, COUNT(ce.id)::int AS course_enrollments
+          FROM live_corporate_members cm
+          JOIN course_enrollments ce ON ce.user_id = cm.user_id AND ce.enrolled_at >= $1 AND ce.enrolled_at < $2
+          JOIN learning_courses lc ON lc.id = ce.course_id AND lc.published = true
+          GROUP BY cm.corporate_id
+        ),
+        members_by_org AS (
+          SELECT corporate_id, COUNT(DISTINCT user_id)::int AS active_members
+          FROM live_corporate_members GROUP BY corporate_id
+        )
+        SELECT co.name AS organization_name,
+          COALESCE(m.active_members, 0)::int AS active_members,
+          COALESCE(a.unique_visitors, 0)::int AS unique_visitors,
+          COALESCE(a.visits, 0)::int AS visits,
+          COALESCE(b.bookings, 0)::int AS bookings,
+          COALESCE(c.course_enrollments, 0)::int AS course_enrollments
+        FROM corporate_organizations co
+        LEFT JOIN members_by_org m ON m.corporate_id = co.id
+        LEFT JOIN attendance_by_org a ON a.corporate_id = co.id
+        LEFT JOIN bookings_by_org b ON b.corporate_id = co.id
+        LEFT JOIN courses_by_org c ON c.corporate_id = co.id
+        WHERE co.status = 'active' AND (
+          COALESCE(m.active_members, 0) > 0 OR COALESCE(a.visits, 0) > 0
+          OR COALESCE(b.bookings, 0) > 0 OR COALESCE(c.course_enrollments, 0) > 0
+        )
+        ORDER BY COALESCE(a.visits, 0) DESC, co.name
+        LIMIT 50
+      `, [fromTimestamp, toTimestamp]) : Promise.resolve({ rows: [] }),
+      role === "partner_operations_admin" ? pool.query(`
+        WITH assigned_offerings AS (
+          SELECT DISTINCT ioa.user_id, o.id
+          FROM instructor_offering_assignments ioa
+          JOIN booking_offerings o ON o.id = ioa.offering_id
+          WHERE o.starts_at >= $1 AND o.starts_at < $2 AND o.scope = 'live'
+            AND o.cancelled_at IS NULL
+            AND (o.active = true
+              OR EXISTS (SELECT 1 FROM attendance a WHERE a.offering_id = o.id)
+              OR EXISTS (SELECT 1 FROM reservations r WHERE r.offering_id = o.id))
+        ),
+        session_counts AS (
+          SELECT user_id, COUNT(DISTINCT id)::int AS sessions
+          FROM assigned_offerings GROUP BY user_id
+        ),
+        booking_counts AS (
+          SELECT ao.user_id, COUNT(r.id)::int AS bookings
+          FROM assigned_offerings ao
+          JOIN reservations r ON r.offering_id = ao.id AND r.created_at >= $1 AND r.created_at < $2
+          GROUP BY ao.user_id
+        ),
+        attendance_counts AS (
+          SELECT ao.user_id,
+            COUNT(a.id) FILTER (WHERE a.status = 'confirmed' AND a.settlement_eligible)::int AS visits,
+            COUNT(a.id) FILTER (WHERE a.status = 'no_show')::int AS no_shows
+          FROM assigned_offerings ao
+          JOIN attendance a ON a.offering_id = ao.id AND a.checked_in_at >= $1 AND a.checked_in_at < $2
+          GROUP BY ao.user_id
+        ),
+        assigned_courses AS (
+          SELECT user_id, course_id FROM instructor_course_assignments
+          UNION
+          SELECT instructor_user_id AS user_id, id AS course_id
+          FROM learning_courses
+          WHERE instructor_user_id IS NOT NULL AND published = true
+        ),
+        enrollment_progress AS (
+          SELECT ce.id, ce.course_id, ce.enrolled_at,
+            COUNT(DISTINCT ll.id) AS lesson_count,
+            COUNT(DISTINCT lp.lesson_id) AS completed_count,
+            MAX(lp.completed_at) AS completed_at
+          FROM course_enrollments ce
+          JOIN learning_courses lc ON lc.id = ce.course_id AND lc.published = true
+          LEFT JOIN learning_lessons ll ON ll.course_id = lc.id
+          LEFT JOIN lesson_progress lp ON lp.enrollment_id = ce.id AND lp.lesson_id = ll.id
+          GROUP BY ce.id, ce.course_id, ce.enrolled_at
+        ),
+        course_counts AS (
+          SELECT ac.user_id,
+            COUNT(*) FILTER (WHERE ep.enrolled_at >= $1 AND ep.enrolled_at < $2)::int AS course_enrollments,
+            COUNT(*) FILTER (WHERE ep.lesson_count > 0 AND ep.completed_count >= ep.lesson_count
+              AND ep.completed_at >= $1 AND ep.completed_at < $2)::int AS course_completions
+          FROM assigned_courses ac
+          JOIN enrollment_progress ep ON ep.course_id = ac.course_id
+          GROUP BY ac.user_id
+        )
+        SELECT ip.display_name AS instructor_name,
+          COALESCE(s.sessions, 0)::int AS sessions,
+          COALESCE(b.bookings, 0)::int AS bookings,
+          COALESCE(a.visits, 0)::int AS visits,
+          COALESCE(a.no_shows, 0)::int AS no_shows,
+          COALESCE(c.course_enrollments, 0)::int AS course_enrollments,
+          COALESCE(c.course_completions, 0)::int AS course_completions
+        FROM instructor_profiles ip
+        LEFT JOIN session_counts s ON s.user_id = ip.user_id
+        LEFT JOIN booking_counts b ON b.user_id = ip.user_id
+        LEFT JOIN attendance_counts a ON a.user_id = ip.user_id
+        LEFT JOIN course_counts c ON c.user_id = ip.user_id
+        WHERE COALESCE(s.sessions, 0) > 0 OR COALESCE(b.bookings, 0) > 0
+          OR COALESCE(a.visits, 0) > 0 OR COALESCE(a.no_shows, 0) > 0
+          OR COALESCE(c.course_enrollments, 0) > 0 OR COALESCE(c.course_completions, 0) > 0
+        ORDER BY COALESCE(a.visits, 0) DESC, COALESCE(b.bookings, 0) DESC, ip.display_name
+        LIMIT 50
+      `, [fromTimestamp, toTimestamp]) : Promise.resolve({ rows: [] }),
+      role === "partner_operations_admin" ? pool.query(`
+        WITH facility_campaigns AS (
+          SELECT c.campaign_name, 'facility'::text AS target_type, c.status,
+            COUNT(e.id) FILTER (WHERE e.event_type = 'impression')::int AS impressions,
+            COUNT(e.id) FILTER (WHERE e.event_type = 'click')::int AS clicks,
+            NULL::int AS conversions
+          FROM sponsored_facility_campaigns c
+          LEFT JOIN sponsored_placement_events e ON e.campaign_id = c.id
+            AND e.created_at >= $1 AND e.created_at < $2
+          GROUP BY c.id
+        ),
+        content_campaigns AS (
+          SELECT c.campaign_name, c.target_type, c.status,
+            COUNT(e.id) FILTER (WHERE e.event_type = 'impression')::int AS impressions,
+            COUNT(e.id) FILTER (WHERE e.event_type = 'click')::int AS clicks,
+            COUNT(e.id) FILTER (WHERE e.event_type = 'conversion')::int AS conversions
+          FROM sponsored_content_campaigns c
+          LEFT JOIN sponsored_content_placement_events e ON e.campaign_id = c.id
+            AND e.created_at >= $1 AND e.created_at < $2
+          GROUP BY c.id
+        )
+        SELECT * FROM facility_campaigns
+        UNION ALL
+        SELECT * FROM content_campaigns
+        ORDER BY impressions DESC, campaign_name
+        LIMIT 100
+      `, [fromTimestamp, toTimestamp]) : Promise.resolve({ rows: [] }),
     ]);
 
     const visit = visitTotals.rows[0] ?? {};
@@ -539,6 +692,43 @@ router.get("/analytics", async (req, res, next) => {
         averageRating: rating(row.average_rating),
         ratingCount: count(row.rating_count),
       })),
+      corporateUsage: corporateUsage.rows.map(row => {
+        const activeMembers = count(row.active_members);
+        const uniqueVisitors = count(row.unique_visitors);
+        return {
+          organizationName: String(row.organization_name),
+          activeMembers,
+          uniqueVisitors,
+          visits: count(row.visits),
+          bookings: count(row.bookings),
+          courseEnrollments: count(row.course_enrollments),
+          usageRate: percent(uniqueVisitors, activeMembers),
+        };
+      }),
+      instructorPerformance: instructorPerformance.rows.map(row => ({
+        instructorName: String(row.instructor_name),
+        sessions: count(row.sessions),
+        bookings: count(row.bookings),
+        visits: count(row.visits),
+        noShows: count(row.no_shows),
+        courseEnrollments: count(row.course_enrollments),
+        courseCompletions: count(row.course_completions),
+      })),
+      promotionPerformance: promotionPerformance.rows.map(row => {
+        const impressions = count(row.impressions);
+        const clicks = count(row.clicks);
+        const conversions = row.conversions == null ? null : count(row.conversions);
+        return {
+          campaignName: String(row.campaign_name),
+          targetType: String(row.target_type),
+          status: String(row.status),
+          impressions,
+          clicks,
+          conversions,
+          clickThroughRate: percent(clicks, impressions),
+          conversionRate: conversions === null ? null : percent(conversions, clicks),
+        };
+      }),
       unavailableMetrics: role === "partner_operations_admin" ? [...ADMIN_UNAVAILABLE] : [...PARTNER_UNAVAILABLE],
     });
     res.json(response);

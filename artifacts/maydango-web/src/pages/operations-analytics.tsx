@@ -25,7 +25,7 @@ const copy = {
     operational: 'Operational metrics', financial: 'Financial reporting',
     operationalNote: 'Visits, bookings, attendance and engagement in the selected period.',
     deferredTitle: 'Financial metrics are deferred', deferred: 'Financial reporting will be available after the payments milestone. These figures are not represented as zero.',
-    notTracked: 'Not tracked yet', notTrackedNote: 'Instructor, fraud, referral and promotion performance are not tracked yet.',
+    notTracked: 'Not tracked yet', notTrackedNote: 'Fraud alerts and referral performance are not tracked yet.',
     refresh: 'Refresh', autoRefresh: 'Auto-refresh', off: 'Off', every5: 'Every 5 minutes', every15: 'Every 15 minutes', every60: 'Every hour',
     lastUpdated: 'Last updated', from: 'From · Baghdad date', to: 'To · Baghdad date', apply: 'Apply dates',
     period: 'Selected period', baghdad: 'Asia/Baghdad calendar dates',
@@ -53,6 +53,12 @@ const copy = {
     noShowDefinition: 'No-shows ÷ confirmed or no-show attendance records.',
     cancellationDefinition: 'Cancelled bookings ÷ bookings created in this period.',
     occupancyDefinition: 'Confirmed visits ÷ capacity of scheduled sessions.',
+    corporateUsageTitle: 'Corporate usage', instructorPerformanceTitle: 'Instructor performance', promotionPerformanceTitle: 'Promotion performance',
+    organization: 'Organization', activeMembersLabel: 'Active members', uniqueVisitors: 'Unique visitors', usageRate: 'Usage rate',
+    instructorName: 'Instructor', sessions: 'Sessions', impressions: 'Impressions', clicks: 'Clicks', conversions: 'Verified conversions',
+    clickThroughRate: 'Click-through rate', conversionRate: 'Conversion rate', campaigns: 'Campaign', target: 'Content type', statusColumn: 'Status',
+    facilityTarget: 'Facility', eventTarget: 'Event', courseTarget: 'Course',
+    draftStatus: 'Draft', activeStatus: 'Active', pausedStatus: 'Paused',
   },
   ar: {
     title: 'تحليلات العمليات', subtitle: 'عرض موثوق للنشاط ضمن نطاق MaydanGo المصرح به.',
@@ -61,7 +67,7 @@ const copy = {
     operational: 'المؤشرات التشغيلية', financial: 'التقارير المالية',
     operationalNote: 'الزيارات والحجوزات والحضور والتفاعل خلال الفترة المحددة.',
     deferredTitle: 'المؤشرات المالية مؤجلة', deferred: 'ستتوفر التقارير المالية بعد إنجاز مرحلة المدفوعات. لا تُمثل هذه القيم على أنها صفر.',
-    notTracked: 'غير متتبعة بعد', notTrackedNote: 'أداء المدربين والاحتيال والإحالات والعروض الترويجية غير متتبع بعد.',
+    notTracked: 'غير متتبعة بعد', notTrackedNote: 'تنبيهات الاحتيال وأداء الإحالات غير متتبعين بعد.',
     refresh: 'تحديث', autoRefresh: 'التحديث التلقائي', off: 'إيقاف', every5: 'كل ٥ دقائق', every15: 'كل ١٥ دقيقة', every60: 'كل ساعة',
     lastUpdated: 'آخر تحديث', from: 'من · تاريخ بغداد', to: 'إلى · تاريخ بغداد', apply: 'تطبيق التواريخ',
     period: 'الفترة المحددة', baghdad: 'تواريخ تقويمية بتوقيت آسيا/بغداد',
@@ -89,6 +95,12 @@ const copy = {
     noShowDefinition: 'حالات عدم الحضور ÷ سجلات الحضور المؤكدة أو عدم الحضور.',
     cancellationDefinition: 'الحجوزات الملغاة ÷ الحجوزات المنشأة خلال هذه الفترة.',
     occupancyDefinition: 'الزيارات المؤكدة ÷ سعة الجلسات المجدولة.',
+    corporateUsageTitle: 'استخدام الشركات', instructorPerformanceTitle: 'أداء المدربين', promotionPerformanceTitle: 'أداء الحملات الترويجية',
+    organization: 'المؤسسة', activeMembersLabel: 'الأعضاء النشطون', uniqueVisitors: 'الزوار الفريدون', usageRate: 'معدل الاستخدام',
+    instructorName: 'المدرب', sessions: 'الجلسات', impressions: 'مرات الظهور', clicks: 'النقرات', conversions: 'التحويلات المؤكدة',
+    clickThroughRate: 'معدل النقر', conversionRate: 'معدل التحويل', campaigns: 'الحملة', target: 'نوع المحتوى', statusColumn: 'الحالة',
+    facilityTarget: 'مرفق', eventTarget: 'فعالية', courseTarget: 'دورة',
+    draftStatus: 'مسودة', activeStatus: 'نشطة', pausedStatus: 'متوقفة مؤقتاً',
   },
   ku: {
     title: 'شیکاریی کارگێڕی', subtitle: 'بینینێکی متمانەپێکراو بۆ چالاکی لە چوارچێوەی ڕێپێدراوی MaydanGo.',
@@ -97,7 +109,7 @@ const copy = {
     operational: 'پێوەرە کارگێڕییەکان', financial: 'ڕاپۆرتی دارایی',
     operationalNote: 'سەردان، حجز، ئامادەبوون و بەشداری لە ماوەی دیاریکراودا.',
     deferredTitle: 'پێوەرە داراییەکان دواخراون', deferred: 'ڕاپۆرتی دارایی دوای تەواوبوونی قۆناغی پارەدان بەردەست دەبێت. ئەم نرخانە وەک سفر نیشان نادرێن.',
-    notTracked: 'هێشتا چاودێری ناکرێت', notTrackedNote: 'کارایی ڕاهێنەر، ساختەکاری، ڕەوانەکردن و بانگەشە هێشتا چاودێری ناکرێت.',
+    notTracked: 'هێشتا چاودێری ناکرێت', notTrackedNote: 'ئاگادارکردنەوەی ساختەکاری و کارایی ڕەوانەکردن هێشتا چاودێری ناکرێت.',
     refresh: 'نوێکردنەوە', autoRefresh: 'نوێکردنەوەی خۆکار', off: 'ناچالاک', every5: 'هەر ٥ خولەک', every15: 'هەر ١٥ خولەک', every60: 'هەر کاتژمێرێک',
     lastUpdated: 'دوایین نوێکردنەوە', from: 'لە · بەرواری بەغدا', to: 'تا · بەرواری بەغدا', apply: 'جێبەجێکردنی بەروار',
     period: 'ماوەی هەڵبژێردراو', baghdad: 'بەرواری ڕۆژژمێریی بەغدا',
@@ -125,6 +137,12 @@ const copy = {
     noShowDefinition: 'نەهاتن ÷ تۆمارەکانی ئامادەبوونی پشتڕاستکراوە یان نەهاتن.',
     cancellationDefinition: 'حجزە هەڵوەشێنراوەکان ÷ حجزە دروستکراوەکان لەم ماوەیەدا.',
     occupancyDefinition: 'سەردانی پشتڕاستکراوە ÷ گنجایشی وانە پلاندانراوەکان.',
+    corporateUsageTitle: 'بەکارهێنانی کۆمپانیا', instructorPerformanceTitle: 'کارایی ڕاهێنەر', promotionPerformanceTitle: 'کارایی بانگەشە',
+    organization: 'دامەزراوە', activeMembersLabel: 'ئەندامانی چالاک', uniqueVisitors: 'سەردانکەرانی جیاواز', usageRate: 'ڕێژەی بەکارهێنان',
+    instructorName: 'ڕاهێنەر', sessions: 'دانیشتنەکان', impressions: 'جارانی پیشاندان', clicks: 'کرتەکان', conversions: 'گۆڕانکاریی پشتڕاستکراوە',
+    clickThroughRate: 'ڕێژەی کرتە', conversionRate: 'ڕێژەی گۆڕانکاری', campaigns: 'بانگەشە', target: 'جۆری ناوەڕۆک', statusColumn: 'دۆخ',
+    facilityTarget: 'شوێن', eventTarget: 'بۆنە', courseTarget: 'کۆرس',
+    draftStatus: 'ڕەشنووس', activeStatus: 'چالاک', pausedStatus: 'وەستێنراو',
   },
 } as const;
 
@@ -195,6 +213,9 @@ const downloadExcel = (data: OperationsAnalyticsResponse) => {
     ['Popular classes', data.popularClasses],
     ['Course performance', data.coursePerformance],
     ...(data.role === 'partner_operations_admin' ? [['Partner performance', data.partnerPerformance] as [string, Record<string, unknown>[]]] : []),
+    ...(data.role === 'partner_operations_admin' ? [['Corporate usage', data.corporateUsage] as [string, Record<string, unknown>[]]] : []),
+    ...(data.role === 'partner_operations_admin' ? [['Instructor performance', data.instructorPerformance] as [string, Record<string, unknown>[]]] : []),
+    ...(data.role === 'partner_operations_admin' ? [['Promotion performance', data.promotionPerformance] as [string, Record<string, unknown>[]]] : []),
   ];
   const escapeHtml = (value: unknown) => {
     let text = String(value ?? '');
@@ -500,6 +521,62 @@ export function OperationsAnalytics({ language = 'en' }: { language?: Language }
             ]), 'partner')}
           </article>}
         </section>}
+
+        {data?.role === 'partner_operations_admin' && <>
+          <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+            <article className={card}>
+              {sectionHeader('corporateUsageTitle', undefined, csvButton('corporate-usage', data.corporateUsage))}
+              {renderTable(
+                [t('organization'), t('activeMembersLabel'), t('uniqueVisitors'), t('visits'), t('bookings'), t('enrollments'), t('usageRate')],
+                data.corporateUsage.map(row => [
+                  row.organizationName,
+                  numberFormat(row.activeMembers, language),
+                  numberFormat(row.uniqueVisitors, language),
+                  numberFormat(row.visits, language),
+                  numberFormat(row.bookings, language),
+                  numberFormat(row.courseEnrollments, language),
+                  pctFormat(row.usageRate, language),
+                ]),
+                'corporate-usage',
+              )}
+            </article>
+            <article className={card}>
+              {sectionHeader('instructorPerformanceTitle', undefined, csvButton('instructor-performance', data.instructorPerformance))}
+              {renderTable(
+                [t('instructorName'), t('sessions'), t('bookings'), t('visits'), t('noShows'), t('enrollments'), t('completions')],
+                data.instructorPerformance.map(row => [
+                  row.instructorName,
+                  numberFormat(row.sessions, language),
+                  numberFormat(row.bookings, language),
+                  numberFormat(row.visits, language),
+                  numberFormat(row.noShows, language),
+                  numberFormat(row.courseEnrollments, language),
+                  numberFormat(row.courseCompletions, language),
+                ]),
+                'instructor-performance',
+              )}
+            </article>
+          </section>
+          <section>
+            <article className={card}>
+              {sectionHeader('promotionPerformanceTitle', undefined, csvButton('promotion-performance', data.promotionPerformance))}
+              {renderTable(
+                [t('campaigns'), t('target'), t('statusColumn'), t('impressions'), t('clicks'), t('conversions'), t('clickThroughRate'), t('conversionRate')],
+                data.promotionPerformance.map(row => [
+                  row.campaignName,
+                  row.targetType === 'facility' ? t('facilityTarget') : row.targetType === 'event' ? t('eventTarget') : t('courseTarget'),
+                  row.status === 'draft' ? t('draftStatus') : row.status === 'active' ? t('activeStatus') : t('pausedStatus'),
+                  numberFormat(row.impressions, language),
+                  numberFormat(row.clicks, language),
+                  row.conversions === null ? '—' : numberFormat(row.conversions, language),
+                  pctFormat(row.clickThroughRate, language),
+                  pctFormat(row.conversionRate, language),
+                ]),
+                'promotion-performance',
+              )}
+            </article>
+          </section>
+        </>}
 
         {data && <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <article data-testid="financial-metrics-deferred" className="rounded-2xl border border-[#e7d8bb] bg-[#fbf5e8] p-5">

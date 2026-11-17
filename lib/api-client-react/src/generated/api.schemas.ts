@@ -2260,6 +2260,87 @@ export type OperationsAnalyticsResponsePartnerPerformanceItem = {
   ratingCount: number;
 };
 
+export type OperationsAnalyticsResponseCorporateUsageItem = {
+  organizationName: string;
+  /** @minimum 0 */
+  activeMembers: number;
+  /** @minimum 0 */
+  uniqueVisitors: number;
+  /** @minimum 0 */
+  visits: number;
+  /** @minimum 0 */
+  bookings: number;
+  /** @minimum 0 */
+  courseEnrollments: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  usageRate: number | null;
+};
+
+export type OperationsAnalyticsResponseInstructorPerformanceItem = {
+  instructorName: string;
+  /** @minimum 0 */
+  sessions: number;
+  /** @minimum 0 */
+  bookings: number;
+  /** @minimum 0 */
+  visits: number;
+  /** @minimum 0 */
+  noShows: number;
+  /** @minimum 0 */
+  courseEnrollments: number;
+  /** @minimum 0 */
+  courseCompletions: number;
+};
+
+export type OperationsAnalyticsResponsePromotionPerformanceItemTargetType = typeof OperationsAnalyticsResponsePromotionPerformanceItemTargetType[keyof typeof OperationsAnalyticsResponsePromotionPerformanceItemTargetType];
+
+
+export const OperationsAnalyticsResponsePromotionPerformanceItemTargetType = {
+  facility: 'facility',
+  event: 'event',
+  course: 'course',
+} as const;
+
+export type OperationsAnalyticsResponsePromotionPerformanceItemStatus = typeof OperationsAnalyticsResponsePromotionPerformanceItemStatus[keyof typeof OperationsAnalyticsResponsePromotionPerformanceItemStatus];
+
+
+export const OperationsAnalyticsResponsePromotionPerformanceItemStatus = {
+  draft: 'draft',
+  active: 'active',
+  paused: 'paused',
+} as const;
+
+export type OperationsAnalyticsResponsePromotionPerformanceItem = {
+  campaignName: string;
+  targetType: OperationsAnalyticsResponsePromotionPerformanceItemTargetType;
+  status: OperationsAnalyticsResponsePromotionPerformanceItemStatus;
+  /** @minimum 0 */
+  impressions: number;
+  /** @minimum 0 */
+  clicks: number;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  conversions: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  clickThroughRate: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  conversionRate: number | null;
+};
+
 export type OperationsAnalyticsResponseUnavailableMetricsItem = typeof OperationsAnalyticsResponseUnavailableMetricsItem[keyof typeof OperationsAnalyticsResponseUnavailableMetricsItem];
 
 
@@ -2293,6 +2374,9 @@ export interface OperationsAnalyticsResponse {
   popularClasses: OperationsAnalyticsResponsePopularClassesItem[];
   coursePerformance: OperationsAnalyticsResponseCoursePerformanceItem[];
   partnerPerformance: OperationsAnalyticsResponsePartnerPerformanceItem[];
+  corporateUsage: OperationsAnalyticsResponseCorporateUsageItem[];
+  instructorPerformance: OperationsAnalyticsResponseInstructorPerformanceItem[];
+  promotionPerformance: OperationsAnalyticsResponsePromotionPerformanceItem[];
   unavailableMetrics: OperationsAnalyticsResponseUnavailableMetricsItem[];
 }
 

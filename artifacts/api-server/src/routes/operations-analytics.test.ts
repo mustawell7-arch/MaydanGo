@@ -4,7 +4,11 @@ import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
 import { eq, inArray } from "drizzle-orm";
 import express from "express";
-import { attendance, db, offerings, operators, partners, pool, reservations } from "@workspace/db";
+import {
+  attendance, corporateOrganizations, db, instructorContentDrafts, instructorOfferingAssignments,
+  instructorProfiles, memberships, offerings, operators, partners, pool, reservations,
+  sponsoredContentCampaigns, sponsoredContentPlacementEvents,
+} from "@workspace/db";
 import operationsAnalyticsRouter from "./operations-analytics";
 
 const prefix = `analytics-${randomUUID()}`;
@@ -15,6 +19,11 @@ const otherPartnerUser = `${prefix}-other-user`;
 const adminUser = `${prefix}-admin`;
 const financeUser = `${prefix}-finance`;
 const userId = `${prefix}-member`;
+const instructorUserId = `${prefix}-instructor`;
+const instructorDraftId = randomUUID();
+const instructorProfileId = randomUUID();
+const corporateId = `${prefix}-corporate`;
+const sponsoredCampaignId = randomUUID();
 const offeringIds = [1, 2, 3].map(() => randomUUID());
 const reservationIds = offeringIds.map(() => randomUUID());
 let server: Server | null = null;
@@ -52,6 +61,13 @@ async function call(user: string | undefined, date = iraqToday()) {
 
 after(async () => {
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
+  await db.delete(sponsoredContentPlacementEvents).where(eq(sponsoredContentPlacementEvents.campaignId, sponsoredCampaignId));
+  await db.delete(sponsoredContentCampaigns).where(eq(sponsoredContentCampaigns.id, sponsoredCampaignId));
+  await db.delete(instructorOfferingAssignments).where(inArray(instructorOfferingAssignments.offeringId, offeringIds));
+  await db.delete(memberships).where(eq(memberships.userId, userId));
+  await db.delete(instructorProfiles).where(eq(instructorProfiles.id, instructorProfileId));
+  await db.delete(instructorContentDrafts).where(eq(instructorContentDrafts.id, instructorDraftId));
+  await db.delete(corporateOrganizations).where(eq(corporateOrganizations.id, corporateId));
   await db.delete(attendance).where(inArray(attendance.offeringId, offeringIds));
   await db.delete(reservations).where(inArray(reservations.offeringId, offeringIds));
   await db.delete(offerings).where(inArray(offerings.id, offeringIds));
@@ -75,6 +91,40 @@ test("analytics are aggregated, date-bounded, and scoped to each approved partne
   const now = new Date();
   const endsAt = new Date(now.getTime() + 60 * 60_000);
   const cancellationDeadline = new Date(now.getTime() - 60_000);
+  await db.insert(corporateOrganizations).values({
+    id: corporateId,
+    name: `${prefix} Corporate`,
+    status: "active",
+    createdBy: adminUser,
+  });
+  await db.insert(memberships).values({
+    userId,
+    scope: "live",
+    status: "active",
+    paymentStatus: "not_required",
+    tier: "M",
+    source: "corporate",
+    billingId: null,
+    corporateId,
+    startsAt: new Date(now.getTime() - 60_000),
+    endsAt: new Date(now.getTime() + 86_400_000),
+    rules: { quota: 1, dailyLimit: 1, corporateId },
+  });
+  await db.insert(instructorContentDrafts).values({
+    id: instructorDraftId,
+    instructorUserId,
+    contentType: "profile",
+    payload: {},
+    status: "approved",
+  });
+  await db.insert(instructorProfiles).values({
+    id: instructorProfileId,
+    userId: instructorUserId,
+    sourceDraftId: instructorDraftId,
+    displayName: `${prefix} Instructor`,
+    biography: "Approved analytics fixture",
+    approvedBy: adminUser,
+  });
   await db.insert(offerings).values(offeringIds.map((id, index) => ({
     id,
     kind: "facility",
@@ -96,6 +146,12 @@ test("analytics are aggregated, date-bounded, and scoped to each approved partne
     cancellationDeadline,
     capacity: 10,
   })));
+  await db.insert(instructorOfferingAssignments).values({
+    id: randomUUID(),
+    userId: instructorUserId,
+    offeringId: offeringIds[0],
+    assignedBy: adminUser,
+  });
   await db.insert(reservations).values(reservationIds.map((id, index) => ({
     id,
     userId: index === 2 ? `${prefix}-other-member` : userId,
@@ -113,6 +169,27 @@ test("analytics are aggregated, date-bounded, and scoped to each approved partne
     status: "confirmed",
     settlementEligible: true,
   })));
+  await db.insert(sponsoredContentCampaigns).values({
+    id: sponsoredCampaignId,
+    campaignName: `${prefix} Sponsored event`,
+    targetType: "event",
+    targetId: offeringIds[0],
+    targetName: `${prefix} Sponsored target`,
+    partnerId,
+    city: "Erbil",
+    placementTypes: ["featured_event"],
+    targetMembershipTiers: [],
+    startsAt: new Date(now.getTime() - 60_000),
+    endsAt: new Date(now.getTime() + 86_400_000),
+    status: "active",
+    createdBy: adminUser,
+    updatedBy: adminUser,
+  });
+  await db.insert(sponsoredContentPlacementEvents).values([
+    { id: randomUUID(), campaignId: sponsoredCampaignId, eventType: "impression", placementType: "featured_event", createdAt: now },
+    { id: randomUUID(), campaignId: sponsoredCampaignId, eventType: "click", placementType: "featured_event", createdAt: now },
+    { id: randomUUID(), campaignId: sponsoredCampaignId, eventType: "conversion", placementType: "featured_event", referenceId: reservationIds[0], createdAt: now },
+  ]);
 
   server = app.listen(0, "127.0.0.1");
   await new Promise<void>(resolve => server!.once("listening", resolve));
@@ -128,6 +205,9 @@ test("analytics are aggregated, date-bounded, and scoped to each approved partne
   assert.equal(partnerResult.data.summary.retentionRate, 100);
   assert.equal(partnerResult.data.summary.courseEnrollments, null);
   assert.equal(partnerResult.data.partnerPerformance.length, 0);
+  assert.equal(partnerResult.data.corporateUsage.length, 0);
+  assert.equal(partnerResult.data.instructorPerformance.length, 0);
+  assert.equal(partnerResult.data.promotionPerformance.length, 0);
   assert.ok(!JSON.stringify(partnerResult.data).includes(userId));
 
   const adminResult = await call(adminUser);
@@ -136,7 +216,40 @@ test("analytics are aggregated, date-bounded, and scoped to each approved partne
   assert.equal(adminResult.data.summary.visits, 3);
   assert.equal(adminResult.data.summary.activeSubscriptions >= 0, true);
   assert.ok(adminResult.data.unavailableMetrics.includes("revenue"));
+  assert.equal(adminResult.data.unavailableMetrics.includes("instructor_performance"), false);
+  assert.equal(adminResult.data.unavailableMetrics.includes("promotion_performance"), false);
   assert.equal(adminResult.data.partnerPerformance.length, 2);
+  assert.deepEqual(adminResult.data.corporateUsage, [{
+    organizationName: `${prefix} Corporate`,
+    activeMembers: 1,
+    uniqueVisitors: 1,
+    visits: 2,
+    bookings: 2,
+    courseEnrollments: 0,
+    usageRate: 100,
+  }]);
+  const instructor = adminResult.data.instructorPerformance.find((row: { instructorName: string }) =>
+    row.instructorName === `${prefix} Instructor`);
+  assert.deepEqual(instructor, {
+    instructorName: `${prefix} Instructor`,
+    sessions: 1,
+    bookings: 1,
+    visits: 1,
+    noShows: 0,
+    courseEnrollments: 0,
+    courseCompletions: 0,
+  });
+  assert.deepEqual(adminResult.data.promotionPerformance.find((row: { campaignName: string }) =>
+    row.campaignName === `${prefix} Sponsored event`), {
+    campaignName: `${prefix} Sponsored event`,
+    targetType: "event",
+    status: "active",
+    impressions: 1,
+    clicks: 1,
+    conversions: 1,
+    clickThroughRate: 100,
+    conversionRate: 100,
+  });
   assert.ok(!JSON.stringify(adminResult.data).includes(userId));
 
   const invalidRange = await call(adminUser, "2026-02-31");

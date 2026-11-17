@@ -3968,7 +3968,7 @@ components:
     OperationsAnalyticsResponse:
       type: object
       additionalProperties: false
-      required: [role, scopeName, period, summary, trend, facilityPerformance, popularClasses, coursePerformance, partnerPerformance, unavailableMetrics]
+      required: [role, scopeName, period, summary, trend, facilityPerformance, popularClasses, coursePerformance, partnerPerformance, corporateUsage, instructorPerformance, promotionPerformance, unavailableMetrics]
       properties:
         role: { type: string, enum: [partner_operations_admin, partner] }
         scopeName: { type: string }
@@ -4074,6 +4074,49 @@ components:
               cancellationRate: { type: ["number", "null"], minimum: 0, maximum: 100 }
               averageRating: { type: ["number", "null"], minimum: 0, maximum: 5 }
               ratingCount: { type: integer, minimum: 0 }
+        corporateUsage:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [organizationName, activeMembers, uniqueVisitors, visits, bookings, courseEnrollments, usageRate]
+            properties:
+              organizationName: { type: string }
+              activeMembers: { type: integer, minimum: 0 }
+              uniqueVisitors: { type: integer, minimum: 0 }
+              visits: { type: integer, minimum: 0 }
+              bookings: { type: integer, minimum: 0 }
+              courseEnrollments: { type: integer, minimum: 0 }
+              usageRate: { type: ["number", "null"], minimum: 0, maximum: 100 }
+        instructorPerformance:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [instructorName, sessions, bookings, visits, noShows, courseEnrollments, courseCompletions]
+            properties:
+              instructorName: { type: string }
+              sessions: { type: integer, minimum: 0 }
+              bookings: { type: integer, minimum: 0 }
+              visits: { type: integer, minimum: 0 }
+              noShows: { type: integer, minimum: 0 }
+              courseEnrollments: { type: integer, minimum: 0 }
+              courseCompletions: { type: integer, minimum: 0 }
+        promotionPerformance:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [campaignName, targetType, status, impressions, clicks, conversions, clickThroughRate, conversionRate]
+            properties:
+              campaignName: { type: string }
+              targetType: { type: string, enum: [facility, event, course] }
+              status: { type: string, enum: [draft, active, paused] }
+              impressions: { type: integer, minimum: 0 }
+              clicks: { type: integer, minimum: 0 }
+              conversions: { type: ["integer", "null"], minimum: 0 }
+              clickThroughRate: { type: ["number", "null"], minimum: 0, maximum: 100 }
+              conversionRate: { type: ["number", "null"], minimum: 0, maximum: 100 }
         unavailableMetrics:
           type: array
           items:

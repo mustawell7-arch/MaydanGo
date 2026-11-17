@@ -2293,6 +2293,43 @@ export const getOperationsAnalyticsResponsePartnerPerformanceItemAverageRatingMa
 
 export const getOperationsAnalyticsResponsePartnerPerformanceItemRatingCountMin = 0;
 
+export const getOperationsAnalyticsResponseCorporateUsageItemActiveMembersMin = 0;
+
+export const getOperationsAnalyticsResponseCorporateUsageItemUniqueVisitorsMin = 0;
+
+export const getOperationsAnalyticsResponseCorporateUsageItemVisitsMin = 0;
+
+export const getOperationsAnalyticsResponseCorporateUsageItemBookingsMin = 0;
+
+export const getOperationsAnalyticsResponseCorporateUsageItemCourseEnrollmentsMin = 0;
+
+export const getOperationsAnalyticsResponseCorporateUsageItemUsageRateMin = 0;
+export const getOperationsAnalyticsResponseCorporateUsageItemUsageRateMax = 100;
+
+export const getOperationsAnalyticsResponseInstructorPerformanceItemSessionsMin = 0;
+
+export const getOperationsAnalyticsResponseInstructorPerformanceItemBookingsMin = 0;
+
+export const getOperationsAnalyticsResponseInstructorPerformanceItemVisitsMin = 0;
+
+export const getOperationsAnalyticsResponseInstructorPerformanceItemNoShowsMin = 0;
+
+export const getOperationsAnalyticsResponseInstructorPerformanceItemCourseEnrollmentsMin = 0;
+
+export const getOperationsAnalyticsResponseInstructorPerformanceItemCourseCompletionsMin = 0;
+
+export const getOperationsAnalyticsResponsePromotionPerformanceItemImpressionsMin = 0;
+
+export const getOperationsAnalyticsResponsePromotionPerformanceItemClicksMin = 0;
+
+export const getOperationsAnalyticsResponsePromotionPerformanceItemConversionsMin = 0;
+
+export const getOperationsAnalyticsResponsePromotionPerformanceItemClickThroughRateMin = 0;
+export const getOperationsAnalyticsResponsePromotionPerformanceItemClickThroughRateMax = 100;
+
+export const getOperationsAnalyticsResponsePromotionPerformanceItemConversionRateMin = 0;
+export const getOperationsAnalyticsResponsePromotionPerformanceItemConversionRateMax = 100;
+
 
 
 export const GetOperationsAnalyticsResponse = zod.object({
@@ -2368,6 +2405,34 @@ export const GetOperationsAnalyticsResponse = zod.object({
   "cancellationRate": zod.number().min(getOperationsAnalyticsResponsePartnerPerformanceItemCancellationRateMin).max(getOperationsAnalyticsResponsePartnerPerformanceItemCancellationRateMax).nullable(),
   "averageRating": zod.number().min(getOperationsAnalyticsResponsePartnerPerformanceItemAverageRatingMin).max(getOperationsAnalyticsResponsePartnerPerformanceItemAverageRatingMax).nullable(),
   "ratingCount": zod.int().min(getOperationsAnalyticsResponsePartnerPerformanceItemRatingCountMin)
+})),
+  "corporateUsage": zod.array(zod.object({
+  "organizationName": zod.string(),
+  "activeMembers": zod.int().min(getOperationsAnalyticsResponseCorporateUsageItemActiveMembersMin),
+  "uniqueVisitors": zod.int().min(getOperationsAnalyticsResponseCorporateUsageItemUniqueVisitorsMin),
+  "visits": zod.int().min(getOperationsAnalyticsResponseCorporateUsageItemVisitsMin),
+  "bookings": zod.int().min(getOperationsAnalyticsResponseCorporateUsageItemBookingsMin),
+  "courseEnrollments": zod.int().min(getOperationsAnalyticsResponseCorporateUsageItemCourseEnrollmentsMin),
+  "usageRate": zod.number().min(getOperationsAnalyticsResponseCorporateUsageItemUsageRateMin).max(getOperationsAnalyticsResponseCorporateUsageItemUsageRateMax).nullable()
+})),
+  "instructorPerformance": zod.array(zod.object({
+  "instructorName": zod.string(),
+  "sessions": zod.int().min(getOperationsAnalyticsResponseInstructorPerformanceItemSessionsMin),
+  "bookings": zod.int().min(getOperationsAnalyticsResponseInstructorPerformanceItemBookingsMin),
+  "visits": zod.int().min(getOperationsAnalyticsResponseInstructorPerformanceItemVisitsMin),
+  "noShows": zod.int().min(getOperationsAnalyticsResponseInstructorPerformanceItemNoShowsMin),
+  "courseEnrollments": zod.int().min(getOperationsAnalyticsResponseInstructorPerformanceItemCourseEnrollmentsMin),
+  "courseCompletions": zod.int().min(getOperationsAnalyticsResponseInstructorPerformanceItemCourseCompletionsMin)
+})),
+  "promotionPerformance": zod.array(zod.object({
+  "campaignName": zod.string(),
+  "targetType": zod.enum(['facility', 'event', 'course']),
+  "status": zod.enum(['draft', 'active', 'paused']),
+  "impressions": zod.int().min(getOperationsAnalyticsResponsePromotionPerformanceItemImpressionsMin),
+  "clicks": zod.int().min(getOperationsAnalyticsResponsePromotionPerformanceItemClicksMin),
+  "conversions": zod.int().min(getOperationsAnalyticsResponsePromotionPerformanceItemConversionsMin).nullable(),
+  "clickThroughRate": zod.number().min(getOperationsAnalyticsResponsePromotionPerformanceItemClickThroughRateMin).max(getOperationsAnalyticsResponsePromotionPerformanceItemClickThroughRateMax).nullable(),
+  "conversionRate": zod.number().min(getOperationsAnalyticsResponsePromotionPerformanceItemConversionRateMin).max(getOperationsAnalyticsResponsePromotionPerformanceItemConversionRateMax).nullable()
 })),
   "unavailableMetrics": zod.array(zod.enum(['membership_sales', 'renewals', 'membership_cancellations', 'churn', 'revenue', 'failed_payments', 'partner_cost', 'gross_margin', 'event_revenue', 'instructor_performance', 'referral_performance', 'promotion_performance', 'fraud_alerts', 'refund_rate', 'chargeback_rate', 'estimated_earnings', 'accounting_export']))
 })
