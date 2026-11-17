@@ -185,7 +185,10 @@ export function createAdminRbacMiddleware(
       res.once("finish", () => {
         if (res.statusCode < 200 || res.statusCode >= 300) return;
         void access.recordMutation!({ ...event, status: res.statusCode }).catch(error => {
-          console.error("Unable to record admin mutation audit event", error);
+          req.log.error(
+            { err: error, actorId: userId, path: event.path },
+            "Unable to record admin mutation audit event",
+          );
         });
       });
     }

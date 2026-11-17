@@ -34,6 +34,7 @@ MaydanGo connects people across Iraq with local sports, fitness, wellness, event
 - `lib/api-client-react/` and `lib/api-zod/` — generated API client and validation schemas.
 - `docs/technical-architecture.md` — current architecture, service coverage, and deferred systems.
 - `docs/database-entity-coverage.md` — Section 78 data-entity coverage and gaps.
+- `docs/security-controls.md` — Section 79 control status, scan results, and release blockers.
 
 ## Architecture decisions
 

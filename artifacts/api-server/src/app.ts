@@ -11,6 +11,7 @@ import { createRateLimitMiddleware } from "./middlewares/rate-limit";
 import paymentWebhookRouter from "./routes/payment-webhook";
 
 const app: Express = express();
+app.disable("x-powered-by");
 
 app.use(
   pinoHttp({
@@ -31,6 +32,13 @@ app.use(
     },
   }),
 );
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), geolocation=(), microphone=()");
+  next();
+});
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use((req, res, next) => {
   const origin = req.headers.origin;
