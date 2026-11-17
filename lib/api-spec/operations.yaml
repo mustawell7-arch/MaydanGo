@@ -5181,6 +5181,7 @@ components:
       required: [token]
       properties:
         token: { type: string, minLength: 32, maxLength: 256 }
+        expectedRole: { type: string, enum: [employee], description: "Optionally require the invitation to enroll the signed-in user as an employee." }
     CorporateInvitationAcceptance:
       type: object
       required: [organizationId, organizationName, role]

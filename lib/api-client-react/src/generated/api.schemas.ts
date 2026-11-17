@@ -3771,12 +3771,24 @@ export interface CorporatePortalResponse {
   myEnrollments: CorporateEmployeeEnrollment[];
 }
 
+/**
+ * Optionally require the invitation to enroll the signed-in user as an employee.
+ */
+export type CorporateInvitationAcceptanceInputExpectedRole = typeof CorporateInvitationAcceptanceInputExpectedRole[keyof typeof CorporateInvitationAcceptanceInputExpectedRole];
+
+
+export const CorporateInvitationAcceptanceInputExpectedRole = {
+  employee: 'employee',
+} as const;
+
 export interface CorporateInvitationAcceptanceInput {
   /**
      * @minLength 32
      * @maxLength 256
      */
   token: string;
+  /** Optionally require the invitation to enroll the signed-in user as an employee. */
+  expectedRole?: CorporateInvitationAcceptanceInputExpectedRole;
 }
 
 export type CorporateInvitationAcceptanceRole = typeof CorporateInvitationAcceptanceRole[keyof typeof CorporateInvitationAcceptanceRole];

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Image, Platform, Share, View, StyleSheet } from 'react-native';
 import { File, Paths } from 'expo-file-system';
 import { fetch as expoFetch } from 'expo/fetch';
@@ -12,6 +12,7 @@ import {
   getMemberPrivacyRequestExport,
   getGetMemberPrivacyRequestsQueryKey,
   useAttributeMemberReferral,
+  useAcceptCorporateInvitation,
   useCreateMemberPrivacyRequest,
   useGetMemberConsents,
   useGetMemberProfilePhoto,
@@ -45,8 +46,9 @@ export default function AccountScreen() {
   const { signIn } = useSignIn();
   const { signUp } = useSignUp();
   const { startSSOFlow } = useSSO();
-  const params = useLocalSearchParams<{ ref?: string | string[] }>();
+  const params = useLocalSearchParams<{ ref?: string | string[]; corp?: string | string[] }>();
   const incomingReferralCode = Array.isArray(params.ref) ? params.ref[0] : params.ref;
+  const incomingCorporateCode = Array.isArray(params.corp) ? params.corp[0] : params.corp;
   const queryClient = useQueryClient();
   const profilePhotoQueryKey = [...getGetMemberProfilePhotoQueryKey(), user?.id ?? 'signed-out'];
   const profilePhoto = useGetMemberProfilePhoto({
@@ -62,6 +64,7 @@ export default function AccountScreen() {
   const createPrivacyRequest = useCreateMemberPrivacyRequest();
   const saveConsents = useSaveMemberConsents();
   const attributeReferral = useAttributeMemberReferral();
+  const acceptCorporateInvitation = useAcceptCorporateInvitation();
   const requestProfilePhotoUpload = useRequestMemberProfilePhotoUploadUrl();
   const completeProfilePhotoUpload = useCompleteMemberProfilePhotoUpload();
   const deleteProfilePhoto = useDeleteMemberProfilePhoto();
@@ -71,6 +74,9 @@ export default function AccountScreen() {
   const [code, setCode] = useState('');
   const [referralCode, setReferralCode] = useState(incomingReferralCode?.toUpperCase() ?? '');
   const [referralNotice, setReferralNotice] = useState('');
+  const [corporateCode, setCorporateCode] = useState(incomingCorporateCode ?? '');
+  const [corporateCodeNotice, setCorporateCodeNotice] = useState('');
+  const corporateInvitationAttempt = useRef<string | null>(null);
   const [verify, setVerify] = useState(false);
   const [reset, setReset] = useState<'none' | 'code' | 'password'>('none');
   const [busy, setBusy] = useState(false);
@@ -89,6 +95,9 @@ export default function AccountScreen() {
   useEffect(() => {
     if (incomingReferralCode) setReferralCode(incomingReferralCode.toUpperCase());
   }, [incomingReferralCode]);
+  useEffect(() => {
+    if (incomingCorporateCode) setCorporateCode(incomingCorporateCode);
+  }, [incomingCorporateCode]);
   useEffect(() => {
     let active = true;
     if (isSignedIn !== true) {
@@ -111,14 +120,54 @@ export default function AccountScreen() {
   const check = (result: { error?: { message?: string; longMessage?: string } | null }) => {
     if (result.error) throw result.error;
   };
+  const routeAfterAuthentication = () => {
+    if (mode !== 'signup') {
+      router.replace('/(tabs)/bookings');
+      return;
+    }
+    const signupParams: { ref?: string; corp?: string } = {};
+    if (referralCode.trim()) signupParams.ref = referralCode.trim().toUpperCase();
+    if (corporateCode.trim()) signupParams.corp = corporateCode.trim();
+    router.replace(Object.keys(signupParams).length
+      ? { pathname: '/account', params: signupParams }
+      : '/account');
+  };
+  const clearCorporateCodeFromRoute = () => {
+    router.replace(incomingReferralCode
+      ? { pathname: '/account', params: { ref: incomingReferralCode } }
+      : '/account');
+  };
+  const applyCorporateCode = (token = corporateCode.trim()) => {
+    setCorporateCodeNotice('');
+    if (token.length < 32) {
+      setCorporateCodeNotice(translate(app.language, 'memberCorporateCodeError'));
+      clearCorporateCodeFromRoute();
+      return;
+    }
+    acceptCorporateInvitation.mutate({ data: { token, expectedRole: 'employee' } }, {
+      onSuccess: response => {
+        setCorporateCode('');
+        setCorporateCodeNotice(`${translate(app.language, 'memberCorporateCodeSuccess')} ${response.organizationName}`);
+        clearCorporateCodeFromRoute();
+      },
+      onError: () => {
+        setCorporateCodeNotice(translate(app.language, 'memberCorporateCodeError'));
+        clearCorporateCodeFromRoute();
+      },
+    });
+  };
+  useEffect(() => {
+    const token = incomingCorporateCode?.trim();
+    if (isSignedIn !== true || !token || corporateInvitationAttempt.current === token) return;
+    corporateInvitationAttempt.current = token;
+    applyCorporateCode(token);
+  }, [isSignedIn, incomingCorporateCode]);
   const finish = async () => {
     const attempt = mode === 'signup' ? signUp : signIn;
     if (attempt.status !== 'complete') throw new Error('Additional verification is required. Check your details or use another sign-in method.');
     check(await attempt.finalize({ navigate: ({ session }) => {
       if (session?.currentTask) { setError('Your account requires an additional verification step.'); return; }
-      router.replace(mode === 'signup' && referralCode.trim()
-        ? { pathname: '/account', params: { ref: referralCode.trim().toUpperCase() } }
-        : mode === 'signup' ? '/account' : '/(tabs)/bookings');
+      routeAfterAuthentication();
     } }));
   };
   const submit = () => run(async () => {
@@ -474,6 +523,35 @@ export default function AccountScreen() {
           {referralNotice ? <Text accessibilityRole="alert" style={{ color: c.primary }}>{referralNotice}</Text> : null}
         </View>
         <View style={[styles.privacyCard, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={{ color: c.foreground, fontWeight: '800', fontSize: 18 }}>{translate(app.language, 'memberCorporateCodeTitle')}</Text>
+          <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'memberCorporateCodeIntro')}</Text>
+          <TextInput
+            inputDirection="ltr"
+            testID="member-corporate-code"
+            accessibilityLabel={translate(app.language, 'memberCorporateCodeInput')}
+            placeholder={translate(app.language, 'memberCorporateCodeInput')}
+            placeholderTextColor={c.mutedForeground}
+            value={corporateCode}
+            onChangeText={value => { setCorporateCode(value); setCorporateCodeNotice(''); }}
+            autoCapitalize="none"
+            autoCorrect={false}
+            maxLength={128}
+            style={[styles.input, { color: c.foreground, borderColor: c.border }]}
+          />
+          <Pressable
+            accessibilityRole="button"
+            testID="member-corporate-code-apply"
+            disabled={acceptCorporateInvitation.isPending || corporateCode.trim().length < 32}
+            onPress={() => applyCorporateCode()}
+            style={[styles.button, { backgroundColor: c.secondary, opacity: acceptCorporateInvitation.isPending || corporateCode.trim().length < 32 ? .6 : 1 }]}
+          >
+            <Text style={{ color: c.secondaryForeground, fontWeight: '700' }}>
+              {translate(app.language, acceptCorporateInvitation.isPending ? 'memberCorporateCodeApplying' : 'memberCorporateCodeApply')}
+            </Text>
+          </Pressable>
+          {corporateCodeNotice ? <Text accessibilityRole="alert" style={{ color: corporateCodeNotice.startsWith(translate(app.language, 'memberCorporateCodeSuccess')) ? c.primary : c.destructive }}>{corporateCodeNotice}</Text> : null}
+        </View>
+        <View style={[styles.privacyCard, { backgroundColor: c.card, borderColor: c.border }]}>
           <Text style={{ color: c.foreground, fontWeight: '800', fontSize: 18 }}>{translate(app.language, 'memberPhotoTitle')}</Text>
           <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'memberPhotoIntro')}</Text>
           <View style={{ alignItems: 'center', gap: 10, paddingVertical: 6 }}>
@@ -641,7 +719,11 @@ export default function AccountScreen() {
       </> : <>
         <Text style={{ color: c.mutedForeground }}>Sign in to keep reservations securely on your account across devices.</Text>
         {!verify && reset !== 'code' ? <>
-           {mode === 'signup' ? <TextInput inputDirection="ltr" testID="auth-referral-code" accessibilityLabel={translate(app.language, 'memberReferralsInput')} placeholder={translate(app.language, 'memberReferralsInput')} placeholderTextColor={c.mutedForeground} value={referralCode} onChangeText={value => setReferralCode(value.toUpperCase())} autoCapitalize="characters" maxLength={10} style={[styles.input, { color: c.foreground, borderColor: c.border }]} /> : null}
+           {mode === 'signup' ? <>
+             <TextInput inputDirection="ltr" testID="auth-referral-code" accessibilityLabel={translate(app.language, 'memberReferralsInput')} placeholder={translate(app.language, 'memberReferralsInput')} placeholderTextColor={c.mutedForeground} value={referralCode} onChangeText={value => setReferralCode(value.toUpperCase())} autoCapitalize="characters" maxLength={10} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
+             <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'memberCorporateCodeSignupHint')}</Text>
+             <TextInput inputDirection="ltr" testID="auth-corporate-code" accessibilityLabel={translate(app.language, 'memberCorporateCodeInput')} placeholder={translate(app.language, 'memberCorporateCodeInput')} placeholderTextColor={c.mutedForeground} value={corporateCode} onChangeText={value => setCorporateCode(value)} autoCapitalize="none" autoCorrect={false} maxLength={128} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
+           </> : null}
           <TextInput inputDirection="ltr" testID="auth-email" accessibilityLabel="Email address" placeholder="Email address" placeholderTextColor={c.mutedForeground} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
           <TextInput testID="auth-password" accessibilityLabel="Password" placeholder="Password" placeholderTextColor={c.mutedForeground} secureTextEntry value={password} onChangeText={setPassword} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
         </> : <TextInput testID="auth-code" accessibilityLabel="Email verification code" placeholder="Email verification code" placeholderTextColor={c.mutedForeground} value={code} onChangeText={setCode} keyboardType="number-pad" style={[styles.input, { color: c.foreground, borderColor: c.border }]} />}
@@ -656,9 +738,7 @@ export default function AccountScreen() {
           const result = await startSSOFlow({ strategy: 'oauth_google', redirectUrl: AuthSession.makeRedirectUri() });
           if (!result.createdSessionId || !result.setActive) throw new Error('Sign-in was not completed. Try email and password.');
           await result.setActive({ session: result.createdSessionId });
-          router.replace(mode === 'signup' && referralCode.trim()
-            ? { pathname: '/account', params: { ref: referralCode.trim().toUpperCase() } }
-            : mode === 'signup' ? '/account' : '/(tabs)/bookings');
+          routeAfterAuthentication();
         }))}
         <Pressable onPress={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setVerify(false); setReset('none'); setError(''); signIn.reset(); signUp.reset(); }}>
           <Text style={{ color: c.primary }}>{mode === 'signin' ? 'New here? Create account' : 'Already registered? Sign in'}</Text>

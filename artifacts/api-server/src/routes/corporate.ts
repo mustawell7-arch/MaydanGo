@@ -224,6 +224,10 @@ export function createCorporateRouter(
       res.status(404).json({ message: "This invitation is invalid, expired, or already used." });
       return;
     }
+    if (parsed.data.expectedRole && candidate.role !== parsed.data.expectedRole) {
+      res.status(403).json({ message: "This is not an employee invitation." });
+      return;
+    }
     if (!verifiedEmails.includes(normalizeEmail(candidate.email))) {
       res.status(403).json({ message: "Sign in with the verified email address that received this invitation." });
       return;
@@ -234,6 +238,9 @@ export function createCorporateRouter(
         .where(eq(corporateInvitations.id, candidate.id)).for("update");
       if (!invitation || invitation.acceptedAt || invitation.revokedAt || invitation.expiresAt <= now) {
         throw new CorporateHttpError(409, "This invitation has already been used or is no longer valid.");
+      }
+      if (parsed.data.expectedRole && invitation.role !== parsed.data.expectedRole) {
+        throw new CorporateHttpError(403, "This is not an employee invitation.");
       }
       const [organization] = await tx.select().from(corporateOrganizations)
         .where(and(

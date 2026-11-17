@@ -7712,7 +7712,8 @@ export const acceptCorporateInvitationBodyTokenMax = 256;
 
 
 export const AcceptCorporateInvitationBody = zod.object({
-  "token": zod.string().min(acceptCorporateInvitationBodyTokenMin).max(acceptCorporateInvitationBodyTokenMax)
+  "token": zod.string().min(acceptCorporateInvitationBodyTokenMin).max(acceptCorporateInvitationBodyTokenMax),
+  "expectedRole": zod.enum(['employee']).optional().describe('Optionally require the invitation to enroll the signed-in user as an employee.')
 })
 
 export const AcceptCorporateInvitationResponse = zod.object({

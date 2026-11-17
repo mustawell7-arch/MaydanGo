@@ -88,6 +88,10 @@ test("corporate invitations are admin-provisioned, email-verified, and company-s
   verifiedEmails.set(hrUserId, ["not-hr@northern.example"]);
   assert.equal((await call("/corporate/invitations/accept", hrUserId, "POST", { token: hrInvite })).status, 403);
   verifiedEmails.set(hrUserId, ["hr@northern.example"]);
+  assert.equal((await call("/corporate/invitations/accept", hrUserId, "POST", {
+    token: hrInvite,
+    expectedRole: "employee",
+  })).status, 403);
   const acceptedHr = await call("/corporate/invitations/accept", hrUserId, "POST", { token: hrInvite });
   assert.equal(acceptedHr.status, 200);
   assert.equal(acceptedHr.data.role, "hr_admin");
@@ -105,7 +109,10 @@ test("corporate invitations are admin-provisioned, email-verified, and company-s
   verifiedEmails.set(employeeUserId, ["different@northern.example"]);
   assert.equal((await call("/corporate/invitations/accept", employeeUserId, "POST", { token: firstInvite.token })).status, 403);
   verifiedEmails.set(employeeUserId, ["first@northern.example"]);
-  const acceptedEmployee = await call("/corporate/invitations/accept", employeeUserId, "POST", { token: firstInvite.token });
+  const acceptedEmployee = await call("/corporate/invitations/accept", employeeUserId, "POST", {
+    token: firstInvite.token,
+    expectedRole: "employee",
+  });
   assert.equal(acceptedEmployee.status, 200);
   assert.equal(acceptedEmployee.data.role, "employee");
 
