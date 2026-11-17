@@ -33,6 +33,7 @@ MaydanGo connects people across Iraq with local sports, fitness, wellness, event
 - `lib/api-spec/` — OpenAPI contract and API code generation.
 - `lib/api-client-react/` and `lib/api-zod/` — generated API client and validation schemas.
 - `docs/technical-architecture.md` — current architecture, service coverage, and deferred systems.
+- `docs/database-entity-coverage.md` — Section 78 data-entity coverage and gaps.
 
 ## Architecture decisions
 

@@ -110,3 +110,4 @@ The API is the shared authority for member eligibility, booking and attendance s
 - API contracts and generators: `lib/api-spec/`.
 - Mobile app: `artifacts/maydango/`.
 - Website and browser portals: `artifacts/maydango-web/`.
+- Section 78 entity-to-schema mapping: `docs/database-entity-coverage.md`.
