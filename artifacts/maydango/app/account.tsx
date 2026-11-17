@@ -194,7 +194,11 @@ export default function AccountScreen() {
     setProfilePhotoNotice('');
     try {
       const upload = await requestProfilePhotoUpload.mutateAsync({
-        data: { contentType: contentType as 'image/jpeg' | 'image/png' | 'image/webp', sizeBytes },
+        data: {
+          contentType: contentType as 'image/jpeg' | 'image/png' | 'image/webp',
+          sizeBytes,
+          consentConfirmed: true,
+        },
       });
       let uploadResponse: Response;
       if (Platform.OS === 'web' && asset.file) {

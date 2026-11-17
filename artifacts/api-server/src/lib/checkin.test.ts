@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import { GetAttendanceResponse } from "@workspace/api-zod";
 import { db, pool, partners, operators, offerings, facilityProfiles, guardianConsentDocuments, memberships, memberProfiles, memberProfilePhotos, memberConsentEvents, reservations, attendance, checkinPolicies, checkinChallenges, manualCheckinChallenges, attendanceEvents } from "@workspace/db";
-import { savePolicy, issueQr, scanQr, review, roster, scanInput, issueManualCheckinCode, recordManualCheckin, manualCheckinInput, isCheckinTravelViolation } from "./checkin";
+import { savePolicy, issueQr, scanQr, review, roster, getPartnerMemberPhotoPath, scanInput, issueManualCheckinCode, recordManualCheckin, manualCheckinInput, isCheckinTravelViolation } from "./checkin";
 import { BookingError, createReservation } from "./reservations";
 import app from "../app";
 import { DEFAULT_PLATFORM_SAFETY_RULES } from "./platform-rules";
@@ -192,6 +192,9 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     const parsedPhotoRoster = GetAttendanceResponse.safeParse(JSON.parse(JSON.stringify(authorizedPhotoRoster)));
     assert.equal(parsedPhotoRoster.success, true,
       parsedPhotoRoster.success ? undefined : JSON.stringify(parsedPhotoRoster.error.issues));
+    assert.match((await getPartnerMemberPhotoPath(staff, r)) ?? "", /^\/objects\/member-profile-photos\//);
+    assert.equal(await getPartnerMemberPhotoPath(stranger, r), null);
+    assert.equal(await getPartnerMemberPhotoPath(admin, r), null);
     assert.equal((await roster(stranger)).rows.length, 0);
   });
   let token: string;

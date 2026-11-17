@@ -570,3 +570,37 @@ export async function roster(actor: string) {
     events: events.filter(e => e.reservationId === r.id).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
   })) };
 }
+export async function getPartnerMemberPhotoPath(actor: string, reservationId: string) {
+  const [op] = await db.select().from(operators).where(eq(operators.userId, actor)).limit(1);
+  if (!op || !isPartnerOperatorRole(op.role) || !hasPartnerPermission(op.role, "attendance") || !op.partnerId) {
+    return null;
+  }
+  const [partner] = await db.select({ approved: partners.approved }).from(partners)
+    .where(eq(partners.id, op.partnerId)).limit(1);
+  if (!partner?.approved || await isAccessSuspended("partner", op.partnerId)) return null;
+
+  const [booking] = await db.select({
+    userId: reservations.userId,
+    status: reservations.status,
+    startsAt: offerings.startsAt,
+    policy: checkinPolicies,
+  }).from(reservations)
+    .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
+    .leftJoin(checkinPolicies, eq(checkinPolicies.offeringId, offerings.id))
+    .where(and(
+      eq(reservations.id, reservationId),
+      eq(offerings.partnerId, op.partnerId),
+      eq(offerings.scope, "live"),
+    )).limit(1);
+  if (!booking || booking.status !== "reserved" || !booking.policy) return null;
+
+  const now = new Date();
+  if (now < booking.policy.opensAt || now > booking.policy.closesAt) return null;
+  if (op.role === "partner_reception"
+    && iraqCalendarDate(booking.startsAt) !== iraqCalendarDate(now)) return null;
+  if (!await hasCurrentRequiredMemberConsent(booking.userId)) return null;
+
+  const [photo] = await db.select({ objectPath: memberProfilePhotos.objectPath })
+    .from(memberProfilePhotos).where(eq(memberProfilePhotos.userId, booking.userId)).limit(1);
+  return photo?.objectPath ?? null;
+}

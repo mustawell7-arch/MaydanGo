@@ -201,7 +201,7 @@ router.get("/profile-photo/file", async (req, res): Promise<void> => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Cache-Control", "private, no-store");
   file.createReadStream().on("error", error => {
-    req.log.error({ err: error, userId: getAuth(req).userId }, "Failed to stream member profile photo");
+    req.log.error({ err: error }, "Failed to stream member profile photo");
     if (!res.headersSent) res.status(404).end();
     else res.end();
   }).pipe(res);
@@ -293,7 +293,7 @@ router.post("/profile-photo/upload-url", async (req, res): Promise<void> => {
   if (!await ensureCurrentMemberConsent(req, res)) return;
   const parsed = RequestMemberProfilePhotoUploadUrlBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ message: "Choose a JPEG, PNG, or WebP image up to 5 MB." });
+    res.status(400).json({ message: "Confirm photo consent and choose a JPEG, PNG, or WebP image up to 5 MB." });
     return;
   }
   const userId = getAuth(req).userId!;
@@ -333,7 +333,7 @@ router.post("/profile-photo/complete", async (req, res): Promise<void> => {
   if (actualType !== parsed.data.contentType || actualSize !== parsed.data.sizeBytes
     || actualSize < 1 || actualSize > memberProfilePhotoMaxBytes) {
     try { await memberProfilePhotoStorage.deletePrivateFile(stagingPath); } catch (error) {
-      req.log.warn({ err: error, userId }, "Could not remove rejected member profile photo upload");
+      req.log.warn({ err: error }, "Could not remove rejected member profile photo upload");
     }
     res.status(400).json({ message: "The uploaded photo type or size did not match. Please choose it again." });
     return;
@@ -345,12 +345,20 @@ router.post("/profile-photo/complete", async (req, res): Promise<void> => {
   const [previous] = await db.select().from(memberProfilePhotos)
     .where(eq(memberProfilePhotos.userId, userId)).limit(1);
   const consentAt = new Date();
-  let [saved] = await db.insert(memberProfilePhotos).values({
-    userId, objectPath, consentVersion: memberProfilePhotoConsentVersion, consentAt, updatedAt: consentAt,
-  }).onConflictDoUpdate({
-    target: memberProfilePhotos.userId,
-    set: { objectPath, consentVersion: memberProfilePhotoConsentVersion, consentAt, updatedAt: consentAt },
-  }).returning();
+  let saved: typeof memberProfilePhotos.$inferSelect | undefined;
+  try {
+    [saved] = await db.insert(memberProfilePhotos).values({
+      userId, objectPath, consentVersion: memberProfilePhotoConsentVersion, consentAt, updatedAt: consentAt,
+    }).onConflictDoUpdate({
+      target: memberProfilePhotos.userId,
+      set: { objectPath, consentVersion: memberProfilePhotoConsentVersion, consentAt, updatedAt: consentAt },
+    }).returning();
+  } catch (error) {
+    try { await memberProfilePhotoStorage.deletePrivateFile(objectPath); } catch (cleanupError) {
+      req.log.warn({ err: cleanupError }, "Could not clean up a failed member profile photo save");
+    }
+    throw error;
+  }
   if (!saved) {
     await memberProfilePhotoStorage.deletePrivateFile(objectPath);
     res.status(500).json({ message: "The photo could not be saved. Please try again." });
@@ -358,7 +366,7 @@ router.post("/profile-photo/complete", async (req, res): Promise<void> => {
   }
   if (previous?.objectPath && previous.objectPath !== objectPath) {
     try { await memberProfilePhotoStorage.deletePrivateFile(previous.objectPath); } catch (error) {
-      req.log.warn({ err: error, userId }, "Could not remove replaced member profile photo");
+      req.log.warn({ err: error }, "Could not remove replaced member profile photo");
     }
   }
   res.json(CompleteMemberProfilePhotoUploadResponse.parse({
@@ -377,7 +385,7 @@ router.delete("/profile-photo", async (req, res): Promise<void> => {
       updatedAt: new Date(),
     }).where(eq(memberProfilePhotos.userId, userId));
     try { await memberProfilePhotoStorage.deletePrivateFile(previous.objectPath); } catch (error) {
-      req.log.warn({ err: error, userId }, "Could not remove deleted member profile photo file");
+      req.log.warn({ err: error }, "Could not remove deleted member profile photo file");
     }
   }
   res.json(DeleteMemberProfilePhotoResponse.parse({

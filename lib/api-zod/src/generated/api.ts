@@ -11694,7 +11694,8 @@ export const requestMemberProfilePhotoUploadUrlBodySizeBytesMax = 5000000;
 
 export const RequestMemberProfilePhotoUploadUrlBody = zod.object({
   "contentType": zod.enum(['image/jpeg', 'image/png', 'image/webp']),
-  "sizeBytes": zod.int().min(1).max(requestMemberProfilePhotoUploadUrlBodySizeBytesMax)
+  "sizeBytes": zod.int().min(1).max(requestMemberProfilePhotoUploadUrlBodySizeBytesMax),
+  "consentConfirmed": zod.literal(true)
 })
 
 export const RequestMemberProfilePhotoUploadUrlResponse = zod.object({

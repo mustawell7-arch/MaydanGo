@@ -213,7 +213,11 @@ paths:
         "200":
           description: The signed-in member's private profile photo
           content:
-            application/octet-stream:
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+            image/webp:
               schema: { type: string, format: binary }
         "404": { description: No profile photo is available }
   /attendance/{id}/member-photo:
@@ -224,7 +228,11 @@ paths:
         "200":
           description: A member photo shown only to authorized staff for this booking
           content:
-            application/octet-stream:
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+            image/webp:
               schema: { type: string, format: binary }
         "404": { description: No photo is available for this authorized booking }
         "403": { description: Attendance access is not permitted }
@@ -3433,10 +3441,11 @@ components:
     MemberProfilePhotoUploadInput:
       type: object
       additionalProperties: false
-      required: [contentType, sizeBytes]
+      required: [contentType, sizeBytes, consentConfirmed]
       properties:
         contentType: { type: string, enum: [image/jpeg, image/png, image/webp] }
         sizeBytes: { type: integer, minimum: 1, maximum: 5000000 }
+        consentConfirmed: { type: boolean, enum: [true] }
     MemberProfilePhotoUploadUrl:
       type: object
       additionalProperties: false

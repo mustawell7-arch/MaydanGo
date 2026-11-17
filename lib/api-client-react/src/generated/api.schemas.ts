@@ -1171,6 +1171,7 @@ export interface MemberProfilePhotoUploadInput {
      * @maximum 5000000
      */
   sizeBytes: number;
+  consentConfirmed: true;
 }
 
 export type MemberProfilePhotoUploadUrlContentType = typeof MemberProfilePhotoUploadUrlContentType[keyof typeof MemberProfilePhotoUploadUrlContentType];
