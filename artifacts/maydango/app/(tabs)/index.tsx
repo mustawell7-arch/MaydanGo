@@ -19,12 +19,16 @@ import { cityIdForFacility, facilityText } from '@/lib/facility-content';
 import {
   getGetPublicCatalogQueryKey,
   getGetPublicFacilitiesQueryKey,
+  getGetPublicSponsoredFacilitiesQueryKey,
+  useGetPublicSponsoredFacilities,
   useGetMemberCourses,
   useGetMemberLiveClasses,
   useGetMemberAllowances,
   useGetPublicCatalog,
   useGetPublicFacilities,
 } from '@workspace/api-client-react';
+import { useSponsoredFacilityTracking } from '@/lib/sponsored-facilities';
+import { findSponsoredFacilityPlacement } from '@/lib/sponsored-placement-match';
 
 export default function HomeScreen() {
   const colors = useColors();
@@ -34,6 +38,13 @@ export default function HomeScreen() {
   const facilitiesQuery = useGetPublicFacilities({
     query: { queryKey: getGetPublicFacilitiesQueryKey(), refetchInterval: 60_000 },
   });
+  const sponsoredQuery = useGetPublicSponsoredFacilities({
+    query: {
+      queryKey: [...getGetPublicSponsoredFacilitiesQueryKey(), app.signedIn],
+      refetchInterval: 60_000,
+    },
+  });
+  const sponsoredTracking = useSponsoredFacilityTracking();
   const eventsQuery = useGetPublicCatalog({
     query: { queryKey: getGetPublicCatalogQueryKey(), refetchInterval: 60_000 },
   });
@@ -79,11 +90,14 @@ export default function HomeScreen() {
       app.selectedCityId === 'all' || cityIdForFacility(facility.city) === app.selectedCityId,
     );
     return rows.sort((a, b) => {
+      const sponsoredOrder = Number(Boolean(findSponsoredFacilityPlacement(sponsoredQuery.data ?? [], b, 'home_featured')))
+        - Number(Boolean(findSponsoredFacilityPlacement(sponsoredQuery.data ?? [], a, 'home_featured')));
+      if (sponsoredOrder) return sponsoredOrder;
       const favoriteOrder = Number(app.favorites.includes(b.id)) - Number(app.favorites.includes(a.id));
       if (favoriteOrder) return favoriteOrder;
       return Number(b.openingStatus === 'open') - Number(a.openingStatus === 'open');
     }).slice(0, 4);
-  }, [facilitiesQuery.data, app.selectedCityId, app.favorites]);
+  }, [facilitiesQuery.data, sponsoredQuery.data, app.selectedCityId, app.favorites]);
   const upcomingBooking = useMemo(() => app.serverBookings
     .filter((booking) =>
       !['cancelled', 'partner_cancelled'].includes(String(booking.status)) &&
@@ -113,6 +127,9 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
+        onScroll={sponsoredTracking.checkVisible}
+        onContentSizeChange={sponsoredTracking.checkVisible}
+        scrollEventThrottle={250}
       >
         <View style={styles.topBar}>
           <View style={styles.brand}>
@@ -385,17 +402,35 @@ export default function HomeScreen() {
             <Text style={[styles.dashboardMeta, { color: colors.destructive }]}>{t('catalogLoadError')}</Text>
           </Pressable>
         ) : nearbyFacilities.length ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalCards}>
-            {nearbyFacilities.map((facility) => (
-            <FacilityCard
-              key={facility.id}
-              facility={facility}
-              favorite={app.favorites.includes(facility.id)}
-              onPress={() => router.push({ pathname: '/facility/[id]', params: { id: facility.id } })}
-              onToggleFavorite={() => app.toggleFavorite(facility.id)}
-              compact
-            />
-            ))}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalCards}
+            onScroll={sponsoredTracking.checkVisible} onContentSizeChange={sponsoredTracking.checkVisible} scrollEventThrottle={250}>
+            {nearbyFacilities.map((facility) => {
+              const placement = findSponsoredFacilityPlacement(
+                sponsoredQuery.data ?? [],
+                facility,
+                'home_featured',
+              );
+              return (
+                <View
+                  key={facility.id}
+                  ref={view => sponsoredTracking.register(facility.id, placement?.campaignId, 'home_featured', view)}
+                  collapsable={false}
+                  onLayout={sponsoredTracking.checkVisible}
+                >
+                  <FacilityCard
+                    facility={facility}
+                    favorite={app.favorites.includes(facility.id)}
+                    sponsoredLabel={placement ? t('sponsored') : undefined}
+                    onPress={() => {
+                      if (placement) sponsoredTracking.recordClick(placement.campaignId, 'home_featured');
+                      router.push({ pathname: '/facility/[id]', params: { id: facility.id } });
+                    }}
+                    onToggleFavorite={() => app.toggleFavorite(facility.id)}
+                    compact
+                  />
+                </View>
+              );
+            })}
           </ScrollView>
         ) : (
           <View style={[styles.emptyBooking, { backgroundColor: colors.secondary }]}>

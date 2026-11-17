@@ -25,9 +25,13 @@ import { absoluteApiAssetUrl } from '@/lib/live-api';
 import {
   getGetPublicCatalogQueryKey,
   getGetPublicFacilitiesQueryKey,
+  getGetPublicSponsoredFacilitiesQueryKey,
+  useGetPublicSponsoredFacilities,
   useGetPublicCatalog,
   useGetPublicFacilities,
 } from '@workspace/api-client-react';
+import { useSponsoredFacilityTracking } from '@/lib/sponsored-facilities';
+import { findSponsoredFacilityPlacement } from '@/lib/sponsored-placement-match';
 
 function FilterRow({
   title,
@@ -98,12 +102,33 @@ export default function ExploreScreen() {
   const facilitiesQuery = useGetPublicFacilities({
     query: { queryKey: getGetPublicFacilitiesQueryKey(), refetchInterval: 60_000 },
   });
+  const sponsoredQuery = useGetPublicSponsoredFacilities({
+    query: {
+      queryKey: [...getGetPublicSponsoredFacilitiesQueryKey(), app.signedIn],
+      enabled: kind === 'places',
+      refetchInterval: 60_000,
+    },
+  });
+  const sponsoredTracking = useSponsoredFacilityTracking();
   const eventsQuery = useGetPublicCatalog({
     query: { queryKey: getGetPublicCatalogQueryKey(), enabled: kind === 'events', refetchInterval: 60_000 },
   });
   const facilities = facilitiesQuery.data ?? [];
   const t = (key: Parameters<typeof translate>[1]) => translate(app.language, key);
   const currentCity = getCityLabel(app.selectedCityId, app.language);
+  const sponsoredPlacementForFacility = (facility: (typeof facilities)[number]) => {
+    const searchPlacement = findSponsoredFacilityPlacement(sponsoredQuery.data ?? [], facility, 'search_sponsored');
+    if (searchPlacement) return { placement: searchPlacement, placementType: 'search_sponsored' as const };
+    const categoryPlacement = findSponsoredFacilityPlacement(
+      sponsoredQuery.data ?? [],
+      facility,
+      'category_featured',
+      category === 'All' ? undefined : category,
+    );
+    return categoryPlacement
+      ? { placement: categoryPlacement, placementType: 'category_featured' as const }
+      : null;
+  };
   useEffect(() => {
     setCategory('All');
     setSelectedAmenity(null);
@@ -173,10 +198,13 @@ export default function ExploreScreen() {
       distanceLimit === null || location === null ||
       (item.distance !== null && item.distance <= distanceLimit),
     );
-    return location
-      ? withinDistance.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity)).map(item => item.facility)
-      : withinDistance.map(item => item.facility);
-  }, [facilitiesWithDistance, distanceLimit, location]);
+    return withinDistance.sort((a, b) => {
+      const campaignOrder = Number(Boolean(sponsoredPlacementForFacility(b.facility)))
+        - Number(Boolean(sponsoredPlacementForFacility(a.facility)));
+      if (campaignOrder) return campaignOrder;
+      return location ? (a.distance ?? Infinity) - (b.distance ?? Infinity) : 0;
+    }).map(item => item.facility);
+  }, [facilitiesWithDistance, sponsoredQuery.data, distanceLimit, location, category]);
   const mappedFacilities: FacilityMapPoint[] = useMemo(
     () => resultFacilities.flatMap(facility =>
       facility.latitude !== null && facility.longitude !== null
@@ -186,6 +214,9 @@ export default function ExploreScreen() {
     [resultFacilities],
   );
   const selectedMapFacility = resultFacilities.find(facility => facility.id === mapSelectedId) ?? null;
+  const selectedMapPlacement = selectedMapFacility
+    ? sponsoredPlacementForFacility(selectedMapFacility)
+    : null;
   useEffect(() => {
     if (!mapSelectedId || !mappedFacilities.some(point => point.id === mapSelectedId)) {
       setMapSelectedId(mappedFacilities[0]?.id ?? null);
@@ -273,7 +304,8 @@ export default function ExploreScreen() {
   return (
     <ScreenShell>
       <ScreenHeader eyebrow={currentCity} title={t('explore')} />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}
+        onScroll={sponsoredTracking.checkVisible} onContentSizeChange={sponsoredTracking.checkVisible} scrollEventThrottle={250}>
         <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Ionicons name="search" size={18} color={colors.mutedForeground} />
           <TextInput
@@ -556,15 +588,32 @@ export default function ExploreScreen() {
               ) : null}
               {selectedMapFacility ? (
                 <>
+                  <View
+                    ref={view => sponsoredTracking.register(
+                      selectedMapFacility.id,
+                      selectedMapPlacement?.placement.campaignId,
+                      selectedMapPlacement?.placementType,
+                      view,
+                    )}
+                    collapsable={false}
+                    onLayout={sponsoredTracking.checkVisible}
+                  >
                   <FacilityCard
                     facility={selectedMapFacility}
                     favorite={app.favorites.includes(selectedMapFacility.id)}
+                    sponsoredLabel={selectedMapPlacement ? t('sponsored') : undefined}
                     distanceLabel={location && selectedMapFacility.latitude !== null && selectedMapFacility.longitude !== null
                       ? formatDistance(distanceKm(location, { latitude: selectedMapFacility.latitude, longitude: selectedMapFacility.longitude }), app.language)
                       : undefined}
-                    onPress={() => router.push({ pathname: '/facility/[id]', params: { id: selectedMapFacility.id } })}
+                    onPress={() => {
+                      if (selectedMapPlacement) {
+                        sponsoredTracking.recordClick(selectedMapPlacement.placement.campaignId, selectedMapPlacement.placementType);
+                      }
+                      router.push({ pathname: '/facility/[id]', params: { id: selectedMapFacility.id } });
+                    }}
                     onToggleFavorite={() => app.toggleFavorite(selectedMapFacility.id)}
                   />
+                  </View>
                   <Pressable
                     accessibilityRole="button"
                     onPress={() => openDirections(selectedMapFacility)}
@@ -578,18 +627,38 @@ export default function ExploreScreen() {
             </View>
           ) : (
             <>
-              {resultFacilities.map((facility) => (
-              <FacilityCard
-                key={facility.id}
-                facility={facility}
-                favorite={app.favorites.includes(facility.id)}
-                distanceLabel={location && facility.latitude !== null && facility.longitude !== null
-                  ? formatDistance(distanceKm(location, { latitude: facility.latitude, longitude: facility.longitude }), app.language)
-                  : undefined}
-                onPress={() => router.push({ pathname: '/facility/[id]', params: { id: facility.id } })}
-                onToggleFavorite={() => app.toggleFavorite(facility.id)}
-              />
-            ))}
+              {resultFacilities.map(facility => {
+                const sponsored = sponsoredPlacementForFacility(facility);
+                return (
+                  <View
+                    key={facility.id}
+                    ref={view => sponsoredTracking.register(
+                      facility.id,
+                      sponsored?.placement.campaignId,
+                      sponsored?.placementType,
+                      view,
+                    )}
+                    collapsable={false}
+                    onLayout={sponsoredTracking.checkVisible}
+                  >
+                    <FacilityCard
+                      facility={facility}
+                      favorite={app.favorites.includes(facility.id)}
+                      sponsoredLabel={sponsored ? t('sponsored') : undefined}
+                      distanceLabel={location && facility.latitude !== null && facility.longitude !== null
+                        ? formatDistance(distanceKm(location, { latitude: facility.latitude, longitude: facility.longitude }), app.language)
+                        : undefined}
+                      onPress={() => {
+                        if (sponsored) {
+                          sponsoredTracking.recordClick(sponsored.placement.campaignId, sponsored.placementType);
+                        }
+                        router.push({ pathname: '/facility/[id]', params: { id: facility.id } });
+                      }}
+                      onToggleFavorite={() => app.toggleFavorite(facility.id)}
+                    />
+                  </View>
+                );
+              })}
             </>
           )}
         </View>

@@ -20,6 +20,7 @@ export function FacilityCard({
   onPress,
   onToggleFavorite,
   distanceLabel,
+  sponsoredLabel,
   compact = false,
 }: {
   facility: PublicFacility | SampleFacility;
@@ -27,6 +28,7 @@ export function FacilityCard({
   onPress: () => void;
   onToggleFavorite: () => void;
   distanceLabel?: string;
+  sponsoredLabel?: string;
   compact?: boolean;
 }) {
   const colors = useColors();
@@ -77,6 +79,16 @@ export function FacilityCard({
             color={favorite ? '#cf5a4d' : '#18352b'}
           />
         </Pressable>
+        {sponsoredLabel ? (
+          <View
+            pointerEvents="none"
+            testID={`sponsored-label-${facility.id}`}
+            style={[styles.sponsoredBadge, { backgroundColor: colors.primary, borderColor: colors.card }]}
+          >
+            <Ionicons name="megaphone-outline" size={12} color={colors.primaryForeground} />
+            <Text style={[styles.sponsoredText, { color: colors.primaryForeground }]}>{sponsoredLabel}</Text>
+          </View>
+        ) : null}
       </View>
       <Pressable accessibilityRole="button" onPress={onPress} style={styles.details}>
           <Text style={[styles.category, { color: colors.mutedForeground }]}>
@@ -129,6 +141,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.92)',
   },
+  sponsoredBadge: {
+    position: 'absolute',
+    start: 10,
+    top: 10,
+    minHeight: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderRadius: 15,
+  },
+  sponsoredText: { fontSize: 10, fontWeight: '800' },
   details: { padding: 15 },
   category: { fontSize: 12, fontWeight: '600', marginBottom: 5 },
   name: { fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
