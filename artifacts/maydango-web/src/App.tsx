@@ -286,6 +286,7 @@ const legacyTranslations: Record<Language, Copy> = {
     legalStatus: 'Informational status', legalStatusD: 'This content is an informational draft only. It is not legal advice and does not state that it has been reviewed or approved by a lawyer. It should be reviewed for the relevant jurisdictions before formal use.',
     legalDisclaimer: 'This content is an informational draft only. It is not legal advice and does not state that it has been reviewed or approved by a lawyer.',
     legalPolicyChecklist: 'Policies awaiting review', legalPolicyPending: 'This is a publication checklist, not a set of active terms. Each item needs review before it can be published as policy.', legalPublishedVersions: 'Published policy versions',
+    policySeoDescription: 'Read the published MaydanGo policy, including its version and effective date.',
     legalPendingLabel: 'Not published as active policy',
     legalTermsTitle: 'Terms of use', legalPrivacyTitle: 'Privacy policy', legalCookiesTitle: 'Cookie policy',
     legalBookingTitle: 'Booking policy', legalCancellationTitle: 'Cancellation policy', legalNoShowTitle: 'No-show policy',
@@ -435,6 +436,7 @@ const legacyTranslations: Record<Language, Copy> = {
     legalStatus: 'الطبيعة المعلوماتية', legalStatusD: 'هذا المحتوى مسودة معلوماتية فقط، وليس نصيحة قانونية ولا يدعي مراجعة محامٍ له أو اعتماده. ينبغي مراجعته وفق الاختصاصات ذات الصلة قبل استخدامه رسمياً.',
     legalDisclaimer: 'هذا المحتوى مسودة معلوماتية فقط، وليس نصيحة قانونية ولا يدعي مراجعته أو اعتماده من محامٍ.',
     legalPolicyChecklist: 'سياسات بانتظار المراجعة', legalPolicyPending: 'هذه قائمة تجهيز للنشر وليست مجموعة شروط سارية. يحتاج كل بند إلى مراجعة قبل نشره كسياسة.', legalPublishedVersions: 'إصدارات السياسات المنشورة',
+    policySeoDescription: 'اطّلع على سياسة MaydanGo المنشورة، بما في ذلك رقم الإصدار وتاريخ السريان.',
     legalPendingLabel: 'غير منشورة كسياسة سارية',
     legalTermsTitle: 'شروط الاستخدام', legalPrivacyTitle: 'سياسة الخصوصية', legalCookiesTitle: 'سياسة ملفات تعريف الارتباط',
     legalBookingTitle: 'سياسة الحجز', legalCancellationTitle: 'سياسة الإلغاء', legalNoShowTitle: 'سياسة عدم الحضور',
@@ -584,6 +586,7 @@ const legacyTranslations: Record<Language, Copy> = {
     legalStatus: 'بارودۆخی زانیاری', legalStatusD: 'ئەم ناوەڕۆکە تەنها ڕەشنووسی زانیارییە. ڕاوێژی یاسایی نییە و بانگەشەی پەسەندکردن یان پێداچوونەوەی پارێزەر ناکات. پێش بەکارهێنانی فەرمی، بەپێی دادوەریی پەیوەندیدار پێداچوونەوەی بۆ بکرێت.',
     legalDisclaimer: 'ئەم ناوەڕۆکە تەنها ڕەشنووسی زانیارییە، ڕاوێژی یاسایی نییە و بانگەشەی پێداچوونەوە یان پەسەندکردنی پارێزەر ناکات.',
     legalPolicyChecklist: 'سیاسەتەکان چاوەڕێی پێداچوونەوەن', legalPolicyPending: 'ئەمە تەنها لیستی ئامادەکاریی بڵاوکردنەوەیە، نەک کۆمەڵێک مەرجی کارپێکراو. هەر بابەتێک پێویستی بە پێداچوونەوە هەیە پێش ئەوەی وەک سیاسەت بڵاو بکرێتەوە.', legalPublishedVersions: 'وەشانە بڵاوکراوەکانی سیاسەت',
+    policySeoDescription: 'سیاسەتی بڵاوکراوەی MaydanGo بخوێنەوە، لەگەڵ ژمارەی وەشان و بەرواری جێبەجێبوون.',
     legalPendingLabel: 'وەک سیاسەتی کارپێکراو بڵاونەکراوەتەوە',
     legalTermsTitle: 'مەرجەکانی بەکارهێنان', legalPrivacyTitle: 'سیاسەتی تایبەتمەندی', legalCookiesTitle: 'سیاسەتی کوکی',
     legalBookingTitle: 'سیاسەتی حجزکردن', legalCancellationTitle: 'سیاسەتی هەڵوەشاندنەوە', legalNoShowTitle: 'سیاسەتی نەهاتن',
@@ -626,6 +629,14 @@ const routes = [
   ['/contact', 'contact'], ['/legal', 'legal'], ['/account', 'account'],
 ] as const;
 
+const publicPolicyTitleKeys: Record<string, string> = {
+  terms_of_use: 'legalTermsTitle',
+  privacy_policy: 'legalPrivacyTitle',
+  booking_policy: 'legalBookingTitle',
+  cancellation_policy: 'legalCancellationTitle',
+  refund_policy: 'legalRefundTitle',
+};
+
 function destination(key: string) {
   const env = import.meta.env as Record<string, string | undefined>;
   return env[key]?.trim() || '';
@@ -648,9 +659,20 @@ function Layout({ children, language, setLanguage }: { children: ReactNode; lang
   const t = translations[language];
   const rtl = language !== 'en';
   useEffect(() => {
-    const hasRouteCopy = Object.prototype.hasOwnProperty.call(t, `page_title:${location}`);
-    const title = hasRouteCopy ? t[`page_title:${location}`] : t.not_found_title;
-    const pageDescription = hasRouteCopy ? t[`page_description:${location}`] : t.not_found_description;
+    const route = stripBase(location.split('?')[0]);
+    const policyKey = route.startsWith('/policies/') ? route.slice('/policies/'.length).split('/')[0] : '';
+    const policyTitleKey = publicPolicyTitleKeys[policyKey];
+    const hasRouteCopy = Object.prototype.hasOwnProperty.call(t, `page_title:${route}`);
+    const title = hasRouteCopy
+      ? t[`page_title:${route}`]
+      : policyTitleKey
+        ? `${t[policyTitleKey]} | MaydanGo`
+        : t.not_found_title;
+    const pageDescription = hasRouteCopy
+      ? t[`page_description:${route}`]
+      : policyTitleKey
+        ? t.policySeoDescription
+        : t.not_found_description;
     document.title = title;
     const description = document.querySelector('meta[name="description"]');
     if (description) description.setAttribute('content', pageDescription);
@@ -1112,6 +1134,7 @@ function AppDownloadLinks({ t }: { t: Copy }) {
     <div className="mt-4 flex flex-wrap gap-3 md:mt-0">
       {iosUrl && <a href={iosUrl} target="_blank" rel="noopener noreferrer" className="rounded-full border border-border px-4 py-3 text-sm font-bold hover:bg-muted" data-testid="link-ios-app">{t.iosApp}<ArrowUpRight size={14} className="ms-2 inline" /></a>}
       {androidUrl && <a href={androidUrl} target="_blank" rel="noopener noreferrer" className="rounded-full border border-border px-4 py-3 text-sm font-bold hover:bg-muted" data-testid="link-android-app">{t.androidApp}<ArrowUpRight size={14} className="ms-2 inline" /></a>}
+      {!iosUrl && !androidUrl && <Link href="/contact?topic=membership" className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-bold text-primary-foreground" data-testid="link-app-availability-enquiry">{t.ask}<ArrowUpRight size={14} /></Link>}
     </div>
   </section>;
 }
