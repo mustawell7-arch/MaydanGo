@@ -8,6 +8,7 @@ import {
 import type { LiveOffering } from '@workspace/api-client-react';
 import { BookOpenText, Check, Clipboard, Download, ExternalLink, Image, Megaphone, Palette, QrCode, RefreshCw, Save, ShieldCheck } from 'lucide-react';
 import type { PortalLanguage } from '@/pages/partner-operations';
+import { buildPartnerFacilityUrl } from '@/lib/partner-marketing-links';
 
 const copy = {
   en: {
@@ -36,9 +37,9 @@ const copy = {
     copyError: 'Copy was blocked. Select and copy the text manually.',
     noSession: 'No published sessions are available. You can still prepare a general campaign.',
     qrPoster: 'QR poster',
-    qrIntro: 'Print a simple poster that links people to MaydanGo facilities.',
+    qrIntro: 'Print a poster that opens this facility profile on MaydanGo.',
     printPoster: 'Print poster',
-    explore: 'Explore facilities on MaydanGo',
+    explore: 'View this facility on MaydanGo',
     brandGuidelines: 'Brand guidelines',
     guidelineOne: 'Use the official partner logo without changing its proportions or colors.',
     guidelineTwo: 'Use welcoming language for women, men, families, and people with different abilities.',
@@ -53,7 +54,7 @@ const copy = {
     retry: 'Retry',
     noFacilities: 'No approved facility profiles are available yet.',
     published: 'Published',
-    qrAlt: 'QR code linking to the MaydanGo facilities page',
+    qrAlt: 'QR code linking to this facility profile on MaydanGo',
   },
   ar: {
     title: 'مركز التسويق للشركاء',
@@ -81,9 +82,9 @@ const copy = {
     copyError: 'تعذر النسخ. حدّد النص وانسخه يدوياً.',
     noSession: 'لا توجد جلسات منشورة. يمكنك إعداد حملة عامة.',
     qrPoster: 'ملصق رمز QR',
-    qrIntro: 'اطبع ملصقاً بسيطاً يفتح صفحة المرافق على MaydanGo.',
+    qrIntro: 'اطبع ملصقاً يفتح ملف هذا المرفق على MaydanGo.',
     printPoster: 'طباعة الملصق',
-    explore: 'استكشف المرافق على MaydanGo',
+    explore: 'اطّلع على هذا المرفق على MaydanGo',
     brandGuidelines: 'إرشادات الهوية',
     guidelineOne: 'استخدم شعار الشريك الرسمي دون تغيير أبعاده أو ألوانه.',
     guidelineTwo: 'استخدم لغة ترحب بالنساء والرجال والعائلات والأشخاص ذوي القدرات المختلفة.',
@@ -98,7 +99,7 @@ const copy = {
     retry: 'إعادة المحاولة',
     noFacilities: 'لا توجد ملفات مرافق معتمدة بعد.',
     published: 'منشور',
-    qrAlt: 'رمز QR يفتح صفحة مرافق MaydanGo',
+    qrAlt: 'رمز QR يفتح ملف هذا المرفق على MaydanGo',
   },
   ku: {
     title: 'ناوەندی بازاڕکردنی هاوبەش',
@@ -126,9 +127,9 @@ const copy = {
     copyError: 'کۆپیکردن ڕێگەپێدراو نەبوو. دەقەکە دەستنیشان بکە و بە دەستی کۆپی بکە.',
     noSession: 'هیچ دانیشتنێکی بڵاوکراوە نییە. دەتوانیت بانگەشەیەکی گشتی ئامادە بکەیت.',
     qrPoster: 'پۆستەری کۆدی QR',
-    qrIntro: 'پۆستەرێکی سادە چاپ بکە کە پەڕەی شوێنەکانی MaydanGo دەکاتەوە.',
+    qrIntro: 'پۆستەرێک چاپ بکە کە پڕۆفایلی ئەم شوێنە لە MaydanGo دەکاتەوە.',
     printPoster: 'چاپکردنی پۆستەر',
-    explore: 'شوێنەکان لە MaydanGo ببینە',
+    explore: 'ئەم شوێنە لە MaydanGo ببینە',
     brandGuidelines: 'ڕێنمایی نیشانەی بازرگانی',
     guidelineOne: 'لۆگۆی فەرمیی هاوبەش بەکاربهێنە و قەبارە و ڕەنگەکانی مەگۆڕە.',
     guidelineTwo: 'زمانێکی بەخێرهێنەر بۆ ژنان، پیاوان، خێزانەکان و خاوەن پێداویستی جیاوازەکان بەکاربهێنە.',
@@ -143,7 +144,7 @@ const copy = {
     retry: 'دووبارە هەوڵ بدە',
     noFacilities: 'هێشتا هیچ پڕۆفایلی شوێنی پەسەندکراو نییە.',
     published: 'بڵاوکراوەتەوە',
-    qrAlt: 'کۆدی QR بۆ کردنەوەی پەڕەی شوێنەکانی MaydanGo',
+    qrAlt: 'کۆدی QR بۆ کردنەوەی پڕۆفایلی ئەم شوێنە لە MaydanGo',
   },
 } as const;
 type CopyKey = keyof typeof copy.en;
@@ -185,9 +186,11 @@ export function PartnerMarketingCenter({ language, offerings }: { language: Port
   const facility = facilitiesQuery.data?.find(item => item.id === selectedFacilityId);
   const offering = offerings.find(item => item.id === selectedOfferingId);
   const partnerName = profileQuery.data?.partnerName ?? 'MaydanGo partner';
-  const shareUrl = typeof window === 'undefined'
-    ? `${import.meta.env.BASE_URL}facilities`
-    : new URL(`${import.meta.env.BASE_URL}facilities`, window.location.origin).toString();
+  const shareUrl = buildPartnerFacilityUrl(
+    import.meta.env.BASE_URL,
+    facility?.id,
+    typeof window === 'undefined' ? undefined : window.location.origin,
+  );
   const dateText = useMemo(() => {
     if (!offering) return '';
     return new Intl.DateTimeFormat(
