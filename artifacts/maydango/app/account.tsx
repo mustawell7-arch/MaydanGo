@@ -69,6 +69,8 @@ export default function AccountScreen() {
   const completeProfilePhotoUpload = useCompleteMemberProfilePhotoUpload();
   const deleteProfilePhoto = useDeleteMemberProfilePhoto();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
@@ -182,7 +184,17 @@ export default function AccountScreen() {
       await finish(); return;
     }
     if (mode === 'signup') {
-      check(await signUp.password({ emailAddress: email.trim(), password }));
+      const normalizedFirstName = firstName.trim();
+      const normalizedLastName = lastName.trim();
+      if (!normalizedFirstName || !normalizedLastName) {
+        throw new Error(translate(app.language, 'memberNameRequired'));
+      }
+      check(await signUp.password({
+        emailAddress: email.trim(),
+        password,
+        firstName: normalizedFirstName,
+        lastName: normalizedLastName,
+      }));
       check(await signUp.verifications.sendEmailCode()); setVerify(true);
     } else {
       check(await signIn.password({ emailAddress: email.trim(), password }));
@@ -720,6 +732,28 @@ export default function AccountScreen() {
         <Text style={{ color: c.mutedForeground }}>Sign in to keep reservations securely on your account across devices.</Text>
         {!verify && reset !== 'code' ? <>
            {mode === 'signup' ? <>
+              <TextInput
+                testID="auth-first-name"
+                accessibilityLabel={translate(app.language, 'memberFirstName')}
+                placeholder={translate(app.language, 'memberFirstName')}
+                placeholderTextColor={c.mutedForeground}
+                value={firstName}
+                onChangeText={setFirstName}
+                autoCapitalize="words"
+                maxLength={100}
+                style={[styles.input, { color: c.foreground, borderColor: c.border }]}
+              />
+              <TextInput
+                testID="auth-last-name"
+                accessibilityLabel={translate(app.language, 'memberLastName')}
+                placeholder={translate(app.language, 'memberLastName')}
+                placeholderTextColor={c.mutedForeground}
+                value={lastName}
+                onChangeText={setLastName}
+                autoCapitalize="words"
+                maxLength={100}
+                style={[styles.input, { color: c.foreground, borderColor: c.border }]}
+              />
              <TextInput inputDirection="ltr" testID="auth-referral-code" accessibilityLabel={translate(app.language, 'memberReferralsInput')} placeholder={translate(app.language, 'memberReferralsInput')} placeholderTextColor={c.mutedForeground} value={referralCode} onChangeText={value => setReferralCode(value.toUpperCase())} autoCapitalize="characters" maxLength={10} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
              <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'memberCorporateCodeSignupHint')}</Text>
              <TextInput inputDirection="ltr" testID="auth-corporate-code" accessibilityLabel={translate(app.language, 'memberCorporateCodeInput')} placeholder={translate(app.language, 'memberCorporateCodeInput')} placeholderTextColor={c.mutedForeground} value={corporateCode} onChangeText={value => setCorporateCode(value)} autoCapitalize="none" autoCorrect={false} maxLength={128} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
