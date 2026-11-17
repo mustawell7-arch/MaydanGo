@@ -993,51 +993,6 @@ export interface MemberDataExportPrivacyRequest {
   createdAt: string;
 }
 
-export type MemberDataExportFormatVersion = typeof MemberDataExportFormatVersion[keyof typeof MemberDataExportFormatVersion];
-
-
-export const MemberDataExportFormatVersion = {
-  '10': '1.0',
-} as const;
-
-export type MemberDataExportExcludedDataItem = typeof MemberDataExportExcludedDataItem[keyof typeof MemberDataExportExcludedDataItem];
-
-
-export const MemberDataExportExcludedDataItem = {
-  payment_instrument_details: 'payment_instrument_details',
-  login_credentials: 'login_credentials',
-  push_tokens: 'push_tokens',
-  private_class_links: 'private_class_links',
-  support_conversation_messages: 'support_conversation_messages',
-  internal_support_notes: 'internal_support_notes',
-} as const;
-
-export interface MemberDataExport {
-  formatVersion: MemberDataExportFormatVersion;
-  generatedAt: string;
-  account: MemberDataExportAccount;
-  memberships: MemberDataExportMembership[];
-  bookings: MemberDataExportBooking[];
-  waitlist: MemberDataExportWaitlistEntry[];
-  attendance: MemberDataExportAttendance[];
-  courses: MemberDataExportCourse[];
-  savedCourses: MemberDataExportSavedCourse[];
-  reviews: MemberDataExportReview[];
-  privacyRequests: MemberDataExportPrivacyRequest[];
-  notificationPreferences: MemberDataExportNotificationPreferences | null;
-  excludedData: MemberDataExportExcludedDataItem[];
-}
-
-export interface PrivacyRequest {
-  id: string;
-  kind: PrivacyRequestKind;
-  subject: string;
-  status: SupportTicketStatus;
-  createdAt: string;
-  /** @nullable */
-  exportAvailableUntil: string | null;
-}
-
 export type MemberConsentPurpose = typeof MemberConsentPurpose[keyof typeof MemberConsentPurpose];
 
 
@@ -1054,6 +1009,89 @@ export const MemberConsentChoice = {
   accepted: 'accepted',
   declined: 'declined',
 } as const;
+
+export interface MemberDataExportConsent {
+  purpose: MemberConsentPurpose;
+  policyVersion: string;
+  choice: MemberConsentChoice;
+  recordedAt: string;
+}
+
+export interface MemberDataExportSupportAttachment {
+  fileName: string;
+  contentType: string;
+  /** @minimum 0 */
+  size: number;
+  status: string;
+  createdAt: string;
+}
+
+export interface MemberDataExportSupportMessage {
+  authorRole: string;
+  body: string;
+  language: SupportedLanguage;
+  createdAt: string;
+  attachments: MemberDataExportSupportAttachment[];
+}
+
+export interface MemberDataExportSupportConversation {
+  subject: string;
+  category: string;
+  status: SupportTicketStatus;
+  language: SupportedLanguage;
+  createdAt: string;
+  /** @nullable */
+  closedAt: string | null;
+  messages: MemberDataExportSupportMessage[];
+}
+
+export type MemberDataExportFormatVersion = typeof MemberDataExportFormatVersion[keyof typeof MemberDataExportFormatVersion];
+
+
+export const MemberDataExportFormatVersion = {
+  '11': '1.1',
+} as const;
+
+export type MemberDataExportExcludedDataItem = typeof MemberDataExportExcludedDataItem[keyof typeof MemberDataExportExcludedDataItem];
+
+
+export const MemberDataExportExcludedDataItem = {
+  payment_instrument_details: 'payment_instrument_details',
+  login_credentials: 'login_credentials',
+  push_tokens: 'push_tokens',
+  private_class_links: 'private_class_links',
+  internal_support_notes: 'internal_support_notes',
+  support_attachment_contents: 'support_attachment_contents',
+  browser_local_cookie_choice: 'browser_local_cookie_choice',
+} as const;
+
+export interface MemberDataExport {
+  formatVersion: MemberDataExportFormatVersion;
+  generatedAt: string;
+  account: MemberDataExportAccount;
+  memberships: MemberDataExportMembership[];
+  bookings: MemberDataExportBooking[];
+  waitlist: MemberDataExportWaitlistEntry[];
+  attendance: MemberDataExportAttendance[];
+  courses: MemberDataExportCourse[];
+  savedCourses: MemberDataExportSavedCourse[];
+  reviews: MemberDataExportReview[];
+  consentHistory: MemberDataExportConsent[];
+  supportConversations: MemberDataExportSupportConversation[];
+  privacyRequests: MemberDataExportPrivacyRequest[];
+  notificationPreferences: MemberDataExportNotificationPreferences | null;
+  excludedData: MemberDataExportExcludedDataItem[];
+}
+
+export interface PrivacyRequest {
+  id: string;
+  kind: PrivacyRequestKind;
+  subject: string;
+  status: SupportTicketStatus;
+  createdAt: string;
+  /** @nullable */
+  exportAvailableUntil: string | null;
+}
 
 export type LegalPolicyKey = typeof LegalPolicyKey[keyof typeof LegalPolicyKey];
 

@@ -5,7 +5,7 @@ import { GetMemberPrivacyRequestExportResponse } from "@workspace/api-zod";
 test("member export response contains only the declared, non-secret fields", () => {
   const now = new Date("2026-11-14T12:00:00.000Z");
   const parsed = GetMemberPrivacyRequestExportResponse.parse({
-    formatVersion: "1.0",
+    formatVersion: "1.1",
     generatedAt: now,
     account: {
       email: "member@example.test",
@@ -43,6 +43,33 @@ test("member export response contains only the declared, non-secret fields", () 
     }],
     savedCourses: [{ title: "Strength basics", savedAt: now }],
     reviews: [],
+    consentHistory: [{
+      purpose: "marketing",
+      policyVersion: "v1-draft",
+      choice: "declined",
+      recordedAt: now,
+    }],
+    supportConversations: [{
+      subject: "Booking question",
+      category: "booking",
+      status: "resolved",
+      language: "en",
+      createdAt: now,
+      closedAt: now,
+      messages: [{
+        authorRole: "member",
+        body: "Please help with my booking.",
+        language: "en",
+        createdAt: now,
+        attachments: [{
+          fileName: "schedule.jpg",
+          contentType: "image/jpeg",
+          size: 2048,
+          status: "ready",
+          createdAt: now,
+        }],
+      }],
+    }],
     privacyRequests: [],
     notificationPreferences: null,
     excludedData: [
@@ -50,8 +77,9 @@ test("member export response contains only the declared, non-secret fields", () 
       "login_credentials",
       "push_tokens",
       "private_class_links",
-      "support_conversation_messages",
       "internal_support_notes",
+      "support_attachment_contents",
+      "browser_local_cookie_choice",
     ],
   });
 
@@ -60,12 +88,16 @@ test("member export response contains only the declared, non-secret fields", () 
   assert.equal("rules" in parsed.memberships[0], false);
   assert.equal(parsed.courses[0]?.viewedLessons[0]?.playbackPositionSeconds, 45);
   assert.equal(parsed.savedCourses[0]?.title, "Strength basics");
+  assert.equal(parsed.consentHistory[0]?.choice, "declined");
+  assert.equal(parsed.supportConversations[0]?.messages[0]?.body, "Please help with my booking.");
+  assert.equal(parsed.supportConversations[0]?.messages[0]?.attachments[0]?.fileName, "schedule.jpg");
   assert.deepEqual(parsed.excludedData, [
     "payment_instrument_details",
     "login_credentials",
     "push_tokens",
     "private_class_links",
-    "support_conversation_messages",
     "internal_support_notes",
+    "support_attachment_contents",
+    "browser_local_cookie_choice",
   ]);
 });

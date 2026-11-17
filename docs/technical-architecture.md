@@ -112,3 +112,4 @@ The API is the shared authority for member eligibility, booking and attendance s
 - Website and browser portals: `artifacts/maydango-web/`.
 - Section 78 entity-to-schema mapping: `docs/database-entity-coverage.md`.
 - Section 79 security control status: `docs/security-controls.md`.
+- Section 80 compliance control status: `docs/compliance-controls.md`.

@@ -10094,10 +10094,12 @@ export const GetMemberPrivacyRequestExportParams = zod.object({
 export const getMemberPrivacyRequestExportResponseCoursesItemViewedLessonsItemPlaybackPositionSecondsMin = 0;
 
 
+export const getMemberPrivacyRequestExportResponseSupportConversationsItemMessagesItemAttachmentsItemSizeMin = 0;
+
 
 
 export const GetMemberPrivacyRequestExportResponse = zod.object({
-  "formatVersion": zod.enum(['1.0']),
+  "formatVersion": zod.enum(['1.1']),
   "generatedAt": zod.coerce.date(),
   "account": zod.object({
   "email": zod.string().nullable(),
@@ -10184,6 +10186,33 @@ export const GetMemberPrivacyRequestExportResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })),
+  "consentHistory": zod.array(zod.object({
+  "purpose": zod.enum(['terms_of_use', 'privacy_policy', 'marketing']),
+  "policyVersion": zod.string(),
+  "choice": zod.enum(['accepted', 'declined']),
+  "recordedAt": zod.coerce.date()
+})),
+  "supportConversations": zod.array(zod.object({
+  "subject": zod.string(),
+  "category": zod.string(),
+  "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "closedAt": zod.coerce.date().nullable(),
+  "messages": zod.array(zod.object({
+  "authorRole": zod.string(),
+  "body": zod.string(),
+  "language": zod.enum(['en', 'ar', 'ku']),
+  "createdAt": zod.coerce.date(),
+  "attachments": zod.array(zod.object({
+  "fileName": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.int().min(getMemberPrivacyRequestExportResponseSupportConversationsItemMessagesItemAttachmentsItemSizeMin),
+  "status": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+})),
   "privacyRequests": zod.array(zod.object({
   "kind": zod.enum(['data_export', 'account_deletion']),
   "subject": zod.string(),
@@ -10195,7 +10224,7 @@ export const GetMemberPrivacyRequestExportResponse = zod.object({
   "language": zod.enum(['en', 'ar', 'ku']),
   "updatedAt": zod.coerce.date()
 }),zod.null()]),
-  "excludedData": zod.array(zod.enum(['payment_instrument_details', 'login_credentials', 'push_tokens', 'private_class_links', 'support_conversation_messages', 'internal_support_notes']))
+  "excludedData": zod.array(zod.enum(['payment_instrument_details', 'login_credentials', 'push_tokens', 'private_class_links', 'internal_support_notes', 'support_attachment_contents', 'browser_local_cookie_choice']))
 })
 
 

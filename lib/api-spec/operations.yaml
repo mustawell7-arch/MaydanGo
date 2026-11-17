@@ -3193,12 +3193,57 @@ components:
         subject: { type: string }
         status: { $ref: "#/components/schemas/SupportTicketStatus" }
         createdAt: { type: string, format: date-time }
+    MemberDataExportConsent:
+      type: object
+      additionalProperties: false
+      required: [purpose, policyVersion, choice, recordedAt]
+      properties:
+        purpose: { $ref: "#/components/schemas/MemberConsentPurpose" }
+        policyVersion: { type: string }
+        choice: { $ref: "#/components/schemas/MemberConsentChoice" }
+        recordedAt: { type: string, format: date-time }
+    MemberDataExportSupportAttachment:
+      type: object
+      additionalProperties: false
+      required: [fileName, contentType, size, status, createdAt]
+      properties:
+        fileName: { type: string }
+        contentType: { type: string }
+        size: { type: integer, minimum: 0 }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+    MemberDataExportSupportMessage:
+      type: object
+      additionalProperties: false
+      required: [authorRole, body, language, createdAt, attachments]
+      properties:
+        authorRole: { type: string }
+        body: { type: string }
+        language: { $ref: "#/components/schemas/SupportedLanguage" }
+        createdAt: { type: string, format: date-time }
+        attachments:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportSupportAttachment" }
+    MemberDataExportSupportConversation:
+      type: object
+      additionalProperties: false
+      required: [subject, category, status, language, createdAt, closedAt, messages]
+      properties:
+        subject: { type: string }
+        category: { type: string }
+        status: { $ref: "#/components/schemas/SupportTicketStatus" }
+        language: { $ref: "#/components/schemas/SupportedLanguage" }
+        createdAt: { type: string, format: date-time }
+        closedAt: { type: ["string", "null"], format: date-time }
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportSupportMessage" }
     MemberDataExport:
       type: object
       additionalProperties: false
-      required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, savedCourses, reviews, privacyRequests, notificationPreferences, excludedData]
+      required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, savedCourses, reviews, consentHistory, supportConversations, privacyRequests, notificationPreferences, excludedData]
       properties:
-        formatVersion: { type: string, enum: ["1.0"] }
+        formatVersion: { type: string, enum: ["1.1"] }
         generatedAt: { type: string, format: date-time }
         account: { $ref: "#/components/schemas/MemberDataExportAccount" }
         memberships:
@@ -3222,6 +3267,12 @@ components:
         reviews:
           type: array
           items: { $ref: "#/components/schemas/MemberDataExportReview" }
+        consentHistory:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportConsent" }
+        supportConversations:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportSupportConversation" }
         privacyRequests:
           type: array
           items: { $ref: "#/components/schemas/MemberDataExportPrivacyRequest" }
@@ -3233,7 +3284,7 @@ components:
           type: array
           items:
             type: string
-            enum: [payment_instrument_details, login_credentials, push_tokens, private_class_links, support_conversation_messages, internal_support_notes]
+            enum: [payment_instrument_details, login_credentials, push_tokens, private_class_links, internal_support_notes, support_attachment_contents, browser_local_cookie_choice]
     PrivacyRequest:
       type: object
       additionalProperties: false

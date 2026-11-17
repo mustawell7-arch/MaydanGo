@@ -9,12 +9,15 @@ import {
   learningLessons,
   lessonAccess,
   lessonProgress,
+  memberConsentEvents,
   memberSavedCourses,
   memberNotificationPreferences,
   memberProfiles,
   memberships,
   offerings,
   reservations,
+  supportAttachments,
+  supportMessages,
   supportTickets,
   waitlistEntries,
 } from "@workspace/db";
@@ -34,6 +37,8 @@ export async function createMemberDataExport(userId: string) {
     reviewRows,
     notificationRows,
     privacyRows,
+    consentRows,
+    supportTicketRows,
   ] = await Promise.all([
     clerkClient.users.getUser(userId),
     db.select({ gender: memberProfiles.gender, birthDate: memberProfiles.birthDate })
@@ -129,6 +134,25 @@ export async function createMemberDataExport(userId: string) {
       eq(supportTickets.category, "account"),
       inArray(supportTickets.subject, privacyRequestSubjects),
     )).orderBy(desc(supportTickets.createdAt)),
+    db.select({
+      purpose: memberConsentEvents.purpose,
+      policyVersion: memberConsentEvents.policyVersion,
+      choice: memberConsentEvents.choice,
+      recordedAt: memberConsentEvents.recordedAt,
+    }).from(memberConsentEvents)
+      .where(eq(memberConsentEvents.userId, userId))
+      .orderBy(desc(memberConsentEvents.recordedAt), desc(memberConsentEvents.id)),
+    db.select({
+      id: supportTickets.id,
+      subject: supportTickets.subject,
+      category: supportTickets.category,
+      status: supportTickets.status,
+      language: supportTickets.language,
+      createdAt: supportTickets.createdAt,
+      closedAt: supportTickets.closedAt,
+    }).from(supportTickets)
+      .where(eq(supportTickets.userId, userId))
+      .orderBy(desc(supportTickets.createdAt)),
   ]);
 
   const enrollmentIds = enrollmentRows.map(row => row.id);
@@ -155,6 +179,39 @@ export async function createMemberDataExport(userId: string) {
       .where(inArray(lessonAccess.enrollmentId, enrollmentIds))
       .orderBy(asc(lessonAccess.lastViewedAt))
     : [];
+  const supportTicketIds = supportTicketRows.map(row => row.id);
+  const supportMessageRows = supportTicketIds.length
+    ? await db.select({
+      id: supportMessages.id,
+      ticketId: supportMessages.ticketId,
+      authorRole: supportMessages.authorRole,
+      body: supportMessages.body,
+      language: supportMessages.language,
+      createdAt: supportMessages.createdAt,
+    }).from(supportMessages).where(and(
+      inArray(supportMessages.ticketId, supportTicketIds),
+      eq(supportMessages.isInternal, false),
+    )).orderBy(asc(supportMessages.createdAt))
+    : [];
+  const supportMessageIds = supportMessageRows.map(row => row.id);
+  const supportAttachmentRows = supportMessageIds.length
+    ? await db.select({
+      messageId: supportAttachments.messageId,
+      fileName: supportAttachments.fileName,
+      contentType: supportAttachments.contentType,
+      size: supportAttachments.size,
+      status: supportAttachments.status,
+      createdAt: supportAttachments.createdAt,
+    }).from(supportAttachments)
+      .where(inArray(supportAttachments.messageId, supportMessageIds))
+      .orderBy(asc(supportAttachments.createdAt))
+    : [];
+  const attachmentsByMessage = new Map<string, typeof supportAttachmentRows>();
+  for (const row of supportAttachmentRows) {
+    const attachments = attachmentsByMessage.get(row.messageId) ?? [];
+    attachments.push(row);
+    attachmentsByMessage.set(row.messageId, attachments);
+  }
 
   const completedLessons = new Map<string, { title: string; completedAt: Date }[]>();
   for (const row of progressRows) {
@@ -183,9 +240,15 @@ export async function createMemberDataExport(userId: string) {
     });
     viewedLessons.set(row.enrollmentId, lessons);
   }
+  const messagesByTicket = new Map<string, typeof supportMessageRows>();
+  for (const row of supportMessageRows) {
+    const messages = messagesByTicket.get(row.ticketId) ?? [];
+    messages.push(row);
+    messagesByTicket.set(row.ticketId, messages);
+  }
 
   return GetMemberPrivacyRequestExportResponse.parse({
-    formatVersion: "1.0",
+    formatVersion: "1.1",
     generatedAt: new Date(),
     account: {
       email: account.primaryEmailAddress?.emailAddress ?? null,
@@ -207,6 +270,28 @@ export async function createMemberDataExport(userId: string) {
     })),
     savedCourses: savedCourseRows,
     reviews: reviewRows,
+    consentHistory: consentRows,
+    supportConversations: supportTicketRows.map(ticket => ({
+      subject: ticket.subject,
+      category: ticket.category,
+      status: ticket.status,
+      language: ticket.language,
+      createdAt: ticket.createdAt,
+      closedAt: ticket.closedAt,
+      messages: (messagesByTicket.get(ticket.id) ?? []).map(message => ({
+        authorRole: message.authorRole,
+        body: message.body,
+        language: message.language,
+        createdAt: message.createdAt,
+        attachments: (attachmentsByMessage.get(message.id) ?? []).map(({ fileName, contentType, size, status, createdAt }) => ({
+          fileName,
+          contentType,
+          size,
+          status,
+          createdAt,
+        })),
+      })),
+    })),
     privacyRequests: privacyRows.map(row => ({
       ...row,
       kind: getPrivacyRequestKind(row.subject),
@@ -217,8 +302,9 @@ export async function createMemberDataExport(userId: string) {
       "login_credentials",
       "push_tokens",
       "private_class_links",
-      "support_conversation_messages",
       "internal_support_notes",
+      "support_attachment_contents",
+      "browser_local_cookie_choice",
     ],
   });
 }
