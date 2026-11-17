@@ -26,12 +26,16 @@ import {
   getGetPublicCatalogQueryKey,
   getGetPublicFacilitiesQueryKey,
   getGetPublicSponsoredFacilitiesQueryKey,
+  getGetPublicSponsoredContentQueryKey,
   useGetPublicSponsoredFacilities,
+  useGetPublicSponsoredContent,
   useGetPublicCatalog,
   useGetPublicFacilities,
+  type SponsoredContentPlacementType,
 } from '@workspace/api-client-react';
 import { useSponsoredFacilityTracking } from '@/lib/sponsored-facilities';
 import { findSponsoredFacilityPlacement } from '@/lib/sponsored-placement-match';
+import { findSponsoredContentPlacement, useSponsoredContentTracking } from '@/lib/sponsored-content';
 
 function FilterRow({
   title,
@@ -80,7 +84,13 @@ function FilterRow({
 export default function ExploreScreen() {
   const colors = useColors();
   const app = useApp();
-  const params = useLocalSearchParams<{ category?: string; kind?: string }>();
+const params = useLocalSearchParams<{
+  category?: string;
+  kind?: string;
+  sponsoredCampaignId?: string;
+  sponsoredTargetId?: string;
+  sponsoredPlacementType?: string;
+}>();
   const [kind, setKind] = useState<'places' | 'events'>(params.kind === 'events' ? 'events' : 'places');
   // Home banner can deep-link here with kind=events while the tab is already mounted.
   useEffect(() => {
@@ -110,6 +120,18 @@ export default function ExploreScreen() {
     },
   });
   const sponsoredTracking = useSponsoredFacilityTracking();
+  const sponsoredContentCity = app.selectedCityId === 'all' ? undefined : getCityLabel(app.selectedCityId, 'en');
+  const sponsoredContentQuery = useGetPublicSponsoredContent(
+    { city: sponsoredContentCity },
+    {
+      query: {
+        queryKey: getGetPublicSponsoredContentQueryKey({ city: sponsoredContentCity }),
+        enabled: kind === 'events',
+        refetchInterval: 60_000,
+      },
+    },
+  );
+  const sponsoredContentTracking = useSponsoredContentTracking();
   const eventsQuery = useGetPublicCatalog({
     query: { queryKey: getGetPublicCatalogQueryKey(), enabled: kind === 'events', refetchInterval: 60_000 },
   });
@@ -291,11 +313,19 @@ export default function ExploreScreen() {
     void Linking.openURL(url).catch(() => setLocationMessage(t('directionsUnavailable')));
   };
 
-  const toggleEvent = async (eventId: string) => {
+  const toggleEvent = async (
+    eventId: string,
+    campaignId?: string,
+    placementType?: SponsoredContentPlacementType,
+  ) => {
     const wasReserved = app.isEventReserved(eventId);
+    if (campaignId && placementType) sponsoredContentTracking.recordClick(campaignId, placementType);
     const result = await (wasReserved ? app.cancelEvent(eventId) : app.bookEvent(eventId));
     if (result.ok) {
       setNotice(wasReserved ? t('cancelled') : t('eventSaved'));
+      if (!wasReserved && campaignId && placementType) {
+        sponsoredContentTracking.recordConversion(campaignId, placementType);
+      }
       void eventsQuery.refetch();
     }
     else setNotice(result.reason === 'duplicate' ? t('alreadySaved') : t('notSaved'));
@@ -305,7 +335,8 @@ export default function ExploreScreen() {
     <ScreenShell>
       <ScreenHeader eyebrow={currentCity} title={t('explore')} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}
-        onScroll={sponsoredTracking.checkVisible} onContentSizeChange={sponsoredTracking.checkVisible} scrollEventThrottle={250}>
+        onScroll={() => { sponsoredTracking.checkVisible(); sponsoredContentTracking.checkVisible(); }}
+        onContentSizeChange={() => { sponsoredTracking.checkVisible(); sponsoredContentTracking.checkVisible(); }} scrollEventThrottle={250}>
         <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Ionicons name="search" size={18} color={colors.mutedForeground} />
           <TextInput
@@ -383,10 +414,35 @@ export default function ExploreScreen() {
               const title = event.localizedTitle ? facilityText(event.localizedTitle, app.language) : event.title;
               const description = event.localizedDescription ? facilityText(event.localizedDescription, app.language) : '';
               const eligibleTiers = event.tiers?.join(', ') ?? '';
+              const homeCampaign = params.sponsoredTargetId === event.id
+                && params.sponsoredPlacementType === 'home_promotion'
+                ? sponsoredContentQuery.data?.find(item =>
+                  item.campaignId === params.sponsoredCampaignId &&
+                  item.targetId === event.id &&
+                  item.placementTypes.includes('home_promotion'),
+                )
+                : undefined;
+              const featuredCampaign = homeCampaign ?? findSponsoredContentPlacement(
+                sponsoredContentQuery.data ?? [], 'event', event.id, 'featured_event',
+              );
+              const categoryCampaign = featuredCampaign ? undefined : findSponsoredContentPlacement(
+                sponsoredContentQuery.data ?? [], 'event', event.id, 'category_featured', event.category,
+              );
+              const sponsoredCampaign = featuredCampaign ?? categoryCampaign;
+              const sponsoredPlacementType = homeCampaign ? 'home_promotion' as const
+                : featuredCampaign ? 'featured_event' as const
+                : categoryCampaign ? 'category_featured' as const : undefined;
               return (
-                <View key={event.id} style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View key={event.id}
+                  ref={node => sponsoredContentTracking.register(event.id, sponsoredCampaign?.campaignId, sponsoredPlacementType, node)}
+                  collapsable={false}
+                  onLayout={sponsoredContentTracking.checkVisible}
+                  style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <View style={styles.eventBody}>
                     {event.imageUrl ? <Image source={{ uri: absoluteApiAssetUrl(event.imageUrl) }} accessibilityLabel={title} resizeMode="cover" style={{ width: '100%', height: 160, borderRadius: 14, marginBottom: 12 }} /> : null}
+                    {sponsoredCampaign ? <View style={[styles.sponsoredBadge, { backgroundColor: colors.secondary, alignSelf: app.language === 'en' ? 'flex-start' : 'flex-end' }]}>
+                      <Text style={[styles.sponsoredBadgeText, { color: colors.primary }]}>{t('sponsored')}</Text>
+                    </View> : null}
                     <View style={styles.eventHeader}>
                       <View style={[styles.eventIcon, { backgroundColor: colors.secondary }]}>
                         <Ionicons name="calendar-outline" size={21} color={colors.primary} />
@@ -441,7 +497,7 @@ export default function ExploreScreen() {
                           accessibilityState={{ disabled: app.memberLoading || full }}
                           accessibilityLabel={`${reserved ? t('cancelReservation') : t('reserveEvent')}: ${title}`}
                           disabled={app.memberLoading || full}
-                          onPress={() => void toggleEvent(event.targetId)}
+                          onPress={() => void toggleEvent(event.targetId, sponsoredCampaign?.campaignId, sponsoredPlacementType)}
                           style={({ pressed }) => [
                             styles.eventButton,
                             {
@@ -677,6 +733,8 @@ const styles = StyleSheet.create({
   toastText: { fontSize: 11, fontWeight: '800' },
   eventCard: { borderWidth: 1, borderRadius: 20, overflow: 'hidden', marginBottom: 12 },
   eventBody: { padding: 14 },
+  sponsoredBadge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, marginBottom: 9 },
+  sponsoredBadgeText: { fontSize: 10, fontWeight: '900' },
   eventHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   eventIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   eventHeading: { flex: 1 },

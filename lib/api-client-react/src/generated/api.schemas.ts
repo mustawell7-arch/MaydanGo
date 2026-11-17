@@ -5604,6 +5604,141 @@ export interface PublicSponsoredFacilityEventInput {
   placementType: SponsoredPlacementType;
 }
 
+export type SponsoredContentType = typeof SponsoredContentType[keyof typeof SponsoredContentType];
+
+
+export const SponsoredContentType = {
+  event: 'event',
+  course: 'course',
+} as const;
+
+export type SponsoredContentPlacementType = typeof SponsoredContentPlacementType[keyof typeof SponsoredContentPlacementType];
+
+
+export const SponsoredContentPlacementType = {
+  featured_event: 'featured_event',
+  featured_course: 'featured_course',
+  home_promotion: 'home_promotion',
+  category_featured: 'category_featured',
+} as const;
+
+export type SponsoredContentCampaignStatus = typeof SponsoredContentCampaignStatus[keyof typeof SponsoredContentCampaignStatus];
+
+
+export const SponsoredContentCampaignStatus = {
+  draft: 'draft',
+  active: 'active',
+  paused: 'paused',
+} as const;
+
+export type SponsoredContentCampaignTargetMembershipTiersItem = typeof SponsoredContentCampaignTargetMembershipTiersItem[keyof typeof SponsoredContentCampaignTargetMembershipTiersItem];
+
+
+export const SponsoredContentCampaignTargetMembershipTiersItem = {
+  M: 'M',
+  L: 'L',
+  XL: 'XL',
+} as const;
+
+export interface SponsoredContentCampaign {
+  id: string;
+  campaignName: string;
+  targetType: SponsoredContentType;
+  targetId: string;
+  targetName: string;
+  /** @nullable */
+  partnerName: string | null;
+  /** @nullable */
+  city: string | null;
+  /** @minItems 1 */
+  placementTypes: SponsoredContentPlacementType[];
+  /** @nullable */
+  targetCity: string | null;
+  /** @nullable */
+  targetActivity: string | null;
+  targetMembershipTiers: SponsoredContentCampaignTargetMembershipTiersItem[];
+  startsAt: string;
+  endsAt: string;
+  status: SponsoredContentCampaignStatus;
+  /** @minimum 0 */
+  impressions: number;
+  /** @minimum 0 */
+  clicks: number;
+  /** @minimum 0 */
+  conversions: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SponsoredContentCampaignInputTargetMembershipTiersItem = typeof SponsoredContentCampaignInputTargetMembershipTiersItem[keyof typeof SponsoredContentCampaignInputTargetMembershipTiersItem];
+
+
+export const SponsoredContentCampaignInputTargetMembershipTiersItem = {
+  M: 'M',
+  L: 'L',
+  XL: 'XL',
+} as const;
+
+export interface SponsoredContentCampaignInput {
+  /**
+     * @minLength 2
+     * @maxLength 120
+     */
+  campaignName: string;
+  targetType: SponsoredContentType;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  targetId: string;
+  /** @minItems 1 */
+  placementTypes: SponsoredContentPlacementType[];
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  targetCity: string | null;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  targetActivity: string | null;
+  targetMembershipTiers: SponsoredContentCampaignInputTargetMembershipTiersItem[];
+  startsAt: string;
+  endsAt: string;
+  status: SponsoredContentCampaignStatus;
+}
+
+export type SponsoredContentCampaignsResponse = SponsoredContentCampaign[];
+
+export interface PublicSponsoredContentPlacement {
+  campaignId: string;
+  targetType: SponsoredContentType;
+  targetId: string;
+  placementTypes: SponsoredContentPlacementType[];
+  /** @nullable */
+  targetCity: string | null;
+  /** @nullable */
+  targetActivity: string | null;
+}
+
+export type PublicSponsoredContentPlacementsResponse = PublicSponsoredContentPlacement[];
+
+export type PublicSponsoredContentEventInputEventType = typeof PublicSponsoredContentEventInputEventType[keyof typeof PublicSponsoredContentEventInputEventType];
+
+
+export const PublicSponsoredContentEventInputEventType = {
+  impression: 'impression',
+  click: 'click',
+  conversion: 'conversion',
+} as const;
+
+export interface PublicSponsoredContentEventInput {
+  eventType: PublicSponsoredContentEventInputEventType;
+  placementType: SponsoredContentPlacementType;
+}
+
 export type GuardianConsentUploadUrlRequestContentType = typeof GuardianConsentUploadUrlRequestContentType[keyof typeof GuardianConsentUploadUrlRequestContentType];
 
 
@@ -5690,6 +5825,13 @@ export const PartnerStaffRemovalResponseValue = {
   ok: true,
 } as const;
 export type PartnerStaffRemovalResponse = typeof PartnerStaffRemovalResponseValue;
+
+export type GetPublicSponsoredContentParams = {
+/**
+ * @maxLength 120
+ */
+city?: string;
+};
 
 /**
  * Partner-only status; no birth date or guardian details are exposed.

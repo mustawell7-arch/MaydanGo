@@ -21,11 +21,11 @@ type Operator = typeof operators.$inferSelect;
 type PlacementType = "home_featured" | "search_sponsored" | "category_featured";
 type CampaignStatus = "draft" | "active" | "paused";
 
-function marketingOperator(res: Response): Operator {
+export function marketingOperator(res: Response): Operator {
   return res.locals.marketingOperator as Operator;
 }
 
-async function requireMarketingAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function requireMarketingAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
   const userId = getAuth(req).userId;
   if (!userId) {
     res.status(401).json({ message: "Sign in to manage sponsored placements." });
@@ -111,7 +111,7 @@ async function campaignDetail(id: string) {
   };
 }
 
-async function activeMembershipTiers(userId: string | null, now: Date): Promise<Set<string>> {
+export async function activeMembershipTiers(userId: string | null, now: Date): Promise<Set<string>> {
   if (!userId) return new Set();
   const rows = await db.select({ tier: memberships.tier }).from(memberships)
     .where(and(

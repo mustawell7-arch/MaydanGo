@@ -6,17 +6,20 @@ import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetMemberCoursesQueryKey, getGetMemberLiveClassesQueryKey,
-  getGetMemberCourseQueryKey, useCreateLiveClassJoin, useGetMemberCourses,
+  getGetMemberCourseQueryKey, getGetPublicSponsoredContentQueryKey,
+  useCreateLiveClassJoin, useGetMemberCourses, useGetPublicSponsoredContent,
   useGetMemberLiveClasses, useSetMemberCourseFavorite,
+  type SponsoredContentPlacementType,
 } from '@workspace/api-client-react';
 import { MemberNotice } from '@/components/MemberNotice';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
-import { coaches } from '@/data/demo';
+import { coaches, getCityLabel } from '@/data/demo';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { translate, type Language, type MessageKey } from '@/lib/i18n';
 import { errorCopy } from '@/lib/content';
 import { recommendOnlineCourses } from '@/lib/course-recommendations';
+import { findSponsoredContentPlacement, useSponsoredContentTracking } from '@/lib/sponsored-content';
 
 type Mode = 'courses' | 'live' | 'coaching';
 type Localized = { en: string; ar: string; ku: string };
@@ -37,6 +40,18 @@ export default function OnlineScreen() {
   const t = (key: MessageKey) => translate(app.language, key);
   const align = app.language === 'en' ? 'left' : 'right';
   const coursesQuery = useGetMemberCourses({ query: { enabled: mode === 'courses' } });
+  const sponsoredContentCity = app.selectedCityId === 'all' ? undefined : getCityLabel(app.selectedCityId, 'en');
+  const sponsoredContentQuery = useGetPublicSponsoredContent(
+    { city: sponsoredContentCity },
+    {
+      query: {
+        queryKey: getGetPublicSponsoredContentQueryKey({ city: sponsoredContentCity }),
+        enabled: mode === 'courses' && !showSavedOnly,
+        refetchInterval: 60_000,
+      },
+    },
+  );
+  const sponsoredContentTracking = useSponsoredContentTracking();
   const liveQuery = useGetMemberLiveClasses({ query: { enabled: mode === 'live', refetchInterval: 30_000 } });
   const joinMutation = useCreateLiveClassJoin();
   const favoriteMutation = useSetMemberCourseFavorite();
@@ -46,10 +61,31 @@ export default function OnlineScreen() {
   const liveClasses = liveQuery.data ?? [];
   const started = showSavedOnly ? [] : courseRows.filter((course) => course.enrolled && course.completedLessons < course.lessonCount);
   const recommendations = showSavedOnly ? [] : recommendOnlineCourses(courseRows);
-  const openCourse = (id: string, resume = false) => router.push({
-    pathname: '/course/[id]',
-    params: { id, ...(resume ? { resume: '1' } : {}) },
-  });
+  const coursePlacement = (id: string, category: string) => {
+    const featured = findSponsoredContentPlacement(sponsoredContentQuery.data ?? [], 'course', id, 'featured_course');
+    if (featured) return { campaignId: featured.campaignId, placementType: 'featured_course' as const };
+    const categoryFeatured = findSponsoredContentPlacement(
+      sponsoredContentQuery.data ?? [], 'course', id, 'category_featured', category,
+    );
+    return categoryFeatured
+      ? { campaignId: categoryFeatured.campaignId, placementType: 'category_featured' as const }
+      : null;
+  };
+  const openCourse = (
+    id: string,
+    resume = false,
+    sponsored?: { campaignId: string; placementType: SponsoredContentPlacementType } | null,
+  ) => {
+    if (sponsored) sponsoredContentTracking.recordClick(sponsored.campaignId, sponsored.placementType);
+    router.push({
+      pathname: '/course/[id]',
+      params: {
+        id,
+        ...(resume ? { resume: '1' } : {}),
+        ...(sponsored ? { sponsoredCampaignId: sponsored.campaignId, sponsoredPlacementType: sponsored.placementType } : {}),
+      },
+    });
+  };
 
   const toggleSavedCourse = async (courseId: string, isSaved: boolean) => {
     try {
@@ -109,7 +145,13 @@ export default function OnlineScreen() {
   return (
     <ScreenShell>
       <ScreenHeader eyebrow={t('onlineEyebrow')} title={t('online')} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        onScroll={sponsoredContentTracking.checkVisible}
+        onContentSizeChange={sponsoredContentTracking.checkVisible}
+        scrollEventThrottle={250}
+      >
         <MemberNotice />
         <View style={[styles.intro, { backgroundColor: colors.primary }]}>
           <View style={styles.introCircle} />
@@ -205,18 +247,25 @@ export default function OnlineScreen() {
             {recommendations.length ? <>
               <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 18, textAlign: align }]}>{t('recommendedForYou')}</Text>
               <Text style={[styles.catalogMeta, { color: colors.mutedForeground, marginBottom: 8, textAlign: align }]}>{t('recommendationReason')}</Text>
-              {recommendations.map((course) => (
-                <View key={`recommended-${course.id}`} style={[styles.catalogRow, { borderBottomColor: colors.border }]}>
+              {recommendations.map((course) => {
+                const sponsored = coursePlacement(course.id, course.category);
+                return (
+                <View key={`recommended-${course.id}`}
+                  ref={node => sponsoredContentTracking.register(`recommended-${course.id}`, sponsored?.campaignId, sponsored?.placementType, node)}
+                  collapsable={false}
+                  onLayout={sponsoredContentTracking.checkVisible}
+                  style={[styles.catalogRow, { borderBottomColor: colors.border }]}>
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`${t('recommendedForYou')}: ${localText(course.localizedTitle, app.language)}`}
-                    onPress={() => openCourse(course.id)}
+                    onPress={() => openCourse(course.id, false, sponsored)}
                     style={styles.courseRowMain}
                   >
                     {course.thumbnailUrl
                       ? <Image source={{ uri: course.thumbnailUrl }} style={styles.catalogImage} />
                       : <View style={[styles.catalogImage, styles.catalogImageFallback, { backgroundColor: colors.secondary }]}><Ionicons name="sparkles-outline" size={20} color={colors.primary} /></View>}
                     <View style={{ flex: 1 }}>
+                      {sponsored ? <View style={[styles.sponsoredBadge, { backgroundColor: colors.secondary, alignSelf: app.language === 'en' ? 'flex-start' : 'flex-end' }]}><Text style={[styles.sponsoredBadgeText, { color: colors.primary }]}>{t('sponsored')}</Text></View> : null}
                       <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{localText(course.localizedTitle, app.language)}</Text>
                       <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
                         {localText(course.localizedInstructor, app.language)} · {course.category}
@@ -229,23 +278,31 @@ export default function OnlineScreen() {
                   </Pressable>
                   {saveCourseButton(course.id, course.isSaved)}
                 </View>
-              ))}
+                );
+              })}
             </> : null}
             {visibleCourseRows.length > 0 ? <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 18, textAlign: align }]}>{showSavedOnly ? t('savedCourses') : t('courses')}</Text> : null}
             {!showSavedOnly && !courseRows.some((course) => course.enrolled) && courseRows.length > 0
               ? <Text style={[styles.catalogMeta, { color: colors.mutedForeground, marginBottom: 10, textAlign: align }]}>{t('notStartedYet')}</Text> : null}
-            {visibleCourseRows.map((course) => (
-              <View key={course.id} style={[styles.catalogRow, { borderBottomColor: colors.border }]}>
+            {visibleCourseRows.map((course) => {
+              const sponsored = !showSavedOnly && !course.enrolled ? coursePlacement(course.id, course.category) : null;
+              return (
+              <View key={course.id}
+                ref={node => sponsoredContentTracking.register(`catalog-${course.id}`, sponsored?.campaignId, sponsored?.placementType, node)}
+                collapsable={false}
+                onLayout={sponsoredContentTracking.checkVisible}
+                style={[styles.catalogRow, { borderBottomColor: colors.border }]}>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`${t('viewCourse')}: ${localText(course.localizedTitle, app.language)}`}
-                  onPress={() => openCourse(course.id, course.enrolled)}
+                  onPress={() => openCourse(course.id, course.enrolled, sponsored)}
                   style={styles.courseRowMain}
                 >
                   {course.thumbnailUrl
                     ? <Image source={{ uri: course.thumbnailUrl }} style={styles.catalogImage} />
                     : <View style={[styles.catalogImage, styles.catalogImageFallback, { backgroundColor: colors.secondary }]}><Ionicons name="fitness-outline" size={20} color={colors.primary} /></View>}
                   <View style={{ flex: 1 }}>
+                    {sponsored ? <View style={[styles.sponsoredBadge, { backgroundColor: colors.secondary, alignSelf: app.language === 'en' ? 'flex-start' : 'flex-end' }]}><Text style={[styles.sponsoredBadgeText, { color: colors.primary }]}>{t('sponsored')}</Text></View> : null}
                     <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{localText(course.localizedTitle, app.language)}</Text>
                     <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
                       {localText(course.localizedInstructor, app.language)} · {course.lessonCount} {t('lessons')}{course.enrolled ? ` · ${t('enrolled')}` : ''}
@@ -258,7 +315,8 @@ export default function OnlineScreen() {
                 </Pressable>
                 {saveCourseButton(course.id, course.isSaved)}
               </View>
-            ))}
+              );
+            })}
             <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align, marginTop: 12 }]}>{t('courseNotice')}</Text>
           </>
         ) : mode === 'live' ? (
@@ -449,6 +507,8 @@ const styles = StyleSheet.create({
   catalogImage: { width: 51, height: 51, borderRadius: 15 },
   catalogImageFallback: { alignItems: 'center', justifyContent: 'center' },
   catalogMeta: { fontSize: 10, marginTop: 4 },
+  sponsoredBadge: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, marginBottom: 3 },
+  sponsoredBadgeText: { fontSize: 9, fontWeight: '900' },
   playButton: { width: 34, height: 34, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   liveCard: { borderWidth: 1, borderRadius: 18, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 9 },
   liveImage: { width: 59, height: 59, borderRadius: 14 },

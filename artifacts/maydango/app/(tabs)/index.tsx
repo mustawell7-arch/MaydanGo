@@ -20,7 +20,9 @@ import {
   getGetPublicCatalogQueryKey,
   getGetPublicFacilitiesQueryKey,
   getGetPublicSponsoredFacilitiesQueryKey,
+  getGetPublicSponsoredContentQueryKey,
   useGetPublicSponsoredFacilities,
+  useGetPublicSponsoredContent,
   useGetMemberCourses,
   useGetMemberLiveClasses,
   useGetMemberAllowances,
@@ -29,6 +31,7 @@ import {
 } from '@workspace/api-client-react';
 import { useSponsoredFacilityTracking } from '@/lib/sponsored-facilities';
 import { findSponsoredFacilityPlacement } from '@/lib/sponsored-placement-match';
+import { findSponsoredContentPlacement, useSponsoredContentTracking } from '@/lib/sponsored-content';
 
 export default function HomeScreen() {
   const colors = useColors();
@@ -45,6 +48,12 @@ export default function HomeScreen() {
     },
   });
   const sponsoredTracking = useSponsoredFacilityTracking();
+  const sponsoredContentCity = app.selectedCityId === 'all' ? undefined : getCityLabel(app.selectedCityId, 'en');
+  const sponsoredContentQuery = useGetPublicSponsoredContent(
+    { city: sponsoredContentCity },
+    { query: { queryKey: getGetPublicSponsoredContentQueryKey({ city: sponsoredContentCity }), refetchInterval: 60_000 } },
+  );
+  const sponsoredContentTracking = useSponsoredContentTracking();
   const eventsQuery = useGetPublicCatalog({
     query: { queryKey: getGetPublicCatalogQueryKey(), refetchInterval: 60_000 },
   });
@@ -115,10 +124,26 @@ export default function HomeScreen() {
       event.kind === 'event' &&
       !event.additionalPayment &&
       Date.parse(event.startsAt) > Date.now() &&
-      (app.selectedCityId === 'all' || cityIdForFacility(event.city) === app.selectedCityId),
+      (app.selectedCityId === 'all' || cityIdForFacility(event.city) === app.selectedCityId) &&
+      !findSponsoredContentPlacement(sponsoredContentQuery.data ?? [], 'event', event.id, 'home_promotion'),
     )
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
-    .slice(0, 3), [eventsQuery.data, app.selectedCityId]);
+    .slice(0, 3), [eventsQuery.data, app.selectedCityId, sponsoredContentQuery.data]);
+  const promotedEvents = useMemo(() => (eventsQuery.data ?? [])
+    .filter(event =>
+      event.kind === 'event' &&
+      !event.additionalPayment &&
+      Date.parse(event.startsAt) > Date.now() &&
+      (app.selectedCityId === 'all' || cityIdForFacility(event.city) === app.selectedCityId) &&
+      findSponsoredContentPlacement(sponsoredContentQuery.data ?? [], 'event', event.id, 'home_promotion'),
+    )
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+    .slice(0, 2), [eventsQuery.data, app.selectedCityId, sponsoredContentQuery.data]);
+  const promotedCourses = useMemo(() => (coursesQuery.data ?? [])
+    .filter(course => !course.enrolled && findSponsoredContentPlacement(
+      sponsoredContentQuery.data ?? [], 'course', course.id, 'home_promotion',
+    ))
+    .slice(0, 2), [coursesQuery.data, sponsoredContentQuery.data]);
   const localized = (value: { en?: string; ar?: string; ku?: string } | null | undefined) =>
     value?.[app.language] || value?.en || '';
 
@@ -127,8 +152,8 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
-        onScroll={sponsoredTracking.checkVisible}
-        onContentSizeChange={sponsoredTracking.checkVisible}
+        onScroll={() => { sponsoredTracking.checkVisible(); sponsoredContentTracking.checkVisible(); }}
+        onContentSizeChange={() => { sponsoredTracking.checkVisible(); sponsoredContentTracking.checkVisible(); }}
         scrollEventThrottle={250}
       >
         <View style={styles.topBar}>
@@ -484,6 +509,75 @@ export default function HomeScreen() {
         ) : (
           <Text style={[styles.dashboardMeta, styles.emptyEvents, { color: colors.mutedForeground }]}>{t('noEvents')}</Text>
         )}
+
+        {(promotedEvents.length || promotedCourses.length) ? <>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t('sponsoredHighlights')}</Text>
+          </View>
+          {promotedEvents.map(event => {
+            const campaign = findSponsoredContentPlacement(sponsoredContentQuery.data ?? [], 'event', event.id, 'home_promotion');
+            return <View
+              key={`home-sponsored-event-${event.id}`}
+              ref={view => sponsoredContentTracking.register(`home-event-${event.id}`, campaign?.campaignId, 'home_promotion', view)}
+              collapsable={false}
+              onLayout={sponsoredContentTracking.checkVisible}
+            >
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  if (campaign) sponsoredContentTracking.recordClick(campaign.campaignId, 'home_promotion');
+                  router.push({
+                    pathname: '/explore',
+                    params: campaign
+                      ? { kind: 'events', sponsoredCampaignId: campaign.campaignId, sponsoredTargetId: event.id, sponsoredPlacementType: 'home_promotion' }
+                      : { kind: 'events' },
+                  });
+                }}
+                style={({ pressed }) => [styles.eventRow, { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.9 : 1 }]}
+              >
+                <View style={[styles.dashboardIcon, { backgroundColor: colors.secondary }]}><Ionicons name="ticket-outline" size={19} color={colors.primary} /></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.dashboardMeta, { color: colors.primary, fontWeight: '800' }]}>{t('sponsored')} · {dateTime(event.startsAt, app.language)}</Text>
+                  <Text style={[styles.dashboardTitle, { color: colors.foreground }]}>{event.localizedTitle ? facilityText(event.localizedTitle, app.language) : event.title}</Text>
+                  <Text style={[styles.dashboardMeta, { color: colors.mutedForeground }]}>{[event.facility, event.city].filter(Boolean).join(' · ')}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.mutedForeground} />
+              </Pressable>
+            </View>;
+          })}
+          {promotedCourses.map(course => {
+            const campaign = findSponsoredContentPlacement(sponsoredContentQuery.data ?? [], 'course', course.id, 'home_promotion');
+            return <View
+              key={`home-sponsored-course-${course.id}`}
+              ref={view => sponsoredContentTracking.register(`home-course-${course.id}`, campaign?.campaignId, 'home_promotion', view)}
+              collapsable={false}
+              onLayout={sponsoredContentTracking.checkVisible}
+            >
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  if (campaign) sponsoredContentTracking.recordClick(campaign.campaignId, 'home_promotion');
+                  router.push({
+                    pathname: '/course/[id]',
+                    params: {
+                      id: course.id,
+                      ...(campaign ? { sponsoredCampaignId: campaign.campaignId, sponsoredPlacementType: 'home_promotion' } : {}),
+                    },
+                  });
+                }}
+                style={({ pressed }) => [styles.eventRow, { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.9 : 1 }]}
+              >
+                <View style={[styles.dashboardIcon, { backgroundColor: colors.secondary }]}><Ionicons name="play-circle-outline" size={19} color={colors.primary} /></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.dashboardMeta, { color: colors.primary, fontWeight: '800' }]}>{t('sponsored')} · {course.category}</Text>
+                  <Text style={[styles.dashboardTitle, { color: colors.foreground }]}>{localized(course.localizedTitle)}</Text>
+                  <Text style={[styles.dashboardMeta, { color: colors.mutedForeground }]}>{localized(course.localizedInstructor)}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.mutedForeground} />
+              </Pressable>
+            </View>;
+          })}
+        </> : null}
 
         <View style={styles.categoryRow}>
           <Text style={[styles.categoryEyebrow, { color: colors.mutedForeground }]}>

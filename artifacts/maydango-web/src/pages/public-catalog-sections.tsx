@@ -8,6 +8,7 @@ import {
   getGetPublicFacilityQueryKey,
   getGetPublicFacilityReviewsQueryKey,
   getGetPublicSponsoredFacilitiesQueryKey,
+  getGetPublicSponsoredContentQueryKey,
   getGetPublicInstructorProfilesQueryKey,
   useGetPublicCatalog,
   useGetPublicCourses,
@@ -15,10 +16,15 @@ import {
   useGetPublicFacility,
   useGetPublicFacilityReviews,
   useGetPublicSponsoredFacilities,
+  useGetPublicSponsoredContent,
   useGetPublicInstructorProfiles,
   useRecordPublicSponsoredFacilityEvent,
+  useRecordPublicSponsoredContentEvent,
 } from '@workspace/api-client-react';
-import type { PublicFacility, PublicCourse, PublicInstructorProfile } from '@workspace/api-client-react';
+import type {
+  PublicFacility, PublicCourse, PublicInstructorProfile,
+  PublicSponsoredContentPlacement, SponsoredContentPlacementType, SponsoredContentType,
+} from '@workspace/api-client-react';
 
 export type PublicCatalogLanguage = 'en' | 'ar' | 'ku';
 type CourseLanguageCode = 'en' | 'ar' | 'ku';
@@ -495,7 +501,52 @@ function SponsoredPlacementTracker({ campaignId, placementType, children }: { ca
   return <div ref={elementRef} onClick={() => record('click')} data-sponsored-campaign={campaignId}>{children}</div>;
 }
 
+function SponsoredContentTracker({ campaignId, placementType, children }: {
+  campaignId: string;
+  placementType: SponsoredContentPlacementType;
+  children: ReactNode;
+}) {
+  const elementRef = useRef<HTMLDivElement>(null);
+  const recordEvent = useRecordPublicSponsoredContentEvent();
+  const record = (eventType: 'impression' | 'click') => recordEvent.mutate({
+    id: campaignId,
+    data: { eventType, placementType },
+  });
+
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element || typeof window === 'undefined') return;
+    if (!('IntersectionObserver' in window)) {
+      record('impression');
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) {
+        record('impression');
+        observer.disconnect();
+      }
+    }, { threshold: 0.5 });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [campaignId, placementType]);
+
+  return <div ref={elementRef} onClick={() => record('click')} data-sponsored-campaign={campaignId}>{children}</div>;
+}
+
 const normalizedText = (value: string) => value.trim().toLocaleLowerCase('en');
+function placementForContent(
+  placements: PublicSponsoredContentPlacement[],
+  targetType: SponsoredContentType,
+  targetId: string,
+  placementTypes: SponsoredContentPlacementType[],
+): { placement: PublicSponsoredContentPlacement; placementType: SponsoredContentPlacementType } | undefined {
+  for (const placement of placements) {
+    if (placement.targetType !== targetType || placement.targetId !== targetId) continue;
+    const placementType = placementTypes.find(type => placement.placementTypes.includes(type));
+    if (placementType) return { placement, placementType };
+  }
+  return undefined;
+}
 function placementForFacility(
   placements: PublicSponsoredPlacement[],
   facility: PublicFacility,
@@ -525,17 +576,27 @@ export function PublicHomeShowcase({ language = 'en' }: { language?: PublicCatal
   const catalog = useGetPublicCatalog({ query: { queryKey: getGetPublicCatalogQueryKey() } });
   const facilities = useGetPublicFacilities({ query: { queryKey: getGetPublicFacilitiesQueryKey() } });
   const sponsored = useGetPublicSponsoredFacilities({ query: { queryKey: getGetPublicSponsoredFacilitiesQueryKey() } });
+  const sponsoredContentQuery = useGetPublicSponsoredContent(undefined, {
+    query: { queryKey: getGetPublicSponsoredContentQueryKey() },
+  });
   const courses = useGetPublicCourses({ query: { queryKey: getGetPublicCoursesQueryKey() } });
+  const sponsoredContent = sponsoredContentQuery.data ?? [];
   const offerings = (catalog.data ?? [])
     .filter((offering) => !offering.additionalPayment && Date.parse(offering.startsAt) > Date.now())
     .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
-  const upcoming = offerings.slice(0, 3);
+  const upcoming = [...offerings].sort((a, b) =>
+    Number(Boolean(placementForContent(sponsoredContent, 'event', b.id, ['home_promotion', 'featured_event', 'category_featured'])))
+    - Number(Boolean(placementForContent(sponsoredContent, 'event', a.id, ['home_promotion', 'featured_event', 'category_featured']))),
+  ).slice(0, 3);
   const sponsoredPlacements = (sponsored.data ?? []) as PublicSponsoredPlacement[];
   const facilityPreview = [...(facilities.data ?? [])]
     .sort((left, right) => Number(Boolean(placementForFacility(sponsoredPlacements, right, 'home_featured')))
       - Number(Boolean(placementForFacility(sponsoredPlacements, left, 'home_featured'))))
     .slice(0, 2);
-  const coursePreview = courses.data?.slice(0, 2) ?? [];
+  const coursePreview = [...(courses.data ?? [])].sort((a, b) =>
+    Number(Boolean(placementForContent(sponsoredContent, 'course', b.id, ['home_promotion', 'featured_course', 'category_featured'])))
+    - Number(Boolean(placementForContent(sponsoredContent, 'course', a.id, ['home_promotion', 'featured_course', 'category_featured']))),
+  ).slice(0, 2);
   const isLoading = catalog.isLoading || facilities.isLoading || courses.isLoading;
   const hasError = catalog.isError || facilities.isError || courses.isError;
   const retryAll = () => {
@@ -583,17 +644,27 @@ export function PublicHomeShowcase({ language = 'en' }: { language?: PublicCatal
             <p className="rounded-xl border border-secondary/40 bg-secondary/10 p-4 text-sm" role="alert" data-testid="status-home-offerings-error">{text.catalogError}</p>
           ) : upcoming.length ? (
             <div className="grid gap-3 sm:grid-cols-2">
-              {upcoming.map((offering) => <article key={offering.id} className="offering-card rounded-xl border border-border bg-card p-4" data-testid={`card-home-offering-${offering.id}`}>
-                {offering.imageUrl && <img src={offering.imageUrl} alt={localized(offering.localizedTitle, language) || offering.title} loading="lazy" referrerPolicy="no-referrer" className="mb-3 aspect-[16/8] w-full rounded-lg object-cover" />}
-                <div className="flex items-center justify-between gap-3">
-                  <span className="rounded-full bg-accent/70 px-2.5 py-1 text-[11px] font-bold">{offering.kind === 'session' ? text.class : offering.kind === 'event' ? text.event : text.coaching}</span>
-                  <span className="text-xs text-muted-foreground">{new Date(offering.startsAt).toLocaleDateString(language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ', { month: 'short', day: 'numeric' })}</span>
-                </div>
-                <h4 className="font-display mt-3 text-lg font-bold leading-snug">{localized(offering.localizedTitle, language) || offering.title}</h4>
-                <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />{offering.city} · {offering.facility}</p>
-                {offering.localizedDescription && <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">{localized(offering.localizedDescription, language)}</p>}
-                {offering.instructions && <p className="mt-2 whitespace-pre-line text-xs leading-5 text-muted-foreground">{offering.instructions}</p>}
-              </article>)}
+              {upcoming.map((offering) => {
+                const placement = offering.kind === 'event'
+                  ? placementForContent(sponsoredContent, 'event', offering.id, ['home_promotion', 'featured_event', 'category_featured'])
+                  : undefined;
+                const card = <article className="offering-card rounded-xl border border-border bg-card p-4" data-testid={`card-home-offering-${offering.id}`}>
+                  {offering.imageUrl && <img src={offering.imageUrl} alt={localized(offering.localizedTitle, language) || offering.title} loading="lazy" referrerPolicy="no-referrer" className="mb-3 aspect-[16/8] w-full rounded-lg object-cover" />}
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="rounded-full bg-accent/70 px-2.5 py-1 text-[11px] font-bold">{offering.kind === 'session' ? text.class : offering.kind === 'event' ? text.event : text.coaching}</span>
+                    {placement
+                      ? <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-900" data-testid={`badge-sponsored-event-${offering.id}`}>{text.sponsored}</span>
+                      : <span className="text-xs text-muted-foreground">{new Date(offering.startsAt).toLocaleDateString(language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ', { month: 'short', day: 'numeric' })}</span>}
+                  </div>
+                  <h4 className="font-display mt-3 text-lg font-bold leading-snug">{localized(offering.localizedTitle, language) || offering.title}</h4>
+                  <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />{offering.city} · {offering.facility}</p>
+                  {offering.localizedDescription && <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">{localized(offering.localizedDescription, language)}</p>}
+                  {offering.instructions && <p className="mt-2 whitespace-pre-line text-xs leading-5 text-muted-foreground">{offering.instructions}</p>}
+                </article>;
+                return placement
+                  ? <SponsoredContentTracker key={offering.id} campaignId={placement.placement.campaignId} placementType={placement.placementType}>{card}</SponsoredContentTracker>
+                  : <div key={offering.id}>{card}</div>;
+              })}
             </div>
           ) : (
             <div className="rounded-xl border border-dashed border-border bg-card/60 p-5 text-sm text-muted-foreground" data-testid="empty-home-catalog">{text.emptyCatalog}</div>
@@ -649,11 +720,20 @@ export function PublicHomeShowcase({ language = 'en' }: { language?: PublicCatal
             <p className="rounded-xl border border-secondary/40 bg-secondary/10 p-4 text-sm" role="alert" data-testid="status-home-courses-error">{text.catalogError}</p>
           ) : coursePreview.length ? (
             <ul className="space-y-2">
-              {coursePreview.map((course) => <li key={course.id} className="rounded-xl border border-border bg-card p-4" data-testid={`card-home-course-${course.id}`}>
-                <p className="font-semibold">{localized(course.localizedTitle, language)}</p>
-                <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{localized(course.localizedSummary, language)}</p>
-                <p className="mt-2 text-xs text-muted-foreground">{localized(course.localizedInstructor, language)} · {course.level} · {course.durationMinutes} {text.duration}</p>
-              </li>)}
+              {coursePreview.map((course) => {
+                const placement = placementForContent(sponsoredContent, 'course', course.id, ['home_promotion', 'featured_course', 'category_featured']);
+                const card = <div className="rounded-xl border border-border bg-card p-4" data-testid={`card-home-course-${course.id}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-semibold">{localized(course.localizedTitle, language)}</p>
+                    {placement && <span className="shrink-0 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-900" data-testid={`badge-sponsored-course-home-${course.id}`}>{text.sponsored}</span>}
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{localized(course.localizedSummary, language)}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">{localized(course.localizedInstructor, language)} · {course.level} · {course.durationMinutes} {text.duration}</p>
+                </div>;
+                return <li key={course.id}>{placement
+                  ? <SponsoredContentTracker campaignId={placement.placement.campaignId} placementType={placement.placementType}>{card}</SponsoredContentTracker>
+                  : card}</li>;
+              })}
             </ul>
           ) : (
             <p className="rounded-xl border border-dashed border-border bg-card/60 p-4 text-sm text-muted-foreground" data-testid="empty-home-courses">{text.noCourses}</p>
@@ -780,6 +860,9 @@ export function PublicFacilityBrowser({ language = 'en' }: { language?: PublicCa
 export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCatalogLanguage }) {
   const text = copy[language];
   const coursesQuery = useGetPublicCourses({ query: { queryKey: getGetPublicCoursesQueryKey() } });
+  const sponsoredContentQuery = useGetPublicSponsoredContent(undefined, {
+    query: { queryKey: getGetPublicSponsoredContentQueryKey() },
+  });
   const instructorProfilesQuery = useGetPublicInstructorProfiles({ query: { queryKey: getGetPublicInstructorProfilesQueryKey(), retry: false } });
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
@@ -789,10 +872,14 @@ export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCata
     () => Array.from(new Set(courses.map((course) => course.category.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, locale)),
     [courses, locale],
   );
+  const sponsoredContent = sponsoredContentQuery.data ?? [];
   const filtered = courses.filter((course) =>
     (!activeCategory || course.category === activeCategory)
     && [localized(course.localizedTitle, language), localized(course.localizedSummary, language), localized(course.localizedInstructor, language), course.category, course.level]
       .join(' ').toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
+  ).sort((a, b) =>
+    Number(Boolean(placementForContent(sponsoredContent, 'course', b.id, ['featured_course', 'category_featured'])))
+    - Number(Boolean(placementForContent(sponsoredContent, 'course', a.id, ['featured_course', 'category_featured']))),
   );
   const instructorProfiles = instructorProfilesQuery.data ?? [];
 
@@ -838,8 +925,10 @@ export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCata
           <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center" data-testid="empty-course-search"><p className="font-display text-xl font-bold">{text.noFilteredCourses}</p></div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((course: PublicCourse, index: number) => <article key={course.id} className="offering-card flex min-h-[270px] flex-col rounded-2xl border border-border bg-card p-5 sm:p-6" data-testid={`card-public-course-${course.id}`}>
-              <div className="flex items-start justify-between gap-3"><span className="rounded-full bg-accent/70 px-3 py-1 text-xs font-bold">{course.category}</span><span className="font-mono text-xs text-muted-foreground">0{index + 1}</span></div>
+            {filtered.map((course: PublicCourse, index: number) => {
+              const placement = placementForContent(sponsoredContent, 'course', course.id, ['featured_course', 'category_featured']);
+              const card = <article className="offering-card flex min-h-[270px] flex-col rounded-2xl border border-border bg-card p-5 sm:p-6" data-testid={`card-public-course-${course.id}`}>
+              <div className="flex items-start justify-between gap-3"><span className="rounded-full bg-accent/70 px-3 py-1 text-xs font-bold">{course.category}</span>{placement ? <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-900" data-testid={`badge-sponsored-course-${course.id}`}>{text.sponsored}</span> : <span className="font-mono text-xs text-muted-foreground">0{index + 1}</span>}</div>
               <h3 className="font-display mt-5 text-2xl font-bold leading-tight">{localized(course.localizedTitle, language)}</h3>
               <p className="mt-3 flex-1 text-sm leading-6 text-muted-foreground">{localized(course.localizedSummary, language)}</p>
               <div className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-4 text-sm">
@@ -864,7 +953,11 @@ export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCata
                   <div><dt className="text-xs font-semibold text-muted-foreground">{text.supportingMaterials}</dt><dd className="mt-1 whitespace-pre-line">{course.supportingMaterials ? localized(course.supportingMaterials, language) : text.informationNotProvided}</dd></div>
                 </dl>
               </div>
-            </article>)}
+              </article>;
+              return placement
+                ? <SponsoredContentTracker key={course.id} campaignId={placement.placement.campaignId} placementType={placement.placementType}>{card}</SponsoredContentTracker>
+                : <div key={course.id}>{card}</div>;
+            })}
           </div>
         )}
       </section>

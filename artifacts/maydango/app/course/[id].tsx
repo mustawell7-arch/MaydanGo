@@ -12,18 +12,25 @@ import {
   useEnrollMemberCourse, useGetMemberCourse, useRecordMemberCourseLessonView,
   useSetMemberCourseFavorite, useUpdateCourseProgress,
   useUpdateMemberCoursePlaybackProgress,
+  type SponsoredContentPlacementType,
 } from '@workspace/api-client-react';
 import type { CourseDetail } from '@workspace/api-client-react';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { translate, type MessageKey } from '@/lib/i18n';
 import { errorCopy } from '@/lib/content';
+import { useSponsoredContentTracking } from '@/lib/sponsored-content';
 
 export default function CourseDetailScreen() {
   const colors = useColors();
   const app = useApp();
   const queryClient = useQueryClient();
-  const { id, resume } = useLocalSearchParams<{ id: string; resume?: string }>();
+  const { id, resume, sponsoredCampaignId, sponsoredPlacementType } = useLocalSearchParams<{
+    id: string;
+    resume?: string;
+    sponsoredCampaignId?: string;
+    sponsoredPlacementType?: string;
+  }>();
   const courseQuery = useGetMemberCourse(id);
   const course = courseQuery.data;
   const enrollMutation = useEnrollMemberCourse();
@@ -33,6 +40,7 @@ export default function CourseDetailScreen() {
   const materialDownloadMutation = useCreateMemberCourseMaterialDownloadLink();
   const lessonViewMutation = useRecordMemberCourseLessonView();
   const favoriteMutation = useSetMemberCourseFavorite();
+  const sponsoredTracking = useSponsoredContentTracking();
   const [activePlayback, setActivePlayback] = useState<{
     lessonId: string;
     url: string;
@@ -191,6 +199,9 @@ export default function CourseDetailScreen() {
   const enroll = async () => {
     try {
       await enrollMutation.mutateAsync({ id: course.id });
+      if (sponsoredCampaignId && sponsoredPlacementType) {
+        sponsoredTracking.recordConversion(sponsoredCampaignId, sponsoredPlacementType as SponsoredContentPlacementType);
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: getGetMemberCourseQueryKey(course.id) }),
         queryClient.invalidateQueries({ queryKey: getGetMemberCoursesQueryKey() }),
@@ -235,6 +246,9 @@ export default function CourseDetailScreen() {
             </Pressable>
           </View>
           <View style={styles.heroText}>
+            {sponsoredCampaignId ? <View style={[styles.sponsoredBadge, { backgroundColor: colors.secondary, alignSelf: app.language === 'en' ? 'flex-start' : 'flex-end' }]}>
+              <Text style={[styles.sponsoredBadgeText, { color: colors.primary }]}>{t('sponsored')}</Text>
+            </View> : null}
             <Text style={[styles.kicker, { textAlign: align }]}>{t(course.level === 'all-levels' ? 'allLevels' : course.level)} · {course.durationMinutes} {t('minutesShort')} · {course.lessonCount} {t('lessons')} · {course.localizedInstructor[app.language] || course.localizedInstructor.en}</Text>
             <Text style={[styles.heroTitle, { textAlign: align }]}>{course.localizedTitle[app.language] || course.localizedTitle.en}</Text>
           </View>
@@ -428,6 +442,8 @@ const styles = StyleSheet.create({
   backButton: { width: 42, height: 42, borderRadius: 15, backgroundColor: '#c6e57d', alignItems: 'center', justifyContent: 'center' },
   favoriteButton: { width: 42, height: 42, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   heroText: { position: 'absolute', left: 18, right: 18, bottom: 18 },
+  sponsoredBadge: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4, marginBottom: 3 },
+  sponsoredBadgeText: { fontSize: 10, fontWeight: '900' },
   kicker: { color: '#c6e57d', fontSize: 10, fontWeight: '800' },
   heroTitle: { color: '#ffffff', fontSize: 25, fontWeight: '800', marginTop: 6 },
   body: { paddingHorizontal: 20, paddingTop: 18 },

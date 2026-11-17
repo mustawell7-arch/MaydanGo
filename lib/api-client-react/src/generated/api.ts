@@ -126,6 +126,7 @@ import type {
   GetPartnerStaffResponse,
   GetPublicInstructorProfilesResponse,
   GetPublicLegalPolicyVersionParams,
+  GetPublicSponsoredContentParams,
   GetSuperAdminAuditLogsParams,
   GetSuperAdminGuardianConsentsParams,
   GetSuperAdminGuardianConsentsResponse,
@@ -230,6 +231,8 @@ import type {
   PublicLegalPolicyVersion,
   PublicOffering,
   PublicPlan,
+  PublicSponsoredContentEventInput,
+  PublicSponsoredContentPlacementsResponse,
   PublicSponsoredFacilityEventInput,
   PublicSponsoredFacilityPlacementsResponse,
   PushDeviceInput,
@@ -246,6 +249,9 @@ import type {
   SaveMemberProfileBody,
   ScanCheckinQr200,
   ScanCheckinQrBody,
+  SponsoredContentCampaign,
+  SponsoredContentCampaignInput,
+  SponsoredContentCampaignsResponse,
   SponsoredFacilityCampaign,
   SponsoredFacilityCampaignInput,
   SponsoredFacilityCampaignsResponse,
@@ -675,6 +681,451 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRecordPublicSponsoredFacilityEventMutationOptions(options), queryClient);
+    }
+
+export const getGetSponsoredContentCampaignsUrl = () => {
+
+
+
+
+  return `/api/operations/sponsored-content`
+}
+
+export const getSponsoredContentCampaigns = async ( options?: Parameters<typeof customFetch>[1]): Promise<SponsoredContentCampaignsResponse> => {
+
+  return customFetch<SponsoredContentCampaignsResponse>(getGetSponsoredContentCampaignsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSponsoredContentCampaignsQueryKey = () => {
+    return [
+    `/api/operations/sponsored-content`
+    ] as const;
+    }
+
+
+export const getGetSponsoredContentCampaignsQueryOptions = <TData = Awaited<ReturnType<typeof getSponsoredContentCampaigns>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSponsoredContentCampaigns>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSponsoredContentCampaignsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSponsoredContentCampaigns>>> = ({ signal }) => getSponsoredContentCampaigns({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSponsoredContentCampaigns>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSponsoredContentCampaignsQueryResult = NonNullable<Awaited<ReturnType<typeof getSponsoredContentCampaigns>>>
+export type GetSponsoredContentCampaignsQueryError = ErrorType<void>
+
+
+export function useGetSponsoredContentCampaigns<TData = Awaited<ReturnType<typeof getSponsoredContentCampaigns>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSponsoredContentCampaigns>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSponsoredContentCampaigns>>,
+          TError,
+          Awaited<ReturnType<typeof getSponsoredContentCampaigns>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSponsoredContentCampaigns<TData = Awaited<ReturnType<typeof getSponsoredContentCampaigns>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSponsoredContentCampaigns>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSponsoredContentCampaigns>>,
+          TError,
+          Awaited<ReturnType<typeof getSponsoredContentCampaigns>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSponsoredContentCampaigns<TData = Awaited<ReturnType<typeof getSponsoredContentCampaigns>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSponsoredContentCampaigns>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSponsoredContentCampaigns<TData = Awaited<ReturnType<typeof getSponsoredContentCampaigns>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSponsoredContentCampaigns>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSponsoredContentCampaignsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSponsoredContentCampaignUrl = () => {
+
+
+
+
+  return `/api/operations/sponsored-content`
+}
+
+export const createSponsoredContentCampaign = async (sponsoredContentCampaignInput: SponsoredContentCampaignInput, options?: Parameters<typeof customFetch>[1]): Promise<SponsoredContentCampaign> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SponsoredContentCampaign>(getCreateSponsoredContentCampaignUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sponsoredContentCampaignInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSponsoredContentCampaignMutationKey = () => ['createSponsoredContentCampaign'] as const;
+
+export const getCreateSponsoredContentCampaignMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSponsoredContentCampaign>>, TError,CreateSponsoredContentCampaignMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSponsoredContentCampaign>>, TError,CreateSponsoredContentCampaignMutationVariables, TContext> => {
+
+const mutationKey = getCreateSponsoredContentCampaignMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSponsoredContentCampaign>>, CreateSponsoredContentCampaignMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSponsoredContentCampaign(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSponsoredContentCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof createSponsoredContentCampaign>>>
+    export type CreateSponsoredContentCampaignMutationBody = BodyType<SponsoredContentCampaignInput>
+    export type CreateSponsoredContentCampaignMutationError = ErrorType<void>
+    export type CreateSponsoredContentCampaignMutationVariables = {data: BodyType<SponsoredContentCampaignInput>}
+
+    export const useCreateSponsoredContentCampaign = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSponsoredContentCampaign>>, TError,CreateSponsoredContentCampaignMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createSponsoredContentCampaign>>,
+        TError,
+        CreateSponsoredContentCampaignMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateSponsoredContentCampaignMutationOptions(options), queryClient);
+    }
+
+export const getUpdateSponsoredContentCampaignUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/sponsored-content/${id}`
+}
+
+export const updateSponsoredContentCampaign = async (id: string,
+    sponsoredContentCampaignInput: SponsoredContentCampaignInput, options?: Parameters<typeof customFetch>[1]): Promise<SponsoredContentCampaign> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SponsoredContentCampaign>(getUpdateSponsoredContentCampaignUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sponsoredContentCampaignInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateSponsoredContentCampaignMutationKey = () => ['updateSponsoredContentCampaign'] as const;
+
+export const getUpdateSponsoredContentCampaignMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSponsoredContentCampaign>>, TError,UpdateSponsoredContentCampaignMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSponsoredContentCampaign>>, TError,UpdateSponsoredContentCampaignMutationVariables, TContext> => {
+
+const mutationKey = getUpdateSponsoredContentCampaignMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSponsoredContentCampaign>>, UpdateSponsoredContentCampaignMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSponsoredContentCampaign(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSponsoredContentCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof updateSponsoredContentCampaign>>>
+    export type UpdateSponsoredContentCampaignMutationBody = BodyType<SponsoredContentCampaignInput>
+    export type UpdateSponsoredContentCampaignMutationError = ErrorType<void>
+    export type UpdateSponsoredContentCampaignMutationVariables = {id: string;data: BodyType<SponsoredContentCampaignInput>}
+
+    export const useUpdateSponsoredContentCampaign = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSponsoredContentCampaign>>, TError,UpdateSponsoredContentCampaignMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateSponsoredContentCampaign>>,
+        TError,
+        UpdateSponsoredContentCampaignMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateSponsoredContentCampaignMutationOptions(options), queryClient);
+    }
+
+export const getGetPublicSponsoredContentUrl = (params?: GetPublicSponsoredContentParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/public/sponsored-content?${stringifiedParams}` : `/api/public/sponsored-content`
+}
+
+export const getPublicSponsoredContent = async (params?: GetPublicSponsoredContentParams, options?: Parameters<typeof customFetch>[1]): Promise<PublicSponsoredContentPlacementsResponse> => {
+
+  return customFetch<PublicSponsoredContentPlacementsResponse>(getGetPublicSponsoredContentUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicSponsoredContentQueryKey = (params?: GetPublicSponsoredContentParams,) => {
+    return [
+    `/api/public/sponsored-content`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPublicSponsoredContentQueryOptions = <TData = Awaited<ReturnType<typeof getPublicSponsoredContent>>, TError = ErrorType<unknown>>(params?: GetPublicSponsoredContentParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicSponsoredContent>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicSponsoredContentQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicSponsoredContent>>> = ({ signal }) => getPublicSponsoredContent(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicSponsoredContent>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPublicSponsoredContentQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicSponsoredContent>>>
+export type GetPublicSponsoredContentQueryError = ErrorType<unknown>
+
+
+export function useGetPublicSponsoredContent<TData = Awaited<ReturnType<typeof getPublicSponsoredContent>>, TError = ErrorType<unknown>>(
+ params: undefined |  GetPublicSponsoredContentParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicSponsoredContent>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicSponsoredContent>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicSponsoredContent>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicSponsoredContent<TData = Awaited<ReturnType<typeof getPublicSponsoredContent>>, TError = ErrorType<unknown>>(
+ params?: GetPublicSponsoredContentParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicSponsoredContent>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicSponsoredContent>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicSponsoredContent>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicSponsoredContent<TData = Awaited<ReturnType<typeof getPublicSponsoredContent>>, TError = ErrorType<unknown>>(
+ params?: GetPublicSponsoredContentParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicSponsoredContent>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPublicSponsoredContent<TData = Awaited<ReturnType<typeof getPublicSponsoredContent>>, TError = ErrorType<unknown>>(
+ params?: GetPublicSponsoredContentParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicSponsoredContent>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPublicSponsoredContentQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordPublicSponsoredContentEventUrl = (id: string,) => {
+
+
+
+
+  return `/api/public/sponsored-content/${id}/events`
+}
+
+export const recordPublicSponsoredContentEvent = async (id: string,
+    publicSponsoredContentEventInput: PublicSponsoredContentEventInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<void>(getRecordPublicSponsoredContentEventUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(publicSponsoredContentEventInput)
+  }
+);}
+
+
+
+
+
+export const getRecordPublicSponsoredContentEventMutationKey = () => ['recordPublicSponsoredContentEvent'] as const;
+
+export const getRecordPublicSponsoredContentEventMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordPublicSponsoredContentEvent>>, TError,RecordPublicSponsoredContentEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordPublicSponsoredContentEvent>>, TError,RecordPublicSponsoredContentEventMutationVariables, TContext> => {
+
+const mutationKey = getRecordPublicSponsoredContentEventMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordPublicSponsoredContentEvent>>, RecordPublicSponsoredContentEventMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordPublicSponsoredContentEvent(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordPublicSponsoredContentEventMutationResult = NonNullable<Awaited<ReturnType<typeof recordPublicSponsoredContentEvent>>>
+    export type RecordPublicSponsoredContentEventMutationBody = BodyType<PublicSponsoredContentEventInput>
+    export type RecordPublicSponsoredContentEventMutationError = ErrorType<void>
+    export type RecordPublicSponsoredContentEventMutationVariables = {id: string;data: BodyType<PublicSponsoredContentEventInput>}
+
+    export const useRecordPublicSponsoredContentEvent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordPublicSponsoredContentEvent>>, TError,RecordPublicSponsoredContentEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof recordPublicSponsoredContentEvent>>,
+        TError,
+        RecordPublicSponsoredContentEventMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordPublicSponsoredContentEventMutationOptions(options), queryClient);
     }
 
 export const getGetOperationFacilitiesUrl = () => {

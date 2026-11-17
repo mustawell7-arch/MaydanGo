@@ -343,6 +343,191 @@ export const RecordPublicSponsoredFacilityEventBody = zod.object({
 export const RecordPublicSponsoredFacilityEventResponse = zod.void()
 
 
+
+export const getSponsoredContentCampaignsResponseImpressionsMin = 0;
+
+export const getSponsoredContentCampaignsResponseClicksMin = 0;
+
+export const getSponsoredContentCampaignsResponseConversionsMin = 0;
+
+
+
+export const GetSponsoredContentCampaignsResponseItem = zod.object({
+  "id": zod.string(),
+  "campaignName": zod.string(),
+  "targetType": zod.enum(['event', 'course']),
+  "targetId": zod.string(),
+  "targetName": zod.string(),
+  "partnerName": zod.string().nullable(),
+  "city": zod.string().nullable(),
+  "placementTypes": zod.array(zod.enum(['featured_event', 'featured_course', 'home_promotion', 'category_featured'])).min(1),
+  "targetCity": zod.string().nullable(),
+  "targetActivity": zod.string().nullable(),
+  "targetMembershipTiers": zod.array(zod.enum(['M', 'L', 'XL'])),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "status": zod.enum(['draft', 'active', 'paused']),
+  "impressions": zod.int().min(getSponsoredContentCampaignsResponseImpressionsMin),
+  "clicks": zod.int().min(getSponsoredContentCampaignsResponseClicksMin),
+  "conversions": zod.int().min(getSponsoredContentCampaignsResponseConversionsMin),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const GetSponsoredContentCampaignsResponse = zod.array(GetSponsoredContentCampaignsResponseItem)
+
+
+export const createSponsoredContentCampaignBodyCampaignNameMin = 2;
+export const createSponsoredContentCampaignBodyCampaignNameMax = 120;
+
+export const createSponsoredContentCampaignBodyTargetIdMax = 160;
+
+
+export const createSponsoredContentCampaignBodyTargetCityMax = 120;
+
+export const createSponsoredContentCampaignBodyTargetActivityMax = 120;
+
+
+
+export const CreateSponsoredContentCampaignBody = zod.object({
+  "campaignName": zod.string().min(createSponsoredContentCampaignBodyCampaignNameMin).max(createSponsoredContentCampaignBodyCampaignNameMax),
+  "targetType": zod.enum(['event', 'course']),
+  "targetId": zod.string().min(1).max(createSponsoredContentCampaignBodyTargetIdMax),
+  "placementTypes": zod.array(zod.enum(['featured_event', 'featured_course', 'home_promotion', 'category_featured'])).min(1),
+  "targetCity": zod.string().max(createSponsoredContentCampaignBodyTargetCityMax).nullable(),
+  "targetActivity": zod.string().max(createSponsoredContentCampaignBodyTargetActivityMax).nullable(),
+  "targetMembershipTiers": zod.array(zod.enum(['M', 'L', 'XL'])),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "status": zod.enum(['draft', 'active', 'paused'])
+})
+
+
+export const createSponsoredContentCampaignResponseImpressionsMin = 0;
+
+export const createSponsoredContentCampaignResponseClicksMin = 0;
+
+export const createSponsoredContentCampaignResponseConversionsMin = 0;
+
+
+
+export const CreateSponsoredContentCampaignResponse = zod.object({
+  "id": zod.string(),
+  "campaignName": zod.string(),
+  "targetType": zod.enum(['event', 'course']),
+  "targetId": zod.string(),
+  "targetName": zod.string(),
+  "partnerName": zod.string().nullable(),
+  "city": zod.string().nullable(),
+  "placementTypes": zod.array(zod.enum(['featured_event', 'featured_course', 'home_promotion', 'category_featured'])).min(1),
+  "targetCity": zod.string().nullable(),
+  "targetActivity": zod.string().nullable(),
+  "targetMembershipTiers": zod.array(zod.enum(['M', 'L', 'XL'])),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "status": zod.enum(['draft', 'active', 'paused']),
+  "impressions": zod.int().min(createSponsoredContentCampaignResponseImpressionsMin),
+  "clicks": zod.int().min(createSponsoredContentCampaignResponseClicksMin),
+  "conversions": zod.int().min(createSponsoredContentCampaignResponseConversionsMin),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const UpdateSponsoredContentCampaignParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updateSponsoredContentCampaignBodyCampaignNameMin = 2;
+export const updateSponsoredContentCampaignBodyCampaignNameMax = 120;
+
+export const updateSponsoredContentCampaignBodyTargetIdMax = 160;
+
+
+export const updateSponsoredContentCampaignBodyTargetCityMax = 120;
+
+export const updateSponsoredContentCampaignBodyTargetActivityMax = 120;
+
+
+
+export const UpdateSponsoredContentCampaignBody = zod.object({
+  "campaignName": zod.string().min(updateSponsoredContentCampaignBodyCampaignNameMin).max(updateSponsoredContentCampaignBodyCampaignNameMax),
+  "targetType": zod.enum(['event', 'course']),
+  "targetId": zod.string().min(1).max(updateSponsoredContentCampaignBodyTargetIdMax),
+  "placementTypes": zod.array(zod.enum(['featured_event', 'featured_course', 'home_promotion', 'category_featured'])).min(1),
+  "targetCity": zod.string().max(updateSponsoredContentCampaignBodyTargetCityMax).nullable(),
+  "targetActivity": zod.string().max(updateSponsoredContentCampaignBodyTargetActivityMax).nullable(),
+  "targetMembershipTiers": zod.array(zod.enum(['M', 'L', 'XL'])),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "status": zod.enum(['draft', 'active', 'paused'])
+})
+
+
+export const updateSponsoredContentCampaignResponseImpressionsMin = 0;
+
+export const updateSponsoredContentCampaignResponseClicksMin = 0;
+
+export const updateSponsoredContentCampaignResponseConversionsMin = 0;
+
+
+
+export const UpdateSponsoredContentCampaignResponse = zod.object({
+  "id": zod.string(),
+  "campaignName": zod.string(),
+  "targetType": zod.enum(['event', 'course']),
+  "targetId": zod.string(),
+  "targetName": zod.string(),
+  "partnerName": zod.string().nullable(),
+  "city": zod.string().nullable(),
+  "placementTypes": zod.array(zod.enum(['featured_event', 'featured_course', 'home_promotion', 'category_featured'])).min(1),
+  "targetCity": zod.string().nullable(),
+  "targetActivity": zod.string().nullable(),
+  "targetMembershipTiers": zod.array(zod.enum(['M', 'L', 'XL'])),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "status": zod.enum(['draft', 'active', 'paused']),
+  "impressions": zod.int().min(updateSponsoredContentCampaignResponseImpressionsMin),
+  "clicks": zod.int().min(updateSponsoredContentCampaignResponseClicksMin),
+  "conversions": zod.int().min(updateSponsoredContentCampaignResponseConversionsMin),
+  "createdBy": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const getPublicSponsoredContentQueryCityMax = 120;
+
+
+
+export const GetPublicSponsoredContentQueryParams = zod.object({
+  "city": zod.coerce.string().max(getPublicSponsoredContentQueryCityMax).optional()
+})
+
+export const GetPublicSponsoredContentResponseItem = zod.object({
+  "campaignId": zod.string(),
+  "targetType": zod.enum(['event', 'course']),
+  "targetId": zod.string(),
+  "placementTypes": zod.array(zod.enum(['featured_event', 'featured_course', 'home_promotion', 'category_featured'])),
+  "targetCity": zod.string().nullable(),
+  "targetActivity": zod.string().nullable()
+})
+export const GetPublicSponsoredContentResponse = zod.array(GetPublicSponsoredContentResponseItem)
+
+
+export const RecordPublicSponsoredContentEventParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const RecordPublicSponsoredContentEventBody = zod.object({
+  "eventType": zod.enum(['impression', 'click', 'conversion']),
+  "placementType": zod.enum(['featured_event', 'featured_course', 'home_promotion', 'category_featured'])
+})
+
+export const RecordPublicSponsoredContentEventResponse = zod.void()
+
+
 export const getOperationFacilitiesResponseOneLocalizedNameEnMax = 500;
 
 export const getOperationFacilitiesResponseOneLocalizedNameArMax = 500;

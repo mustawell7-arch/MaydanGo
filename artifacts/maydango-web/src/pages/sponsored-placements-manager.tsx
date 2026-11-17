@@ -9,6 +9,7 @@ import {
   useGetPublicFacilities,
   useUpdateSponsoredFacilityCampaign,
 } from "@workspace/api-client-react";
+import { SponsoredContentCampaigns } from "./sponsored-content-campaigns";
 
 type Language = "en" | "ar" | "ku";
 type PlacementType = "home_featured" | "search_sponsored" | "category_featured";
@@ -363,6 +364,7 @@ export default function SponsoredPlacementsManagerPage() {
           </div>
         )}
       </section>
+      <SponsoredContentCampaigns language={language} />
     </div>
   </main>;
 }

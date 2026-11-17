@@ -1135,6 +1135,76 @@ paths:
         "204": { description: Sponsored placement event recorded }
         "400": { description: Invalid placement event }
         "404": { description: Active sponsored placement not found }
+  /operations/sponsored-content:
+    get:
+      operationId: getSponsoredContentCampaigns
+      responses:
+        "200":
+          description: Sponsored event and course campaigns for authorized marketing administrators
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SponsoredContentCampaignsResponse" }
+        "403": { description: Marketing administrator access is required }
+    post:
+      operationId: createSponsoredContentCampaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SponsoredContentCampaignInput" }
+      responses:
+        "201":
+          description: Sponsored content campaign created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SponsoredContentCampaign" }
+        "400": { description: Invalid campaign details }
+        "403": { description: Marketing administrator access is required }
+  /operations/sponsored-content/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: updateSponsoredContentCampaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SponsoredContentCampaignInput" }
+      responses:
+        "200":
+          description: Sponsored content campaign updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SponsoredContentCampaign" }
+        "400": { description: Invalid campaign details }
+        "403": { description: Marketing administrator access is required }
+        "404": { description: Campaign not found }
+  /public/sponsored-content:
+    get:
+      operationId: getPublicSponsoredContent
+      parameters:
+        - name: city
+          in: query
+          required: false
+          schema: { type: string, maxLength: 120 }
+      responses:
+        "200":
+          description: Current event and course placements eligible for this visitor
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicSponsoredContentPlacementsResponse" }
+  /public/sponsored-content/{id}/events:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: recordPublicSponsoredContentEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PublicSponsoredContentEventInput" }
+      responses:
+        "204": { description: Sponsored content event recorded }
+        "400": { description: Invalid placement event }
+        "404": { description: Active sponsored content placement not found }
   /operations/analytics:
     get:
       operationId: getOperationsAnalytics
@@ -6006,6 +6076,79 @@ components:
       properties:
         eventType: { type: string, enum: [impression, click] }
         placementType: { $ref: "#/components/schemas/SponsoredPlacementType" }
+    SponsoredContentType:
+      type: string
+      enum: [event, course]
+    SponsoredContentPlacementType:
+      type: string
+      enum: [featured_event, featured_course, home_promotion, category_featured]
+    SponsoredContentCampaignStatus:
+      type: string
+      enum: [draft, active, paused]
+    SponsoredContentCampaign:
+      type: object
+      additionalProperties: false
+      required: [id, campaignName, targetType, targetId, targetName, partnerName, city, placementTypes, targetCity, targetActivity, targetMembershipTiers, startsAt, endsAt, status, impressions, clicks, conversions, createdBy, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        campaignName: { type: string }
+        targetType: { $ref: "#/components/schemas/SponsoredContentType" }
+        targetId: { type: string }
+        targetName: { type: string }
+        partnerName: { type: ["string", "null"] }
+        city: { type: ["string", "null"] }
+        placementTypes: { type: array, minItems: 1, items: { $ref: "#/components/schemas/SponsoredContentPlacementType" } }
+        targetCity: { type: ["string", "null"] }
+        targetActivity: { type: ["string", "null"] }
+        targetMembershipTiers: { type: array, items: { type: string, enum: [M, L, XL] } }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        status: { $ref: "#/components/schemas/SponsoredContentCampaignStatus" }
+        impressions: { type: integer, minimum: 0 }
+        clicks: { type: integer, minimum: 0 }
+        conversions: { type: integer, minimum: 0 }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    SponsoredContentCampaignInput:
+      type: object
+      additionalProperties: false
+      required: [campaignName, targetType, targetId, placementTypes, targetCity, targetActivity, targetMembershipTiers, startsAt, endsAt, status]
+      properties:
+        campaignName: { type: string, minLength: 2, maxLength: 120 }
+        targetType: { $ref: "#/components/schemas/SponsoredContentType" }
+        targetId: { type: string, minLength: 1, maxLength: 160 }
+        placementTypes: { type: array, minItems: 1, uniqueItems: true, items: { $ref: "#/components/schemas/SponsoredContentPlacementType" } }
+        targetCity: { type: ["string", "null"], maxLength: 120 }
+        targetActivity: { type: ["string", "null"], maxLength: 120 }
+        targetMembershipTiers: { type: array, uniqueItems: true, items: { type: string, enum: [M, L, XL] } }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        status: { $ref: "#/components/schemas/SponsoredContentCampaignStatus" }
+    SponsoredContentCampaignsResponse:
+      type: array
+      items: { $ref: "#/components/schemas/SponsoredContentCampaign" }
+    PublicSponsoredContentPlacement:
+      type: object
+      additionalProperties: false
+      required: [campaignId, targetType, targetId, placementTypes, targetCity, targetActivity]
+      properties:
+        campaignId: { type: string }
+        targetType: { $ref: "#/components/schemas/SponsoredContentType" }
+        targetId: { type: string }
+        placementTypes: { type: array, items: { $ref: "#/components/schemas/SponsoredContentPlacementType" } }
+        targetCity: { type: ["string", "null"] }
+        targetActivity: { type: ["string", "null"] }
+    PublicSponsoredContentPlacementsResponse:
+      type: array
+      items: { $ref: "#/components/schemas/PublicSponsoredContentPlacement" }
+    PublicSponsoredContentEventInput:
+      type: object
+      additionalProperties: false
+      required: [eventType, placementType]
+      properties:
+        eventType: { type: string, enum: [impression, click, conversion] }
+        placementType: { $ref: "#/components/schemas/SponsoredContentPlacementType" }
     GuardianConsentUploadUrlRequest:
       type: object
       additionalProperties: false

@@ -40,6 +40,14 @@ paths:
     $ref: "./operations.yaml#/paths/~1public~1sponsored-facilities"
   /public/sponsored-facilities/{id}/events:
     $ref: "./operations.yaml#/paths/~1public~1sponsored-facilities~1{id}~1events"
+  /operations/sponsored-content:
+    $ref: "./operations.yaml#/paths/~1operations~1sponsored-content"
+  /operations/sponsored-content/{id}:
+    $ref: "./operations.yaml#/paths/~1operations~1sponsored-content~1{id}"
+  /public/sponsored-content:
+    $ref: "./operations.yaml#/paths/~1public~1sponsored-content"
+  /public/sponsored-content/{id}/events:
+    $ref: "./operations.yaml#/paths/~1public~1sponsored-content~1{id}~1events"
   /operations/facilities:
     get:
       operationId: getOperationFacilities
