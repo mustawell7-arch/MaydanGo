@@ -19,6 +19,7 @@ The schema already supports much of the member, facility, booking, learning, sup
 | --- | --- | --- |
 | Users | Clerk identity IDs referenced by application records; no local password table | Represented externally |
 | Customer profiles | `member_profiles` | Represented |
+| Optional member profile photos | `member_profile_photos` plus private App Storage objects | Represented; explicit consent and scoped partner delivery |
 | Devices and device history | `member_devices`, `member_device_changes`, `member_device_events` | Represented |
 | Admin users | Clerk identity plus `operators` | Represented |
 | Admin roles and permissions | `operators.role`, `admin_role_permissions` | Represented |
@@ -45,7 +46,7 @@ The schema already supports much of the member, facility, booking, learning, sup
 | Credit notes | No issued credit-note entity; correction records track review metadata and references | Deferred; final accounting treatment requires advice |
 | Wallet transactions | No wallet ledger | Deferred |
 | Promotions and sponsored placements | Sponsored facility/content campaign and placement-event tables | Represented for sponsored campaigns; no general coupon ledger |
-| Referrals | No referral ledger or referral-attribution table | Deferred |
+| Referrals | `member_referral_codes`, `member_referral_attributions` | Represented for sign-up attribution only |
 | Corporate clients and employees | `corporate_organizations`, `corporate_administrators`, `corporate_employees`, `corporate_invitations` | Represented for employee administration |
 | Corporate billing | No active corporate billing ledger | Deferred |
 | Events and tickets | Event offerings use the shared offering/reservation model | Partial; no separate ticket ledger and paid ticketing is deferred |

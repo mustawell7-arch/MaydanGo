@@ -10,6 +10,7 @@ import {
   lessonAccess,
   lessonProgress,
   memberConsentEvents,
+  memberProfilePhotos,
   memberSavedCourses,
   memberNotificationPreferences,
   memberProfiles,
@@ -25,11 +26,15 @@ import {
 } from "@workspace/db";
 import { GetMemberPrivacyRequestExportResponse } from "@workspace/api-zod";
 import { getPrivacyRequestKind, privacyRequestSubjects } from "./privacy-requests";
+import { ObjectNotFoundError, ObjectStorageService } from "./objectStorage";
+
+const memberDataExportStorage = new ObjectStorageService();
 
 export async function createMemberDataExport(userId: string) {
   const [
     account,
     profileRows,
+    profilePhotoRows,
     membershipRows,
     bookingRows,
     waitlistRows,
@@ -48,6 +53,7 @@ export async function createMemberDataExport(userId: string) {
     clerkClient.users.getUser(userId),
     db.select({ gender: memberProfiles.gender, birthDate: memberProfiles.birthDate })
       .from(memberProfiles).where(eq(memberProfiles.userId, userId)).limit(1),
+    db.select().from(memberProfilePhotos).where(eq(memberProfilePhotos.userId, userId)).limit(1),
     db.select({
       scope: memberships.scope,
       status: memberships.status,
@@ -262,8 +268,44 @@ export async function createMemberDataExport(userId: string) {
     messagesByTicket.set(row.ticketId, messages);
   }
 
+  const savedProfilePhoto = profilePhotoRows[0];
+  let profilePhotoExport = {
+    present: false,
+    consentVersion: savedProfilePhoto?.consentVersion ?? null,
+    consentAt: savedProfilePhoto?.consentAt ?? null,
+    contentType: null as "image/jpeg" | "image/png" | "image/webp" | null,
+    imageBase64: null as string | null,
+  };
+  if (savedProfilePhoto?.objectPath) {
+    let imageFile;
+    try {
+      imageFile = await memberDataExportStorage.getPrivateFile(savedProfilePhoto.objectPath);
+    } catch (error) {
+      if (!(error instanceof ObjectNotFoundError)) throw error;
+      throw new Error("The member profile photo is missing from private storage; the data export cannot be completed.");
+    }
+    const [metadata] = await imageFile.getMetadata();
+    const contentType = String(metadata.contentType ?? "");
+    const size = Number(metadata.size ?? 0);
+    if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)
+      || size < 1 || size > 5_000_000) {
+      throw new Error("The member profile photo is not a supported image; the data export cannot be completed.");
+    }
+    const [imageBytes] = await imageFile.download();
+    if (imageBytes.byteLength !== size) {
+      throw new Error("The member profile photo changed while the data export was being prepared.");
+    }
+    profilePhotoExport = {
+      present: true,
+      consentVersion: savedProfilePhoto.consentVersion,
+      consentAt: savedProfilePhoto.consentAt,
+      contentType: contentType as "image/jpeg" | "image/png" | "image/webp",
+      imageBase64: imageBytes.toString("base64"),
+    };
+  }
+
   return GetMemberPrivacyRequestExportResponse.parse({
-    formatVersion: "1.2",
+    formatVersion: "1.3",
     generatedAt: new Date(),
     account: {
       email: account.primaryEmailAddress?.emailAddress ?? null,
@@ -271,6 +313,7 @@ export async function createMemberDataExport(userId: string) {
       lastName: account.lastName,
       createdAt: new Date(account.createdAt),
       profile: profileRows[0] ?? null,
+      profilePhoto: profilePhotoExport,
     },
     memberships: membershipRows,
     bookings: bookingRows,

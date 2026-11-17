@@ -1,20 +1,27 @@
 import { Router } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { db, memberships, memberProfiles, offerings, reservations, partners, waitlistEntries } from "@workspace/db";
+import { db, memberships, memberProfilePhotos, memberProfiles, offerings, reservations, partners, waitlistEntries } from "@workspace/db";
 import { eq, and, inArray, sql, gt, asc, isNull, ne, or } from "drizzle-orm";
 import {
+  CompleteMemberProfilePhotoUploadBody,
+  CompleteMemberProfilePhotoUploadResponse,
   CreateMemberPrivacyRequestBody,
   CreateMemberPrivacyRequestResponse,
   GetMemberAccountSummaryResponse,
   GetMemberConsentsResponse,
   GetMemberAllowancesResponse,
+  GetMemberProfilePhotoResponse,
   GetMemberPrivacyRequestsResponse,
   SaveMemberConsentsBody,
   SaveMemberConsentsResponse,
   GetMemberReferralsResponse,
   AttributeMemberReferralBody,
   AttributeMemberReferralResponse,
+  RequestMemberProfilePhotoUploadUrlBody,
+  RequestMemberProfilePhotoUploadUrlResponse,
+  DeleteMemberProfilePhotoResponse,
 } from "@workspace/api-zod";
 import {
   BookingError, memberState, memberAccountSummary, createReservation, cancelReservation,
@@ -38,6 +45,7 @@ import {
   RequiredMemberConsentError,
   StaleMemberConsentPolicyError,
 } from "../lib/member-consents";
+import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 import learningRouter from "./learning";
 import { memberSupportRouter } from "./support";
 import memberReviewsRouter from "./member-reviews";
@@ -58,6 +66,7 @@ import {
 } from "../lib/member-device-security";
 
 const router = Router();
+const memberProfilePhotoStorage = new ObjectStorageService();
 router.use((req, res, next) => {
   if (!getAuth(req).userId) { res.status(401).json({ message: "Sign in to manage your bookings." }); return; }
   next();
@@ -164,6 +173,39 @@ router.post("/referrals/attribute", async (req, res) => {
     throw error;
   }
 });
+router.get("/profile-photo/file", async (req, res): Promise<void> => {
+  const [photo] = await db.select().from(memberProfilePhotos)
+    .where(eq(memberProfilePhotos.userId, getAuth(req).userId!)).limit(1);
+  if (!photo?.objectPath) {
+    res.status(404).end();
+    return;
+  }
+  let file;
+  try {
+    file = await memberProfilePhotoStorage.getPrivateFile(photo.objectPath);
+  } catch (error) {
+    if (!(error instanceof ObjectNotFoundError)) throw error;
+    res.status(404).end();
+    return;
+  }
+  const [metadata] = await file.getMetadata();
+  const contentType = String(metadata.contentType ?? "");
+  const size = Number(metadata.size ?? 0);
+  if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)
+    || size < 1 || size > 5_000_000) {
+    res.status(404).end();
+    return;
+  }
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Content-Disposition", "inline");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Cache-Control", "private, no-store");
+  file.createReadStream().on("error", error => {
+    req.log.error({ err: error, userId: getAuth(req).userId }, "Failed to stream member profile photo");
+    if (!res.headersSent) res.status(404).end();
+    else res.end();
+  }).pipe(res);
+});
 router.get("/privacy-requests", async (req, res) => {
   const ownerId = getAuth(req).userId!;
   res.json(GetMemberPrivacyRequestsResponse.parse(await listMemberPrivacyRequests(ownerId)));
@@ -225,6 +267,124 @@ router.delete("/device/change", async (req, res) => {
   const token = readMemberDeviceToken(req);
   if (!token) { res.status(403).json({ code: "DEVICE_REGISTRATION_REQUIRED", message: "Secure device registration is required." }); return; }
   res.json(await cancelMemberDeviceChange(getAuth(req).userId!, token));
+});
+const profilePhotoExtensions = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+} as const;
+const memberProfilePhotoConsentVersion = "member-photo-v1";
+const memberProfilePhotoMaxBytes = 5_000_000;
+function memberProfilePhotoPath(photo: typeof memberProfilePhotos.$inferSelect | undefined) {
+  return photo?.objectPath
+    ? `/api/member/profile-photo/file?v=${photo.updatedAt.getTime()}`
+    : null;
+}
+router.get("/profile-photo", async (req, res): Promise<void> => {
+  const [photo] = await db.select().from(memberProfilePhotos)
+    .where(eq(memberProfilePhotos.userId, getAuth(req).userId!)).limit(1);
+  res.json(GetMemberProfilePhotoResponse.parse({
+    photoPath: memberProfilePhotoPath(photo),
+    consentVersion: photo?.consentVersion ?? null,
+    consentAt: photo?.consentAt ?? null,
+  }));
+});
+router.post("/profile-photo/upload-url", async (req, res): Promise<void> => {
+  if (!await ensureCurrentMemberConsent(req, res)) return;
+  const parsed = RequestMemberProfilePhotoUploadUrlBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Choose a JPEG, PNG, or WebP image up to 5 MB." });
+    return;
+  }
+  const userId = getAuth(req).userId!;
+  const uploadId = randomUUID();
+  const { uploadURL } = await memberProfilePhotoStorage.createMemberProfilePhotoUpload(
+    userId, uploadId, profilePhotoExtensions[parsed.data.contentType],
+  );
+  res.json(RequestMemberProfilePhotoUploadUrlResponse.parse({
+    uploadId,
+    uploadUrl: uploadURL,
+    contentType: parsed.data.contentType,
+  }));
+});
+router.post("/profile-photo/complete", async (req, res): Promise<void> => {
+  if (!await ensureCurrentMemberConsent(req, res)) return;
+  const parsed = CompleteMemberProfilePhotoUploadBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Confirm photo consent and provide the requested image upload." });
+    return;
+  }
+  const userId = getAuth(req).userId!;
+  const extension = profilePhotoExtensions[parsed.data.contentType];
+  const stagingPath = memberProfilePhotoStorage.getMemberProfilePhotoUploadPath(
+    userId, parsed.data.uploadId, extension,
+  );
+  let file;
+  try {
+    file = await memberProfilePhotoStorage.getPrivateFile(stagingPath);
+  } catch (error) {
+    if (!(error instanceof ObjectNotFoundError)) throw error;
+    res.status(400).json({ message: "The uploaded photo was not found. Please choose it again." });
+    return;
+  }
+  const [metadata] = await file.getMetadata();
+  const actualType = String(metadata.contentType ?? "");
+  const actualSize = Number(metadata.size ?? 0);
+  if (actualType !== parsed.data.contentType || actualSize !== parsed.data.sizeBytes
+    || actualSize < 1 || actualSize > memberProfilePhotoMaxBytes) {
+    try { await memberProfilePhotoStorage.deletePrivateFile(stagingPath); } catch (error) {
+      req.log.warn({ err: error, userId }, "Could not remove rejected member profile photo upload");
+    }
+    res.status(400).json({ message: "The uploaded photo type or size did not match. Please choose it again." });
+    return;
+  }
+
+  const objectPath = await memberProfilePhotoStorage.promoteMemberProfilePhotoUpload(
+    userId, parsed.data.uploadId, extension,
+  );
+  const [previous] = await db.select().from(memberProfilePhotos)
+    .where(eq(memberProfilePhotos.userId, userId)).limit(1);
+  const consentAt = new Date();
+  let [saved] = await db.insert(memberProfilePhotos).values({
+    userId, objectPath, consentVersion: memberProfilePhotoConsentVersion, consentAt, updatedAt: consentAt,
+  }).onConflictDoUpdate({
+    target: memberProfilePhotos.userId,
+    set: { objectPath, consentVersion: memberProfilePhotoConsentVersion, consentAt, updatedAt: consentAt },
+  }).returning();
+  if (!saved) {
+    await memberProfilePhotoStorage.deletePrivateFile(objectPath);
+    res.status(500).json({ message: "The photo could not be saved. Please try again." });
+    return;
+  }
+  if (previous?.objectPath && previous.objectPath !== objectPath) {
+    try { await memberProfilePhotoStorage.deletePrivateFile(previous.objectPath); } catch (error) {
+      req.log.warn({ err: error, userId }, "Could not remove replaced member profile photo");
+    }
+  }
+  res.json(CompleteMemberProfilePhotoUploadResponse.parse({
+    photoPath: memberProfilePhotoPath(saved),
+    consentVersion: saved.consentVersion,
+    consentAt: saved.consentAt,
+  }));
+});
+router.delete("/profile-photo", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId!;
+  const [previous] = await db.select().from(memberProfilePhotos)
+    .where(eq(memberProfilePhotos.userId, userId)).limit(1);
+  if (previous?.objectPath) {
+    await db.update(memberProfilePhotos).set({
+      objectPath: null,
+      updatedAt: new Date(),
+    }).where(eq(memberProfilePhotos.userId, userId));
+    try { await memberProfilePhotoStorage.deletePrivateFile(previous.objectPath); } catch (error) {
+      req.log.warn({ err: error, userId }, "Could not remove deleted member profile photo file");
+    }
+  }
+  res.json(DeleteMemberProfilePhotoResponse.parse({
+    photoPath: null,
+    consentVersion: previous?.consentVersion ?? null,
+    consentAt: previous?.consentAt ?? null,
+  }));
 });
 router.use(requirePrimaryMemberDevice);
 router.use(learningRouter);

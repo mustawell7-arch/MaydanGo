@@ -2,17 +2,68 @@ import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { attendance, db, operators, reservations } from "@workspace/db";
+import { attendance, db, memberProfilePhotos, operators, reservations } from "@workspace/db";
 import { BookingError } from "../lib/reservations";
 import { sendMemberNotification } from "../lib/notifications";
 import { DeviceSecurityError, requirePrimaryMemberDevice } from "../lib/member-device-security";
 import { roster, savePolicy, issueQr, scanQr, review, policyInput, scanInput, reviewInput, issueManualCheckinCode, recordManualCheckin, manualCheckinInput } from "../lib/checkin";
 import { hasPartnerPermission, isPartnerOperatorRole } from "../lib/partner-roles";
+import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 
 const router = Router();
+const profilePhotoStorage = new ObjectStorageService();
 router.use((req, res, next) => {
   if (!getAuth(req).userId) { res.status(401).json({ message: "Sign in to access attendance." }); return; }
   next();
+});
+router.get("/:id/member-photo", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId!;
+  const [operator] = await db.select().from(operators).where(eq(operators.userId, userId)).limit(1);
+  if (!operator || !isPartnerOperatorRole(operator.role)
+    || !hasPartnerPermission(operator.role, "attendance")) {
+    res.status(403).end();
+    return;
+  }
+  const reservationId = String(req.params.id);
+  const authorizedRoster = await roster(userId);
+  const booking = authorizedRoster.rows.find(row =>
+    row.reservationId === reservationId && !!row.customerImageUrl,
+  );
+  if (!booking) {
+    res.status(404).end();
+    return;
+  }
+  const [photo] = await db.select({ objectPath: memberProfilePhotos.objectPath })
+    .from(memberProfilePhotos).where(eq(memberProfilePhotos.userId, booking.userId)).limit(1);
+  if (!photo?.objectPath) {
+    res.status(404).end();
+    return;
+  }
+  let file;
+  try {
+    file = await profilePhotoStorage.getPrivateFile(photo.objectPath);
+  } catch (error) {
+    if (!(error instanceof ObjectNotFoundError)) throw error;
+    res.status(404).end();
+    return;
+  }
+  const [metadata] = await file.getMetadata();
+  const contentType = String(metadata.contentType ?? "");
+  const size = Number(metadata.size ?? 0);
+  if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)
+    || size < 1 || size > 5_000_000) {
+    res.status(404).end();
+    return;
+  }
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Content-Disposition", "inline");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Cache-Control", "private, no-store");
+  file.createReadStream().on("error", error => {
+    req.log.error({ err: error, reservationId }, "Failed to stream member profile photo to partner attendance");
+    if (!res.headersSent) res.status(404).end();
+    else res.end();
+  }).pipe(res);
 });
 router.get("/", async (req, res, next) => {
   const userId = getAuth(req).userId!;

@@ -157,6 +157,77 @@ paths:
           description: Verified email and current policy consent are required
         "409":
           description: A referral was already applied to this account
+  /member/profile-photo:
+    get:
+      operationId: getMemberProfilePhoto
+      responses:
+        "200":
+          description: The signed-in member's optional profile photo and recorded consent date
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberProfilePhoto" }
+    delete:
+      operationId: deleteMemberProfilePhoto
+      responses:
+        "200":
+          description: The member's photo was removed; the consent record remains
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberProfilePhoto" }
+  /member/profile-photo/upload-url:
+    post:
+      operationId: requestMemberProfilePhotoUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemberProfilePhotoUploadInput" }
+      responses:
+        "200":
+          description: A short-lived upload URL for the signed-in member's private photo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberProfilePhotoUploadUrl" }
+        "400": { description: Unsupported image type or size }
+        "403": { description: Current Terms and Privacy consent is required }
+  /member/profile-photo/complete:
+    post:
+      operationId: completeMemberProfilePhotoUpload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemberProfilePhotoCompleteInput" }
+      responses:
+        "200":
+          description: The private image was verified and saved as the member's profile photo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberProfilePhoto" }
+        "400": { description: The uploaded file is missing or does not match the requested image }
+        "403": { description: Current Terms and Privacy consent and explicit photo consent are required }
+  /member/profile-photo/file:
+    get:
+      operationId: getMemberProfilePhotoFile
+      responses:
+        "200":
+          description: The signed-in member's private profile photo
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "404": { description: No profile photo is available }
+  /attendance/{id}/member-photo:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getAttendanceMemberPhoto
+      responses:
+        "200":
+          description: A member photo shown only to authorized staff for this booking
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        "404": { description: No photo is available for this authorized booking }
+        "403": { description: Attendance access is not permitted }
   /policies:
     get:
       operationId: getPublicLegalPolicies
@@ -3082,10 +3153,20 @@ components:
       properties:
         gender: { type: string }
         birthDate: { type: string, format: date }
+    MemberDataExportProfilePhoto:
+      type: object
+      additionalProperties: false
+      required: [present, consentVersion, consentAt, contentType, imageBase64]
+      properties:
+        present: { type: boolean }
+        consentVersion: { type: ["string", "null"] }
+        consentAt: { type: ["string", "null"], format: date-time }
+        contentType: { type: ["string", "null"], enum: [image/jpeg, image/png, image/webp, null] }
+        imageBase64: { type: ["string", "null"], maxLength: 7000000 }
     MemberDataExportAccount:
       type: object
       additionalProperties: false
-      required: [email, firstName, lastName, createdAt, profile]
+      required: [email, firstName, lastName, createdAt, profile, profilePhoto]
       properties:
         email: { type: ["string", "null"] }
         firstName: { type: ["string", "null"] }
@@ -3095,6 +3176,7 @@ components:
           anyOf:
             - { $ref: "#/components/schemas/MemberDataExportProfile" }
             - { type: "null" }
+        profilePhoto: { $ref: "#/components/schemas/MemberDataExportProfilePhoto" }
     MemberDataExportMembership:
       type: object
       additionalProperties: false
@@ -3274,7 +3356,7 @@ components:
       additionalProperties: false
       required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, savedCourses, reviews, consentHistory, supportConversations, referrals, privacyRequests, notificationPreferences, excludedData]
       properties:
-        formatVersion: { type: string, enum: ["1.2"] }
+        formatVersion: { type: string, enum: ["1.3"] }
         generatedAt: { type: string, format: date-time }
         account: { $ref: "#/components/schemas/MemberDataExportAccount" }
         memberships:
@@ -3340,6 +3422,38 @@ components:
       required: [code]
       properties:
         code: { type: string, minLength: 10, maxLength: 10, pattern: '^[A-HJ-NP-Z2-9a-hj-np-z2-9]{10}$' }
+    MemberProfilePhoto:
+      type: object
+      additionalProperties: false
+      required: [photoPath, consentVersion, consentAt]
+      properties:
+        photoPath: { type: ["string", "null"] }
+        consentVersion: { type: ["string", "null"] }
+        consentAt: { type: ["string", "null"], format: date-time }
+    MemberProfilePhotoUploadInput:
+      type: object
+      additionalProperties: false
+      required: [contentType, sizeBytes]
+      properties:
+        contentType: { type: string, enum: [image/jpeg, image/png, image/webp] }
+        sizeBytes: { type: integer, minimum: 1, maximum: 5000000 }
+    MemberProfilePhotoUploadUrl:
+      type: object
+      additionalProperties: false
+      required: [uploadId, uploadUrl, contentType]
+      properties:
+        uploadId: { type: string, format: uuid }
+        uploadUrl: { type: string, format: uri }
+        contentType: { type: string, enum: [image/jpeg, image/png, image/webp] }
+    MemberProfilePhotoCompleteInput:
+      type: object
+      additionalProperties: false
+      required: [uploadId, contentType, sizeBytes, consentConfirmed]
+      properties:
+        uploadId: { type: string, format: uuid }
+        contentType: { type: string, enum: [image/jpeg, image/png, image/webp] }
+        sizeBytes: { type: integer, minimum: 1, maximum: 5000000 }
+        consentConfirmed: { type: boolean, enum: [true] }
     MemberReferralAttributionResponse:
       type: object
       additionalProperties: false

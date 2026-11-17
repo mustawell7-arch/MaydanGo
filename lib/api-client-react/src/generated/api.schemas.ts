@@ -864,6 +864,33 @@ export interface MemberDataExportProfile {
   birthDate: string;
 }
 
+/**
+ * @nullable
+ */
+export type MemberDataExportProfilePhotoContentType = typeof MemberDataExportProfilePhotoContentType[keyof typeof MemberDataExportProfilePhotoContentType] | null;
+
+
+export const MemberDataExportProfilePhotoContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export interface MemberDataExportProfilePhoto {
+  present: boolean;
+  /** @nullable */
+  consentVersion: string | null;
+  /** @nullable */
+  consentAt: string | null;
+  /** @nullable */
+  contentType: MemberDataExportProfilePhotoContentType;
+  /**
+     * @maxLength 7000000
+     * @nullable
+     */
+  imageBase64: string | null;
+}
+
 export interface MemberDataExportAccount {
   /** @nullable */
   email: string | null;
@@ -874,6 +901,7 @@ export interface MemberDataExportAccount {
   /** @nullable */
   createdAt: string | null;
   profile: MemberDataExportProfile | null;
+  profilePhoto: MemberDataExportProfilePhoto;
 }
 
 export interface MemberDataExportMembership {
@@ -1049,7 +1077,7 @@ export type MemberDataExportFormatVersion = typeof MemberDataExportFormatVersion
 
 
 export const MemberDataExportFormatVersion = {
-  '12': '1.2',
+  '13': '1.3',
 } as const;
 
 export type MemberDataExportExcludedDataItem = typeof MemberDataExportExcludedDataItem[keyof typeof MemberDataExportExcludedDataItem];
@@ -1116,6 +1144,68 @@ export interface MemberReferralAttributionInput {
      * @pattern ^[A-HJ-NP-Z2-9a-hj-np-z2-9]{10}$
      */
   code: string;
+}
+
+export interface MemberProfilePhoto {
+  /** @nullable */
+  photoPath: string | null;
+  /** @nullable */
+  consentVersion: string | null;
+  /** @nullable */
+  consentAt: string | null;
+}
+
+export type MemberProfilePhotoUploadInputContentType = typeof MemberProfilePhotoUploadInputContentType[keyof typeof MemberProfilePhotoUploadInputContentType];
+
+
+export const MemberProfilePhotoUploadInputContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export interface MemberProfilePhotoUploadInput {
+  contentType: MemberProfilePhotoUploadInputContentType;
+  /**
+     * @minimum 1
+     * @maximum 5000000
+     */
+  sizeBytes: number;
+}
+
+export type MemberProfilePhotoUploadUrlContentType = typeof MemberProfilePhotoUploadUrlContentType[keyof typeof MemberProfilePhotoUploadUrlContentType];
+
+
+export const MemberProfilePhotoUploadUrlContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export interface MemberProfilePhotoUploadUrl {
+  uploadId: string;
+  uploadUrl: string;
+  contentType: MemberProfilePhotoUploadUrlContentType;
+}
+
+export type MemberProfilePhotoCompleteInputContentType = typeof MemberProfilePhotoCompleteInputContentType[keyof typeof MemberProfilePhotoCompleteInputContentType];
+
+
+export const MemberProfilePhotoCompleteInputContentType = {
+  'image/jpeg': 'image/jpeg',
+  'image/png': 'image/png',
+  'image/webp': 'image/webp',
+} as const;
+
+export interface MemberProfilePhotoCompleteInput {
+  uploadId: string;
+  contentType: MemberProfilePhotoCompleteInputContentType;
+  /**
+     * @minimum 1
+     * @maximum 5000000
+     */
+  sizeBytes: number;
+  consentConfirmed: true;
 }
 
 export interface MemberReferralAttributionResponse {
@@ -6032,7 +6122,7 @@ export type GetAttendance200RowsItem = {
      */
   customerName?: string | null;
   /**
-     * Partner-only profile image URL from the member account.
+     * Protected MaydanGo path for an optional photo
      * @nullable
      */
   customerImageUrl?: string | null;

@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { File, Storage } from "@google-cloud/storage";
 
 const sidecar = "http://127.0.0.1:1106";
@@ -204,6 +204,49 @@ export class ObjectStorageService {
     const { bucketName, objectName: bucketObjectName } = parseObjectPath(`${this.privateDir()}/${objectName}`);
     const uploadURL = await signUpload(bucketName, bucketObjectName);
     return { uploadURL, objectPath: `/objects/${objectName}` };
+  }
+
+  private memberProfilePhotoOwnerKey(userId: string) {
+    return createHash("sha256").update(userId).digest("hex");
+  }
+
+  async createMemberProfilePhotoUpload(userId: string, uploadId: string, extension: string) {
+    if (!/^[A-Za-z0-9_-]{1,160}$/.test(userId)
+      || !/^[0-9a-f-]{36}$/i.test(uploadId)
+      || !/^(jpg|png|webp)$/.test(extension)) {
+      throw new Error("Invalid member profile photo upload identifier.");
+    }
+    const objectName = `member-profile-photo-uploads/${this.memberProfilePhotoOwnerKey(userId)}/${uploadId}.${extension}`;
+    const { bucketName, objectName: bucketObjectName } = parseObjectPath(`${this.privateDir()}/${objectName}`);
+    const uploadURL = await signUpload(bucketName, bucketObjectName);
+    return { uploadURL, objectPath: `/objects/${objectName}` };
+  }
+
+  getMemberProfilePhotoUploadPath(userId: string, uploadId: string, extension: string) {
+    if (!/^[A-Za-z0-9_-]{1,160}$/.test(userId)
+      || !/^[0-9a-f-]{36}$/i.test(uploadId)
+      || !/^(jpg|png|webp)$/.test(extension)) {
+      throw new ObjectNotFoundError();
+    }
+    return `/objects/member-profile-photo-uploads/${this.memberProfilePhotoOwnerKey(userId)}/${uploadId}.${extension}`;
+  }
+
+  async promoteMemberProfilePhotoUpload(userId: string, uploadId: string, extension: string) {
+    const stagingPath = this.getMemberProfilePhotoUploadPath(userId, uploadId, extension);
+    const ownerKey = this.memberProfilePhotoOwnerKey(userId);
+    const finalPath = `/objects/member-profile-photos/${ownerKey}/${uploadId}.${extension}`;
+    const source = await this.getPrivateFile(stagingPath);
+    const { bucketName, objectName } = parseObjectPath(
+      `${this.privateDir()}/${finalPath.slice("/objects/".length)}`,
+    );
+    const destination = objectStorageClient.bucket(bucketName).file(objectName);
+    await source.copy(destination);
+    try {
+      await source.delete({ ignoreNotFound: true });
+    } catch {
+      // The approved copy is separate; staging cleanup can retry later.
+    }
+    return finalPath;
   }
 
   async createGuardianConsentUpload(attendanceId: string, documentId: string) {

@@ -235,7 +235,7 @@ paths:
                         startsAt: { type: string }
                         endsAt: { type: string }
                         customerName: { type: [string, "null"], description: Partner-only display name from the member account. }
-                        customerImageUrl: { type: [string, "null"], format: uri, description: Partner-only profile image URL from the member account. }
+                        customerImageUrl: { type: [string, "null"], description: Protected MaydanGo path for an optional photo, visible only to authorized partner attendance staff. }
                         membershipPlan: { type: [string, "null"], description: Partner-only membership plan name or tier. }
                         bookingStatus: { type: string }
                         status: { type: string }
@@ -406,6 +406,8 @@ paths:
                 reason: { type: string }
       responses:
         "200": { description: Audited review saved }
+  /attendance/{id}/member-photo:
+    $ref: "./operations.yaml#/paths/~1attendance~1{id}~1member-photo"
   /operations:
     $ref: "./operations.yaml#/paths/~1operations"
   /operations/contracts:
@@ -720,6 +722,14 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1referrals"
   /member/referrals/attribute:
     $ref: "./operations.yaml#/paths/~1member~1referrals~1attribute"
+  /member/profile-photo:
+    $ref: "./operations.yaml#/paths/~1member~1profile-photo"
+  /member/profile-photo/upload-url:
+    $ref: "./operations.yaml#/paths/~1member~1profile-photo~1upload-url"
+  /member/profile-photo/complete:
+    $ref: "./operations.yaml#/paths/~1member~1profile-photo~1complete"
+  /member/profile-photo/file:
+    $ref: "./operations.yaml#/paths/~1member~1profile-photo~1file"
   /member/notifications/settings:
     $ref: "./operations.yaml#/paths/~1member~1notifications~1settings"
   /member/notifications/devices:

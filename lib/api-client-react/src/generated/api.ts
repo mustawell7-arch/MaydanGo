@@ -167,6 +167,10 @@ import type {
   MemberDeviceStatus,
   MemberFacilityReviews,
   MemberLiveClass,
+  MemberProfilePhoto,
+  MemberProfilePhotoCompleteInput,
+  MemberProfilePhotoUploadInput,
+  MemberProfilePhotoUploadUrl,
   MemberReferralAttributionInput,
   MemberReferralAttributionResponse,
   MemberReferralSummary,
@@ -2823,6 +2827,101 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getReviewAttendanceMutationOptions(options), queryClient);
     }
+
+export const getGetAttendanceMemberPhotoUrl = (id: string,) => {
+
+
+
+
+  return `/api/attendance/${id}/member-photo`
+}
+
+export const getAttendanceMemberPhoto = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetAttendanceMemberPhotoUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAttendanceMemberPhotoQueryKey = (id: string,) => {
+    return [
+    `/api/attendance/${id}/member-photo`
+    ] as const;
+    }
+
+
+export const getGetAttendanceMemberPhotoQueryOptions = <TData = Awaited<ReturnType<typeof getAttendanceMemberPhoto>>, TError = ErrorType<void>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendanceMemberPhoto>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAttendanceMemberPhotoQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAttendanceMemberPhoto>>> = ({ signal }) => getAttendanceMemberPhoto(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAttendanceMemberPhoto>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAttendanceMemberPhotoQueryResult = NonNullable<Awaited<ReturnType<typeof getAttendanceMemberPhoto>>>
+export type GetAttendanceMemberPhotoQueryError = ErrorType<void>
+
+
+export function useGetAttendanceMemberPhoto<TData = Awaited<ReturnType<typeof getAttendanceMemberPhoto>>, TError = ErrorType<void>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendanceMemberPhoto>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAttendanceMemberPhoto>>,
+          TError,
+          Awaited<ReturnType<typeof getAttendanceMemberPhoto>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAttendanceMemberPhoto<TData = Awaited<ReturnType<typeof getAttendanceMemberPhoto>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendanceMemberPhoto>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAttendanceMemberPhoto>>,
+          TError,
+          Awaited<ReturnType<typeof getAttendanceMemberPhoto>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAttendanceMemberPhoto<TData = Awaited<ReturnType<typeof getAttendanceMemberPhoto>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendanceMemberPhoto>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetAttendanceMemberPhoto<TData = Awaited<ReturnType<typeof getAttendanceMemberPhoto>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAttendanceMemberPhoto>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetAttendanceMemberPhotoQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetOperationsUrl = () => {
 
@@ -17824,6 +17923,428 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getAttributeMemberReferralMutationOptions(options), queryClient);
     }
+
+export const getGetMemberProfilePhotoUrl = () => {
+
+
+
+
+  return `/api/member/profile-photo`
+}
+
+export const getMemberProfilePhoto = async ( options?: Parameters<typeof customFetch>[1]): Promise<MemberProfilePhoto> => {
+
+  return customFetch<MemberProfilePhoto>(getGetMemberProfilePhotoUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberProfilePhotoQueryKey = () => {
+    return [
+    `/api/member/profile-photo`
+    ] as const;
+    }
+
+
+export const getGetMemberProfilePhotoQueryOptions = <TData = Awaited<ReturnType<typeof getMemberProfilePhoto>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberProfilePhoto>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberProfilePhotoQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberProfilePhoto>>> = ({ signal }) => getMemberProfilePhoto({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberProfilePhoto>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberProfilePhotoQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberProfilePhoto>>>
+export type GetMemberProfilePhotoQueryError = ErrorType<unknown>
+
+
+export function useGetMemberProfilePhoto<TData = Awaited<ReturnType<typeof getMemberProfilePhoto>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberProfilePhoto>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberProfilePhoto>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberProfilePhoto>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberProfilePhoto<TData = Awaited<ReturnType<typeof getMemberProfilePhoto>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberProfilePhoto>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberProfilePhoto>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberProfilePhoto>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberProfilePhoto<TData = Awaited<ReturnType<typeof getMemberProfilePhoto>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberProfilePhoto>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberProfilePhoto<TData = Awaited<ReturnType<typeof getMemberProfilePhoto>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberProfilePhoto>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberProfilePhotoQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDeleteMemberProfilePhotoUrl = () => {
+
+
+
+
+  return `/api/member/profile-photo`
+}
+
+export const deleteMemberProfilePhoto = async ( options?: Parameters<typeof customFetch>[1]): Promise<MemberProfilePhoto> => {
+
+  return customFetch<MemberProfilePhoto>(getDeleteMemberProfilePhotoUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteMemberProfilePhotoMutationKey = () => ['deleteMemberProfilePhoto'] as const;
+
+export const getDeleteMemberProfilePhotoMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMemberProfilePhoto>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteMemberProfilePhoto>>, TError,void, TContext> => {
+
+const mutationKey = getDeleteMemberProfilePhotoMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMemberProfilePhoto>>, void> = () => {
+
+
+          return  deleteMemberProfilePhoto(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteMemberProfilePhotoMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMemberProfilePhoto>>>
+
+    export type DeleteMemberProfilePhotoMutationError = ErrorType<unknown>
+
+
+    export const useDeleteMemberProfilePhoto = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMemberProfilePhoto>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteMemberProfilePhoto>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDeleteMemberProfilePhotoMutationOptions(options), queryClient);
+    }
+
+export const getRequestMemberProfilePhotoUploadUrlUrl = () => {
+
+
+
+
+  return `/api/member/profile-photo/upload-url`
+}
+
+export const requestMemberProfilePhotoUploadUrl = async (memberProfilePhotoUploadInput: MemberProfilePhotoUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<MemberProfilePhotoUploadUrl> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MemberProfilePhotoUploadUrl>(getRequestMemberProfilePhotoUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(memberProfilePhotoUploadInput)
+  }
+);}
+
+
+
+
+
+export const getRequestMemberProfilePhotoUploadUrlMutationKey = () => ['requestMemberProfilePhotoUploadUrl'] as const;
+
+export const getRequestMemberProfilePhotoUploadUrlMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestMemberProfilePhotoUploadUrl>>, TError,RequestMemberProfilePhotoUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestMemberProfilePhotoUploadUrl>>, TError,RequestMemberProfilePhotoUploadUrlMutationVariables, TContext> => {
+
+const mutationKey = getRequestMemberProfilePhotoUploadUrlMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestMemberProfilePhotoUploadUrl>>, RequestMemberProfilePhotoUploadUrlMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestMemberProfilePhotoUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestMemberProfilePhotoUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestMemberProfilePhotoUploadUrl>>>
+    export type RequestMemberProfilePhotoUploadUrlMutationBody = BodyType<MemberProfilePhotoUploadInput>
+    export type RequestMemberProfilePhotoUploadUrlMutationError = ErrorType<void>
+    export type RequestMemberProfilePhotoUploadUrlMutationVariables = {data: BodyType<MemberProfilePhotoUploadInput>}
+
+    export const useRequestMemberProfilePhotoUploadUrl = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestMemberProfilePhotoUploadUrl>>, TError,RequestMemberProfilePhotoUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof requestMemberProfilePhotoUploadUrl>>,
+        TError,
+        RequestMemberProfilePhotoUploadUrlMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestMemberProfilePhotoUploadUrlMutationOptions(options), queryClient);
+    }
+
+export const getCompleteMemberProfilePhotoUploadUrl = () => {
+
+
+
+
+  return `/api/member/profile-photo/complete`
+}
+
+export const completeMemberProfilePhotoUpload = async (memberProfilePhotoCompleteInput: MemberProfilePhotoCompleteInput, options?: Parameters<typeof customFetch>[1]): Promise<MemberProfilePhoto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MemberProfilePhoto>(getCompleteMemberProfilePhotoUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(memberProfilePhotoCompleteInput)
+  }
+);}
+
+
+
+
+
+export const getCompleteMemberProfilePhotoUploadMutationKey = () => ['completeMemberProfilePhotoUpload'] as const;
+
+export const getCompleteMemberProfilePhotoUploadMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeMemberProfilePhotoUpload>>, TError,CompleteMemberProfilePhotoUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeMemberProfilePhotoUpload>>, TError,CompleteMemberProfilePhotoUploadMutationVariables, TContext> => {
+
+const mutationKey = getCompleteMemberProfilePhotoUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeMemberProfilePhotoUpload>>, CompleteMemberProfilePhotoUploadMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  completeMemberProfilePhotoUpload(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteMemberProfilePhotoUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completeMemberProfilePhotoUpload>>>
+    export type CompleteMemberProfilePhotoUploadMutationBody = BodyType<MemberProfilePhotoCompleteInput>
+    export type CompleteMemberProfilePhotoUploadMutationError = ErrorType<void>
+    export type CompleteMemberProfilePhotoUploadMutationVariables = {data: BodyType<MemberProfilePhotoCompleteInput>}
+
+    export const useCompleteMemberProfilePhotoUpload = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeMemberProfilePhotoUpload>>, TError,CompleteMemberProfilePhotoUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof completeMemberProfilePhotoUpload>>,
+        TError,
+        CompleteMemberProfilePhotoUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompleteMemberProfilePhotoUploadMutationOptions(options), queryClient);
+    }
+
+export const getGetMemberProfilePhotoFileUrl = () => {
+
+
+
+
+  return `/api/member/profile-photo/file`
+}
+
+export const getMemberProfilePhotoFile = async ( options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetMemberProfilePhotoFileUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberProfilePhotoFileQueryKey = () => {
+    return [
+    `/api/member/profile-photo/file`
+    ] as const;
+    }
+
+
+export const getGetMemberProfilePhotoFileQueryOptions = <TData = Awaited<ReturnType<typeof getMemberProfilePhotoFile>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberProfilePhotoFile>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberProfilePhotoFileQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberProfilePhotoFile>>> = ({ signal }) => getMemberProfilePhotoFile({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberProfilePhotoFile>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberProfilePhotoFileQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberProfilePhotoFile>>>
+export type GetMemberProfilePhotoFileQueryError = ErrorType<void>
+
+
+export function useGetMemberProfilePhotoFile<TData = Awaited<ReturnType<typeof getMemberProfilePhotoFile>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberProfilePhotoFile>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberProfilePhotoFile>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberProfilePhotoFile>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberProfilePhotoFile<TData = Awaited<ReturnType<typeof getMemberProfilePhotoFile>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberProfilePhotoFile>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberProfilePhotoFile>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberProfilePhotoFile>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberProfilePhotoFile<TData = Awaited<ReturnType<typeof getMemberProfilePhotoFile>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberProfilePhotoFile>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberProfilePhotoFile<TData = Awaited<ReturnType<typeof getMemberProfilePhotoFile>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberProfilePhotoFile>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberProfilePhotoFileQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetMemberNotificationSettingsUrl = () => {
 

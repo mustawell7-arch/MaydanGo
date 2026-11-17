@@ -1,18 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { Platform, Share, View, StyleSheet } from 'react-native';
+import { Image, Platform, Share, View, StyleSheet } from 'react-native';
 import { File, Paths } from 'expo-file-system';
+import { fetch as expoFetch } from 'expo/fetch';
+import * as ImagePicker from 'expo-image-picker';
 import * as Sharing from 'expo-sharing';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetMemberConsentsQueryKey,
+  getGetMemberProfilePhotoQueryKey,
   getGetMemberReferralsQueryKey,
   getMemberPrivacyRequestExport,
   getGetMemberPrivacyRequestsQueryKey,
   useAttributeMemberReferral,
   useCreateMemberPrivacyRequest,
   useGetMemberConsents,
+  useGetMemberProfilePhoto,
   useGetMemberPrivacyRequests,
   useGetMemberReferrals,
+  useCompleteMemberProfilePhotoUpload,
+  useDeleteMemberProfilePhoto,
+  useRequestMemberProfilePhotoUploadUrl,
   useSaveMemberConsents,
 } from '@workspace/api-client-react';
 import { Text, TextInput, Pressable } from '@/components/Localized';
@@ -41,6 +48,10 @@ export default function AccountScreen() {
   const params = useLocalSearchParams<{ ref?: string | string[] }>();
   const incomingReferralCode = Array.isArray(params.ref) ? params.ref[0] : params.ref;
   const queryClient = useQueryClient();
+  const profilePhotoQueryKey = [...getGetMemberProfilePhotoQueryKey(), user?.id ?? 'signed-out'];
+  const profilePhoto = useGetMemberProfilePhoto({
+    query: { enabled: isSignedIn === true, queryKey: profilePhotoQueryKey, retry: false },
+  });
   const consents = useGetMemberConsents({ query: { enabled: isSignedIn === true, refetchInterval: 30_000 } });
   const hasCurrentRequiredConsent = consents.data?.currentChoices.termsOfUse === 'accepted'
     && consents.data.currentChoices.privacyPolicy === 'accepted';
@@ -51,6 +62,9 @@ export default function AccountScreen() {
   const createPrivacyRequest = useCreateMemberPrivacyRequest();
   const saveConsents = useSaveMemberConsents();
   const attributeReferral = useAttributeMemberReferral();
+  const requestProfilePhotoUpload = useRequestMemberProfilePhotoUploadUrl();
+  const completeProfilePhotoUpload = useCompleteMemberProfilePhotoUpload();
+  const deleteProfilePhoto = useDeleteMemberProfilePhoto();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -66,11 +80,28 @@ export default function AccountScreen() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
+  const [profilePhotoConsent, setProfilePhotoConsent] = useState(false);
+  const [profilePhotoNotice, setProfilePhotoNotice] = useState('');
+  const [selectedProfilePhoto, setSelectedProfilePhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [profilePhotoToken, setProfilePhotoToken] = useState<string | null>(null);
   const [birthDate, setBirthDate] = useState('');
   const [gender, setGender] = useState<'female' | 'male' | 'unspecified'>('unspecified');
   useEffect(() => {
     if (incomingReferralCode) setReferralCode(incomingReferralCode.toUpperCase());
   }, [incomingReferralCode]);
+  useEffect(() => {
+    let active = true;
+    if (isSignedIn !== true) {
+      setProfilePhotoToken(null);
+      return () => { active = false; };
+    }
+    void getToken().then(token => {
+      if (active) setProfilePhotoToken(token);
+    }).catch(() => {
+      if (active) setProfilePhotoToken(null);
+    });
+    return () => { active = false; };
+  }, [getToken, isSignedIn]);
   const run = async (fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(true); setError('');
@@ -121,6 +152,93 @@ export default function AccountScreen() {
     request.kind === 'data_export' &&
     ['open', 'in_progress', 'waiting_member'].includes(request.status)
   );
+  const chooseProfilePhoto = async () => {
+    setProfilePhotoNotice('');
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.9,
+      });
+      if (result.canceled || !result.assets[0]) return;
+      const asset = result.assets[0];
+      const contentType = asset.mimeType ?? asset.file?.type ?? '';
+      const sizeBytes = asset.fileSize ?? asset.file?.size ?? new File(asset.uri).size;
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(contentType) || sizeBytes < 1 || sizeBytes > 5_000_000) {
+        setProfilePhotoNotice(translate(app.language, 'memberPhotoTypeError'));
+        return;
+      }
+      setSelectedProfilePhoto(asset);
+    } catch {
+      setProfilePhotoNotice(translate(app.language, 'memberPhotoError'));
+    }
+  };
+  const saveProfilePhoto = async () => {
+    if (!selectedProfilePhoto) return;
+    if (!hasCurrentRequiredConsent) {
+      setProfilePhotoNotice(translate(app.language, 'memberConsentsRequiredHint'));
+      return;
+    }
+    if (!profilePhotoConsent) {
+      setProfilePhotoNotice(translate(app.language, 'memberPhotoConsentRequired'));
+      return;
+    }
+    const asset = selectedProfilePhoto;
+    const contentType = asset.mimeType ?? asset.file?.type ?? '';
+    const sizeBytes = asset.fileSize ?? asset.file?.size ?? new File(asset.uri).size;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(contentType) || sizeBytes < 1 || sizeBytes > 5_000_000) {
+      setProfilePhotoNotice(translate(app.language, 'memberPhotoTypeError'));
+      return;
+    }
+    setProfilePhotoNotice('');
+    try {
+      const upload = await requestProfilePhotoUpload.mutateAsync({
+        data: { contentType: contentType as 'image/jpeg' | 'image/png' | 'image/webp', sizeBytes },
+      });
+      let uploadResponse: Response;
+      if (Platform.OS === 'web' && asset.file) {
+        uploadResponse = await fetch(upload.uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': contentType },
+          body: asset.file,
+        });
+      } else {
+        uploadResponse = await expoFetch(upload.uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': contentType },
+          body: new File(asset.uri),
+        });
+      }
+      if (!uploadResponse.ok) throw new Error('The image upload did not complete.');
+      await completeProfilePhotoUpload.mutateAsync({
+        data: {
+          uploadId: upload.uploadId,
+          contentType: upload.contentType,
+          sizeBytes,
+          consentConfirmed: true,
+        },
+      });
+      setSelectedProfilePhoto(null);
+      setProfilePhotoConsent(false);
+      await queryClient.invalidateQueries({ queryKey: profilePhotoQueryKey });
+      setProfilePhotoNotice(translate(app.language, 'memberPhotoSaved'));
+    } catch {
+      setProfilePhotoNotice(translate(app.language, 'memberPhotoError'));
+    }
+  };
+  const removeProfilePhoto = async () => {
+    setProfilePhotoNotice('');
+    try {
+      await deleteProfilePhoto.mutateAsync();
+      setProfilePhotoConsent(false);
+      setSelectedProfilePhoto(null);
+      await queryClient.invalidateQueries({ queryKey: profilePhotoQueryKey });
+      setProfilePhotoNotice(translate(app.language, 'memberPhotoRemoved'));
+    } catch {
+      setProfilePhotoNotice(translate(app.language, 'memberPhotoError'));
+    }
+  };
   const privacyStatusKey: Record<string, MessageKey> = {
     open: 'supportStatusOpen',
     in_progress: 'supportStatusInProgress',
@@ -128,6 +246,12 @@ export default function AccountScreen() {
     resolved: 'supportStatusResolved',
     closed: 'supportStatusClosed',
   };
+  const profilePhotoUrl = profilePhoto.data?.photoPath && process.env.EXPO_PUBLIC_DOMAIN
+    ? `https://${process.env.EXPO_PUBLIC_DOMAIN}${profilePhoto.data.photoPath}`
+    : null;
+  const profilePhotoBusy = requestProfilePhotoUpload.isPending
+    || completeProfilePhotoUpload.isPending
+    || deleteProfilePhoto.isPending;
   const consentPurposeKey: Record<'terms_of_use' | 'privacy_policy' | 'marketing', MessageKey> = {
     terms_of_use: 'memberConsentsTermsName',
     privacy_policy: 'memberConsentsPrivacyName',
@@ -344,6 +468,80 @@ export default function AccountScreen() {
                     </>}
                 </> : null}
           {referralNotice ? <Text accessibilityRole="alert" style={{ color: c.primary }}>{referralNotice}</Text> : null}
+        </View>
+        <View style={[styles.privacyCard, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={{ color: c.foreground, fontWeight: '800', fontSize: 18 }}>{translate(app.language, 'memberPhotoTitle')}</Text>
+          <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'memberPhotoIntro')}</Text>
+          <View style={{ alignItems: 'center', gap: 10, paddingVertical: 6 }}>
+            {profilePhotoUrl && profilePhotoToken ? (
+              <Image
+                accessibilityLabel={translate(app.language, 'memberPhotoTitle')}
+                source={{ uri: profilePhotoUrl, headers: { Authorization: `Bearer ${profilePhotoToken}` } }}
+                style={{ width: 88, height: 88, borderRadius: 44, borderWidth: 1, borderColor: c.border }}
+              />
+            ) : (
+              <View accessibilityElementsHidden style={{ width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: c.muted }}>
+                <Text style={{ color: c.mutedForeground, fontSize: 30 }}>◎</Text>
+              </View>
+            )}
+          </View>
+          {!profilePhoto.data?.photoPath ? <Text style={{ color: c.mutedForeground }}>{translate(app.language, 'memberPhotoNoPhoto')}</Text> : null}
+          {profilePhoto.isLoading ? <Text style={{ color: c.mutedForeground }}>{translate(app.language, 'memberPhotoLoading')}</Text> : null}
+          {profilePhoto.isError ? <Text accessibilityRole="alert" style={{ color: c.destructive }}>{translate(app.language, 'memberPhotoError')}</Text> : null}
+          <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'memberPhotoPrivacy')}</Text>
+          {!hasCurrentRequiredConsent ? <Text style={{ color: c.mutedForeground }}>{translate(app.language, 'memberConsentsRequiredHint')}</Text> : <>
+            <Pressable
+              testID="member-profile-photo-consent"
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: profilePhotoConsent, disabled: profilePhotoBusy }}
+              disabled={profilePhotoBusy}
+              onPress={() => {
+                setProfilePhotoConsent(value => !value);
+                setProfilePhotoNotice('');
+              }}
+            >
+              <Text style={{ color: c.foreground }}>{profilePhotoConsent ? '☑ ' : '☐ '}{translate(app.language, 'memberPhotoConsent')}</Text>
+            </Pressable>
+            <Pressable
+              testID="choose-member-profile-photo"
+              accessibilityRole="button"
+              disabled={profilePhotoBusy || profilePhoto.isLoading}
+              onPress={() => void chooseProfilePhoto()}
+              style={[styles.button, { backgroundColor: c.secondary, opacity: profilePhotoBusy ? .6 : 1 }]}
+            >
+              <Text style={{ color: c.secondaryForeground, fontWeight: '700' }}>{translate(app.language, 'memberPhotoChoose')}</Text>
+            </Pressable>
+            {selectedProfilePhoto ? (
+              <Text style={{ color: c.mutedForeground }} numberOfLines={1}>
+                {selectedProfilePhoto.fileName || translate(app.language, 'memberPhotoTitle')}
+              </Text>
+            ) : null}
+            <Pressable
+              testID="save-member-profile-photo"
+              accessibilityRole="button"
+              disabled={profilePhotoBusy || !selectedProfilePhoto || !profilePhotoConsent}
+              onPress={() => void saveProfilePhoto()}
+              style={[styles.button, { backgroundColor: c.primary, opacity: profilePhotoBusy || !selectedProfilePhoto || !profilePhotoConsent ? .55 : 1 }]}
+            >
+              <Text style={{ color: c.primaryForeground, fontWeight: '700' }}>
+                {profilePhotoBusy ? translate(app.language, 'memberPhotoUploading') : translate(app.language, 'memberPhotoUpload')}
+              </Text>
+            </Pressable>
+          </>}
+          {profilePhoto.data?.photoPath ? (
+            <Pressable
+              testID="remove-member-profile-photo"
+              accessibilityRole="button"
+              disabled={profilePhotoBusy}
+              onPress={() => void removeProfilePhoto()}
+              style={[styles.button, { backgroundColor: c.secondary, opacity: profilePhotoBusy ? .6 : 1 }]}
+            >
+              <Text style={{ color: c.secondaryForeground, fontWeight: '700' }}>
+                {deleteProfilePhoto.isPending ? translate(app.language, 'memberPhotoRemoving') : translate(app.language, 'memberPhotoRemove')}
+              </Text>
+            </Pressable>
+          ) : null}
+          {profilePhotoNotice ? <Text accessibilityRole="alert" style={{ color: c.primary }}>{profilePhotoNotice}</Text> : null}
         </View>
         <Text style={{ color: c.foreground, fontWeight: '700' }}>Server-verified memberships</Text>
         {app.memberMemberships.length ? app.memberMemberships.map(m => <Text key={m.scope} style={{ color: c.foreground }}>{m.scope === 'preview' ? 'Sample-only trial' : m.source === 'corporate' ? 'Corporate' : m.source === 'trial' ? 'Trial' : 'Real membership'} · {m.tier} · {m.status.replaceAll('_', ' ')} · ends {dateTime(m.endsAt, app.language, true)}</Text>) : <Text style={{ color: c.mutedForeground }}>No active membership. Local plan selections do not grant access.</Text>}

@@ -1411,7 +1411,7 @@ export const GetAttendanceResponse = zod.object({
   "startsAt": zod.string(),
   "endsAt": zod.string(),
   "customerName": zod.string().nullish().describe('Partner-only display name from the member account.'),
-  "customerImageUrl": zod.url().nullish().describe('Partner-only profile image URL from the member account.'),
+  "customerImageUrl": zod.string().nullish().describe('Protected MaydanGo path for an optional photo'),
   "membershipPlan": zod.string().nullish().describe('Partner-only membership plan name or tier.'),
   "bookingStatus": zod.string(),
   "status": zod.string(),
@@ -1539,6 +1539,13 @@ export const ReviewAttendanceBody = zod.object({
 })
 
 export const ReviewAttendanceResponse = zod.unknown()
+
+
+export const GetAttendanceMemberPhotoParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetAttendanceMemberPhotoResponse = zod.unknown()
 
 
 export const getOperationsResponseOfferingsItemOneLocalizedTitleOneEnMax = 240;
@@ -10094,6 +10101,8 @@ export const GetMemberPrivacyRequestExportParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const getMemberPrivacyRequestExportResponseAccountProfilePhotoImageBase64Max = 7000000;
+
 export const getMemberPrivacyRequestExportResponseCoursesItemViewedLessonsItemPlaybackPositionSecondsMin = 0;
 
 
@@ -10106,7 +10115,7 @@ export const getMemberPrivacyRequestExportResponseReferralsCodeUsedRegExp = new 
 
 
 export const GetMemberPrivacyRequestExportResponse = zod.object({
-  "formatVersion": zod.enum(['1.2']),
+  "formatVersion": zod.enum(['1.3']),
   "generatedAt": zod.coerce.date(),
   "account": zod.object({
   "email": zod.string().nullable(),
@@ -10116,7 +10125,14 @@ export const GetMemberPrivacyRequestExportResponse = zod.object({
   "profile": zod.union([zod.object({
   "gender": zod.string(),
   "birthDate": zod.coerce.date()
-}),zod.null()])
+}),zod.null()]),
+  "profilePhoto": zod.object({
+  "present": zod.boolean(),
+  "consentVersion": zod.string().nullable(),
+  "consentAt": zod.coerce.date().nullable(),
+  "contentType": zod.union([zod.literal('image/jpeg'),zod.literal('image/png'),zod.literal('image/webp'),zod.literal(null)]).nullable(),
+  "imageBase64": zod.string().max(getMemberPrivacyRequestExportResponseAccountProfilePhotoImageBase64Max).nullable()
+})
 }),
   "memberships": zod.array(zod.object({
   "scope": zod.string(),
@@ -11656,6 +11672,57 @@ export const AttributeMemberReferralBody = zod.object({
 export const AttributeMemberReferralResponse = zod.object({
   "attributed": zod.literal(true)
 })
+
+
+export const GetMemberProfilePhotoResponse = zod.object({
+  "photoPath": zod.string().nullable(),
+  "consentVersion": zod.string().nullable(),
+  "consentAt": zod.coerce.date().nullable()
+})
+
+
+export const DeleteMemberProfilePhotoResponse = zod.object({
+  "photoPath": zod.string().nullable(),
+  "consentVersion": zod.string().nullable(),
+  "consentAt": zod.coerce.date().nullable()
+})
+
+
+export const requestMemberProfilePhotoUploadUrlBodySizeBytesMax = 5000000;
+
+
+
+export const RequestMemberProfilePhotoUploadUrlBody = zod.object({
+  "contentType": zod.enum(['image/jpeg', 'image/png', 'image/webp']),
+  "sizeBytes": zod.int().min(1).max(requestMemberProfilePhotoUploadUrlBodySizeBytesMax)
+})
+
+export const RequestMemberProfilePhotoUploadUrlResponse = zod.object({
+  "uploadId": zod.uuid(),
+  "uploadUrl": zod.url(),
+  "contentType": zod.enum(['image/jpeg', 'image/png', 'image/webp'])
+})
+
+
+export const completeMemberProfilePhotoUploadBodySizeBytesMax = 5000000;
+
+
+
+export const CompleteMemberProfilePhotoUploadBody = zod.object({
+  "uploadId": zod.uuid(),
+  "contentType": zod.enum(['image/jpeg', 'image/png', 'image/webp']),
+  "sizeBytes": zod.int().min(1).max(completeMemberProfilePhotoUploadBodySizeBytesMax),
+  "consentConfirmed": zod.literal(true)
+})
+
+export const CompleteMemberProfilePhotoUploadResponse = zod.object({
+  "photoPath": zod.string().nullable(),
+  "consentVersion": zod.string().nullable(),
+  "consentAt": zod.coerce.date().nullable()
+})
+
+
+export const GetMemberProfilePhotoFileResponse = zod.unknown()
 
 
 export const getMemberNotificationSettingsResponseRegisteredDevicesMin = 0;

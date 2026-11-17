@@ -22,6 +22,7 @@ export * from "./member-consents";
 export * from "./legal-policy-versions";
 export * from "./guardian-consents";
 export * from "./referrals";
+export * from "./member-profile-photos";
 // Export your models here. Add one export per file
 // export * from "./posts";
 //

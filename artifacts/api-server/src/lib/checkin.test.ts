@@ -2,7 +2,8 @@ import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
-import { db, pool, partners, operators, offerings, facilityProfiles, guardianConsentDocuments, memberships, memberProfiles, memberConsentEvents, reservations, attendance, checkinPolicies, checkinChallenges, manualCheckinChallenges, attendanceEvents } from "@workspace/db";
+import { GetAttendanceResponse } from "@workspace/api-zod";
+import { db, pool, partners, operators, offerings, facilityProfiles, guardianConsentDocuments, memberships, memberProfiles, memberProfilePhotos, memberConsentEvents, reservations, attendance, checkinPolicies, checkinChallenges, manualCheckinChallenges, attendanceEvents } from "@workspace/db";
 import { savePolicy, issueQr, scanQr, review, roster, scanInput, issueManualCheckinCode, recordManualCheckin, manualCheckinInput, isCheckinTravelViolation } from "./checkin";
 import { BookingError, createReservation } from "./reservations";
 import app from "../app";
@@ -95,6 +96,11 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     id: `${prefix}-${purpose}-stranger`, userId: stranger, purpose, policyVersion: "v1-draft", choice: "accepted" as const,
   })));
   await db.insert(memberProfiles).values({ userId: member, gender: "unspecified", birthDate: "1990-01-01" });
+  await db.insert(memberProfilePhotos).values({
+    userId: member,
+    objectPath: `/objects/member-profile-photos/test/${randomUUID()}.jpg`,
+    consentAt: new Date(),
+  });
   await db.insert(reservations).values({ id: r, userId: member, offeringId: o, status: "reserved" });
   await db.insert(offerings).values({ id: nextOffering, targetId: nextOffering, kind: "session", title: prefix, scope: "live", partnerId: p,
     active: true, city: "baghdad", facility: prefix, category: "gym", tiers: ["M"], capacity: 3,
@@ -132,15 +138,20 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     const memberRoster = await roster(member);
     assert.equal(memberRoster.rows[0].status, "not_checked_in");
     assert.equal("customerName" in memberRoster.rows[0], false);
+    assert.equal("customerImageUrl" in memberRoster.rows[0], false);
     const partnerRoster = await roster(staff);
     assert.equal(partnerRoster.rows[0].customerName, "Member");
     assert.equal(partnerRoster.rows[0].customerImageUrl, null);
     assert.equal(partnerRoster.rows[0].membershipPlan, "M");
+    const parsedPartnerRoster = GetAttendanceResponse.safeParse(JSON.parse(JSON.stringify(partnerRoster)));
+    assert.equal(parsedPartnerRoster.success, true,
+      parsedPartnerRoster.success ? undefined : JSON.stringify(parsedPartnerRoster.error.issues));
     const server = app.listen(0, "127.0.0.1");
     await new Promise<void>(resolve => server.once("listening", resolve));
     try {
       const address = server.address() as { port: number };
       assert.equal((await fetch(`http://127.0.0.1:${address.port}/api/attendance`)).status, 401);
+      assert.equal((await fetch(`http://127.0.0.1:${address.port}/api/attendance/${r}/member-photo`)).status, 401);
     } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
   });
   await t.test("partner rejection is scoped, reasoned, and only applies to a future request", async () => {
@@ -175,6 +186,12 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     await savePolicy(staff, r, { latitude: 33.3, longitude: 44.4, radius: 150,
       opensAt: new Date(now - 120000).toISOString(), closesAt: new Date(now + 3600000).toISOString(),
       correctionEndsAt: new Date(now + 86400000).toISOString() });
+    const authorizedPhotoRoster = await roster(staff);
+    assert.equal(authorizedPhotoRoster.rows.find(row => row.reservationId === r)?.customerImageUrl,
+      `/api/attendance/${r}/member-photo`);
+    const parsedPhotoRoster = GetAttendanceResponse.safeParse(JSON.parse(JSON.stringify(authorizedPhotoRoster)));
+    assert.equal(parsedPhotoRoster.success, true,
+      parsedPhotoRoster.success ? undefined : JSON.stringify(parsedPhotoRoster.error.issues));
     assert.equal((await roster(stranger)).rows.length, 0);
   });
   let token: string;
@@ -448,6 +465,7 @@ after(async () => {
   await db.delete(facilityProfiles).where(inArray(facilityProfiles.id, [mainFacilityProfile, otherFacilityProfile]));
   await db.delete(memberships).where(inArray(memberships.userId, users));
   await db.delete(memberConsentEvents).where(eq(memberConsentEvents.userId, member));
+  await db.delete(memberProfilePhotos).where(eq(memberProfilePhotos.userId, member));
   await db.delete(memberProfiles).where(eq(memberProfiles.userId, member));
   await db.delete(operators).where(inArray(operators.userId, users));
   await db.delete(partners).where(eq(partners.id, p));
