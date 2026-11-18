@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Linking, Platform, StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
@@ -40,6 +40,7 @@ const statusKeys: Record<Status, MessageKey> = {
 export default function SupportCenterScreen() {
   const colors = useColors();
   const app = useApp();
+  const params = useLocalSearchParams<{ facilityName?: string; facilityAction?: string }>();
   const t = (key: MessageKey) => translate(app.language, key);
   const queryClient = useQueryClient();
   const [subject, setSubject] = useState('');
@@ -50,6 +51,7 @@ export default function SupportCenterScreen() {
   const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [permissionBlocked, setPermissionBlocked] = useState(false);
+  const appliedFacilityPrefill = useRef<string | null>(null);
   const tickets = useGetMemberSupportTickets({ query: { enabled: app.signedIn } });
   const settings = useGetMemberNotificationSettings({ query: { enabled: app.signedIn } });
   const agents = useGetSupportStaffAgents({ query: { enabled: app.signedIn, staleTime: 30_000 } });
@@ -57,6 +59,17 @@ export default function SupportCenterScreen() {
   const updateSettings = useUpdateMemberNotificationSettings();
   const registerDevice = useRegisterMemberPushDevice();
   const align = app.language === 'en' ? 'left' : 'right';
+
+  useEffect(() => {
+    if (!params.facilityName || (params.facilityAction !== 'contact' && params.facilityAction !== 'report')) return;
+    const prefillKey = `${params.facilityAction}:${params.facilityName}`;
+    if (appliedFacilityPrefill.current === prefillKey) return;
+    const report = params.facilityAction === 'report';
+    setSubject(t(report ? 'facilityReportSubject' : 'facilityContactSubject').replace('{facility}', params.facilityName));
+    setMessage(t(report ? 'facilityReportMessage' : 'facilityContactMessage').replace('{facility}', params.facilityName));
+    setCategory('other');
+    appliedFacilityPrefill.current = prefillKey;
+  }, [params.facilityAction, params.facilityName, app.language]);
 
   useEffect(() => {
     if (settings.data?.pushEnabled && settings.data.language !== app.language) {

@@ -323,9 +323,30 @@ function FacilityDetails({ facility }: { facility: PublicFacility }) {
                 <Text style={[styles.actionText, { color: colors.primary }]}>{t('website')}</Text>
               </Pressable>
             ) : null}
-            {!facility.contactPhone && !facility.websiteUrl ? (
-              <Text style={[styles.bodyCopy, { color: colors.mutedForeground }]}>{t('notPublished')}</Text>
-            ) : null}
+            <Pressable
+              accessibilityRole="button"
+              testID="facility-contact-support"
+              onPress={() => router.push({
+                pathname: '/support',
+                params: { facilityAction: 'contact', facilityName: name },
+              })}
+              style={[styles.actionButton, { borderColor: colors.border }]}
+            >
+              <Ionicons name="chatbubble-ellipses-outline" size={17} color={colors.primary} />
+              <Text style={[styles.actionText, { color: colors.primary }]}>{t('contactFacilitySupport')}</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              testID="facility-report-info"
+              onPress={() => router.push({
+                pathname: '/support',
+                params: { facilityAction: 'report', facilityName: name },
+              })}
+              style={[styles.actionButton, { borderColor: colors.border }]}
+            >
+              <Ionicons name="alert-circle-outline" size={17} color={colors.primary} />
+              <Text style={[styles.actionText, { color: colors.primary }]}>{t('reportFacilityInfo')}</Text>
+            </Pressable>
           </Section>
 
           <LocalizedList title={t('amenities')} values={facility.amenities} language={app.language} />
