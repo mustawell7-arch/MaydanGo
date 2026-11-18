@@ -5,7 +5,7 @@ import type { Server } from "node:http";
 import { eq, inArray } from "drizzle-orm";
 import express from "express";
 import {
-  db, facilityProfiles, operationAudit, operators, partners, pool,
+  db, facilityProfiles, offerings, operationAudit, operators, partners, pool,
 } from "@workspace/db";
 import facilitiesPublicRouter from "./facilities-public";
 import operationsRouter from "./operations";
@@ -20,6 +20,7 @@ const adminUser = `${prefix}-admin`;
 const profileA = `${prefix}-profile-a`;
 const profileB = `${prefix}-profile-b`;
 const hiddenProfile = `${prefix}-profile-hidden`;
+const offeringId = `${prefix}-offering`;
 const actorIds = [userA, userB, adminUser];
 const profileIds = [profileA, profileB, hiddenProfile];
 let server: Server | null = null;
@@ -79,6 +80,7 @@ async function call(path: string, userId?: string, method = "GET", body?: unknow
 after(async () => {
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
   // operation_audit is append-only; randomized test records are intentionally retained.
+  await db.delete(offerings).where(eq(offerings.id, offeringId));
   await db.delete(facilityProfiles).where(inArray(facilityProfiles.id, profileIds));
   await db.delete(operators).where(inArray(operators.userId, actorIds));
   await db.delete(partners).where(inArray(partners.id, [partnerA, partnerB, unapprovedPartner]));
@@ -101,6 +103,29 @@ test("facility records stay partner-scoped and public listings require partner a
     { id: profileB, partnerId: partnerB, ...profileContent(`${prefix} facility B`, "Original B") },
     { id: hiddenProfile, partnerId: unapprovedPartner, ...profileContent(`${prefix} hidden facility`, "Hidden") },
   ]);
+  const startsAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  await db.insert(offerings).values({
+    id: offeringId,
+    kind: "session",
+    targetId: `${prefix}-session`,
+    title: "Strength session",
+    localizedTitle: { en: "Strength session", ar: "حصة قوة", ku: "وانەی هێز" },
+    localizedInstructor: { en: "Rana Ahmed", ar: "رنا أحمد", ku: "ڕەنا ئەحمەد" },
+    scope: "live",
+    partnerId: partnerA,
+    city: "Baghdad",
+    facility: `${prefix} facility A`,
+    category: "Fitness",
+    tiers: ["M", "XL"],
+    startsAt,
+    endsAt: new Date(startsAt.getTime() + 60 * 60 * 1000),
+    cancellationDeadline: new Date(startsAt.getTime() - 60 * 60 * 1000),
+    capacity: 10,
+    accessType: "premium",
+    active: true,
+    approvalStatus: "published",
+    activityStatus: "published",
+  });
   server = app.listen(0, "127.0.0.1");
   await new Promise<void>(resolve => server!.once("listening", resolve));
 
@@ -136,6 +161,12 @@ test("facility records stay partner-scoped and public listings require partner a
   assert.ok(publicIds.includes(profileA));
   assert.ok(publicIds.includes(profileB));
   assert.ok(!publicIds.includes(hiddenProfile));
+  const publicFacilityA = (publicFacilities.data as Array<{
+    id: string;
+    upcomingSessions: Array<{ tiers: string[]; localizedInstructor: { en: string } | null }>;
+  }>).find(row => row.id === profileA);
+  assert.deepEqual(publicFacilityA?.upcomingSessions[0]?.tiers, ["M", "XL"]);
+  assert.equal(publicFacilityA?.upcomingSessions[0]?.localizedInstructor?.en, "Rana Ahmed");
   assert.equal((await call(`/public/facilities/${hiddenProfile}`)).status, 404);
   const publicApprovedProfile = await call(`/public/facilities/${profileA}`);
   assert.equal(publicApprovedProfile.status, 200);

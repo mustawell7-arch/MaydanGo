@@ -67,6 +67,12 @@ export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOne
 
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOneKuMax = 500;
 
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneEnMax = 500;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneArMax = 500;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneKuMax = 500;
+
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemMinAgeMin = 0;
 
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemMaxAgeMin = 0;
@@ -152,10 +158,16 @@ export const GetPublicFacilitiesResponseItem = zod.object({
   "ar": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOneArMax),
   "ku": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOneKuMax)
 }),zod.null()]),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneKuMax)
+}),zod.null()]),
   "category": zod.string(),
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
+  "tiers": zod.array(zod.string()),
   "gender": zod.enum(['all', 'female', 'male']),
   "minAge": zod.int().min(getPublicFacilitiesResponseTwoUpcomingSessionsItemMinAgeMin),
   "maxAge": zod.int().min(getPublicFacilitiesResponseTwoUpcomingSessionsItemMaxAgeMin).nullable()
@@ -226,6 +238,12 @@ export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneEn
 export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneArMax = 500;
 
 export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneKuMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneEnMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneArMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneKuMax = 500;
 
 export const getPublicFacilityResponseTwoUpcomingSessionsItemMinAgeMin = 0;
 
@@ -312,10 +330,16 @@ export const GetPublicFacilityResponse = zod.object({
   "ar": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneArMax),
   "ku": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneKuMax)
 }),zod.null()]),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneKuMax)
+}),zod.null()]),
   "category": zod.string(),
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
+  "tiers": zod.array(zod.string()),
   "gender": zod.enum(['all', 'female', 'male']),
   "minAge": zod.int().min(getPublicFacilityResponseTwoUpcomingSessionsItemMinAgeMin),
   "maxAge": zod.int().min(getPublicFacilityResponseTwoUpcomingSessionsItemMaxAgeMin).nullable()
@@ -1190,6 +1214,12 @@ export const getPublicCatalogResponseLocalizedDescriptionOneArMax = 500;
 
 export const getPublicCatalogResponseLocalizedDescriptionOneKuMax = 500;
 
+export const getPublicCatalogResponseLocalizedInstructorOneEnMax = 500;
+
+export const getPublicCatalogResponseLocalizedInstructorOneArMax = 500;
+
+export const getPublicCatalogResponseLocalizedInstructorOneKuMax = 500;
+
 export const getPublicCatalogResponseInstructionsMax = 2000;
 
 export const getPublicCatalogResponseBookingCutoffMinutesMin = 0;
@@ -1218,6 +1248,11 @@ export const GetPublicCatalogResponseItem = zod.object({
   "en": zod.string().min(1).max(getPublicCatalogResponseLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(getPublicCatalogResponseLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(getPublicCatalogResponseLocalizedDescriptionOneKuMax)
+}),zod.null()]),
+  "localizedInstructor": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicCatalogResponseLocalizedInstructorOneEnMax),
+  "ar": zod.string().min(1).max(getPublicCatalogResponseLocalizedInstructorOneArMax),
+  "ku": zod.string().min(1).max(getPublicCatalogResponseLocalizedInstructorOneKuMax)
 }),zod.null()]),
   "instructions": zod.string().max(getPublicCatalogResponseInstructionsMax).nullish(),
   "imageUrl": zod.string().nullish(),

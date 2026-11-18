@@ -353,10 +353,12 @@ export interface PublicFacilitySession {
   id: string;
   title: string;
   localizedTitle: LocalizedFacilityText | null;
+  localizedInstructor: LocalizedFacilityText | null;
   category: string;
   startsAt: string;
   endsAt: string;
   accessType: PublicFacilitySessionAccessType;
+  tiers: string[];
   gender: PublicFacilitySessionGender;
   /** @minimum 0 */
   minAge: number;
@@ -422,6 +424,7 @@ export interface PublicOffering {
   title: string;
   localizedTitle: LocalizedFacilityText | null;
   localizedDescription: LocalizedFacilityText | null;
+  localizedInstructor: LocalizedFacilityText | null;
   /**
      * @maxLength 2000
      * @nullable

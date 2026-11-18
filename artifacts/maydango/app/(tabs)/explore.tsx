@@ -21,6 +21,13 @@ import { translate } from '@/lib/i18n';
 import { facilityText, cityIdForFacility, eligibilityKey, eligibilityLabel } from '@/lib/facility-content';
 import { directionsUrl, distanceKm, formatDistance, type Coordinates } from '@/lib/location';
 import { activityFavoriteId } from '@/lib/favorite-activities';
+import {
+  baghdadDateKey,
+  formatDiscoveryDate,
+  matchesDiscoverySessionFilters,
+  type DiscoveryAccessType,
+  type DiscoveryTimeOfDay,
+} from '@/lib/facility-discovery';
 import { dateTime, timeOnly } from '@/lib/content';
 import { absoluteApiAssetUrl } from '@/lib/live-api';
 import {
@@ -107,6 +114,11 @@ const params = useLocalSearchParams<{
   const [selectedAmenity, setSelectedAmenity] = useState<string | null>(null);
   const [selectedAccessibility, setSelectedAccessibility] = useState<string | null>(null);
   const [selectedEligibility, setSelectedEligibility] = useState<string | null>(null);
+  const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<DiscoveryTimeOfDay | null>(null);
+  const [selectedAccessType, setSelectedAccessType] = useState<DiscoveryAccessType | null>(null);
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -199,9 +211,54 @@ const params = useLocalSearchParams<{
     });
     return [...values].map(([key, label]) => ({ key, label }));
   }, [facilities, app.language]);
+  const districtOptions = useMemo(() => {
+    const values = new Map<string, string>();
+    facilities
+      .filter(facility => app.selectedCityId === 'all' || cityIdForFacility(facility.city) === app.selectedCityId)
+      .forEach(facility => values.set(
+        JSON.stringify(facility.localizedDistrict),
+        facilityText(facility.localizedDistrict, app.language),
+      ));
+    return [...values].map(([key, label]) => ({ key, label }));
+  }, [facilities, app.selectedCityId, app.language]);
+  const sessionFilters = {
+    date: selectedDate,
+    timeOfDay: selectedTimeOfDay,
+    accessType: selectedAccessType,
+    tier: selectedTier,
+  };
+  const dateFilterSessions = kind === 'events'
+    ? (eventsQuery.data ?? []).filter(event =>
+        event.kind === 'event' && !event.additionalPayment &&
+        (app.selectedCityId === 'all' || cityIdForFacility(event.city) === app.selectedCityId),
+      )
+    : facilities
+        .filter(facility => app.selectedCityId === 'all' || cityIdForFacility(facility.city) === app.selectedCityId)
+        .flatMap(facility => facility.upcomingSessions);
+  const dateOptions = [...new Set(dateFilterSessions
+    .map(session => baghdadDateKey(session.startsAt))
+    .filter((date): date is string => date !== null))]
+    .sort()
+    .map(date => ({ key: date, label: formatDiscoveryDate(date, app.language) }));
+  const accessTypeOptions = [
+    { key: 'physical', label: t('physicalAccess') },
+    { key: 'premium', label: t('premiumAccess') },
+    { key: 'live', label: t('liveAccess') },
+  ];
+  const membershipLevelOptions = [
+    { key: 'M', label: t('planM') },
+    { key: 'L', label: t('planL') },
+    { key: 'XL', label: t('planXL') },
+  ];
+  const timeOfDayOptions = [
+    { key: 'morning', label: t('morning') },
+    { key: 'afternoon', label: t('afternoon') },
+    { key: 'evening', label: t('evening') },
+  ];
   const visibleFacilities = useMemo(
     () => facilities.filter(facility => {
       const matchesCity = app.selectedCityId === 'all' || cityIdForFacility(facility.city) === app.selectedCityId;
+      const matchesDistrict = !selectedDistrict || JSON.stringify(facility.localizedDistrict) === selectedDistrict;
       const searchValues = [
         facility.localizedName.en, facility.localizedName.ar, facility.localizedName.ku,
         facility.localizedDistrict.en, facility.localizedDistrict.ar, facility.localizedDistrict.ku,
@@ -210,6 +267,16 @@ const params = useLocalSearchParams<{
         ...facility.activities.flatMap(item => [item.en, item.ar, item.ku]),
         ...facility.amenities.flatMap(item => [item.en, item.ar, item.ku]),
         ...facility.accessibility.flatMap(item => [item.en, item.ar, item.ku]),
+        ...facility.upcomingSessions.flatMap(session => [
+          session.title,
+          session.localizedTitle?.en ?? '',
+          session.localizedTitle?.ar ?? '',
+          session.localizedTitle?.ku ?? '',
+          session.category,
+          session.localizedInstructor?.en ?? '',
+          session.localizedInstructor?.ar ?? '',
+          session.localizedInstructor?.ku ?? '',
+        ]),
       ];
       const matchesText = searchValues.join(' ').toLocaleLowerCase().includes(query.toLocaleLowerCase());
       const matchesCategory = category === 'All' || facility.activities.some(item =>
@@ -218,10 +285,13 @@ const params = useLocalSearchParams<{
       const matchesAmenity = !selectedAmenity || facility.amenities.some(item => JSON.stringify(item) === selectedAmenity);
       const matchesAccessibility = !selectedAccessibility || facility.accessibility.some(item => JSON.stringify(item) === selectedAccessibility);
       const matchesEligibility = !selectedEligibility || facility.upcomingSessions.some(session => eligibilityKey(session) === selectedEligibility);
-      return matchesCity && matchesText && matchesCategory && matchesAmenity && matchesAccessibility &&
+      const matchesSchedule = matchesDiscoverySessionFilters(facility.upcomingSessions, sessionFilters);
+      return matchesCity && matchesDistrict && matchesText && matchesCategory && matchesAmenity && matchesAccessibility &&
+        matchesSchedule &&
         matchesEligibility && (!openNowOnly || facility.openingStatus === 'open');
     }),
-    [facilities, app.selectedCityId, app.language, query, category, selectedAmenity, selectedAccessibility, selectedEligibility, openNowOnly],
+    [facilities, app.selectedCityId, app.language, query, category, selectedAmenity, selectedAccessibility, selectedEligibility,
+      selectedDistrict, selectedDate, selectedTimeOfDay, selectedAccessType, selectedTier, openNowOnly],
   );
   const facilitiesWithDistance = useMemo(
     () => visibleFacilities.map(facility => ({
@@ -271,6 +341,9 @@ const params = useLocalSearchParams<{
         event.localizedTitle?.en,
         event.localizedTitle?.ar,
         event.localizedTitle?.ku,
+         event.localizedInstructor?.en,
+         event.localizedInstructor?.ar,
+         event.localizedInstructor?.ku,
         event.localizedDescription?.en,
         event.localizedDescription?.ar,
         event.localizedDescription?.ku,
@@ -280,9 +353,9 @@ const params = useLocalSearchParams<{
         event.partnerName,
       ];
       const matchesText = searchValues.join(' ').toLocaleLowerCase().includes(query.toLocaleLowerCase());
-      return matchesCity && matchesText;
+       return matchesCity && matchesText && matchesDiscoverySessionFilters([event], sessionFilters);
     }),
-    [eventsQuery.data, app.selectedCityId, query],
+    [eventsQuery.data, app.selectedCityId, query, selectedDate, selectedTimeOfDay, selectedAccessType, selectedTier],
   );
   const align = app.language === 'en' ? 'left' : 'right';
   const distanceOptions = location ? [5, 10, 25].map(value => ({
@@ -404,6 +477,16 @@ const params = useLocalSearchParams<{
             </Pressable>
           ))}
         </View>
+        {dateOptions.length ? (
+          <FilterRow title={t('dateFilter')} anyLabel={t('anyDate')} options={dateOptions}
+            selected={selectedDate} onSelect={setSelectedDate} colors={colors} />
+        ) : null}
+        <FilterRow title={t('timeFilter')} anyLabel={t('anyTime')} options={timeOfDayOptions}
+          selected={selectedTimeOfDay} onSelect={value => setSelectedTimeOfDay(value as DiscoveryTimeOfDay | null)} colors={colors} />
+        <FilterRow title={t('serviceTypeFilter')} anyLabel={t('anyServiceType')} options={accessTypeOptions}
+          selected={selectedAccessType} onSelect={value => setSelectedAccessType(value as DiscoveryAccessType | null)} colors={colors} />
+        <FilterRow title={t('membershipLevelFilter')} anyLabel={t('anyMembershipLevel')} options={membershipLevelOptions}
+          selected={selectedTier} onSelect={setSelectedTier} colors={colors} />
         {kind === 'events' ? (
           <View style={styles.list}>
             <Text style={[styles.eventsHint, { color: colors.mutedForeground, textAlign: align }]}>{t('eventsHint')}</Text>
@@ -599,6 +682,8 @@ const params = useLocalSearchParams<{
           </Pressable>
           <Text style={[styles.updatedHint, { color: colors.mutedForeground }]}>{t('iraqTime')}</Text>
         </View>
+        <FilterRow title={t('districtFilter')} anyLabel={t('anyDistrict')} options={districtOptions}
+          selected={selectedDistrict} onSelect={setSelectedDistrict} colors={colors} />
         <FilterRow title={t('amenities')} anyLabel={t('anyAmenity')} options={amenityOptions}
           selected={selectedAmenity} onSelect={setSelectedAmenity} colors={colors} />
         <FilterRow title={t('accessibility')} anyLabel={t('anyAccessNeed')} options={accessibilityOptions}

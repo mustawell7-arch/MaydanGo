@@ -823,6 +823,10 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       assert.equal((await call(`/member/live-classes/${created.data.id}/join`, alice, "POST", {})).status, 403);
       const publicCatalog = await fetch(`http://127.0.0.1:${port}/public/catalog`).then(response => response.json()) as any[];
       assert.equal(publicCatalog.find((row: any) => row.id === created.data.id)?.joinUrl, undefined);
+      assert.equal(
+        publicCatalog.find((row: any) => row.id === created.data.id)?.localizedInstructor?.en,
+        liveBody.localizedInstructor.en,
+      );
     });
     await t.test("separate quotas allow premium independently; shared and partner-group limits deny", async () => {
       const premium = await call("/operations/offerings", partnerUser, "POST", { ...offerBody, accessType: "premium" });

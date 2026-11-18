@@ -1218,7 +1218,7 @@ components:
               items: { $ref: "#/components/schemas/FacilityHoursOverride" }
     PublicFacilitySession:
       type: object
-      required: [id, title, localizedTitle, category, startsAt, endsAt, accessType, gender, minAge, maxAge]
+      required: [id, title, localizedTitle, localizedInstructor, category, startsAt, endsAt, accessType, tiers, gender, minAge, maxAge]
       properties:
         id: { type: string }
         title: { type: string }
@@ -1226,10 +1226,17 @@ components:
           anyOf:
             - { $ref: "#/components/schemas/LocalizedFacilityText" }
             - { type: "null" }
+        localizedInstructor:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedFacilityText" }
+            - { type: "null" }
         category: { type: string }
         startsAt: { type: string, format: date-time }
         endsAt: { type: string, format: date-time }
         accessType: { type: string, enum: [physical, premium, live] }
+        tiers:
+          type: array
+          items: { type: string }
         gender: { type: string, enum: [all, female, male] }
         minAge: { type: integer, minimum: 0 }
         maxAge: { type: ["integer", "null"], minimum: 0 }
@@ -1251,7 +1258,7 @@ components:
               items: { $ref: "#/components/schemas/PublicFacilitySession" }
     PublicOffering:
       type: object
-      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, city, facility, category, accessType, tiers, startsAt, endsAt, cancellationDeadline, bookingCutoffMinutes, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
+      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, localizedInstructor, city, facility, category, accessType, tiers, startsAt, endsAt, cancellationDeadline, bookingCutoffMinutes, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
       properties:
         id: { type: string }
         kind: { type: string, enum: [session, event, coach] }
@@ -1263,6 +1270,10 @@ components:
             - { $ref: "#/components/schemas/LocalizedFacilityText" }
             - { type: "null" }
         localizedDescription:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedFacilityText" }
+            - { type: "null" }
+        localizedInstructor:
           anyOf:
             - { $ref: "#/components/schemas/LocalizedFacilityText" }
             - { type: "null" }
