@@ -26,6 +26,7 @@ import {
 import { Text, TextInput, Pressable } from '@/components/Localized';
 import { dateTime, errorCopy } from '@/lib/content';
 import { getCityLabel } from '@/data/demo';
+import { normalizeInternationalPhoneNumber } from '@/lib/phone-number';
 import { useAuth, useClerk, useUser, useSignIn, useSignUp, useSSO } from '@clerk/expo';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
@@ -72,6 +73,7 @@ export default function AccountScreen() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
@@ -187,14 +189,19 @@ export default function AccountScreen() {
     if (mode === 'signup') {
       const normalizedFirstName = firstName.trim();
       const normalizedLastName = lastName.trim();
+      const normalizedPhoneNumber = normalizeInternationalPhoneNumber(phoneNumber);
       if (!normalizedFirstName || !normalizedLastName) {
         throw new Error(translate(app.language, 'memberNameRequired'));
+      }
+      if (!normalizedPhoneNumber) {
+        throw new Error(translate(app.language, 'memberPhoneInvalid'));
       }
       check(await signUp.password({
         emailAddress: email.trim(),
         password,
         firstName: normalizedFirstName,
         lastName: normalizedLastName,
+        unsafeMetadata: { maydangoContactPhone: normalizedPhoneNumber },
       }));
       check(await signUp.verifications.sendEmailCode()); setVerify(true);
     } else {
@@ -755,6 +762,22 @@ export default function AccountScreen() {
                 maxLength={100}
                 style={[styles.input, { color: c.foreground, borderColor: c.border }]}
               />
+              <TextInput
+                inputDirection="ltr"
+                testID="auth-phone-number"
+                accessibilityLabel={translate(app.language, 'memberPhoneNumber')}
+                placeholder="+964 7xx xxx xxxx"
+                placeholderTextColor={c.mutedForeground}
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
+                autoComplete="tel"
+                maxLength={24}
+                style={[styles.input, { color: c.foreground, borderColor: c.border }]}
+              />
+              <Text style={{ color: c.mutedForeground, lineHeight: 18, marginTop: -6 }}>
+                {translate(app.language, 'memberPhoneVerificationHint')}
+              </Text>
               <Pressable
                 testID="auth-city-picker"
                 accessibilityRole="button"

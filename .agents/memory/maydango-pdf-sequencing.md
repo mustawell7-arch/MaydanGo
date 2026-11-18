@@ -7,4 +7,4 @@ When the user says to continue MaydanGo work, identify and implement the next un
 
 **Why:** The user repeatedly asked to continue the PDF chronologically and corrected when adjacent follow-up suggestions displaced that work. The user also explicitly directed that the Bird connection be done at the end.
 
-**How to apply:** Before each continuation, locate the next incomplete PDF item, check the current code for existing coverage, then build that item before proposing anything outside the PDF. Do not configure Bird or start SMS delivery until every other PDF milestone is complete; keep its task open in the meantime.
+**How to apply:** Before each continuation, locate the next incomplete PDF item, check the current code for existing coverage, then build that item before proposing anything outside the PDF. Do not configure Bird or start SMS delivery until every other PDF milestone is complete; keep its task open in the meantime. Treat the sign-up phone value as unverified user input: never send messages or trust it for verification until the final SMS flow confirms that exact number.

@@ -5,13 +5,15 @@ import { GetMemberPrivacyRequestExportResponse } from "@workspace/api-zod";
 test("member export response contains only the declared, non-secret fields", () => {
   const now = new Date("2026-11-14T12:00:00.000Z");
   const parsed = GetMemberPrivacyRequestExportResponse.parse({
-    formatVersion: "1.3",
+    formatVersion: "1.4",
     generatedAt: now,
     account: {
       email: "member@example.test",
       firstName: "Member",
       lastName: null,
       createdAt: now,
+      contactPhoneNumber: "+9647700000000",
+      contactPhoneNumberVerified: false,
       profile: { gender: "unspecified", birthDate: "1990-01-01" },
       profilePhoto: {
         present: true,
@@ -98,6 +100,8 @@ test("member export response contains only the declared, non-secret fields", () 
   });
 
   assert.equal("passwordHash" in parsed.account, false);
+  assert.equal(parsed.account.contactPhoneNumber, "+9647700000000");
+  assert.equal(parsed.account.contactPhoneNumberVerified, false);
   assert.deepEqual(parsed.account.profilePhoto, {
     present: true,
     consentVersion: "member-photo-v1",

@@ -900,6 +900,12 @@ export interface MemberDataExportAccount {
   lastName: string | null;
   /** @nullable */
   createdAt: string | null;
+  /**
+     * @maxLength 24
+     * @nullable
+     */
+  contactPhoneNumber: string | null;
+  contactPhoneNumberVerified: boolean;
   profile: MemberDataExportProfile | null;
   profilePhoto: MemberDataExportProfilePhoto;
 }
@@ -1077,7 +1083,7 @@ export type MemberDataExportFormatVersion = typeof MemberDataExportFormatVersion
 
 
 export const MemberDataExportFormatVersion = {
-  '13': '1.3',
+  '14': '1.4',
 } as const;
 
 export type MemberDataExportExcludedDataItem = typeof MemberDataExportExcludedDataItem[keyof typeof MemberDataExportExcludedDataItem];

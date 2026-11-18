@@ -3174,12 +3174,14 @@ components:
     MemberDataExportAccount:
       type: object
       additionalProperties: false
-      required: [email, firstName, lastName, createdAt, profile, profilePhoto]
+      required: [email, firstName, lastName, createdAt, contactPhoneNumber, contactPhoneNumberVerified, profile, profilePhoto]
       properties:
         email: { type: ["string", "null"] }
         firstName: { type: ["string", "null"] }
         lastName: { type: ["string", "null"] }
         createdAt: { type: ["string", "null"], format: date-time }
+        contactPhoneNumber: { type: ["string", "null"], maxLength: 24 }
+        contactPhoneNumberVerified: { type: boolean }
         profile:
           anyOf:
             - { $ref: "#/components/schemas/MemberDataExportProfile" }
@@ -3364,7 +3366,7 @@ components:
       additionalProperties: false
       required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, savedCourses, reviews, consentHistory, supportConversations, referrals, privacyRequests, notificationPreferences, excludedData]
       properties:
-        formatVersion: { type: string, enum: ["1.3"] }
+        formatVersion: { type: string, enum: ["1.4"] }
         generatedAt: { type: string, format: date-time }
         account: { $ref: "#/components/schemas/MemberDataExportAccount" }
         memberships:

@@ -10102,6 +10102,8 @@ export const GetMemberPrivacyRequestExportParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const getMemberPrivacyRequestExportResponseAccountContactPhoneNumberMax = 24;
+
 export const getMemberPrivacyRequestExportResponseAccountProfilePhotoImageBase64Max = 7000000;
 
 export const getMemberPrivacyRequestExportResponseCoursesItemViewedLessonsItemPlaybackPositionSecondsMin = 0;
@@ -10116,13 +10118,15 @@ export const getMemberPrivacyRequestExportResponseReferralsCodeUsedRegExp = new 
 
 
 export const GetMemberPrivacyRequestExportResponse = zod.object({
-  "formatVersion": zod.enum(['1.3']),
+  "formatVersion": zod.enum(['1.4']),
   "generatedAt": zod.coerce.date(),
   "account": zod.object({
   "email": zod.string().nullable(),
   "firstName": zod.string().nullable(),
   "lastName": zod.string().nullable(),
   "createdAt": zod.coerce.date().nullable(),
+  "contactPhoneNumber": zod.string().max(getMemberPrivacyRequestExportResponseAccountContactPhoneNumberMax).nullable(),
+  "contactPhoneNumberVerified": zod.boolean(),
   "profile": zod.union([zod.object({
   "gender": zod.string(),
   "birthDate": zod.coerce.date()

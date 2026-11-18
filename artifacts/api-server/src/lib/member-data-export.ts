@@ -269,6 +269,12 @@ export async function createMemberDataExport(userId: string) {
   }
 
   const savedProfilePhoto = profilePhotoRows[0];
+  const accountUnsafeMetadata = account.unsafeMetadata as Record<string, unknown>;
+  const accountPrivateMetadata = account.privateMetadata as Record<string, unknown>;
+  const contactPhoneNumber = typeof accountUnsafeMetadata.maydangoContactPhone === "string"
+    ? accountUnsafeMetadata.maydangoContactPhone
+    : null;
+  const verifiedContactPhoneNumber = accountPrivateMetadata.maydangoVerifiedContactPhone;
   let profilePhotoExport = {
     present: false,
     consentVersion: savedProfilePhoto?.consentVersion ?? null,
@@ -305,13 +311,16 @@ export async function createMemberDataExport(userId: string) {
   }
 
   return GetMemberPrivacyRequestExportResponse.parse({
-    formatVersion: "1.3",
+      formatVersion: "1.4",
     generatedAt: new Date(),
     account: {
       email: account.primaryEmailAddress?.emailAddress ?? null,
       firstName: account.firstName,
       lastName: account.lastName,
       createdAt: new Date(account.createdAt),
+        contactPhoneNumber,
+        contactPhoneNumberVerified: typeof verifiedContactPhoneNumber === "string"
+          && verifiedContactPhoneNumber === contactPhoneNumber,
       profile: profileRows[0] ?? null,
       profilePhoto: profilePhotoExport,
     },
