@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { and, asc, eq, gt, gte, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, isNull, or, sql } from "drizzle-orm";
 import {
   db,
   facilityHoursOverrides,
@@ -15,6 +15,7 @@ import {
 } from "@workspace/api-zod";
 import { iraqCalendarDate, openingState } from "../lib/facility-hours";
 import { filterSuspendedOfferings, suspendedEntityIds } from "../lib/account-access-restrictions";
+import { getOfferingBookingModel } from "../lib/booking-model";
 
 const router = Router();
 
@@ -58,6 +59,7 @@ async function publishedFacilities(id?: string) {
     startsAt: offerings.startsAt,
     endsAt: offerings.endsAt,
     accessType: offerings.accessType,
+    bookingModel: offerings.bookingModel,
     tiers: offerings.tiers,
     difficultyLevel: offerings.difficultyLevel,
     environment: offerings.environment,
@@ -72,7 +74,10 @@ async function publishedFacilities(id?: string) {
       isNull(offerings.cancelledAt),
       eq(offerings.additionalPayment, false),
       eq(partners.approved, true),
-      gt(offerings.startsAt, now),
+      or(
+        gt(offerings.startsAt, now),
+        and(eq(offerings.bookingModel, "open_access"), gt(offerings.endsAt, now)),
+      ),
       inArray(offerings.partnerId, partnerIds),
     ))
     .orderBy(asc(offerings.startsAt));
@@ -105,7 +110,14 @@ async function publishedFacilities(id?: string) {
         session.partnerId === profile.partnerId &&
         normalized(session.city) === normalized(profile.city) &&
         normalized(session.facility) === normalized(profile.facility),
-      ).map(({ partnerId: _partnerId, city: _city, facility: _facility, ...session }) => session),
+      ).map(({ partnerId: _partnerId, city: _city, facility: _facility, ...session }) => ({
+        ...session,
+        bookingModel: getOfferingBookingModel({
+          kind: "session",
+          accessType: session.accessType,
+          bookingModel: session.bookingModel,
+        }),
+      })),
     };
   });
 }

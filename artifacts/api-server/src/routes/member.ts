@@ -2,9 +2,10 @@ import { Router } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { db, memberships, memberProfilePhotos, memberProfiles, offerings, reservations, partners, waitlistEntries } from "@workspace/db";
+import { db, memberships, memberProfilePhotos, memberProfiles, offerings, reservations, partners, waitlistEntries, checkinPolicies } from "@workspace/db";
 import { eq, and, inArray, sql, gt, asc, isNull, ne, or } from "drizzle-orm";
 import { buildMemberProfileUpsert } from "../lib/member-profile";
+import { getOfferingBookingModel } from "../lib/booking-model";
 import { ageOnDate } from "../lib/age";
 import {
   CompleteMemberProfilePhotoUploadBody,
@@ -425,15 +426,22 @@ router.post("/subscription/cancel", async (req, res) => {
 router.get("/live-catalog", async (_req, res) => {
   const now = new Date();
   const rows = await db.select({ offering: offerings, partnerName: partners.name,
+    checkinPolicyId: checkinPolicies.offeringId,
+    checkinOpensAt: checkinPolicies.opensAt,
+    checkinClosesAt: checkinPolicies.closesAt,
     reserved: sql<number>`count(${reservations.id})::int`,
   }).from(offerings).innerJoin(partners, eq(offerings.partnerId, partners.id))
     .leftJoin(reservations, and(eq(reservations.offeringId, offerings.id), inArray(reservations.status, ["reserved", "requested"])))
+    .leftJoin(checkinPolicies, eq(checkinPolicies.offeringId, offerings.id))
     .where(and(
       eq(offerings.scope, "live"), eq(offerings.active, true), isNull(offerings.cancelledAt),
-      eq(partners.approved, true), gt(offerings.startsAt, now),
+      eq(partners.approved, true), or(
+        gt(offerings.startsAt, now),
+        and(eq(offerings.bookingModel, "open_access"), gt(offerings.endsAt, now)),
+      ),
       or(ne(offerings.kind, "event"), eq(offerings.additionalPayment, false)),
     ))
-    .groupBy(offerings.id, partners.id).orderBy(asc(offerings.startsAt));
+    .groupBy(offerings.id, partners.id, checkinPolicies.offeringId, checkinPolicies.opensAt, checkinPolicies.closesAt).orderBy(asc(offerings.startsAt));
   const activeOffers = await db.select({
     offeringId: waitlistEntries.offeringId,
     count: sql<number>`count(*)::int`,
@@ -443,11 +451,14 @@ router.get("/live-catalog", async (_req, res) => {
   const offeredByClass = new Map(activeOffers.map(row => [row.offeringId, Number(row.count)]));
   const visibleOfferings = await filterSuspendedOfferings(rows.map(({ offering }) => offering));
   const visibleIds = new Set(visibleOfferings.map(offering => offering.id));
-  res.json(rows.filter(({ offering }) => visibleIds.has(offering.id)).map(({ offering: o, partnerName, reserved }) => ({
+  res.json(rows.filter(({ offering }) => visibleIds.has(offering.id)).map(({ offering: o, partnerName, reserved, checkinPolicyId, checkinOpensAt, checkinClosesAt }) => ({
     id: o.id, targetId: o.targetId, slot: o.slot, scope: o.scope,
     partnerId: o.partnerId, partnerName, title: o.title,
     localizedTitle: o.localizedTitle, localizedDescription: o.localizedDescription,
-     kind: o.kind, city: o.city, facility: o.facility, category: o.category, accessType: o.accessType, environment: o.environment,
+     kind: o.kind, city: o.city, facility: o.facility, category: o.category, accessType: o.accessType,
+     bookingModel: getOfferingBookingModel(o), walkInReady: !!checkinPolicyId,
+     walkInOpensAt: checkinOpensAt?.toISOString() ?? null, walkInClosesAt: checkinClosesAt?.toISOString() ?? null,
+     environment: o.environment,
     tiers: o.tiers, startsAt: o.startsAt, endsAt: o.endsAt, cancellationDeadline: o.cancellationDeadline,
      capacity: o.capacity, waitlistOfferMinutes: o.waitlistOfferMinutes, gender: o.gender, minAge: o.minAge, maxAge: o.maxAge,
     additionalPayment: o.additionalPayment, active: o.active, cancelledAt: o.cancelledAt,

@@ -468,6 +468,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1image-upload-url"
   /operations/offerings/{id}/image:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1image"
+  /operations/offerings/{id}/checkin-policy:
+    $ref: "./operations.yaml#/paths/~1operations~1offerings~1{id}~1checkin-policy"
   /operations/offerings/recurring:
     $ref: "./operations.yaml#/paths/~1operations~1offerings~1recurring"
   /operations/offerings/{id}:
@@ -1218,7 +1220,7 @@ components:
               items: { $ref: "#/components/schemas/FacilityHoursOverride" }
     PublicFacilitySession:
       type: object
-      required: [id, title, localizedTitle, localizedInstructor, category, startsAt, endsAt, accessType, tiers, difficultyLevel, environment, gender, minAge, maxAge]
+      required: [id, title, localizedTitle, localizedInstructor, category, startsAt, endsAt, accessType, bookingModel, tiers, difficultyLevel, environment, gender, minAge, maxAge]
       properties:
         id: { type: string }
         title: { type: string }
@@ -1234,6 +1236,7 @@ components:
         startsAt: { type: string, format: date-time }
         endsAt: { type: string, format: date-time }
         accessType: { type: string, enum: [physical, premium, live] }
+        bookingModel: { type: string, enum: [booking_required, booking_request, open_access, event, live_class] }
         tiers:
           type: array
           items: { type: string }
@@ -1268,7 +1271,7 @@ components:
               items: { $ref: "#/components/schemas/PublicFacilitySession" }
     PublicOffering:
       type: object
-      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, localizedInstructor, city, facility, category, accessType, tiers, difficultyLevel, environment, startsAt, endsAt, cancellationDeadline, bookingCutoffMinutes, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
+      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, localizedInstructor, city, facility, category, accessType, bookingModel, tiers, difficultyLevel, environment, startsAt, endsAt, cancellationDeadline, bookingCutoffMinutes, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
       properties:
         id: { type: string }
         kind: { type: string, enum: [session, event, coach] }
@@ -1293,6 +1296,7 @@ components:
         facility: { type: string }
         category: { type: string }
         accessType: { type: string, enum: [physical, premium, live] }
+        bookingModel: { type: string, enum: [booking_required, booking_request, open_access, event, live_class] }
         tiers:
           type: array
           items: { type: string }
@@ -1573,7 +1577,7 @@ components:
         createdAt: { type: string, format: date-time }
     MemberBooking:
       type: object
-      required: [id, kind, targetId, slot, title, localizedTitle, city, facility, cancellationDeadline, scope, startsAt, status, createdAt]
+      required: [id, kind, targetId, slot, title, localizedTitle, city, facility, bookingModel, cancellationDeadline, scope, startsAt, status, createdAt]
       properties:
         id: { type: string }
         kind: { type: string }
@@ -1586,6 +1590,7 @@ components:
             - { type: "null" }
         city: { type: string }
         facility: { type: string }
+        bookingModel: { type: string, enum: [booking_required, booking_request, open_access, event, live_class] }
         cancellationDeadline: { type: string, format: date-time }
         scope: { type: string }
         startsAt: { type: string }

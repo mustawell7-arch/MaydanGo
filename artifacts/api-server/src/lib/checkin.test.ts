@@ -4,8 +4,8 @@ import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import { GetAttendanceResponse } from "@workspace/api-zod";
 import { db, pool, partners, operators, offerings, facilityProfiles, guardianConsentDocuments, memberships, memberProfiles, memberProfilePhotos, memberConsentEvents, reservations, attendance, checkinPolicies, checkinChallenges, manualCheckinChallenges, attendanceEvents } from "@workspace/db";
-import { savePolicy, issueQr, scanQr, review, roster, getPartnerMemberPhotoPath, scanInput, issueManualCheckinCode, recordManualCheckin, manualCheckinInput, isCheckinTravelViolation } from "./checkin";
-import { BookingError, createReservation } from "./reservations";
+import { savePolicy, saveOfferingPolicy, issueQr, scanQr, review, roster, getPartnerMemberPhotoPath, scanInput, issueManualCheckinCode, recordManualCheckin, manualCheckinInput, isCheckinTravelViolation } from "./checkin";
+import { BookingError, createReservation, cancelReservation, joinWaitlist, memberState } from "./reservations";
 import app from "../app";
 import { DEFAULT_PLATFORM_SAFETY_RULES } from "./platform-rules";
 
@@ -35,7 +35,8 @@ const requestReservation = `${prefix}-request-reservation`;
 const manualReservation = `${prefix}-manual-reservation`;
 const fraudOffering = `${prefix}-fraud-offering`, fraudReservation = `${prefix}-fraud-reservation`;
 const mainFacilityProfile = `${prefix}-facility-profile`, otherFacilityProfile = `${prefix}-other-facility-profile`;
-const users = [member, staff, secondStaff, admin, complianceAdmin, stranger];
+const openAccessOffering = `${prefix}-open-access`, walkInMember = `${prefix}-walk-in-member`;
+const users = [member, staff, secondStaff, admin, complianceAdmin, stranger, walkInMember];
 const now = Date.now();
 const reject = (f: () => Promise<unknown>, status: number) => assert.rejects(f, e => e instanceof BookingError && e.status === status);
 const location = () => ({ latitude: 33.3, longitude: 44.4, accuracy: 5, capturedAt: new Date().toISOString() });
@@ -452,6 +453,42 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
     assert.deepEqual(manualEventAfterReview, manualEventBeforeReview,
       "review appends a new audit event and does not change the original manual check-in event");
   });
+  await t.test("open access creates a cancellable same-window reservation without advance bookings or waitlists", async () => {
+    const startsAt = new Date(Date.now() - 30_000);
+    const endsAt = new Date(Date.now() + 3 * 60 * 60_000);
+    await db.insert(memberships).values({
+      userId: walkInMember, scope: "live", status: "trial", source: "trial",
+      paymentStatus: "not_required", tier: "M", startsAt: new Date(Date.now() - 86400000),
+      endsAt: new Date(Date.now() + 86400000), rules: { quota: 10, dailyLimit: 10, trialAllowedTypes: ["physical"] },
+    });
+    await db.insert(memberConsentEvents).values((["terms_of_use", "privacy_policy"] as const).map(purpose => ({
+      id: `${prefix}-walkin-${purpose}`, userId: walkInMember, purpose,
+      policyVersion: "v1-draft", choice: "accepted" as const,
+    })));
+    await db.insert(offerings).values({
+      id: openAccessOffering, targetId: openAccessOffering, kind: "session", slot: "",
+      title: "Walk-in test", scope: "live", partnerId: p, active: true, bookingModel: "open_access",
+      accessType: "physical", additionalPayment: false, city: "baghdad", facility: prefix,
+      category: "gym", tiers: ["M"], capacity: 2, bookingCutoffMinutes: 0,
+      startsAt, endsAt, cancellationDeadline: endsAt,
+    });
+    await reject(() => createReservation(walkInMember, { kind: "session", targetId: openAccessOffering, slot: "" }), 409);
+
+    const policy = {
+      latitude: 33.3, longitude: 44.4, radius: 150,
+      opensAt: startsAt.toISOString(), closesAt: endsAt.toISOString(),
+      correctionEndsAt: new Date(endsAt.getTime() + 24 * 60 * 60_000).toISOString(),
+    };
+    await saveOfferingPolicy(staff, openAccessOffering, policy);
+    const first = await createReservation(walkInMember, { kind: "session", targetId: openAccessOffering, slot: "" });
+    assert.equal(first.status, "reserved");
+    assert.equal((await memberState(walkInMember)).bookings.find(row => row.id === first.id)?.bookingModel, "open_access");
+    await reject(() => joinWaitlist(walkInMember, openAccessOffering), 409);
+    await reject(() => createReservation(walkInMember, { kind: "session", targetId: openAccessOffering, slot: "" }), 409);
+    await cancelReservation(walkInMember, first.id);
+    const replacement = await createReservation(walkInMember, { kind: "session", targetId: openAccessOffering, slot: "" });
+    assert.equal(replacement.status, "reserved");
+  });
 });
 after(async () => {
   await db.delete(guardianConsentDocuments).where(eq(guardianConsentDocuments.memberUserId, member));
@@ -463,11 +500,14 @@ after(async () => {
   await db.delete(checkinChallenges).where(eq(checkinChallenges.reservationId, r));
   await db.delete(attendance).where(eq(attendance.reservationId, r));
   await db.delete(checkinPolicies).where(eq(checkinPolicies.offeringId, o));
+  await db.delete(checkinPolicies).where(eq(checkinPolicies.offeringId, openAccessOffering));
+  await db.delete(reservations).where(eq(reservations.offeringId, openAccessOffering));
+  await db.delete(offerings).where(eq(offerings.id, openAccessOffering));
   await db.delete(reservations).where(inArray(reservations.offeringId, [o, nextOffering]));
   await db.delete(offerings).where(inArray(offerings.id, [o, nextOffering]));
   await db.delete(facilityProfiles).where(inArray(facilityProfiles.id, [mainFacilityProfile, otherFacilityProfile]));
   await db.delete(memberships).where(inArray(memberships.userId, users));
-  await db.delete(memberConsentEvents).where(eq(memberConsentEvents.userId, member));
+  await db.delete(memberConsentEvents).where(inArray(memberConsentEvents.userId, [member, walkInMember]));
   await db.delete(memberProfilePhotos).where(eq(memberProfilePhotos.userId, member));
   await db.delete(memberProfiles).where(eq(memberProfiles.userId, member));
   await db.delete(operators).where(inArray(operators.userId, users));

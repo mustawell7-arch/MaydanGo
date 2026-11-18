@@ -3,6 +3,7 @@ import { and, asc, eq, gt, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { db, membershipPlans, offerings, partners, reservations } from "@workspace/db";
 import facilitiesPublicRouter from "./facilities-public";
 import { filterSuspendedOfferings } from "../lib/account-access-restrictions";
+import { getOfferingBookingModel } from "../lib/booking-model";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 
 const router = Router();
@@ -28,6 +29,7 @@ router.get("/catalog", async (_req, res) => {
       facility: offerings.facility,
       category: offerings.category,
       accessType: offerings.accessType,
+      bookingModel: offerings.bookingModel,
       tiers: offerings.tiers,
       startsAt: offerings.startsAt,
       endsAt: offerings.endsAt,
@@ -57,7 +59,10 @@ router.get("/catalog", async (_req, res) => {
         eq(offerings.active, true),
         isNull(offerings.cancelledAt),
         eq(partners.approved, true),
-        gt(offerings.startsAt, new Date()),
+        or(
+          gt(offerings.startsAt, new Date()),
+          and(eq(offerings.bookingModel, "open_access"), gt(offerings.endsAt, new Date())),
+        ),
         or(ne(offerings.kind, "event"), eq(offerings.additionalPayment, false)),
       ),
     )
@@ -67,6 +72,7 @@ router.get("/catalog", async (_req, res) => {
   const visible = await filterSuspendedOfferings(rows);
   res.json(visible.map(({ capacity, reserved, imagePath, partnerId: _partnerId, ...offering }) => ({
     ...offering,
+    bookingModel: getOfferingBookingModel(offering),
     imageUrl: imagePath ? `/api/public/offerings/${offering.id}/image` : null,
     remaining: Math.max(0, capacity - reserved),
   })));

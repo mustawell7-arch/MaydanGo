@@ -1,7 +1,7 @@
 import { Children, cloneElement, isValidElement, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetMemberSupportTicketQueryKey, getGetMemberSupportTicketsQueryKey, getGetOperationFacilitiesQueryKey, getGetOperationsQueryKey, useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useCancelRecurringOfferingSeries, useChangeLiveOffering, useChangeRecurringOfferingSeries, useCreateRecurringOfferings, useCreateMemberSupportTicket, useGetAttendance, useGetMemberSupportTicket, useGetMemberSupportTickets, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReplyMemberSupportTicket, useReviewAttendance, useRespondToOfferingCorrection, useReviewOfferingApproval, useRequestOfferingImageUploadUrl, useSubmitLiveOffering, useUpdatePartnerActivityApprovalMode } from '@workspace/api-client-react';
-import type { GetAttendanceQueryResult, OfferingApprovalStatus, OfferingInput, OfferingSessionStatus, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody, RecurringOfferingsInput, RecurringScheduleMode } from '@workspace/api-client-react';
+import { getGetMemberSupportTicketQueryKey, getGetMemberSupportTicketsQueryKey, getGetOperationFacilitiesQueryKey, getGetOperationsQueryKey, useAddLiveOffering, useAddPartner, useApprovePartner, useCancelLiveOffering, useCancelRecurringOfferingSeries, useChangeLiveOffering, useChangeRecurringOfferingSeries, useCreateRecurringOfferings, useCreateMemberSupportTicket, useGetAttendance, useGetMemberSupportTicket, useGetMemberSupportTickets, useGetOperationFacilities, useGetOfferingWaitlist, useGetOperations, useRecordManualCheckin, useReplyMemberSupportTicket, useReviewAttendance, useRespondToOfferingCorrection, useReviewOfferingApproval, useRequestOfferingImageUploadUrl, useSubmitLiveOffering, useUpdatePartnerActivityApprovalMode, useSetOfferingCheckinPolicy } from '@workspace/api-client-react';
+import type { GetAttendanceQueryResult, OfferingApprovalStatus, OfferingInput, OfferingSessionStatus, OfferingUpdate, PartnerInput, RecordManualCheckinBody, ReviewAttendanceBody, RecurringOfferingsInput, RecurringScheduleMode, LiveOffering, OfferingCheckinPolicyInput } from '@workspace/api-client-react';
 import { getGetMemberSupportTicketAttachmentsQueryKey, useGetMemberSupportTicketAttachments } from '@workspace/api-client-react';
 import { downloadMemberSupportFile, supportAttachmentType, uploadMemberSupportAttachments } from '@/lib/support-attachments';
 import { uploadGuardianConsentImage } from '@/lib/guardian-consent-documents';
@@ -309,7 +309,22 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Membership tiers (comma separated)': 'فئات العضوية (افصل بينها بفاصلة)', 'Publish as active': 'نشر كعرض نشط', 'Create offering': 'إنشاء العرض',
     'Verify member check-in code': 'تحقق من رمز حضور العضو', 'The member must request this short-lived code from their own reservation. This verifies the code only; the server still enforces the attendance policy.': 'يطلب العضو هذا الرمز المؤقت من حجزه. يتحقق الرمز فقط؛ ويظل الخادم مسؤولاً عن تطبيق سياسة الحضور.',
     '8-digit member code': 'رمز العضو من 8 أرقام', 'Audit reason (at least 5 characters)': 'سبب التدقيق (5 أحرف على الأقل)', 'Verifying…': 'جارٍ التحقق…',
-    'Verify and record arrival': 'تحقق وسجل الوصول', 'The server did not accept this code. It may be invalid, expired, or the attempt limit may have been reached. Ask the member to request a fresh code from their own reservation; staff cannot issue codes.': 'لم يقبل الخادم الرمز. قد يكون غير صالح أو منتهي الصلاحية أو تم بلوغ حد المحاولات. اطلب من العضو إصدار رمز جديد من حجزه؛ لا يمكن للموظفين إصدار الرموز.',
+     'Verify and record arrival': 'تحقق وسجل الوصول', 'The server did not accept this code. It may be invalid, expired, or the attempt limit may have been reached. Ask the member to request a fresh code from their own reservation; staff cannot issue codes.': 'لم يقبل الخادم الرمز. قد يكون غير صالح أو منتهي الصلاحية أو تم بلوغ حد المحاولات. اطلب من العضو إصدار رمز جديد من حجزه؛ لا يمكن للموظفين إصدار الرموز.',
+     'Booking model': 'نظام الحجز', 'Advance booking required': 'الحجز المسبق مطلوب', 'Open access · walk in': 'دخول مفتوح · دون حجز مسبق',
+     'Members can start a visit during the published access window without booking ahead. Set a check-in location and window before submitting this activity for review.': 'يمكن للأعضاء بدء الزيارة خلال فترة الدخول المنشورة دون حجز مسبق. حدّد موقع الحضور ووقته قبل إرسال النشاط للمراجعة.',
+     'Maximum visits during this access window': 'الحد الأقصى للزيارات خلال فترة الدخول',
+     'Members may cancel a walk-in reservation until the access window closes, but not after check-in begins.': 'يمكن للعضو إلغاء تسجيل الدخول حتى إغلاق فترة الدخول، لكن لا يمكن الإلغاء بعد بدء تسجيل الحضور.',
+     'Open-access activities stay as drafts until check-in is configured and the activity is reviewed.': 'تبقى أنشطة الدخول المفتوح كمسودات حتى إعداد تسجيل الحضور ومراجعة النشاط.',
+     'Update visit limit': 'تحديث حد الزيارات',
+     'The published access window and check-in location stay fixed. Create a replacement activity to change those details.': 'تبقى فترة الدخول المنشورة وموقع تسجيل الحضور ثابتين. أنشئ نشاطاً بديلاً لتغيير هذه التفاصيل.',
+     'Enter a whole-number visit limit of at least 1.': 'أدخل حداً للزيارات كرقم صحيح لا يقل عن 1.',
+     'Walk-in visit limit saved.': 'تم حفظ حد الزيارات المباشرة.',
+     'Walk-in access and check-in': 'الدخول المباشر وتسجيل الحضور',
+     'Use the facility entrance coordinates. Members scan a single-use QR displayed by staff; location supports check-in, and partner confirmation records attendance.': 'استخدم إحداثيات مدخل المرفق. يمسح العضو رمز QR لمرة واحدة يعرضه الموظف؛ ويدعم الموقع التحقق من الوصول، بينما يؤكد الشريك تسجيل الحضور.',
+     'Latitude': 'خط العرض', 'Longitude': 'خط الطول', 'Check-in radius · metres': 'نطاق تسجيل الحضور · متر',
+     'Check-in opens at': 'يبدأ تسجيل الحضور في', 'Check-in closes at': 'ينتهي تسجيل الحضور في', 'Attendance corrections due by': 'آخر موعد لتصحيح الحضور',
+     'Save check-in details': 'حفظ تفاصيل تسجيل الحضور', 'Check-in details saved. Members can start walk-in visits only during this window.': 'تم حفظ تفاصيل تسجيل الحضور. يمكن للأعضاء بدء الزيارة المباشرة خلال هذه الفترة فقط.',
+     'Check-in details could not be saved. Verify the coordinates and access times, then try again.': 'تعذر حفظ تفاصيل تسجيل الحضور. تحقق من الإحداثيات والأوقات ثم حاول مجدداً.',
   },
   ku: {
     'English': 'ئینگلیزی', 'MAYDANGO · IRAQ': 'MaydanGo · عێراق',
@@ -460,6 +475,21 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Verify member check-in code': 'کۆدی ئامادەبوونی ئەندام پشتڕاست بکەرەوە', 'The member must request this short-lived code from their own reservation. This verifies the code only; the server still enforces the attendance policy.': 'ئەندام دەبێت ئەم کۆدە کورت‌ماوەیە لە حجزەکەی خۆی داوا بکات. تەنها کۆدەکە پشتڕاست دەکاتەوە؛ سێرڤەر هێشتا ڕێسای ئامادەبوون جێبەجێ دەکات.',
     '8-digit member code': 'کۆدی 8 ژمارەیی ئەندام', 'Audit reason (at least 5 characters)': 'هۆکاری پشکنین (لانیکەم 5 پیت)', 'Verifying…': 'پشتڕاست دەکرێتەوە…',
     'Verify and record arrival': 'پشتڕاستی بکەرەوە و گەیشتن تۆمار بکە', 'The server did not accept this code. It may be invalid, expired, or the attempt limit may have been reached. Ask the member to request a fresh code from their own reservation; staff cannot issue codes.': 'سێرڤەر کۆدەکەی قبوڵ نەکرد. لەوانەیە هەڵە، بەسەرچوو یان ژمارەی هەوڵ تەواو بووبێت. داوا لە ئەندام بکە کۆدی نوێ لە حجزەکەی خۆی وەربگرێت؛ کارمەند ناتوانێت کۆد دابین بکات.',
+    'Booking model': 'مۆدێلی حجز', 'Advance booking required': 'حجزی پێشوەختە پێویستە', 'Open access · walk in': 'چوونەژوورەوەی کراوە · بێ حجزی پێشوەختە',
+    'Members can start a visit during the published access window without booking ahead. Set a check-in location and window before submitting this activity for review.': 'ئەندامان دەتوانن لە ماوەی چوونەژوورەوەی بڵاوکراوەدا بێ حجزی پێشوەختە سەردانێک دەست پێبکەن. پێش ناردنی چالاکییەکە بۆ پێداچوونەوە، شوێن و کاتی پشکنینی گەیشتن دیاری بکە.',
+    'Maximum visits during this access window': 'زۆرترین ژمارەی سەردان لەم ماوەیەدا',
+    'Members may cancel a walk-in reservation until the access window closes, but not after check-in begins.': 'ئەندام دەتوانێت حجزەی چوونەژوورەوە هەڵبوەشێنێتەوە تا ماوەکە دادەخرێت، بەڵام دوای دەستپێکردنی پشکنینی گەیشتن نا.',
+    'Open-access activities stay as drafts until check-in is configured and the activity is reviewed.': 'چالاکییەکانی چوونەژوورەوەی کراوە وەک ڕەشنووس دەمێننەوە تا پشکنینی گەیشتن ڕێکبخرێت و چالاکییەکە پێداچوونەوەی بۆ بکرێت.',
+    'Update visit limit': 'نوێکردنەوەی سنووری سەردان',
+    'The published access window and check-in location stay fixed. Create a replacement activity to change those details.': 'ماوەی بڵاوکراوە و شوێنی پشکنینی گەیشتن ناگۆڕێن. بۆ گۆڕینی ئەم وردەکارییانە چالاکییەکی جێگرەوە دروست بکە.',
+    'Enter a whole-number visit limit of at least 1.': 'سنووری سەردان بە ژمارەیەکی تەواو و لانیکەم 1 بنووسە.',
+    'Walk-in visit limit saved.': 'سنووری سەردانی ڕاستەوخۆ پاشەکەوت کرا.',
+    'Walk-in access and check-in': 'چوونەژوورەوەی ڕاستەوخۆ و پشکنینی گەیشتن',
+    'Use the facility entrance coordinates. Members scan a single-use QR displayed by staff; location supports check-in, and partner confirmation records attendance.': 'ئایندینەکانی دەروازەی شوێنەکە بەکاربهێنە. ئەندامان QRی یەکجار بەکارهێنان کە کارمەند پیشانی دەدات دەسکانن؛ شوێن پشتگیری پشکنینی گەیشتن دەکات و پشتڕاستکردنەوەی هاوبەش ئامادەبوون تۆمار دەکات.',
+    'Latitude': 'هێڵی پانی', 'Longitude': 'هێڵی درێژی', 'Check-in radius · metres': 'مەودای پشکنینی گەیشتن · مەتر',
+    'Check-in opens at': 'پشکنینی گەیشتن لەم کاتەوە دەست پێدەکات', 'Check-in closes at': 'پشکنینی گەیشتن لەم کاتەدا دادەخرێت', 'Attendance corrections due by': 'کۆتا کاتی ڕاستکردنەوەی ئامادەبوون',
+    'Save check-in details': 'زانیاریی پشکنینی گەیشتن پاشەکەوت بکە', 'Check-in details saved. Members can start walk-in visits only during this window.': 'زانیاریی پشکنینی گەیشتن پاشەکەوت کرا. ئەندامان تەنها لەم ماوەیەدا دەتوانن سەردانی ڕاستەوخۆ دەست پێبکەن.',
+    'Check-in details could not be saved. Verify the coordinates and access times, then try again.': 'نەتوانرا زانیاریی پشکنینی گەیشتن پاشەکەوت بکرێت. ئایندین و کاتەکان بپشکنە و دووبارە هەوڵ بدە.',
   },
 };
 function portalText(lang: PortalLanguage, value: string): string {
@@ -537,7 +567,7 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
   const [conflictingDates, setConflictingDates] = useState<string[]>([]);
   const [selectedPartnerId, setSelectedPartnerId] = useState(partnerId);
   const [form, setForm] = useState({
-    title: '', kind: 'session' as OfferingInput['kind'], facilityProfileId: '', city: '', facility: '', category: '', accessType: 'physical' as OfferingInput['accessType'],
+    title: '', kind: 'session' as OfferingInput['kind'], bookingModel: 'booking_required' as NonNullable<OfferingInput['bookingModel']>, facilityProfileId: '', city: '', facility: '', category: '', accessType: 'physical' as OfferingInput['accessType'],
     environment: '', startsAt: '', endsAt: '', cancellationDeadline: '', bookingCutoffMinutes: '0', capacity: '', waitlistOfferMinutes: '30', gender: 'all' as NonNullable<OfferingInput['gender']>, minAge: '', maxAge: '', joinUrl: '', tiers: '', instructions: '', active: false,
     localizedTitleEn: '', localizedTitleAr: '', localizedTitleKu: '',
     localizedDescriptionEn: '', localizedDescriptionAr: '', localizedDescriptionKu: '',
@@ -600,7 +630,7 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
     setMessage('');
     setConflictingDates([]);
     if (pending) return;
-    if (!form.startsAt || !form.endsAt || !form.cancellationDeadline || Date.parse(`${form.endsAt}:00+03:00`) <= Date.parse(`${form.startsAt}:00+03:00`)) {
+    if (!form.startsAt || !form.endsAt || (form.bookingModel !== 'open_access' && !form.cancellationDeadline) || Date.parse(`${form.endsAt}:00+03:00`) <= Date.parse(`${form.startsAt}:00+03:00`)) {
       setMessage('Add valid session start, end, and cancellation times. The end must be after the start.');
       return;
     }
@@ -651,7 +681,9 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
     const data: OfferingInput = {
       partnerId: selectedPartnerId, title: form.title.trim(), kind: form.kind, city: selectedFacility.city, facility: selectedFacility.facility, category: form.category.trim(),
       accessType: form.accessType, environment: isLive ? null : form.environment as 'indoor' | 'outdoor', tiers: splitLocalizedCommaList(form.tiers),
-      startsAt: localIso(form.startsAt), endsAt: localIso(form.endsAt), cancellationDeadline: localIso(form.cancellationDeadline),
+      ...(form.kind === 'session' && !isLive ? { bookingModel: form.bookingModel } : {}),
+      startsAt: localIso(form.startsAt), endsAt: localIso(form.endsAt),
+      cancellationDeadline: localIso(form.bookingModel === 'open_access' ? form.endsAt : form.cancellationDeadline),
       bookingCutoffMinutes: Number(form.bookingCutoffMinutes), instructions: form.instructions.trim() || null,
       imagePath,
       capacity: Number(form.capacity), waitlistOfferMinutes: Number(form.waitlistOfferMinutes),
@@ -715,8 +747,25 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
           setForm(current => ({ ...current, facilityProfileId: e.target.value, city: next?.city ?? '', facility: next?.facility ?? '', category: next?.activities[0]?.en ?? '' }));
         }}><option value="">{facilitiesQuery.isLoading ? 'Loading shared facilities…' : 'Choose a shared facility'}</option>{facilityRecords.map(item => <option key={item.id} value={item.id}>{item.localizedName[lang] || item.facility} · {item.city}</option>)}</select>{!facilitiesQuery.isLoading && facilityRecords.length === 0 && <span className="mt-1 block text-[11px] font-normal text-[#9a4435]">Create a shared facility record before adding sessions.</span>}{selectedFacility && <span className="mt-1 block text-[11px] font-normal text-[#75847c]">{selectedFacility.localizedAddress[lang]}</span>}</LabelField>
         <LabelField label="Approved activity category">{selectedFacility?.activities.length ? <select required className={fieldClass()} value={form.category} onChange={e => update('category', e.target.value)}><option value="">Choose a facility activity</option>{selectedFacility.activities.map(activity => <option key={activity.en} value={activity.en}>{activity[lang] || activity.en}</option>)}</select> : <p className="rounded-xl bg-[#f2dfd5] px-3 py-2 text-xs leading-5 text-[#9a4435]">Add activity categories to this facility profile before creating an offering.</p>}</LabelField>
-        <LabelField label="Access"><select className={fieldClass()} value={form.accessType} onChange={e => update('accessType', e.target.value)}><option value="physical">In person</option><option value="premium">Premium</option><option value="live">Live online</option></select></LabelField>
+        <LabelField label="Access"><select className={fieldClass()} value={form.accessType} onChange={e => {
+          const accessType = e.target.value as OfferingInput['accessType'];
+          setForm(current => ({ ...current, accessType, ...(accessType === 'live' && current.bookingModel === 'open_access' ? { bookingModel: 'booking_required' } : {}) }));
+          if (accessType === 'live') { setRecurring(false); setWeekdays([]); setRepeatUntil(''); }
+          setMessage(''); setConflictingDates([]);
+        }}><option value="physical">In person</option><option value="premium">Premium</option><option value="live">Live online</option></select></LabelField>
         {form.accessType !== 'live' && <LabelField label={portalText(lang, 'Activity setting')}><select required className={fieldClass()} value={form.environment} onChange={e => update('environment', e.target.value)}><option value="">{portalText(lang, 'Choose a setting')}</option><option value="indoor">{portalText(lang, 'Indoors')}</option><option value="outdoor">{portalText(lang, 'Outdoors')}</option></select></LabelField>}
+        {form.kind === 'session' && form.accessType !== 'live' && <LabelField label={portalText(lang, 'Booking model')}>
+          <select className={fieldClass()} value={form.bookingModel} onChange={event => {
+            const bookingModel = event.target.value as NonNullable<OfferingInput['bookingModel']>;
+            setForm(current => ({ ...current, bookingModel, bookingCutoffMinutes: '0', active: bookingModel === 'open_access' ? false : current.active }));
+            if (bookingModel === 'open_access') { setRecurring(false); setWeekdays([]); setRepeatUntil(''); }
+            setMessage(''); setConflictingDates([]);
+          }}>
+            <option value="booking_required">{portalText(lang, 'Advance booking required')}</option>
+            <option value="open_access">{portalText(lang, 'Open access · walk in')}</option>
+          </select>
+        </LabelField>}
+        {form.bookingModel === 'open_access' && <p className="rounded-xl border border-[#d8c6a5] bg-[#fff8e8] px-4 py-3 text-xs leading-5 text-[#715533] sm:col-span-2">{portalText(lang, 'Members can start a visit during the published access window without booking ahead. Set a check-in location and window before submitting this activity for review.')}</p>}
         {form.accessType === 'live' && <div className="rounded-2xl border border-[#dbcbb1] bg-[#f2ebda] p-4 sm:col-span-2">
           <p className="text-sm font-bold text-[#36564b]">Online class details</p>
           <p className="mt-1 text-xs leading-5 text-[#687a71]">Provide translations for all three supported languages and a secure HTTPS access link.</p>
@@ -739,11 +788,13 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
           </div>
           <p className="mt-3 text-xs leading-5 text-[#687a71]">MaydanGo staff assign the instructor’s account access after approval. The name above is the member-facing display name.</p>
         </div>}
-        {dateInput('startsAt', 'Starts at')}{dateInput('endsAt', 'Ends at')}{dateInput('cancellationDeadline', 'Cancellation deadline')}
-        <LabelField label="Booking cutoff · minutes before start"><input required min="0" max="10080" step="15" type="number" className={fieldClass()} value={form.bookingCutoffMinutes} onChange={e => update('bookingCutoffMinutes', e.target.value)} /><span className="mt-1 block text-[11px] font-normal text-[#75847c]">Set 0 to allow booking until the activity starts.</span></LabelField>
+        {dateInput('startsAt', 'Starts at')}{dateInput('endsAt', 'Ends at')}{form.bookingModel === 'open_access'
+          ? <p className="rounded-xl bg-[#f2efe4] px-4 py-3 text-xs leading-5 text-[#687a71]">{portalText(lang, 'Members may cancel a walk-in reservation until the access window closes, but not after check-in begins.')}</p>
+          : dateInput('cancellationDeadline', 'Cancellation deadline')}
+        {form.bookingModel !== 'open_access' && <LabelField label="Booking cutoff · minutes before start"><input required min="0" max="10080" step="15" type="number" className={fieldClass()} value={form.bookingCutoffMinutes} onChange={e => update('bookingCutoffMinutes', e.target.value)} /><span className="mt-1 block text-[11px] font-normal text-[#75847c]">Set 0 to allow booking until the activity starts.</span></LabelField>}
         <LabelField label="Participant instructions"><textarea maxLength={2000} rows={3} className={fieldClass()} value={form.instructions} onChange={e => update('instructions', e.target.value)} placeholder="Arrival, clothing, equipment, or preparation information" /></LabelField>
         <LabelField label="Activity image · JPEG, PNG, or WebP"><input type="file" accept="image/jpeg,image/png,image/webp" className={fieldClass()} onChange={e => setSelectedImage(e.target.files?.[0] ?? null)} /><span className="mt-1 block text-[11px] font-normal text-[#75847c]">Optional, up to 10 MB. Draft images stay private until the activity is published.</span>{selectedImage && <span className="mt-1 block text-[11px] font-semibold text-[#36564b]">{selectedImage.name}</span>}</LabelField>
-        {form.kind === 'session' && <div className="rounded-2xl border border-[#d8d2c4] bg-[#f2efe4] p-4 sm:col-span-2" data-testid="panel-recurring-schedule">
+         {form.kind === 'session' && form.bookingModel !== 'open_access' && <div className="rounded-2xl border border-[#d8d2c4] bg-[#f2efe4] p-4 sm:col-span-2" data-testid="panel-recurring-schedule">
           <label className="flex cursor-pointer items-start gap-3 text-sm font-semibold text-[#36564b]">
             <input data-testid="toggle-recurring-session" type="checkbox" checked={recurring} onChange={event => { setRecurring(event.target.checked); setMessage(''); setConflictingDates([]); }} className="mt-0.5 accent-[#174d43]" />
             <span><span className="block">Create a recurring schedule</span><span className="mt-1 block text-xs font-normal leading-5 text-[#75847c]">Each occurrence becomes a separate bookable session. Dates and times use Iraq time.</span></span>
@@ -783,19 +834,89 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
             </div>}
           </div>}
         </div>}
-        <LabelField label="Capacity"><input required min="1" type="number" className={fieldClass()} value={form.capacity} onChange={e => update('capacity', e.target.value)} /></LabelField>
-        <LabelField label="Waitlist offer window (minutes)"><input required min="5" max="1440" type="number" className={fieldClass()} value={form.waitlistOfferMinutes} onChange={e => update('waitlistOfferMinutes', e.target.value)} /></LabelField>
+        <LabelField label={form.bookingModel === 'open_access' ? portalText(lang, 'Maximum visits during this access window') : 'Capacity'}><input required min="1" type="number" className={fieldClass()} value={form.capacity} onChange={e => update('capacity', e.target.value)} /></LabelField>
+        {form.bookingModel !== 'open_access' && <LabelField label="Waitlist offer window (minutes)"><input required min="5" max="1440" type="number" className={fieldClass()} value={form.waitlistOfferMinutes} onChange={e => update('waitlistOfferMinutes', e.target.value)} /></LabelField>}
         <LabelField label="Gender access"><select className={fieldClass()} value={form.gender} onChange={e => update('gender', e.target.value)}><option value="all">All</option><option value="female">Female</option><option value="male">Male</option></select></LabelField>
         <LabelField label="Minimum age"><input type="number" min="0" className={fieldClass()} value={form.minAge} onChange={e => update('minAge', e.target.value)} /></LabelField>
         <LabelField label="Maximum age (optional)"><input type="number" min="0" className={fieldClass()} value={form.maxAge} onChange={e => update('maxAge', e.target.value)} /></LabelField>
         <LabelField label="Membership tiers (comma separated)"><input required placeholder="Use tiers configured for your offering" className={fieldClass()} value={form.tiers} onChange={e => update('tiers', e.target.value)} /></LabelField>
         <LabelField label="Join URL (optional)"><input type="url" className={fieldClass()} value={form.joinUrl} onChange={e => update('joinUrl', e.target.value)} /></LabelField>
-        {isAdmin ? <label className="flex items-center gap-3 rounded-xl bg-[#eeeadc] px-4 py-3 text-sm font-medium text-[#36564b] sm:col-span-2"><input type="checkbox" checked={form.active} onChange={e => update('active', e.target.checked)} className="accent-[#174d43]" />Publish as active</label> : <p className="rounded-xl bg-[#eeeadc] px-4 py-3 text-sm text-[#36564b] sm:col-span-2">New activities are saved as drafts. Submit them to apply this partner’s activity-review mode.</p>}
+        {isAdmin && form.bookingModel !== 'open_access' ? <label className="flex items-center gap-3 rounded-xl bg-[#eeeadc] px-4 py-3 text-sm font-medium text-[#36564b] sm:col-span-2"><input type="checkbox" checked={form.active} onChange={e => update('active', e.target.checked)} className="accent-[#174d43]" />Publish as active</label>
+          : <p className="rounded-xl bg-[#eeeadc] px-4 py-3 text-sm text-[#36564b] sm:col-span-2">{form.bookingModel === 'open_access'
+            ? portalText(lang, 'Open-access activities stay as drafts until check-in is configured and the activity is reviewed.')
+            : 'New activities are saved as drafts. Submit them to apply this partner’s activity-review mode.'}</p>}
          {message && <p data-testid="status-offering-error" role="alert" className="text-sm text-[#a33d2e] sm:col-span-2">{message}</p>}
          <div className="flex justify-end gap-3 pt-2 sm:col-span-2"><Button kind="quiet" onClick={onClose}>Cancel</Button><Button type="submit" disabled={pending || Boolean(recurrenceIssue)}><Plus size={16} />{uploadingImage ? 'Uploading image…' : pending ? 'Saving…' : recurring ? 'Create recurring sessions' : 'Create offering'}</Button></div>
       </form>
     </section>
   </div></LocalizedContent>;
+}
+
+function OpenAccessPolicyForm({ item, lang }: { item: LiveOffering; lang: PortalLanguage }) {
+  const client = useQueryClient();
+  const savePolicy = useSetOfferingCheckinPolicy();
+  const [values, setValues] = useState({
+    latitude: '', longitude: '', radius: '150', opensAt: '', closesAt: '', correctionEndsAt: '',
+  });
+  const [feedback, setFeedback] = useState('');
+  useEffect(() => {
+    const policy = item.checkinPolicy ?? undefined;
+    const correctionDefault = new Date(Date.parse(item.endsAt) + 24 * 60 * 60 * 1000).toISOString();
+    setValues({
+      latitude: policy ? String(policy.latitude) : '',
+      longitude: policy ? String(policy.longitude) : '',
+      radius: policy ? String(policy.radius) : '150',
+      opensAt: dateTimeInputBaghdad(policy?.opensAt ?? item.startsAt),
+      closesAt: dateTimeInputBaghdad(policy?.closesAt ?? item.endsAt),
+      correctionEndsAt: dateTimeInputBaghdad(policy?.correctionEndsAt ?? correctionDefault),
+    });
+    setFeedback('');
+  }, [item.id, item.startsAt, item.endsAt, item.checkinPolicy]);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setFeedback('');
+    const latitude = Number(values.latitude);
+    const longitude = Number(values.longitude);
+    const radius = Number(values.radius);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || !Number.isInteger(radius)) {
+      setFeedback(portalText(lang, 'Check-in details could not be saved. Verify the coordinates and access times, then try again.'));
+      return;
+    }
+    const data: OfferingCheckinPolicyInput = {
+      latitude, longitude, radius,
+      opensAt: localIso(values.opensAt),
+      closesAt: localIso(values.closesAt),
+      correctionEndsAt: localIso(values.correctionEndsAt),
+    };
+    try {
+      await savePolicy.mutateAsync({ id: item.id, data });
+      await client.invalidateQueries({ queryKey: getGetOperationsQueryKey() });
+      setFeedback(portalText(lang, 'Check-in details saved. Members can start walk-in visits only during this window.'));
+    } catch (error) {
+      const message = error instanceof Error && error.message ? error.message
+        : 'Check-in details could not be saved. Verify the coordinates and access times, then try again.';
+      setFeedback(portalText(lang, message));
+    }
+  };
+
+  return <LocalizedContent lang={lang}><form onSubmit={submit} className="mt-4 rounded-2xl border border-[#d8c6a5] bg-[#fff8e8] p-4">
+    <h3 className="text-sm font-bold text-[#36564b]">{portalText(lang, 'Walk-in access and check-in')}</h3>
+    <p className="mt-1 text-xs leading-5 text-[#687a71]">{portalText(lang, 'Use the facility entrance coordinates. Members scan a single-use QR displayed by staff; location supports check-in, and partner confirmation records attendance.')}</p>
+    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <LabelField label={portalText(lang, 'Latitude')}><input required type="number" min="-90" max="90" step="any" className={fieldClass()} value={values.latitude} onChange={event => setValues(current => ({ ...current, latitude: event.target.value }))} /></LabelField>
+      <LabelField label={portalText(lang, 'Longitude')}><input required type="number" min="-180" max="180" step="any" className={fieldClass()} value={values.longitude} onChange={event => setValues(current => ({ ...current, longitude: event.target.value }))} /></LabelField>
+      <LabelField label={portalText(lang, 'Check-in radius · metres')}><input required type="number" min="25" max="800" step="1" className={fieldClass()} value={values.radius} onChange={event => setValues(current => ({ ...current, radius: event.target.value }))} /></LabelField>
+      <LabelField label={portalText(lang, 'Check-in opens at')}><input required type="datetime-local" className={fieldClass()} value={values.opensAt} onChange={event => setValues(current => ({ ...current, opensAt: event.target.value }))} /></LabelField>
+      <LabelField label={portalText(lang, 'Check-in closes at')}><input required type="datetime-local" className={fieldClass()} value={values.closesAt} onChange={event => setValues(current => ({ ...current, closesAt: event.target.value }))} /></LabelField>
+      <LabelField label={portalText(lang, 'Attendance corrections due by')}><input required type="datetime-local" className={fieldClass()} value={values.correctionEndsAt} onChange={event => setValues(current => ({ ...current, correctionEndsAt: event.target.value }))} /></LabelField>
+    </div>
+    <div className="mt-4 flex flex-wrap items-center gap-3">
+      <Button type="submit" disabled={savePolicy.isPending}>{savePolicy.isPending ? portalText(lang, 'Saving…') : portalText(lang, 'Save check-in details')}</Button>
+      {item.checkinPolicy && <span className="text-xs font-semibold text-[#315e42]">{portalText(lang, 'Check-in details saved.')}</span>}
+    </div>
+    {feedback && <p role="status" className="mt-3 rounded-xl bg-white/80 p-3 text-xs leading-5 text-[#36564b]">{feedback}</p>}
+  </form></LocalizedContent>;
 }
 
 function ManualCheckinForm({ reservationId, lang, onClose, onSuccess }: { reservationId: string; lang: PortalLanguage; onClose: () => void; onSuccess: () => void }) {
@@ -1274,6 +1395,18 @@ export default function PartnerPortal() {
   const saveOfferingEdit = (event: FormEvent<HTMLFormElement>, item: (typeof offerings)[number], scope: 'session' | 'series') => {
     event.preventDefault();
     const values = new FormData(event.currentTarget);
+    if (item.bookingModel === 'open_access') {
+      const capacity = Number(values.get('capacity'));
+      if (!Number.isInteger(capacity) || capacity < 1) {
+        setNotice('Enter a whole-number visit limit of at least 1.');
+        return;
+      }
+      updateOffering.mutate({ id: item.id, data: { capacity } }, {
+        onSuccess: () => { invalidate(); setEditing(null); setNotice('Walk-in visit limit saved.'); },
+        onError: () => mutationError('Offering update'),
+      });
+      return;
+    }
     const start = String(values.get('startsAt') || '');
     const end = String(values.get('endsAt') || '');
     const deadline = String(values.get('cancellationDeadline') || '');
@@ -1408,6 +1541,7 @@ export default function PartnerPortal() {
                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${item.cancelledAt ? approvalStatusStyles.archived : approvalStatusStyles[item.approvalStatus]}`}>{item.cancelledAt ? 'Cancelled' : approvalStatusLabels[item.approvalStatus]}</span>
                        {item.sessionStatus && item.sessionStatus !== 'draft' && !item.cancelledAt && <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${sessionStatusStyles[item.sessionStatus]}`}>{sessionStatusLabels[item.sessionStatus]}</span>}
                       <span className="text-[10px] font-bold uppercase tracking-wide text-[#a76445]">{item.kind}</span>
+                       {item.bookingModel === 'open_access' && <span className="rounded-full bg-[#e1ece5] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#28695a]">{portalText(language, 'Open access · walk in')}</span>}
                       {item.recurrenceGroupId && <span className="rounded-full bg-[#e9e5d7] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#536b61]">Recurring series</span>}
                     </div>
                     <h2 className="mt-3 font-display text-xl font-bold">{item.localizedTitle?.[language] || item.title}</h2>
@@ -1416,12 +1550,12 @@ export default function PartnerPortal() {
                     {item.imageUrl && <img src={item.imageUrl} alt={item.localizedTitle?.[language] || item.title} loading="lazy" referrerPolicy="no-referrer" className="mt-3 aspect-[16/8] max-h-48 w-full rounded-xl object-cover sm:max-w-sm" />}
                     {item.instructions && <p className="mt-2 whitespace-pre-line text-xs leading-5 text-[#687a71]">{item.instructions}</p>}
                     <p className="mt-3 text-xs text-[#75847c]">{formatDate(item.startsAt)} – {formatDate(item.endsAt)}{item.remaining !== undefined ? ` · ${item.remaining} remaining` : ''}</p>
-                    <p className="mt-2 text-xs text-[#75847c]">Waitlist offers expire after {item.waitlistOfferMinutes ?? 30} minutes.</p>
+                    {item.bookingModel !== 'open_access' && <p className="mt-2 text-xs text-[#75847c]">Waitlist offers expire after {item.waitlistOfferMinutes ?? 30} minutes.</p>}
                     {isAdmin && item.partnerName && <p className="mt-2 text-xs text-[#75847c]">Partner: {item.partnerName}</p>}
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2">
                     {!item.cancelledAt && <>
-                      <Button kind="quiet" onClick={() => setEditing({ id: item.id, scope: 'session' })}>Edit session</Button>
+                      <Button kind="quiet" onClick={() => setEditing({ id: item.id, scope: 'session' })}>{item.bookingModel === 'open_access' ? portalText(language, 'Update visit limit') : 'Edit session'}</Button>
                       {item.recurrenceGroupId && <Button kind="quiet" onClick={() => setEditing({ id: item.id, scope: 'series' })}>Edit future series</Button>}
                       {!isAdmin && item.approvalStatus === 'draft' && <Button kind="quiet" onClick={() => submitForReview(item.id)} disabled={submitOffering.isPending}>Submit for review</Button>}
                       <Button kind="danger" onClick={() => cancelOfferingScope(item, false)}>Cancel session</Button>
@@ -1441,7 +1575,12 @@ export default function PartnerPortal() {
                   <label className="grid gap-1.5 text-sm font-medium"><span>Decision reason</span><textarea name="reason" rows={2} maxLength={1000} defaultValue={item.approvalReason ?? ''} className={fieldClass()} placeholder="Required for correction, rejection, suspension, or archiving." /></label>
                   <Button type="submit" disabled={reviewOfferingApproval.isPending}>Save decision</Button>
                 </form>}
-                {editing?.id === item.id && <form className="mt-5 grid gap-3 rounded-2xl bg-[#f2efe4] p-4 sm:grid-cols-2" onSubmit={event => saveOfferingEdit(event, item, editing?.id === item.id ? editing.scope : 'session')}>
+                {editing?.id === item.id && item.bookingModel === 'open_access' && <form className="mt-5 grid gap-3 rounded-2xl bg-[#f2efe4] p-4 sm:grid-cols-2" onSubmit={event => saveOfferingEdit(event, item, 'session')}>
+                  <p className="text-xs leading-5 text-[#687a71] sm:col-span-2">{portalText(language, 'The published access window and check-in location stay fixed. Create a replacement activity to change those details.')}</p>
+                  <LabelField label={portalText(language, 'Maximum visits during this access window')}><input required min="1" name="capacity" defaultValue={item.capacity} type="number" className={fieldClass()} /></LabelField>
+                  <div className="flex items-end gap-2"><Button type="submit" disabled={updateOffering.isPending}>Save</Button><Button kind="quiet" onClick={() => setEditing(null)}>Close</Button></div>
+                </form>}
+                {editing?.id === item.id && item.bookingModel !== 'open_access' && <form className="mt-5 grid gap-3 rounded-2xl bg-[#f2efe4] p-4 sm:grid-cols-2" onSubmit={event => saveOfferingEdit(event, item, editing?.id === item.id ? editing.scope : 'session')}>
                   {editing.scope === 'series' && <p className="text-xs leading-5 text-[#687a71] sm:col-span-2">Changes apply to this and all remaining future sessions. Reservations stay attached to their sessions. A session with an attendance record cannot have its date changed. Moving the selected date shifts the remaining dates by the same amount.</p>}
                   <LabelField label="Starts at"><input required name="startsAt" type="datetime-local" defaultValue={dateTimeInputBaghdad(item.startsAt)} className={fieldClass()} /></LabelField>
                   <LabelField label="Ends at"><input required name="endsAt" type="datetime-local" defaultValue={dateTimeInputBaghdad(item.endsAt)} className={fieldClass()} /></LabelField>
@@ -1450,11 +1589,12 @@ export default function PartnerPortal() {
                   {item.accessType !== 'live' && <LabelField label={portalText(language, 'Activity setting')}><select required name="environment" defaultValue={item.environment ?? ''} className={fieldClass()}><option value="" disabled>{portalText(language, 'Choose a setting')}</option><option value="indoor">{portalText(language, 'Indoors')}</option><option value="outdoor">{portalText(language, 'Outdoors')}</option></select></LabelField>}
                   <div className="flex items-end gap-2"><Button type="submit" disabled={updateOffering.isPending || updateOfferingSeries.isPending}>Save</Button><Button kind="quiet" onClick={() => setEditing(null)}>Close</Button></div>
                 </form>}
-                {!item.cancelledAt && <form className="mt-4 flex flex-wrap items-end gap-3 rounded-2xl bg-[#f2efe4] p-4" onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); handleStatus(item.id, item.capacity, Number(data.get('waitlistOfferMinutes'))); }}>
+                {!item.cancelledAt && item.bookingModel !== 'open_access' && <form className="mt-4 flex flex-wrap items-end gap-3 rounded-2xl bg-[#f2efe4] p-4" onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); handleStatus(item.id, item.capacity, Number(data.get('waitlistOfferMinutes'))); }}>
                   <LabelField label="Waitlist offer window (minutes)"><input required min="5" max="1440" name="waitlistOfferMinutes" defaultValue={item.waitlistOfferMinutes ?? 30} type="number" className={fieldClass()} /></LabelField>
                   <Button type="submit" disabled={updateOffering.isPending}>Save offer window</Button>
                 </form>}
-                <WaitlistPanel offeringId={item.id} lang={language} />
+                {item.bookingModel === 'open_access' && !item.cancelledAt && <OpenAccessPolicyForm item={item} lang={language} />}
+                {item.bookingModel !== 'open_access' && <WaitlistPanel offeringId={item.id} lang={language} />}
               </article>)}</div> : <div className="rounded-3xl border border-dashed border-[#d5cfbf] bg-[#fffdf7]/60 p-10 text-center"><Dumbbell className="mx-auto text-[#a76445]" /><h2 className="mt-4 font-display text-xl font-bold">No offerings returned</h2><p className="mt-2 text-sm text-[#75847c]">Create an offering to start managing your available sessions and events.</p></div>}
             </section>}
           {tab === 'waitlist' && canManageSessions && <section>

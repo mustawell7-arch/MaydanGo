@@ -44,6 +44,8 @@ import { courseRecordingContentType, isPrivateCourseRecordingPath } from "../lib
 import { courseMaterialObjectPath, courseMaterialUploadObjectPath, isPrivateCourseMaterialUploadPath, isSafeCourseMaterialFileName, maxCourseMaterialBytes } from "../lib/course-materials";
 import { hasAccessRestrictionRecord, isAccessSuspended } from "../lib/account-access-restrictions";
 import { completeGuardianConsentUpload, requestGuardianConsentUpload } from "../lib/guardian-consents";
+import { saveOfferingPolicy, policyInput } from "../lib/checkin";
+import { getOfferingBookingModel } from "../lib/booking-model";
 import {
   GetPartnerInvoicesResponse, GetPartnerSettlementSummaryResponse, RequestPartnerInvoiceUploadUrlBody,
   RequestPartnerInvoiceUploadUrlResponse, SubmitPartnerInvoiceBody, SubmitPartnerInvoiceResponse,
@@ -456,6 +458,9 @@ router.delete("/facilities/:id/hours-overrides/:overrideId", async (req, res) =>
 router.post("/offerings", async (req, res) => {
   const data = offeringInput.parse(req.body);
   own(res, data.partnerId);
+  if (getOfferingBookingModel(data) === "open_access" && data.active) {
+    throw new BookingError(400, "Create open-access activities as drafts, save the check-in policy, then submit them for review.");
+  }
   await verifyOfferingImageUpload(data.imagePath, data.partnerId);
   const row = await db.transaction(async tx => {
     const [p] = await tx.select().from(partners).where(eq(partners.id, data.partnerId)).for("share");
@@ -481,7 +486,7 @@ router.post("/offerings", async (req, res) => {
     const id = randomUUID();
     if (data.accessType === "live" && data.active) ensureHttps(data.joinUrl, "Live class join link");
     if (data.joinUrl) ensureHttps(data.joinUrl, "Live class join link");
-    const [o] = await tx.insert(offerings).values({ ...data, id, targetId: id, slot: "", scope: "live",
+    const [o] = await tx.insert(offerings).values({ ...data, bookingModel: getOfferingBookingModel(data), id, targetId: id, slot: "", scope: "live",
       approvalStatus: data.active ? "published" : "draft",
       activityStatus: data.active ? "published" : "draft",
       reviewedAt: data.active ? new Date() : null,
@@ -496,6 +501,20 @@ router.post("/offerings", async (req, res) => {
     return o;
   });
   res.status(201).json(serializeOffering(row));
+});
+router.put("/offerings/:id/checkin-policy", async (req, res) => {
+  const input = policyInput.parse(req.body);
+  const policy = await saveOfferingPolicy(
+    res.locals.operator.userId,
+    String(req.params.id),
+    input,
+  );
+  res.json({
+    ...policy,
+    opensAt: policy.opensAt.toISOString(),
+    closesAt: policy.closesAt.toISOString(),
+    correctionEndsAt: policy.correctionEndsAt.toISOString(),
+  });
 });
 router.post("/offerings/image-upload-url", async (req, res) => {
   const data = RequestOfferingImageUploadUrlBody.parse(req.body);
@@ -512,6 +531,9 @@ router.post("/offerings/recurring", async (req, res) => {
   const body = CreateRecurringOfferingsBody.parse(req.body);
   const template = offeringInput.parse(body.template);
   if (template.kind !== "session") throw new BookingError(400, "Only sessions can be added to a recurring schedule.");
+  if (getOfferingBookingModel(template) === "open_access") {
+    throw new BookingError(400, "Create open-access activities individually so each visit can have its own check-in window.");
+  }
   const calendarDate = (value: Date | string) => value instanceof Date ? value.toISOString().slice(0, 10) : value;
   const schedule = {
     ...body.schedule,
@@ -626,6 +648,11 @@ async function assertOfferingReadyForReview(tx: Tx, row: OfferingRow) {
   if (row.accessType !== "live" && row.environment !== "indoor" && row.environment !== "outdoor") {
     throw new BookingError(400, "Choose whether this in-person activity is indoors or outdoors before publishing.");
   }
+  if (getOfferingBookingModel(row) === "open_access") {
+    const [policy] = await tx.select({ offeringId: checkinPolicies.offeringId })
+      .from(checkinPolicies).where(eq(checkinPolicies.offeringId, row.id));
+    if (!policy) throw new BookingError(409, "Set up open-access check-in details before submitting this activity.");
+  }
   if (!row.partnerId) throw new BookingError(409, "This activity is not assigned to a partner.");
   const [partner] = await tx.select().from(partners).where(eq(partners.id, row.partnerId)).for("share");
   if (!partner?.approved) throw new BookingError(403, "Partner approval is required before activity review.");
@@ -660,6 +687,7 @@ function serializeOffering(row: OfferingRow) {
   });
   return {
     ...visibleRow,
+    bookingModel: getOfferingBookingModel(row),
     activityStatus,
     sessionStatus: deriveOfferingSessionStatus({
       activityStatus, approvalStatus: row.approvalStatus, active: row.active,
@@ -831,8 +859,8 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
   const requestedEnd = hasTimeChange ? new Date(data.endsAt!) : null;
   const requestedDeadline = hasTimeChange ? new Date(data.cancellationDeadline!) : null;
   if (requestedStart && requestedEnd && requestedDeadline
-    && (!(requestedStart > new Date()) || !(requestedEnd > requestedStart) || requestedDeadline > requestedStart)) {
-    throw new BookingError(400, "Use a future start, later end, and a cancellation deadline no later than the start.");
+    && (!(requestedStart > new Date()) || !(requestedEnd > requestedStart))) {
+    throw new BookingError(400, "Use a future start and later end.");
   }
 
   const result = await db.transaction(async tx => {
@@ -843,6 +871,10 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
     own(res, selected.partnerId);
     if (selected.cancelledAt) throw new BookingError(409, "Cancelled offerings cannot be edited or republished. Create a replacement.");
     if (selected.startsAt <= new Date()) throw new BookingError(409, "Past offerings cannot be edited.");
+    if (getOfferingBookingModel(selected) === "open_access"
+      && (series || hasTimeChange || data.waitlistOfferMinutes !== undefined || data.joinUrl !== undefined)) {
+      throw new BookingError(409, "Open-access time and check-in details are fixed. Create a replacement activity to change them.");
+    }
     if (selected.accessType === "live" && data.environment !== undefined) {
       throw new BookingError(400, "Live online classes do not use an indoor or outdoor setting.");
     }
@@ -940,8 +972,10 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
       }
       return { row, startsAt: requestedStart, endsAt: requestedEnd, cancellationDeadline: requestedDeadline };
     });
+    const openAccess = getOfferingBookingModel(selected) === "open_access";
     for (const item of resolvedTimes) {
-      if (item.startsAt <= new Date() || item.endsAt <= item.startsAt || item.cancellationDeadline > item.startsAt) {
+      if (item.startsAt <= new Date() || item.endsAt <= item.startsAt
+        || (openAccess ? item.cancellationDeadline > item.endsAt : item.cancellationDeadline > item.startsAt)) {
         throw new BookingError(400, "Every changed session needs a future start, later end, and valid cancellation deadline.");
       }
     }

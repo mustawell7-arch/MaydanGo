@@ -90,7 +90,7 @@ export default function LiveScreen() {
     ],
   );
 
-  const act = async (o: Pick<Offering, 'id' | 'kind' | 'targetId' | 'slot'>, cancel: boolean) => {
+  const act = async (o: Pick<Offering, 'id' | 'kind' | 'targetId' | 'slot' | 'bookingModel'>, cancel: boolean) => {
     if (busyId) return;
     setBusyId(o.id); setNotice(null);
     const r = cancel
@@ -98,7 +98,12 @@ export default function LiveScreen() {
       : await (o.kind === 'session' ? app.bookSession(o.targetId) : o.kind === 'event' ? app.bookEvent(o.targetId) : app.requestCoaching(o.targetId, o.slot));
     await Promise.all([app.refreshMember(), catalog.refresh()]);
     setBusyId(null);
-    setNotice(r.ok ? { tone: 'ok', text: cancel ? 'Reservation cancelled.' : 'Reserved with the partner.' } : { tone: 'err', text: app.memberError ?? 'This reservation could not be completed. Check your membership eligibility.' });
+    setNotice(r.ok ? {
+      tone: 'ok',
+      text: cancel ? 'Reservation cancelled.' : o.bookingModel === 'open_access'
+        ? 'Walk-in reservation started. Scan the single-use QR shown by partner staff; attendance still requires partner confirmation.'
+        : 'Reserved with the partner.',
+    } : { tone: 'err', text: app.memberError ?? 'This reservation could not be completed. Check your membership eligibility.' });
   };
 
   if (!catalog.signedIn) return <ScreenShell>
@@ -163,10 +168,13 @@ export default function LiveScreen() {
         <Text style={{ color: c.mutedForeground, textAlign: 'center', lineHeight: 19 }}>Partners are being onboarded. Pull to refresh or browse sample listings meanwhile.</Text>
       </View> : items.map(o => {
         const mine = booked(o), full = (o.remaining ?? 1) <= 0;
+        const isOpenAccess = o.bookingModel === 'open_access';
+        const walkInOpen = isOpenAccess && !!o.walkInReady && !!o.walkInOpensAt && !!o.walkInClosesAt
+          && Date.now() >= Date.parse(o.walkInOpensAt) && Date.now() < Date.parse(o.walkInClosesAt);
         const waitlistEntry = [...app.waitlists].filter(entry => entry.offeringId === o.id)
           .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
         const activeWaitlistEntry = waitlistEntry && ['waiting', 'offered'].includes(waitlistEntry.status) ? waitlistEntry : undefined;
-        const canJoinWaitlist = full && o.kind === 'session' && !activeWaitlistEntry && !mine && !o.additionalPayment;
+        const canJoinWaitlist = !isOpenAccess && full && o.kind === 'session' && !activeWaitlistEntry && !mine && !o.additionalPayment;
         const waitlistBusy = busyId === `waitlist:${o.id}`;
         return <View key={o.id} style={[styles.card, { backgroundColor: c.card, borderColor: mine ? c.primary : c.border }]}>
           <View style={styles.between}>
@@ -178,8 +186,13 @@ export default function LiveScreen() {
           {o.accessType !== 'live' ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
             {t('activitySettingFilter')}: {o.environment ? t(o.environment) : t('settingNotListed')}
           </Text> : null}
-          <Text style={{ color: c.foreground }}>{dateTime(o.startsAt, app.language)}</Text>
-          <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Free cancellation until {dateTime(o.cancellationDeadline, app.language)}</Text>
+           <Text style={{ color: c.foreground }}>{dateTime(o.startsAt, app.language)}</Text>
+           {isOpenAccess
+             ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{walkInOpen
+               ? t('walkInAvailableNow')
+               : o.walkInReady && o.walkInOpensAt ? t('walkInOpensAt').replace('{date}', dateTime(o.walkInOpensAt, app.language, true))
+                 : t('walkInNotReady')}</Text>
+             : <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Free cancellation until {dateTime(o.cancellationDeadline, app.language)}</Text>}
           {o.additionalPayment ? <Text style={{ color: c.destructive, fontSize: 12, fontWeight: '700' }}>Additional payment required. Booking is unavailable until payments launch.</Text> : null}
           {o.gender !== 'all' || o.minAge > 0 || o.maxAge !== null ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{o.gender === 'female' ? 'Women only' : o.gender === 'male' ? 'Men only' : 'Everyone'} · {o.minAge}{o.maxAge !== null ? `–${o.maxAge}` : '+'}</Text> : null}
           <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Tiers: {o.tiers.join(', ')}</Text>
@@ -204,12 +217,14 @@ export default function LiveScreen() {
             </Pressable>
           </> : <>
             {waitlistEntry && !['left'].includes(waitlistEntry.status) ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{t(waitlistStatusKey(waitlistEntry.status))}</Text> : null}
-            <Pressable testID={full && o.kind === 'session' ? `live-waitlist-join-${o.id}` : `live-book-${o.id}`}
-              accessibilityRole="button" disabled={!!busyId || (!mine && !canJoinWaitlist && (full || o.additionalPayment))}
-              onPress={() => full && o.kind === 'session' ? void runWaitlistAction(o.id, 'join') : void act(o, mine)}
-              style={[styles.cta, { backgroundColor: mine ? c.secondary : c.primary, opacity: busyId === o.id || waitlistBusy || (!mine && full) ? .55 : 1 }]}>
+            <Pressable testID={full && o.kind === 'session' && !isOpenAccess ? `live-waitlist-join-${o.id}` : `live-book-${o.id}`}
+              accessibilityRole="button" disabled={!!busyId || (!mine && !canJoinWaitlist && (full || o.additionalPayment || (isOpenAccess && !walkInOpen)))}
+              onPress={() => full && o.kind === 'session' && !isOpenAccess ? void runWaitlistAction(o.id, 'join') : void act(o, mine)}
+              style={[styles.cta, { backgroundColor: mine ? c.secondary : c.primary, opacity: busyId === o.id || waitlistBusy || (!mine && (full || (isOpenAccess && !walkInOpen))) ? .55 : 1 }]}>
               <Text style={{ color: mine ? c.secondaryForeground : c.primaryForeground, fontWeight: '700' }}>
-                {busyId === o.id || waitlistBusy ? 'Working…' : mine ? 'Cancel reservation' : full ? o.kind === 'session' ? t('waitlistJoin') : 'Full' : o.additionalPayment ? 'Unavailable' : 'Reserve'}
+                {busyId === o.id || waitlistBusy ? 'Working…' : mine ? isOpenAccess ? t('cancelWalkIn') : 'Cancel reservation'
+                  : isOpenAccess ? walkInOpen ? t('startWalkIn') : t('walkInUnavailable')
+                    : full ? o.kind === 'session' ? t('waitlistJoin') : 'Full' : o.additionalPayment ? 'Unavailable' : 'Reserve'}
               </Text>
             </Pressable>
           </>}
@@ -226,9 +241,12 @@ export default function LiveScreen() {
               <Text raw style={{ color: c.foreground, fontWeight: '700' }}>{o?.title ?? b.title}</Text>
               <Text style={{ color: c.mutedForeground }}>{dateTime(b.startsAt, app.language)}</Text>
               <Text style={{ color: st === 'partner_cancelled' ? c.destructive : st === 'cancelled' ? c.mutedForeground : c.primary, fontWeight: '700', fontSize: 12 }}>
-                {st === 'partner_cancelled' ? 'Cancelled by partner. Your visit was returned.' : st === 'cancelled' ? 'Cancelled by you' : 'Reserved'}</Text>
-              {!o && ['reserved', 'requested'].includes(st) && ['session', 'event', 'coach'].includes(b.kind) ? <Pressable accessibilityRole="button" disabled={!!busyId}
-                onPress={() => void act({ id: b.id, kind: b.kind as Offering['kind'], targetId: b.targetId, slot: b.slot }, true)}>
+                {st === 'partner_cancelled' ? 'Cancelled by partner. Your visit was returned.' : st === 'cancelled' ? 'Cancelled by you' : b.bookingModel === 'open_access' ? t('walkInReservation') : 'Reserved'}</Text>
+              {b.bookingModel === 'open_access' && st === 'reserved' && <Pressable accessibilityRole="button" onPress={() => router.push('/checkin')}>
+                <Text style={{ color: c.primary, fontWeight: '700' }}>{t('scanPartnerQr')}</Text>
+              </Pressable>}
+              {!o && ['reserved', 'requested'].includes(st) && ['session', 'event', 'coach'].includes(b.kind) && b.bookingModel !== 'open_access' ? <Pressable accessibilityRole="button" disabled={!!busyId}
+                onPress={() => void act({ id: b.id, kind: b.kind as Offering['kind'], targetId: b.targetId, slot: b.slot, bookingModel: b.bookingModel }, true)}>
                 <Text style={{ color: c.primary }}>Cancel reservation</Text>
               </Pressable> : null}
             </View>; })}

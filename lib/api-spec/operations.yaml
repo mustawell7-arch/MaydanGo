@@ -1575,6 +1575,25 @@ paths:
             image/webp: { schema: { type: string, format: binary } }
         "403": { description: Activity is outside the user's access scope }
         "404": { description: Activity image not found }
+  /operations/offerings/{id}/checkin-policy:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    put:
+      operationId: setOfferingCheckinPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OfferingCheckinPolicyInput" }
+      responses:
+        "200":
+          description: Open-access check-in window and location saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionCheckinPolicy" }
+        "400": { description: Invalid check-in policy }
+        "403": { description: Authorized partner or administrator access required }
+        "404": { description: Offering not found }
+        "409": { description: Policy can no longer be changed }
   /operations/offerings/{id}:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     patch:
@@ -4397,6 +4416,9 @@ components:
             - type: "null"
         joinUrl: { type: ["string", "null"], format: uri }
         kind: { type: string, enum: [session, event, coach] }
+        bookingModel:
+          type: string
+          enum: [booking_required, booking_request, open_access, event, live_class]
         city: { type: string }
         facility: { type: string }
         category: { type: string }
@@ -4462,7 +4484,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/OfferingInput"
         - type: object
-      required: [id, targetId, slot, scope, approvalStatus, activityStatus]
+      required: [id, targetId, slot, scope, bookingModel, approvalStatus, activityStatus]
       properties:
         id: { type: string }
         targetId: { type: string }
@@ -4487,6 +4509,9 @@ components:
           oneOf:
             - $ref: "#/components/schemas/SessionCheckinPolicy"
             - type: "null"
+        walkInReady: { type: boolean, description: "Whether the member may start an open-access visit now; the server rechecks all rules." }
+        walkInOpensAt: { type: ["string", "null"], format: date-time }
+        walkInClosesAt: { type: ["string", "null"], format: date-time }
     OfferingApprovalStatus:
       type: string
       enum: [draft, submitted, under_review, changes_requested, approved, published, suspended, rejected, archived]
@@ -4513,6 +4538,17 @@ components:
         latitude: { type: number }
         longitude: { type: number }
         radius: { type: integer }
+        opensAt: { type: string, format: date-time }
+        closesAt: { type: string, format: date-time }
+        correctionEndsAt: { type: string, format: date-time }
+    OfferingCheckinPolicyInput:
+      type: object
+      additionalProperties: false
+      required: [latitude, longitude, radius, opensAt, closesAt, correctionEndsAt]
+      properties:
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        radius: { type: integer, minimum: 25, maximum: 800 }
         opensAt: { type: string, format: date-time }
         closesAt: { type: string, format: date-time }
         correctionEndsAt: { type: string, format: date-time }

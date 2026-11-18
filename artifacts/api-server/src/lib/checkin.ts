@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, desc, eq, gt, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 import { clerkClient } from "@clerk/express";
-import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, guardianConsentDocuments, manualCheckinChallenges, memberships, membershipBilling, membershipPlans, offerings, operators, partners, reservations, memberProfiles, memberConsentEvents, memberProfilePhotos } from "@workspace/db";
+import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, guardianConsentDocuments, manualCheckinChallenges, memberships, membershipBilling, membershipPlans, offerings, operators, partners, reservations, memberProfiles, memberConsentEvents, memberProfilePhotos, operationAudit } from "@workspace/db";
 import { z } from "zod";
 import { BookingError, membershipCanAccess, processWaitlistQueue } from "./reservations";
 import { ageOnDate } from "./age";
@@ -209,6 +209,75 @@ export async function savePolicy(actor: string, id: string, input: z.infer<typeo
     if (c.p || c.o.endsAt <= new Date()) throw new BookingError(409, "Policy is fixed once configured. Contact support for a replacement session.");
     await tx.insert(checkinPolicies).values({ ...input, offeringId: c.o.id, opensAt, closesAt, correctionEndsAt });
     await event(tx, id, actor, "policy", "", "", JSON.stringify(input));
+  });
+}
+export async function saveOfferingPolicy(actor: string, offeringId: string, input: z.infer<typeof policyInput>) {
+  return db.transaction(async tx => {
+    const [o] = await tx.select().from(offerings).where(eq(offerings.id, offeringId)).for("update");
+    if (!o) throw new BookingError(404, "Offering not found.");
+    if (o.scope !== "live" || o.bookingModel !== "open_access" || o.kind !== "session"
+      || o.accessType === "live" || o.additionalPayment) {
+      throw new BookingError(400, "An open-access in-person session is required.");
+    }
+    if (o.cancelledAt || o.endsAt <= new Date()) {
+      throw new BookingError(409, "Check-in policy cannot be changed after this activity has ended or been canceled.");
+    }
+    const op = await staff(tx, actor, o.partnerId, undefined, o);
+    if (isPartnerOperatorRole(op.role) && !hasPartnerPermission(op.role, "sessions")) {
+      throw new BookingError(403, "Only partner owners and managers can change check-in policies.");
+    }
+
+    const opensAt = new Date(input.opensAt);
+    const closesAt = new Date(input.closesAt);
+    const correctionEndsAt = new Date(input.correctionEndsAt);
+    if (opensAt >= closesAt || opensAt < new Date(o.startsAt.getTime() - 3600000) || closesAt > o.endsAt
+      || correctionEndsAt < o.endsAt || correctionEndsAt > new Date(o.endsAt.getTime() + 7 * 86400000)) {
+      throw new BookingError(400, "Check-in must fall within one hour before the activity through its end; the correction deadline must be within seven days afterward.");
+    }
+
+    const [existing] = await tx.select().from(checkinPolicies)
+      .where(eq(checkinPolicies.offeringId, o.id)).for("update");
+    const [evidence] = await tx.select({ id: attendance.id }).from(attendance)
+      .where(eq(attendance.offeringId, o.id)).limit(1);
+    if (existing && evidence) {
+      throw new BookingError(409, "Check-in policy is fixed after attendance evidence exists. Create a replacement activity instead.");
+    }
+    const values = { ...input, offeringId: o.id, opensAt, closesAt, correctionEndsAt };
+    if (existing) {
+      await tx.update(checkinPolicies).set({
+        latitude: input.latitude,
+        longitude: input.longitude,
+        radius: input.radius,
+        opensAt,
+        closesAt,
+        correctionEndsAt,
+      }).where(eq(checkinPolicies.offeringId, o.id));
+      const reservationRows = await tx.select({ id: reservations.id }).from(reservations)
+        .where(eq(reservations.offeringId, o.id));
+      const ids = reservationRows.map(row => row.id);
+      if (ids.length) {
+        const now = new Date();
+        await tx.update(checkinChallenges).set({ consumedAt: now })
+          .where(and(inArray(checkinChallenges.reservationId, ids), isNull(checkinChallenges.consumedAt)));
+        await tx.update(manualCheckinChallenges).set({ consumedAt: now })
+          .where(and(inArray(manualCheckinChallenges.reservationId, ids), isNull(manualCheckinChallenges.consumedAt)));
+      }
+    } else {
+      await tx.insert(checkinPolicies).values(values);
+    }
+    await tx.insert(operationAudit).values({
+      id: randomUUID(),
+      actorId: actor,
+      action: existing ? "offering.checkin_policy.update" : "offering.checkin_policy.create",
+      targetId: o.id,
+      detail: JSON.stringify({
+        radius: input.radius,
+        opensAt: opensAt.toISOString(),
+        closesAt: closesAt.toISOString(),
+        correctionEndsAt: correctionEndsAt.toISOString(),
+      }),
+    });
+    return values;
   });
 }
 export async function issueQr(actor: string, id: string, revoke = false) {

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, gt, inArray, isNull, lte, sql } from "drizzle-orm";
-import { db, memberships, offerings, reservations, attendance, facilityProfiles, memberProfiles, partners, waitlistEntries, memberUpdates } from "@workspace/db";
+import { and, asc, desc, eq, gt, gte, inArray, isNull, lte, sql } from "drizzle-orm";
+import { db, memberships, offerings, reservations, attendance, facilityProfiles, facilityHoursOverrides, checkinPolicies, memberProfiles, partners, waitlistEntries, memberUpdates } from "@workspace/db";
 import { sendMemberNotification } from "./notifications";
 import {
   hasCurrentRequiredMemberConsent,
@@ -8,6 +8,8 @@ import {
   MEMBER_CONSENT_REQUIRED_MESSAGE,
 } from "./member-consents";
 import { isAccessSuspended, lockVenueAccess } from "./account-access-restrictions";
+import { getOfferingBookingModel } from "./booking-model";
+import { iraqCalendarDate, openingState, previousIraqCalendarDate } from "./facility-hours";
 
 export class BookingError extends Error {
   constructor(public status: number, message: string, public code?: string) { super(message); }
@@ -148,6 +150,7 @@ export async function memberState(userId: string) {
     bookings: rows.map(({ reservation: r, offering: o }) => ({
     id: r.id, kind: o.kind, targetId: o.targetId, slot: o.slot, title: o.title,
     localizedTitle: o.localizedTitle, city: o.city, facility: o.facility,
+    bookingModel: getOfferingBookingModel(o),
     cancellationDeadline: o.cancellationDeadline,
     scope: o.scope, startsAt: o.startsAt, status: r.status,
     createdAt: r.createdAt, cancelledAt: r.cancelledAt,
@@ -301,6 +304,11 @@ function notifyWaitlistChanges(changes: WaitlistChanges) {
 
 export async function joinWaitlist(userId: string, offeringId: string) {
   await requireCurrentMemberConsent(userId);
+  const [knownOffering] = await db.select({ bookingModel: offerings.bookingModel, kind: offerings.kind, accessType: offerings.accessType })
+    .from(offerings).where(eq(offerings.id, offeringId)).limit(1);
+  if (knownOffering && getOfferingBookingModel(knownOffering) === "open_access") {
+    throw new BookingError(409, "Open-access visits do not use advance bookings or waitlists.");
+  }
   await processWaitlistQueue(new Date(), [offeringId]);
   const result = await db.transaction(async tx => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
@@ -352,6 +360,51 @@ export async function leaveWaitlist(userId: string, entryId: string) {
   });
   notifyWaitlistChanges(result.changes);
   return result.changed;
+}
+
+async function assertOpenAccessReady(
+  tx: BookingTx,
+  offering: typeof offerings.$inferSelect,
+  now: Date,
+) {
+  const [policy] = await tx.select().from(checkinPolicies)
+    .where(eq(checkinPolicies.offeringId, offering.id));
+  if (!policy) {
+    throw new BookingError(409, "Walk-in check-in is not set up for this activity yet.");
+  }
+  if (now < policy.opensAt || now >= policy.closesAt) {
+    throw new BookingError(409, "Walk-in access is outside the published check-in window.");
+  }
+
+  const [facility] = await tx.select({
+    id: facilityProfiles.id,
+    openingHours: facilityProfiles.openingHours,
+  }).from(facilityProfiles).where(and(
+    eq(facilityProfiles.partnerId, offering.partnerId ?? ""),
+    eq(facilityProfiles.city, offering.city),
+    eq(facilityProfiles.facility, offering.facility),
+  )).limit(1);
+  const today = iraqCalendarDate(now);
+  const previousDate = previousIraqCalendarDate(now);
+  const overrides = facility ? await tx.select({
+    startDate: facilityHoursOverrides.startDate,
+    endDate: facilityHoursOverrides.endDate,
+    closed: facilityHoursOverrides.closed,
+    opensAt: facilityHoursOverrides.opensAt,
+    closesAt: facilityHoursOverrides.closesAt,
+  }).from(facilityHoursOverrides).where(and(
+    eq(facilityHoursOverrides.facilityId, facility.id),
+    lte(facilityHoursOverrides.startDate, today),
+    gte(facilityHoursOverrides.endDate, previousDate),
+  )) : [];
+  const state = facility
+    ? openingState(facility.openingHours, now, overrides)
+    : { openingStatus: "unavailable" as const };
+  if (state.openingStatus !== "open") {
+    throw new BookingError(409, state.openingStatus === "closed"
+      ? "The facility is closed."
+      : "Facility opening hours are not published.");
+  }
 }
 
 export async function acceptWaitlistOffer(userId: string, entryId: string) {
@@ -418,10 +471,11 @@ export async function processWaitlistQueue(now = new Date(), onlyOfferingIds?: s
 
 export async function createReservation(userId: string, input: { kind: string; targetId: string; slot: string }) {
   await requireCurrentMemberConsent(userId);
-  const [known] = await db.select({ id: offerings.id }).from(offerings).where(and(
+  const [known] = await db.select({ id: offerings.id, bookingModel: offerings.bookingModel, kind: offerings.kind, accessType: offerings.accessType }).from(offerings).where(and(
     eq(offerings.kind, input.kind), eq(offerings.targetId, input.targetId), eq(offerings.slot, input.slot),
   )).limit(1);
-  if (known) await processWaitlistQueue(new Date(), [known.id]);
+  if (known && getOfferingBookingModel(known) !== "open_access")
+    await processWaitlistQueue(new Date(), [known.id]);
   return db.transaction(async tx => {
     // Lock the account and offering: quota and capacity checks must be atomic.
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
@@ -430,7 +484,18 @@ export async function createReservation(userId: string, input: { kind: string; t
     )).for("update");
     const now = new Date();
     if (!o || !o.active || o.cancelledAt) throw new BookingError(404, "This activity isn’t available.");
-    if (o.startsAt <= now) throw new BookingError(409, "This class has already started.");
+    const bookingModel = getOfferingBookingModel(o);
+    if (bookingModel === "open_access") {
+      if (o.kind !== "session" || o.accessType === "live" || o.additionalPayment) {
+        throw new BookingError(409, "This open-access activity is not configured for walk-in visits.");
+      }
+      if (now < o.startsAt || now >= o.endsAt) {
+        throw new BookingError(409, "Walk-in access is available only during the published access window.");
+      }
+      await assertOpenAccessReady(tx, o, now);
+    } else if (o.startsAt <= now) {
+      throw new BookingError(409, "This class has already started.");
+    }
     await assertMemberEligibleForOffering(tx, userId, o);
     const places = await tx.select({ id: reservations.id }).from(reservations)
       .where(and(eq(reservations.offeringId, o.id), inArray(reservations.status, ["reserved", "requested"])));

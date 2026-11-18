@@ -457,6 +457,28 @@ test("live operations: staff scope, approved inventory, server grants and quota 
     assert.equal(freeEventOffer.data.approvalStatus, "draft");
     assert.equal((await call(`/operations/offerings/${freeEventOffer.data.id}`, adminId, "PATCH", { capacity: 2, active: true })).status, 400);
     await publishOffering(freeEventOffer.data.id);
+    const openAccessOffer = await call("/operations/offerings", partnerUser, "POST", {
+      ...offerBody,
+      title: "Isolated open-access test",
+      bookingModel: "open_access",
+      bookingCutoffMinutes: 0,
+      cancellationDeadline: offerBody.endsAt,
+    });
+    assert.equal(openAccessOffer.status, 201, JSON.stringify(openAccessOffer.data));
+    ids.push(openAccessOffer.data.id);
+    assert.equal(openAccessOffer.data.bookingModel, "open_access");
+    const visitLimitUpdate = await call(`/operations/offerings/${openAccessOffer.data.id}`, partnerUser, "PATCH", { capacity: 3 });
+    assert.equal(visitLimitUpdate.status, 200, JSON.stringify(visitLimitUpdate.data));
+    assert.equal(visitLimitUpdate.data.capacity, 3);
+    const rescheduleOpenAccess = await call(`/operations/offerings/${openAccessOffer.data.id}`, partnerUser, "PATCH", {
+      capacity: 3,
+      startsAt: new Date(now + 2 * 86400000).toISOString(),
+      endsAt: new Date(now + 2 * 86400000 + 3600000).toISOString(),
+      cancellationDeadline: new Date(now + 2 * 86400000 + 3600000).toISOString(),
+    });
+    assert.equal(rescheduleOpenAccess.status, 409, JSON.stringify(rescheduleOpenAccess.data));
+    const submitWithoutCheckinPolicy = await call(`/operations/offerings/${openAccessOffer.data.id}/submit`, partnerUser, "POST");
+    assert.equal(submitWithoutCheckinPolicy.status, 409, JSON.stringify(submitWithoutCheckinPolicy.data));
     const paidEventOffer = await call("/operations/offerings", partnerUser, "POST", {
       ...offerBody, title: "Isolated paid event", kind: "event", additionalPayment: true,
     });

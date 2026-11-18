@@ -340,6 +340,17 @@ export const PublicFacilitySessionAccessType = {
   live: 'live',
 } as const;
 
+export type PublicFacilitySessionBookingModel = typeof PublicFacilitySessionBookingModel[keyof typeof PublicFacilitySessionBookingModel];
+
+
+export const PublicFacilitySessionBookingModel = {
+  booking_required: 'booking_required',
+  booking_request: 'booking_request',
+  open_access: 'open_access',
+  event: 'event',
+  live_class: 'live_class',
+} as const;
+
 export type PublicFacilitySessionDifficultyLevel = typeof PublicFacilitySessionDifficultyLevel[keyof typeof PublicFacilitySessionDifficultyLevel] | null;
 
 
@@ -376,6 +387,7 @@ export interface PublicFacilitySession {
   startsAt: string;
   endsAt: string;
   accessType: PublicFacilitySessionAccessType;
+  bookingModel: PublicFacilitySessionBookingModel;
   tiers: string[];
   difficultyLevel: PublicFacilitySessionDifficultyLevel;
   environment: PublicFacilitySessionEnvironment;
@@ -435,6 +447,17 @@ export const PublicOfferingAccessType = {
   live: 'live',
 } as const;
 
+export type PublicOfferingBookingModel = typeof PublicOfferingBookingModel[keyof typeof PublicOfferingBookingModel];
+
+
+export const PublicOfferingBookingModel = {
+  booking_required: 'booking_required',
+  booking_request: 'booking_request',
+  open_access: 'open_access',
+  event: 'event',
+  live_class: 'live_class',
+} as const;
+
 export type PublicOfferingDifficultyLevel = typeof PublicOfferingDifficultyLevel[keyof typeof PublicOfferingDifficultyLevel] | null;
 
 
@@ -482,6 +505,7 @@ export interface PublicOffering {
   facility: string;
   category: string;
   accessType: PublicOfferingAccessType;
+  bookingModel: PublicOfferingBookingModel;
   tiers: string[];
   difficultyLevel: PublicOfferingDifficultyLevel;
   environment: PublicOfferingEnvironment;
@@ -675,6 +699,17 @@ export type MemberStateMembershipsItem = {
   endsAt: string;
 };
 
+export type MemberBookingBookingModel = typeof MemberBookingBookingModel[keyof typeof MemberBookingBookingModel];
+
+
+export const MemberBookingBookingModel = {
+  booking_required: 'booking_required',
+  booking_request: 'booking_request',
+  open_access: 'open_access',
+  event: 'event',
+  live_class: 'live_class',
+} as const;
+
 export interface MemberBooking {
   id: string;
   kind: string;
@@ -684,6 +719,7 @@ export interface MemberBooking {
   localizedTitle: LocalizedFacilityText | null;
   city: string;
   facility: string;
+  bookingModel: MemberBookingBookingModel;
   cancellationDeadline: string;
   scope: string;
   startsAt: string;
@@ -2676,6 +2712,17 @@ export const OfferingInputKind = {
   coach: 'coach',
 } as const;
 
+export type OfferingInputBookingModel = typeof OfferingInputBookingModel[keyof typeof OfferingInputBookingModel];
+
+
+export const OfferingInputBookingModel = {
+  booking_required: 'booking_required',
+  booking_request: 'booking_request',
+  open_access: 'open_access',
+  event: 'event',
+  live_class: 'live_class',
+} as const;
+
 export type OfferingInputAccessType = typeof OfferingInputAccessType[keyof typeof OfferingInputAccessType];
 
 
@@ -2743,6 +2790,7 @@ export interface OfferingInput {
   /** @nullable */
   joinUrl?: string | null;
   kind: OfferingInputKind;
+  bookingModel?: OfferingInputBookingModel;
   city: string;
   facility: string;
   category: string;
@@ -2886,7 +2934,61 @@ export type LiveOffering = OfferingInput & { [key: string]: unknown } & ({
      */
   waitlistOfferMinutes?: number;
   checkinPolicy?: SessionCheckinPolicy | null;
-});
+  /** Whether the member may start an open-access visit now; the server rechecks all rules. */
+  walkInReady?: boolean;
+  /** @nullable */
+  walkInOpensAt?: string | null;
+  /** @nullable */
+  walkInClosesAt?: string | null;
+}) & Required<Pick<OfferingInput & { [key: string]: unknown } & ({
+  id: string;
+  targetId: string;
+  slot: string;
+  scope: string;
+  /** @nullable */
+  cancelledAt?: string | null;
+  /**
+     * Shared identifier for sessions created as one recurring series.
+     * @nullable
+     */
+  recurrenceGroupId?: string | null;
+  approvalStatus: OfferingApprovalStatus;
+  activityStatus: OfferingApprovalStatus;
+  sessionStatus?: OfferingSessionStatus;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  approvalReason?: string | null;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  partnerResponse?: string | null;
+  /** @nullable */
+  submittedAt?: string | null;
+  /** @nullable */
+  reviewedAt?: string | null;
+  /** @nullable */
+  reviewedBy?: string | null;
+  partnerName?: string;
+  remaining?: number;
+  /** @nullable */
+  imageUrl?: string | null;
+  canJoin?: boolean;
+  /**
+     * @minimum 5
+     * @maximum 1440
+     */
+  waitlistOfferMinutes?: number;
+  checkinPolicy?: SessionCheckinPolicy | null;
+  /** Whether the member may start an open-access visit now; the server rechecks all rules. */
+  walkInReady?: boolean;
+  /** @nullable */
+  walkInOpensAt?: string | null;
+  /** @nullable */
+  walkInClosesAt?: string | null;
+}), 'bookingModel'>>;
 
 /**
  * @minItems 1
@@ -2916,6 +3018,27 @@ export interface OfferingPartnerResponse {
      * @maxLength 1000
      */
   response: string;
+}
+
+export interface OfferingCheckinPolicyInput {
+  /**
+     * @minimum -90
+     * @maximum 90
+     */
+  latitude: number;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  longitude: number;
+  /**
+     * @minimum 25
+     * @maximum 800
+     */
+  radius: number;
+  opensAt: string;
+  closesAt: string;
+  correctionEndsAt: string;
 }
 
 export type OfferingWaitlistEntryStatus = typeof OfferingWaitlistEntryStatus[keyof typeof OfferingWaitlistEntryStatus];

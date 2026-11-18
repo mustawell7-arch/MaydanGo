@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getOfferingBookingModel } from "./booking-model";
 
 const label = z.string().trim().min(1).max(160);
 const quota = z.number().int().min(0).max(100000);
@@ -138,6 +139,7 @@ export const createFacilityProfileInput = facilityProfileFieldsObject.extend({ p
   .strict().superRefine(validateFacilityCoordinates);
 export const offeringInput = z.object({
   partnerId: label, title: label, kind: z.enum(["session", "event", "coach"]),
+  bookingModel: z.enum(["booking_required", "booking_request", "open_access", "event", "live_class"]).optional(),
   localizedTitle: localizedText.nullable().optional(),
   localizedDescription: localizedText.nullable().optional(),
   instructions: z.string().trim().max(2000).nullable().optional(),
@@ -161,6 +163,20 @@ export const offeringInput = z.object({
   maxAge: z.number().int().min(0).max(120).nullable().default(null),
   additionalPayment: z.boolean().default(false), active: z.boolean(),
 }).strict().superRefine((o, ctx) => {
+  const defaultBookingModel = getOfferingBookingModel({ ...o, bookingModel: undefined });
+  const bookingModel = o.bookingModel ?? defaultBookingModel;
+  if (bookingModel !== defaultBookingModel && bookingModel !== "open_access") {
+    ctx.addIssue({ code: "custom", path: ["bookingModel"], message: "The booking model must match the activity format." });
+  }
+  if (bookingModel === "open_access" && (
+    o.kind !== "session" || o.accessType === "live" || o.additionalPayment || o.bookingCutoffMinutes !== 0
+  )) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["bookingModel"],
+      message: "Open access is for in-person sessions with no added payment or advance-booking cutoff.",
+    });
+  }
   if (o.accessType === "live" && o.environment !== null) {
     ctx.addIssue({ code: "custom", path: ["environment"], message: "Live online classes do not use an indoor or outdoor setting." });
   }
@@ -176,8 +192,12 @@ export const offeringInput = z.object({
     if (!o.requiredEquipment) ctx.addIssue({ code: "custom", path: ["requiredEquipment"], message: "Add the required equipment in English, Arabic and Sorani." });
     if (!o.joinUrl) ctx.addIssue({ code: "custom", path: ["joinUrl"], message: "An HTTPS class link is required before publishing." });
   }
+  const cancellationDeadline = new Date(o.cancellationDeadline);
+  const validCancellationDeadline = bookingModel === "open_access"
+    ? cancellationDeadline <= new Date(o.endsAt)
+    : cancellationDeadline <= new Date(o.startsAt);
   if (!(new Date(o.startsAt) > new Date() && new Date(o.endsAt) > new Date(o.startsAt)
-    && new Date(o.cancellationDeadline) <= new Date(o.startsAt) && (o.maxAge === null || o.maxAge >= o.minAge))) {
+    && validCancellationDeadline && (o.maxAge === null || o.maxAge >= o.minAge))) {
     ctx.addIssue({ code: "custom", message: "Use a future start, later end, cancellation deadline no later than start, and valid ages." });
   }
 });

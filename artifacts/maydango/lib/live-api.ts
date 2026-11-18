@@ -30,6 +30,8 @@ export type Offering = {
   requiredEquipment?: { en: string; ar: string; ku: string } | null;
   joinUrl?: string | null; canJoin?: boolean;
   accessType: 'physical' | 'premium' | 'live'; tiers: string[]; startsAt: string; endsAt: string; cancellationDeadline: string;
+  bookingModel: 'booking_required' | 'booking_request' | 'open_access' | 'event' | 'live_class';
+  walkInReady?: boolean; walkInOpensAt?: string | null; walkInClosesAt?: string | null;
   capacity: number; waitlistOfferMinutes?: number; gender: 'all' | 'female' | 'male'; minAge: number; maxAge: number | null; additionalPayment: boolean; active: boolean;
   targetId: string; slot: string; scope: string; cancelledAt: string | null; partnerName?: string; remaining?: number;
 };

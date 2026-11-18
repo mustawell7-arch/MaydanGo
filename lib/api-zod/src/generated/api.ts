@@ -173,6 +173,7 @@ export const GetPublicFacilitiesResponseItem = zod.object({
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "tiers": zod.array(zod.string()),
   "difficultyLevel": zod.union([zod.enum(['all-levels', 'beginner', 'intermediate', 'advanced']),zod.null()]),
   "environment": zod.union([zod.enum(['indoor', 'outdoor']),zod.null()]),
@@ -353,6 +354,7 @@ export const GetPublicFacilityResponse = zod.object({
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "tiers": zod.array(zod.string()),
   "difficultyLevel": zod.union([zod.enum(['all-levels', 'beginner', 'intermediate', 'advanced']),zod.null()]),
   "environment": zod.union([zod.enum(['indoor', 'outdoor']),zod.null()]),
@@ -1276,6 +1278,7 @@ export const GetPublicCatalogResponseItem = zod.object({
   "facility": zod.string(),
   "category": zod.string(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "tiers": zod.array(zod.string()),
   "difficultyLevel": zod.union([zod.enum(['all-levels', 'beginner', 'intermediate', 'advanced']),zod.null()]),
   "environment": zod.union([zod.enum(['indoor', 'outdoor']),zod.null()]),
@@ -1755,6 +1758,7 @@ export const GetOperationsResponse = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -1799,7 +1803,10 @@ export const GetOperationsResponse = zod.object({
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
+  "walkInOpensAt": zod.coerce.date().nullish(),
+  "walkInClosesAt": zod.coerce.date().nullish()
 }))),
   "waitlist": zod.array(zod.object({
   "id": zod.string(),
@@ -3472,6 +3479,7 @@ export const AddLiveOfferingBody = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']).optional(),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -3569,6 +3577,7 @@ export const AddLiveOfferingResponse = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -3613,7 +3622,10 @@ export const AddLiveOfferingResponse = zod.object({
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
+  "walkInOpensAt": zod.coerce.date().nullish(),
+  "walkInClosesAt": zod.coerce.date().nullish()
 }))
 
 
@@ -3641,6 +3653,40 @@ export const GetOperationOfferingImageParams = zod.object({
 })
 
 export const GetOperationOfferingImageResponse = zod.unknown()
+
+
+export const SetOfferingCheckinPolicyParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const setOfferingCheckinPolicyBodyLatitudeMin = -90;
+export const setOfferingCheckinPolicyBodyLatitudeMax = 90;
+
+export const setOfferingCheckinPolicyBodyLongitudeMin = -180;
+export const setOfferingCheckinPolicyBodyLongitudeMax = 180;
+
+export const setOfferingCheckinPolicyBodyRadiusMin = 25;
+export const setOfferingCheckinPolicyBodyRadiusMax = 800;
+
+
+
+export const SetOfferingCheckinPolicyBody = zod.object({
+  "latitude": zod.number().min(setOfferingCheckinPolicyBodyLatitudeMin).max(setOfferingCheckinPolicyBodyLatitudeMax),
+  "longitude": zod.number().min(setOfferingCheckinPolicyBodyLongitudeMin).max(setOfferingCheckinPolicyBodyLongitudeMax),
+  "radius": zod.int().min(setOfferingCheckinPolicyBodyRadiusMin).max(setOfferingCheckinPolicyBodyRadiusMax),
+  "opensAt": zod.coerce.date(),
+  "closesAt": zod.coerce.date(),
+  "correctionEndsAt": zod.coerce.date()
+})
+
+export const SetOfferingCheckinPolicyResponse = zod.object({
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.int(),
+  "opensAt": zod.coerce.date(),
+  "closesAt": zod.coerce.date(),
+  "correctionEndsAt": zod.coerce.date()
+})
 
 
 export const createRecurringOfferingsBodyTemplateLocalizedTitleOneEnMax = 240;
@@ -3730,6 +3776,7 @@ export const CreateRecurringOfferingsBody = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']).optional(),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -3836,6 +3883,7 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -3880,7 +3928,10 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
+  "walkInOpensAt": zod.coerce.date().nullish(),
+  "walkInClosesAt": zod.coerce.date().nullish()
 }))
 export const CreateRecurringOfferingsResponse = zod.array(CreateRecurringOfferingsResponseItem).min(1)
 
@@ -4007,6 +4058,7 @@ export const ChangeLiveOfferingResponse = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -4051,7 +4103,10 @@ export const ChangeLiveOfferingResponse = zod.object({
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
+  "walkInOpensAt": zod.coerce.date().nullish(),
+  "walkInClosesAt": zod.coerce.date().nullish()
 }))
 
 
@@ -4204,6 +4259,7 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -4248,7 +4304,10 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
+  "walkInOpensAt": zod.coerce.date().nullish(),
+  "walkInClosesAt": zod.coerce.date().nullish()
 }))
 export const ChangeRecurringOfferingSeriesResponse = zod.array(ChangeRecurringOfferingSeriesResponseItem).min(1)
 
@@ -4348,6 +4407,7 @@ export const SubmitLiveOfferingResponse = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -4392,7 +4452,10 @@ export const SubmitLiveOfferingResponse = zod.object({
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
+  "walkInOpensAt": zod.coerce.date().nullish(),
+  "walkInClosesAt": zod.coerce.date().nullish()
 }))
 
 
@@ -4489,6 +4552,7 @@ export const RespondToOfferingCorrectionResponse = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -4533,7 +4597,10 @@ export const RespondToOfferingCorrectionResponse = zod.object({
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
+  "walkInOpensAt": zod.coerce.date().nullish(),
+  "walkInClosesAt": zod.coerce.date().nullish()
 }))
 
 
@@ -4631,6 +4698,7 @@ export const ReviewOfferingApprovalResponse = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -4675,7 +4743,10 @@ export const ReviewOfferingApprovalResponse = zod.object({
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
+  "walkInOpensAt": zod.coerce.date().nullish(),
+  "walkInClosesAt": zod.coerce.date().nullish()
 }))
 
 
@@ -10118,6 +10189,7 @@ export const GetLiveCatalogResponseItem = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -10162,7 +10234,10 @@ export const GetLiveCatalogResponseItem = zod.object({
   "opensAt": zod.coerce.date(),
   "closesAt": zod.coerce.date(),
   "correctionEndsAt": zod.coerce.date()
-}),zod.null()]).optional()
+}),zod.null()]).optional(),
+  "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
+  "walkInOpensAt": zod.coerce.date().nullish(),
+  "walkInClosesAt": zod.coerce.date().nullish()
 }))
 export const GetLiveCatalogResponse = zod.array(GetLiveCatalogResponseItem)
 
@@ -11185,6 +11260,7 @@ export const JoinMemberWaitlistResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -11251,6 +11327,7 @@ export const LeaveMemberWaitlistResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -11317,6 +11394,7 @@ export const AcceptMemberWaitlistOfferResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -12949,6 +13027,7 @@ export const SaveMemberProfileResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -13025,6 +13104,7 @@ export const GetMemberStateResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -13081,6 +13161,7 @@ export const GetMemberAccountSummaryResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -13166,6 +13247,7 @@ export const GetMemberAllowancesResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -13214,6 +13296,7 @@ export const EnablePreviewMembershipResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -13282,6 +13365,7 @@ export const CreateMemberBookingResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -13348,6 +13432,7 @@ export const CancelMemberBookingResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),

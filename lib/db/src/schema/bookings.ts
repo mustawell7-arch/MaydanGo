@@ -40,6 +40,12 @@ export type OfferingApprovalStatus =
   | "suspended"
   | "rejected"
   | "archived";
+export type BookingModel =
+  | "booking_required"
+  | "booking_request"
+  | "open_access"
+  | "event"
+  | "live_class";
 export const memberProfiles = pgTable("member_profiles", {
   userId: text("user_id").primaryKey(),
   gender: text("gender").notNull(),
@@ -92,6 +98,7 @@ export const offerings = pgTable("booking_offerings", {
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
   reviewedBy: text("reviewed_by"),
   accessType: text("access_type").notNull().default("physical"),
+  bookingModel: text("booking_model").$type<BookingModel>().notNull().default("booking_required"),
   active: boolean("active").notNull().default(false),
   cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
   city: text("city").notNull(),
