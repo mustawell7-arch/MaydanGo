@@ -12841,8 +12841,8 @@ export const CancelMemberSubscriptionResponse = zod.object({
 
 
 export const SaveMemberProfileBody = zod.object({
-  "gender": zod.enum(['female', 'male', 'unspecified']),
-  "birthDate": zod.string()
+  "gender": zod.enum(['female', 'male', 'unspecified']).optional(),
+  "birthDate": zod.coerce.date()
 })
 
 export const saveMemberProfileResponseBookingsItemLocalizedTitleOneEnMax = 500;

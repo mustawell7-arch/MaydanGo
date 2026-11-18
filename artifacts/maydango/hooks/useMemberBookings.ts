@@ -125,6 +125,7 @@ export function useMemberBookings(language: Language) {
       return o ? dateTime(o.startsAt, language) : 'Sign in to view sample date';
     },
     saveProfile: (gender: 'female' | 'male' | 'unspecified', birthDate: string) => mutate(() => saveMemberProfile({ gender, birthDate })),
+    saveBirthDate: (birthDate: string) => mutate(() => saveMemberProfile({ birthDate })),
     enablePreview: () => mutate(() => enablePreviewMembership({ acknowledgeSampleData: true })),
     bookSession: (id: string) => create('session', id),
     bookEvent: (id: string) => create('event', id),

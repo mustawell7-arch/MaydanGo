@@ -800,11 +800,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [gender, birthDate]
-              properties:
-                gender: { type: string, enum: [female, male, unspecified] }
-                birthDate: { type: string }
+              $ref: "#/components/schemas/MemberProfileInput"
       responses:
         "200":
           description: Eligibility profile saved
@@ -1030,6 +1026,13 @@ paths:
         "409": { description: Review has already been reported by this member }
 components:
   schemas:
+    MemberProfileInput:
+      type: object
+      additionalProperties: false
+      required: [birthDate]
+      properties:
+        gender: { type: string, enum: [female, male, unspecified] }
+        birthDate: { type: string, format: date }
     PartnerSettlementSummary:
       type: object
       additionalProperties: false

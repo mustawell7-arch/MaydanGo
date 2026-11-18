@@ -5,6 +5,20 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type MemberProfileInputGender = typeof MemberProfileInputGender[keyof typeof MemberProfileInputGender];
+
+
+export const MemberProfileInputGender = {
+  female: 'female',
+  male: 'male',
+  unspecified: 'unspecified',
+} as const;
+
+export interface MemberProfileInput {
+  gender?: MemberProfileInputGender;
+  birthDate: string;
+}
+
 export type PartnerSettlementSummaryGroupsItemAccessType = typeof PartnerSettlementSummaryGroupsItemAccessType[keyof typeof PartnerSettlementSummaryGroupsItemAccessType];
 
 
@@ -6311,20 +6325,6 @@ token: string;
 
 export type GetSupportStaffTicketsParams = {
 status?: SupportTicketStatus;
-};
-
-export type SaveMemberProfileBodyGender = typeof SaveMemberProfileBodyGender[keyof typeof SaveMemberProfileBodyGender];
-
-
-export const SaveMemberProfileBodyGender = {
-  female: 'female',
-  male: 'male',
-  unspecified: 'unspecified',
-} as const;
-
-export type SaveMemberProfileBody = {
-  gender: SaveMemberProfileBodyGender;
-  birthDate: string;
 };
 
 export type GetBookingCatalog200Item = {

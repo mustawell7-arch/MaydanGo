@@ -167,6 +167,7 @@ import type {
   MemberDeviceStatus,
   MemberFacilityReviews,
   MemberLiveClass,
+  MemberProfileInput,
   MemberProfilePhoto,
   MemberProfilePhotoCompleteInput,
   MemberProfilePhotoUploadInput,
@@ -253,7 +254,6 @@ import type {
   RefundRequest,
   RequestManualCheckinCode200,
   ReviewAttendanceBody,
-  SaveMemberProfileBody,
   ScanCheckinQr200,
   ScanCheckinQrBody,
   SponsoredContentCampaign,
@@ -21710,7 +21710,7 @@ export const getSaveMemberProfileUrl = () => {
   return `/api/member/profile`
 }
 
-export const saveMemberProfile = async (saveMemberProfileBody: SaveMemberProfileBody, options?: Parameters<typeof customFetch>[1]): Promise<MemberState> => {
+export const saveMemberProfile = async (memberProfileInput: MemberProfileInput, options?: Parameters<typeof customFetch>[1]): Promise<MemberState> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -21731,7 +21731,7 @@ return customFetch<MemberState>(getSaveMemberProfileUrl(),
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(saveMemberProfileBody)
+    body: JSON.stringify(memberProfileInput)
   }
 );}
 
@@ -21769,9 +21769,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type SaveMemberProfileMutationResult = NonNullable<Awaited<ReturnType<typeof saveMemberProfile>>>
-    export type SaveMemberProfileMutationBody = BodyType<SaveMemberProfileBody>
+    export type SaveMemberProfileMutationBody = BodyType<MemberProfileInput>
     export type SaveMemberProfileMutationError = ErrorType<unknown>
-    export type SaveMemberProfileMutationVariables = {data: BodyType<SaveMemberProfileBody>}
+    export type SaveMemberProfileMutationVariables = {data: BodyType<MemberProfileInput>}
 
     export const useSaveMemberProfile = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveMemberProfile>>, TError,SaveMemberProfileMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}

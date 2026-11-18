@@ -26,7 +26,7 @@ import {
 import { Text, TextInput, Pressable } from '@/components/Localized';
 import { dateTime, errorCopy } from '@/lib/content';
 import { getCityLabel } from '@/data/demo';
-import { normalizeInternationalPhoneNumber } from '@/lib/phone-number';
+import { normalizeBirthDate, normalizeInternationalPhoneNumber } from '@/lib/registration-fields';
 import { useAuth, useClerk, useUser, useSignIn, useSignUp, useSSO } from '@clerk/expo';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
@@ -96,7 +96,13 @@ export default function AccountScreen() {
   const [selectedProfilePhoto, setSelectedProfilePhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [profilePhotoToken, setProfilePhotoToken] = useState<string | null>(null);
   const [birthDate, setBirthDate] = useState('');
+  const [pendingSignupProfile, setPendingSignupProfile] = useState<{ birthDate: string; phoneNumber: string } | null>(null);
   const [gender, setGender] = useState<'female' | 'male' | 'unspecified'>('unspecified');
+  const birthDateSaveAttempt = useRef<string | null>(null);
+  const saveBirthDateAction = useRef(app.saveBirthDate);
+  saveBirthDateAction.current = app.saveBirthDate;
+  const userResource = useRef(user);
+  userResource.current = user;
   useEffect(() => {
     if (incomingReferralCode) setReferralCode(incomingReferralCode.toUpperCase());
   }, [incomingReferralCode]);
@@ -116,6 +122,37 @@ export default function AccountScreen() {
     });
     return () => { active = false; };
   }, [getToken, isSignedIn]);
+  useEffect(() => {
+    if (isSignedIn !== true || !user?.id || !pendingSignupProfile) return;
+    const attemptKey = `${user.id}:${pendingSignupProfile.birthDate}:${pendingSignupProfile.phoneNumber}`;
+    if (birthDateSaveAttempt.current === attemptKey) return;
+    birthDateSaveAttempt.current = attemptKey;
+    let active = true;
+    const saveSignupProfile = async () => {
+      const currentUser = userResource.current;
+      if (!currentUser) throw new Error(translate(app.language, 'memberBirthDateSaveError'));
+      if (currentUser.unsafeMetadata.maydangoContactPhone !== pendingSignupProfile.phoneNumber) {
+        await currentUser.update({
+          unsafeMetadata: {
+            ...currentUser.unsafeMetadata,
+            maydangoContactPhone: pendingSignupProfile.phoneNumber,
+          },
+        });
+      }
+      const result = await saveBirthDateAction.current(pendingSignupProfile.birthDate);
+      if (!result.ok) throw new Error(translate(app.language, 'memberBirthDateSaveError'));
+    };
+    void saveSignupProfile().then(() => {
+      if (!active) return;
+      setPendingSignupProfile(null);
+    }).catch(error => {
+      if (!active) return;
+      birthDateSaveAttempt.current = null;
+      setPendingSignupProfile(null);
+      setError(errorCopy(error));
+    });
+    return () => { active = false; };
+  }, [isSignedIn, user?.id, pendingSignupProfile]);
   const run = async (fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(true); setError('');
@@ -190,11 +227,15 @@ export default function AccountScreen() {
       const normalizedFirstName = firstName.trim();
       const normalizedLastName = lastName.trim();
       const normalizedPhoneNumber = normalizeInternationalPhoneNumber(phoneNumber);
+      const normalizedBirthDate = normalizeBirthDate(birthDate);
       if (!normalizedFirstName || !normalizedLastName) {
         throw new Error(translate(app.language, 'memberNameRequired'));
       }
       if (!normalizedPhoneNumber) {
         throw new Error(translate(app.language, 'memberPhoneInvalid'));
+      }
+      if (!normalizedBirthDate) {
+        throw new Error(translate(app.language, 'memberBirthDateInvalid'));
       }
       check(await signUp.password({
         emailAddress: email.trim(),
@@ -203,6 +244,8 @@ export default function AccountScreen() {
         lastName: normalizedLastName,
         unsafeMetadata: { maydangoContactPhone: normalizedPhoneNumber },
       }));
+      setBirthDate(normalizedBirthDate);
+      setPendingSignupProfile({ birthDate: normalizedBirthDate, phoneNumber: normalizedPhoneNumber });
       check(await signUp.verifications.sendEmailCode()); setVerify(true);
     } else {
       check(await signIn.password({ emailAddress: email.trim(), password }));
@@ -778,6 +821,21 @@ export default function AccountScreen() {
               <Text style={{ color: c.mutedForeground, lineHeight: 18, marginTop: -6 }}>
                 {translate(app.language, 'memberPhoneVerificationHint')}
               </Text>
+              <TextInput
+                inputDirection="ltr"
+                testID="auth-birth-date"
+                accessibilityLabel={translate(app.language, 'memberBirthDate')}
+                placeholder={translate(app.language, 'memberBirthDatePlaceholder')}
+                placeholderTextColor={c.mutedForeground}
+                value={birthDate}
+                onChangeText={setBirthDate}
+                keyboardType="numbers-and-punctuation"
+                maxLength={10}
+                style={[styles.input, { color: c.foreground, borderColor: c.border }]}
+              />
+              <Text style={{ color: c.mutedForeground, lineHeight: 18, marginTop: -6 }}>
+                {translate(app.language, 'memberBirthDateHint')}
+              </Text>
               <Pressable
                 testID="auth-city-picker"
                 accessibilityRole="button"
@@ -809,12 +867,24 @@ export default function AccountScreen() {
           setReset('code');
         })}><Text style={{ color: c.primary }}>Forgot password? Send reset code</Text></Pressable> : null}
         {verify ? button('Send a new code', () => void run(async () => { check(mode === 'signup' ? await signUp.verifications.sendEmailCode() : await signIn.mfa.sendEmailCode()); })) : button('Continue with Google', () => void run(async () => {
+          const socialSignupBirthDate = mode === 'signup' ? normalizeBirthDate(birthDate) : null;
+          const socialSignupPhoneNumber = mode === 'signup' ? normalizeInternationalPhoneNumber(phoneNumber) : null;
+          if (mode === 'signup' && !socialSignupBirthDate) {
+            throw new Error(translate(app.language, 'memberBirthDateInvalid'));
+          }
+          if (mode === 'signup' && !socialSignupPhoneNumber) {
+            throw new Error(translate(app.language, 'memberPhoneInvalid'));
+          }
+          if (socialSignupBirthDate && socialSignupPhoneNumber) {
+            setBirthDate(socialSignupBirthDate);
+            setPendingSignupProfile({ birthDate: socialSignupBirthDate, phoneNumber: socialSignupPhoneNumber });
+          }
           const result = await startSSOFlow({ strategy: 'oauth_google', redirectUrl: AuthSession.makeRedirectUri() });
           if (!result.createdSessionId || !result.setActive) throw new Error('Sign-in was not completed. Try email and password.');
           await result.setActive({ session: result.createdSessionId });
           routeAfterAuthentication();
         }))}
-        <Pressable onPress={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setVerify(false); setReset('none'); setError(''); signIn.reset(); signUp.reset(); }}>
+        <Pressable onPress={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setVerify(false); setReset('none'); setError(''); setPendingSignupProfile(null); signIn.reset(); signUp.reset(); }}>
           <Text style={{ color: c.primary }}>{mode === 'signin' ? 'New here? Create account' : 'Already registered? Sign in'}</Text>
         </Pressable>
       </>}

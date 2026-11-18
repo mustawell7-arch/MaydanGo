@@ -4,6 +4,8 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { db, memberships, memberProfilePhotos, memberProfiles, offerings, reservations, partners, waitlistEntries } from "@workspace/db";
 import { eq, and, inArray, sql, gt, asc, isNull, ne, or } from "drizzle-orm";
+import { buildMemberProfileUpsert } from "../lib/member-profile";
+import { ageOnDate } from "../lib/age";
 import {
   CompleteMemberProfilePhotoUploadBody,
   CompleteMemberProfilePhotoUploadResponse,
@@ -454,16 +456,17 @@ router.get("/live-catalog", async (_req, res) => {
 });
 router.put("/profile", async (req, res) => {
   const parsed = z.object({
-    gender: z.enum(["female", "male", "unspecified"]),
+    gender: z.enum(["female", "male", "unspecified"]).optional(),
     birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(d => {
-      const dt = new Date(d);
-      return !isNaN(dt.getTime()) && dt.toISOString().slice(0, 10) === d && dt < new Date() && dt.getUTCFullYear() >= 1900;
+      return new Date(d).getUTCFullYear() >= 1900 && ageOnDate(d, new Date()) !== null;
     }),
   }).strict().safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ message: "Enter a valid birth date (YYYY-MM-DD) and gender." }); return; }
-  await db.insert(memberProfiles).values({ userId: getAuth(req).userId!, ...parsed.data })
-    .onConflictDoUpdate({ target: memberProfiles.userId, set: parsed.data });
-  res.json(await memberState(getAuth(req).userId!));
+  if (!parsed.success) { res.status(400).json({ message: "Enter a valid birth date (YYYY-MM-DD) and optional gender selection." }); return; }
+  const userId = getAuth(req).userId!;
+  const upsert = buildMemberProfileUpsert(parsed.data);
+  await db.insert(memberProfiles).values({ userId, ...upsert.insert })
+    .onConflictDoUpdate({ target: memberProfiles.userId, set: upsert.update });
+  res.json(await memberState(userId));
 });
 router.get("/catalog", async (_req, res) => {
   const rows = await db.select({
