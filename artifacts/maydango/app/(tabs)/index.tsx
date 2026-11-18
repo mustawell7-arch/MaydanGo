@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { Text, Pressable, Ionicons } from '@/components/Localized';
+import { useUser } from '@clerk/expo';
 import { router } from 'expo-router';
 import { ScreenShell } from '@/components/ScreenShell';
 import { FacilityCard } from '@/components/FacilityCard';
@@ -36,7 +37,12 @@ import { findSponsoredContentPlacement, useSponsoredContentTracking } from '@/li
 export default function HomeScreen() {
   const colors = useColors();
   const app = useApp();
+  const { user } = useUser();
   const t = (key: Parameters<typeof translate>[1]) => translate(app.language, key);
+  const firstName = user?.firstName?.trim();
+  const greeting = firstName
+    ? t('welcomeMember').replace('{name}', firstName)
+    : t('goodMorning');
   const currentCity = getCityLabel(app.selectedCityId, app.language);
   const facilitiesQuery = useGetPublicFacilities({
     query: { queryKey: getGetPublicFacilitiesQueryKey(), refetchInterval: 60_000 },
@@ -189,7 +195,7 @@ export default function HomeScreen() {
             {t('regionEyebrow')}
           </Text>
           <Text style={[styles.greeting, { color: colors.foreground }]}>
-            {t('goodMorning')}
+            {greeting}
           </Text>
           <Text style={[styles.greetingAccent, { color: colors.primary }]}>
             {t('goodMorningAccent')}
