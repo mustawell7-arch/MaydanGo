@@ -20,6 +20,7 @@ export const learningCourses = pgTable("learning_courses", {
   disclaimers: jsonb("disclaimers").$type<LocalizedText | null>(),
   supportingMaterials: jsonb("supporting_materials").$type<LocalizedText | null>(),
   published: boolean("published").notNull().default(false),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => [

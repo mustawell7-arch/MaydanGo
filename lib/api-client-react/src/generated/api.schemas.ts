@@ -581,6 +581,8 @@ export interface PublicCourse {
   durationMinutes: number;
   /** @minimum 0 */
   lessonCount: number;
+  /** @nullable */
+  publishedAt: string | null;
   /**
      * @minItems 1
      * @maxItems 3

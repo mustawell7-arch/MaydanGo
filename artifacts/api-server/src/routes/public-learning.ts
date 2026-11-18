@@ -16,6 +16,7 @@ router.get("/courses", async (_req, res): Promise<void> => {
     category: learningCourses.category,
     level: learningCourses.level,
     durationMinutes: learningCourses.durationMinutes,
+    publishedAt: learningCourses.publishedAt,
     courseLanguages: learningCourses.courseLanguages,
     subtitleLanguages: learningCourses.subtitleLanguages,
     requiredEquipment: learningCourses.requiredEquipment,
@@ -37,6 +38,7 @@ router.get("/courses", async (_req, res): Promise<void> => {
 
   res.json(GetPublicCoursesResponse.parse(courses.map(course => ({
     ...course,
+    publishedAt: course.publishedAt?.toISOString() ?? null,
     lessonCount: countByCourse.get(course.id) ?? 0,
   }))));
 });

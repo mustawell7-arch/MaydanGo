@@ -40,7 +40,7 @@ import { PaymentError, paymentsEnabled, payTabsTestModeEnabled } from "../lib/pa
 import { cancelPaidSubscriptionImmediately, requestFullRefund, validatePaidPlan } from "../lib/payments-paytabs";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 import { financeRecordRetentionUntil } from "../lib/finance-record-retention";
-import { isPrivateCourseRecordingPath } from "../lib/course-recordings";
+import { courseRecordingContentType, isPrivateCourseRecordingPath } from "../lib/course-recordings";
 import { courseMaterialObjectPath, courseMaterialUploadObjectPath, isPrivateCourseMaterialUploadPath, isSafeCourseMaterialFileName, maxCourseMaterialBytes } from "../lib/course-materials";
 import { hasAccessRestrictionRecord, isAccessSuspended } from "../lib/account-access-restrictions";
 import { completeGuardianConsentUpload, requestGuardianConsentUpload } from "../lib/guardian-consents";
@@ -2031,6 +2031,7 @@ router.post("/courses", async (req, res) => {
       disclaimers: data.disclaimers ?? null,
       supportingMaterials: data.supportingMaterials ?? null,
       published: data.published,
+      publishedAt: data.published ? new Date() : null,
     }).returning();
     await tx.insert(learningLessons).values(data.lessons.map(lesson => ({
       id: randomUUID(),
@@ -2075,6 +2076,9 @@ router.put("/courses/:id", async (req, res) => {
       ...(data.disclaimers !== undefined ? { disclaimers: data.disclaimers } : {}),
       ...(data.supportingMaterials !== undefined ? { supportingMaterials: data.supportingMaterials } : {}),
       published: data.published,
+      publishedAt: data.published && !existing.published && !existing.publishedAt
+        ? new Date()
+        : existing.publishedAt,
       updatedAt: new Date(),
     }).where(eq(learningCourses.id, id)).returning();
     await audit(tx, getAuth(req).userId!, "course.update", id, `published=${data.published}`);
@@ -2109,7 +2113,16 @@ router.post("/courses/:id/lessons", async (req, res) => {
       mediaUrl: data.mediaUrl,
     }).returning();
     await audit(tx, getAuth(req).userId!, "course.lesson.create", added.id, `course=${courseId}`);
-    return { ...added, hasRecording: true, completed: false };
+    const contentType = added.mediaUrl ? courseRecordingContentType(added.mediaUrl) : null;
+    return {
+      ...added,
+      hasRecording: true,
+      recordingKind: contentType?.startsWith("audio/") ? "audio" : "video",
+      completed: false,
+      viewed: false,
+      playbackPositionSeconds: 0,
+      durationSeconds: null,
+    };
   });
   res.status(201).json(AddLearningLessonResponse.parse(lesson));
 });

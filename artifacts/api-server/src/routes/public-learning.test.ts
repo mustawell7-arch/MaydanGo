@@ -11,6 +11,7 @@ const prefix = `public-courses-${randomUUID()}`;
 const publishedId = `${prefix}-published`;
 const unreportedId = `${prefix}-unreported`;
 const hiddenId = `${prefix}-hidden`;
+const recentlyPublishedAt = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 let server: Server | null = null;
 
 const app = express();
@@ -34,6 +35,7 @@ test("public course catalogue returns published metadata without lesson media", 
       category: "mobility",
       level: "beginner",
       durationMinutes: 45,
+      publishedAt: recentlyPublishedAt,
       courseLanguages: ["en", "ar"],
       subtitleLanguages: [],
       requiredEquipment: { en: "A mat", ar: "بساط", ku: "مەت" },
@@ -89,6 +91,7 @@ test("public course catalogue returns published metadata without lesson media", 
   const unreportedCourse = data.find(course => course.id === unreportedId)!;
   assert.equal(publishedCourse.category, "mobility");
   assert.equal(publishedCourse.lessonCount, 1);
+  assert.equal(publishedCourse.publishedAt, recentlyPublishedAt.toISOString());
   assert.deepEqual(publishedCourse.courseLanguages, ["en", "ar"]);
   assert.deepEqual(publishedCourse.subtitleLanguages, []);
   assert.deepEqual(publishedCourse.requiredEquipment, { en: "A mat", ar: "بساط", ku: "مەت" });
@@ -98,8 +101,8 @@ test("public course catalogue returns published metadata without lesson media", 
   assert.equal(unreportedCourse.requiredEquipment, null);
   assert.deepEqual(Object.keys(publishedCourse).sort(), [
     "category", "courseLanguages", "disclaimers", "durationMinutes", "id", "lessonCount", "level",
-    "localizedInstructor", "localizedSummary", "localizedTitle", "requiredEquipment", "subtitleLanguages",
-    "supportingMaterials",
+    "localizedInstructor", "localizedSummary", "localizedTitle", "publishedAt", "requiredEquipment",
+    "subtitleLanguages", "supportingMaterials",
   ]);
   assert.ok(!JSON.stringify(data).includes("private.example.test"));
   assert.ok(!JSON.stringify(data).includes("Private lesson"));

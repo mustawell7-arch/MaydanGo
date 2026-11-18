@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import type { Server } from "node:http";
 import { randomUUID } from "node:crypto";
-import { inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import express from "express";
-import { db, learningCourses, operators, partners, pool } from "@workspace/db";
+import { db, learningCourses, learningLessons, operators, partners, pool } from "@workspace/db";
 import operationsRouter, { operationsObjectStorage } from "./operations";
 
 const prefix = `learning-admin-test-${randomUUID()}`;
@@ -185,13 +185,39 @@ test("only administrators can list, edit, publish, or add lessons to courses", a
   const published = await call(`/operations/courses/${course.id}`, adminUserId, "PUT", courseMetadata(true));
   assert.equal(published.status, 200);
   assert.equal((published.data as { published: boolean }).published, true);
+  const [publishedCourse] = await db.select({ publishedAt: learningCourses.publishedAt })
+    .from(learningCourses).where(eq(learningCourses.id, course.id)).limit(1);
+  assert.ok(publishedCourse?.publishedAt instanceof Date);
+
+  const legacyCourseId = randomUUID();
+  courseIds.push(legacyCourseId);
+  await db.insert(learningCourses).values({
+    id: legacyCourseId,
+    title: "Legacy published course",
+    localizedTitle: localized("Legacy course", "دورة قديمة", "کۆرسی کۆن"),
+    localizedSummary: localized("Existing course.", "دورة قائمة.", "کۆرسێکی هەبوو."),
+    localizedInstructor: localized("MaydanGo team", "فريق ميدان", "تیمی مەیدان"),
+    category: "mobility",
+    level: "beginner",
+    durationMinutes: 30,
+    published: true,
+  });
+  await db.insert(learningLessons).values({
+    id: randomUUID(),
+    courseId: legacyCourseId,
+    ...initialLesson,
+  });
+  assert.equal((await call(`/operations/courses/${legacyCourseId}`, adminUserId, "PUT", courseMetadata(true))).status, 200);
+  const [legacyCourse] = await db.select({ publishedAt: learningCourses.publishedAt })
+    .from(learningCourses).where(eq(learningCourses.id, legacyCourseId)).limit(1);
+  assert.equal(legacyCourse?.publishedAt, null);
 
   const addedLesson = await call(`/operations/courses/${course.id}/lessons`, adminUserId, "POST", {
     ...initialLesson,
     position: 2,
     localizedTitle: localized("Second lesson", "الدرس الثاني", "وانەی دووەم"),
   });
-  assert.equal(addedLesson.status, 201);
+  assert.equal(addedLesson.status, 201, JSON.stringify(addedLesson.data));
 
   const unpublished = await call(`/operations/courses/${course.id}`, adminUserId, "PUT", courseMetadata(false));
   assert.equal(unpublished.status, 200);

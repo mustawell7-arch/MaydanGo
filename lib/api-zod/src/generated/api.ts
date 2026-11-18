@@ -1345,6 +1345,7 @@ export const GetPublicCoursesResponseItem = zod.object({
   "level": zod.string(),
   "durationMinutes": zod.int().min(1),
   "lessonCount": zod.int().min(getPublicCoursesResponseLessonCountMin),
+  "publishedAt": zod.coerce.date().nullable(),
   "courseLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).min(1).max(getPublicCoursesResponseCourseLanguagesMax).nullable(),
   "subtitleLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).max(getPublicCoursesResponseSubtitleLanguagesMax).nullable(),
   "requiredEquipment": zod.union([zod.object({

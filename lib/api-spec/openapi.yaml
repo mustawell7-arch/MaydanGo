@@ -1339,7 +1339,7 @@ components:
     PublicCourse:
       type: object
       additionalProperties: false
-      required: [id, localizedTitle, localizedSummary, localizedInstructor, category, level, durationMinutes, lessonCount, courseLanguages, subtitleLanguages, requiredEquipment, disclaimers, supportingMaterials]
+      required: [id, localizedTitle, localizedSummary, localizedInstructor, category, level, durationMinutes, lessonCount, publishedAt, courseLanguages, subtitleLanguages, requiredEquipment, disclaimers, supportingMaterials]
       properties:
         id: { type: string }
         localizedTitle:
@@ -1370,6 +1370,7 @@ components:
         level: { type: string }
         durationMinutes: { type: integer, minimum: 1 }
         lessonCount: { type: integer, minimum: 0 }
+        publishedAt: { type: ["string", "null"], format: date-time }
         courseLanguages:
           type: ["array", "null"]
           minItems: 1

@@ -427,6 +427,7 @@ async function publishCourseDraft(
       disclaimers: payload.disclaimers as { en: string; ar: string; ku: string } | null,
       supportingMaterials: payload.supportingMaterials as { en: string; ar: string; ku: string } | null,
       published: true,
+      publishedAt: new Date(),
     });
     await tx.insert(learningLessons).values(promotedLessons.map(({ lesson, mediaUrl }, index) => ({
       id: randomUUID(),

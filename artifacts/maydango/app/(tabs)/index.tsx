@@ -19,8 +19,10 @@ import { dateTime } from '@/lib/content';
 import { cityIdForFacility, facilityText } from '@/lib/facility-content';
 import { recommendHomeActivities } from '@/lib/home-activity-recommendations';
 import { getNewFacilities } from '@/lib/new-facility-recommendations';
+import { getNewOnlineCourses } from '@/lib/new-online-courses';
 import {
   getGetPublicCatalogQueryKey,
+  getGetPublicCoursesQueryKey,
   getGetPublicFacilitiesQueryKey,
   getGetPublicSponsoredFacilitiesQueryKey,
   getGetPublicSponsoredContentQueryKey,
@@ -30,6 +32,7 @@ import {
   useGetMemberLiveClasses,
   useGetMemberAllowances,
   useGetPublicCatalog,
+  useGetPublicCourses,
   useGetPublicFacilities,
 } from '@workspace/api-client-react';
 import { useSponsoredFacilityTracking } from '@/lib/sponsored-facilities';
@@ -40,6 +43,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const app = useApp();
   const { user } = useUser();
+  const align = app.language === 'en' ? 'left' : 'right';
   const t = (key: Parameters<typeof translate>[1]) => translate(app.language, key);
   const firstName = user?.firstName?.trim();
   const greeting = firstName
@@ -48,6 +52,9 @@ export default function HomeScreen() {
   const currentCity = getCityLabel(app.selectedCityId, app.language);
   const facilitiesQuery = useGetPublicFacilities({
     query: { queryKey: getGetPublicFacilitiesQueryKey(), refetchInterval: 60_000 },
+  });
+  const publicCoursesQuery = useGetPublicCourses({
+    query: { queryKey: getGetPublicCoursesQueryKey(), refetchInterval: 60_000 },
   });
   const sponsoredQuery = useGetPublicSponsoredFacilities({
     query: {
@@ -161,6 +168,14 @@ export default function HomeScreen() {
   const coursesInProgress = (coursesQuery.data ?? []).filter((course) =>
     course.enrolled && course.completedLessons < course.lessonCount,
   ).slice(0, 2);
+  const enrolledCourseIds = new Set((coursesQuery.data ?? [])
+    .filter(course => course.enrolled)
+    .map(course => course.id));
+  const newOnlineCourses = useMemo(
+    () => getNewOnlineCourses(publicCoursesQuery.data ?? [], Date.now(), 4)
+      .filter(course => !enrolledCourseIds.has(course.id)),
+    [publicCoursesQuery.data, coursesQuery.data],
+  );
   const upcomingEvents = useMemo(() => (eventsQuery.data ?? [])
     .filter((event) =>
       event.kind === 'event' &&
@@ -182,10 +197,10 @@ export default function HomeScreen() {
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
     .slice(0, 2), [eventsQuery.data, app.selectedCityId, sponsoredContentQuery.data]);
   const promotedCourses = useMemo(() => (coursesQuery.data ?? [])
-    .filter(course => !course.enrolled && findSponsoredContentPlacement(
-      sponsoredContentQuery.data ?? [], 'course', course.id, 'home_promotion',
-    ))
-    .slice(0, 2), [coursesQuery.data, sponsoredContentQuery.data]);
+    .filter(course => !course.enrolled
+      && !newOnlineCourses.some(newCourse => newCourse.id === course.id)
+      && findSponsoredContentPlacement(sponsoredContentQuery.data ?? [], 'course', course.id, 'home_promotion'))
+    .slice(0, 2), [coursesQuery.data, sponsoredContentQuery.data, newOnlineCourses]);
   const localized = (value: { en?: string; ar?: string; ku?: string } | null | undefined) =>
     value?.[app.language] || value?.en || '';
 
@@ -708,6 +723,106 @@ export default function HomeScreen() {
             </ScrollView>
           </>
         ) : null}
+        {publicCoursesQuery.isLoading ? (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : publicCoursesQuery.isError ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void publicCoursesQuery.refetch()}
+            style={styles.emptyBooking}
+          >
+            <Text style={[styles.dashboardMeta, { color: colors.destructive }]}>{t('catalogLoadError')}</Text>
+          </Pressable>
+        ) : newOnlineCourses.length ? (
+          <>
+            <View style={[styles.sectionHeader, styles.activitySectionHeader]}>
+              <View>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                  {t('newOnlineCourses')}
+                </Text>
+                <Text style={[styles.sectionSub, { color: colors.mutedForeground }]}>
+                  {t('newOnlineCoursesHint')}
+                </Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push(app.signedIn ? '/online' : '/account')}
+              >
+                <Text style={[styles.seeAll, { color: colors.primary }]}>{t('seeAll')}</Text>
+              </Pressable>
+            </View>
+            {newOnlineCourses.map(course => {
+              const campaign = findSponsoredContentPlacement(
+                sponsoredContentQuery.data ?? [],
+                'course',
+                course.id,
+                'home_promotion',
+              );
+              return (
+                <View
+                  key={`new-online-course-${course.id}`}
+                  ref={view => sponsoredContentTracking.register(
+                    `new-online-course-${course.id}`,
+                    campaign?.campaignId,
+                    'home_promotion',
+                    view,
+                  )}
+                  collapsable={false}
+                  onLayout={sponsoredContentTracking.checkVisible}
+                >
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t('viewCourse')}: ${localized(course.localizedTitle)}`}
+                    onPress={() => {
+                      if (campaign) sponsoredContentTracking.recordClick(campaign.campaignId, 'home_promotion');
+                      if (!app.signedIn) {
+                        router.push('/account');
+                        return;
+                      }
+                      router.push({
+                        pathname: '/course/[id]',
+                        params: {
+                          id: course.id,
+                          ...(campaign ? {
+                            sponsoredCampaignId: campaign.campaignId,
+                            sponsoredPlacementType: 'home_promotion',
+                          } : {}),
+                        },
+                      });
+                    }}
+                    style={({ pressed }) => [
+                      styles.newOnlineCourseCard,
+                      { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.9 : 1 },
+                    ]}
+                  >
+                    <View style={[styles.newOnlineCourseIcon, { backgroundColor: colors.secondary }]}>
+                      <Ionicons name="play-circle-outline" size={23} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      {campaign ? (
+                        <Text style={[styles.newOnlineCourseMeta, { color: colors.primary, fontWeight: '800', textAlign: align }]}>
+                          {t('sponsored')}
+                        </Text>
+                      ) : null}
+                      <Text style={[styles.newOnlineCourseMeta, { color: colors.mutedForeground, textAlign: align }]}>
+                        {localized(course.localizedInstructor)} · {course.durationMinutes} {t('minutesShort')} · {course.lessonCount} {t('lessons')}
+                      </Text>
+                      <Text style={[styles.dashboardTitle, { color: colors.foreground, textAlign: align }]}>
+                        {localized(course.localizedTitle)}
+                      </Text>
+                      <Text numberOfLines={2} style={[styles.dashboardMeta, { color: colors.mutedForeground, textAlign: align }]}>
+                        {localized(course.localizedSummary)}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={colors.mutedForeground} />
+                  </Pressable>
+                </View>
+              );
+            })}
+          </>
+        ) : null}
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push({ pathname: '/explore', params: { kind: 'events' } })}
@@ -798,6 +913,9 @@ const styles = StyleSheet.create({
   emptyBooking: { marginHorizontal: 20, marginBottom: 14, padding: 14, borderRadius: 16 },
   loadingRow: { height: 52, alignItems: 'center', justifyContent: 'center' },
   courseProgressCard: { marginHorizontal: 20, marginBottom: 10, borderWidth: 1, borderRadius: 18, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 11 },
+  newOnlineCourseCard: { marginHorizontal: 20, marginBottom: 10, borderWidth: 1, borderRadius: 18, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 11 },
+  newOnlineCourseIcon: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  newOnlineCourseMeta: { fontSize: 9, lineHeight: 14, fontWeight: '600' },
   courseThumbnail: { width: 62, height: 62, borderRadius: 14 },
   courseThumbnailFallback: { alignItems: 'center', justifyContent: 'center' },
   progressTrack: { height: 5, borderRadius: 5, marginTop: 8, overflow: 'hidden' },
