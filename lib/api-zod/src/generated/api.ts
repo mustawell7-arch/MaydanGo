@@ -10118,7 +10118,7 @@ export const getMemberPrivacyRequestExportResponseReferralsCodeUsedRegExp = new 
 
 
 export const GetMemberPrivacyRequestExportResponse = zod.object({
-  "formatVersion": zod.enum(['1.4']),
+  "formatVersion": zod.enum(['1.5']),
   "generatedAt": zod.coerce.date(),
   "account": zod.object({
   "email": zod.string().nullable(),
@@ -10127,6 +10127,7 @@ export const GetMemberPrivacyRequestExportResponse = zod.object({
   "createdAt": zod.coerce.date().nullable(),
   "contactPhoneNumber": zod.string().max(getMemberPrivacyRequestExportResponseAccountContactPhoneNumberMax).nullable(),
   "contactPhoneNumberVerified": zod.boolean(),
+  "cityId": zod.string().nullable(),
   "profile": zod.union([zod.object({
   "gender": zod.string(),
   "birthDate": zod.coerce.date()

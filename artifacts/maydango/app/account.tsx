@@ -25,7 +25,7 @@ import {
 } from '@workspace/api-client-react';
 import { Text, TextInput, Pressable } from '@/components/Localized';
 import { dateTime, errorCopy } from '@/lib/content';
-import { getCityLabel } from '@/data/demo';
+import { cities, getCityLabel } from '@/data/demo';
 import { normalizeBirthDate, normalizeInternationalPhoneNumber } from '@/lib/registration-fields';
 import { useAuth, useClerk, useUser, useSignIn, useSignUp, useSSO } from '@clerk/expo';
 import * as AuthSession from 'expo-auth-session';
@@ -96,7 +96,7 @@ export default function AccountScreen() {
   const [selectedProfilePhoto, setSelectedProfilePhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [profilePhotoToken, setProfilePhotoToken] = useState<string | null>(null);
   const [birthDate, setBirthDate] = useState('');
-  const [pendingSignupProfile, setPendingSignupProfile] = useState<{ birthDate: string; phoneNumber: string } | null>(null);
+  const [pendingSignupProfile, setPendingSignupProfile] = useState<{ birthDate: string; phoneNumber: string; cityId: string } | null>(null);
   const [gender, setGender] = useState<'female' | 'male' | 'unspecified'>('unspecified');
   const birthDateSaveAttempt = useRef<string | null>(null);
   const saveBirthDateAction = useRef(app.saveBirthDate);
@@ -124,18 +124,22 @@ export default function AccountScreen() {
   }, [getToken, isSignedIn]);
   useEffect(() => {
     if (isSignedIn !== true || !user?.id || !pendingSignupProfile) return;
-    const attemptKey = `${user.id}:${pendingSignupProfile.birthDate}:${pendingSignupProfile.phoneNumber}`;
+    const attemptKey = `${user.id}:${pendingSignupProfile.birthDate}:${pendingSignupProfile.phoneNumber}:${pendingSignupProfile.cityId}`;
     if (birthDateSaveAttempt.current === attemptKey) return;
     birthDateSaveAttempt.current = attemptKey;
     let active = true;
     const saveSignupProfile = async () => {
       const currentUser = userResource.current;
       if (!currentUser) throw new Error(translate(app.language, 'memberBirthDateSaveError'));
-      if (currentUser.unsafeMetadata.maydangoContactPhone !== pendingSignupProfile.phoneNumber) {
+      if (
+        currentUser.unsafeMetadata.maydangoContactPhone !== pendingSignupProfile.phoneNumber
+        || currentUser.unsafeMetadata.maydangoCityId !== pendingSignupProfile.cityId
+      ) {
         await currentUser.update({
           unsafeMetadata: {
             ...currentUser.unsafeMetadata,
             maydangoContactPhone: pendingSignupProfile.phoneNumber,
+            maydangoCityId: pendingSignupProfile.cityId,
           },
         });
       }
@@ -228,6 +232,7 @@ export default function AccountScreen() {
       const normalizedLastName = lastName.trim();
       const normalizedPhoneNumber = normalizeInternationalPhoneNumber(phoneNumber);
       const normalizedBirthDate = normalizeBirthDate(birthDate);
+      const signupCityId = cities.find(city => city.id === app.selectedCityId)?.id;
       if (!normalizedFirstName || !normalizedLastName) {
         throw new Error(translate(app.language, 'memberNameRequired'));
       }
@@ -237,6 +242,9 @@ export default function AccountScreen() {
       if (!normalizedBirthDate) {
         throw new Error(translate(app.language, 'memberBirthDateInvalid'));
       }
+      if (!signupCityId) {
+        throw new Error(translate(app.language, 'memberSignupCityInvalid'));
+      }
       check(await signUp.password({
         emailAddress: email.trim(),
         password,
@@ -245,7 +253,7 @@ export default function AccountScreen() {
         unsafeMetadata: { maydangoContactPhone: normalizedPhoneNumber },
       }));
       setBirthDate(normalizedBirthDate);
-      setPendingSignupProfile({ birthDate: normalizedBirthDate, phoneNumber: normalizedPhoneNumber });
+      setPendingSignupProfile({ birthDate: normalizedBirthDate, phoneNumber: normalizedPhoneNumber, cityId: signupCityId });
       check(await signUp.verifications.sendEmailCode()); setVerify(true);
     } else {
       check(await signIn.password({ emailAddress: email.trim(), password }));
@@ -869,15 +877,19 @@ export default function AccountScreen() {
         {verify ? button('Send a new code', () => void run(async () => { check(mode === 'signup' ? await signUp.verifications.sendEmailCode() : await signIn.mfa.sendEmailCode()); })) : button('Continue with Google', () => void run(async () => {
           const socialSignupBirthDate = mode === 'signup' ? normalizeBirthDate(birthDate) : null;
           const socialSignupPhoneNumber = mode === 'signup' ? normalizeInternationalPhoneNumber(phoneNumber) : null;
+          const socialSignupCityId = mode === 'signup' ? cities.find(city => city.id === app.selectedCityId)?.id : null;
           if (mode === 'signup' && !socialSignupBirthDate) {
             throw new Error(translate(app.language, 'memberBirthDateInvalid'));
           }
           if (mode === 'signup' && !socialSignupPhoneNumber) {
             throw new Error(translate(app.language, 'memberPhoneInvalid'));
           }
-          if (socialSignupBirthDate && socialSignupPhoneNumber) {
+          if (mode === 'signup' && !socialSignupCityId) {
+            throw new Error(translate(app.language, 'memberSignupCityInvalid'));
+          }
+          if (socialSignupBirthDate && socialSignupPhoneNumber && socialSignupCityId) {
             setBirthDate(socialSignupBirthDate);
-            setPendingSignupProfile({ birthDate: socialSignupBirthDate, phoneNumber: socialSignupPhoneNumber });
+            setPendingSignupProfile({ birthDate: socialSignupBirthDate, phoneNumber: socialSignupPhoneNumber, cityId: socialSignupCityId });
           }
           const result = await startSSOFlow({ strategy: 'oauth_google', redirectUrl: AuthSession.makeRedirectUri() });
           if (!result.createdSessionId || !result.setActive) throw new Error('Sign-in was not completed. Try email and password.');

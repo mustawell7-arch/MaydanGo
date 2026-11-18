@@ -5,6 +5,7 @@ import {
   View,
 } from 'react-native';
 import { Text, Pressable, TextInput, Ionicons } from '@/components/Localized';
+import { useAuth, useUser } from '@clerk/expo';
 import { router } from 'expo-router';
 import { ScreenShell } from '@/components/ScreenShell';
 import { cities, getCityLabel } from '@/data/demo';
@@ -30,7 +31,11 @@ function regionLabel(region: string, language: 'en' | 'ar' | 'ku') {
 export default function CitiesScreen() {
   const colors = useColors();
   const app = useApp();
+  const { isSignedIn } = useAuth();
+  const { user } = useUser();
   const [query, setQuery] = useState('');
+  const [savingCity, setSavingCity] = useState(false);
+  const [citySyncError, setCitySyncError] = useState(false);
   const t = (key: Parameters<typeof translate>[1]) => translate(app.language, key);
   const filteredCities = useMemo(
     () =>
@@ -42,7 +47,28 @@ export default function CitiesScreen() {
     [query],
   );
 
-  const chooseCity = (cityId: string) => {
+  const chooseCity = async (cityId: string) => {
+    setCitySyncError(false);
+    if (isSignedIn && !user) {
+      setCitySyncError(true);
+      return;
+    }
+    if (user) {
+      setSavingCity(true);
+      try {
+        await user.update({
+          unsafeMetadata: {
+            ...user.unsafeMetadata,
+            maydangoCityId: cityId,
+          },
+        });
+      } catch {
+        setSavingCity(false);
+        setCitySyncError(true);
+        return;
+      }
+      setSavingCity(false);
+    }
     app.setSelectedCityId(cityId);
     router.back();
   };
@@ -88,8 +114,9 @@ export default function CitiesScreen() {
               <Pressable
                 key={city.id}
                 accessibilityRole="button"
-                accessibilityState={{ selected }}
-                onPress={() => chooseCity(city.id)}
+                accessibilityState={{ selected, disabled: savingCity }}
+                disabled={savingCity}
+                onPress={() => void chooseCity(city.id)}
                 style={[
                   styles.cityRow,
                   {
@@ -125,6 +152,11 @@ export default function CitiesScreen() {
             <Text style={[styles.noResults, { color: colors.mutedForeground }]}>{t('noPlaces')}</Text>
           ) : null}
         </View>
+        {citySyncError ? (
+          <Text accessibilityRole="alert" style={[styles.noResults, { color: colors.destructive }]}>
+            {t('citySyncError')}
+          </Text>
+        ) : null}
         <Text style={[styles.note, { color: colors.mutedForeground }]}>{t('nationwideNote')}</Text>
       </ScrollView>
     </ScreenShell>

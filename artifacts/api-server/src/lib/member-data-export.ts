@@ -274,6 +274,9 @@ export async function createMemberDataExport(userId: string) {
   const contactPhoneNumber = typeof accountUnsafeMetadata.maydangoContactPhone === "string"
     ? accountUnsafeMetadata.maydangoContactPhone
     : null;
+  const cityId = typeof accountUnsafeMetadata.maydangoCityId === "string"
+    ? accountUnsafeMetadata.maydangoCityId
+    : null;
   const verifiedContactPhoneNumber = accountPrivateMetadata.maydangoVerifiedContactPhone;
   let profilePhotoExport = {
     present: false,
@@ -311,7 +314,7 @@ export async function createMemberDataExport(userId: string) {
   }
 
   return GetMemberPrivacyRequestExportResponse.parse({
-      formatVersion: "1.4",
+      formatVersion: "1.5",
     generatedAt: new Date(),
     account: {
       email: account.primaryEmailAddress?.emailAddress ?? null,
@@ -321,6 +324,7 @@ export async function createMemberDataExport(userId: string) {
         contactPhoneNumber,
         contactPhoneNumberVerified: typeof verifiedContactPhoneNumber === "string"
           && verifiedContactPhoneNumber === contactPhoneNumber,
+        cityId,
       profile: profileRows[0] ?? null,
       profilePhoto: profilePhotoExport,
     },

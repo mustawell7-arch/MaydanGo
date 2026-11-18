@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -17,12 +17,13 @@ import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import { translate } from '@/lib/i18n';
-import { ClerkProvider, ClerkLoaded, useAuth } from '@clerk/expo';
+import { ClerkProvider, ClerkLoaded, useAuth, useUser } from '@clerk/expo';
 import { setBaseUrl, setAuthTokenGetter, setDeviceTokenGetter } from '@workspace/api-client-react';
 import { tokenCache } from '@clerk/expo/token-cache';
 import { getDeviceInstallationToken } from '@/lib/device-identity';
 import { DeviceSecurityProvider, useDeviceSecurity } from '@/contexts/DeviceSecurityContext';
 import { DeviceSecurityGate } from '@/components/DeviceSecurityGate';
+import { cities } from '@/data/demo';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -36,12 +37,27 @@ const proxyUrl = process.env.EXPO_PUBLIC_CLERK_PROXY_URL || undefined;
 
 function RootLayoutNav() {
   const { getToken, userId, isSignedIn } = useAuth();
+  const { user } = useUser();
   const device = useDeviceSecurity();
   const segments = useSegments();
+  const app = useApp();
+  const restoredCityForUser = useRef<string | null>(null);
   const isSupportRoute = segments[0] === 'support';
+  useEffect(() => {
+    if (isSignedIn !== true || !user?.id) {
+      restoredCityForUser.current = null;
+      return;
+    }
+    if (!app.hydrated || restoredCityForUser.current === user.id) return;
+    restoredCityForUser.current = user.id;
+    const savedCityId = user.unsafeMetadata.maydangoCityId;
+    if (typeof savedCityId === 'string' && cities.some(city => city.id === savedCityId)) {
+      app.setSelectedCityId(savedCityId);
+    }
+  }, [isSignedIn, user?.id, app.hydrated]);
   useEffect(() => { queryClient.clear(); }, [userId]);
   useEffect(() => { setAuthTokenGetter(() => getToken()); }, [getToken]);
-  const { language } = useApp();
+  const { language } = app;
   if (Platform.OS !== 'web' && isSignedIn && !isSupportRoute && (
     !device.status || device.loading || device.status.status === 'pending'
   )) {

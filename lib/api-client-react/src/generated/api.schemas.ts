@@ -920,6 +920,8 @@ export interface MemberDataExportAccount {
      */
   contactPhoneNumber: string | null;
   contactPhoneNumberVerified: boolean;
+  /** @nullable */
+  cityId: string | null;
   profile: MemberDataExportProfile | null;
   profilePhoto: MemberDataExportProfilePhoto;
 }
@@ -1097,7 +1099,7 @@ export type MemberDataExportFormatVersion = typeof MemberDataExportFormatVersion
 
 
 export const MemberDataExportFormatVersion = {
-  '14': '1.4',
+  '15': '1.5',
 } as const;
 
 export type MemberDataExportExcludedDataItem = typeof MemberDataExportExcludedDataItem[keyof typeof MemberDataExportExcludedDataItem];
