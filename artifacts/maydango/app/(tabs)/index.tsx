@@ -20,14 +20,18 @@ import { cityIdForFacility, facilityText } from '@/lib/facility-content';
 import { recommendHomeActivities } from '@/lib/home-activity-recommendations';
 import { getNewFacilities } from '@/lib/new-facility-recommendations';
 import { getNewOnlineCourses } from '@/lib/new-online-courses';
+import { getFeaturedInstructors } from '@/lib/featured-instructors';
+import { absoluteApiAssetUrl } from '@/lib/live-api';
 import {
   getGetPublicCatalogQueryKey,
   getGetPublicCoursesQueryKey,
   getGetPublicFacilitiesQueryKey,
+  getGetPublicInstructorProfilesQueryKey,
   getGetPublicSponsoredFacilitiesQueryKey,
   getGetPublicSponsoredContentQueryKey,
   useGetPublicSponsoredFacilities,
   useGetPublicSponsoredContent,
+  useGetPublicInstructorProfiles,
   useGetMemberCourses,
   useGetMemberLiveClasses,
   useGetMemberAllowances,
@@ -55,6 +59,13 @@ export default function HomeScreen() {
   });
   const publicCoursesQuery = useGetPublicCourses({
     query: { queryKey: getGetPublicCoursesQueryKey(), refetchInterval: 60_000 },
+  });
+  const instructorProfilesQuery = useGetPublicInstructorProfiles({
+    query: {
+      queryKey: getGetPublicInstructorProfilesQueryKey(),
+      refetchInterval: 60_000,
+      retry: false,
+    },
   });
   const sponsoredQuery = useGetPublicSponsoredFacilities({
     query: {
@@ -175,6 +186,10 @@ export default function HomeScreen() {
     () => getNewOnlineCourses(publicCoursesQuery.data ?? [], Date.now(), 4)
       .filter(course => !enrolledCourseIds.has(course.id)),
     [publicCoursesQuery.data, coursesQuery.data],
+  );
+  const featuredInstructors = useMemo(
+    () => getFeaturedInstructors(instructorProfilesQuery.data ?? [], 3),
+    [instructorProfilesQuery.data],
   );
   const upcomingEvents = useMemo(() => (eventsQuery.data ?? [])
     .filter((event) =>
@@ -823,6 +838,98 @@ export default function HomeScreen() {
             })}
           </>
         ) : null}
+        {instructorProfilesQuery.isLoading ? (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : instructorProfilesQuery.isError ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void instructorProfilesQuery.refetch()}
+            style={styles.emptyBooking}
+          >
+            <Text style={[styles.dashboardMeta, { color: colors.destructive }]}>
+              {t('instructorLoadError')}
+            </Text>
+          </Pressable>
+        ) : featuredInstructors.length ? (
+          <>
+            <View style={[styles.sectionHeader, styles.activitySectionHeader]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                  {t('featuredInstructors')}
+                </Text>
+                <Text style={[styles.sectionSub, { color: colors.mutedForeground }]}>
+                  {t('featuredInstructorsHint')}
+                </Text>
+              </View>
+              <Pressable accessibilityRole="button" onPress={() => router.push('/online')}>
+                <Text style={[styles.seeAll, { color: colors.primary }]}>{t('seeAll')}</Text>
+              </Pressable>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalCards}
+            >
+              {featuredInstructors.map(profile => {
+                const photoUrl = absoluteApiAssetUrl(profile.photoUrl);
+                return (
+                  <Pressable
+                    key={profile.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${profile.displayName}, ${numberFormat.format(profile.courses.length)} ${t('publishedCourses')}`}
+                    onPress={() => router.push('/online')}
+                    style={({ pressed }) => [
+                      styles.instructorCard,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border,
+                        opacity: pressed ? 0.9 : 1,
+                      },
+                    ]}
+                  >
+                    <View style={styles.instructorIdentity}>
+                      {photoUrl ? (
+                        <Image source={{ uri: photoUrl }} style={styles.instructorPhoto} />
+                      ) : (
+                        <View style={[styles.instructorPhotoFallback, { backgroundColor: colors.secondary }]}>
+                          <Ionicons name="person-outline" size={22} color={colors.primary} />
+                        </View>
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <Text numberOfLines={2} style={[styles.instructorName, { color: colors.foreground, textAlign: align }]}>
+                          {profile.displayName}
+                        </Text>
+                        <Text style={[styles.dashboardMeta, { color: colors.mutedForeground, textAlign: align }]}>
+                          {numberFormat.format(profile.courses.length)} {t('publishedCourses')}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={[styles.instructorCourses, { borderTopColor: colors.border }]}>
+                      {profile.courses.slice(0, 2).map(course => (
+                        <Text
+                          key={course.id}
+                          numberOfLines={2}
+                          style={[styles.instructorCourseTitle, { color: colors.foreground, textAlign: align }]}
+                        >
+                          {localized(course.localizedTitle)}
+                        </Text>
+                      ))}
+                    </View>
+                    <Text style={[styles.instructorViewCourses, { color: colors.primary, textAlign: align }]}>
+                      {t('viewCourses')}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </>
+        ) : (
+          <Text style={[styles.dashboardMeta, styles.emptyEvents, { color: colors.mutedForeground }]}>
+            {t('noFeaturedInstructors')}
+          </Text>
+        )}
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push({ pathname: '/explore', params: { kind: 'events' } })}
@@ -916,6 +1023,14 @@ const styles = StyleSheet.create({
   newOnlineCourseCard: { marginHorizontal: 20, marginBottom: 10, borderWidth: 1, borderRadius: 18, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 11 },
   newOnlineCourseIcon: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   newOnlineCourseMeta: { fontSize: 9, lineHeight: 14, fontWeight: '600' },
+  instructorCard: { width: 260, minHeight: 168, marginEnd: 10, borderWidth: 1, borderRadius: 18, padding: 13 },
+  instructorIdentity: { flexDirection: 'row', alignItems: 'center', gap: 11 },
+  instructorPhoto: { width: 48, height: 48, borderRadius: 16 },
+  instructorPhotoFallback: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  instructorName: { fontSize: 13, lineHeight: 18, fontWeight: '800' },
+  instructorCourses: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: 12, paddingTop: 9, gap: 5 },
+  instructorCourseTitle: { fontSize: 10, lineHeight: 14, fontWeight: '600' },
+  instructorViewCourses: { fontSize: 10, lineHeight: 14, fontWeight: '800', marginTop: 8 },
   courseThumbnail: { width: 62, height: 62, borderRadius: 14 },
   courseThumbnailFallback: { alignItems: 'center', justifyContent: 'center' },
   progressTrack: { height: 5, borderRadius: 5, marginTop: 8, overflow: 'hidden' },
