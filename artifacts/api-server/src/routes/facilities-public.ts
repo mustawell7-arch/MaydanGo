@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { and, asc, eq, gt, gte, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, isNull, sql } from "drizzle-orm";
 import {
   db,
   facilityHoursOverrides,
   facilityProfiles,
+  facilityReviews,
   offerings,
   partners,
 } from "@workspace/db";
@@ -58,6 +59,7 @@ async function publishedFacilities(id?: string) {
     endsAt: offerings.endsAt,
     accessType: offerings.accessType,
     tiers: offerings.tiers,
+    difficultyLevel: offerings.difficultyLevel,
     gender: offerings.gender,
     minAge: offerings.minAge,
     maxAge: offerings.maxAge,
@@ -74,6 +76,17 @@ async function publishedFacilities(id?: string) {
     ))
     .orderBy(asc(offerings.startsAt));
   const liveSessions = await filterSuspendedOfferings(sessionRows);
+  const ratingRows = await db.select({
+    facilityId: facilityReviews.facilityId,
+    reviewCount: sql<number>`count(*)::int`,
+    averageRating: sql<number | null>`round(avg(${facilityReviews.overallRating})::numeric, 1)`,
+  }).from(facilityReviews)
+    .where(and(
+      eq(facilityReviews.status, "published"),
+      inArray(facilityReviews.facilityId, profiles.map(row => row.profile.id)),
+    ))
+    .groupBy(facilityReviews.facilityId);
+  const ratingsByFacility = new Map(ratingRows.map(row => [row.facilityId, row]));
   const normalized = (value: string) => value.trim().toLocaleLowerCase("en");
 
   return profiles.map(({ profile, partnerName }) => {
@@ -82,6 +95,9 @@ async function publishedFacilities(id?: string) {
       ...profile,
       publishedAt: profile.publishedAt?.toISOString() ?? null,
       partnerName,
+      averageRating: ratingsByFacility.get(profile.id)?.averageRating == null
+        ? null : Number(ratingsByFacility.get(profile.id)?.averageRating),
+      reviewCount: ratingsByFacility.get(profile.id)?.reviewCount ?? 0,
       specialHours,
       ...openingState(profile.openingHours, now, specialHours),
       upcomingSessions: liveSessions.filter(session =>

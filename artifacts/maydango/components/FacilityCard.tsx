@@ -48,6 +48,12 @@ export function FacilityCard({
     ? facility.openingStatus === 'open' ? t('openStatus') :
       facility.openingStatus === 'closed' ? t('closedStatus') : t('hoursNotPublished')
     : localize(facility.openUntil, app.language);
+  const ratingLocale = app.language === 'ku' ? 'ckb-IQ' : app.language === 'ar' ? 'ar-IQ' : 'en-IQ';
+  const ratingSummary = isPublished
+    ? facility.averageRating === null
+      ? t('noRatingsYet')
+      : `${facility.averageRating.toFixed(1)} · ${new Intl.NumberFormat(ratingLocale).format(facility.reviewCount)} ${t('ratings')}`
+    : null;
   const sessionCaption = isPublished
     ? facility.upcomingSessions.length === 0 ? t('noPublishedSessions') : `${facility.upcomingSessions.length} ${t('sessions')}`
     : localize(facility.gender, app.language);
@@ -113,6 +119,12 @@ export function FacilityCard({
               {status}
             </Text>
           </View>
+          {ratingSummary ? (
+            <View style={styles.ratingRow} testID={`facility-rating-${facility.id}`}>
+              <Ionicons name="star" size={13} color={colors.accent} />
+              <Text style={[styles.ratingText, { color: colors.mutedForeground }]}>{ratingSummary}</Text>
+            </View>
+          ) : null}
       </Pressable>
     </View>
   );
@@ -170,4 +182,6 @@ const styles = StyleSheet.create({
   genderPill: { paddingHorizontal: 8, paddingVertical: 5, borderRadius: 11 },
   genderText: { fontSize: 10, fontWeight: '700' },
   openText: { fontSize: 10, fontWeight: '700' },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 9 },
+  ratingText: { fontSize: 11, fontWeight: '600' },
 });

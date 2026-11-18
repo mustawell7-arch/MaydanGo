@@ -55,6 +55,10 @@ export const getPublicFacilitiesResponseOneOpeningHoursItemDayMax = 6;
 
 export const getPublicFacilitiesResponseOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
 export const getPublicFacilitiesResponseOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getPublicFacilitiesResponseTwoAverageRatingMax = 5;
+
+export const getPublicFacilitiesResponseTwoReviewCountMin = 0;
+
 export const getPublicFacilitiesResponseTwoSpecialHoursItemLocalizedReasonEnMax = 500;
 
 export const getPublicFacilitiesResponseTwoSpecialHoursItemLocalizedReasonArMax = 500;
@@ -135,6 +139,8 @@ export const GetPublicFacilitiesResponseItem = zod.object({
   "openingStatus": zod.enum(['open', 'closed', 'unavailable']),
   "closesAt": zod.string().nullable(),
   "publishedAt": zod.coerce.date().nullable(),
+  "averageRating": zod.number().min(1).max(getPublicFacilitiesResponseTwoAverageRatingMax).nullable(),
+  "reviewCount": zod.int().min(getPublicFacilitiesResponseTwoReviewCountMin),
   "specialHours": zod.array(zod.object({
   "id": zod.string(),
   "facilityId": zod.string(),
@@ -168,6 +174,7 @@ export const GetPublicFacilitiesResponseItem = zod.object({
   "endsAt": zod.coerce.date(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
   "tiers": zod.array(zod.string()),
+  "difficultyLevel": zod.union([zod.enum(['all-levels', 'beginner', 'intermediate', 'advanced']),zod.null()]),
   "gender": zod.enum(['all', 'female', 'male']),
   "minAge": zod.int().min(getPublicFacilitiesResponseTwoUpcomingSessionsItemMinAgeMin),
   "maxAge": zod.int().min(getPublicFacilitiesResponseTwoUpcomingSessionsItemMaxAgeMin).nullable()
@@ -227,6 +234,10 @@ export const getPublicFacilityResponseOneOpeningHoursItemDayMax = 6;
 
 export const getPublicFacilityResponseOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
 export const getPublicFacilityResponseOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getPublicFacilityResponseTwoAverageRatingMax = 5;
+
+export const getPublicFacilityResponseTwoReviewCountMin = 0;
+
 export const getPublicFacilityResponseTwoSpecialHoursItemLocalizedReasonEnMax = 500;
 
 export const getPublicFacilityResponseTwoSpecialHoursItemLocalizedReasonArMax = 500;
@@ -307,6 +318,8 @@ export const GetPublicFacilityResponse = zod.object({
   "openingStatus": zod.enum(['open', 'closed', 'unavailable']),
   "closesAt": zod.string().nullable(),
   "publishedAt": zod.coerce.date().nullable(),
+  "averageRating": zod.number().min(1).max(getPublicFacilityResponseTwoAverageRatingMax).nullable(),
+  "reviewCount": zod.int().min(getPublicFacilityResponseTwoReviewCountMin),
   "specialHours": zod.array(zod.object({
   "id": zod.string(),
   "facilityId": zod.string(),
@@ -340,6 +353,7 @@ export const GetPublicFacilityResponse = zod.object({
   "endsAt": zod.coerce.date(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
   "tiers": zod.array(zod.string()),
+  "difficultyLevel": zod.union([zod.enum(['all-levels', 'beginner', 'intermediate', 'advanced']),zod.null()]),
   "gender": zod.enum(['all', 'female', 'male']),
   "minAge": zod.int().min(getPublicFacilityResponseTwoUpcomingSessionsItemMinAgeMin),
   "maxAge": zod.int().min(getPublicFacilityResponseTwoUpcomingSessionsItemMaxAgeMin).nullable()
@@ -1261,6 +1275,7 @@ export const GetPublicCatalogResponseItem = zod.object({
   "category": zod.string(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
   "tiers": zod.array(zod.string()),
+  "difficultyLevel": zod.union([zod.enum(['all-levels', 'beginner', 'intermediate', 'advanced']),zod.null()]),
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
   "cancellationDeadline": zod.coerce.date(),

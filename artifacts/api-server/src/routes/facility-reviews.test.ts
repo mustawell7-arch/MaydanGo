@@ -11,6 +11,7 @@ import {
 } from "@workspace/db";
 import memberReviewsRouter from "./member-reviews";
 import publicReviewsRouter from "./public-reviews";
+import facilitiesPublicRouter from "./facilities-public";
 import operationsReviewsRouter from "./operations-reviews";
 
 const prefix = `facility-reviews-${randomUUID()}`;
@@ -84,6 +85,7 @@ app.use((req, _res, next) => {
 });
 app.use("/member", memberReviewsRouter);
 app.use("/public", publicReviewsRouter);
+app.use("/public", facilitiesPublicRouter);
 app.use("/operations", operationsReviewsRouter);
 
 async function call(path: string, userId?: string, method = "GET", body?: unknown) {
@@ -190,6 +192,13 @@ test("reviews require confirmed visits and support reporting, moderation, and pa
   assert.equal(publicData.reviewCount, 1);
   assert.equal(publicData.averageRating, 4);
   assert.equal(publicData.reviews[0].id, review.id);
+  const facilitiesWithRatings = await call("/public/facilities");
+  assert.equal(facilitiesWithRatings.status, 200);
+  const ratedFacility = (facilitiesWithRatings.data as Array<{
+    id: string; averageRating: number | null; reviewCount: number;
+  }>).find(item => item.id === facilityA);
+  assert.equal(ratedFacility?.averageRating, 4);
+  assert.equal(ratedFacility?.reviewCount, 1);
 
   assert.equal((await call(`/member/reviews/${review.id}/reports`, userA, "POST", { reason: "other", details: null })).status, 404);
   const report = await call(`/member/reviews/${review.id}/reports`, userB, "POST", {
@@ -240,6 +249,12 @@ test("reviews require confirmed visits and support reporting, moderation, and pa
   const publicAfter = await call(`/public/facilities/${facilityA}/reviews`);
   assert.equal((publicAfter.data as { reviewCount: number; reviews: unknown[] }).reviewCount, 0);
   assert.equal((publicAfter.data as { reviews: unknown[] }).reviews.length, 0);
+  const facilitiesAfterModeration = await call("/public/facilities");
+  const facilityAfterModeration = (facilitiesAfterModeration.data as Array<{
+    id: string; averageRating: number | null; reviewCount: number;
+  }>).find(item => item.id === facilityA);
+  assert.equal(facilityAfterModeration?.averageRating, null);
+  assert.equal(facilityAfterModeration?.reviewCount, 0);
 
   const ownHistory = await call("/member/reviews", userA);
   assert.equal((ownHistory.data as { reviews: Array<{ id: string; status: string }> }).reviews[0].status, "hidden");

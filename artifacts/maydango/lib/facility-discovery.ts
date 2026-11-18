@@ -3,13 +3,21 @@ import type { Language } from "@/lib/i18n";
 
 export type DiscoveryTimeOfDay = "morning" | "afternoon" | "evening";
 export type DiscoveryAccessType = PublicFacilitySession["accessType"];
-export type DiscoverySession = Pick<PublicFacilitySession, "startsAt" | "accessType" | "tiers">;
+export type DiscoverySession = Pick<
+  PublicFacilitySession,
+  "startsAt" | "accessType" | "tiers" | "difficultyLevel"
+>;
+export type DiscoveryDifficultyFilter = Exclude<
+  NonNullable<PublicFacilitySession["difficultyLevel"]>,
+  "all-levels"
+>;
 
 export type DiscoverySessionFilters = {
   date: string | null;
   timeOfDay: DiscoveryTimeOfDay | null;
   accessType: DiscoveryAccessType | null;
   tier: string | null;
+  difficultyLevel: DiscoveryDifficultyFilter | null;
 };
 
 const timeZone = "Asia/Baghdad";
@@ -51,14 +59,20 @@ export function matchesDiscoverySessionFilters(
   filters: DiscoverySessionFilters,
 ): boolean {
   const hasFilters = filters.date !== null || filters.timeOfDay !== null
-    || filters.accessType !== null || filters.tier !== null;
+    || filters.accessType !== null || filters.tier !== null || filters.difficultyLevel !== null;
   if (!hasFilters) return true;
   return sessions.some(session =>
     (!filters.date || baghdadDateKey(session.startsAt) === filters.date) &&
     (!filters.timeOfDay || matchesTimeOfDay(session.startsAt, filters.timeOfDay)) &&
     (!filters.accessType || session.accessType === filters.accessType) &&
-    (!filters.tier || session.tiers.includes(filters.tier)),
+    (!filters.tier || session.tiers.includes(filters.tier)) &&
+    (!filters.difficultyLevel || session.difficultyLevel === "all-levels"
+      || session.difficultyLevel === filters.difficultyLevel),
   );
+}
+
+export function matchesMinimumFacilityRating(averageRating: number | null, minimumRating: number | null): boolean {
+  return minimumRating === null || (averageRating !== null && averageRating >= minimumRating);
 }
 
 export function formatDiscoveryDate(dateKey: string, language: Language): string {

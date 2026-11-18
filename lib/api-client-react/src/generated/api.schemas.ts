@@ -340,6 +340,16 @@ export const PublicFacilitySessionAccessType = {
   live: 'live',
 } as const;
 
+export type PublicFacilitySessionDifficultyLevel = typeof PublicFacilitySessionDifficultyLevel[keyof typeof PublicFacilitySessionDifficultyLevel] | null;
+
+
+export const PublicFacilitySessionDifficultyLevel = {
+  'all-levels': 'all-levels',
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
+} as const;
+
 export type PublicFacilitySessionGender = typeof PublicFacilitySessionGender[keyof typeof PublicFacilitySessionGender];
 
 
@@ -359,6 +369,7 @@ export interface PublicFacilitySession {
   endsAt: string;
   accessType: PublicFacilitySessionAccessType;
   tiers: string[];
+  difficultyLevel: PublicFacilitySessionDifficultyLevel;
   gender: PublicFacilitySessionGender;
   /** @minimum 0 */
   minAge: number;
@@ -385,6 +396,14 @@ export type PublicFacility = FacilityProfile & ({
   closesAt: string | null;
   /** @nullable */
   publishedAt: string | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     * @nullable
+     */
+  averageRating: number | null;
+  /** @minimum 0 */
+  reviewCount: number;
   specialHours: FacilityHoursOverride[];
   upcomingSessions: PublicFacilitySession[];
 });
@@ -405,6 +424,16 @@ export const PublicOfferingAccessType = {
   physical: 'physical',
   premium: 'premium',
   live: 'live',
+} as const;
+
+export type PublicOfferingDifficultyLevel = typeof PublicOfferingDifficultyLevel[keyof typeof PublicOfferingDifficultyLevel] | null;
+
+
+export const PublicOfferingDifficultyLevel = {
+  'all-levels': 'all-levels',
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
 } as const;
 
 export type PublicOfferingGender = typeof PublicOfferingGender[keyof typeof PublicOfferingGender];
@@ -437,6 +466,7 @@ export interface PublicOffering {
   category: string;
   accessType: PublicOfferingAccessType;
   tiers: string[];
+  difficultyLevel: PublicOfferingDifficultyLevel;
   startsAt: string;
   endsAt: string;
   cancellationDeadline: string;

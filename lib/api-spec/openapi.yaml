@@ -1218,7 +1218,7 @@ components:
               items: { $ref: "#/components/schemas/FacilityHoursOverride" }
     PublicFacilitySession:
       type: object
-      required: [id, title, localizedTitle, localizedInstructor, category, startsAt, endsAt, accessType, tiers, gender, minAge, maxAge]
+      required: [id, title, localizedTitle, localizedInstructor, category, startsAt, endsAt, accessType, tiers, difficultyLevel, gender, minAge, maxAge]
       properties:
         id: { type: string }
         title: { type: string }
@@ -1237,6 +1237,10 @@ components:
         tiers:
           type: array
           items: { type: string }
+        difficultyLevel:
+          anyOf:
+            - { type: string, enum: [all-levels, beginner, intermediate, advanced] }
+            - { type: "null" }
         gender: { type: string, enum: [all, female, male] }
         minAge: { type: integer, minimum: 0 }
         maxAge: { type: ["integer", "null"], minimum: 0 }
@@ -1244,12 +1248,14 @@ components:
       allOf:
         - { $ref: "#/components/schemas/FacilityProfile" }
         - type: object
-          required: [partnerName, openingStatus, closesAt, upcomingSessions, specialHours, publishedAt]
+          required: [partnerName, openingStatus, closesAt, upcomingSessions, specialHours, publishedAt, averageRating, reviewCount]
           properties:
             partnerName: { type: string }
             openingStatus: { type: string, enum: [open, closed, unavailable] }
             closesAt: { type: ["string", "null"] }
             publishedAt: { type: ["string", "null"], format: date-time }
+            averageRating: { type: ["number", "null"], minimum: 1, maximum: 5 }
+            reviewCount: { type: integer, minimum: 0 }
             specialHours:
               type: array
               items: { $ref: "#/components/schemas/FacilityHoursOverride" }
@@ -1258,7 +1264,7 @@ components:
               items: { $ref: "#/components/schemas/PublicFacilitySession" }
     PublicOffering:
       type: object
-      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, localizedInstructor, city, facility, category, accessType, tiers, startsAt, endsAt, cancellationDeadline, bookingCutoffMinutes, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
+      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, localizedInstructor, city, facility, category, accessType, tiers, difficultyLevel, startsAt, endsAt, cancellationDeadline, bookingCutoffMinutes, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
       properties:
         id: { type: string }
         kind: { type: string, enum: [session, event, coach] }
@@ -1286,6 +1292,10 @@ components:
         tiers:
           type: array
           items: { type: string }
+        difficultyLevel:
+          anyOf:
+            - { type: string, enum: [all-levels, beginner, intermediate, advanced] }
+            - { type: "null" }
         startsAt: { type: string, format: date-time }
         endsAt: { type: string, format: date-time }
         cancellationDeadline: { type: string, format: date-time }

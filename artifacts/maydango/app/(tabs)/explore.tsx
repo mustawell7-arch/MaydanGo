@@ -24,8 +24,10 @@ import { activityFavoriteId } from '@/lib/favorite-activities';
 import {
   baghdadDateKey,
   formatDiscoveryDate,
+  matchesMinimumFacilityRating,
   matchesDiscoverySessionFilters,
   type DiscoveryAccessType,
+  type DiscoveryDifficultyFilter,
   type DiscoveryTimeOfDay,
 } from '@/lib/facility-discovery';
 import { dateTime, timeOnly } from '@/lib/content';
@@ -52,6 +54,7 @@ function FilterRow({
   selected,
   onSelect,
   colors,
+  testIDPrefix,
 }: {
   title: string;
   anyLabel: string;
@@ -59,6 +62,7 @@ function FilterRow({
   selected: string | null;
   onSelect: (value: string | null) => void;
   colors: ReturnType<typeof useColors>;
+  testIDPrefix?: string;
 }) {
   if (!options.length) return null;
   return (
@@ -70,6 +74,7 @@ function FilterRow({
           return (
             <Pressable
               key={option.key || 'any'}
+              testID={testIDPrefix ? `${testIDPrefix}-${option.key || 'any'}` : undefined}
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
               onPress={() => onSelect(option.key || null)}
@@ -119,6 +124,8 @@ const params = useLocalSearchParams<{
   const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<DiscoveryTimeOfDay | null>(null);
   const [selectedAccessType, setSelectedAccessType] = useState<DiscoveryAccessType | null>(null);
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DiscoveryDifficultyFilter | null>(null);
+  const [minimumRating, setMinimumRating] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -226,6 +233,7 @@ const params = useLocalSearchParams<{
     timeOfDay: selectedTimeOfDay,
     accessType: selectedAccessType,
     tier: selectedTier,
+    difficultyLevel: selectedDifficulty,
   };
   const dateFilterSessions = kind === 'events'
     ? (eventsQuery.data ?? []).filter(event =>
@@ -255,6 +263,15 @@ const params = useLocalSearchParams<{
     { key: 'afternoon', label: t('afternoon') },
     { key: 'evening', label: t('evening') },
   ];
+  const difficultyOptions = [
+    { key: 'beginner', label: t('beginner') },
+    { key: 'intermediate', label: t('intermediate') },
+    { key: 'advanced', label: t('advanced') },
+  ];
+  const ratingOptions = [4, 4.5].map(value => ({
+    key: String(value),
+    label: t('ratingThreshold').replace('{n}', String(value)),
+  }));
   const visibleFacilities = useMemo(
     () => facilities.filter(facility => {
       const matchesCity = app.selectedCityId === 'all' || cityIdForFacility(facility.city) === app.selectedCityId;
@@ -286,12 +303,13 @@ const params = useLocalSearchParams<{
       const matchesAccessibility = !selectedAccessibility || facility.accessibility.some(item => JSON.stringify(item) === selectedAccessibility);
       const matchesEligibility = !selectedEligibility || facility.upcomingSessions.some(session => eligibilityKey(session) === selectedEligibility);
       const matchesSchedule = matchesDiscoverySessionFilters(facility.upcomingSessions, sessionFilters);
+      const matchesRating = matchesMinimumFacilityRating(facility.averageRating, minimumRating);
       return matchesCity && matchesDistrict && matchesText && matchesCategory && matchesAmenity && matchesAccessibility &&
-        matchesSchedule &&
+        matchesSchedule && matchesRating &&
         matchesEligibility && (!openNowOnly || facility.openingStatus === 'open');
     }),
     [facilities, app.selectedCityId, app.language, query, category, selectedAmenity, selectedAccessibility, selectedEligibility,
-      selectedDistrict, selectedDate, selectedTimeOfDay, selectedAccessType, selectedTier, openNowOnly],
+      selectedDistrict, selectedDate, selectedTimeOfDay, selectedAccessType, selectedTier, selectedDifficulty, minimumRating, openNowOnly],
   );
   const facilitiesWithDistance = useMemo(
     () => visibleFacilities.map(facility => ({
@@ -353,9 +371,9 @@ const params = useLocalSearchParams<{
         event.partnerName,
       ];
       const matchesText = searchValues.join(' ').toLocaleLowerCase().includes(query.toLocaleLowerCase());
-       return matchesCity && matchesText && matchesDiscoverySessionFilters([event], sessionFilters);
+      return matchesCity && matchesText && matchesDiscoverySessionFilters([event], sessionFilters);
     }),
-    [eventsQuery.data, app.selectedCityId, query, selectedDate, selectedTimeOfDay, selectedAccessType, selectedTier],
+    [eventsQuery.data, app.selectedCityId, query, selectedDate, selectedTimeOfDay, selectedAccessType, selectedTier, selectedDifficulty],
   );
   const align = app.language === 'en' ? 'left' : 'right';
   const distanceOptions = location ? [5, 10, 25].map(value => ({
@@ -487,6 +505,9 @@ const params = useLocalSearchParams<{
           selected={selectedAccessType} onSelect={value => setSelectedAccessType(value as DiscoveryAccessType | null)} colors={colors} />
         <FilterRow title={t('membershipLevelFilter')} anyLabel={t('anyMembershipLevel')} options={membershipLevelOptions}
           selected={selectedTier} onSelect={setSelectedTier} colors={colors} />
+        <FilterRow title={t('skillLevelFilter')} anyLabel={t('allLevels')} options={difficultyOptions}
+          selected={selectedDifficulty} onSelect={value => setSelectedDifficulty(value as DiscoveryDifficultyFilter | null)}
+          colors={colors} testIDPrefix="explore-skill" />
         {kind === 'events' ? (
           <View style={styles.list}>
             <Text style={[styles.eventsHint, { color: colors.mutedForeground, textAlign: align }]}>{t('eventsHint')}</Text>
@@ -684,6 +705,10 @@ const params = useLocalSearchParams<{
         </View>
         <FilterRow title={t('districtFilter')} anyLabel={t('anyDistrict')} options={districtOptions}
           selected={selectedDistrict} onSelect={setSelectedDistrict} colors={colors} />
+        <FilterRow title={t('ratingFilter')} anyLabel={t('anyRating')} options={ratingOptions}
+          selected={minimumRating === null ? null : String(minimumRating)}
+          onSelect={value => setMinimumRating(value === null ? null : Number(value))}
+          colors={colors} testIDPrefix="explore-rating" />
         <FilterRow title={t('amenities')} anyLabel={t('anyAmenity')} options={amenityOptions}
           selected={selectedAmenity} onSelect={setSelectedAmenity} colors={colors} />
         <FilterRow title={t('accessibility')} anyLabel={t('anyAccessNeed')} options={accessibilityOptions}

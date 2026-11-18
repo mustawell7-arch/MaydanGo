@@ -117,6 +117,7 @@ test("facility records stay partner-scoped and public listings require partner a
     facility: `${prefix} facility A`,
     category: "Fitness",
     tiers: ["M", "XL"],
+    difficultyLevel: "beginner",
     startsAt,
     endsAt: new Date(startsAt.getTime() + 60 * 60 * 1000),
     cancellationDeadline: new Date(startsAt.getTime() - 60 * 60 * 1000),
@@ -163,10 +164,19 @@ test("facility records stay partner-scoped and public listings require partner a
   assert.ok(!publicIds.includes(hiddenProfile));
   const publicFacilityA = (publicFacilities.data as Array<{
     id: string;
-    upcomingSessions: Array<{ tiers: string[]; localizedInstructor: { en: string } | null }>;
+    averageRating: number | null;
+    reviewCount: number;
+    upcomingSessions: Array<{
+      tiers: string[];
+      localizedInstructor: { en: string } | null;
+      difficultyLevel: string | null;
+    }>;
   }>).find(row => row.id === profileA);
   assert.deepEqual(publicFacilityA?.upcomingSessions[0]?.tiers, ["M", "XL"]);
   assert.equal(publicFacilityA?.upcomingSessions[0]?.localizedInstructor?.en, "Rana Ahmed");
+  assert.equal(publicFacilityA?.upcomingSessions[0]?.difficultyLevel, "beginner");
+  assert.equal(publicFacilityA?.averageRating, null);
+  assert.equal(publicFacilityA?.reviewCount, 0);
   assert.equal((await call(`/public/facilities/${hiddenProfile}`)).status, 404);
   const publicApprovedProfile = await call(`/public/facilities/${profileA}`);
   assert.equal(publicApprovedProfile.status, 200);
