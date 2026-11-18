@@ -15,6 +15,7 @@ import {
   useAcceptCorporateInvitation,
   useCreateMemberPrivacyRequest,
   useGetMemberConsents,
+  useGetPublicLegalPolicies,
   useGetMemberProfilePhoto,
   useGetMemberPrivacyRequests,
   useGetMemberReferrals,
@@ -71,6 +72,13 @@ export default function AccountScreen() {
   const completeProfilePhotoUpload = useCompleteMemberProfilePhotoUpload();
   const deleteProfilePhoto = useDeleteMemberProfilePhoto();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const signupPolicies = useGetPublicLegalPolicies({
+    query: { enabled: mode === 'signup' && isSignedIn !== true, retry: false },
+  });
+  const signupTermsVersion = signupPolicies.data?.find(policy => policy.policyKey === 'terms_of_use')?.version;
+  const signupPrivacyVersion = signupPolicies.data?.find(policy => policy.policyKey === 'privacy_policy')?.version;
+  const saveSignupConsentAction = useRef(saveConsents.mutateAsync);
+  saveSignupConsentAction.current = saveConsents.mutateAsync;
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -97,8 +105,14 @@ export default function AccountScreen() {
   const [profilePhotoToken, setProfilePhotoToken] = useState<string | null>(null);
   const [birthDate, setBirthDate] = useState('');
   const [pendingSignupProfile, setPendingSignupProfile] = useState<{ birthDate: string; phoneNumber: string; cityId: string } | null>(null);
+  const [pendingSignupConsent, setPendingSignupConsent] = useState<{
+    termsVersion: string;
+    privacyVersion: string;
+    marketingConsent: boolean;
+  } | null>(null);
   const [gender, setGender] = useState<'female' | 'male' | 'unspecified'>('unspecified');
   const birthDateSaveAttempt = useRef<string | null>(null);
+  const signupConsentSaveAttempt = useRef<string | null>(null);
   const saveBirthDateAction = useRef(app.saveBirthDate);
   saveBirthDateAction.current = app.saveBirthDate;
   const userResource = useRef(user);
@@ -157,6 +171,40 @@ export default function AccountScreen() {
     });
     return () => { active = false; };
   }, [isSignedIn, user?.id, pendingSignupProfile]);
+  useEffect(() => {
+    if (isSignedIn !== true || !user?.id || !pendingSignupConsent) return;
+    const attemptKey = `${user.id}:${pendingSignupConsent.termsVersion}:${pendingSignupConsent.privacyVersion}:${pendingSignupConsent.marketingConsent}`;
+    if (signupConsentSaveAttempt.current === attemptKey) return;
+    signupConsentSaveAttempt.current = attemptKey;
+    let active = true;
+    const saveSignupConsent = async () => {
+      await saveSignupConsentAction.current({
+        data: {
+          termsOfUseAccepted: true,
+          privacyPolicyAccepted: true,
+          marketingConsent: pendingSignupConsent.marketingConsent,
+          termsVersion: pendingSignupConsent.termsVersion,
+          privacyVersion: pendingSignupConsent.privacyVersion,
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: getGetMemberConsentsQueryKey() });
+      await app.refreshMember().catch(() => {});
+    };
+    void saveSignupConsent().then(() => {
+      if (!active) return;
+      setTermsAccepted(true);
+      setPrivacyAccepted(true);
+      setMarketingConsent(pendingSignupConsent.marketingConsent);
+      setPrivacyNotice(translate(app.language, 'memberConsentsSaved'));
+      setPendingSignupConsent(null);
+    }).catch(() => {
+      if (!active) return;
+      signupConsentSaveAttempt.current = null;
+      setPendingSignupConsent(null);
+      setError(translate(app.language, 'memberConsentsError'));
+    });
+    return () => { active = false; };
+  }, [isSignedIn, user?.id, pendingSignupConsent]);
   const run = async (fn: () => Promise<void>) => {
     if (busy) return;
     setBusy(true); setError('');
@@ -245,6 +293,12 @@ export default function AccountScreen() {
       if (!signupCityId) {
         throw new Error(translate(app.language, 'memberSignupCityInvalid'));
       }
+      if (!termsAccepted || !privacyAccepted) {
+        throw new Error(translate(app.language, 'memberSignupConsentRequired'));
+      }
+      if (!signupTermsVersion || !signupPrivacyVersion) {
+        throw new Error(translate(app.language, 'memberSignupPoliciesUnavailable'));
+      }
       check(await signUp.password({
         emailAddress: email.trim(),
         password,
@@ -254,6 +308,11 @@ export default function AccountScreen() {
       }));
       setBirthDate(normalizedBirthDate);
       setPendingSignupProfile({ birthDate: normalizedBirthDate, phoneNumber: normalizedPhoneNumber, cityId: signupCityId });
+      setPendingSignupConsent({
+        termsVersion: signupTermsVersion,
+        privacyVersion: signupPrivacyVersion,
+        marketingConsent,
+      });
       check(await signUp.verifications.sendEmailCode()); setVerify(true);
     } else {
       check(await signIn.password({ emailAddress: email.trim(), password }));
@@ -863,6 +922,71 @@ export default function AccountScreen() {
              <TextInput inputDirection="ltr" testID="auth-referral-code" accessibilityLabel={translate(app.language, 'memberReferralsInput')} placeholder={translate(app.language, 'memberReferralsInput')} placeholderTextColor={c.mutedForeground} value={referralCode} onChangeText={value => setReferralCode(value.toUpperCase())} autoCapitalize="characters" maxLength={10} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
              <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'memberCorporateCodeSignupHint')}</Text>
              <TextInput inputDirection="ltr" testID="auth-corporate-code" accessibilityLabel={translate(app.language, 'memberCorporateCodeInput')} placeholder={translate(app.language, 'memberCorporateCodeInput')} placeholderTextColor={c.mutedForeground} value={corporateCode} onChangeText={value => setCorporateCode(value)} autoCapitalize="none" autoCorrect={false} maxLength={128} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
+              <View style={[styles.privacyCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                <Text style={{ color: c.foreground, fontWeight: '800', fontSize: 16 }}>
+                  {translate(app.language, 'memberConsentsTitle')}
+                </Text>
+                <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>
+                  {translate(app.language, 'memberSignupConsentRequired')}
+                </Text>
+                {signupPolicies.isLoading ? (
+                  <Text style={{ color: c.mutedForeground }}>{translate(app.language, 'memberConsentsLoading')}</Text>
+                ) : !signupTermsVersion || !signupPrivacyVersion || signupPolicies.isError ? (
+                  <Text accessibilityRole="alert" style={{ color: c.destructive }}>
+                    {translate(app.language, 'memberSignupPoliciesUnavailable')}
+                  </Text>
+                ) : <>
+                  <Pressable
+                    accessibilityRole="link"
+                    onPress={() => router.push({
+                      pathname: '/policies/[policyKey]',
+                      params: { policyKey: 'terms_of_use', version: signupTermsVersion },
+                    })}
+                  >
+                    <Text style={{ color: c.primary, textDecorationLine: 'underline' }}>
+                      {translate(app.language, 'memberConsentsTermsName')} · {translate(app.language, 'memberConsentsReadPolicy')} · {signupTermsVersion}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="link"
+                    onPress={() => router.push({
+                      pathname: '/policies/[policyKey]',
+                      params: { policyKey: 'privacy_policy', version: signupPrivacyVersion },
+                    })}
+                  >
+                    <Text style={{ color: c.primary, textDecorationLine: 'underline' }}>
+                      {translate(app.language, 'memberConsentsPrivacyName')} · {translate(app.language, 'memberConsentsReadPolicy')} · {signupPrivacyVersion}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: termsAccepted }}
+                    onPress={() => setTermsAccepted(value => !value)}
+                  >
+                    <Text style={{ color: c.foreground }}>
+                      {termsAccepted ? '☑ ' : '☐ '}{translate(app.language, 'memberConsentsTerms')}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: privacyAccepted }}
+                    onPress={() => setPrivacyAccepted(value => !value)}
+                  >
+                    <Text style={{ color: c.foreground }}>
+                      {privacyAccepted ? '☑ ' : '☐ '}{translate(app.language, 'memberConsentsPrivacy')}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: marketingConsent }}
+                    onPress={() => setMarketingConsent(value => !value)}
+                  >
+                    <Text style={{ color: c.foreground }}>
+                      {marketingConsent ? '☑ ' : '☐ '}{translate(app.language, 'memberConsentsMarketing')}
+                    </Text>
+                  </Pressable>
+                </>}
+              </View>
            </> : null}
           <TextInput inputDirection="ltr" testID="auth-email" accessibilityLabel="Email address" placeholder="Email address" placeholderTextColor={c.mutedForeground} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
           <TextInput testID="auth-password" accessibilityLabel="Password" placeholder="Password" placeholderTextColor={c.mutedForeground} secureTextEntry value={password} onChangeText={setPassword} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
@@ -878,6 +1002,8 @@ export default function AccountScreen() {
           const socialSignupBirthDate = mode === 'signup' ? normalizeBirthDate(birthDate) : null;
           const socialSignupPhoneNumber = mode === 'signup' ? normalizeInternationalPhoneNumber(phoneNumber) : null;
           const socialSignupCityId = mode === 'signup' ? cities.find(city => city.id === app.selectedCityId)?.id : null;
+          const socialSignupTermsVersion = mode === 'signup' ? signupTermsVersion : null;
+          const socialSignupPrivacyVersion = mode === 'signup' ? signupPrivacyVersion : null;
           if (mode === 'signup' && !socialSignupBirthDate) {
             throw new Error(translate(app.language, 'memberBirthDateInvalid'));
           }
@@ -887,16 +1013,29 @@ export default function AccountScreen() {
           if (mode === 'signup' && !socialSignupCityId) {
             throw new Error(translate(app.language, 'memberSignupCityInvalid'));
           }
+          if (mode === 'signup' && (!termsAccepted || !privacyAccepted)) {
+            throw new Error(translate(app.language, 'memberSignupConsentRequired'));
+          }
+          if (mode === 'signup' && (!socialSignupTermsVersion || !socialSignupPrivacyVersion)) {
+            throw new Error(translate(app.language, 'memberSignupPoliciesUnavailable'));
+          }
           if (socialSignupBirthDate && socialSignupPhoneNumber && socialSignupCityId) {
             setBirthDate(socialSignupBirthDate);
             setPendingSignupProfile({ birthDate: socialSignupBirthDate, phoneNumber: socialSignupPhoneNumber, cityId: socialSignupCityId });
+            if (socialSignupTermsVersion && socialSignupPrivacyVersion) {
+              setPendingSignupConsent({
+                termsVersion: socialSignupTermsVersion,
+                privacyVersion: socialSignupPrivacyVersion,
+                marketingConsent,
+              });
+            }
           }
           const result = await startSSOFlow({ strategy: 'oauth_google', redirectUrl: AuthSession.makeRedirectUri() });
           if (!result.createdSessionId || !result.setActive) throw new Error('Sign-in was not completed. Try email and password.');
           await result.setActive({ session: result.createdSessionId });
           routeAfterAuthentication();
         }))}
-        <Pressable onPress={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setVerify(false); setReset('none'); setError(''); setPendingSignupProfile(null); signIn.reset(); signUp.reset(); }}>
+        <Pressable onPress={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setVerify(false); setReset('none'); setError(''); setPendingSignupProfile(null); setPendingSignupConsent(null); setTermsAccepted(false); setPrivacyAccepted(false); setMarketingConsent(false); signIn.reset(); signUp.reset(); }}>
           <Text style={{ color: c.primary }}>{mode === 'signin' ? 'New here? Create account' : 'Already registered? Sign in'}</Text>
         </Pressable>
       </>}
