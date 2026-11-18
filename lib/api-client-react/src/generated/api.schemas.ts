@@ -350,6 +350,14 @@ export const PublicFacilitySessionDifficultyLevel = {
   advanced: 'advanced',
 } as const;
 
+export type PublicFacilitySessionEnvironment = typeof PublicFacilitySessionEnvironment[keyof typeof PublicFacilitySessionEnvironment] | null;
+
+
+export const PublicFacilitySessionEnvironment = {
+  indoor: 'indoor',
+  outdoor: 'outdoor',
+} as const;
+
 export type PublicFacilitySessionGender = typeof PublicFacilitySessionGender[keyof typeof PublicFacilitySessionGender];
 
 
@@ -370,6 +378,7 @@ export interface PublicFacilitySession {
   accessType: PublicFacilitySessionAccessType;
   tiers: string[];
   difficultyLevel: PublicFacilitySessionDifficultyLevel;
+  environment: PublicFacilitySessionEnvironment;
   gender: PublicFacilitySessionGender;
   /** @minimum 0 */
   minAge: number;
@@ -436,6 +445,14 @@ export const PublicOfferingDifficultyLevel = {
   advanced: 'advanced',
 } as const;
 
+export type PublicOfferingEnvironment = typeof PublicOfferingEnvironment[keyof typeof PublicOfferingEnvironment] | null;
+
+
+export const PublicOfferingEnvironment = {
+  indoor: 'indoor',
+  outdoor: 'outdoor',
+} as const;
+
 export type PublicOfferingGender = typeof PublicOfferingGender[keyof typeof PublicOfferingGender];
 
 
@@ -467,6 +484,7 @@ export interface PublicOffering {
   accessType: PublicOfferingAccessType;
   tiers: string[];
   difficultyLevel: PublicOfferingDifficultyLevel;
+  environment: PublicOfferingEnvironment;
   startsAt: string;
   endsAt: string;
   cancellationDeadline: string;
@@ -2628,6 +2646,17 @@ export const OfferingInputDifficultyLevel = {
 /**
  * @nullable
  */
+export type OfferingInputEnvironment = typeof OfferingInputEnvironment[keyof typeof OfferingInputEnvironment] | null;
+
+
+export const OfferingInputEnvironment = {
+  indoor: 'indoor',
+  outdoor: 'outdoor',
+} as const;
+
+/**
+ * @nullable
+ */
 export type OfferingInputInstructionLanguage = typeof OfferingInputInstructionLanguage[keyof typeof OfferingInputInstructionLanguage] | null;
 
 
@@ -2706,6 +2735,8 @@ export interface OfferingInput {
   localizedInstructor?: LocalizedText | null;
   /** @nullable */
   difficultyLevel?: OfferingInputDifficultyLevel;
+  /** @nullable */
+  environment: OfferingInputEnvironment;
   /** @nullable */
   instructionLanguage?: OfferingInputInstructionLanguage;
   requiredEquipment?: LocalizedText | null;
@@ -2912,6 +2943,14 @@ export interface OfferingWaitlistEntry {
   respondedAt?: string | null;
 }
 
+export type OfferingUpdateEnvironment = typeof OfferingUpdateEnvironment[keyof typeof OfferingUpdateEnvironment];
+
+
+export const OfferingUpdateEnvironment = {
+  indoor: 'indoor',
+  outdoor: 'outdoor',
+} as const;
+
 export interface OfferingUpdate {
   /** @minimum 1 */
   capacity: number;
@@ -2920,6 +2959,7 @@ export interface OfferingUpdate {
      * @maximum 1440
      */
   waitlistOfferMinutes?: number;
+  environment?: OfferingUpdateEnvironment;
   localizedTitle?: LocalizedText;
   localizedDescription?: LocalizedText;
   /** @nullable */

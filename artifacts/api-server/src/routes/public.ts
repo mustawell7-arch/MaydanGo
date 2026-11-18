@@ -21,6 +21,7 @@ router.get("/catalog", async (_req, res) => {
       localizedDescription: offerings.localizedDescription,
       localizedInstructor: offerings.localizedInstructor,
       difficultyLevel: offerings.difficultyLevel,
+      environment: offerings.environment,
       instructions: offerings.instructions,
       imagePath: offerings.imagePath,
       city: offerings.city,

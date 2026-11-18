@@ -3,9 +3,10 @@ import type { Language } from "@/lib/i18n";
 
 export type DiscoveryTimeOfDay = "morning" | "afternoon" | "evening";
 export type DiscoveryAccessType = PublicFacilitySession["accessType"];
+export type DiscoveryEnvironmentFilter = Exclude<NonNullable<PublicFacilitySession["environment"]>, null>;
 export type DiscoverySession = Pick<
   PublicFacilitySession,
-  "startsAt" | "accessType" | "tiers" | "difficultyLevel"
+  "startsAt" | "accessType" | "tiers" | "difficultyLevel" | "environment"
 >;
 export type DiscoveryDifficultyFilter = Exclude<
   NonNullable<PublicFacilitySession["difficultyLevel"]>,
@@ -18,6 +19,7 @@ export type DiscoverySessionFilters = {
   accessType: DiscoveryAccessType | null;
   tier: string | null;
   difficultyLevel: DiscoveryDifficultyFilter | null;
+  environment: DiscoveryEnvironmentFilter | null;
 };
 
 const timeZone = "Asia/Baghdad";
@@ -59,7 +61,8 @@ export function matchesDiscoverySessionFilters(
   filters: DiscoverySessionFilters,
 ): boolean {
   const hasFilters = filters.date !== null || filters.timeOfDay !== null
-    || filters.accessType !== null || filters.tier !== null || filters.difficultyLevel !== null;
+    || filters.accessType !== null || filters.tier !== null || filters.difficultyLevel !== null
+    || (filters.environment !== null && filters.environment !== undefined);
   if (!hasFilters) return true;
   return sessions.some(session =>
     (!filters.date || baghdadDateKey(session.startsAt) === filters.date) &&
@@ -67,7 +70,8 @@ export function matchesDiscoverySessionFilters(
     (!filters.accessType || session.accessType === filters.accessType) &&
     (!filters.tier || session.tiers.includes(filters.tier)) &&
     (!filters.difficultyLevel || session.difficultyLevel === "all-levels"
-      || session.difficultyLevel === filters.difficultyLevel),
+      || session.difficultyLevel === filters.difficultyLevel) &&
+    (!filters.environment || session.environment === filters.environment),
   );
 }
 

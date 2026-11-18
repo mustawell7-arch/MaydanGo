@@ -276,6 +276,7 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Cancel session': 'إلغاء الجلسة', 'Cancel future series': 'إلغاء الجلسات القادمة',
     'Changes apply to this and all remaining future sessions. Reservations stay attached to their sessions. A session with an attendance record cannot have its date changed. Moving the selected date shifts the remaining dates by the same amount.': 'تُطبّق التغييرات على هذه الجلسة وكل الجلسات المستقبلية. تبقى الحجوزات مرتبطة بالجلسة نفسها. لا يمكن تغيير تاريخ جلسة لها سجل حضور. تغيير تاريخ الجلسة المحددة يزيح تواريخ الجلسات المتبقية بالمقدار نفسه.',
     'Make draft': 'تحويل إلى مسودة', 'Activate': 'تفعيل', 'Cancel': 'إلغاء', 'Capacity': 'السعة', 'Save': 'حفظ',
+    'Activity setting': 'مكان النشاط', 'Choose a setting': 'اختر مكان النشاط', 'Indoors': 'داخلي', 'Outdoors': 'خارجي',
     'Waitlist offer window (minutes)': 'مدة عرض قائمة الانتظار (دقيقة)', 'Save offer window': 'حفظ مدة العرض', 'Waitlist and offers': 'قائمة الانتظار والعروض',
     'Loading waitlist…': 'جارٍ تحميل قائمة الانتظار…', 'Waitlist unavailable. No member account details are shown.': 'تعذرت إتاحة قائمة الانتظار. لا تُعرض بيانات حسابات الأعضاء.',
     'No waitlist entries have been recorded.': 'لا توجد سجلات في قائمة الانتظار.', 'View the live queue for your upcoming offerings. The server shares queue order and timing only; member identities stay private in this view.': 'اعرض قائمة الانتظار المباشرة لعروضك القادمة. يعرض الخادم ترتيب الانتظار وتوقيته فقط؛ وتبقى هويات الأعضاء خاصة.',
@@ -424,6 +425,7 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Cancel session': 'وانە هەڵبوەشێنەوە', 'Cancel future series': 'زنجیرەی داهاتوو هەڵبوەشێنەوە',
     'Changes apply to this and all remaining future sessions. Reservations stay attached to their sessions. A session with an attendance record cannot have its date changed. Moving the selected date shifts the remaining dates by the same amount.': 'گۆڕانکارییەکان بۆ ئەم وانە و هەموو وانە داهاتووەکان جێبەجێ دەبن. حجزەکان بە هەمان وانەوە دەمێننەوە. بەرواری وانەیەک کە تۆماری ئامادەبوونی هەیە ناگۆڕدرێت. گۆڕینی بەرواری وانەی دیاریکراو بەروارەکانی داهاتوو بە هەمان بڕ دەگوازێتەوە.',
     'Make draft': 'بیکە بە ڕەشنووس', 'Activate': 'چالاکی بکە', 'Cancel': 'هەڵوەشاندنەوە', 'Capacity': 'توانا', 'Save': 'پاشەکەوت',
+    'Activity setting': 'شوێنی چالاکی', 'Choose a setting': 'شوێنی چالاکی هەڵبژێرە', 'Indoors': 'لەناوەوە', 'Outdoors': 'لەدەرەوە',
     'Waitlist offer window (minutes)': 'ماوەی ئۆفەری لیستی چاوەڕوانی (خولەک)', 'Save offer window': 'ماوەی ئۆفەر پاشەکەوت بکە', 'Waitlist and offers': 'لیستی چاوەڕوانی و ئۆفەرەکان',
     'Loading waitlist…': 'لیستی چاوەڕوانی بار دەکرێت…', 'Waitlist unavailable. No member account details are shown.': 'لیستی چاوەڕوانی بەردەست نییە. وردەکاریی هەژماری ئەندامان نیشان نادرێت.',
     'No waitlist entries have been recorded.': 'هیچ تۆمارێک لە لیستی چاوەڕوانی نییە.', 'View the live queue for your upcoming offerings. The server shares queue order and timing only; member identities stay private in this view.': 'ڕیزی چاوەڕوانیی پێشکەشکراوە داهاتووەکان ببینە. سێرڤەر تەنها ڕیز و کات پیشان دەدات؛ ناسنامەی ئەندامان تایبەت دەمێنێتەوە.',
@@ -536,7 +538,7 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
   const [selectedPartnerId, setSelectedPartnerId] = useState(partnerId);
   const [form, setForm] = useState({
     title: '', kind: 'session' as OfferingInput['kind'], facilityProfileId: '', city: '', facility: '', category: '', accessType: 'physical' as OfferingInput['accessType'],
-    startsAt: '', endsAt: '', cancellationDeadline: '', bookingCutoffMinutes: '0', capacity: '', waitlistOfferMinutes: '30', gender: 'all' as NonNullable<OfferingInput['gender']>, minAge: '', maxAge: '', joinUrl: '', tiers: '', instructions: '', active: false,
+    environment: '', startsAt: '', endsAt: '', cancellationDeadline: '', bookingCutoffMinutes: '0', capacity: '', waitlistOfferMinutes: '30', gender: 'all' as NonNullable<OfferingInput['gender']>, minAge: '', maxAge: '', joinUrl: '', tiers: '', instructions: '', active: false,
     localizedTitleEn: '', localizedTitleAr: '', localizedTitleKu: '',
     localizedDescriptionEn: '', localizedDescriptionAr: '', localizedDescriptionKu: '',
     localizedInstructorEn: '', localizedInstructorAr: '', localizedInstructorKu: '',
@@ -607,6 +609,7 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
     if (!selectedFacility) { setMessage('Choose a shared facility record before creating this offering.'); return; }
     if (!selectedFacility.activities.length) { setMessage('Add at least one activity to the facility profile before creating an offering.'); return; }
     const isLive = form.accessType === 'live';
+    if (!isLive && form.environment !== 'indoor' && form.environment !== 'outdoor') { setMessage('Choose whether this in-person activity is indoors or outdoors.'); return; }
     if (isLive && [form.localizedTitleEn, form.localizedTitleAr, form.localizedTitleKu, form.localizedDescriptionEn, form.localizedDescriptionAr, form.localizedDescriptionKu, form.localizedInstructorEn, form.localizedInstructorAr, form.localizedInstructorKu, form.requiredEquipmentEn, form.requiredEquipmentAr, form.requiredEquipmentKu].some(value => !value.trim())) {
       setMessage('Live online offerings need a title, description, instructor name, and equipment details in English, Iraqi Arabic, and Sorani.');
       return;
@@ -647,7 +650,7 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
     }
     const data: OfferingInput = {
       partnerId: selectedPartnerId, title: form.title.trim(), kind: form.kind, city: selectedFacility.city, facility: selectedFacility.facility, category: form.category.trim(),
-      accessType: form.accessType, tiers: splitLocalizedCommaList(form.tiers),
+      accessType: form.accessType, environment: isLive ? null : form.environment as 'indoor' | 'outdoor', tiers: splitLocalizedCommaList(form.tiers),
       startsAt: localIso(form.startsAt), endsAt: localIso(form.endsAt), cancellationDeadline: localIso(form.cancellationDeadline),
       bookingCutoffMinutes: Number(form.bookingCutoffMinutes), instructions: form.instructions.trim() || null,
       imagePath,
@@ -713,6 +716,7 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
         }}><option value="">{facilitiesQuery.isLoading ? 'Loading shared facilities…' : 'Choose a shared facility'}</option>{facilityRecords.map(item => <option key={item.id} value={item.id}>{item.localizedName[lang] || item.facility} · {item.city}</option>)}</select>{!facilitiesQuery.isLoading && facilityRecords.length === 0 && <span className="mt-1 block text-[11px] font-normal text-[#9a4435]">Create a shared facility record before adding sessions.</span>}{selectedFacility && <span className="mt-1 block text-[11px] font-normal text-[#75847c]">{selectedFacility.localizedAddress[lang]}</span>}</LabelField>
         <LabelField label="Approved activity category">{selectedFacility?.activities.length ? <select required className={fieldClass()} value={form.category} onChange={e => update('category', e.target.value)}><option value="">Choose a facility activity</option>{selectedFacility.activities.map(activity => <option key={activity.en} value={activity.en}>{activity[lang] || activity.en}</option>)}</select> : <p className="rounded-xl bg-[#f2dfd5] px-3 py-2 text-xs leading-5 text-[#9a4435]">Add activity categories to this facility profile before creating an offering.</p>}</LabelField>
         <LabelField label="Access"><select className={fieldClass()} value={form.accessType} onChange={e => update('accessType', e.target.value)}><option value="physical">In person</option><option value="premium">Premium</option><option value="live">Live online</option></select></LabelField>
+        {form.accessType !== 'live' && <LabelField label={portalText(lang, 'Activity setting')}><select required className={fieldClass()} value={form.environment} onChange={e => update('environment', e.target.value)}><option value="">{portalText(lang, 'Choose a setting')}</option><option value="indoor">{portalText(lang, 'Indoors')}</option><option value="outdoor">{portalText(lang, 'Outdoors')}</option></select></LabelField>}
         {form.accessType === 'live' && <div className="rounded-2xl border border-[#dbcbb1] bg-[#f2ebda] p-4 sm:col-span-2">
           <p className="text-sm font-bold text-[#36564b]">Online class details</p>
           <p className="mt-1 text-xs leading-5 text-[#687a71]">Provide translations for all three supported languages and a secure HTTPS access link.</p>
@@ -1273,12 +1277,18 @@ export default function PartnerPortal() {
     const start = String(values.get('startsAt') || '');
     const end = String(values.get('endsAt') || '');
     const deadline = String(values.get('cancellationDeadline') || '');
+    const environment = String(values.get('environment') || '');
     if (!start || !end || !deadline) {
       setNotice('Enter a start, end, and cancellation deadline.');
       return;
     }
+    if (item.accessType !== 'live' && environment !== 'indoor' && environment !== 'outdoor') {
+      setNotice('Choose whether this in-person activity is indoors or outdoors.');
+      return;
+    }
     const data: OfferingUpdate = {
       capacity: Number(values.get('capacity')),
+      ...(item.accessType !== 'live' ? { environment: environment as 'indoor' | 'outdoor' } : {}),
       startsAt: localIso(start),
       endsAt: localIso(end),
       cancellationDeadline: localIso(deadline),
@@ -1402,6 +1412,7 @@ export default function PartnerPortal() {
                     </div>
                     <h2 className="mt-3 font-display text-xl font-bold">{item.localizedTitle?.[language] || item.title}</h2>
                     <p className="mt-1 text-sm text-[#687a71]">{item.facility}, {item.city} · {item.category}</p>
+                    {item.accessType !== 'live' && <p className="mt-1 text-xs text-[#75847c]">{portalText(language, 'Activity setting')}: {item.environment ? portalText(language, item.environment === 'indoor' ? 'Indoors' : 'Outdoors') : portalText(language, 'Choose a setting')}</p>}
                     {item.imageUrl && <img src={item.imageUrl} alt={item.localizedTitle?.[language] || item.title} loading="lazy" referrerPolicy="no-referrer" className="mt-3 aspect-[16/8] max-h-48 w-full rounded-xl object-cover sm:max-w-sm" />}
                     {item.instructions && <p className="mt-2 whitespace-pre-line text-xs leading-5 text-[#687a71]">{item.instructions}</p>}
                     <p className="mt-3 text-xs text-[#75847c]">{formatDate(item.startsAt)} – {formatDate(item.endsAt)}{item.remaining !== undefined ? ` · ${item.remaining} remaining` : ''}</p>
@@ -1436,6 +1447,7 @@ export default function PartnerPortal() {
                   <LabelField label="Ends at"><input required name="endsAt" type="datetime-local" defaultValue={dateTimeInputBaghdad(item.endsAt)} className={fieldClass()} /></LabelField>
                   <LabelField label="Cancellation deadline"><input required name="cancellationDeadline" type="datetime-local" defaultValue={dateTimeInputBaghdad(item.cancellationDeadline)} className={fieldClass()} /></LabelField>
                   <LabelField label="Capacity"><input required min="1" name="capacity" defaultValue={item.capacity} type="number" className={fieldClass()} /></LabelField>
+                  {item.accessType !== 'live' && <LabelField label={portalText(language, 'Activity setting')}><select required name="environment" defaultValue={item.environment ?? ''} className={fieldClass()}><option value="" disabled>{portalText(language, 'Choose a setting')}</option><option value="indoor">{portalText(language, 'Indoors')}</option><option value="outdoor">{portalText(language, 'Outdoors')}</option></select></LabelField>}
                   <div className="flex items-end gap-2"><Button type="submit" disabled={updateOffering.isPending || updateOfferingSeries.isPending}>Save</Button><Button kind="quiet" onClick={() => setEditing(null)}>Close</Button></div>
                 </form>}
                 {!item.cancelledAt && <form className="mt-4 flex flex-wrap items-end gap-3 rounded-2xl bg-[#f2efe4] p-4" onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); handleStatus(item.id, item.capacity, Number(data.get('waitlistOfferMinutes'))); }}>

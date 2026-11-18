@@ -418,7 +418,7 @@ test("live operations: staff scope, approved inventory, server grants and quota 
     const p = await call("/operations/partners", adminId, "POST", { name: "Isolated test partner", groupId: prefix, ownerUserId: partnerUser });
     assert.equal(p.status, 201); partnerIds.push(p.data.id);
     const offerBody = { partnerId: p.data.id, title: "Isolated live test", kind: "session", city: "baghdad", facility: prefix,
-      category: "fitness", accessType: "physical", tiers: ["M"], startsAt: new Date(now + 86400000).toISOString(),
+      category: "fitness", accessType: "physical", environment: "indoor", tiers: ["M"], startsAt: new Date(now + 86400000).toISOString(),
       endsAt: new Date(now + 90000000).toISOString(), cancellationDeadline: new Date(now + 80000000).toISOString(), capacity: 2, active: false };
     await t.test("partner cannot self-approve, manage plans, or publish unapproved inventory", async () => {
       assert.equal((await call(`/operations/partners/${p.data.id}`, partnerUser, "PATCH", { approved: true })).status, 403);
@@ -769,7 +769,7 @@ test("live operations: staff scope, approved inventory, server grants and quota 
     await t.test("live class details are localized and join links stay private until eligibility checks pass", async () => {
       const start = new Date(Date.now() + 10 * 60_000);
       const liveBody = {
-        ...offerBody, title: "Online mobility", accessType: "live",
+        ...offerBody, title: "Online mobility", accessType: "live", environment: null,
         startsAt: start.toISOString(),
         endsAt: new Date(start.getTime() + 60 * 60_000).toISOString(),
         cancellationDeadline: new Date(start.getTime() - 5 * 60_000).toISOString(),
@@ -791,6 +791,7 @@ test("live operations: staff scope, approved inventory, server grants and quota 
       const catalog = await call("/member/live-catalog", alice);
       const card = catalog.data.find((row: any) => row.id === created.data.id);
       assert.equal(card.localizedTitle.ku, "جووڵەی ئۆنلاین");
+      assert.equal(card.environment, null);
       assert.equal(card.joinUrl, undefined);
       const beforeBooking = await call("/member/live-classes", alice);
       const session = beforeBooking.data.find((row: any) => row.id === created.data.id);

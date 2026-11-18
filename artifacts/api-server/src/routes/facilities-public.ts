@@ -60,6 +60,7 @@ async function publishedFacilities(id?: string) {
     accessType: offerings.accessType,
     tiers: offerings.tiers,
     difficultyLevel: offerings.difficultyLevel,
+    environment: offerings.environment,
     gender: offerings.gender,
     minAge: offerings.minAge,
     maxAge: offerings.maxAge,

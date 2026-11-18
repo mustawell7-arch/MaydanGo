@@ -623,6 +623,9 @@ async function assertOfferingReadyForReview(tx: Tx, row: OfferingRow) {
   if (row.cancelledAt || row.startsAt <= new Date()) {
     throw new BookingError(409, "Only a future, uncancelled activity can be submitted or published.");
   }
+  if (row.accessType !== "live" && row.environment !== "indoor" && row.environment !== "outdoor") {
+    throw new BookingError(400, "Choose whether this in-person activity is indoors or outdoors before publishing.");
+  }
   if (!row.partnerId) throw new BookingError(409, "This activity is not assigned to a partner.");
   const [partner] = await tx.select().from(partners).where(eq(partners.id, row.partnerId)).for("share");
   if (!partner?.approved) throw new BookingError(403, "Partner approval is required before activity review.");
@@ -840,6 +843,9 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
     own(res, selected.partnerId);
     if (selected.cancelledAt) throw new BookingError(409, "Cancelled offerings cannot be edited or republished. Create a replacement.");
     if (selected.startsAt <= new Date()) throw new BookingError(409, "Past offerings cannot be edited.");
+    if (selected.accessType === "live" && data.environment !== undefined) {
+      throw new BookingError(400, "Live online classes do not use an indoor or outdoor setting.");
+    }
     if (isPartnerOperatorRole(res.locals.operator.role) && selected.partnerId) {
       const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
         eq(facilityProfiles.partnerId, selected.partnerId),
@@ -873,7 +879,7 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
     for (const row of rows) own(res, row.partnerId);
 
     const contentChanged = data.localizedTitle !== undefined
-      || data.localizedDescription !== undefined || data.joinUrl !== undefined;
+      || data.localizedDescription !== undefined || data.joinUrl !== undefined || data.environment !== undefined;
     const partnerContentEdit = isPartnerOperatorRole(res.locals.operator.role) && contentChanged;
     if (partnerContentEdit && rows.some(row =>
       ["submitted", "under_review", "rejected", "archived"].includes(row.approvalStatus))) {
@@ -1016,6 +1022,7 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
       const [updated] = await tx.update(offerings).set({
         capacity: data.capacity,
         ...(data.waitlistOfferMinutes !== undefined ? { waitlistOfferMinutes: data.waitlistOfferMinutes } : {}),
+        ...(data.environment !== undefined ? { environment: data.environment } : {}),
         ...(needsReview ? {
           active: false,
           approvalStatus: "submitted" as const,

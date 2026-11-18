@@ -175,6 +175,9 @@ export default function LiveScreen() {
           </View>
           <Text raw style={{ color: c.foreground, fontSize: 18, fontWeight: '800' }}>{o.title}</Text>
           <Text raw style={{ color: c.mutedForeground }}>{o.partnerName ?? ''} · {o.facility} · {o.city}</Text>
+          {o.accessType !== 'live' ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
+            {t('activitySettingFilter')}: {o.environment ? t(o.environment) : t('settingNotListed')}
+          </Text> : null}
           <Text style={{ color: c.foreground }}>{dateTime(o.startsAt, app.language)}</Text>
           <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Free cancellation until {dateTime(o.cancellationDeadline, app.language)}</Text>
           {o.additionalPayment ? <Text style={{ color: c.destructive, fontSize: 12, fontWeight: '700' }}>Additional payment required. Booking is unavailable until payments launch.</Text> : null}

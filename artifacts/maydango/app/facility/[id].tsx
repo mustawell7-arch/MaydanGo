@@ -369,7 +369,9 @@ function FacilityDetails({ facility }: { facility: PublicFacility }) {
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.sessionTime, { color: colors.primary }]}>{dateTime(session.startsAt, app.language)}</Text>
                   <Text style={[styles.sessionName, { color: colors.foreground }]}>{session.localizedTitle?.[app.language] ?? session.title}</Text>
-                  <Text style={[styles.sessionMeta, { color: colors.mutedForeground }]}>{session.category} · {session.accessType}</Text>
+                  <Text style={[styles.sessionMeta, { color: colors.mutedForeground }]}>
+                    {session.category} · {session.accessType} · {session.environment ? t(session.environment) : t('settingNotListed')}
+                  </Text>
                   <Text style={[styles.sessionEligibility, { color: colors.mutedForeground }]}>
                     {t('sessionSuitability')}: {eligibilityLabel(session, app.language)}
                   </Text>

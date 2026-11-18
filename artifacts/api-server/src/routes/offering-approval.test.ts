@@ -99,6 +99,7 @@ test("activity review is scoped, audited, and cannot bypass booking safeguards",
     facility: "Studio",
     category: "fitness",
     accessType: "physical",
+    environment: "indoor",
     tiers: ["M"],
     startsAt: "2099-03-14T09:00:00+03:00",
     endsAt: "2099-03-14T10:00:00+03:00",
@@ -116,6 +117,12 @@ test("activity review is scoped, audited, and cannot bypass booking safeguards",
   createdOfferingIds = [activity.id];
   assert.equal(activity.approvalStatus, "draft");
   assert.equal(activity.active, false);
+  assert.equal((created.data as { environment: string | null }).environment, "indoor");
+  const settingUpdated = await call(`/operations/offerings/${activity.id}`, partnerUserId, "PATCH", {
+    capacity: 2, environment: "outdoor",
+  });
+  assert.equal(settingUpdated.status, 200);
+  assert.equal((settingUpdated.data as { environment: string | null }).environment, "outdoor");
 
   assert.equal((await call(`/operations/offerings/${activity.id}/submit`, otherPartnerUserId, "POST")).status, 403);
   const directPublishAttempt = await call(`/operations/offerings/${activity.id}`, partnerUserId, "PATCH", {

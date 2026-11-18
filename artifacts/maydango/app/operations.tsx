@@ -122,13 +122,14 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
     requiredEquipmentEn: '', requiredEquipmentAr: '', requiredEquipmentKu: '',
     difficultyLevel: 'all-levels' as NonNullable<Offering['difficultyLevel']>,
     instructionLanguage: 'mixed' as NonNullable<Offering['instructionLanguage']>,
-    accessType: 'physical' as Offering['accessType'], tiers: ['M'] as string[], startsAt: '', endsAt: '', cancellationDeadline: '', capacity: '12', gender: 'all' as 'all' | 'female' | 'male', minAge: '0', maxAge: '', additionalPayment: false, active: true });
+    accessType: 'physical' as Offering['accessType'], environment: 'not_set' as 'indoor' | 'outdoor' | 'not_set', tiers: ['M'] as string[], startsAt: '', endsAt: '', cancellationDeadline: '', capacity: '12', gender: 'all' as 'all' | 'female' | 'male', minAge: '0', maxAge: '', additionalPayment: false, active: true });
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [caps, setCaps] = useState<Record<string, string>>({});
   const set = (k: keyof typeof f) => (v: string) => setF(x => ({ ...x, [k]: v }));
   const create = async () => {
     const err = !f.partnerId ? 'Choose a partner.' : !f.title.trim() || !f.city.trim() || !f.facility.trim() || !f.category.trim() ? 'Title, city, facility and category are required.'
+      : f.accessType !== 'live' && f.environment === 'not_set' ? 'Choose whether this in-person activity is indoors or outdoors.'
       : ![f.startsAt, f.endsAt, f.cancellationDeadline].every(validDate) ? 'Use dates like 2025-06-01T18:00.'
       : iraqInstant(f.endsAt) <= iraqInstant(f.startsAt) ? 'End must be after start.' : iraqInstant(f.cancellationDeadline) > iraqInstant(f.startsAt) ? 'Cancellation deadline must be before start.'
       : !isInt(f.capacity, 1) ? 'Capacity must be a whole number of at least 1.' : !f.tiers.length ? 'Select at least one tier.'
@@ -158,7 +159,7 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
           joinUrl: joinUrl.trim() || null,
         } : {}),
         startsAt: iraqInstant(f.startsAt).toISOString(), endsAt: iraqInstant(f.endsAt).toISOString(), cancellationDeadline: iraqInstant(f.cancellationDeadline).toISOString(),
-        capacity: Number(f.capacity), minAge: Number(f.minAge), maxAge: f.maxAge ? Number(f.maxAge) : null, additionalPayment: f.additionalPayment } });
+         environment: f.accessType === 'live' ? null : f.environment as 'indoor' | 'outdoor', capacity: Number(f.capacity), minAge: Number(f.minAge), maxAge: f.maxAge ? Number(f.maxAge) : null, additionalPayment: f.additionalPayment } });
       setMsg({ ok: true, text: 'Offering saved.' }); setF(x => ({ ...x, title: '' })); await refresh();
     } catch (e) { setMsg(fail(e)); } finally { setBusy(null); }
   };
@@ -187,6 +188,7 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
       <Field c={c} label="TITLE" value={f.title} onChange={set('title')} />
        <Choice c={c} label="TYPE" options={['session', 'event', 'coach'] as const} value={f.kind} onChange={v => setF(x => ({ ...x, kind: v }))} names={{ session: 'Session', event: 'Event', coach: 'Coaching' }} />
        <Choice c={c} label="ACCESS" options={['physical', 'premium', 'live'] as const} value={f.accessType} onChange={v => setF(x => ({ ...x, accessType: v, ...(v === 'live' ? { kind: 'session' as const } : {}) }))} names={{ physical: 'Physical', premium: 'Premium', live: 'Live online' }} />
+        {f.accessType !== 'live' ? <Choice c={c} label="ACTIVITY SETTING" options={['not_set', 'indoor', 'outdoor'] as const} value={f.environment} onChange={v => setF(x => ({ ...x, environment: v }))} names={{ not_set: 'Choose a setting', indoor: 'Indoors', outdoor: 'Outdoors' }} /> : null}
        {f.accessType === 'live' ? <>
          <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Member-facing details are required in all three app languages. The join link is only returned to an eligible member who has booked and is inside the join window.</Text>
          <View style={s.wrap}><Field c={c} label="TITLE · ENGLISH" value={f.localizedTitleEn} onChange={set('localizedTitleEn')} /><Field c={c} label="العنوان · العربية العراقية" value={f.localizedTitleAr} onChange={set('localizedTitleAr')} /><Field c={c} label="ناونیشان · سۆرانی" value={f.localizedTitleKu} onChange={set('localizedTitleKu')} /></View>

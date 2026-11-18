@@ -1218,7 +1218,7 @@ components:
               items: { $ref: "#/components/schemas/FacilityHoursOverride" }
     PublicFacilitySession:
       type: object
-      required: [id, title, localizedTitle, localizedInstructor, category, startsAt, endsAt, accessType, tiers, difficultyLevel, gender, minAge, maxAge]
+      required: [id, title, localizedTitle, localizedInstructor, category, startsAt, endsAt, accessType, tiers, difficultyLevel, environment, gender, minAge, maxAge]
       properties:
         id: { type: string }
         title: { type: string }
@@ -1240,6 +1240,10 @@ components:
         difficultyLevel:
           anyOf:
             - { type: string, enum: [all-levels, beginner, intermediate, advanced] }
+            - { type: "null" }
+        environment:
+          anyOf:
+            - { type: string, enum: [indoor, outdoor] }
             - { type: "null" }
         gender: { type: string, enum: [all, female, male] }
         minAge: { type: integer, minimum: 0 }
@@ -1264,7 +1268,7 @@ components:
               items: { $ref: "#/components/schemas/PublicFacilitySession" }
     PublicOffering:
       type: object
-      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, localizedInstructor, city, facility, category, accessType, tiers, difficultyLevel, startsAt, endsAt, cancellationDeadline, bookingCutoffMinutes, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
+      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, localizedInstructor, city, facility, category, accessType, tiers, difficultyLevel, environment, startsAt, endsAt, cancellationDeadline, bookingCutoffMinutes, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
       properties:
         id: { type: string }
         kind: { type: string, enum: [session, event, coach] }
@@ -1295,6 +1299,10 @@ components:
         difficultyLevel:
           anyOf:
             - { type: string, enum: [all-levels, beginner, intermediate, advanced] }
+            - { type: "null" }
+        environment:
+          anyOf:
+            - { type: string, enum: [indoor, outdoor] }
             - { type: "null" }
         startsAt: { type: string, format: date-time }
         endsAt: { type: string, format: date-time }

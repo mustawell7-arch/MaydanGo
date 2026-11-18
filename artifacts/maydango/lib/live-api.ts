@@ -25,6 +25,7 @@ export type Offering = {
   localizedDescription?: { en: string; ar: string; ku: string } | null;
   localizedInstructor?: { en: string; ar: string; ku: string } | null;
   difficultyLevel?: 'all-levels' | 'beginner' | 'intermediate' | 'advanced' | null;
+  environment: 'indoor' | 'outdoor' | null;
   instructionLanguage?: 'en' | 'ar' | 'ku' | 'mixed' | null;
   requiredEquipment?: { en: string; ar: string; ku: string } | null;
   joinUrl?: string | null; canJoin?: boolean;

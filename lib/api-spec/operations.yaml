@@ -4363,7 +4363,7 @@ components:
             enum: [membership_sales, renewals, membership_cancellations, churn, revenue, failed_payments, partner_cost, gross_margin, event_revenue, instructor_performance, referral_performance, promotion_performance, fraud_alerts, refund_rate, chargeback_rate, estimated_earnings, accounting_export]
     OfferingInput:
       type: object
-      required: [partnerId, title, kind, city, facility, category, accessType, tiers, startsAt, endsAt, cancellationDeadline, capacity, active]
+      required: [partnerId, title, kind, city, facility, category, accessType, environment, tiers, startsAt, endsAt, cancellationDeadline, capacity, active]
       properties:
         partnerId: { type: string }
         title: { type: string }
@@ -4385,6 +4385,9 @@ components:
         difficultyLevel:
           type: ["string", "null"]
           enum: [all-levels, beginner, intermediate, advanced, null]
+        environment:
+          type: ["string", "null"]
+          enum: [indoor, outdoor, null]
         instructionLanguage:
           type: ["string", "null"]
           enum: [en, ar, ku, mixed, null]
@@ -4530,6 +4533,7 @@ components:
       properties:
         capacity: { type: integer, minimum: 1 }
         waitlistOfferMinutes: { type: integer, minimum: 5, maximum: 1440 }
+        environment: { type: string, enum: [indoor, outdoor] }
         localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
         localizedDescription: { $ref: "#/components/schemas/LocalizedText" }
         joinUrl: { type: ["string", "null"], format: uri }

@@ -75,6 +75,7 @@ export const offerings = pgTable("booking_offerings", {
   bookingCutoffMinutes: integer("booking_cutoff_minutes").notNull().default(0),
   localizedInstructor: jsonb("localized_instructor").$type<LocalizedText | null>(),
   difficultyLevel: text("difficulty_level"),
+  environment: text("environment"),
   instructionLanguage: text("instruction_language"),
   requiredEquipment: jsonb("required_equipment").$type<LocalizedText | null>(),
   joinUrl: text("join_url"),

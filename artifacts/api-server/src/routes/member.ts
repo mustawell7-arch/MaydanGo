@@ -447,7 +447,7 @@ router.get("/live-catalog", async (_req, res) => {
     id: o.id, targetId: o.targetId, slot: o.slot, scope: o.scope,
     partnerId: o.partnerId, partnerName, title: o.title,
     localizedTitle: o.localizedTitle, localizedDescription: o.localizedDescription,
-    kind: o.kind, city: o.city, facility: o.facility, category: o.category, accessType: o.accessType,
+     kind: o.kind, city: o.city, facility: o.facility, category: o.category, accessType: o.accessType, environment: o.environment,
     tiers: o.tiers, startsAt: o.startsAt, endsAt: o.endsAt, cancellationDeadline: o.cancellationDeadline,
      capacity: o.capacity, waitlistOfferMinutes: o.waitlistOfferMinutes, gender: o.gender, minAge: o.minAge, maxAge: o.maxAge,
     additionalPayment: o.additionalPayment, active: o.active, cancelledAt: o.cancelledAt,

@@ -28,6 +28,7 @@ import {
   matchesDiscoverySessionFilters,
   type DiscoveryAccessType,
   type DiscoveryDifficultyFilter,
+  type DiscoveryEnvironmentFilter,
   type DiscoveryTimeOfDay,
 } from '@/lib/facility-discovery';
 import { dateTime, timeOnly } from '@/lib/content';
@@ -125,6 +126,7 @@ const params = useLocalSearchParams<{
   const [selectedAccessType, setSelectedAccessType] = useState<DiscoveryAccessType | null>(null);
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<DiscoveryDifficultyFilter | null>(null);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<DiscoveryEnvironmentFilter | null>(null);
   const [minimumRating, setMinimumRating] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [location, setLocation] = useState<Coordinates | null>(null);
@@ -234,6 +236,7 @@ const params = useLocalSearchParams<{
     accessType: selectedAccessType,
     tier: selectedTier,
     difficultyLevel: selectedDifficulty,
+    environment: selectedEnvironment,
   };
   const dateFilterSessions = kind === 'events'
     ? (eventsQuery.data ?? []).filter(event =>
@@ -267,6 +270,10 @@ const params = useLocalSearchParams<{
     { key: 'beginner', label: t('beginner') },
     { key: 'intermediate', label: t('intermediate') },
     { key: 'advanced', label: t('advanced') },
+  ];
+  const environmentOptions = [
+    { key: 'indoor', label: t('indoor') },
+    { key: 'outdoor', label: t('outdoor') },
   ];
   const ratingOptions = [4, 4.5].map(value => ({
     key: String(value),
@@ -309,7 +316,7 @@ const params = useLocalSearchParams<{
         matchesEligibility && (!openNowOnly || facility.openingStatus === 'open');
     }),
     [facilities, app.selectedCityId, app.language, query, category, selectedAmenity, selectedAccessibility, selectedEligibility,
-      selectedDistrict, selectedDate, selectedTimeOfDay, selectedAccessType, selectedTier, selectedDifficulty, minimumRating, openNowOnly],
+       selectedDistrict, selectedDate, selectedTimeOfDay, selectedAccessType, selectedTier, selectedDifficulty, selectedEnvironment, minimumRating, openNowOnly],
   );
   const facilitiesWithDistance = useMemo(
     () => visibleFacilities.map(facility => ({
@@ -508,6 +515,9 @@ const params = useLocalSearchParams<{
         <FilterRow title={t('skillLevelFilter')} anyLabel={t('allLevels')} options={difficultyOptions}
           selected={selectedDifficulty} onSelect={value => setSelectedDifficulty(value as DiscoveryDifficultyFilter | null)}
           colors={colors} testIDPrefix="explore-skill" />
+        <FilterRow title={t('activitySettingFilter')} anyLabel={t('anyActivitySetting')} options={environmentOptions}
+          selected={selectedEnvironment} onSelect={value => setSelectedEnvironment(value as DiscoveryEnvironmentFilter | null)}
+          colors={colors} testIDPrefix="explore-environment" />
         {kind === 'events' ? (
           <View style={styles.list}>
             <Text style={[styles.eventsHint, { color: colors.mutedForeground, textAlign: align }]}>{t('eventsHint')}</Text>
@@ -583,6 +593,9 @@ const params = useLocalSearchParams<{
                       </Text>
                       <Text style={[styles.eventDetailText, { color: colors.foreground, textAlign: align }]}>
                         {t('eventEligibility')}: {eligibilityLabel(event, app.language)}
+                      </Text>
+                      <Text style={[styles.eventDetailText, { color: colors.foreground, textAlign: align }]}>
+                        {t('activitySettingFilter')}: {event.environment ? t(event.environment) : t('settingNotListed')}
                       </Text>
                       {eligibleTiers ? (
                         <Text style={[styles.eventDetailText, { color: colors.foreground, textAlign: align }]}>

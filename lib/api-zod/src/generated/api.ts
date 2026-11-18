@@ -175,6 +175,7 @@ export const GetPublicFacilitiesResponseItem = zod.object({
   "accessType": zod.enum(['physical', 'premium', 'live']),
   "tiers": zod.array(zod.string()),
   "difficultyLevel": zod.union([zod.enum(['all-levels', 'beginner', 'intermediate', 'advanced']),zod.null()]),
+  "environment": zod.union([zod.enum(['indoor', 'outdoor']),zod.null()]),
   "gender": zod.enum(['all', 'female', 'male']),
   "minAge": zod.int().min(getPublicFacilitiesResponseTwoUpcomingSessionsItemMinAgeMin),
   "maxAge": zod.int().min(getPublicFacilitiesResponseTwoUpcomingSessionsItemMaxAgeMin).nullable()
@@ -354,6 +355,7 @@ export const GetPublicFacilityResponse = zod.object({
   "accessType": zod.enum(['physical', 'premium', 'live']),
   "tiers": zod.array(zod.string()),
   "difficultyLevel": zod.union([zod.enum(['all-levels', 'beginner', 'intermediate', 'advanced']),zod.null()]),
+  "environment": zod.union([zod.enum(['indoor', 'outdoor']),zod.null()]),
   "gender": zod.enum(['all', 'female', 'male']),
   "minAge": zod.int().min(getPublicFacilityResponseTwoUpcomingSessionsItemMinAgeMin),
   "maxAge": zod.int().min(getPublicFacilityResponseTwoUpcomingSessionsItemMaxAgeMin).nullable()
@@ -1276,6 +1278,7 @@ export const GetPublicCatalogResponseItem = zod.object({
   "accessType": zod.enum(['physical', 'premium', 'live']),
   "tiers": zod.array(zod.string()),
   "difficultyLevel": zod.union([zod.enum(['all-levels', 'beginner', 'intermediate', 'advanced']),zod.null()]),
+  "environment": zod.union([zod.enum(['indoor', 'outdoor']),zod.null()]),
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
   "cancellationDeadline": zod.coerce.date(),
@@ -1743,6 +1746,7 @@ export const GetOperationsResponse = zod.object({
   "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedInstructorOneKuMax)
 }),zod.null()]).optional(),
   "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "environment": zod.union([zod.literal('indoor'),zod.literal('outdoor'),zod.literal(null)]).nullable(),
   "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
   "requiredEquipment": zod.union([zod.object({
   "en": zod.string().min(1).max(getOperationsResponseOfferingsItemOneRequiredEquipmentOneEnMax),
@@ -3459,6 +3463,7 @@ export const AddLiveOfferingBody = zod.object({
   "ku": zod.string().min(1).max(addLiveOfferingBodyLocalizedInstructorOneKuMax)
 }),zod.null()]).optional(),
   "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "environment": zod.union([zod.literal('indoor'),zod.literal('outdoor'),zod.literal(null)]).nullable(),
   "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
   "requiredEquipment": zod.union([zod.object({
   "en": zod.string().min(1).max(addLiveOfferingBodyRequiredEquipmentOneEnMax),
@@ -3555,6 +3560,7 @@ export const AddLiveOfferingResponse = zod.object({
   "ku": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedInstructorOneKuMax)
 }),zod.null()]).optional(),
   "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "environment": zod.union([zod.literal('indoor'),zod.literal('outdoor'),zod.literal(null)]).nullable(),
   "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
   "requiredEquipment": zod.union([zod.object({
   "en": zod.string().min(1).max(addLiveOfferingResponseOneRequiredEquipmentOneEnMax),
@@ -3715,6 +3721,7 @@ export const CreateRecurringOfferingsBody = zod.object({
   "ku": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedInstructorOneKuMax)
 }),zod.null()]).optional(),
   "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "environment": zod.union([zod.literal('indoor'),zod.literal('outdoor'),zod.literal(null)]).nullable(),
   "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
   "requiredEquipment": zod.union([zod.object({
   "en": zod.string().min(1).max(createRecurringOfferingsBodyTemplateRequiredEquipmentOneEnMax),
@@ -3820,6 +3827,7 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "ku": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedInstructorOneKuMax)
 }),zod.null()]).optional(),
   "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "environment": zod.union([zod.literal('indoor'),zod.literal('outdoor'),zod.literal(null)]).nullable(),
   "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
   "requiredEquipment": zod.union([zod.object({
   "en": zod.string().min(1).max(createRecurringOfferingsResponseOneRequiredEquipmentOneEnMax),
@@ -3902,6 +3910,7 @@ export const changeLiveOfferingBodyLocalizedDescriptionKuMax = 240;
 export const ChangeLiveOfferingBody = zod.object({
   "capacity": zod.int().min(1),
   "waitlistOfferMinutes": zod.int().min(changeLiveOfferingBodyWaitlistOfferMinutesMin).max(changeLiveOfferingBodyWaitlistOfferMinutesMax).optional(),
+  "environment": zod.enum(['indoor', 'outdoor']).optional(),
   "localizedTitle": zod.object({
   "en": zod.string().min(1).max(changeLiveOfferingBodyLocalizedTitleEnMax),
   "ar": zod.string().min(1).max(changeLiveOfferingBodyLocalizedTitleArMax),
@@ -3989,6 +3998,7 @@ export const ChangeLiveOfferingResponse = zod.object({
   "ku": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedInstructorOneKuMax)
 }),zod.null()]).optional(),
   "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "environment": zod.union([zod.literal('indoor'),zod.literal('outdoor'),zod.literal(null)]).nullable(),
   "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
   "requiredEquipment": zod.union([zod.object({
   "en": zod.string().min(1).max(changeLiveOfferingResponseOneRequiredEquipmentOneEnMax),
@@ -4097,6 +4107,7 @@ export const changeRecurringOfferingSeriesBodyLocalizedDescriptionKuMax = 240;
 export const ChangeRecurringOfferingSeriesBody = zod.object({
   "capacity": zod.int().min(1),
   "waitlistOfferMinutes": zod.int().min(changeRecurringOfferingSeriesBodyWaitlistOfferMinutesMin).max(changeRecurringOfferingSeriesBodyWaitlistOfferMinutesMax).optional(),
+  "environment": zod.enum(['indoor', 'outdoor']).optional(),
   "localizedTitle": zod.object({
   "en": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedTitleEnMax),
   "ar": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedTitleArMax),
@@ -4184,6 +4195,7 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
   "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedInstructorOneKuMax)
 }),zod.null()]).optional(),
   "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "environment": zod.union([zod.literal('indoor'),zod.literal('outdoor'),zod.literal(null)]).nullable(),
   "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
   "requiredEquipment": zod.union([zod.object({
   "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneRequiredEquipmentOneEnMax),
@@ -4327,6 +4339,7 @@ export const SubmitLiveOfferingResponse = zod.object({
   "ku": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedInstructorOneKuMax)
 }),zod.null()]).optional(),
   "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "environment": zod.union([zod.literal('indoor'),zod.literal('outdoor'),zod.literal(null)]).nullable(),
   "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
   "requiredEquipment": zod.union([zod.object({
   "en": zod.string().min(1).max(submitLiveOfferingResponseOneRequiredEquipmentOneEnMax),
@@ -4467,6 +4480,7 @@ export const RespondToOfferingCorrectionResponse = zod.object({
   "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedInstructorOneKuMax)
 }),zod.null()]).optional(),
   "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "environment": zod.union([zod.literal('indoor'),zod.literal('outdoor'),zod.literal(null)]).nullable(),
   "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
   "requiredEquipment": zod.union([zod.object({
   "en": zod.string().min(1).max(respondToOfferingCorrectionResponseOneRequiredEquipmentOneEnMax),
@@ -4608,6 +4622,7 @@ export const ReviewOfferingApprovalResponse = zod.object({
   "ku": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedInstructorOneKuMax)
 }),zod.null()]).optional(),
   "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "environment": zod.union([zod.literal('indoor'),zod.literal('outdoor'),zod.literal(null)]).nullable(),
   "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
   "requiredEquipment": zod.union([zod.object({
   "en": zod.string().min(1).max(reviewOfferingApprovalResponseOneRequiredEquipmentOneEnMax),
@@ -10094,6 +10109,7 @@ export const GetLiveCatalogResponseItem = zod.object({
   "ku": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedInstructorOneKuMax)
 }),zod.null()]).optional(),
   "difficultyLevel": zod.union([zod.literal('all-levels'),zod.literal('beginner'),zod.literal('intermediate'),zod.literal('advanced'),zod.literal(null)]).nullish(),
+  "environment": zod.union([zod.literal('indoor'),zod.literal('outdoor'),zod.literal(null)]).nullable(),
   "instructionLanguage": zod.union([zod.literal('en'),zod.literal('ar'),zod.literal('ku'),zod.literal('mixed'),zod.literal(null)]).nullish(),
   "requiredEquipment": zod.union([zod.object({
   "en": zod.string().min(1).max(getLiveCatalogResponseOneRequiredEquipmentOneEnMax),

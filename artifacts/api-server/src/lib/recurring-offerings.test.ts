@@ -11,6 +11,7 @@ const template = offeringInput.parse({
   facility: "Studio",
   category: "fitness",
   accessType: "physical",
+  environment: "indoor",
   tiers: ["M"],
   startsAt: "2099-01-04T09:00:00+03:00",
   endsAt: "2099-01-04T10:00:00+03:00",

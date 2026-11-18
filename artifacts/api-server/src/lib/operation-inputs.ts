@@ -145,6 +145,7 @@ export const offeringInput = z.object({
   bookingCutoffMinutes: z.number().int().min(0).max(10080).default(0),
   localizedInstructor: localizedText.nullable().optional(),
   difficultyLevel: z.enum(["all-levels", "beginner", "intermediate", "advanced"]).nullable().optional(),
+  environment: z.enum(["indoor", "outdoor"]).nullable(),
   instructionLanguage: z.enum(["en", "ar", "ku", "mixed"]).nullable().optional(),
   requiredEquipment: localizedText.nullable().optional(),
   joinUrl: secureUrl.nullable().optional(),
@@ -160,6 +161,12 @@ export const offeringInput = z.object({
   maxAge: z.number().int().min(0).max(120).nullable().default(null),
   additionalPayment: z.boolean().default(false), active: z.boolean(),
 }).strict().superRefine((o, ctx) => {
+  if (o.accessType === "live" && o.environment !== null) {
+    ctx.addIssue({ code: "custom", path: ["environment"], message: "Live online classes do not use an indoor or outdoor setting." });
+  }
+  if (o.accessType !== "live" && o.environment === null) {
+    ctx.addIssue({ code: "custom", path: ["environment"], message: "Choose whether this in-person activity is indoors or outdoors." });
+  }
   if (o.accessType === "live" && o.active) {
     if (!o.localizedTitle) ctx.addIssue({ code: "custom", path: ["localizedTitle"], message: "Live classes need English, Arabic and Sorani titles." });
     if (!o.localizedDescription) ctx.addIssue({ code: "custom", path: ["localizedDescription"], message: "Live classes need English, Arabic and Sorani descriptions." });
