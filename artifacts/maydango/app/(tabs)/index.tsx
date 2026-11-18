@@ -22,6 +22,7 @@ import { getNewFacilities } from '@/lib/new-facility-recommendations';
 import { getNewOnlineCourses } from '@/lib/new-online-courses';
 import { getFeaturedInstructors } from '@/lib/featured-instructors';
 import { getRecentlyVisitedFacilities } from '@/lib/recently-visited-facilities';
+import { activityFavoriteId, getFavoriteActivities } from '@/lib/favorite-activities';
 import { absoluteApiAssetUrl } from '@/lib/live-api';
 import {
   getGetPublicCatalogQueryKey,
@@ -164,10 +165,11 @@ export default function HomeScreen() {
         facilityId: facility.id,
         savedPlace: app.favorites.includes(facility.id),
         previouslyBooked: bookedFacilities.has(name),
+        preferredActivity: app.favoriteActivities.includes(activityFavoriteId(activity.en)),
       }));
     });
     return recommendHomeActivities(candidates);
-  }, [facilitiesQuery.data, app.selectedCityId, app.favorites, app.serverBookings]);
+  }, [facilitiesQuery.data, app.selectedCityId, app.favorites, app.favoriteActivities, app.serverBookings]);
   const newFacilities = useMemo(
     () => getNewFacilities(
       facilitiesQuery.data ?? [],
@@ -205,6 +207,13 @@ export default function HomeScreen() {
   const recentlyVisitedFacilities = useMemo(
     () => getRecentlyVisitedFacilities(recentVisitsQuery.data ?? [], Date.now(), 4),
     [recentVisitsQuery.data],
+  );
+  const favoriteActivities = useMemo(
+    () => getFavoriteActivities(
+      (facilitiesQuery.data ?? []).flatMap(facility => facility.activities),
+      app.favoriteActivities,
+    ),
+    [facilitiesQuery.data, app.favoriteActivities],
   );
   const upcomingEvents = useMemo(() => (eventsQuery.data ?? [])
     .filter((event) =>
@@ -1014,6 +1023,75 @@ export default function HomeScreen() {
             )}
           </>
         ) : null}
+        <View style={[styles.sectionHeader, styles.activitySectionHeader]}>
+          <View>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              {t('favoriteActivities')}
+            </Text>
+            <Text style={[styles.sectionSub, { color: colors.mutedForeground }]}>
+              {t('favoriteActivitiesHint')}
+            </Text>
+          </View>
+        </View>
+        {favoriteActivities.length ? (
+          <View style={styles.favoriteActivityList}>
+            {favoriteActivities.map(activity => {
+              const label = facilityText(activity, app.language);
+              const favoriteId = activityFavoriteId(activity.en);
+              return (
+                <View
+                  key={favoriteId}
+                  style={[
+                    styles.favoriteActivityChip,
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                  ]}
+                >
+                  <Pressable
+                    testID={`favorite-activity-open-${favoriteId}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={label}
+                    onPress={() => router.push({ pathname: '/explore', params: { kind: 'places', category: label } })}
+                    style={styles.favoriteActivityOpen}
+                  >
+                    <Ionicons name="heart" size={14} color={colors.primary} />
+                    <Text style={[styles.favoriteActivityText, { color: colors.foreground }]}>
+                      {label}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    testID={`favorite-activity-remove-${favoriteId}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('removeActivityFavorite').replace('{activity}', label)}
+                    onPress={() => app.toggleFavoriteActivity(activity.en)}
+                    style={styles.removeFavoriteActivity}
+                  >
+                    <Ionicons name="close" size={16} color={colors.mutedForeground} />
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
+        ) : (
+          <Pressable
+            testID="favorite-activities-empty"
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: '/explore', params: { kind: 'places' } })}
+            style={({ pressed }) => [
+              styles.favoriteActivityEmpty,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                opacity: pressed ? 0.88 : 1,
+              },
+            ]}
+          >
+            <Ionicons name="heart-outline" size={20} color={colors.primary} />
+            <Text style={[styles.favoriteActivityEmptyText, { color: colors.mutedForeground }]}>
+              {t('favoriteActivitiesEmpty')}
+            </Text>
+            <Ionicons name="chevron-forward" size={17} color={colors.mutedForeground} />
+          </Pressable>
+        )}
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push({ pathname: '/explore', params: { kind: 'events' } })}
@@ -1118,6 +1196,13 @@ const styles = StyleSheet.create({
   recentVisitCard: { width: 200, minHeight: 142, marginEnd: 10, borderWidth: 1, borderRadius: 18, padding: 13 },
   recentVisitIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', marginBottom: 9 },
   recentVisitDate: { fontSize: 9, lineHeight: 14, fontWeight: '700', marginTop: 8 },
+  favoriteActivityList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginHorizontal: 20, marginBottom: 10 },
+  favoriteActivityChip: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 15, overflow: 'hidden' },
+  favoriteActivityOpen: { minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 7, paddingStart: 11, paddingEnd: 4 },
+  favoriteActivityText: { fontSize: 11, fontWeight: '700' },
+  removeFavoriteActivity: { width: 36, height: 40, alignItems: 'center', justifyContent: 'center' },
+  favoriteActivityEmpty: { minHeight: 54, marginHorizontal: 20, borderWidth: 1, borderRadius: 16, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  favoriteActivityEmptyText: { flex: 1, fontSize: 11, lineHeight: 16 },
   courseThumbnail: { width: 62, height: 62, borderRadius: 14 },
   courseThumbnailFallback: { alignItems: 'center', justifyContent: 'center' },
   progressTrack: { height: 5, borderRadius: 5, marginTop: 8, overflow: 'hidden' },

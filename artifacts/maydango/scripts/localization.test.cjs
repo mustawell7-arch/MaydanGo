@@ -63,6 +63,13 @@ assert.equal(errorCopy(new Error('secret provider details')), 'Account request f
 assert.equal(translate('en', 'checkInHint'), 'At the door? Scan to check in.');
 assert.equal(translate('ar', 'checkInHint'), 'وصلت؟ امسح الكود وسجّل وصولك.');
 assert.equal(translate('ku', 'checkInHint'), 'گەیشتیت؟ کۆدەکە سکان بکە و گەیشتنت تۆمار بکە.');
+for (const key of ['favoriteActivities', 'favoriteActivitiesHint', 'favoriteActivitiesEmpty', 'saveActivityFavorite', 'removeActivityFavorite']) {
+  assert.ok(translate('en', key).trim());
+  assert.ok(translate('ar', key).trim());
+  assert.ok(translate('ku', key).trim());
+  assert.notEqual(translate('ar', key), translate('en', key), `Arabic translation missing: ${key}`);
+  assert.notEqual(translate('ku', key), translate('en', key), `Sorani translation missing: ${key}`);
+}
 assert.equal(translate('en', 'visitsLeft'), '{n} visits left');
 assert.equal(translate('en', 'spotsLeft'), '{n} spots left');
 assert.equal(translate('en', 'cancelled'), 'Booking canceled');

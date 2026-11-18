@@ -20,6 +20,7 @@ import { useColors } from '@/hooks/useColors';
 import { translate } from '@/lib/i18n';
 import { facilityText, cityIdForFacility, eligibilityKey, eligibilityLabel } from '@/lib/facility-content';
 import { directionsUrl, distanceKm, formatDistance, type Coordinates } from '@/lib/location';
+import { activityFavoriteId } from '@/lib/favorite-activities';
 import { dateTime, timeOnly } from '@/lib/content';
 import { absoluteApiAssetUrl } from '@/lib/live-api';
 import {
@@ -160,9 +161,22 @@ const params = useLocalSearchParams<{
     setSelectedAccessibility(null);
     setSelectedEligibility(null);
   }, [app.language]);
-  const categories = useMemo(() => [
-    ...new Set(facilities.flatMap(facility => facility.activities.map(activity => facilityText(activity, app.language)))),
-  ], [facilities, app.language]);
+  const categories = useMemo(() => {
+    const values = new Map<string, (typeof facilities)[number]['activities'][number]>();
+    facilities.flatMap(facility => facility.activities).forEach(activity => {
+      const key = activityFavoriteId(activity.en);
+      if (key && !values.has(key)) values.set(key, activity);
+    });
+    return [...values].map(([key, activity]) => ({
+      key,
+      label: facilityText(activity, app.language),
+      activity,
+    }));
+  }, [facilities, app.language]);
+  const activityCategoryOptions = [
+    { key: 'all', label: t('allActivities'), activity: null },
+    ...categories,
+  ];
   const amenityOptions = useMemo(() => {
     const values = new Map<string, string>();
     facilities.flatMap(facility => facility.amenities).forEach(value => values.set(JSON.stringify(value), facilityText(value, app.language)));
@@ -531,20 +545,45 @@ const params = useLocalSearchParams<{
           </View>
         ) : (<>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          {['All', ...categories].map(item => {
-            const selected = category === item;
+          {activityCategoryOptions.map(item => {
+            const allActivities = item.key === 'all';
+            const selected = allActivities ? category === 'All' : category === item.label;
+            const saved = !allActivities && app.favoriteActivities.includes(item.key);
             return (
-              <Pressable
-                key={item}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                onPress={() => setCategory(item)}
-                style={[styles.chip, { backgroundColor: selected ? colors.primary : colors.card, borderColor: colors.border }]}
+              <View
+                key={item.key}
+                style={[
+                  styles.activityCategoryChip,
+                  {
+                    backgroundColor: selected ? colors.primary : colors.card,
+                    borderColor: selected ? colors.primary : colors.border,
+                  },
+                ]}
               >
-                <Text style={[styles.chipText, { color: selected ? colors.primaryForeground : colors.foreground }]}>
-                  {item === 'All' ? t('allActivities') : item}
-                </Text>
-              </Pressable>
+                <Pressable
+                  testID={`explore-category-${item.key}`}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  onPress={() => setCategory(allActivities ? 'All' : item.label)}
+                  style={styles.activityCategorySelect}
+                >
+                  <Text style={[styles.chipText, { color: selected ? colors.primaryForeground : colors.foreground }]}>
+                    {item.label}
+                  </Text>
+                </Pressable>
+                {item.activity ? (
+                  <Pressable
+                    testID={`favorite-activity-${item.key}`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: saved }}
+                    accessibilityLabel={(saved ? t('removeActivityFavorite') : t('saveActivityFavorite')).replace('{activity}', item.label)}
+                    onPress={() => app.toggleFavoriteActivity(item.activity!.en)}
+                    style={styles.favoriteActivityToggle}
+                  >
+                    <Ionicons name={saved ? 'heart' : 'heart-outline'} size={16} color={saved ? colors.destructive : colors.mutedForeground} />
+                  </Pressable>
+                ) : null}
+              </View>
             );
           })}
         </ScrollView>
@@ -768,6 +807,9 @@ const styles = StyleSheet.create({
   citySelectorHint: { fontSize: 9, flex: 1 },
   searchInput: { flex: 1, height: '100%', fontSize: 13, fontWeight: '500' },
   chips: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 5, gap: 8 },
+  activityCategoryChip: { minHeight: 40, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
+  activityCategorySelect: { minHeight: 38, justifyContent: 'center', paddingStart: 13, paddingEnd: 8 },
+  favoriteActivityToggle: { width: 36, minHeight: 38, alignItems: 'center', justifyContent: 'center' },
   chip: { paddingHorizontal: 13, paddingVertical: 9, borderRadius: 14, borderWidth: 1 },
   chipText: { fontSize: 11, fontWeight: '700' },
   filterBar: { paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

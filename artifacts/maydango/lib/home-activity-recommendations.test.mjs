@@ -25,3 +25,12 @@ test('home activity suggestions deduplicate facilities and honor limits', () => 
   assert.equal(recommendHomeActivities(candidates, 1)[0]?.facilityCount, 1);
   assert.deepEqual(recommendHomeActivities(candidates, 0), []);
 });
+
+test('saved activity preferences rank ahead of other recommendation signals', () => {
+  const suggestions = recommendHomeActivities([
+    { activity: { en: 'Yoga' }, facilityId: 'yoga-studio', savedPlace: false, previouslyBooked: false, preferredActivity: true },
+    { activity: { en: 'Boxing' }, facilityId: 'boxing-club', savedPlace: true, previouslyBooked: true },
+  ]);
+
+  assert.deepEqual(suggestions.map(item => item.activity.en), ['Yoga', 'Boxing']);
+});

@@ -2,6 +2,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const Module = require('node:module');
 const ts = require('typescript');
+require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText, filename);
+const favoriteActivityHelpers = require('../lib/favorite-activities.ts');
 // Exercise the real preferences provider with deterministic hooks/storage,
 // without signing into an account or touching a user's device data.
 let cells = [], cursor = 0, effects = [], storage = new Map();
@@ -27,6 +31,7 @@ const mocks = {
     setItem: async (key, value) => { storage.set(key, value); },
   },
   '@/hooks/useMemberBookings': { useMemberBookings: () => ({}) },
+  '@/lib/favorite-activities': favoriteActivityHelpers,
   '@/data/demo': { courses: [] },
 };
 const original = Module._load;
@@ -45,6 +50,12 @@ const settle = async () => {
   assert.equal(app.hydrated, false);
   await settle(); app = render(); await settle();
   assert.equal(app.hydrated, true);
+  app.toggleFavoriteActivity('  Yoga  ');
+  app = render(); await settle();
+  assert.deepEqual(JSON.parse(storage.get('maydango-preferences-v2')).favoriteActivities, ['yoga']);
+  cells = []; effects = [];
+  app = render(); await settle(); app = render(); await settle();
+  assert.deepEqual(app.favoriteActivities, ['yoga']);
   for (const language of ['ar', 'ku', 'en']) {
     app.setLanguage(language); app = render(); await settle();
     assert.equal(JSON.parse(storage.get('maydango-preferences-v2')).language, language);
