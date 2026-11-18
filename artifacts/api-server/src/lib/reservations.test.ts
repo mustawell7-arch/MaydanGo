@@ -612,6 +612,11 @@ test("live operations: staff scope, approved inventory, server grants and quota 
         targetId: freeEventOffer.data.targetId,
         slot: freeEventOffer.data.slot,
       };
+      assert.equal(
+        (await call("/member/bookings", alice, "POST", { ...eventInput, eventAccess: true, guestPasses: 99 })).status,
+        400,
+        "clients cannot grant event or guest-pass access by adding fields to a booking request",
+      );
       await db.update(memberships).set({
         rules: { ...expandedRules, planTerms: { ...originalPlanTerms, eventAccess: false } },
       }).where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));

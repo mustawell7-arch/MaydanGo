@@ -16,7 +16,6 @@ const prefix = `learning-playback-test-${randomUUID()}`;
 const userId = `${prefix}-member`;
 const courseId = randomUUID();
 const lessonId = randomUUID();
-const enrollmentId = randomUUID();
 const materialId = randomUUID();
 const recordingPath = "/objects/course-recordings/test-recording.mp4";
 const materialPath = `/objects/course-materials/${courseId}/${materialId}.pdf`;
@@ -155,12 +154,15 @@ test("private course recordings require current membership and enrollment", asyn
   const path = `/api/member/courses/${courseId}/lessons/${lessonId}/playback-link`;
   const viewPath = `/api/member/courses/${courseId}/lessons/${lessonId}/view`;
   const playbackProgressPath = `/api/member/courses/${courseId}/lessons/${lessonId}/playback-progress`;
+  const enrollmentPath = `/api/member/courses/${courseId}/enroll`;
+  const courseProgressPath = `/api/member/courses/${courseId}/progress`;
   assert.equal((await call(path, userId, "POST")).response.status, 403);
+  assert.equal((await call(enrollmentPath, userId, "POST")).response.status, 403);
   assert.equal((await call(viewPath, userId, "POST")).response.status, 403);
   assert.equal((await call(playbackProgressPath, userId, "PUT", { positionSeconds: 50, durationSeconds: 600 })).response.status, 403);
+  assert.equal((await call(courseProgressPath, userId, "PUT", { lessonId, completed: true })).response.status, 403);
   assert.equal((await call(`/api/member/courses/${courseId}/materials/${materialId}/download-link`, userId, "POST")).response.status, 403);
 
-  await db.insert(courseEnrollments).values({ id: enrollmentId, userId, courseId });
   const restrictedDetails = await call(`/api/member/courses/${courseId}`, userId);
   assert.equal(restrictedDetails.response.status, 200);
   assert.equal((restrictedDetails.data as { accessState: string }).accessState, "membership_required");
@@ -168,10 +170,17 @@ test("private course recordings require current membership and enrollment", asyn
   assert.equal(restrictedLesson.localizedContent, null);
   assert.equal(restrictedLesson.hasRecording, false);
   assert.equal((restrictedDetails.data as { materials: unknown[] }).materials.length, 0);
-  assert.equal((await call(path, userId, "POST")).response.status, 403);
-  assert.equal((await call(viewPath, userId, "POST")).response.status, 403);
 
   await db.update(memberships).set({ rules: courseRules(true) }).where(eq(memberships.userId, userId));
+  const enrollmentRequired = await call(`/api/member/courses/${courseId}`, userId);
+  assert.equal((enrollmentRequired.data as { accessState: string }).accessState, "enrollment_required");
+  assert.equal((enrollmentRequired.data as { lessons: Array<{ localizedContent: unknown }> }).lessons[0]?.localizedContent, null);
+  const enrollmentResponse = await call(enrollmentPath, userId, "POST");
+  assert.equal(enrollmentResponse.response.status, 200);
+  const [enrollment] = await db.select({ id: courseEnrollments.id }).from(courseEnrollments).where(eq(courseEnrollments.userId, userId));
+  if (!enrollment) throw new Error("Eligible membership did not create a course enrollment.");
+  const enrollmentId = enrollment.id;
+
   const details = await call(`/api/member/courses/${courseId}`, userId);
   assert.equal(details.response.status, 200);
   assert.equal((details.data as { accessState: string }).accessState, "ready");
@@ -213,7 +222,6 @@ test("private course recordings require current membership and enrollment", asyn
   assert.equal(updatedViewRows.length, 1);
   assert.equal(updatedViewRows[0]?.playbackPositionSeconds, 89);
 
-  const courseProgressPath = `/api/member/courses/${courseId}/progress`;
   const completedCourse = await call(courseProgressPath, userId, "PUT", { lessonId, completed: true });
   assert.equal(completedCourse.response.status, 200);
   const completedDetail = completedCourse.data as { completionPercentage: number; courseCompletedAt: string | null };
