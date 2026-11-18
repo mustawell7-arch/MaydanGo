@@ -149,11 +149,22 @@ test("reviews require confirmed visits and support reporting, moderation, and pa
   await new Promise<void>(resolve => server!.once("listening", resolve));
 
   assert.equal((await call("/member/reviews")).status, 401);
+  assert.equal((await call("/member/visits")).status, 401);
   assert.equal((await call("/operations/reviews", financeUser)).status, 403);
   const eligible = await call("/member/reviews", userA);
   assert.equal(eligible.status, 200);
   const eligibleData = eligible.data as { eligibleVisits: Array<{ reservationId: string }>; reviews: unknown[] };
   assert.deepEqual(eligibleData.eligibleVisits.map(visit => visit.reservationId), [reservationA]);
+  const visits = await call("/member/visits", userA);
+  assert.equal(visits.status, 200);
+  const visitRows = visits.data as Array<{ facilityId: string; localizedName: { en: string }; visitedAt: string }>;
+  assert.deepEqual(visitRows.map(visit => visit.facilityId), [facilityA]);
+  assert.equal(visitRows[0].localizedName.en, `${prefix} facility A`);
+  const otherMemberVisits = await call("/member/visits", userB);
+  assert.deepEqual(
+    (otherMemberVisits.data as Array<{ facilityId: string }>).map(visit => visit.facilityId),
+    [facilityB],
+  );
 
   const body = {
     reservationId: reservationA,
@@ -164,6 +175,10 @@ test("reviews require confirmed visits and support reporting, moderation, and pa
   assert.equal((await call("/member/reviews", userA, "POST", { ...body, reservationId: pendingReservation })).status, 404);
   const created = await call("/member/reviews", userA, "POST", body);
   assert.equal(created.status, 201);
+  assert.deepEqual(
+    ((await call("/member/visits", userA)).data as Array<{ facilityId: string }>).map(visit => visit.facilityId),
+    [facilityA],
+  );
   const review = created.data as { id: string; facilityId: string; status: string };
   assert.equal(review.facilityId, facilityA);
   assert.equal(review.status, "published");

@@ -6019,6 +6019,19 @@ components:
       properties:
         eligibleVisits: { type: array, items: { $ref: "#/components/schemas/EligibleFacilityVisit" } }
         reviews: { type: array, items: { $ref: "#/components/schemas/MemberFacilityReview" } }
+    MemberVisitedFacility:
+      type: object
+      additionalProperties: false
+      required: [facilityId, facility, localizedName, city, visitedAt]
+      properties:
+        facilityId: { type: string }
+        facility: { type: string }
+        localizedName: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        city: { type: string }
+        visitedAt: { type: string, format: date-time }
+    MemberVisitedFacilities:
+      type: array
+      items: { $ref: "#/components/schemas/MemberVisitedFacility" }
     FacilityReviewInput:
       type: object
       additionalProperties: false

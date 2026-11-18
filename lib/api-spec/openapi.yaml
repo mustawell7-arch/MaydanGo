@@ -1005,6 +1005,16 @@ paths:
         "403": { description: Review privileges are suspended }
         "404": { description: Verified visit not found }
         "409": { description: A review already exists for this visit }
+  /member/visits:
+    get:
+      operationId: getMemberVisitedFacilities
+      responses:
+        "200":
+          description: The signed-in member's recent partner-confirmed facility visits
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberVisitedFacilities" }
+        "401": { description: Sign-in required }
   /member/reviews/{id}/reports:
     post:
       operationId: reportFacilityReview

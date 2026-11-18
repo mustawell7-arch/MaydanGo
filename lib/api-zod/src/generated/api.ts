@@ -13495,6 +13495,28 @@ export const CreateMemberFacilityReviewResponse = zod.object({
 })
 
 
+export const getMemberVisitedFacilitiesResponseLocalizedNameEnMax = 500;
+
+export const getMemberVisitedFacilitiesResponseLocalizedNameArMax = 500;
+
+export const getMemberVisitedFacilitiesResponseLocalizedNameKuMax = 500;
+
+
+
+export const GetMemberVisitedFacilitiesResponseItem = zod.object({
+  "facilityId": zod.string(),
+  "facility": zod.string(),
+  "localizedName": zod.object({
+  "en": zod.string().min(1).max(getMemberVisitedFacilitiesResponseLocalizedNameEnMax),
+  "ar": zod.string().min(1).max(getMemberVisitedFacilitiesResponseLocalizedNameArMax),
+  "ku": zod.string().min(1).max(getMemberVisitedFacilitiesResponseLocalizedNameKuMax)
+}),
+  "city": zod.string(),
+  "visitedAt": zod.coerce.date()
+})
+export const GetMemberVisitedFacilitiesResponse = zod.array(GetMemberVisitedFacilitiesResponseItem)
+
+
 export const ReportFacilityReviewParams = zod.object({
   "id": zod.coerce.string()
 })

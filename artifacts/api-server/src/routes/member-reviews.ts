@@ -8,7 +8,7 @@ import {
 } from "@workspace/db";
 import {
   CreateMemberFacilityReviewBody, CreateMemberFacilityReviewResponse,
-  GetMemberFacilityReviewsResponse, ReportFacilityReviewBody,
+  GetMemberFacilityReviewsResponse, GetMemberVisitedFacilitiesResponse, ReportFacilityReviewBody,
   ReportFacilityReviewParams, ReportFacilityReviewResponse,
 } from "@workspace/api-zod";
 
@@ -95,6 +95,28 @@ router.get("/reviews", async (req, res): Promise<void> => {
     eligibleVisits: eligibleVisits.filter(visit => visit.reservationId !== null),
     reviews,
   }));
+});
+
+router.get("/visits", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId!;
+  const visits = await db.select({
+    facilityId: facilityProfiles.id,
+    facility: facilityProfiles.facility,
+    localizedName: facilityProfiles.localizedName,
+    city: facilityProfiles.city,
+    visitedAt: attendance.checkedInAt,
+  }).from(attendance)
+    .innerJoin(offerings, eq(offerings.id, attendance.offeringId))
+    .innerJoin(facilityProfiles, facilityMatch())
+    .where(and(
+      eq(attendance.userId, userId),
+      eq(attendance.status, "confirmed"),
+      isNotNull(attendance.checkedInAt),
+      eq(offerings.scope, "live"),
+    ))
+    .orderBy(desc(attendance.checkedInAt))
+    .limit(100);
+  res.json(GetMemberVisitedFacilitiesResponse.parse(visits));
 });
 
 router.post("/reviews", async (req, res): Promise<void> => {

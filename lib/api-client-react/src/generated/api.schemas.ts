@@ -5276,6 +5276,16 @@ export interface MemberFacilityReviews {
   reviews: MemberFacilityReview[];
 }
 
+export interface MemberVisitedFacility {
+  facilityId: string;
+  facility: string;
+  localizedName: LocalizedFacilityText;
+  city: string;
+  visitedAt: string;
+}
+
+export type MemberVisitedFacilities = MemberVisitedFacility[];
+
 export interface FacilityReviewInput {
   /**
      * @minLength 1

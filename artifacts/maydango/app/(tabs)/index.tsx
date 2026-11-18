@@ -21,11 +21,13 @@ import { recommendHomeActivities } from '@/lib/home-activity-recommendations';
 import { getNewFacilities } from '@/lib/new-facility-recommendations';
 import { getNewOnlineCourses } from '@/lib/new-online-courses';
 import { getFeaturedInstructors } from '@/lib/featured-instructors';
+import { getRecentlyVisitedFacilities } from '@/lib/recently-visited-facilities';
 import { absoluteApiAssetUrl } from '@/lib/live-api';
 import {
   getGetPublicCatalogQueryKey,
   getGetPublicCoursesQueryKey,
   getGetPublicFacilitiesQueryKey,
+  getGetMemberVisitedFacilitiesQueryKey,
   getGetPublicInstructorProfilesQueryKey,
   getGetPublicSponsoredFacilitiesQueryKey,
   getGetPublicSponsoredContentQueryKey,
@@ -35,6 +37,7 @@ import {
   useGetMemberCourses,
   useGetMemberLiveClasses,
   useGetMemberAllowances,
+  useGetMemberVisitedFacilities,
   useGetPublicCatalog,
   useGetPublicCourses,
   useGetPublicFacilities,
@@ -90,6 +93,14 @@ export default function HomeScreen() {
   });
   const allowancesQuery = useGetMemberAllowances({
     query: { enabled: app.signedIn, refetchInterval: 60_000, retry: false },
+  });
+  const recentVisitsQuery = useGetMemberVisitedFacilities({
+    query: {
+      queryKey: [...getGetMemberVisitedFacilitiesQueryKey(), user?.id],
+      enabled: app.signedIn,
+      refetchInterval: 60_000,
+      retry: false,
+    },
   });
   const activeMembership = app.memberMemberships.find((membership) =>
     membership.scope !== 'preview' &&
@@ -190,6 +201,10 @@ export default function HomeScreen() {
   const featuredInstructors = useMemo(
     () => getFeaturedInstructors(instructorProfilesQuery.data ?? [], 3),
     [instructorProfilesQuery.data],
+  );
+  const recentlyVisitedFacilities = useMemo(
+    () => getRecentlyVisitedFacilities(recentVisitsQuery.data ?? [], Date.now(), 4),
+    [recentVisitsQuery.data],
   );
   const upcomingEvents = useMemo(() => (eventsQuery.data ?? [])
     .filter((event) =>
@@ -930,6 +945,75 @@ export default function HomeScreen() {
             {t('noFeaturedInstructors')}
           </Text>
         )}
+        {app.signedIn ? (
+          <>
+            <View style={[styles.sectionHeader, styles.activitySectionHeader]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                  {t('recentlyVisitedFacilities')}
+                </Text>
+                <Text style={[styles.sectionSub, { color: colors.mutedForeground }]}>
+                  {t('recentlyVisitedFacilitiesHint')}
+                </Text>
+              </View>
+            </View>
+            {recentVisitsQuery.isLoading ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color={colors.primary} />
+              </View>
+            ) : recentVisitsQuery.isError ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => void recentVisitsQuery.refetch()}
+                style={styles.emptyBooking}
+              >
+                <Text style={[styles.dashboardMeta, { color: colors.destructive }]}>
+                  {t('recentVisitsLoadError')}
+                </Text>
+              </Pressable>
+            ) : recentlyVisitedFacilities.length ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalCards}
+              >
+                {recentlyVisitedFacilities.map(visit => (
+                  <Pressable
+                    key={visit.facilityId}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${facilityText(visit.localizedName, app.language)}, ${visit.city}, ${dateTime(visit.visitedAt, app.language, true)}`}
+                    onPress={() => router.push({ pathname: '/facility/[id]', params: { id: visit.facilityId } })}
+                    style={({ pressed }) => [
+                      styles.recentVisitCard,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border,
+                        opacity: pressed ? 0.9 : 1,
+                      },
+                    ]}
+                  >
+                    <View style={[styles.recentVisitIcon, { backgroundColor: colors.secondary }]}>
+                      <Ionicons name="location-outline" size={21} color={colors.primary} />
+                    </View>
+                    <Text numberOfLines={2} style={[styles.instructorName, { color: colors.foreground, textAlign: align }]}>
+                      {facilityText(visit.localizedName, app.language)}
+                    </Text>
+                    <Text numberOfLines={1} style={[styles.dashboardMeta, { color: colors.mutedForeground, textAlign: align }]}>
+                      {visit.city}
+                    </Text>
+                    <Text style={[styles.recentVisitDate, { color: colors.primary, textAlign: align }]}>
+                      {dateTime(visit.visitedAt, app.language, true)}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            ) : (
+              <Text style={[styles.dashboardMeta, styles.emptyEvents, { color: colors.mutedForeground }]}>
+                {t('noRecentlyVisitedFacilities')}
+              </Text>
+            )}
+          </>
+        ) : null}
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push({ pathname: '/explore', params: { kind: 'events' } })}
@@ -1031,6 +1115,9 @@ const styles = StyleSheet.create({
   instructorCourses: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: 12, paddingTop: 9, gap: 5 },
   instructorCourseTitle: { fontSize: 10, lineHeight: 14, fontWeight: '600' },
   instructorViewCourses: { fontSize: 10, lineHeight: 14, fontWeight: '800', marginTop: 8 },
+  recentVisitCard: { width: 200, minHeight: 142, marginEnd: 10, borderWidth: 1, borderRadius: 18, padding: 13 },
+  recentVisitIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', marginBottom: 9 },
+  recentVisitDate: { fontSize: 9, lineHeight: 14, fontWeight: '700', marginTop: 8 },
   courseThumbnail: { width: 62, height: 62, borderRadius: 14 },
   courseThumbnailFallback: { alignItems: 'center', justifyContent: 'center' },
   progressTrack: { height: 5, borderRadius: 5, marginTop: 8, overflow: 'hidden' },
