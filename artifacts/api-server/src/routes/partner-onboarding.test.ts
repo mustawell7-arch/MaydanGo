@@ -6,6 +6,7 @@ import express from "express";
 import { eq, inArray } from "drizzle-orm";
 import {
   db,
+  facilityProfiles,
   operationAudit,
   operators,
   partnerOnboardingApplications,
@@ -25,6 +26,7 @@ const storedFiles = new Map<string, { contentType: string; bytes: Buffer }>();
 let server: Server | null = null;
 let applicationId: string | null = null;
 let partnerId: string | null = null;
+let facilityId: string | null = null;
 
 const mockStorage = {
   createPartnerApplicationUpload: async (appId: string, documentId: string) => ({
@@ -124,6 +126,7 @@ after(async () => {
     await db.delete(partnerOnboardingApplications).where(eq(partnerOnboardingApplications.id, applicationId));
   }
   if (partnerId) {
+    if (facilityId) await db.delete(facilityProfiles).where(eq(facilityProfiles.id, facilityId));
     await db.delete(operators).where(eq(operators.userId, applicantId));
     await db.delete(partners).where(eq(partners.id, partnerId));
   }
@@ -267,4 +270,33 @@ test("partner applications are private, documents are scoped, and staff creation
   const [owner] = await db.select().from(operators).where(eq(operators.userId, applicantId)).limit(1);
   assert.equal(owner?.role, "partner");
   assert.equal(owner?.partnerId, partnerId);
+
+  facilityId = randomUUID();
+  await db.insert(facilityProfiles).values({
+    id: facilityId,
+    partnerId,
+    city: applicationInput.city,
+    facility: applicationInput.facilityName,
+    localizedName: { en: applicationInput.facilityName, ar: "مركز تجريبي", ku: "تاقیگەی تاقیکردنەوە" },
+    localizedDistrict: { en: applicationInput.district, ar: "المنطقة الوسطى", ku: "ناوەندی شار" },
+    localizedAddress: { en: applicationInput.address, ar: "شارع رئيسي", ku: "شەقامی سەرەکی" },
+    localizedDescription: { en: "Test facility", ar: "منشأة تجريبية", ku: "شوێنی تاقیکردنەوە" },
+    activities: [{ en: "Fitness", ar: "لياقة", ku: "ڕاهێنان" }],
+    amenities: [],
+    accessibility: [],
+    openingHours: applicationInput.openingHours,
+    contactPhone: null,
+    websiteUrl: null,
+    latitude: applicationInput.latitude,
+    longitude: applicationInput.longitude,
+  });
+  const [privateFacility] = await db.select({ publishedAt: facilityProfiles.publishedAt })
+    .from(facilityProfiles).where(eq(facilityProfiles.id, facilityId)).limit(1);
+  assert.equal(privateFacility?.publishedAt, null);
+  for (const status of ["qr_code_issued", "staff_training_completed", "test_checkin_completed", "approved", "live"]) {
+    assert.equal((await changeStatus(status)).status, 200);
+  }
+  const [publishedFacility] = await db.select({ publishedAt: facilityProfiles.publishedAt })
+    .from(facilityProfiles).where(eq(facilityProfiles.id, facilityId)).limit(1);
+  assert.ok(publishedFacility?.publishedAt instanceof Date);
 });

@@ -13,6 +13,7 @@ const migrationPaths = [
   new URL("../lib/db/migrations/0012_facility_quality_control.sql", import.meta.url),
   new URL("../lib/db/migrations/0013_facility_reviews_and_ratings.sql", import.meta.url),
   new URL("../lib/db/migrations/0014_partner_marketing_profile.sql", import.meta.url),
+  new URL("../lib/db/migrations/0026_facility_publication_date.sql", import.meta.url),
 ];
 
 try {

@@ -381,6 +381,8 @@ export type PublicFacility = FacilityProfile & ({
   openingStatus: PublicFacilityOpeningStatus;
   /** @nullable */
   closesAt: string | null;
+  /** @nullable */
+  publishedAt: string | null;
   specialHours: FacilityHoursOverride[];
   upcomingSessions: PublicFacilitySession[];
 });

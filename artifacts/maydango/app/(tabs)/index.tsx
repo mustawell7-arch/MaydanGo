@@ -11,12 +11,14 @@ import { useUser } from '@clerk/expo';
 import { router } from 'expo-router';
 import { ScreenShell } from '@/components/ScreenShell';
 import { FacilityCard } from '@/components/FacilityCard';
-import { categories, getCityLabel } from '@/data/demo';
+import { getCityLabel } from '@/data/demo';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { translate } from '@/lib/i18n';
 import { dateTime } from '@/lib/content';
 import { cityIdForFacility, facilityText } from '@/lib/facility-content';
+import { recommendHomeActivities } from '@/lib/home-activity-recommendations';
+import { getNewFacilities } from '@/lib/new-facility-recommendations';
 import {
   getGetPublicCatalogQueryKey,
   getGetPublicFacilitiesQueryKey,
@@ -54,6 +56,7 @@ export default function HomeScreen() {
     },
   });
   const sponsoredTracking = useSponsoredFacilityTracking();
+  const newFacilityTracking = useSponsoredFacilityTracking();
   const sponsoredContentCity = app.selectedCityId === 'all' ? undefined : getCityLabel(app.selectedCityId, 'en');
   const sponsoredContentQuery = useGetPublicSponsoredContent(
     { city: sponsoredContentCity },
@@ -113,6 +116,39 @@ export default function HomeScreen() {
       return Number(b.openingStatus === 'open') - Number(a.openingStatus === 'open');
     }).slice(0, 4);
   }, [facilitiesQuery.data, sponsoredQuery.data, app.selectedCityId, app.favorites]);
+  const recommendedActivities = useMemo(() => {
+    const facilities = (facilitiesQuery.data ?? []).filter((facility) =>
+      app.selectedCityId === 'all' || cityIdForFacility(facility.city) === app.selectedCityId,
+    );
+    const bookedFacilities = new Set(
+      app.serverBookings
+        .filter(booking => booking.kind === 'session'
+          && Date.parse(booking.startsAt) <= Date.now()
+          && !['cancelled', 'partner_cancelled'].includes(booking.status))
+        .map(booking => booking.facility.trim().toLocaleLowerCase('en'))
+        .filter(Boolean),
+    );
+    const candidates = facilities.flatMap(facility => {
+      const name = facilityText(facility.localizedName, 'en').trim().toLocaleLowerCase('en');
+      return facility.activities.map(activity => ({
+        activity,
+        facilityId: facility.id,
+        savedPlace: app.favorites.includes(facility.id),
+        previouslyBooked: bookedFacilities.has(name),
+      }));
+    });
+    return recommendHomeActivities(candidates);
+  }, [facilitiesQuery.data, app.selectedCityId, app.favorites, app.serverBookings]);
+  const newFacilities = useMemo(
+    () => getNewFacilities(
+      facilitiesQuery.data ?? [],
+      app.selectedCityId,
+      Date.now(),
+      4,
+      (city, cityId) => cityIdForFacility(city) === cityId,
+    ),
+    [facilitiesQuery.data, app.selectedCityId],
+  );
   const upcomingBooking = useMemo(() => app.serverBookings
     .filter((booking) =>
       !['cancelled', 'partner_cancelled'].includes(String(booking.status)) &&
@@ -158,8 +194,16 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
-        onScroll={() => { sponsoredTracking.checkVisible(); sponsoredContentTracking.checkVisible(); }}
-        onContentSizeChange={() => { sponsoredTracking.checkVisible(); sponsoredContentTracking.checkVisible(); }}
+        onScroll={() => {
+          sponsoredTracking.checkVisible();
+          newFacilityTracking.checkVisible();
+          sponsoredContentTracking.checkVisible();
+        }}
+        onContentSizeChange={() => {
+          sponsoredTracking.checkVisible();
+          newFacilityTracking.checkVisible();
+          sponsoredContentTracking.checkVisible();
+        }}
         scrollEventThrottle={250}
       >
         <View style={styles.topBar}>
@@ -585,27 +629,85 @@ export default function HomeScreen() {
           })}
         </> : null}
 
-        <View style={styles.categoryRow}>
-          <Text style={[styles.categoryEyebrow, { color: colors.mutedForeground }]}>
-            MOVE YOUR WAY
-          </Text>
-          <Text style={[styles.categoryCount, { color: colors.mutedForeground }]}>
-            {categories.length - 1} ways to begin
-          </Text>
-        </View>
-        <View style={styles.chipRow}>
-          {categories.slice(1, 5).map((category) => (
-            <Pressable
-              key={category}
-              onPress={() => router.push({ pathname: '/explore', params: { category } })}
-              style={[styles.categoryChip, { backgroundColor: colors.secondary }]}
+        {recommendedActivities.length ? (
+          <>
+            <View style={[styles.sectionHeader, styles.activitySectionHeader]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                  {t('recommendedActivities')}
+                </Text>
+                <Text style={[styles.sectionSub, { color: colors.mutedForeground }]}>
+                  {t('activitySuggestionReason')}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.chipRow}>
+              {recommendedActivities.map(({ activity, facilityCount }) => {
+                const category = facilityText(activity, app.language);
+                return (
+                  <Pressable
+                    key={activity.en.trim().toLocaleLowerCase('en')}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${category}, ${numberFormat.format(facilityCount)} ${t('places')}`}
+                    onPress={() => router.push({ pathname: '/explore', params: { kind: 'places', category } })}
+                    style={[styles.categoryChip, { backgroundColor: colors.secondary }]}
+                  >
+                    <Ionicons name="sparkles-outline" size={15} color={colors.primary} />
+                    <Text style={[styles.categoryChipText, { color: colors.secondaryForeground }]}>
+                      {category}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
+        {newFacilities.length ? (
+          <>
+            <View style={[styles.sectionHeader, styles.activitySectionHeader]}>
+              <View>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                  {t('newFacilities')}
+                </Text>
+                <Text style={[styles.sectionSub, { color: colors.mutedForeground }]}>
+                  {t('newFacilitiesHint')}
+                </Text>
+              </View>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalCards}
+              onScroll={newFacilityTracking.checkVisible}
+              onContentSizeChange={newFacilityTracking.checkVisible}
+              scrollEventThrottle={250}
             >
-              <Text style={[styles.categoryChipText, { color: colors.secondaryForeground }]}>
-                {category}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+              {newFacilities.map(facility => {
+                const placement = findSponsoredFacilityPlacement(sponsoredQuery.data ?? [], facility, 'home_featured');
+                return (
+                  <View
+                    key={facility.id}
+                    ref={view => newFacilityTracking.register(`new-${facility.id}`, placement?.campaignId, 'home_featured', view)}
+                    collapsable={false}
+                    onLayout={newFacilityTracking.checkVisible}
+                  >
+                    <FacilityCard
+                      facility={facility}
+                      favorite={app.favorites.includes(facility.id)}
+                      sponsoredLabel={placement ? t('sponsored') : undefined}
+                      onPress={() => {
+                        if (placement) newFacilityTracking.recordClick(placement.campaignId, 'home_featured');
+                        router.push({ pathname: '/facility/[id]', params: { id: facility.id } });
+                      }}
+                      onToggleFavorite={() => app.toggleFavorite(facility.id)}
+                      compact
+                    />
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </>
+        ) : null}
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push({ pathname: '/explore', params: { kind: 'events' } })}
@@ -724,16 +826,9 @@ const styles = StyleSheet.create({
   checkinTitle: { fontSize: 13, fontWeight: '800' },
   checkinSub: { fontSize: 10, fontWeight: '500', marginTop: 3 },
   horizontalCards: { paddingHorizontal: 20, paddingBottom: 5 },
-  categoryRow: {
-    justifyContent: 'space-between',
-    paddingHorizontal: 22,
-    marginTop: 17,
-    marginBottom: 10,
-  },
-  categoryEyebrow: { fontSize: 9, fontWeight: '800', letterSpacing: 1.3 },
-  categoryCount: { fontSize: 10, fontWeight: '600' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 20 },
-  categoryChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 },
+  activitySectionHeader: { alignItems: 'flex-start', marginTop: 18, marginBottom: 10 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 20, marginBottom: 14 },
+  categoryChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 },
   categoryChipText: { fontSize: 10, fontWeight: '700' },
   eventsBanner: { marginHorizontal: 20, marginTop: 16, marginBottom: 2, borderRadius: 17, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
   eventsIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },

@@ -317,7 +317,8 @@ router.post("/facilities", async (req, res) => {
   const data = createFacilityProfileInput.parse(req.body);
   CreateFacilityProfileBody.parse(data);
   own(res, data.partnerId);
-  const [partner] = await db.select({ id: partners.id }).from(partners).where(eq(partners.id, data.partnerId));
+  const [partner] = await db.select({ id: partners.id, approved: partners.approved })
+    .from(partners).where(eq(partners.id, data.partnerId));
   if (!partner) throw new BookingError(404, "Partner not found.");
   const [duplicate] = await db.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
     eq(facilityProfiles.partnerId, data.partnerId),
@@ -328,7 +329,11 @@ router.post("/facilities", async (req, res) => {
   const { partnerId, ...profile } = data;
   const row = await db.transaction(async tx => {
     const [created] = await tx.insert(facilityProfiles).values({
-      ...profile, id: randomUUID(), partnerId, updatedAt: new Date(),
+      ...profile,
+      id: randomUUID(),
+      partnerId,
+      publishedAt: partner.approved ? new Date() : null,
+      updatedAt: new Date(),
     }).returning();
     await audit(tx, res.locals.operator.userId, "facility.create", created.id);
     return created;

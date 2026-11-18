@@ -78,6 +78,7 @@ async function publishedFacilities(id?: string) {
     const specialHours = hoursOverridesByFacility.get(profile.id) ?? [];
     return {
       ...profile,
+      publishedAt: profile.publishedAt?.toISOString() ?? null,
       partnerName,
       specialHours,
       ...openingState(profile.openingHours, now, specialHours),

@@ -42,6 +42,7 @@ export const facilityProfiles = pgTable("facility_profiles", {
   websiteUrl: text("website_url"),
   latitude: doublePrecision("latitude"),
   longitude: doublePrecision("longitude"),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [uniqueIndex("facility_profile_partner_city_name").on(t.partnerId, t.city, t.facility)]);
 

@@ -128,6 +128,7 @@ export const GetPublicFacilitiesResponseItem = zod.object({
   "partnerName": zod.string(),
   "openingStatus": zod.enum(['open', 'closed', 'unavailable']),
   "closesAt": zod.string().nullable(),
+  "publishedAt": zod.coerce.date().nullable(),
   "specialHours": zod.array(zod.object({
   "id": zod.string(),
   "facilityId": zod.string(),
@@ -287,6 +288,7 @@ export const GetPublicFacilityResponse = zod.object({
   "partnerName": zod.string(),
   "openingStatus": zod.enum(['open', 'closed', 'unavailable']),
   "closesAt": zod.string().nullable(),
+  "publishedAt": zod.coerce.date().nullable(),
   "specialHours": zod.array(zod.object({
   "id": zod.string(),
   "facilityId": zod.string(),

@@ -96,6 +96,9 @@ const params = useLocalSearchParams<{
   useEffect(() => {
     if (params.kind === 'events' || params.kind === 'places') setKind(params.kind);
   }, [params.kind]);
+  useEffect(() => {
+    setCategory(params.category ?? 'All');
+  }, [params.category]);
   const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState(params.category ?? 'All');

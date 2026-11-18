@@ -1227,11 +1227,12 @@ components:
       allOf:
         - { $ref: "#/components/schemas/FacilityProfile" }
         - type: object
-          required: [partnerName, openingStatus, closesAt, upcomingSessions, specialHours]
+          required: [partnerName, openingStatus, closesAt, upcomingSessions, specialHours, publishedAt]
           properties:
             partnerName: { type: string }
             openingStatus: { type: string, enum: [open, closed, unavailable] }
             closesAt: { type: ["string", "null"] }
+            publishedAt: { type: ["string", "null"], format: date-time }
             specialHours:
               type: array
               items: { $ref: "#/components/schemas/FacilityHoursOverride" }

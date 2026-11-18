@@ -1,5 +1,5 @@
 import { clerkClient, getAuth } from "@clerk/express";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { Router, type Request, type Response } from "express";
 import {
@@ -597,7 +597,10 @@ router.patch("/operations/partner-onboarding/applications/:id/status", async (re
         const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles)
           .where(eq(facilityProfiles.partnerId, partnerId)).limit(1);
         if (!facility) return { kind: "facility_profile_missing" as const };
+        const publishedAt = new Date();
         await tx.update(partners).set({ approved: true }).where(eq(partners.id, partnerId));
+        await tx.update(facilityProfiles).set({ publishedAt })
+          .where(and(eq(facilityProfiles.partnerId, partnerId), isNull(facilityProfiles.publishedAt)));
       }
       const [updated] = await tx.update(partnerOnboardingApplications).set({
         status: nextStatus,
