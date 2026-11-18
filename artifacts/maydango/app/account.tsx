@@ -25,6 +25,7 @@ import {
 } from '@workspace/api-client-react';
 import { Text, TextInput, Pressable } from '@/components/Localized';
 import { dateTime, errorCopy } from '@/lib/content';
+import { getCityLabel } from '@/data/demo';
 import { useAuth, useClerk, useUser, useSignIn, useSignUp, useSSO } from '@clerk/expo';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
@@ -754,6 +755,22 @@ export default function AccountScreen() {
                 maxLength={100}
                 style={[styles.input, { color: c.foreground, borderColor: c.border }]}
               />
+              <Pressable
+                testID="auth-city-picker"
+                accessibilityRole="button"
+                accessibilityLabel={`${translate(app.language, 'memberSignupCity')}: ${getCityLabel(app.selectedCityId, app.language)}. ${translate(app.language, 'memberSignupChangeCity')}`}
+                onPress={() => router.push('/cities')}
+                style={[styles.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderColor: c.border }]}
+              >
+                <View style={{ flex: 1, gap: 3 }}>
+                  <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{translate(app.language, 'memberSignupCity')}</Text>
+                  <Text raw style={{ color: c.foreground, fontWeight: '600' }}>{getCityLabel(app.selectedCityId, app.language)}</Text>
+                </View>
+                <Text style={{ color: c.primary, fontWeight: '600', marginStart: 12 }}>{translate(app.language, 'memberSignupChangeCity')}</Text>
+              </Pressable>
+              <Text style={{ color: c.mutedForeground, lineHeight: 18, marginTop: -6 }}>
+                {translate(app.language, 'memberSignupCityHint')}
+              </Text>
              <TextInput inputDirection="ltr" testID="auth-referral-code" accessibilityLabel={translate(app.language, 'memberReferralsInput')} placeholder={translate(app.language, 'memberReferralsInput')} placeholderTextColor={c.mutedForeground} value={referralCode} onChangeText={value => setReferralCode(value.toUpperCase())} autoCapitalize="characters" maxLength={10} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
              <Text style={{ color: c.mutedForeground, lineHeight: 20 }}>{translate(app.language, 'memberCorporateCodeSignupHint')}</Text>
              <TextInput inputDirection="ltr" testID="auth-corporate-code" accessibilityLabel={translate(app.language, 'memberCorporateCodeInput')} placeholder={translate(app.language, 'memberCorporateCodeInput')} placeholderTextColor={c.mutedForeground} value={corporateCode} onChangeText={value => setCorporateCode(value)} autoCapitalize="none" autoCorrect={false} maxLength={128} style={[styles.input, { color: c.foreground, borderColor: c.border }]} />
