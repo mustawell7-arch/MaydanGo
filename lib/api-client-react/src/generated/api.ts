@@ -327,6 +327,7 @@ import type {
   SupportTicketSummary,
   SupportUrgentAlertDeliveryOutcome,
   SupportUrgentAlertRecipientAudit,
+  SyncMemberAppleHealthActivityBody,
   UpdateLegalPolicyDraftBody
 } from './api.schemas';
 
@@ -17613,6 +17614,88 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRevokeMemberActivitySyncMutationOptions(options), queryClient);
+    }
+
+export const getSyncMemberAppleHealthActivityUrl = () => {
+
+
+
+
+  return `/api/member/activity-sync/apple-health/sync`
+}
+
+export const syncMemberAppleHealthActivity = async (syncMemberAppleHealthActivityBody: SyncMemberAppleHealthActivityBody, options?: Parameters<typeof customFetch>[1]): Promise<MemberActivitySyncState> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MemberActivitySyncState>(getSyncMemberAppleHealthActivityUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(syncMemberAppleHealthActivityBody)
+  }
+);}
+
+
+
+
+
+export const getSyncMemberAppleHealthActivityMutationKey = () => ['syncMemberAppleHealthActivity'] as const;
+
+export const getSyncMemberAppleHealthActivityMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncMemberAppleHealthActivity>>, TError,SyncMemberAppleHealthActivityMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncMemberAppleHealthActivity>>, TError,SyncMemberAppleHealthActivityMutationVariables, TContext> => {
+
+const mutationKey = getSyncMemberAppleHealthActivityMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncMemberAppleHealthActivity>>, SyncMemberAppleHealthActivityMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  syncMemberAppleHealthActivity(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncMemberAppleHealthActivityMutationResult = NonNullable<Awaited<ReturnType<typeof syncMemberAppleHealthActivity>>>
+    export type SyncMemberAppleHealthActivityMutationBody = BodyType<SyncMemberAppleHealthActivityBody>
+    export type SyncMemberAppleHealthActivityMutationError = ErrorType<void>
+    export type SyncMemberAppleHealthActivityMutationVariables = {data: BodyType<SyncMemberAppleHealthActivityBody>}
+
+    export const useSyncMemberAppleHealthActivity = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncMemberAppleHealthActivity>>, TError,SyncMemberAppleHealthActivityMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof syncMemberAppleHealthActivity>>,
+        TError,
+        SyncMemberAppleHealthActivityMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSyncMemberAppleHealthActivityMutationOptions(options), queryClient);
     }
 
 export const getDeleteMemberActivitySyncDataUrl = () => {

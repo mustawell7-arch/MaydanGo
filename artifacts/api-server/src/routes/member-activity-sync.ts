@@ -6,6 +6,7 @@ import {
   DeleteMemberActivitySyncDataResponse,
   GetMemberActivitySyncResponse,
   RevokeMemberActivitySyncResponse,
+  SyncMemberAppleHealthActivityBody,
 } from "@workspace/api-zod";
 import {
   MEMBER_CONSENT_REQUIRED_CODE,
@@ -13,12 +14,15 @@ import {
   hasCurrentRequiredMemberConsent,
 } from "../lib/member-consents";
 import { isAccessSuspended } from "../lib/account-access-restrictions";
+import { addCalendarDays, iraqToday } from "../lib/fitness-challenges";
 import {
   acceptMemberActivitySync,
   deleteMemberActivitySyncData,
   getMemberActivitySyncState,
+  MemberActivitySyncConsentRequiredError,
   MEMBER_ACTIVITY_SYNC_CONSENT_VERSION,
   revokeMemberActivitySync,
+  syncAppleHealthActivitySummaries,
 } from "../lib/member-activity-sync";
 
 const router = Router();
@@ -47,6 +51,60 @@ router.post("/activity-sync/consent", async (req, res): Promise<void> => {
     return;
   }
   res.json(AcceptMemberActivitySyncResponse.parse(await acceptMemberActivitySync(userId)));
+});
+
+router.post("/activity-sync/apple-health/sync", async (req, res): Promise<void> => {
+  const parsed = SyncMemberAppleHealthActivityBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Send valid daily step and completed-workout summaries." });
+    return;
+  }
+  const userId = getAuth(req).userId!;
+  if (!await hasCurrentRequiredMemberConsent(userId)) {
+    res.status(403).json({
+      code: MEMBER_CONSENT_REQUIRED_CODE,
+      message: MEMBER_CONSENT_REQUIRED_MESSAGE,
+    });
+    return;
+  }
+  if (await isAccessSuspended("member", userId)) {
+    res.status(403).json({ message: "This account is restricted from making changes. Contact MaydanGo support." });
+    return;
+  }
+  const current = await getMemberActivitySyncState(userId);
+  if (current.consent.status !== "enabled") {
+    res.status(403).json({ message: "Enable activity-data sharing before syncing Apple Health." });
+    return;
+  }
+
+  const today = iraqToday();
+  const earliestDate = addCalendarDays(today, -29);
+  const seenDates = new Set<string>();
+  for (const summary of parsed.data.summaries) {
+    const parsedDate = new Date(`${summary.activityDate}T00:00:00Z`);
+    if (summary.activityDate < earliestDate || summary.activityDate > today
+      || !Number.isFinite(parsedDate.getTime())
+      || parsedDate.toISOString().slice(0, 10) !== summary.activityDate
+      || seenDates.has(summary.activityDate)
+      || (summary.steps === null && summary.completedWorkouts === 0)) {
+      res.status(400).json({ message: "Summaries must contain unique, non-empty dates from the last 30 Iraq-local days." });
+      return;
+    }
+    seenDates.add(summary.activityDate);
+  }
+
+  try {
+    res.json(GetMemberActivitySyncResponse.parse(await syncAppleHealthActivitySummaries(
+      userId,
+      parsed.data.summaries,
+    )));
+  } catch (error) {
+    if (error instanceof MemberActivitySyncConsentRequiredError) {
+      res.status(403).json({ message: error.message });
+      return;
+    }
+    throw error;
+  }
 });
 
 router.delete("/activity-sync/consent", async (req, res): Promise<void> => {

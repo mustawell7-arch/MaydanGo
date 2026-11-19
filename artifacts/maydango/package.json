@@ -54,6 +54,7 @@
     "typescript": "~6.0.3"
   },
   "dependencies": {
+    "@appeeky/expo-healthkit": "^0.4.2",
     "@clerk/expo": "^4.16.1",
     "@expo-google-fonts/dm-sans": "^0.4.2",
     "expo-auth-session": "~57.0.17",

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import {
@@ -8,12 +8,17 @@ import {
   useDeleteMemberActivitySyncData,
   useGetMemberActivitySync,
   useRevokeMemberActivitySync,
+  useSyncMemberAppleHealthActivity,
 } from '@workspace/api-client-react';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, Pressable } from '@/components/Localized';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
+import {
+  buildAppleHealthDailySummaries,
+  getAppleHealthSyncRange,
+} from '@/lib/apple-health-sync';
 import { translate, type MessageKey } from '@/lib/i18n';
 
 type ConfirmAction = 'delete' | 'revoke' | null;
@@ -28,15 +33,18 @@ export default function ActivitySyncScreen() {
   const accept = useAcceptMemberActivitySync();
   const revoke = useRevokeMemberActivitySync();
   const deleteData = useDeleteMemberActivitySyncData();
+  const appleHealthSync = useSyncMemberAppleHealthActivity();
   const [consentChecked, setConsentChecked] = useState(false);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const [notice, setNotice] = useState<MessageKey | null>(null);
   const [actionError, setActionError] = useState(false);
+  const [healthSyncRunning, setHealthSyncRunning] = useState(false);
   const t = (key: MessageKey) => translate(app.language, key);
   const rtlText = app.language === 'en' ? undefined : styles.rtlText;
   const status = query.data?.consent.status ?? 'not_enabled';
   const enabled = status === 'enabled';
-  const busy = accept.isPending || revoke.isPending || deleteData.isPending;
+  const busy = accept.isPending || revoke.isPending || deleteData.isPending
+    || appleHealthSync.isPending || healthSyncRunning;
 
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: getGetMemberActivitySyncQueryKey() });
@@ -54,6 +62,69 @@ export default function ActivitySyncScreen() {
       setConfirmAction(null);
     } catch {
       setActionError(true);
+    }
+  };
+
+  const syncAppleHealth = async () => {
+    if (busy) return;
+    if (Platform.OS !== 'ios') {
+      setNotice(Platform.OS === 'android' ? 'activitySyncAndroidLater' : 'activitySyncWebHint');
+      return;
+    }
+    setActionError(false);
+    setNotice(null);
+    setHealthSyncRunning(true);
+    try {
+      const {
+        default: HealthKit,
+        QuantityType,
+        StatisticsOption,
+        Unit,
+        WorkoutType,
+      } = await import('@appeeky/expo-healthkit');
+      if (!HealthKit.isAvailable()) {
+        setNotice('activitySyncHealthKitUnavailable');
+        return;
+      }
+
+      await HealthKit.requestAuthorization({
+        toRead: [QuantityType.stepCount, WorkoutType.workout],
+      });
+      const range = getAppleHealthSyncRange();
+      const [stepStatistics, workouts] = await Promise.all([
+        HealthKit.queryStatisticsCollection({
+          type: QuantityType.stepCount,
+          unit: Unit.count,
+          from: range.from,
+          to: range.to,
+          interval: { day: 1 },
+          options: StatisticsOption.cumulativeSum,
+        }),
+        HealthKit.queryWorkouts({ from: range.from, to: range.to, ascending: true }),
+      ]);
+      const summaries = buildAppleHealthDailySummaries(
+        stepStatistics,
+        workouts,
+        range.firstDay,
+        range.today,
+      );
+      if (summaries.length === 0) {
+        setNotice('activitySyncAppleNoData');
+        return;
+      }
+
+      await appleHealthSync.mutateAsync({ data: { summaries } });
+      await refresh();
+      setNotice('activitySyncAppleSyncComplete');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/ExpoHealthKit|native module/i.test(message)) {
+        setNotice('activitySyncNativeBuildRequired');
+      } else {
+        setActionError(true);
+      }
+    } finally {
+      setHealthSyncRunning(false);
     }
   };
 
@@ -118,7 +189,9 @@ export default function ActivitySyncScreen() {
               >
                 {t(enabled ? 'activitySyncEnabledStatus' : status === 'revoked' ? 'activitySyncRevokedStatus' : 'activitySyncNotEnabledStatus')}
               </Text>
-              <Text style={[styles.body, { color: colors.mutedForeground }, rtlText]}>{t('activitySyncUnavailable')}</Text>
+              <Text style={[styles.body, { color: colors.mutedForeground }, rtlText]}>
+                {t(Platform.OS === 'ios' ? 'activitySyncConnectionHint' : Platform.OS === 'android' ? 'activitySyncAndroidLater' : 'activitySyncWebHint')}
+              </Text>
 
               {!enabled ? (
                 <>
@@ -154,6 +227,24 @@ export default function ActivitySyncScreen() {
                 </View>
               )}
             </View>
+
+            {enabled ? (
+              <View testID="activity-sync-apple" style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }, rtlText]}>{t('activitySyncAppleTitle')}</Text>
+                <Text style={[styles.body, { color: colors.mutedForeground }, rtlText]}>
+                  {t(Platform.OS === 'ios' ? 'activitySyncApplePermissionNote' : Platform.OS === 'android' ? 'activitySyncAndroidLater' : 'activitySyncWebHint')}
+                </Text>
+                {Platform.OS === 'ios' ? (
+                  <ActionButton
+                    testID="activity-sync-apple-connect"
+                    label={healthSyncRunning || appleHealthSync.isPending ? t('activitySyncSyncing') : t('activitySyncSyncNow')}
+                    colors={colors}
+                    disabled={busy}
+                    onPress={() => void syncAppleHealth()}
+                  />
+                ) : null}
+              </View>
+            ) : null}
 
             <View testID="activity-sync-data" style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={[styles.sectionTitle, { color: colors.foreground }, rtlText]}>{t('activitySyncDataTitle')}</Text>

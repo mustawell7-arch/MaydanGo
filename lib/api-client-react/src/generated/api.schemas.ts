@@ -1508,10 +1508,33 @@ export interface MemberActivitySyncConsent {
 }
 
 export interface MemberActivitySyncState {
-  syncAvailable: false;
+  syncAvailable: boolean;
   consent: MemberActivitySyncConsent;
   consentHistory: MemberActivitySyncConsentHistoryEntry[];
   records: MemberActivitySyncRecord[];
+}
+
+export interface AppleHealthDailySummary {
+  activityDate: CalendarDate;
+  /**
+     * @minimum 0
+     * @maximum 300000
+     * @nullable
+     */
+  steps: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  completedWorkouts: number;
+}
+
+export interface SyncMemberAppleHealthActivityBody {
+  /**
+     * @minItems 1
+     * @maxItems 30
+     */
+  summaries: AppleHealthDailySummary[];
 }
 
 export interface AcceptMemberActivitySyncBody {

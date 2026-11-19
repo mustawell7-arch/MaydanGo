@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import {
   db,
   memberActivitySyncConsentEvents,
@@ -8,6 +8,10 @@ import {
 } from "@workspace/db";
 
 export const MEMBER_ACTIVITY_SYNC_CONSENT_VERSION = "v1";
+
+async function lockMemberActivitySync(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], userId: string) {
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
+}
 
 export async function getMemberActivitySyncState(userId: string) {
   const [history, records] = await Promise.all([
@@ -20,7 +24,7 @@ export async function getMemberActivitySyncState(userId: string) {
   ]);
   const latest = history[0];
   return {
-    syncAvailable: false as const,
+    syncAvailable: true,
     consent: {
       status: latest?.policyVersion === MEMBER_ACTIVITY_SYNC_CONSENT_VERSION
         ? latest.action === "accepted" ? "enabled" as const : "revoked" as const
@@ -43,26 +47,73 @@ export async function getMemberActivitySyncState(userId: string) {
   };
 }
 
-export async function acceptMemberActivitySync(userId: string) {
-  const current = await db.select()
-    .from(memberActivitySyncConsentEvents)
-    .where(eq(memberActivitySyncConsentEvents.userId, userId))
-    .orderBy(desc(memberActivitySyncConsentEvents.recordedAt), desc(memberActivitySyncConsentEvents.id))
-    .limit(1);
-  if (current[0]?.action !== "accepted"
-    || current[0]?.policyVersion !== MEMBER_ACTIVITY_SYNC_CONSENT_VERSION) {
-    await db.insert(memberActivitySyncConsentEvents).values({
+export async function syncAppleHealthActivitySummaries(
+  userId: string,
+  summaries: Array<{
+    activityDate: string;
+    steps: number | null;
+    completedWorkouts: number;
+  }>,
+) {
+  await db.transaction(async tx => {
+    await lockMemberActivitySync(tx, userId);
+    const latest = await tx.select()
+      .from(memberActivitySyncConsentEvents)
+      .where(eq(memberActivitySyncConsentEvents.userId, userId))
+      .orderBy(desc(memberActivitySyncConsentEvents.recordedAt), desc(memberActivitySyncConsentEvents.id))
+      .limit(1);
+    if (latest[0]?.action !== "accepted"
+      || latest[0]?.policyVersion !== MEMBER_ACTIVITY_SYNC_CONSENT_VERSION) {
+      throw new MemberActivitySyncConsentRequiredError();
+    }
+    await tx.insert(memberActivitySyncSummaries).values(summaries.map(summary => ({
       id: randomUUID(),
       userId,
-      action: "accepted",
-      policyVersion: MEMBER_ACTIVITY_SYNC_CONSENT_VERSION,
+      provider: "apple_health" as const,
+      activityDate: summary.activityDate,
+      steps: summary.steps,
+      completedWorkouts: summary.completedWorkouts,
+      syncedAt: new Date(),
+    }))).onConflictDoUpdate({
+      target: [
+        memberActivitySyncSummaries.userId,
+        memberActivitySyncSummaries.provider,
+        memberActivitySyncSummaries.activityDate,
+      ],
+      set: {
+        steps: sql`excluded.steps`,
+        completedWorkouts: sql`excluded.completed_workouts`,
+        syncedAt: new Date(),
+      },
     });
-  }
+  });
+  return getMemberActivitySyncState(userId);
+}
+
+export async function acceptMemberActivitySync(userId: string) {
+  await db.transaction(async tx => {
+    await lockMemberActivitySync(tx, userId);
+    const current = await tx.select()
+      .from(memberActivitySyncConsentEvents)
+      .where(eq(memberActivitySyncConsentEvents.userId, userId))
+      .orderBy(desc(memberActivitySyncConsentEvents.recordedAt), desc(memberActivitySyncConsentEvents.id))
+      .limit(1);
+    if (current[0]?.action !== "accepted"
+      || current[0]?.policyVersion !== MEMBER_ACTIVITY_SYNC_CONSENT_VERSION) {
+      await tx.insert(memberActivitySyncConsentEvents).values({
+        id: randomUUID(),
+        userId,
+        action: "accepted",
+        policyVersion: MEMBER_ACTIVITY_SYNC_CONSENT_VERSION,
+      });
+    }
+  });
   return getMemberActivitySyncState(userId);
 }
 
 export async function revokeMemberActivitySync(userId: string) {
   await db.transaction(async tx => {
+    await lockMemberActivitySync(tx, userId);
     const current = await tx.select()
       .from(memberActivitySyncConsentEvents)
       .where(eq(memberActivitySyncConsentEvents.userId, userId))
@@ -84,8 +135,18 @@ export async function revokeMemberActivitySync(userId: string) {
 }
 
 export async function deleteMemberActivitySyncData(userId: string) {
-  const deleted = await db.delete(memberActivitySyncSummaries)
-    .where(eq(memberActivitySyncSummaries.userId, userId))
-    .returning({ id: memberActivitySyncSummaries.id });
-  return { deletedRecords: deleted.length };
+  return db.transaction(async tx => {
+    await lockMemberActivitySync(tx, userId);
+    const deleted = await tx.delete(memberActivitySyncSummaries)
+      .where(eq(memberActivitySyncSummaries.userId, userId))
+      .returning({ id: memberActivitySyncSummaries.id });
+    return { deletedRecords: deleted.length };
+  });
+}
+
+export class MemberActivitySyncConsentRequiredError extends Error {
+  constructor() {
+    super("Enable activity-data sharing before syncing Apple Health.");
+    this.name = "MemberActivitySyncConsentRequiredError";
+  }
 }

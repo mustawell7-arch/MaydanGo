@@ -15,8 +15,8 @@ The user explicitly skipped the Customer Community milestone.
 
 **How to apply:** Do not implement or reopen Customer Community unless the user asks. Continue with Wearable Integration next.
 
-The user selected daily step totals and completed-workout counts only, with a provider-neutral privacy/data foundation before live health-platform connections.
+The user selected daily step totals and completed-workout counts only, with a provider-neutral privacy/data foundation before live health-platform connections. Apple Health manual sync is now implemented; native iOS build and device validation remain deferred to the final device-test phase. Google Health Connect is the next provider milestone.
 
 **Why:** The user chose a foundation-first approach after learning Apple Health and Health Connect need native access beyond the current Expo Go preview.
 
-**How to apply:** Keep health data private to the member, exclude heart rate, sleep, and location, and do not count wearable summaries toward fitness challenges. Implement Apple Health and Google Health Connect later in PDF order; do not claim a live sync until those integrations are built and tested.
+**How to apply:** Keep health data private to the member, exclude heart rate, sleep, and location, and do not count wearable summaries toward fitness challenges. Do not claim Apple Health is device-verified until a native iOS build is tested. Continue next with Google Health Connect, then leave final device validation for the user-directed end phase.
