@@ -458,8 +458,8 @@ router.delete("/facilities/:id/hours-overrides/:overrideId", async (req, res) =>
 router.post("/offerings", async (req, res) => {
   const data = offeringInput.parse(req.body);
   own(res, data.partnerId);
-  if (getOfferingBookingModel(data) === "open_access" && data.active) {
-    throw new BookingError(400, "Create open-access activities as drafts, save the check-in policy, then submit them for review.");
+  if (["open_access", "resource_booking"].includes(getOfferingBookingModel(data)) && data.active) {
+    throw new BookingError(400, "Create this activity as a draft, save its check-in policy, then submit it for review.");
   }
   await verifyOfferingImageUpload(data.imagePath, data.partnerId);
   const row = await db.transaction(async tx => {
@@ -531,8 +531,8 @@ router.post("/offerings/recurring", async (req, res) => {
   const body = CreateRecurringOfferingsBody.parse(req.body);
   const template = offeringInput.parse(body.template);
   if (template.kind !== "session") throw new BookingError(400, "Only sessions can be added to a recurring schedule.");
-  if (getOfferingBookingModel(template) === "open_access") {
-    throw new BookingError(400, "Create open-access activities individually so each visit can have its own check-in window.");
+  if (["open_access", "resource_booking"].includes(getOfferingBookingModel(template))) {
+    throw new BookingError(400, "Create walk-in and resource-booking activities individually so each can have its own check-in setup.");
   }
   const calendarDate = (value: Date | string) => value instanceof Date ? value.toISOString().slice(0, 10) : value;
   const schedule = {
@@ -652,6 +652,14 @@ async function assertOfferingReadyForReview(tx: Tx, row: OfferingRow) {
     const [policy] = await tx.select({ offeringId: checkinPolicies.offeringId })
       .from(checkinPolicies).where(eq(checkinPolicies.offeringId, row.id));
     if (!policy) throw new BookingError(409, "Set up open-access check-in details before submitting this activity.");
+  }
+  if (getOfferingBookingModel(row) === "resource_booking") {
+    if (!row.resourceName?.en || row.capacity !== 1 || row.additionalPayment) {
+      throw new BookingError(409, "Set up the named resource and single-booking capacity before publishing.");
+    }
+    const [policy] = await tx.select({ offeringId: checkinPolicies.offeringId })
+      .from(checkinPolicies).where(eq(checkinPolicies.offeringId, row.id));
+    if (!policy) throw new BookingError(409, "Set up resource check-in details before submitting this activity.");
   }
   if (!row.partnerId) throw new BookingError(409, "This activity is not assigned to a partner.");
   const [partner] = await tx.select().from(partners).where(eq(partners.id, row.partnerId)).for("share");
@@ -871,9 +879,13 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
     own(res, selected.partnerId);
     if (selected.cancelledAt) throw new BookingError(409, "Cancelled offerings cannot be edited or republished. Create a replacement.");
     if (selected.startsAt <= new Date()) throw new BookingError(409, "Past offerings cannot be edited.");
-    if (getOfferingBookingModel(selected) === "open_access"
+  if (getOfferingBookingModel(selected) === "open_access"
       && (series || hasTimeChange || data.waitlistOfferMinutes !== undefined || data.joinUrl !== undefined)) {
       throw new BookingError(409, "Open-access time and check-in details are fixed. Create a replacement activity to change them.");
+    }
+    if (getOfferingBookingModel(selected) === "resource_booking"
+      && (series || hasTimeChange || data.capacity !== 1 || data.waitlistOfferMinutes !== undefined)) {
+      throw new BookingError(409, "Resource booking times and capacity are fixed. Create a replacement activity to change them.");
     }
     if (selected.accessType === "live" && data.environment !== undefined) {
       throw new BookingError(400, "Live online classes do not use an indoor or outdoor setting.");

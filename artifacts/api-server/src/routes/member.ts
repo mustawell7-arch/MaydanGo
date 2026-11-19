@@ -430,6 +430,22 @@ router.get("/live-catalog", async (_req, res) => {
     checkinOpensAt: checkinPolicies.opensAt,
     checkinClosesAt: checkinPolicies.closesAt,
     reserved: sql<number>`count(${reservations.id})::int`,
+    resourceBusy: sql<boolean>`exists (
+      select 1 from reservations resource_reservation
+      join booking_offerings resource_offering on resource_offering.id = resource_reservation.offering_id
+      where resource_reservation.status in ('reserved', 'requested')
+        and resource_offering.booking_model = 'resource_booking'
+        and resource_offering.scope = ${offerings.scope}
+        and resource_offering.active = true
+        and resource_offering.cancelled_at is null
+        and resource_offering.partner_id = ${offerings.partnerId}
+        and lower(btrim(resource_offering.city)) = lower(btrim(${offerings.city}))
+        and lower(btrim(resource_offering.facility)) = lower(btrim(${offerings.facility}))
+        and lower(btrim(coalesce(resource_offering.resource_name->>'en', ''))) = lower(btrim(coalesce(${offerings.resourceName}->>'en', '')))
+        and resource_offering.id <> ${offerings.id}
+        and resource_offering.starts_at < ${offerings.endsAt}
+        and resource_offering.ends_at > ${offerings.startsAt}
+    )`,
   }).from(offerings).innerJoin(partners, eq(offerings.partnerId, partners.id))
     .leftJoin(reservations, and(eq(reservations.offeringId, offerings.id), inArray(reservations.status, ["reserved", "requested"])))
     .leftJoin(checkinPolicies, eq(checkinPolicies.offeringId, offerings.id))
@@ -451,10 +467,10 @@ router.get("/live-catalog", async (_req, res) => {
   const offeredByClass = new Map(activeOffers.map(row => [row.offeringId, Number(row.count)]));
   const visibleOfferings = await filterSuspendedOfferings(rows.map(({ offering }) => offering));
   const visibleIds = new Set(visibleOfferings.map(offering => offering.id));
-  res.json(rows.filter(({ offering }) => visibleIds.has(offering.id)).map(({ offering: o, partnerName, reserved, checkinPolicyId, checkinOpensAt, checkinClosesAt }) => ({
+  res.json(rows.filter(({ offering }) => visibleIds.has(offering.id)).map(({ offering: o, partnerName, reserved, resourceBusy, checkinPolicyId, checkinOpensAt, checkinClosesAt }) => ({
     id: o.id, targetId: o.targetId, slot: o.slot, scope: o.scope,
     partnerId: o.partnerId, partnerName, title: o.title,
-    localizedTitle: o.localizedTitle, localizedDescription: o.localizedDescription,
+     localizedTitle: o.localizedTitle, localizedDescription: o.localizedDescription, resourceName: o.resourceName,
      kind: o.kind, city: o.city, facility: o.facility, category: o.category, accessType: o.accessType,
      bookingModel: getOfferingBookingModel(o), walkInReady: !!checkinPolicyId,
      walkInOpensAt: checkinOpensAt?.toISOString() ?? null, walkInClosesAt: checkinClosesAt?.toISOString() ?? null,
@@ -462,7 +478,7 @@ router.get("/live-catalog", async (_req, res) => {
     tiers: o.tiers, startsAt: o.startsAt, endsAt: o.endsAt, cancellationDeadline: o.cancellationDeadline,
      capacity: o.capacity, waitlistOfferMinutes: o.waitlistOfferMinutes, gender: o.gender, minAge: o.minAge, maxAge: o.maxAge,
     additionalPayment: o.additionalPayment, active: o.active, cancelledAt: o.cancelledAt,
-    remaining: Math.max(0, o.capacity - reserved - (offeredByClass.get(o.id) ?? 0)),
+     remaining: resourceBusy ? 0 : Math.max(0, o.capacity - reserved - (offeredByClass.get(o.id) ?? 0)),
   })));
 });
 router.put("/profile", async (req, res) => {

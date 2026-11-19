@@ -20,6 +20,7 @@ router.get("/catalog", async (_req, res) => {
       title: offerings.title,
       localizedTitle: offerings.localizedTitle,
       localizedDescription: offerings.localizedDescription,
+      resourceName: offerings.resourceName,
       localizedInstructor: offerings.localizedInstructor,
       difficultyLevel: offerings.difficultyLevel,
       environment: offerings.environment,
@@ -43,6 +44,22 @@ router.get("/catalog", async (_req, res) => {
       partnerName: partners.name,
       partnerId: offerings.partnerId,
       reserved: sql<number>`count(${reservations.id})::int`,
+      resourceBusy: sql<boolean>`exists (
+        select 1 from reservations resource_reservation
+        join booking_offerings resource_offering on resource_offering.id = resource_reservation.offering_id
+        where resource_reservation.status in ('reserved', 'requested')
+          and resource_offering.booking_model = 'resource_booking'
+          and resource_offering.scope = ${offerings.scope}
+          and resource_offering.active = true
+          and resource_offering.cancelled_at is null
+          and resource_offering.partner_id = ${offerings.partnerId}
+          and lower(btrim(resource_offering.city)) = lower(btrim(${offerings.city}))
+          and lower(btrim(resource_offering.facility)) = lower(btrim(${offerings.facility}))
+          and lower(btrim(coalesce(resource_offering.resource_name->>'en', ''))) = lower(btrim(coalesce(${offerings.resourceName}->>'en', '')))
+          and resource_offering.id <> ${offerings.id}
+          and resource_offering.starts_at < ${offerings.endsAt}
+          and resource_offering.ends_at > ${offerings.startsAt}
+      )`,
     })
     .from(offerings)
     .innerJoin(partners, eq(offerings.partnerId, partners.id))
@@ -70,11 +87,11 @@ router.get("/catalog", async (_req, res) => {
     .orderBy(asc(offerings.startsAt));
 
   const visible = await filterSuspendedOfferings(rows);
-  res.json(visible.map(({ capacity, reserved, imagePath, partnerId: _partnerId, ...offering }) => ({
+  res.json(visible.map(({ capacity, reserved, resourceBusy, imagePath, partnerId: _partnerId, ...offering }) => ({
     ...offering,
     bookingModel: getOfferingBookingModel(offering),
     imageUrl: imagePath ? `/api/public/offerings/${offering.id}/image` : null,
-    remaining: Math.max(0, capacity - reserved),
+    remaining: resourceBusy ? 0 : Math.max(0, capacity - reserved),
   })));
 });
 

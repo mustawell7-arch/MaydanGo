@@ -77,6 +77,12 @@ export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstruct
 
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneKuMax = 500;
 
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemResourceNameOneEnMax = 500;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemResourceNameOneArMax = 500;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemResourceNameOneKuMax = 500;
+
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemMinAgeMin = 0;
 
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemMaxAgeMin = 0;
@@ -173,7 +179,12 @@ export const GetPublicFacilitiesResponseItem = zod.object({
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemResourceNameOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemResourceNameOneKuMax)
+}),zod.null()]),
   "tiers": zod.array(zod.string()),
   "difficultyLevel": zod.union([zod.enum(['all-levels', 'beginner', 'intermediate', 'advanced']),zod.null()]),
   "environment": zod.union([zod.enum(['indoor', 'outdoor']),zod.null()]),
@@ -257,6 +268,12 @@ export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructor
 export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneArMax = 500;
 
 export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneKuMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemResourceNameOneEnMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemResourceNameOneArMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemResourceNameOneKuMax = 500;
 
 export const getPublicFacilityResponseTwoUpcomingSessionsItemMinAgeMin = 0;
 
@@ -354,7 +371,12 @@ export const GetPublicFacilityResponse = zod.object({
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemResourceNameOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemResourceNameOneKuMax)
+}),zod.null()]),
   "tiers": zod.array(zod.string()),
   "difficultyLevel": zod.union([zod.enum(['all-levels', 'beginner', 'intermediate', 'advanced']),zod.null()]),
   "environment": zod.union([zod.enum(['indoor', 'outdoor']),zod.null()]),
@@ -1240,6 +1262,12 @@ export const getPublicCatalogResponseLocalizedInstructorOneKuMax = 500;
 
 export const getPublicCatalogResponseInstructionsMax = 2000;
 
+export const getPublicCatalogResponseResourceNameOneEnMax = 500;
+
+export const getPublicCatalogResponseResourceNameOneArMax = 500;
+
+export const getPublicCatalogResponseResourceNameOneKuMax = 500;
+
 export const getPublicCatalogResponseBookingCutoffMinutesMin = 0;
 export const getPublicCatalogResponseBookingCutoffMinutesMax = 10080;
 
@@ -1278,7 +1306,12 @@ export const GetPublicCatalogResponseItem = zod.object({
   "facility": zod.string(),
   "category": zod.string(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicCatalogResponseResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(getPublicCatalogResponseResourceNameOneArMax),
+  "ku": zod.string().min(1).max(getPublicCatalogResponseResourceNameOneKuMax)
+}),zod.null()]),
   "tiers": zod.array(zod.string()),
   "difficultyLevel": zod.union([zod.enum(['all-levels', 'beginner', 'intermediate', 'advanced']),zod.null()]),
   "environment": zod.union([zod.enum(['indoor', 'outdoor']),zod.null()]),
@@ -1639,6 +1672,12 @@ export const getOperationsResponseOfferingsItemOneRequiredEquipmentOneArMax = 24
 
 export const getOperationsResponseOfferingsItemOneRequiredEquipmentOneKuMax = 240;
 
+export const getOperationsResponseOfferingsItemOneResourceNameOneEnMax = 240;
+
+export const getOperationsResponseOfferingsItemOneResourceNameOneArMax = 240;
+
+export const getOperationsResponseOfferingsItemOneResourceNameOneKuMax = 240;
+
 
 
 export const getOperationsResponseOfferingsItemOneWaitlistOfferMinutesDefault = 30;
@@ -1646,6 +1685,12 @@ export const getOperationsResponseOfferingsItemOneWaitlistOfferMinutesMin = 5;
 export const getOperationsResponseOfferingsItemOneWaitlistOfferMinutesMax = 1440;
 
 export const getOperationsResponseOfferingsItemOneMinAgeMin = 0;
+
+export const getOperationsResponseOfferingsItemThreeResourceNameOneEnMax = 240;
+
+export const getOperationsResponseOfferingsItemThreeResourceNameOneArMax = 240;
+
+export const getOperationsResponseOfferingsItemThreeResourceNameOneKuMax = 240;
 
 export const getOperationsResponseOfferingsItemThreeApprovalReasonMax = 1000;
 
@@ -1758,7 +1803,12 @@ export const GetOperationsResponse = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(getOperationsResponseOfferingsItemOneResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemOneResourceNameOneArMax),
+  "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemOneResourceNameOneKuMax)
+}),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -1781,6 +1831,11 @@ export const GetOperationsResponse = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(getOperationsResponseOfferingsItemThreeResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemThreeResourceNameOneArMax),
+  "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemThreeResourceNameOneKuMax)
+}),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
   "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
@@ -3438,6 +3493,12 @@ export const addLiveOfferingBodyRequiredEquipmentOneArMax = 240;
 
 export const addLiveOfferingBodyRequiredEquipmentOneKuMax = 240;
 
+export const addLiveOfferingBodyResourceNameOneEnMax = 240;
+
+export const addLiveOfferingBodyResourceNameOneArMax = 240;
+
+export const addLiveOfferingBodyResourceNameOneKuMax = 240;
+
 
 
 export const addLiveOfferingBodyWaitlistOfferMinutesDefault = 30;
@@ -3479,7 +3540,12 @@ export const AddLiveOfferingBody = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']).optional(),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']).optional(),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(addLiveOfferingBodyResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(addLiveOfferingBodyResourceNameOneArMax),
+  "ku": zod.string().min(1).max(addLiveOfferingBodyResourceNameOneKuMax)
+}),zod.null()]).optional(),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -3529,6 +3595,12 @@ export const addLiveOfferingResponseOneRequiredEquipmentOneArMax = 240;
 
 export const addLiveOfferingResponseOneRequiredEquipmentOneKuMax = 240;
 
+export const addLiveOfferingResponseOneResourceNameOneEnMax = 240;
+
+export const addLiveOfferingResponseOneResourceNameOneArMax = 240;
+
+export const addLiveOfferingResponseOneResourceNameOneKuMax = 240;
+
 
 
 export const addLiveOfferingResponseOneWaitlistOfferMinutesDefault = 30;
@@ -3536,6 +3608,12 @@ export const addLiveOfferingResponseOneWaitlistOfferMinutesMin = 5;
 export const addLiveOfferingResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const addLiveOfferingResponseOneMinAgeMin = 0;
+
+export const addLiveOfferingResponseThreeResourceNameOneEnMax = 240;
+
+export const addLiveOfferingResponseThreeResourceNameOneArMax = 240;
+
+export const addLiveOfferingResponseThreeResourceNameOneKuMax = 240;
 
 export const addLiveOfferingResponseThreeApprovalReasonMax = 1000;
 
@@ -3577,7 +3655,12 @@ export const AddLiveOfferingResponse = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(addLiveOfferingResponseOneResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(addLiveOfferingResponseOneResourceNameOneArMax),
+  "ku": zod.string().min(1).max(addLiveOfferingResponseOneResourceNameOneKuMax)
+}),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -3600,6 +3683,11 @@ export const AddLiveOfferingResponse = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(addLiveOfferingResponseThreeResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(addLiveOfferingResponseThreeResourceNameOneArMax),
+  "ku": zod.string().min(1).max(addLiveOfferingResponseThreeResourceNameOneKuMax)
+}),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
   "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
@@ -3721,6 +3809,12 @@ export const createRecurringOfferingsBodyTemplateRequiredEquipmentOneArMax = 240
 
 export const createRecurringOfferingsBodyTemplateRequiredEquipmentOneKuMax = 240;
 
+export const createRecurringOfferingsBodyTemplateResourceNameOneEnMax = 240;
+
+export const createRecurringOfferingsBodyTemplateResourceNameOneArMax = 240;
+
+export const createRecurringOfferingsBodyTemplateResourceNameOneKuMax = 240;
+
 
 
 export const createRecurringOfferingsBodyTemplateWaitlistOfferMinutesDefault = 30;
@@ -3776,7 +3870,12 @@ export const CreateRecurringOfferingsBody = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']).optional(),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']).optional(),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsBodyTemplateResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateResourceNameOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsBodyTemplateResourceNameOneKuMax)
+}),zod.null()]).optional(),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -3835,6 +3934,12 @@ export const createRecurringOfferingsResponseOneRequiredEquipmentOneArMax = 240;
 
 export const createRecurringOfferingsResponseOneRequiredEquipmentOneKuMax = 240;
 
+export const createRecurringOfferingsResponseOneResourceNameOneEnMax = 240;
+
+export const createRecurringOfferingsResponseOneResourceNameOneArMax = 240;
+
+export const createRecurringOfferingsResponseOneResourceNameOneKuMax = 240;
+
 
 
 export const createRecurringOfferingsResponseOneWaitlistOfferMinutesDefault = 30;
@@ -3842,6 +3947,12 @@ export const createRecurringOfferingsResponseOneWaitlistOfferMinutesMin = 5;
 export const createRecurringOfferingsResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const createRecurringOfferingsResponseOneMinAgeMin = 0;
+
+export const createRecurringOfferingsResponseThreeResourceNameOneEnMax = 240;
+
+export const createRecurringOfferingsResponseThreeResourceNameOneArMax = 240;
+
+export const createRecurringOfferingsResponseThreeResourceNameOneKuMax = 240;
 
 export const createRecurringOfferingsResponseThreeApprovalReasonMax = 1000;
 
@@ -3883,7 +3994,12 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsResponseOneResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneResourceNameOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsResponseOneResourceNameOneKuMax)
+}),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -3906,6 +4022,11 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsResponseThreeResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsResponseThreeResourceNameOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsResponseThreeResourceNameOneKuMax)
+}),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
   "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
@@ -4010,6 +4131,12 @@ export const changeLiveOfferingResponseOneRequiredEquipmentOneArMax = 240;
 
 export const changeLiveOfferingResponseOneRequiredEquipmentOneKuMax = 240;
 
+export const changeLiveOfferingResponseOneResourceNameOneEnMax = 240;
+
+export const changeLiveOfferingResponseOneResourceNameOneArMax = 240;
+
+export const changeLiveOfferingResponseOneResourceNameOneKuMax = 240;
+
 
 
 export const changeLiveOfferingResponseOneWaitlistOfferMinutesDefault = 30;
@@ -4017,6 +4144,12 @@ export const changeLiveOfferingResponseOneWaitlistOfferMinutesMin = 5;
 export const changeLiveOfferingResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const changeLiveOfferingResponseOneMinAgeMin = 0;
+
+export const changeLiveOfferingResponseThreeResourceNameOneEnMax = 240;
+
+export const changeLiveOfferingResponseThreeResourceNameOneArMax = 240;
+
+export const changeLiveOfferingResponseThreeResourceNameOneKuMax = 240;
 
 export const changeLiveOfferingResponseThreeApprovalReasonMax = 1000;
 
@@ -4058,7 +4191,12 @@ export const ChangeLiveOfferingResponse = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeLiveOfferingResponseOneResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(changeLiveOfferingResponseOneResourceNameOneArMax),
+  "ku": zod.string().min(1).max(changeLiveOfferingResponseOneResourceNameOneKuMax)
+}),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -4081,6 +4219,11 @@ export const ChangeLiveOfferingResponse = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeLiveOfferingResponseThreeResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(changeLiveOfferingResponseThreeResourceNameOneArMax),
+  "ku": zod.string().min(1).max(changeLiveOfferingResponseThreeResourceNameOneKuMax)
+}),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
   "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
@@ -4211,6 +4354,12 @@ export const changeRecurringOfferingSeriesResponseOneRequiredEquipmentOneArMax =
 
 export const changeRecurringOfferingSeriesResponseOneRequiredEquipmentOneKuMax = 240;
 
+export const changeRecurringOfferingSeriesResponseOneResourceNameOneEnMax = 240;
+
+export const changeRecurringOfferingSeriesResponseOneResourceNameOneArMax = 240;
+
+export const changeRecurringOfferingSeriesResponseOneResourceNameOneKuMax = 240;
+
 
 
 export const changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesDefault = 30;
@@ -4218,6 +4367,12 @@ export const changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesMin = 5
 export const changeRecurringOfferingSeriesResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const changeRecurringOfferingSeriesResponseOneMinAgeMin = 0;
+
+export const changeRecurringOfferingSeriesResponseThreeResourceNameOneEnMax = 240;
+
+export const changeRecurringOfferingSeriesResponseThreeResourceNameOneArMax = 240;
+
+export const changeRecurringOfferingSeriesResponseThreeResourceNameOneKuMax = 240;
 
 export const changeRecurringOfferingSeriesResponseThreeApprovalReasonMax = 1000;
 
@@ -4259,7 +4414,12 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneResourceNameOneArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneResourceNameOneKuMax)
+}),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -4282,6 +4442,11 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseThreeResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseThreeResourceNameOneArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseThreeResourceNameOneKuMax)
+}),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
   "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
@@ -4359,6 +4524,12 @@ export const submitLiveOfferingResponseOneRequiredEquipmentOneArMax = 240;
 
 export const submitLiveOfferingResponseOneRequiredEquipmentOneKuMax = 240;
 
+export const submitLiveOfferingResponseOneResourceNameOneEnMax = 240;
+
+export const submitLiveOfferingResponseOneResourceNameOneArMax = 240;
+
+export const submitLiveOfferingResponseOneResourceNameOneKuMax = 240;
+
 
 
 export const submitLiveOfferingResponseOneWaitlistOfferMinutesDefault = 30;
@@ -4366,6 +4537,12 @@ export const submitLiveOfferingResponseOneWaitlistOfferMinutesMin = 5;
 export const submitLiveOfferingResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const submitLiveOfferingResponseOneMinAgeMin = 0;
+
+export const submitLiveOfferingResponseThreeResourceNameOneEnMax = 240;
+
+export const submitLiveOfferingResponseThreeResourceNameOneArMax = 240;
+
+export const submitLiveOfferingResponseThreeResourceNameOneKuMax = 240;
 
 export const submitLiveOfferingResponseThreeApprovalReasonMax = 1000;
 
@@ -4407,7 +4584,12 @@ export const SubmitLiveOfferingResponse = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(submitLiveOfferingResponseOneResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(submitLiveOfferingResponseOneResourceNameOneArMax),
+  "ku": zod.string().min(1).max(submitLiveOfferingResponseOneResourceNameOneKuMax)
+}),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -4430,6 +4612,11 @@ export const SubmitLiveOfferingResponse = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(submitLiveOfferingResponseThreeResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(submitLiveOfferingResponseThreeResourceNameOneArMax),
+  "ku": zod.string().min(1).max(submitLiveOfferingResponseThreeResourceNameOneKuMax)
+}),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
   "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
@@ -4504,6 +4691,12 @@ export const respondToOfferingCorrectionResponseOneRequiredEquipmentOneArMax = 2
 
 export const respondToOfferingCorrectionResponseOneRequiredEquipmentOneKuMax = 240;
 
+export const respondToOfferingCorrectionResponseOneResourceNameOneEnMax = 240;
+
+export const respondToOfferingCorrectionResponseOneResourceNameOneArMax = 240;
+
+export const respondToOfferingCorrectionResponseOneResourceNameOneKuMax = 240;
+
 
 
 export const respondToOfferingCorrectionResponseOneWaitlistOfferMinutesDefault = 30;
@@ -4511,6 +4704,12 @@ export const respondToOfferingCorrectionResponseOneWaitlistOfferMinutesMin = 5;
 export const respondToOfferingCorrectionResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const respondToOfferingCorrectionResponseOneMinAgeMin = 0;
+
+export const respondToOfferingCorrectionResponseThreeResourceNameOneEnMax = 240;
+
+export const respondToOfferingCorrectionResponseThreeResourceNameOneArMax = 240;
+
+export const respondToOfferingCorrectionResponseThreeResourceNameOneKuMax = 240;
 
 export const respondToOfferingCorrectionResponseThreeApprovalReasonMax = 1000;
 
@@ -4552,7 +4751,12 @@ export const RespondToOfferingCorrectionResponse = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(respondToOfferingCorrectionResponseOneResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneResourceNameOneArMax),
+  "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseOneResourceNameOneKuMax)
+}),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -4575,6 +4779,11 @@ export const RespondToOfferingCorrectionResponse = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(respondToOfferingCorrectionResponseThreeResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseThreeResourceNameOneArMax),
+  "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseThreeResourceNameOneKuMax)
+}),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
   "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
@@ -4650,6 +4859,12 @@ export const reviewOfferingApprovalResponseOneRequiredEquipmentOneArMax = 240;
 
 export const reviewOfferingApprovalResponseOneRequiredEquipmentOneKuMax = 240;
 
+export const reviewOfferingApprovalResponseOneResourceNameOneEnMax = 240;
+
+export const reviewOfferingApprovalResponseOneResourceNameOneArMax = 240;
+
+export const reviewOfferingApprovalResponseOneResourceNameOneKuMax = 240;
+
 
 
 export const reviewOfferingApprovalResponseOneWaitlistOfferMinutesDefault = 30;
@@ -4657,6 +4872,12 @@ export const reviewOfferingApprovalResponseOneWaitlistOfferMinutesMin = 5;
 export const reviewOfferingApprovalResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const reviewOfferingApprovalResponseOneMinAgeMin = 0;
+
+export const reviewOfferingApprovalResponseThreeResourceNameOneEnMax = 240;
+
+export const reviewOfferingApprovalResponseThreeResourceNameOneArMax = 240;
+
+export const reviewOfferingApprovalResponseThreeResourceNameOneKuMax = 240;
 
 export const reviewOfferingApprovalResponseThreeApprovalReasonMax = 1000;
 
@@ -4698,7 +4919,12 @@ export const ReviewOfferingApprovalResponse = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(reviewOfferingApprovalResponseOneResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneResourceNameOneArMax),
+  "ku": zod.string().min(1).max(reviewOfferingApprovalResponseOneResourceNameOneKuMax)
+}),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -4721,6 +4947,11 @@ export const ReviewOfferingApprovalResponse = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(reviewOfferingApprovalResponseThreeResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(reviewOfferingApprovalResponseThreeResourceNameOneArMax),
+  "ku": zod.string().min(1).max(reviewOfferingApprovalResponseThreeResourceNameOneKuMax)
+}),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
   "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
@@ -10141,6 +10372,12 @@ export const getLiveCatalogResponseOneRequiredEquipmentOneArMax = 240;
 
 export const getLiveCatalogResponseOneRequiredEquipmentOneKuMax = 240;
 
+export const getLiveCatalogResponseOneResourceNameOneEnMax = 240;
+
+export const getLiveCatalogResponseOneResourceNameOneArMax = 240;
+
+export const getLiveCatalogResponseOneResourceNameOneKuMax = 240;
+
 
 
 export const getLiveCatalogResponseOneWaitlistOfferMinutesDefault = 30;
@@ -10148,6 +10385,12 @@ export const getLiveCatalogResponseOneWaitlistOfferMinutesMin = 5;
 export const getLiveCatalogResponseOneWaitlistOfferMinutesMax = 1440;
 
 export const getLiveCatalogResponseOneMinAgeMin = 0;
+
+export const getLiveCatalogResponseThreeResourceNameOneEnMax = 240;
+
+export const getLiveCatalogResponseThreeResourceNameOneArMax = 240;
+
+export const getLiveCatalogResponseThreeResourceNameOneKuMax = 240;
 
 export const getLiveCatalogResponseThreeApprovalReasonMax = 1000;
 
@@ -10189,7 +10432,12 @@ export const GetLiveCatalogResponseItem = zod.object({
 }),zod.null()]).optional(),
   "joinUrl": zod.url().nullish(),
   "kind": zod.enum(['session', 'event', 'coach']),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(getLiveCatalogResponseOneResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(getLiveCatalogResponseOneResourceNameOneArMax),
+  "ku": zod.string().min(1).max(getLiveCatalogResponseOneResourceNameOneKuMax)
+}),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
   "category": zod.string(),
@@ -10212,6 +10460,11 @@ export const GetLiveCatalogResponseItem = zod.object({
   "targetId": zod.string(),
   "slot": zod.string(),
   "scope": zod.string(),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(getLiveCatalogResponseThreeResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(getLiveCatalogResponseThreeResourceNameOneArMax),
+  "ku": zod.string().min(1).max(getLiveCatalogResponseThreeResourceNameOneKuMax)
+}),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
   "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
@@ -11232,6 +11485,12 @@ export const joinMemberWaitlistResponseBookingsItemLocalizedTitleOneArMax = 500;
 
 export const joinMemberWaitlistResponseBookingsItemLocalizedTitleOneKuMax = 500;
 
+export const joinMemberWaitlistResponseBookingsItemResourceNameOneEnMax = 500;
+
+export const joinMemberWaitlistResponseBookingsItemResourceNameOneArMax = 500;
+
+export const joinMemberWaitlistResponseBookingsItemResourceNameOneKuMax = 500;
+
 
 
 
@@ -11260,7 +11519,12 @@ export const JoinMemberWaitlistResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(joinMemberWaitlistResponseBookingsItemResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(joinMemberWaitlistResponseBookingsItemResourceNameOneArMax),
+  "ku": zod.string().min(1).max(joinMemberWaitlistResponseBookingsItemResourceNameOneKuMax)
+}),zod.null()]),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -11299,6 +11563,12 @@ export const leaveMemberWaitlistResponseBookingsItemLocalizedTitleOneArMax = 500
 
 export const leaveMemberWaitlistResponseBookingsItemLocalizedTitleOneKuMax = 500;
 
+export const leaveMemberWaitlistResponseBookingsItemResourceNameOneEnMax = 500;
+
+export const leaveMemberWaitlistResponseBookingsItemResourceNameOneArMax = 500;
+
+export const leaveMemberWaitlistResponseBookingsItemResourceNameOneKuMax = 500;
+
 
 
 
@@ -11327,7 +11597,12 @@ export const LeaveMemberWaitlistResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(leaveMemberWaitlistResponseBookingsItemResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(leaveMemberWaitlistResponseBookingsItemResourceNameOneArMax),
+  "ku": zod.string().min(1).max(leaveMemberWaitlistResponseBookingsItemResourceNameOneKuMax)
+}),zod.null()]),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -11366,6 +11641,12 @@ export const acceptMemberWaitlistOfferResponseBookingsItemLocalizedTitleOneArMax
 
 export const acceptMemberWaitlistOfferResponseBookingsItemLocalizedTitleOneKuMax = 500;
 
+export const acceptMemberWaitlistOfferResponseBookingsItemResourceNameOneEnMax = 500;
+
+export const acceptMemberWaitlistOfferResponseBookingsItemResourceNameOneArMax = 500;
+
+export const acceptMemberWaitlistOfferResponseBookingsItemResourceNameOneKuMax = 500;
+
 
 
 
@@ -11394,7 +11675,12 @@ export const AcceptMemberWaitlistOfferResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(acceptMemberWaitlistOfferResponseBookingsItemResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(acceptMemberWaitlistOfferResponseBookingsItemResourceNameOneArMax),
+  "ku": zod.string().min(1).max(acceptMemberWaitlistOfferResponseBookingsItemResourceNameOneKuMax)
+}),zod.null()]),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -12999,6 +13285,12 @@ export const saveMemberProfileResponseBookingsItemLocalizedTitleOneArMax = 500;
 
 export const saveMemberProfileResponseBookingsItemLocalizedTitleOneKuMax = 500;
 
+export const saveMemberProfileResponseBookingsItemResourceNameOneEnMax = 500;
+
+export const saveMemberProfileResponseBookingsItemResourceNameOneArMax = 500;
+
+export const saveMemberProfileResponseBookingsItemResourceNameOneKuMax = 500;
+
 
 
 
@@ -13027,7 +13319,12 @@ export const SaveMemberProfileResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(saveMemberProfileResponseBookingsItemResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(saveMemberProfileResponseBookingsItemResourceNameOneArMax),
+  "ku": zod.string().min(1).max(saveMemberProfileResponseBookingsItemResourceNameOneKuMax)
+}),zod.null()]),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -13076,6 +13373,12 @@ export const getMemberStateResponseBookingsItemLocalizedTitleOneArMax = 500;
 
 export const getMemberStateResponseBookingsItemLocalizedTitleOneKuMax = 500;
 
+export const getMemberStateResponseBookingsItemResourceNameOneEnMax = 500;
+
+export const getMemberStateResponseBookingsItemResourceNameOneArMax = 500;
+
+export const getMemberStateResponseBookingsItemResourceNameOneKuMax = 500;
+
 
 
 
@@ -13104,7 +13407,12 @@ export const GetMemberStateResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberStateResponseBookingsItemResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(getMemberStateResponseBookingsItemResourceNameOneArMax),
+  "ku": zod.string().min(1).max(getMemberStateResponseBookingsItemResourceNameOneKuMax)
+}),zod.null()]),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -13139,6 +13447,12 @@ export const getMemberAccountSummaryResponseBookingsItemLocalizedTitleOneArMax =
 
 export const getMemberAccountSummaryResponseBookingsItemLocalizedTitleOneKuMax = 500;
 
+export const getMemberAccountSummaryResponseBookingsItemResourceNameOneEnMax = 500;
+
+export const getMemberAccountSummaryResponseBookingsItemResourceNameOneArMax = 500;
+
+export const getMemberAccountSummaryResponseBookingsItemResourceNameOneKuMax = 500;
+
 
 
 export const GetMemberAccountSummaryResponse = zod.object({
@@ -13161,7 +13475,12 @@ export const GetMemberAccountSummaryResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberAccountSummaryResponseBookingsItemResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(getMemberAccountSummaryResponseBookingsItemResourceNameOneArMax),
+  "ku": zod.string().min(1).max(getMemberAccountSummaryResponseBookingsItemResourceNameOneKuMax)
+}),zod.null()]),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -13198,6 +13517,12 @@ export const getMemberAllowancesResponseBookingsItemLocalizedTitleOneEnMax = 500
 export const getMemberAllowancesResponseBookingsItemLocalizedTitleOneArMax = 500;
 
 export const getMemberAllowancesResponseBookingsItemLocalizedTitleOneKuMax = 500;
+
+export const getMemberAllowancesResponseBookingsItemResourceNameOneEnMax = 500;
+
+export const getMemberAllowancesResponseBookingsItemResourceNameOneArMax = 500;
+
+export const getMemberAllowancesResponseBookingsItemResourceNameOneKuMax = 500;
 
 
 
@@ -13247,7 +13572,12 @@ export const GetMemberAllowancesResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberAllowancesResponseBookingsItemResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(getMemberAllowancesResponseBookingsItemResourceNameOneArMax),
+  "ku": zod.string().min(1).max(getMemberAllowancesResponseBookingsItemResourceNameOneKuMax)
+}),zod.null()]),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -13267,6 +13597,12 @@ export const enablePreviewMembershipResponseBookingsItemLocalizedTitleOneEnMax =
 export const enablePreviewMembershipResponseBookingsItemLocalizedTitleOneArMax = 500;
 
 export const enablePreviewMembershipResponseBookingsItemLocalizedTitleOneKuMax = 500;
+
+export const enablePreviewMembershipResponseBookingsItemResourceNameOneEnMax = 500;
+
+export const enablePreviewMembershipResponseBookingsItemResourceNameOneArMax = 500;
+
+export const enablePreviewMembershipResponseBookingsItemResourceNameOneKuMax = 500;
 
 
 
@@ -13296,7 +13632,12 @@ export const EnablePreviewMembershipResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(enablePreviewMembershipResponseBookingsItemResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(enablePreviewMembershipResponseBookingsItemResourceNameOneArMax),
+  "ku": zod.string().min(1).max(enablePreviewMembershipResponseBookingsItemResourceNameOneKuMax)
+}),zod.null()]),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -13337,6 +13678,12 @@ export const createMemberBookingResponseBookingsItemLocalizedTitleOneArMax = 500
 
 export const createMemberBookingResponseBookingsItemLocalizedTitleOneKuMax = 500;
 
+export const createMemberBookingResponseBookingsItemResourceNameOneEnMax = 500;
+
+export const createMemberBookingResponseBookingsItemResourceNameOneArMax = 500;
+
+export const createMemberBookingResponseBookingsItemResourceNameOneKuMax = 500;
+
 
 
 
@@ -13365,7 +13712,12 @@ export const CreateMemberBookingResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(createMemberBookingResponseBookingsItemResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(createMemberBookingResponseBookingsItemResourceNameOneArMax),
+  "ku": zod.string().min(1).max(createMemberBookingResponseBookingsItemResourceNameOneKuMax)
+}),zod.null()]),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),
@@ -13404,6 +13756,12 @@ export const cancelMemberBookingResponseBookingsItemLocalizedTitleOneArMax = 500
 
 export const cancelMemberBookingResponseBookingsItemLocalizedTitleOneKuMax = 500;
 
+export const cancelMemberBookingResponseBookingsItemResourceNameOneEnMax = 500;
+
+export const cancelMemberBookingResponseBookingsItemResourceNameOneArMax = 500;
+
+export const cancelMemberBookingResponseBookingsItemResourceNameOneKuMax = 500;
+
 
 
 
@@ -13432,7 +13790,12 @@ export const CancelMemberBookingResponse = zod.object({
 }),zod.null()]),
   "city": zod.string(),
   "facility": zod.string(),
-  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'event', 'live_class']),
+  "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
+  "resourceName": zod.union([zod.object({
+  "en": zod.string().min(1).max(cancelMemberBookingResponseBookingsItemResourceNameOneEnMax),
+  "ar": zod.string().min(1).max(cancelMemberBookingResponseBookingsItemResourceNameOneArMax),
+  "ku": zod.string().min(1).max(cancelMemberBookingResponseBookingsItemResourceNameOneKuMax)
+}),zod.null()]),
   "cancellationDeadline": zod.coerce.date(),
   "scope": zod.string(),
   "startsAt": zod.string(),

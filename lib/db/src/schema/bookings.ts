@@ -44,6 +44,7 @@ export type BookingModel =
   | "booking_required"
   | "booking_request"
   | "open_access"
+  | "resource_booking"
   | "event"
   | "live_class";
 export const memberProfiles = pgTable("member_profiles", {
@@ -76,6 +77,7 @@ export const offerings = pgTable("booking_offerings", {
   title: text("title").notNull(),
   localizedTitle: jsonb("localized_title").$type<LocalizedText>(),
   localizedDescription: jsonb("localized_description").$type<LocalizedText>(),
+  resourceName: jsonb("resource_name").$type<LocalizedText | null>(),
   instructions: text("instructions"),
   imagePath: text("image_path"),
   bookingCutoffMinutes: integer("booking_cutoff_minutes").notNull().default(0),
@@ -119,6 +121,7 @@ export const offerings = pgTable("booking_offerings", {
   index("offering_recurrence_group").on(t.recurrenceGroupId, t.startsAt)
     .where(sql`${t.recurrenceGroupId} is not null`),
   index("offering_review_status").on(t.partnerId, t.approvalStatus, t.startsAt),
+  index("offering_resource_booking_lookup").on(t.scope, t.partnerId, t.city, t.facility, t.bookingModel, t.startsAt),
 ]);
 
 export const reservations = pgTable("reservations", {
@@ -128,8 +131,12 @@ export const reservations = pgTable("reservations", {
   status: text("status").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
-}, t => [uniqueIndex("one_active_reservation").on(t.userId, t.offeringId)
-  .where(sql`${t.status} in ('reserved', 'requested')`)]);
+}, t => [
+  uniqueIndex("one_active_reservation").on(t.userId, t.offeringId)
+    .where(sql`${t.status} in ('reserved', 'requested')`),
+  index("reservation_active_offering").on(t.offeringId)
+    .where(sql`${t.status} in ('reserved', 'requested')`),
+]);
 
 export const waitlistEntries = pgTable("waitlist_entries", {
   id: text("id").primaryKey(),

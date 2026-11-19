@@ -2,6 +2,7 @@
 - [MaydanGo PDF sequencing](maydango-pdf-sequencing.md) — Continue with the next unfinished item in the uploaded product PDF; do not replace it with invented follow-ups.
 - [MaydanGo visual assets](maydango-visual-assets.md) — The user will source imagery; do not generate or search for photos.
 - [Account booking boundary](account-booking-boundary.md) — Explicit sample-only access; never convert local plan choices or old preview reservations into live entitlements.
+- [MaydanGo resource booking](maydango-resource-booking.md) — Court and room reservations are exclusive per named resource and time; require check-in setup and keep payments deferred.
 - [Workspace type compatibility](workspace-type-generation.md) — Avoid duplicate React declaration versions and conflicting Orval validator/model barrels.
 - [Localization boundaries](localization-boundaries.md) — Sorani Kurdish, Iraq-time schedules, and native-speaker review remain explicit release constraints.
 - [Live access rollout](live-access-rollout.md) — Gate live payments, preserve reservation terms, and count free event RSVPs as standard membership visits.

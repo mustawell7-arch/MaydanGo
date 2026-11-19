@@ -169,20 +169,24 @@ export default function LiveScreen() {
       </View> : items.map(o => {
         const mine = booked(o), full = (o.remaining ?? 1) <= 0;
         const isOpenAccess = o.bookingModel === 'open_access';
+        const isResourceBooking = o.bookingModel === 'resource_booking';
         const walkInOpen = isOpenAccess && !!o.walkInReady && !!o.walkInOpensAt && !!o.walkInClosesAt
           && Date.now() >= Date.parse(o.walkInOpensAt) && Date.now() < Date.parse(o.walkInClosesAt);
-        const waitlistEntry = [...app.waitlists].filter(entry => entry.offeringId === o.id)
+        const waitlistEntry = isResourceBooking ? undefined : [...app.waitlists].filter(entry => entry.offeringId === o.id)
           .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
         const activeWaitlistEntry = waitlistEntry && ['waiting', 'offered'].includes(waitlistEntry.status) ? waitlistEntry : undefined;
-        const canJoinWaitlist = !isOpenAccess && full && o.kind === 'session' && !activeWaitlistEntry && !mine && !o.additionalPayment;
+        const canJoinWaitlist = !isOpenAccess && !isResourceBooking && full && o.kind === 'session' && !activeWaitlistEntry && !mine && !o.additionalPayment;
         const waitlistBusy = busyId === `waitlist:${o.id}`;
         return <View key={o.id} style={[styles.card, { backgroundColor: c.card, borderColor: mine ? c.primary : c.border }]}>
           <View style={styles.between}>
             <Text style={[styles.label, { color: c.primary }]}>{o.accessType === 'live' ? 'Live online' : o.accessType === 'premium' ? 'Premium' : 'Physical'} · {o.kind === 'coach' ? 'Coaching' : o.kind === 'event' ? 'Event' : 'Session'}</Text>
-            <Text style={{ color: full ? c.destructive : c.mutedForeground, fontSize: 12, fontWeight: '700' }}>{full ? 'Full' : `${o.remaining ?? '—'} / ${o.capacity}`}</Text>
+            <Text style={{ color: full ? c.destructive : c.mutedForeground, fontSize: 12, fontWeight: '700' }}>
+              {isResourceBooking ? full ? t('resourceUnavailable') : t('resourceAvailable') : full ? 'Full' : `${o.remaining ?? '—'} / ${o.capacity}`}
+            </Text>
           </View>
           <Text raw style={{ color: c.foreground, fontSize: 18, fontWeight: '800' }}>{o.title}</Text>
           <Text raw style={{ color: c.mutedForeground }}>{o.partnerName ?? ''} · {o.facility} · {o.city}</Text>
+          {isResourceBooking && o.resourceName ? <Text raw style={{ color: c.primary, fontWeight: '700' }}>{t('resourceLabel')}: {o.resourceName[app.language]}</Text> : null}
           {o.accessType !== 'live' ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
             {t('activitySettingFilter')}: {o.environment ? t(o.environment) : t('settingNotListed')}
           </Text> : null}
@@ -217,14 +221,15 @@ export default function LiveScreen() {
             </Pressable>
           </> : <>
             {waitlistEntry && !['left'].includes(waitlistEntry.status) ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{t(waitlistStatusKey(waitlistEntry.status))}</Text> : null}
-            <Pressable testID={full && o.kind === 'session' && !isOpenAccess ? `live-waitlist-join-${o.id}` : `live-book-${o.id}`}
+            <Pressable testID={full && o.kind === 'session' && !isOpenAccess && !isResourceBooking ? `live-waitlist-join-${o.id}` : `live-book-${o.id}`}
               accessibilityRole="button" disabled={!!busyId || (!mine && !canJoinWaitlist && (full || o.additionalPayment || (isOpenAccess && !walkInOpen)))}
-              onPress={() => full && o.kind === 'session' && !isOpenAccess ? void runWaitlistAction(o.id, 'join') : void act(o, mine)}
+              onPress={() => full && o.kind === 'session' && !isOpenAccess && !isResourceBooking ? void runWaitlistAction(o.id, 'join') : void act(o, mine)}
               style={[styles.cta, { backgroundColor: mine ? c.secondary : c.primary, opacity: busyId === o.id || waitlistBusy || (!mine && (full || (isOpenAccess && !walkInOpen))) ? .55 : 1 }]}>
               <Text style={{ color: mine ? c.secondaryForeground : c.primaryForeground, fontWeight: '700' }}>
                 {busyId === o.id || waitlistBusy ? 'Working…' : mine ? isOpenAccess ? t('cancelWalkIn') : 'Cancel reservation'
                   : isOpenAccess ? walkInOpen ? t('startWalkIn') : t('walkInUnavailable')
-                    : full ? o.kind === 'session' ? t('waitlistJoin') : 'Full' : o.additionalPayment ? 'Unavailable' : 'Reserve'}
+                    : isResourceBooking ? full ? t('resourceUnavailable') : t('reserveResource')
+                      : full ? o.kind === 'session' ? t('waitlistJoin') : 'Full' : o.additionalPayment ? 'Unavailable' : 'Reserve'}
               </Text>
             </Pressable>
           </>}
@@ -239,10 +244,11 @@ export default function LiveScreen() {
           {mine.map(b => { const o = catalog.data?.find(x => x.kind === b.kind && x.targetId === b.targetId && x.slot === b.slot); const st = String(b.status);
             return <View key={b.id} style={[styles.card, { backgroundColor: c.card, borderColor: st === 'partner_cancelled' ? c.destructive : c.border }]}>
               <Text raw style={{ color: c.foreground, fontWeight: '700' }}>{o?.title ?? b.title}</Text>
+              {b.bookingModel === 'resource_booking' && b.resourceName ? <Text raw style={{ color: c.primary, fontWeight: '700' }}>{t('resourceLabel')}: {b.resourceName[app.language]}</Text> : null}
               <Text style={{ color: c.mutedForeground }}>{dateTime(b.startsAt, app.language)}</Text>
               <Text style={{ color: st === 'partner_cancelled' ? c.destructive : st === 'cancelled' ? c.mutedForeground : c.primary, fontWeight: '700', fontSize: 12 }}>
                 {st === 'partner_cancelled' ? 'Cancelled by partner. Your visit was returned.' : st === 'cancelled' ? 'Cancelled by you' : b.bookingModel === 'open_access' ? t('walkInReservation') : 'Reserved'}</Text>
-              {b.bookingModel === 'open_access' && st === 'reserved' && <Pressable accessibilityRole="button" onPress={() => router.push('/checkin')}>
+              {['open_access', 'resource_booking'].includes(b.bookingModel) && st === 'reserved' && <Pressable accessibilityRole="button" onPress={() => router.push('/checkin')}>
                 <Text style={{ color: c.primary, fontWeight: '700' }}>{t('scanPartnerQr')}</Text>
               </Pressable>}
               {!o && ['reserved', 'requested'].includes(st) && ['session', 'event', 'coach'].includes(b.kind) && b.bookingModel !== 'open_access' ? <Pressable accessibilityRole="button" disabled={!!busyId}

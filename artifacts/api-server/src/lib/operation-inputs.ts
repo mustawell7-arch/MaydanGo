@@ -139,7 +139,8 @@ export const createFacilityProfileInput = facilityProfileFieldsObject.extend({ p
   .strict().superRefine(validateFacilityCoordinates);
 export const offeringInput = z.object({
   partnerId: label, title: label, kind: z.enum(["session", "event", "coach"]),
-  bookingModel: z.enum(["booking_required", "booking_request", "open_access", "event", "live_class"]).optional(),
+  bookingModel: z.enum(["booking_required", "booking_request", "open_access", "resource_booking", "event", "live_class"]).optional(),
+  resourceName: localizedText.nullable().optional(),
   localizedTitle: localizedText.nullable().optional(),
   localizedDescription: localizedText.nullable().optional(),
   instructions: z.string().trim().max(2000).nullable().optional(),
@@ -165,7 +166,7 @@ export const offeringInput = z.object({
 }).strict().superRefine((o, ctx) => {
   const defaultBookingModel = getOfferingBookingModel({ ...o, bookingModel: undefined });
   const bookingModel = o.bookingModel ?? defaultBookingModel;
-  if (bookingModel !== defaultBookingModel && bookingModel !== "open_access") {
+  if (bookingModel !== defaultBookingModel && bookingModel !== "open_access" && bookingModel !== "resource_booking") {
     ctx.addIssue({ code: "custom", path: ["bookingModel"], message: "The booking model must match the activity format." });
   }
   if (bookingModel === "open_access" && (
@@ -176,6 +177,18 @@ export const offeringInput = z.object({
       path: ["bookingModel"],
       message: "Open access is for in-person sessions with no added payment or advance-booking cutoff.",
     });
+  }
+  if (bookingModel === "resource_booking" && (
+    o.kind !== "session" || o.accessType === "live" || o.additionalPayment || o.capacity !== 1 || !o.resourceName
+  )) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["resourceName"],
+      message: "Resource bookings need a named in-person resource, one reservation per slot, and no added payment.",
+    });
+  }
+  if (bookingModel !== "resource_booking" && o.resourceName != null) {
+    ctx.addIssue({ code: "custom", path: ["resourceName"], message: "Only resource bookings can name a reserved resource." });
   }
   if (o.accessType === "live" && o.environment !== null) {
     ctx.addIssue({ code: "custom", path: ["environment"], message: "Live online classes do not use an indoor or outdoor setting." });

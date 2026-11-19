@@ -2,7 +2,7 @@ import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
-import { db, pool, offerings, memberships, reservations, waitlistEntries, attendance, memberProfiles, memberConsentEvents, partners, operators, membershipPlans, accessGrants, operationAudit, learningCourses, learningLessons, courseEnrollments, lessonProgress, facilityProfiles, accountAccessRestrictions } from "@workspace/db";
+import { db, pool, offerings, memberships, reservations, waitlistEntries, attendance, memberProfiles, memberConsentEvents, partners, operators, membershipPlans, accessGrants, operationAudit, learningCourses, learningLessons, courseEnrollments, lessonProgress, facilityProfiles, checkinPolicies, accountAccessRestrictions } from "@workspace/db";
 import express from "express";
 import operationsRouter from "../routes/operations";
 import memberRouter from "../routes/member";
@@ -213,6 +213,82 @@ test("authenticated booking service: ownership, durable history, eligibility and
     assert.equal((await createReservation(alice, input(secondOffering))).status, "reserved");
     await db.delete(reservations).where(inArray(reservations.offeringId, [paidOffering, secondOffering]));
     await db.delete(memberships).where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
+  });
+  await t.test("resource reservations block overlapping slots for the same named court", async () => {
+    const resourcePartner = `${prefix}-resource-partner`;
+    partnerIds.push(resourcePartner);
+    await db.insert(partners).values({
+      id: resourcePartner, name: "Resource test partner", groupId: `${prefix}-resource-group`,
+      ownerUserId: `${prefix}-resource-owner`, approved: true,
+    });
+    await db.insert(memberships).values([alice, bob].map(userId => ({
+      userId, scope: "live", status: "active", source: "paid", paymentStatus: "paid", tier: "M",
+      startsAt: new Date(now - 86400000), endsAt: new Date(now + 10 * 86400000),
+      rules: { quota: 20, dailyLimit: 20 },
+    })));
+    const resourceOfferingIds: string[] = [];
+    try {
+      const resourceName = { en: "Court 1", ar: "الملعب ١", ku: "یاریگای ١" };
+      const start = new Date(Date.now() + 2 * 86400000);
+      const base = {
+        scope: "live", partnerId: resourcePartner, bookingModel: "resource_booking" as const,
+        resourceName, capacity: 1, accessType: "physical", bookingCutoffMinutes: 0,
+        startsAt: start, endsAt: new Date(start.getTime() + 60 * 60_000),
+        cancellationDeadline: new Date(start.getTime() - 5 * 60_000),
+      };
+      const first = await offer(base);
+      resourceOfferingIds.push(first);
+      const overlapping = await offer({
+        ...base,
+        startsAt: new Date(start.getTime() + 30 * 60_000),
+        endsAt: new Date(start.getTime() + 90 * 60_000),
+        cancellationDeadline: new Date(start.getTime() + 25 * 60_000),
+      });
+      resourceOfferingIds.push(overlapping);
+      await db.insert(checkinPolicies).values([first, overlapping].map(offeringId => ({
+        offeringId, latitude: 33.3152, longitude: 44.3661, radius: 150,
+        opensAt: new Date(start.getTime() - 30 * 60_000),
+        closesAt: new Date(start.getTime() + 2 * 60 * 60_000),
+        correctionEndsAt: new Date(start.getTime() + 3 * 60 * 60_000),
+      })));
+      const reservation = await createReservation(alice, input(first));
+      const saved = (await memberState(alice)).bookings.find(row => row.id === reservation.id);
+      assert.deepEqual(saved?.resourceName, resourceName);
+      await rejects(() => joinWaitlist(bob, first), 409);
+      await rejects(() => createReservation(bob, input(overlapping)), 409);
+      await cancelReservation(alice, reservation.id);
+      assert.equal((await createReservation(bob, input(overlapping))).status, "reserved");
+
+      const secondResourceName = { en: "Court 2", ar: "الملعب ٢", ku: "یاریگای ٢" };
+      const concurrentA = await offer({ ...base, resourceName: secondResourceName });
+      resourceOfferingIds.push(concurrentA);
+      const concurrentB = await offer({
+        ...base, resourceName: secondResourceName,
+        startsAt: new Date(start.getTime() + 20 * 60_000),
+        endsAt: new Date(start.getTime() + 80 * 60_000),
+        cancellationDeadline: new Date(start.getTime() + 15 * 60_000),
+      });
+      resourceOfferingIds.push(concurrentB);
+      await db.insert(checkinPolicies).values([concurrentA, concurrentB].map(offeringId => ({
+        offeringId, latitude: 33.3152, longitude: 44.3661, radius: 150,
+        opensAt: new Date(start.getTime() - 30 * 60_000),
+        closesAt: new Date(start.getTime() + 2 * 60 * 60_000),
+        correctionEndsAt: new Date(start.getTime() + 3 * 60 * 60_000),
+      })));
+      const results = await Promise.allSettled([
+        createReservation(alice, input(concurrentA)),
+        createReservation(bob, input(concurrentB)),
+      ]);
+      assert.equal(results.filter(result => result.status === "fulfilled").length, 1);
+      assert.equal(results.filter(result => result.status === "rejected"
+        && result.reason instanceof BookingError && result.reason.status === 409).length, 1);
+    } finally {
+      if (resourceOfferingIds.length) {
+        await db.delete(checkinPolicies).where(inArray(checkinPolicies.offeringId, resourceOfferingIds));
+        await db.delete(reservations).where(inArray(reservations.offeringId, resourceOfferingIds));
+      }
+      await db.delete(memberships).where(and(inArray(memberships.userId, [alice, bob]), eq(memberships.scope, "live")));
+    }
   });
 
   await t.test("coaching is requested, never confirmed or attended", async () => {
@@ -446,6 +522,61 @@ test("live operations: staff scope, approved inventory, server grants and quota 
     assert.equal(o.status, 201, JSON.stringify(o.data)); ids.push(o.data.id);
     assert.equal(o.data.approvalStatus, "draft");
     assert.equal((await call(`/operations/offerings/${o.data.id}`, adminId, "PATCH", { capacity: 2, active: true })).status, 400);
+    const resourceName = { en: "Court 1", ar: "الملعب ١", ku: "یاریگای ١" };
+    const resourceOffering = await call("/operations/offerings", partnerUser, "POST", {
+      ...offerBody, title: "Resource booking test", bookingModel: "resource_booking", resourceName, capacity: 1,
+    });
+    assert.equal(resourceOffering.status, 201, JSON.stringify(resourceOffering.data));
+    ids.push(resourceOffering.data.id);
+    assert.equal(resourceOffering.data.bookingModel, "resource_booking");
+    assert.deepEqual(resourceOffering.data.resourceName, resourceName);
+    assert.equal((await call("/operations/offerings", partnerUser, "POST", {
+      ...offerBody, title: "Invalid resource capacity", bookingModel: "resource_booking", resourceName, capacity: 2,
+    })).status, 400);
+    assert.equal((await call("/operations/offerings", partnerUser, "POST", {
+      ...offerBody, title: "Resource without name", bookingModel: "resource_booking", capacity: 1,
+    })).status, 400);
+    assert.equal((await call("/operations/offerings", partnerUser, "POST", {
+      ...offerBody, title: "Resource cannot publish without check-in", bookingModel: "resource_booking",
+      resourceName, capacity: 1, active: true,
+    })).status, 400);
+    const resourceStart = Date.parse(offerBody.startsAt);
+    const resourceEnd = Date.parse(offerBody.endsAt);
+    const resourceCheckin = await call(`/operations/offerings/${resourceOffering.data.id}/checkin-policy`, partnerUser, "PUT", {
+      latitude: 33.3152, longitude: 44.3661, radius: 150,
+      opensAt: new Date(resourceStart - 30 * 60_000).toISOString(),
+      closesAt: new Date(resourceEnd).toISOString(),
+      correctionEndsAt: new Date(resourceEnd + 24 * 60 * 60_000).toISOString(),
+    });
+    assert.equal(resourceCheckin.status, 200, JSON.stringify(resourceCheckin.data));
+    await publishOffering(resourceOffering.data.id);
+    await t.test("member catalog marks an overlapping resource slot unavailable", async () => {
+      const overlap = await call("/operations/offerings", partnerUser, "POST", {
+        ...offerBody, title: "Overlapping court slot", bookingModel: "resource_booking", resourceName, capacity: 1,
+      });
+      assert.equal(overlap.status, 201, JSON.stringify(overlap.data));
+      ids.push(overlap.data.id);
+      await db.update(offerings).set({ active: true }).where(inArray(offerings.id, [resourceOffering.data.id, overlap.data.id]));
+      await db.insert(memberships).values({
+        userId: alice, scope: "live", status: "active", source: "paid", paymentStatus: "paid", tier: "M",
+        startsAt: new Date(now - 86400000), endsAt: new Date(now + 10 * 86400000),
+        rules: { quota: 20, dailyLimit: 20 },
+      });
+      try {
+        await createReservation(alice, input(resourceOffering.data.id));
+        const catalog = await call("/member/live-catalog", adminId);
+        const overlappingSlot = catalog.data.find((row: any) => row.id === overlap.data.id);
+        assert.equal(overlappingSlot?.remaining, 0);
+        assert.deepEqual(overlappingSlot?.resourceName, resourceName);
+        const publicCatalog = await call("/public/catalog", adminId);
+        const publicOverlap = publicCatalog.data.find((row: any) => row.id === overlap.data.id);
+        assert.equal(publicOverlap?.remaining, 0);
+      } finally {
+        const booking = (await memberState(alice)).bookings.find(row => row.targetId === resourceOffering.data.id);
+        if (booking) await cancelReservation(alice, booking.id);
+        await db.delete(memberships).where(and(eq(memberships.userId, alice), eq(memberships.scope, "live")));
+      }
+    });
     await publishOffering(o.data.id);
     const freeEventOffer = await call("/operations/offerings", partnerUser, "POST", {
       ...offerBody, title: "Isolated free event", kind: "event", additionalPayment: false,
@@ -916,6 +1047,7 @@ after(async () => {
   await db.delete(memberConsentEvents).where(inArray(memberConsentEvents.userId, users));
   await db.delete(memberProfiles).where(inArray(memberProfiles.userId, [alice, bob]));
   if (ids.length) await db.delete(waitlistEntries).where(inArray(waitlistEntries.offeringId, ids));
+  if (ids.length) await db.delete(checkinPolicies).where(inArray(checkinPolicies.offeringId, ids));
   if (ids.length) await db.delete(offerings).where(inArray(offerings.id, ids));
   if (courseIds.length) {
     const enrollments = await db.select({ id: courseEnrollments.id }).from(courseEnrollments)

@@ -55,6 +55,7 @@ async function publishedFacilities(id?: string) {
     title: offerings.title,
     localizedTitle: offerings.localizedTitle,
     localizedInstructor: offerings.localizedInstructor,
+    resourceName: offerings.resourceName,
     category: offerings.category,
     startsAt: offerings.startsAt,
     endsAt: offerings.endsAt,

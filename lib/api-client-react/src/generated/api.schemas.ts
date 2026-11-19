@@ -347,6 +347,7 @@ export const PublicFacilitySessionBookingModel = {
   booking_required: 'booking_required',
   booking_request: 'booking_request',
   open_access: 'open_access',
+  resource_booking: 'resource_booking',
   event: 'event',
   live_class: 'live_class',
 } as const;
@@ -388,6 +389,7 @@ export interface PublicFacilitySession {
   endsAt: string;
   accessType: PublicFacilitySessionAccessType;
   bookingModel: PublicFacilitySessionBookingModel;
+  resourceName: LocalizedFacilityText | null;
   tiers: string[];
   difficultyLevel: PublicFacilitySessionDifficultyLevel;
   environment: PublicFacilitySessionEnvironment;
@@ -454,6 +456,7 @@ export const PublicOfferingBookingModel = {
   booking_required: 'booking_required',
   booking_request: 'booking_request',
   open_access: 'open_access',
+  resource_booking: 'resource_booking',
   event: 'event',
   live_class: 'live_class',
 } as const;
@@ -506,6 +509,7 @@ export interface PublicOffering {
   category: string;
   accessType: PublicOfferingAccessType;
   bookingModel: PublicOfferingBookingModel;
+  resourceName: LocalizedFacilityText | null;
   tiers: string[];
   difficultyLevel: PublicOfferingDifficultyLevel;
   environment: PublicOfferingEnvironment;
@@ -706,6 +710,7 @@ export const MemberBookingBookingModel = {
   booking_required: 'booking_required',
   booking_request: 'booking_request',
   open_access: 'open_access',
+  resource_booking: 'resource_booking',
   event: 'event',
   live_class: 'live_class',
 } as const;
@@ -720,6 +725,7 @@ export interface MemberBooking {
   city: string;
   facility: string;
   bookingModel: MemberBookingBookingModel;
+  resourceName: LocalizedFacilityText | null;
   cancellationDeadline: string;
   scope: string;
   startsAt: string;
@@ -2719,6 +2725,7 @@ export const OfferingInputBookingModel = {
   booking_required: 'booking_required',
   booking_request: 'booking_request',
   open_access: 'open_access',
+  resource_booking: 'resource_booking',
   event: 'event',
   live_class: 'live_class',
 } as const;
@@ -2791,6 +2798,7 @@ export interface OfferingInput {
   joinUrl?: string | null;
   kind: OfferingInputKind;
   bookingModel?: OfferingInputBookingModel;
+  resourceName?: LocalizedText | null;
   city: string;
   facility: string;
   category: string;
@@ -2897,6 +2905,7 @@ export type LiveOffering = OfferingInput & { [key: string]: unknown } & ({
   targetId: string;
   slot: string;
   scope: string;
+  resourceName: LocalizedText | null;
   /** @nullable */
   cancelledAt?: string | null;
   /**
@@ -2945,6 +2954,7 @@ export type LiveOffering = OfferingInput & { [key: string]: unknown } & ({
   targetId: string;
   slot: string;
   scope: string;
+  resourceName: LocalizedText | null;
   /** @nullable */
   cancelledAt?: string | null;
   /**

@@ -1056,6 +1056,10 @@ const extra = {
     cancelWalkIn: 'Cancel walk-in reservation',
     walkInReservation: 'Walk-in reservation · awaiting check-in',
     scanPartnerQr: 'Scan the partner check-in QR',
+    resourceLabel: 'Resource',
+    resourceAvailable: 'Available to reserve',
+    resourceUnavailable: 'Booked for this time',
+    reserveResource: 'Reserve resource',
   },
   ar: {
     eventsHint: 'كل حجز يستخدم زيارة عادية من عضويتك. لا يوجد دفع منفصل لتذكرة الفعالية.',
@@ -1466,6 +1470,10 @@ const extra = {
     cancelWalkIn: 'إلغاء تسجيل الزيارة المباشرة',
     walkInReservation: 'تسجيل دخول مباشر · بانتظار التحقق',
     scanPartnerQr: 'مسح رمز حضور الشريك',
+    resourceLabel: 'المورد',
+    resourceAvailable: 'متاح للحجز',
+    resourceUnavailable: 'محجوز لهذا الموعد',
+    reserveResource: 'احجز المورد',
   },
   ku: {
     eventsHint: 'هەر حجزێک سەردانێکی ئاسایی لە ئەندامێتیت بەکاردەهێنێت. پارەدانی جیاواز بۆ بلیت وەرناگیرێت.',
@@ -1876,6 +1884,10 @@ const extra = {
     cancelWalkIn: 'هەڵوەشاندنەوەی حجزەی ڕاستەوخۆ',
     walkInReservation: 'حجزەی ڕاستەوخۆ · چاوەڕێی پشکنینە',
     scanPartnerQr: 'سکانی QRی پشکنینی هاوبەش',
+    resourceLabel: 'سەرچاوە',
+    resourceAvailable: 'بەردەستە بۆ حجز',
+    resourceUnavailable: 'بۆ ئەم کاتە حجزکراوە',
+    reserveResource: 'سەرچاوەکە حجز بکە',
   },
 } as const;
 

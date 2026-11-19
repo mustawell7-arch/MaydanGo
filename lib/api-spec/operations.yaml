@@ -4418,7 +4418,11 @@ components:
         kind: { type: string, enum: [session, event, coach] }
         bookingModel:
           type: string
-          enum: [booking_required, booking_request, open_access, event, live_class]
+          enum: [booking_required, booking_request, open_access, resource_booking, event, live_class]
+        resourceName:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedText"
+            - type: "null"
         city: { type: string }
         facility: { type: string }
         category: { type: string }
@@ -4484,12 +4488,16 @@ components:
       allOf:
         - $ref: "#/components/schemas/OfferingInput"
         - type: object
-      required: [id, targetId, slot, scope, bookingModel, approvalStatus, activityStatus]
+      required: [id, targetId, slot, scope, bookingModel, resourceName, approvalStatus, activityStatus]
       properties:
         id: { type: string }
         targetId: { type: string }
         slot: { type: string }
         scope: { type: string }
+        resourceName:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedText"
+            - type: "null"
         cancelledAt: { type: [string, "null"] }
         recurrenceGroupId: { type: [string, "null"], description: "Shared identifier for sessions created as one recurring series." }
         approvalStatus: { $ref: "#/components/schemas/OfferingApprovalStatus" }

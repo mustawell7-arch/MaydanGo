@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, gt, gte, inArray, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, isNull, lt, lte, ne, sql } from "drizzle-orm";
 import { db, memberships, offerings, reservations, attendance, facilityProfiles, facilityHoursOverrides, checkinPolicies, memberProfiles, partners, waitlistEntries, memberUpdates } from "@workspace/db";
 import { sendMemberNotification } from "./notifications";
 import {
@@ -149,7 +149,7 @@ export async function memberState(userId: string) {
     memberships: membershipRows.map(membership => ({ ...membership, status: effectiveMembershipStatus(membership) })),
     bookings: rows.map(({ reservation: r, offering: o }) => ({
     id: r.id, kind: o.kind, targetId: o.targetId, slot: o.slot, title: o.title,
-    localizedTitle: o.localizedTitle, city: o.city, facility: o.facility,
+    localizedTitle: o.localizedTitle, resourceName: o.resourceName, city: o.city, facility: o.facility,
     bookingModel: getOfferingBookingModel(o),
     cancellationDeadline: o.cancellationDeadline,
     scope: o.scope, startsAt: o.startsAt, status: r.status,
@@ -200,6 +200,7 @@ type WaitlistChanges = {
 
 async function advanceWaitlistInTransaction(tx: BookingTx, offering: typeof offerings.$inferSelect, now: Date): Promise<WaitlistChanges> {
   const changes: WaitlistChanges = { offered: [], expired: [], reminders: [] };
+  if (["open_access", "resource_booking"].includes(getOfferingBookingModel(offering))) return changes;
   const expiredRows = await tx.update(waitlistEntries)
     .set({ status: "expired", respondedAt: now })
     .where(and(eq(waitlistEntries.offeringId, offering.id), eq(waitlistEntries.status, "offered"), lte(waitlistEntries.offerExpiresAt, now)))
@@ -306,8 +307,8 @@ export async function joinWaitlist(userId: string, offeringId: string) {
   await requireCurrentMemberConsent(userId);
   const [knownOffering] = await db.select({ bookingModel: offerings.bookingModel, kind: offerings.kind, accessType: offerings.accessType })
     .from(offerings).where(eq(offerings.id, offeringId)).limit(1);
-  if (knownOffering && getOfferingBookingModel(knownOffering) === "open_access") {
-    throw new BookingError(409, "Open-access visits do not use advance bookings or waitlists.");
+  if (knownOffering && ["open_access", "resource_booking"].includes(getOfferingBookingModel(knownOffering))) {
+    throw new BookingError(409, "This booking type does not use waitlists.");
   }
   await processWaitlistQueue(new Date(), [offeringId]);
   const result = await db.transaction(async tx => {
@@ -421,6 +422,9 @@ export async function acceptWaitlistOffer(userId: string, entryId: string) {
     )).for("update");
     const now = new Date();
     if (!offering || !entry) throw new BookingError(404, "Waitlist offer not found.");
+    if (["open_access", "resource_booking"].includes(getOfferingBookingModel(offering))) {
+      throw new BookingError(409, "This booking type does not use waitlists.");
+    }
     if (entry.status !== "offered" || !entry.offerExpiresAt || entry.offerExpiresAt <= now)
       return { accepted: false, reason: "expired" as const, changes: { offered: [], expired: [], reminders: [] } as WaitlistChanges };
     if (offering.startsAt <= now || offering.cancelledAt || !offering.active)
@@ -453,6 +457,48 @@ export async function acceptWaitlistOffer(userId: string, entryId: string) {
   throw new BookingError(409, result.reason === "closed" ? "This class is no longer available." : "This offer has expired.");
 }
 
+async function lockAndCheckResourceAvailability(tx: BookingTx, offering: typeof offerings.$inferSelect) {
+  const resourceName = offering.resourceName?.en.trim().toLocaleLowerCase("en-US");
+  if (!resourceName || !offering.partnerId || offering.capacity !== 1
+    || offering.kind !== "session" || offering.accessType === "live" || offering.additionalPayment) {
+    throw new BookingError(409, "This resource booking is not configured correctly.");
+  }
+  const [checkinPolicy] = await tx.select({ offeringId: checkinPolicies.offeringId })
+    .from(checkinPolicies).where(eq(checkinPolicies.offeringId, offering.id));
+  if (!checkinPolicy) {
+    throw new BookingError(409, "Resource booking is unavailable until check-in setup is complete.");
+  }
+  const resourceLockKey = [
+    offering.partnerId,
+    offering.city.trim().toLocaleLowerCase("en-US"),
+    offering.facility.trim().toLocaleLowerCase("en-US"),
+    resourceName,
+  ].join("|");
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${resourceLockKey}))`);
+
+  const [conflict] = await tx.select({ id: reservations.id })
+    .from(reservations)
+    .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
+    .where(and(
+      inArray(reservations.status, ["reserved", "requested"]),
+      eq(offerings.scope, offering.scope),
+      eq(offerings.active, true),
+      isNull(offerings.cancelledAt),
+      eq(offerings.partnerId, offering.partnerId),
+      sql`lower(btrim(${offerings.city})) = lower(btrim(${offering.city}))`,
+      sql`lower(btrim(${offerings.facility})) = lower(btrim(${offering.facility}))`,
+      eq(offerings.bookingModel, "resource_booking"),
+      sql`lower(btrim(coalesce(${offerings.resourceName}->>'en', ''))) = ${resourceName}`,
+      ne(offerings.id, offering.id),
+      lt(offerings.startsAt, offering.endsAt),
+      gt(offerings.endsAt, offering.startsAt),
+    ))
+    .limit(1);
+  if (conflict) {
+    throw new BookingError(409, "This resource is already reserved for an overlapping time. Choose another time.");
+  }
+}
+
 export async function processWaitlistQueue(now = new Date(), onlyOfferingIds?: string[]) {
   const conditions = [inArray(waitlistEntries.status, ["waiting", "offered"])];
   if (onlyOfferingIds?.length) conditions.push(inArray(waitlistEntries.offeringId, onlyOfferingIds));
@@ -474,7 +520,7 @@ export async function createReservation(userId: string, input: { kind: string; t
   const [known] = await db.select({ id: offerings.id, bookingModel: offerings.bookingModel, kind: offerings.kind, accessType: offerings.accessType }).from(offerings).where(and(
     eq(offerings.kind, input.kind), eq(offerings.targetId, input.targetId), eq(offerings.slot, input.slot),
   )).limit(1);
-  if (known && getOfferingBookingModel(known) !== "open_access")
+  if (known && !["open_access", "resource_booking"].includes(getOfferingBookingModel(known)))
     await processWaitlistQueue(new Date(), [known.id]);
   return db.transaction(async tx => {
     // Lock the account and offering: quota and capacity checks must be atomic.
@@ -493,6 +539,11 @@ export async function createReservation(userId: string, input: { kind: string; t
         throw new BookingError(409, "Walk-in access is available only during the published access window.");
       }
       await assertOpenAccessReady(tx, o, now);
+    } else if (bookingModel === "resource_booking") {
+      if (now >= new Date(o.startsAt.getTime() - o.bookingCutoffMinutes * 60_000)) {
+        throw new BookingError(409, "Booking has closed for this resource.");
+      }
+      await lockAndCheckResourceAvailability(tx, o);
     } else if (o.startsAt <= now) {
       throw new BookingError(409, "This class has already started.");
     }

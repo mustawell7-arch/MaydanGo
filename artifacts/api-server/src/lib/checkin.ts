@@ -215,9 +215,9 @@ export async function saveOfferingPolicy(actor: string, offeringId: string, inpu
   return db.transaction(async tx => {
     const [o] = await tx.select().from(offerings).where(eq(offerings.id, offeringId)).for("update");
     if (!o) throw new BookingError(404, "Offering not found.");
-    if (o.scope !== "live" || o.bookingModel !== "open_access" || o.kind !== "session"
+    if (o.scope !== "live" || !["open_access", "resource_booking"].includes(o.bookingModel ?? "") || o.kind !== "session"
       || o.accessType === "live" || o.additionalPayment) {
-      throw new BookingError(400, "An open-access in-person session is required.");
+      throw new BookingError(400, "A walk-in or resource-booking in-person session is required.");
     }
     if (o.cancelledAt || o.endsAt <= new Date()) {
       throw new BookingError(409, "Check-in policy cannot be changed after this activity has ended or been canceled.");
