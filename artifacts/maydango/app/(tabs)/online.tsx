@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Text, TextInput, Pressable } from '@/components/Localized';
@@ -14,7 +14,7 @@ import {
 } from '@workspace/api-client-react';
 import { MemberNotice } from '@/components/MemberNotice';
 import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
-import { coaches, getCityLabel } from '@/data/demo';
+import { getCityLabel } from '@/data/demo';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { translate, type Language, type MessageKey } from '@/lib/i18n';
@@ -62,6 +62,33 @@ export default function OnlineScreen() {
   const matchesCourse = (course: (typeof courseRows)[number]) => courseMatchesSearch(course, courseSearch);
   const visibleCourseRows = (showSavedOnly ? savedCourseRows : courseRows).filter(matchesCourse);
   const liveClasses = liveQuery.data ?? [];
+  const coachingOffers = useMemo(() => {
+    const byCoach = new Map<string, {
+      id: string;
+      title: string;
+      scope: string;
+      slots: { id: string; startsAt: string }[];
+    }>();
+    for (const offer of app.bookingCatalog) {
+      const startsAt = Date.parse(offer.startsAt);
+      if (
+        offer.kind !== 'coach' || !offer.slot || offer.remaining < 1 ||
+        !Number.isFinite(startsAt) || startsAt <= Date.now()
+      ) continue;
+      const coach = byCoach.get(offer.targetId) ?? {
+        id: offer.targetId,
+        title: offer.title,
+        scope: offer.scope,
+        slots: [],
+      };
+      coach.slots.push({ id: offer.slot, startsAt: offer.startsAt });
+      byCoach.set(offer.targetId, coach);
+    }
+    return [...byCoach.values()].map(coach => ({
+      ...coach,
+      slots: coach.slots.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)),
+    }));
+  }, [app.bookingCatalog]);
   const started = showSavedOnly ? [] : courseRows.filter((course) =>
     course.enrolled && course.completedLessons < course.lessonCount && matchesCourse(course));
   const recommendations = showSavedOnly ? [] : recommendOnlineCourses(courseRows).filter(matchesCourse);
@@ -143,7 +170,10 @@ export default function OnlineScreen() {
     const slot = slotChoice[coachId];
     if (!slot) return setMessage(t('chooseSlotFirst'));
     const r = await app.requestCoaching(coachId, slot);
-    setMessage(r.ok ? t('requestSent') : r.reason === 'duplicate' ? t('alreadySaved') : r.reason === 'invalid' ? t('chooseSlotFirst') : t('notSaved'));
+    const offer = coachingOffers.find(item => item.id === coachId);
+    setMessage(r.ok
+      ? t(offer?.scope === 'preview' ? 'requestSavedPreview' : 'requestSent')
+      : r.reason === 'duplicate' ? t('alreadySaved') : r.reason === 'invalid' ? t('chooseSlotFirst') : t('notSaved'));
   };
 
   return (
@@ -442,33 +472,42 @@ export default function OnlineScreen() {
         ) : (
           <>
             <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: align }]}>{t('onlineCoaching')}</Text>
-            {coaches.map((coach) => {
+            {coachingOffers.length === 0 ? (
+              <View style={[styles.coachCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{t('noCoachingSlots')}</Text>
+              </View>
+            ) : coachingOffers.map((coach) => {
               const active = app.activeCoachRequest(coach.id);
               const chosen = active?.slot ?? slotChoice[coach.id];
               return (
                 <View key={coach.id} style={[styles.coachCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <View style={styles.coachHead}>
-                    <Image source={coach.image} style={styles.liveImage} />
+                    <View style={[styles.coachIcon, { backgroundColor: colors.secondary }]}>
+                      <Ionicons name="videocam-outline" size={20} color={colors.primary} />
+                    </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{coach.name}</Text>
-                      <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{coach.specialty}</Text>
-                      <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{t('speaks')}: {coach.languages}</Text>
+                      <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align }]}>{coach.title}</Text>
+                      <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{t('onlineCoaching')}</Text>
+                      {coach.scope === 'preview' ? (
+                        <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{t('sampleOffer')}</Text>
+                      ) : null}
                     </View>
                   </View>
                   <Text style={[styles.slotLabel, { color: colors.foreground, textAlign: align }]}>{t('chooseTime')}</Text>
                   <View style={styles.slots}>
-                    {coach.slots.map((slot) => {
+                    {coach.slots.map(slot => {
                       const selected = chosen === slot.id;
                       return (
                         <Pressable
                           key={slot.id}
+                          testID={`button-coaching-slot-${coach.id}-${slot.id}`}
                           accessibilityRole="radio"
                           accessibilityState={{ selected, disabled: !!active }}
                           disabled={!!active}
                           onPress={() => setSlotChoice((c) => ({ ...c, [coach.id]: slot.id }))}
                           style={[styles.slot, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.secondary : colors.card, opacity: active && !selected ? 0.5 : 1 }]}
                         >
-                          <Text style={[styles.slotText, { color: selected ? colors.primary : colors.foreground }]}>{app.offeringTime('coach', coach.id, slot.id)}</Text>
+                          <Text style={[styles.slotText, { color: selected ? colors.primary : colors.foreground }]}>{iraqDateTime(slot.startsAt, app.language)}</Text>
                         </Pressable>
                       );
                     })}
@@ -477,12 +516,15 @@ export default function OnlineScreen() {
                     {active ? (
                       <View style={[styles.pendingPill, { backgroundColor: colors.muted }]}>
                         <Ionicons name="time-outline" size={12} color={colors.mutedForeground} />
-                        <Text style={[styles.pendingText, { color: colors.mutedForeground }]}>{t('requestPending')}</Text>
+                        <Text style={[styles.pendingText, { color: colors.mutedForeground }]}>
+                          {t(active.status === 'confirmed' ? 'requestConfirmed' : 'requestPending')}
+                        </Text>
                       </View>
                     ) : <View />}
                     <Pressable
+                      testID={`button-coaching-request-${coach.id}`}
                       accessibilityRole="button"
-                      accessibilityLabel={`${active ? t('cancelRequest') : t('saveRequest')}: ${coach.name}`}
+                      accessibilityLabel={`${active ? t('cancelRequest') : t('saveRequest')}: ${coach.title}`}
                       disabled={app.memberLoading}
                       onPress={async () => {
                         if (active) {
@@ -500,7 +542,7 @@ export default function OnlineScreen() {
                 </View>
               );
             })}
-            <Text style={{ color: colors.mutedForeground }}>Sample coaches only. Requests sync to your account but are not sent to a partner or confirmed. Server dates appear in Bookings.</Text>
+            <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{t('coachingNotice')}</Text>
           </>
         )}
       </ScrollView>
@@ -560,6 +602,7 @@ const styles = StyleSheet.create({
   joinText: { fontSize: 10, fontWeight: '900' },
   coachCard: { borderWidth: 1, borderRadius: 20, padding: 12, marginBottom: 11 },
   coachHead: { flexDirection: 'row', gap: 11, alignItems: 'center' },
+  coachIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   slotLabel: { fontSize: 11, fontWeight: '800', marginTop: 12, marginBottom: 7 },
   slots: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   slot: { borderWidth: 1, borderRadius: 11, paddingHorizontal: 10, minHeight: 38, justifyContent: 'center' },
