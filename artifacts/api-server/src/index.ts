@@ -4,6 +4,7 @@ import { processWaitlistQueue } from "./lib/reservations";
 import { escalateUnassignedUrgentTickets, recoverPushDeliveries } from "./lib/notifications";
 import { expireGuardianConsentDocuments } from "./lib/guardian-consents";
 import { runPartnerDocumentExpiryReminders } from "./lib/partner-document-expiry";
+import { processLiveClassReminders } from "./lib/live-class-reminders";
 
 const runPushDeliveryRecovery = async () => {
   try {
@@ -43,6 +44,20 @@ const runPartnerExpiryReminders = async () => {
   }
 };
 
+let liveClassRemindersRunning = false;
+const runLiveClassReminders = async () => {
+  if (liveClassRemindersRunning) return;
+  liveClassRemindersRunning = true;
+  try {
+    const result = await processLiveClassReminders();
+    if (result.sent || result.failed) logger.info(result, "Live class reminders processed");
+  } catch (err) {
+    logger.error({ err }, "Live class reminders failed");
+  } finally {
+    liveClassRemindersRunning = false;
+  }
+};
+
 const rawPort = process.env["PORT"];
 
 if (!rawPort) {
@@ -69,6 +84,7 @@ app.listen(port, (err) => {
   void runUrgentEscalations();
   void runGuardianConsentRetention();
   void runPartnerExpiryReminders();
+  void runLiveClassReminders();
 });
 
 const waitlistExpiryTimer = setInterval(() => {
@@ -95,3 +111,8 @@ const partnerDocumentExpiryTimer = setInterval(() => {
   void runPartnerExpiryReminders();
 }, 60 * 60 * 1000);
 partnerDocumentExpiryTimer.unref();
+
+const liveClassReminderTimer = setInterval(() => {
+  void runLiveClassReminders();
+}, 60_000);
+liveClassReminderTimer.unref();

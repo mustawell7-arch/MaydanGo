@@ -103,9 +103,14 @@ function NativeNotificationResponseHandler() {
     const supportAlert = data.kind === 'support_urgent' || data.kind === 'support_urgent_escalation';
     const partnerExpiryAlert = data.kind === 'partner_document_expiry_upcoming'
       || data.kind === 'partner_document_expiry_overdue';
-    if (!supportAlert && !partnerExpiryAlert) return;
+    const liveClassReminder = data.kind === 'live_class_reminder';
+    if (!supportAlert && !partnerExpiryAlert && !liveClassReminder) return;
     void Notifications.clearLastNotificationResponseAsync().catch(() => {});
     if (actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
+    if (liveClassReminder) {
+      router.push('/bookings');
+      return;
+    }
     if (supportAlert) {
       if (
         typeof data.ticketId !== 'string'

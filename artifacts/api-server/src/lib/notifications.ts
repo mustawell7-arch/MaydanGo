@@ -13,6 +13,7 @@ export type NotificationKind =
   | "venue_suspension_cancelled"
   | "booking_rejected"
   | "schedule_changed"
+  | "live_class_reminder"
   | "waitlist_offer"
   | "waitlist_reminder"
   | "waitlist_expired"
@@ -34,6 +35,7 @@ type NotificationContext = {
   offerExpiresAt?: Date;
   remainingMinutes?: number;
   dedupeKey?: string;
+  reservationId?: string;
   ticketId?: string;
   qualityRecord?: {
     facilityId: string;
@@ -51,6 +53,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     venue_suspension_cancelled: { title: "Venue visit cancelled", body: "Your upcoming visit was cancelled because the venue is unavailable. Your membership visit allowance has been restored. Contact MaydanGo support about any separate payment." },
     booking_rejected: { title: "Booking request update", body: "The venue could not accept this booking request. Contact MaydanGO support if you need help." },
     schedule_changed: { title: "Class schedule changed", body: "A class time changed. Check the updated schedule in MaydanGO." },
+    live_class_reminder: { title: "Live class reminder", body: "Your booked online class starts within the next hour. Open MaydanGO to review the details." },
     waitlist_offer: { title: "A class place opened", body: "A place opened in your class. Accept by {deadline} Iraq time in MaydanGO; it is not booked until you accept." },
     waitlist_reminder: { title: "Your class offer is still open", body: "Your class place is still available. Accept within {remaining} in MaydanGO before the offer expires." },
     waitlist_expired: { title: "Waitlist offer expired", body: "Your offer expired, so the place moved to the next person. You are no longer holding it." },
@@ -74,6 +77,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     venue_suspension_cancelled: { title: "أُلغيت زيارة المكان", body: "أُلغيت زيارتك القادمة لعدم توفر المكان. أُعيدت الزيارة إلى رصيد عضويتك. تواصل مع دعم MaydanGo بشأن أي دفعة منفصلة." },
     booking_rejected: { title: "تحديث طلب الحجز", body: "لم يتمكن المكان من قبول طلب الحجز. تواصل مع دعم MaydanGO إذا احتجت إلى مساعدة." },
     schedule_changed: { title: "تغيّر موعد الحصة", body: "تغيّر موعد حصة. راجع الجدول المحدّث في MaydanGO." },
+    live_class_reminder: { title: "تذكير بالحصة المباشرة", body: "تبدأ حصتك المباشرة المحجوزة خلال الساعة القادمة. افتح MaydanGO لمراجعة التفاصيل." },
     waitlist_offer: { title: "توفر مكان في الحصة", body: "توفر مكان في حصتك. أكّد الحجز في MaydanGO قبل {deadline} بتوقيت العراق؛ ما يتأكد الحجز إلا بعد موافقتك." },
     waitlist_reminder: { title: "ما زال عرض الحصة متاحاً", body: "ما زال المكان متاحاً. أكّد الحجز خلال {remaining} في MaydanGO قبل انتهاء المهلة." },
     waitlist_expired: { title: "انتهت مهلة العرض", body: "انتهت مهلة عرض المكان، وانتقل للشخص التالي. ما عاد المكان محجوزاً لك." },
@@ -97,6 +101,7 @@ const copy: Record<AppLanguage, Record<NotificationKind, { title: string; body: 
     venue_suspension_cancelled: { title: "سەردانی شوێن هەڵوەشێندرایەوە", body: "سەردانی داهاتووت بەهۆی بەردەست نەبوونی شوێنەکە هەڵوەشێندرایەوە. سەردانەکە گەڕێندرایەوە بۆ باڵانسی ئەندامێتیت. بۆ هەر پارەدانێکی جیاواز پەیوەندی بە پشتگیریی MaydanGo بکە." },
     booking_rejected: { title: "نوێکاریی داواکاریی حجز", body: "شوێنەکە نەیتوانی داواکاریی حجزەکەت قبوڵ بکات. ئەگەر یارمەتی پێویستت بوو، پەیوەندی بە پشتگیریی MaydanGO بکە." },
     schedule_changed: { title: "کاتی وانە گۆڕا", body: "کاتی وانەیەک گۆڕا. خشتەی نوێ لە MaydanGO ببینە." },
+    live_class_reminder: { title: "بیرخستنەوەی وانەی ئۆنلاین", body: "وانەی ئۆنلاینە حجزکراوەکەت لە ماوەی کاتژمێرێکی داهاتوودا دەست پێدەکات. MaydanGO بکەرەوە بۆ پێداچوونەوە بە وردەکارییەکان." },
     waitlist_offer: { title: "شوێنێک لە وانە بەردەستە", body: "شوێنێک لە وانەکەت بەردەست بووە. تا {deadline} بە کاتی عێراق لە MaydanGO پێشنیارەکە قبووڵ بکە؛ حجزەکە تا ئەو کاتە پشتڕاست نییە." },
     waitlist_reminder: { title: "پێشنیاری وانەکەت هێشتا بەردەستە", body: "شوێنەکە هێشتا بەردەستە. لە ماوەی {remaining}دا لە MaydanGO پێشنیارەکە قبووڵ بکە پێش ئەوەی کاتەکەی تەواو ببێت." },
     waitlist_expired: { title: "ماوەی پێشنیاری چاوەڕوانی تەواو بوو", body: "ماوەی پێشنیاری شوێنەکە تەواو بوو و شوێنەکە درا بە کەسی دواتر. چیتر شوێنەکە بۆ تۆ نەپارێزراوە." },
@@ -335,6 +340,8 @@ async function deliverMemberNotification(
       kind === "support_urgent" || kind === URGENT_ESCALATION_KIND
     ) && context.ticketId
       ? { ticketId: context.ticketId }
+      : kind === "live_class_reminder" && context.reservationId
+        ? { reservationId: context.reservationId }
       : (
         (kind === "partner_document_expiry_upcoming" || kind === "partner_document_expiry_overdue")
         && context.qualityRecord
