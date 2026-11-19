@@ -12705,6 +12705,14 @@ export const getMemberPrivacyRequestExportResponseFitnessChallengesItemActiveDay
 
 export const getMemberPrivacyRequestExportResponseFitnessChallengesItemSelfReportedDatesItemRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
 export const getMemberPrivacyRequestExportResponseFitnessChallengesItemVerifiedAttendanceDatesItemRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const getMemberPrivacyRequestExportResponseLoyaltyPointsBalanceMin = 0;
+
+export const getMemberPrivacyRequestExportResponseLoyaltyPointsEntriesItemLocalizedTitleEnMax = 240;
+
+export const getMemberPrivacyRequestExportResponseLoyaltyPointsEntriesItemLocalizedTitleArMax = 240;
+
+export const getMemberPrivacyRequestExportResponseLoyaltyPointsEntriesItemLocalizedTitleKuMax = 240;
+
 export const getMemberPrivacyRequestExportResponseSupportConversationsItemMessagesItemAttachmentsItemSizeMin = 0;
 
 export const getMemberPrivacyRequestExportResponseReferralsInviteCodeRegExp = new RegExp('^[A-HJ-NP-Z2-9]{10}$');
@@ -12714,7 +12722,7 @@ export const getMemberPrivacyRequestExportResponseReferralsCodeUsedRegExp = new 
 
 
 export const GetMemberPrivacyRequestExportResponse = zod.object({
-  "formatVersion": zod.enum(['1.6']),
+  "formatVersion": zod.enum(['1.7']),
   "generatedAt": zod.coerce.date(),
   "account": zod.object({
   "email": zod.string().nullable(),
@@ -12808,6 +12816,21 @@ export const GetMemberPrivacyRequestExportResponse = zod.object({
   "selfReportedDates": zod.array(zod.string().regex(getMemberPrivacyRequestExportResponseFitnessChallengesItemSelfReportedDatesItemRegExp)),
   "verifiedAttendanceDates": zod.array(zod.string().regex(getMemberPrivacyRequestExportResponseFitnessChallengesItemVerifiedAttendanceDatesItemRegExp))
 })),
+  "loyaltyPoints": zod.object({
+  "balance": zod.int().min(getMemberPrivacyRequestExportResponseLoyaltyPointsBalanceMin),
+  "entries": zod.array(zod.object({
+  "id": zod.string(),
+  "source": zod.enum(['confirmed_visit', 'course_completion']),
+  "points": zod.literal(1),
+  "earnedAt": zod.coerce.date(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(getMemberPrivacyRequestExportResponseLoyaltyPointsEntriesItemLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(getMemberPrivacyRequestExportResponseLoyaltyPointsEntriesItemLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(getMemberPrivacyRequestExportResponseLoyaltyPointsEntriesItemLocalizedTitleKuMax)
+}),
+  "facility": zod.string().nullable()
+}))
+}),
   "reviews": zod.array(zod.object({
   "overallRating": zod.int(),
   "categoryRatings": zod.object({
@@ -13064,6 +13087,33 @@ export const GetMemberFitnessChallengesResponseItem = zod.object({
   "canLogToday": zod.boolean()
 })
 export const GetMemberFitnessChallengesResponse = zod.array(GetMemberFitnessChallengesResponseItem)
+
+
+export const getMemberLoyaltyPointsResponseBalanceMin = 0;
+
+export const getMemberLoyaltyPointsResponseEntriesItemLocalizedTitleEnMax = 240;
+
+export const getMemberLoyaltyPointsResponseEntriesItemLocalizedTitleArMax = 240;
+
+export const getMemberLoyaltyPointsResponseEntriesItemLocalizedTitleKuMax = 240;
+
+
+
+export const GetMemberLoyaltyPointsResponse = zod.object({
+  "balance": zod.int().min(getMemberLoyaltyPointsResponseBalanceMin),
+  "entries": zod.array(zod.object({
+  "id": zod.string(),
+  "source": zod.enum(['confirmed_visit', 'course_completion']),
+  "points": zod.literal(1),
+  "earnedAt": zod.coerce.date(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(getMemberLoyaltyPointsResponseEntriesItemLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(getMemberLoyaltyPointsResponseEntriesItemLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(getMemberLoyaltyPointsResponseEntriesItemLocalizedTitleKuMax)
+}),
+  "facility": zod.string().nullable()
+}))
+})
 
 
 export const JoinMemberFitnessChallengeParams = zod.object({

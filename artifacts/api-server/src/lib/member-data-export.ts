@@ -31,6 +31,7 @@ import { GetMemberPrivacyRequestExportResponse } from "@workspace/api-zod";
 import { getPrivacyRequestKind, privacyRequestSubjects } from "./privacy-requests";
 import { iraqDateKey } from "./fitness-challenges";
 import { ObjectNotFoundError, ObjectStorageService } from "./objectStorage";
+import { getMemberLoyaltyPoints } from "./member-loyalty-points";
 
 const memberDataExportStorage = new ObjectStorageService();
 
@@ -55,6 +56,7 @@ export async function createMemberDataExport(userId: string) {
     appliedReferralRows,
     fitnessChallengeRows,
     fitnessChallengeSelfReportRows,
+    loyaltyPoints,
   ] = await Promise.all([
     clerkClient.users.getUser(userId),
     db.select({ gender: memberProfiles.gender, birthDate: memberProfiles.birthDate })
@@ -199,6 +201,7 @@ export async function createMemberDataExport(userId: string) {
     }).from(fitnessChallengeSelfReports)
       .where(eq(fitnessChallengeSelfReports.userId, userId))
       .orderBy(asc(fitnessChallengeSelfReports.activityDate)),
+    getMemberLoyaltyPoints(userId),
   ]);
 
   const enrollmentIds = enrollmentRows.map(row => row.id);
@@ -364,7 +367,7 @@ export async function createMemberDataExport(userId: string) {
   }
 
   return GetMemberPrivacyRequestExportResponse.parse({
-      formatVersion: "1.6",
+      formatVersion: "1.7",
     generatedAt: new Date(),
     account: {
       email: account.primaryEmailAddress?.emailAddress ?? null,
@@ -393,6 +396,7 @@ export async function createMemberDataExport(userId: string) {
     })),
     savedCourses: savedCourseRows,
     fitnessChallenges: fitnessChallengesExport,
+    loyaltyPoints,
     reviews: reviewRows,
     consentHistory: consentRows,
     supportConversations: supportTicketRows.map(ticket => ({

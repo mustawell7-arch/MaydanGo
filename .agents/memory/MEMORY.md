@@ -20,6 +20,7 @@
 - [Course assignments](course-assignments.md) — Instructors create localized practice tasks, while each member’s completion tracking stays private.
 - [Course recommendations](course-recommendations.md) — Rank course suggestions inside MaydanGo from saved and enrolled courses; do not send learning signals to an external AI.
 - [Fitness challenges](fitness-challenges.md) — Count private self-logged and verified attendance days once in Iraq-local time; do not add rankings or rewards.
+- [Loyalty points](loyalty-points.md) — Award private, non-cash points only for confirmed eligible visits and fully completed courses; keep redemption deferred.
 - [Guardian verification](guardian-verification.md) — Partners verify guardian requirements at the venue; MaydanGo must not collect guardian information.
 - [Waitlist schema sync](waitlist-schema-sync.md) — Drizzle push-force can still hit non-interactive rename prompts; preserve legacy fields or migrate explicitly.
 - [Development schema drift](development-schema-drift.md) — Resolve existing dev database conflicts before pushing schema; never auto-approve data-loss changes.

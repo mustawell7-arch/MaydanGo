@@ -1447,6 +1447,57 @@ export interface MemberDataExportFitnessChallenge {
   verifiedAttendanceDates: CalendarDate[];
 }
 
+export type MemberLoyaltyPointEntrySource = typeof MemberLoyaltyPointEntrySource[keyof typeof MemberLoyaltyPointEntrySource];
+
+
+export const MemberLoyaltyPointEntrySource = {
+  confirmed_visit: 'confirmed_visit',
+  course_completion: 'course_completion',
+} as const;
+
+export type MemberLoyaltyPointEntryPoints = typeof MemberLoyaltyPointEntryPoints[keyof typeof MemberLoyaltyPointEntryPoints];
+
+
+export const MemberLoyaltyPointEntryPoints = {
+  NUMBER_1: 1,
+} as const;
+
+export interface LocalizedText {
+  /**
+     * @minLength 1
+     * @maxLength 240
+     */
+  en: string;
+  /**
+     * @minLength 1
+     * @maxLength 240
+     */
+  ar: string;
+  /**
+     * @minLength 1
+     * @maxLength 240
+     */
+  ku: string;
+}
+
+export interface MemberLoyaltyPointEntry {
+  id: string;
+  source: MemberLoyaltyPointEntrySource;
+  points: MemberLoyaltyPointEntryPoints;
+  earnedAt: string;
+  localizedTitle: LocalizedText;
+  /** @nullable */
+  facility: string | null;
+}
+
+export interface MemberLoyaltyPointsSummary {
+  /** @minimum 0 */
+  balance: number;
+  entries: MemberLoyaltyPointEntry[];
+}
+
+export type MemberDataExportLoyaltyPoints = MemberLoyaltyPointsSummary;
+
 export interface MemberDataExportReviewRatings {
   /** @nullable */
   cleanliness: number | null;
@@ -1541,7 +1592,7 @@ export type MemberDataExportFormatVersion = typeof MemberDataExportFormatVersion
 
 
 export const MemberDataExportFormatVersion = {
-  '16': '1.6',
+  '17': '1.7',
 } as const;
 
 export type MemberDataExportExcludedDataItem = typeof MemberDataExportExcludedDataItem[keyof typeof MemberDataExportExcludedDataItem];
@@ -1585,6 +1636,7 @@ export interface MemberDataExport {
   courses: MemberDataExportCourse[];
   savedCourses: MemberDataExportSavedCourse[];
   fitnessChallenges: MemberDataExportFitnessChallenge[];
+  loyaltyPoints: MemberLoyaltyPointsSummary;
   reviews: MemberDataExportReview[];
   consentHistory: MemberDataExportConsent[];
   supportConversations: MemberDataExportSupportConversation[];
@@ -3194,24 +3246,6 @@ export const OfferingInputGender = {
   female: 'female',
   male: 'male',
 } as const;
-
-export interface LocalizedText {
-  /**
-     * @minLength 1
-     * @maxLength 240
-     */
-  en: string;
-  /**
-     * @minLength 1
-     * @maxLength 240
-     */
-  ar: string;
-  /**
-     * @minLength 1
-     * @maxLength 240
-     */
-  ku: string;
-}
 
 export interface LocalizedActivityDetail47d80cf {
   /**

@@ -773,6 +773,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1courses"
   /member/fitness-challenges:
     $ref: "./operations.yaml#/paths/~1member~1fitness-challenges"
+  /member/loyalty-points:
+    $ref: "./operations.yaml#/paths/~1member~1loyalty-points"
   /member/fitness-challenges/{challengeId}/join:
     $ref: "./operations.yaml#/paths/~1member~1fitness-challenges~1{challengeId}~1join"
   /member/fitness-challenges/{challengeId}/participation:

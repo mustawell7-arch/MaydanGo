@@ -5,7 +5,7 @@ import { GetMemberPrivacyRequestExportResponse } from "@workspace/api-zod";
 test("member export response contains only the declared, non-secret fields", () => {
   const now = new Date("2026-11-14T12:00:00.000Z");
   const parsed = GetMemberPrivacyRequestExportResponse.parse({
-    formatVersion: "1.6",
+    formatVersion: "1.7",
     generatedAt: now,
     account: {
       email: "member@example.test",
@@ -50,6 +50,27 @@ test("member export response contains only the declared, non-secret fields", () 
       selfReportedDates: ["2026-11-10"],
       verifiedAttendanceDates: ["2026-11-11"],
     }],
+    loyaltyPoints: {
+      balance: 2,
+      entries: [
+        {
+          id: "attendance:visit-1",
+          source: "confirmed_visit",
+          points: 1,
+          earnedAt: now,
+          localizedTitle: { en: "Yoga class", ar: "حصة يوغا", ku: "وانەی یۆگا" },
+          facility: "Baghdad studio",
+        },
+        {
+          id: "course:enrollment-1",
+          source: "course_completion",
+          points: 1,
+          earnedAt: now,
+          localizedTitle: { en: "Movement basics", ar: "أساسيات الحركة", ku: "بنەماکانی جووڵە" },
+          facility: null,
+        },
+      ],
+    },
     courses: [{
       title: "Movement basics",
       enrolledAt: now,
@@ -129,6 +150,8 @@ test("member export response contains only the declared, non-secret fields", () 
   assert.equal(parsed.savedCourses[0]?.title, "Strength basics");
   assert.deepEqual(parsed.fitnessChallenges[0]?.selfReportedDates, ["2026-11-10"]);
   assert.equal(parsed.fitnessChallenges[0]?.activeDays, 2);
+  assert.equal(parsed.loyaltyPoints.balance, 2);
+  assert.deepEqual(parsed.loyaltyPoints.entries.map(entry => entry.source), ["confirmed_visit", "course_completion"]);
   assert.equal(parsed.consentHistory[0]?.choice, "declined");
   assert.equal(parsed.supportConversations[0]?.messages[0]?.body, "Please help with my booking.");
   assert.equal(parsed.supportConversations[0]?.messages[0]?.attachments[0]?.fileName, "schedule.jpg");

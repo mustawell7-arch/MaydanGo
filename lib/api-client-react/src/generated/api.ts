@@ -193,6 +193,7 @@ import type {
   MemberFitnessChallengeActivityResponse,
   MemberFitnessChallengeMembership,
   MemberLiveClass,
+  MemberLoyaltyPointsSummary,
   MemberProfileInput,
   MemberProfilePhoto,
   MemberProfilePhotoCompleteInput,
@@ -17259,6 +17260,101 @@ export function useGetMemberFitnessChallenges<TData = Awaited<ReturnType<typeof 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetMemberFitnessChallengesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMemberLoyaltyPointsUrl = () => {
+
+
+
+
+  return `/api/member/loyalty-points`
+}
+
+export const getMemberLoyaltyPoints = async ( options?: Parameters<typeof customFetch>[1]): Promise<MemberLoyaltyPointsSummary> => {
+
+  return customFetch<MemberLoyaltyPointsSummary>(getGetMemberLoyaltyPointsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberLoyaltyPointsQueryKey = () => {
+    return [
+    `/api/member/loyalty-points`
+    ] as const;
+    }
+
+
+export const getGetMemberLoyaltyPointsQueryOptions = <TData = Awaited<ReturnType<typeof getMemberLoyaltyPoints>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberLoyaltyPoints>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberLoyaltyPointsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberLoyaltyPoints>>> = ({ signal }) => getMemberLoyaltyPoints({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberLoyaltyPoints>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberLoyaltyPointsQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberLoyaltyPoints>>>
+export type GetMemberLoyaltyPointsQueryError = ErrorType<void>
+
+
+export function useGetMemberLoyaltyPoints<TData = Awaited<ReturnType<typeof getMemberLoyaltyPoints>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberLoyaltyPoints>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberLoyaltyPoints>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberLoyaltyPoints>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberLoyaltyPoints<TData = Awaited<ReturnType<typeof getMemberLoyaltyPoints>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberLoyaltyPoints>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberLoyaltyPoints>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberLoyaltyPoints>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberLoyaltyPoints<TData = Awaited<ReturnType<typeof getMemberLoyaltyPoints>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberLoyaltyPoints>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberLoyaltyPoints<TData = Awaited<ReturnType<typeof getMemberLoyaltyPoints>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberLoyaltyPoints>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberLoyaltyPointsQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

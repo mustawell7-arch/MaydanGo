@@ -169,6 +169,16 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/MemberFitnessChallenge" }
         "403": { description: Current Terms of Use and Privacy Policy consent is required }
+  /member/loyalty-points:
+    get:
+      operationId: getMemberLoyaltyPoints
+      responses:
+        "200":
+          description: The signed-in member's private points from eligible confirmed visits and completed courses
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberLoyaltyPointsSummary" }
+        "403": { description: Current Terms of Use and Privacy Policy consent is required }
   /member/fitness-challenges/{challengeId}/join:
     parameters:
       - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
@@ -3711,6 +3721,8 @@ components:
         verifiedAttendanceDates:
           type: array
           items: { $ref: "#/components/schemas/CalendarDate" }
+    MemberDataExportLoyaltyPoints:
+      $ref: "#/components/schemas/MemberLoyaltyPointsSummary"
     MemberDataExportReviewRatings:
       type: object
       additionalProperties: false
@@ -3798,9 +3810,9 @@ components:
     MemberDataExport:
       type: object
       additionalProperties: false
-      required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, savedCourses, fitnessChallenges, reviews, consentHistory, supportConversations, referrals, privacyRequests, notificationPreferences, excludedData]
+      required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, savedCourses, fitnessChallenges, loyaltyPoints, reviews, consentHistory, supportConversations, referrals, privacyRequests, notificationPreferences, excludedData]
       properties:
-        formatVersion: { type: string, enum: ["1.6"] }
+        formatVersion: { type: string, enum: ["1.7"] }
         generatedAt: { type: string, format: date-time }
         account: { $ref: "#/components/schemas/MemberDataExportAccount" }
         memberships:
@@ -3824,6 +3836,7 @@ components:
         fitnessChallenges:
           type: array
           items: { $ref: "#/components/schemas/MemberDataExportFitnessChallenge" }
+        loyaltyPoints: { $ref: "#/components/schemas/MemberDataExportLoyaltyPoints" }
         reviews:
           type: array
           items: { $ref: "#/components/schemas/MemberDataExportReview" }
@@ -7361,6 +7374,26 @@ components:
           items: { $ref: "#/components/schemas/CalendarDate" }
         canJoin: { type: boolean }
         canLogToday: { type: boolean }
+    MemberLoyaltyPointEntry:
+      type: object
+      additionalProperties: false
+      required: [id, source, points, earnedAt, localizedTitle, facility]
+      properties:
+        id: { type: string }
+        source: { type: string, enum: [confirmed_visit, course_completion] }
+        points: { type: integer, enum: [1] }
+        earnedAt: { type: string, format: date-time }
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        facility: { type: ["string", "null"] }
+    MemberLoyaltyPointsSummary:
+      type: object
+      additionalProperties: false
+      required: [balance, entries]
+      properties:
+        balance: { type: integer, minimum: 0 }
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/MemberLoyaltyPointEntry" }
     MemberFitnessChallengeMembership:
       type: object
       additionalProperties: false
