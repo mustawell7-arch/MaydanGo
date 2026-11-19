@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Text, Pressable } from '@/components/Localized';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -12,6 +12,7 @@ import {
   useEnrollMemberCourse, useGetMemberCourse, useRecordMemberCourseLessonView,
   useSubmitMemberCourseQuizAttempt,
   useSetMemberCourseFavorite, useUpdateCourseProgress,
+  useGetMemberCourseCertificate,
   useUpdateMemberCoursePlaybackProgress,
   type SponsoredContentPlacementType,
 } from '@workspace/api-client-react';
@@ -42,6 +43,9 @@ export default function CourseDetailScreen() {
   const lessonViewMutation = useRecordMemberCourseLessonView();
   const quizMutation = useSubmitMemberCourseQuizAttempt();
   const favoriteMutation = useSetMemberCourseFavorite();
+  const certificateQuery = useGetMemberCourseCertificate(id, {
+    query: { enabled: !!course?.courseCompletedAt, retry: false },
+  });
   const sponsoredTracking = useSponsoredContentTracking();
   const [activePlayback, setActivePlayback] = useState<{
     lessonId: string;
@@ -110,6 +114,34 @@ export default function CourseDetailScreen() {
       { timeZone: 'Asia/Baghdad', dateStyle: 'medium' },
     ).format(new Date(course.courseCompletedAt))
     : null;
+  const issuedCertificate = certificateQuery.data;
+  const certificateDate = issuedCertificate
+    ? new Intl.DateTimeFormat(
+      app.language === 'ku' ? 'ckb-IQ' : app.language === 'ar' ? 'ar-IQ' : 'en-IQ',
+      { timeZone: 'Asia/Baghdad', dateStyle: 'medium' },
+    ).format(new Date(issuedCertificate.issuedAt))
+    : null;
+  const shareCertificate = async () => {
+    if (!issuedCertificate || !certificateDate) return;
+    const courseTitle = issuedCertificate.localizedCourseTitle[app.language]
+      || issuedCertificate.localizedCourseTitle.en;
+    const instructor = issuedCertificate.localizedInstructor[app.language]
+      || issuedCertificate.localizedInstructor.en;
+    try {
+      await Share.share({
+        message: [
+          t('certificateTitle'),
+          `${issuedCertificate.learnerName} · ${courseTitle}`,
+          `${t('certificateApprovedBy')}: ${instructor}`,
+          `${t('certificateIssuedOn')}: ${certificateDate}`,
+          `${t('certificateNumber')}: ${issuedCertificate.id}`,
+          issuedCertificate.disclaimer,
+        ].join('\n'),
+      });
+    } catch (error) {
+      setMessage(errorCopy(error));
+    }
+  };
   const ready = course.accessState === 'ready';
   const languageList = (languages: Array<'en' | 'ar' | 'ku'> | null | undefined) =>
     languages?.length
@@ -346,6 +378,43 @@ export default function CourseDetailScreen() {
                 <Text style={[styles.progressLabel, { color: colors.primary, textAlign: align }]}>
                   {t('courseCompletedOn')} · {completionDate}
                 </Text>
+              ) : null}
+              {completionDate && issuedCertificate ? (
+                <View style={{ marginTop: 8, padding: 14, borderRadius: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.primary, gap: 7 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Ionicons name="ribbon-outline" size={20} color={colors.primary} />
+                    <Text style={{ flex: 1, color: colors.primary, fontSize: 15, fontWeight: '800', textAlign: align }}>{t('certificateTitle')}</Text>
+                  </View>
+                  <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '700', textAlign: align }}>{issuedCertificate.learnerName}</Text>
+                  <Text style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 18, textAlign: align }}>
+                    {t('certificateApprovedBy')}: {issuedCertificate.localizedInstructor[app.language] || issuedCertificate.localizedInstructor.en}
+                  </Text>
+                  <Text selectable style={{ color: colors.mutedForeground, fontSize: 11, textAlign: align }}>
+                    {t('certificateNumber')}: {issuedCertificate.id}
+                  </Text>
+                  <Text style={{ color: colors.mutedForeground, fontSize: 11, lineHeight: 17, textAlign: align }}>{issuedCertificate.disclaimer}</Text>
+                  <Pressable
+                    testID="button-share-course-certificate"
+                    accessibilityRole="button"
+                    onPress={() => void shareCertificate()}
+                    style={({ pressed }) => ({ minHeight: 42, marginTop: 3, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.72 : 1 })}
+                  >
+                    <Text style={{ color: colors.primaryForeground, fontSize: 13, fontWeight: '800' }}>{t('certificateShare')}</Text>
+                  </Pressable>
+                </View>
+              ) : completionDate ? (
+                <View style={{ marginTop: 8, gap: 6 }}>
+                  <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align }]}>{t('certificatePending')}</Text>
+                  <Pressable
+                    testID="button-refresh-course-certificate"
+                    accessibilityRole="button"
+                    disabled={certificateQuery.isFetching}
+                    onPress={() => void certificateQuery.refetch()}
+                    style={({ pressed }) => ({ alignSelf: app.language === 'en' ? 'flex-start' : 'flex-end', paddingVertical: 5, opacity: pressed || certificateQuery.isFetching ? 0.55 : 1 })}
+                  >
+                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '800' }}>{t('certificateRefresh')}</Text>
+                  </Pressable>
+                </View>
               ) : null}
             </View>
           ) : null}

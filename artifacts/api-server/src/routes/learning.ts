@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { clerkClient, getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, gt, gte, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, gte, inArray, isNull, sql } from "drizzle-orm";
 import {
-  ACTIVE_RESERVATION_STATUSES, BOOKED_RESERVATION_STATUSES, db, courseEnrollments, courseMaterials, courseQuizAttempts, lessonAccess, learningCourses, learningLessons, lessonProgress,
+  ACTIVE_RESERVATION_STATUSES, BOOKED_RESERVATION_STATUSES, courseCertificates, db, courseEnrollments, courseMaterials, courseQuizAttempts, lessonAccess, learningCourses, learningLessons, lessonProgress,
   memberSavedCourses,
   memberships, offerings, partners, reservations,
 } from "@workspace/db";
@@ -15,6 +15,7 @@ import {
   UpdateCourseProgressResponse, RecordMemberCourseLessonViewResponse,
   UpdateMemberCoursePlaybackProgressBody, UpdateMemberCoursePlaybackProgressResponse,
   SetMemberCourseFavoriteBody, SetMemberCourseFavoriteParams, SetMemberCourseFavoriteResponse,
+  GetMemberCourseCertificateResponse,
 } from "@workspace/api-zod";
 import { BookingError, membershipCanAccess } from "../lib/reservations";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
@@ -236,6 +237,38 @@ router.get("/courses/:id", async (req, res): Promise<void> => {
   const userId = getAuth(req).userId;
   if (!userId) { res.status(401).json({ message: "Sign in to view this course." }); return; }
   res.json(GetMemberCourseResponse.parse(await getCourseDetail(userId, String(req.params.id))));
+});
+
+router.get("/courses/:id/certificate", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) { res.status(401).json({ message: "Sign in to view your certificate." }); return; }
+  const courseId = String(req.params.id);
+  const [certificate] = await db.select({
+    id: courseCertificates.id,
+    completedAt: courseCertificates.completedAt,
+    issuedAt: courseCertificates.issuedAt,
+    localizedCourseTitle: learningCourses.localizedTitle,
+    localizedInstructor: learningCourses.localizedInstructor,
+  }).from(courseCertificates)
+    .innerJoin(courseEnrollments, eq(courseCertificates.enrollmentId, courseEnrollments.id))
+    .innerJoin(learningCourses, eq(courseEnrollments.courseId, learningCourses.id))
+    .where(and(
+      eq(courseEnrollments.userId, userId),
+      eq(courseEnrollments.courseId, courseId),
+      eq(learningCourses.published, true),
+    )).limit(1);
+  if (!certificate) { res.status(404).json({ message: "No certificate has been issued for this course." }); return; }
+  const account = await clerkClient.users.getUser(userId);
+  const learnerName = [account.firstName, account.lastName].filter(Boolean).join(" ").trim() || "Member";
+  res.json(GetMemberCourseCertificateResponse.parse({
+    id: certificate.id,
+    learnerName,
+    localizedCourseTitle: certificate.localizedCourseTitle,
+    localizedInstructor: certificate.localizedInstructor,
+    completedAt: certificate.completedAt,
+    issuedAt: certificate.issuedAt,
+    disclaimer: "This is a course completion certificate, not an accredited qualification.",
+  }));
 });
 
 router.put("/courses/:id/favorite", async (req, res): Promise<void> => {

@@ -601,6 +601,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1instructor-content-drafts~1{id}~1uploads~1{uploadId}~1file"
   /instructor/portal:
     $ref: "./operations.yaml#/paths/~1instructor~1portal"
+  /instructor/courses/{courseId}/certificate-candidates:
+    $ref: "./operations.yaml#/paths/~1instructor~1courses~1{courseId}~1certificate-candidates"
+  /instructor/courses/{courseId}/enrollments/{enrollmentId}/certificate:
+    $ref: "./operations.yaml#/paths/~1instructor~1courses~1{courseId}~1enrollments~1{enrollmentId}~1certificate"
   /instructor/content-drafts:
     $ref: "./operations.yaml#/paths/~1instructor~1content-drafts"
   /instructor/content-drafts/{id}:
@@ -757,6 +761,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1courses"
   /member/courses/{id}:
     $ref: "./operations.yaml#/paths/~1member~1courses~1{id}"
+  /member/courses/{id}/certificate:
+    $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1certificate"
   /member/courses/{id}/favorite:
     $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1favorite"
   /member/courses/{id}/enroll:

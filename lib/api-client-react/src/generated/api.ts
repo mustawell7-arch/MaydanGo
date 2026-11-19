@@ -156,12 +156,14 @@ import type {
   InstructorContentDecisionResponse,
   InstructorContentDraft,
   InstructorContentDraftInput,
+  InstructorCourseCertificateCandidates,
   InstructorDraftUpload,
   InstructorDraftUploadInput,
   InstructorDraftUploadUrlResponse,
   InstructorPortalResponse,
   InstructorSupportTicketInput,
   IssueCheckinQr200,
+  IssuedCourseCertificate,
   JoinAccess,
   LegalPolicyKey,
   LessonInput,
@@ -175,6 +177,7 @@ import type {
   MemberConsentInput,
   MemberConsentRecord,
   MemberConsentState,
+  MemberCourseCertificate,
   MemberDataExport,
   MemberDeviceRegistration,
   MemberDeviceStatus,
@@ -8758,6 +8761,171 @@ export function useGetInstructorPortal<TData = Awaited<ReturnType<typeof getInst
 
 
 
+export const getGetInstructorCourseCertificateCandidatesUrl = (courseId: string,) => {
+
+
+
+
+  return `/api/instructor/courses/${courseId}/certificate-candidates`
+}
+
+export const getInstructorCourseCertificateCandidates = async (courseId: string, options?: Parameters<typeof customFetch>[1]): Promise<InstructorCourseCertificateCandidates> => {
+
+  return customFetch<InstructorCourseCertificateCandidates>(getGetInstructorCourseCertificateCandidatesUrl(courseId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInstructorCourseCertificateCandidatesQueryKey = (courseId: string,) => {
+    return [
+    `/api/instructor/courses/${courseId}/certificate-candidates`
+    ] as const;
+    }
+
+
+export const getGetInstructorCourseCertificateCandidatesQueryOptions = <TData = Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>, TError = ErrorType<void>>(courseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInstructorCourseCertificateCandidatesQueryKey(courseId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>> = ({ signal }) => getInstructorCourseCertificateCandidates(courseId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: courseId !== null && courseId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetInstructorCourseCertificateCandidatesQueryResult = NonNullable<Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>>
+export type GetInstructorCourseCertificateCandidatesQueryError = ErrorType<void>
+
+
+export function useGetInstructorCourseCertificateCandidates<TData = Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>, TError = ErrorType<void>>(
+ courseId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorCourseCertificateCandidates<TData = Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>, TError = ErrorType<void>>(
+ courseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>,
+          TError,
+          Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInstructorCourseCertificateCandidates<TData = Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>, TError = ErrorType<void>>(
+ courseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetInstructorCourseCertificateCandidates<TData = Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>, TError = ErrorType<void>>(
+ courseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInstructorCourseCertificateCandidates>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetInstructorCourseCertificateCandidatesQueryOptions(courseId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getIssueInstructorCourseCertificateUrl = (courseId: string,
+    enrollmentId: string,) => {
+
+
+
+
+  return `/api/instructor/courses/${courseId}/enrollments/${enrollmentId}/certificate`
+}
+
+export const issueInstructorCourseCertificate = async (courseId: string,
+    enrollmentId: string, options?: Parameters<typeof customFetch>[1]): Promise<IssuedCourseCertificate> => {
+
+  return customFetch<IssuedCourseCertificate>(getIssueInstructorCourseCertificateUrl(courseId,enrollmentId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getIssueInstructorCourseCertificateMutationKey = () => ['issueInstructorCourseCertificate'] as const;
+
+export const getIssueInstructorCourseCertificateMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof issueInstructorCourseCertificate>>, TError,IssueInstructorCourseCertificateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof issueInstructorCourseCertificate>>, TError,IssueInstructorCourseCertificateMutationVariables, TContext> => {
+
+const mutationKey = getIssueInstructorCourseCertificateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof issueInstructorCourseCertificate>>, IssueInstructorCourseCertificateMutationVariables> = (props) => {
+          const {courseId,enrollmentId} = props ?? {};
+
+          return  issueInstructorCourseCertificate(courseId,enrollmentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type IssueInstructorCourseCertificateMutationResult = NonNullable<Awaited<ReturnType<typeof issueInstructorCourseCertificate>>>
+
+    export type IssueInstructorCourseCertificateMutationError = ErrorType<void>
+    export type IssueInstructorCourseCertificateMutationVariables = {courseId: string;enrollmentId: string}
+
+    export const useIssueInstructorCourseCertificate = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof issueInstructorCourseCertificate>>, TError,IssueInstructorCourseCertificateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof issueInstructorCourseCertificate>>,
+        TError,
+        IssueInstructorCourseCertificateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getIssueInstructorCourseCertificateMutationOptions(options), queryClient);
+    }
+
 export const getGetInstructorContentDraftsUrl = () => {
 
 
@@ -16352,6 +16520,101 @@ export function useGetMemberCourse<TData = Awaited<ReturnType<typeof getMemberCo
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetMemberCourseQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMemberCourseCertificateUrl = (id: string,) => {
+
+
+
+
+  return `/api/member/courses/${id}/certificate`
+}
+
+export const getMemberCourseCertificate = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<MemberCourseCertificate> => {
+
+  return customFetch<MemberCourseCertificate>(getGetMemberCourseCertificateUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberCourseCertificateQueryKey = (id: string,) => {
+    return [
+    `/api/member/courses/${id}/certificate`
+    ] as const;
+    }
+
+
+export const getGetMemberCourseCertificateQueryOptions = <TData = Awaited<ReturnType<typeof getMemberCourseCertificate>>, TError = ErrorType<void>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberCourseCertificate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberCourseCertificateQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberCourseCertificate>>> = ({ signal }) => getMemberCourseCertificate(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberCourseCertificate>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberCourseCertificateQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberCourseCertificate>>>
+export type GetMemberCourseCertificateQueryError = ErrorType<void>
+
+
+export function useGetMemberCourseCertificate<TData = Awaited<ReturnType<typeof getMemberCourseCertificate>>, TError = ErrorType<void>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberCourseCertificate>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberCourseCertificate>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberCourseCertificate>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberCourseCertificate<TData = Awaited<ReturnType<typeof getMemberCourseCertificate>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberCourseCertificate>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberCourseCertificate>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberCourseCertificate>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberCourseCertificate<TData = Awaited<ReturnType<typeof getMemberCourseCertificate>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberCourseCertificate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberCourseCertificate<TData = Awaited<ReturnType<typeof getMemberCourseCertificate>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberCourseCertificate>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberCourseCertificateQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

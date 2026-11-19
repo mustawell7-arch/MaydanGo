@@ -1952,6 +1952,43 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/InstructorPortalResponse" }
+  /instructor/courses/{courseId}/certificate-candidates:
+    parameters:
+      - name: courseId
+        in: path
+        required: true
+        schema: { type: string, minLength: 1 }
+    get:
+      operationId: getInstructorCourseCertificateCandidates
+      responses:
+        "200":
+          description: Learner names and course completion status for one assigned course only
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InstructorCourseCertificateCandidates" }
+        "403": { description: Instructor access or course assignment is required }
+        "404": { description: Course not found }
+  /instructor/courses/{courseId}/enrollments/{enrollmentId}/certificate:
+    parameters:
+      - name: courseId
+        in: path
+        required: true
+        schema: { type: string, minLength: 1 }
+      - name: enrollmentId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      operationId: issueInstructorCourseCertificate
+      responses:
+        "200":
+          description: Certificate issued after server-verified course completion and instructor approval
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IssuedCourseCertificate" }
+        "403": { description: Instructor access or course assignment is required }
+        "404": { description: Enrollment not found in this course }
+        "409": { description: Learner has not completed every course lesson }
   /instructor/content-drafts:
     get:
       operationId: getInstructorContentDrafts
@@ -2690,6 +2727,17 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CourseDetail" }
+  /member/courses/{id}/certificate:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      operationId: getMemberCourseCertificate
+      responses:
+        "200":
+          description: A course completion certificate issued to the signed-in member
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberCourseCertificate" }
+        "404": { description: No certificate has been issued for this member and course }
   /member/courses/{id}/favorite:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     put:
@@ -5291,6 +5339,38 @@ components:
         upcomingSessions:
           type: array
           items: { $ref: "#/components/schemas/InstructorUpcomingSession" }
+    InstructorCourseCertificateCandidate:
+      type: object
+      additionalProperties: false
+      required: [enrollmentId, learnerName, completedAt, certificateId, certificateIssuedAt]
+      properties:
+        enrollmentId: { type: string, format: uuid }
+        learnerName: { type: string }
+        completedAt: { type: string, format: date-time }
+        certificateId: { type: [string, "null"], format: uuid }
+        certificateIssuedAt: { type: [string, "null"], format: date-time }
+    InstructorCourseCertificateCandidates:
+      type: array
+      items: { $ref: "#/components/schemas/InstructorCourseCertificateCandidate" }
+    IssuedCourseCertificate:
+      type: object
+      additionalProperties: false
+      required: [id, issuedAt]
+      properties:
+        id: { type: string, format: uuid }
+        issuedAt: { type: string, format: date-time }
+    MemberCourseCertificate:
+      type: object
+      additionalProperties: false
+      required: [id, learnerName, localizedCourseTitle, localizedInstructor, completedAt, issuedAt, disclaimer]
+      properties:
+        id: { type: string, format: uuid }
+        learnerName: { type: string }
+        localizedCourseTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedInstructor: { $ref: "#/components/schemas/LocalizedText" }
+        completedAt: { type: string, format: date-time }
+        issuedAt: { type: string, format: date-time }
+        disclaimer: { type: string }
     InstructorAccessRequestAdmin:
       type: object
       required: [id, userId, message, status, submittedAt]

@@ -16,6 +16,7 @@
 - [Partner roster privacy](partner-roster-privacy.md) — optional member photos allow human visual checks only for authorized staff during active check-in.
 - [Corporate portal scope](corporate-portal-scope.md) — Start with company employee enrollment only; keep HR away from member activity and finance.
 - [Instructor access approval](instructor-access-approval.md) — Instructors request access; admins approve and assign specific courses/sessions; instructor views stay limited to those items.
+- [Course certificates](course-certificates.md) — Assigned instructors approve completed learners using name and completion date only; certificates are non-accredited completion records.
 - [Guardian verification](guardian-verification.md) — Partners verify guardian requirements at the venue; MaydanGo must not collect guardian information.
 - [Waitlist schema sync](waitlist-schema-sync.md) — Drizzle push-force can still hit non-interactive rename prompts; preserve legacy fields or migrate explicitly.
 - [Development schema drift](development-schema-drift.md) — Resolve existing dev database conflicts before pushing schema; never auto-approve data-loss changes.

@@ -2,14 +2,17 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/react';
 import {
+  getGetInstructorCourseCertificateCandidatesQueryKey,
   getGetInstructorAccessRequestsQueryKey,
   getGetInstructorPortalQueryKey,
   useDecideInstructorAccessRequest,
+  useGetInstructorCourseCertificateCandidates,
   getGetInstructorSupportTicketQueryKey,
   getGetInstructorSupportTicketsQueryKey,
   useCreateInstructorSupportTicket,
   useGetInstructorAccessRequests,
   useGetInstructorPortal,
+  useIssueInstructorCourseCertificate,
   useGetInstructorSupportTicket,
   useGetInstructorSupportTickets,
   useReplyInstructorSupportTicket,
@@ -39,6 +42,11 @@ const copy = {
     reason: 'Decision note', assignedCourses: 'Assigned courses', upcoming: 'Your upcoming sessions',
     noCourses: 'No courses have been assigned yet.', noSessions: 'No future sessions have been assigned.',
     summary: 'Course summary', instructor: 'Instructor', courseDetails: 'Course details',
+    certificateReview: 'Course certificates', certificateReviewIntro: 'Review learners who have completed every lesson. Issuing a certificate is your approval.',
+    certificateEmpty: 'No learners have completed this course yet.', certificateLoading: 'Loading eligible learners…',
+    certificateLoadError: 'Eligible learners could not be loaded.', learner: 'Learner', completed: 'Completed',
+    issueCertificate: 'Approve and issue', issuingCertificate: 'Issuing…', certificateIssued: 'Issued',
+    certificateIssueError: 'The certificate could not be issued. Refresh and try again.',
     category: 'Category', level: 'Level', duration: 'minutes', published: 'Published', unpublished: 'Not published',
     location: 'Location', session: 'Session', event: 'Event', coach: 'Coaching', starts: 'Starts', ends: 'Ends',
     helpTitle: 'Speak with MaydanGo', helpText: 'Use the support panel for questions about instructor access or your assigned work.',
@@ -96,6 +104,11 @@ const copy = {
     reason: 'ملاحظة القرار', assignedCourses: 'الدورات المخصصة', upcoming: 'جلساتك القادمة',
     noCourses: 'لم يتم تخصيص دورات بعد.', noSessions: 'لم يتم تخصيص جلسات مستقبلية.',
     summary: 'ملخص الدورة', instructor: 'المدرّب', courseDetails: 'تفاصيل الدورة',
+    certificateReview: 'شهادات الدورة', certificateReviewIntro: 'راجع المتعلمين الذين أكملوا جميع الدروس. إصدار الشهادة هو موافقتك.',
+    certificateEmpty: 'لم يُكمل أي متعلم هذه الدورة بعد.', certificateLoading: 'جارٍ تحميل المتعلمين المؤهلين…',
+    certificateLoadError: 'تعذر تحميل قائمة المتعلمين المؤهلين.', learner: 'المتعلم', completed: 'تاريخ الإكمال',
+    issueCertificate: 'الموافقة وإصدار الشهادة', issuingCertificate: 'جارٍ الإصدار…', certificateIssued: 'تم الإصدار',
+    certificateIssueError: 'تعذر إصدار الشهادة. حدّث القائمة وحاول مرة أخرى.',
     category: 'الفئة', level: 'المستوى', duration: 'دقيقة', published: 'منشورة', unpublished: 'غير منشورة',
     location: 'الموقع', session: 'جلسة', event: 'فعالية', coach: 'تدريب', starts: 'تبدأ', ends: 'تنتهي',
     helpTitle: 'تواصل مع MaydanGo', helpText: 'استخدم لوحة الدعم للاستفسار عن صلاحية المدرّب أو العمل المخصص لك.',
@@ -153,6 +166,11 @@ const copy = {
     reason: 'تێبینی بڕیار', assignedCourses: 'کۆرسە دیاریکراوەکان', upcoming: 'وانەکانی داهاتووت',
     noCourses: 'هێشتا هیچ کۆرسێکت بۆ دیاری نەکراوە.', noSessions: 'هێشتا هیچ وانەیەکی داهاتووت بۆ دیاری نەکراوە.',
     summary: 'پوختەی کۆرس', instructor: 'ڕاهێنەر', courseDetails: 'وردەکاری کۆرس',
+    certificateReview: 'بڕوانامەکانی کۆرس', certificateReviewIntro: 'ئەو فێرخوازانە بپشکنە کە هەموو وانەکانیان تەواو کردووە. دەرکردنی بڕوانامە بە واتای پەسەندکردنی تۆیە.',
+    certificateEmpty: 'هێشتا هیچ فێرخوازێک ئەم کۆرسەی تەواو نەکردووە.', certificateLoading: 'فێرخوازە شایستەکان بار دەکرێن…',
+    certificateLoadError: 'نەتوانرا لیستی فێرخوازە شایستەکان بار بکرێت.', learner: 'فێرخواز', completed: 'ڕێکەوتی تەواوکردن',
+    issueCertificate: 'پەسەندکردن و دەرکردن', issuingCertificate: 'دەرکردن…', certificateIssued: 'دەرکراوە',
+    certificateIssueError: 'نەتوانرا بڕوانامەکە دەرکرێت. لیستەکە نوێ بکەرەوە و دووبارە هەوڵ بدەوە.',
     category: 'پۆل', level: 'ئاست', duration: 'خولەک', published: 'بڵاوکراوەتەوە', unpublished: 'بڵاونەکراوەتەوە',
     location: 'شوێن', session: 'وانە', event: 'بۆنە', coach: 'ڕاهێنان', starts: 'دەست پێدەکات', ends: 'کۆتایی دێت',
     helpTitle: 'پەیوەندی بە MaydanGo بکە', helpText: 'بۆ پرسیار دەربارەی دەسەڵاتی ڕاهێنەر یان کاری دیاریکراوت، پانێڵی پاڵپشتی بەکاربهێنە.',
@@ -529,6 +547,62 @@ function InstructorSupportPanel({ lang }: { lang: Language }) {
   );
 }
 
+function CourseCertificateReview({ courseId, lang }: { courseId: string; lang: Language }) {
+  const queryClient = useQueryClient();
+  const candidates = useGetInstructorCourseCertificateCandidates(courseId);
+  const issue = useIssueInstructorCourseCertificate();
+  const [error, setError] = useState('');
+  const approve = async (enrollmentId: string) => {
+    setError('');
+    try {
+      await issue.mutateAsync({ courseId, enrollmentId });
+      await queryClient.invalidateQueries({
+        queryKey: getGetInstructorCourseCertificateCandidatesQueryKey(courseId),
+      });
+    } catch {
+      setError(t(lang, 'certificateIssueError'));
+    }
+  };
+  return (
+    <section className="mt-5 border-t border-[#e3dfd3] pt-4" data-testid={`panel-certificates-${courseId}`}>
+      <h4 className="text-sm font-bold">{t(lang, 'certificateReview')}</h4>
+      <p className="mt-1 text-xs leading-5 text-[#718077]">{t(lang, 'certificateReviewIntro')}</p>
+      {candidates.isLoading ? (
+        <p className="mt-3 text-xs text-[#718077]" data-testid={`loading-certificate-candidates-${courseId}`}>{t(lang, 'certificateLoading')}</p>
+      ) : candidates.isError ? (
+        <p role="alert" className="mt-3 text-xs text-[#9a4435]" data-testid={`error-certificate-candidates-${courseId}`}>{t(lang, 'certificateLoadError')}</p>
+      ) : candidates.data?.length ? (
+        <ul className="mt-3 space-y-2">
+          {candidates.data.map(candidate => (
+            <li key={candidate.enrollmentId} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#e3dfd3] bg-white/70 p-3" data-testid={`certificate-candidate-${candidate.enrollmentId}`}>
+              <div>
+                <p className="text-sm font-semibold">{candidate.learnerName}</p>
+                <p className="mt-1 text-xs text-[#718077]">{t(lang, 'completed')}: {dateText(candidate.completedAt, lang)}</p>
+              </div>
+              {candidate.certificateId ? (
+                <span className="rounded-full bg-[#e1efdf] px-3 py-1.5 text-xs font-bold text-[#2d6d4a]" data-testid={`status-certificate-issued-${candidate.enrollmentId}`}>{t(lang, 'certificateIssued')}</span>
+              ) : (
+                <button
+                  type="button"
+                  disabled={issue.isPending}
+                  onClick={() => void approve(candidate.enrollmentId)}
+                  className="rounded-full bg-[#174d43] px-4 py-2 text-xs font-bold text-[#fff9e9] disabled:opacity-50"
+                  data-testid={`button-issue-certificate-${candidate.enrollmentId}`}
+                >
+                  {issue.isPending ? t(lang, 'issuingCertificate') : t(lang, 'issueCertificate')}
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 text-xs text-[#718077]" data-testid={`empty-certificate-candidates-${courseId}`}>{t(lang, 'certificateEmpty')}</p>
+      )}
+      {error && <p role="alert" className="mt-3 text-xs text-[#9a4435]" data-testid={`error-issue-certificate-${courseId}`}>{error}</p>}
+    </section>
+  );
+}
+
 export function InstructorPortalPage() {
   const { isLoaded, isSignedIn } = useAuth();
   const queryClient = useQueryClient();
@@ -645,6 +719,7 @@ export function InstructorPortalPage() {
                           </div>
                           <p className="mt-3 text-sm leading-6 text-[#536b61]">{localized(course.localizedSummary, lang)}</p>
                           <p className="mt-3 text-xs text-[#718077]"><span className="font-semibold">{t(lang, 'instructor')}:</span> {localized(course.localizedInstructor, lang)}</p>
+                            <CourseCertificateReview courseId={course.id} lang={lang} />
                         </article>
                       ))}
                     </div>}

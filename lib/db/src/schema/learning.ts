@@ -120,3 +120,14 @@ export const courseQuizAttempts = pgTable("course_quiz_attempts", {
 }, table => [
   index("course_quiz_attempt_enrollment_lesson_submitted").on(table.enrollmentId, table.lessonId, table.submittedAt),
 ]);
+
+export const courseCertificates = pgTable("course_certificates", {
+  id: text("id").primaryKey(),
+  enrollmentId: text("enrollment_id").notNull().references(() => courseEnrollments.id, { onDelete: "cascade" }),
+  instructorUserId: text("instructor_user_id").notNull(),
+  completedAt: timestamp("completed_at", { withTimezone: true }).notNull(),
+  issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  uniqueIndex("course_certificate_enrollment").on(table.enrollmentId),
+  index("course_certificate_instructor").on(table.instructorUserId, table.issuedAt),
+]);

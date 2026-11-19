@@ -4276,6 +4276,33 @@ export interface InstructorPortalResponse {
   upcomingSessions: InstructorUpcomingSession[];
 }
 
+export interface InstructorCourseCertificateCandidate {
+  enrollmentId: string;
+  learnerName: string;
+  completedAt: string;
+  /** @nullable */
+  certificateId: string | null;
+  /** @nullable */
+  certificateIssuedAt: string | null;
+}
+
+export type InstructorCourseCertificateCandidates = InstructorCourseCertificateCandidate[];
+
+export interface IssuedCourseCertificate {
+  id: string;
+  issuedAt: string;
+}
+
+export interface MemberCourseCertificate {
+  id: string;
+  learnerName: string;
+  localizedCourseTitle: LocalizedText;
+  localizedInstructor: LocalizedText;
+  completedAt: string;
+  issuedAt: string;
+  disclaimer: string;
+}
+
 export type InstructorAccessRequestAdminStatus = typeof InstructorAccessRequestAdminStatus[keyof typeof InstructorAccessRequestAdminStatus];
 
 

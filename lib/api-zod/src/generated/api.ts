@@ -7434,6 +7434,37 @@ export const GetInstructorPortalResponse = zod.object({
 })
 
 
+
+
+
+export const GetInstructorCourseCertificateCandidatesParams = zod.object({
+  "courseId": zod.coerce.string().min(1)
+})
+
+export const GetInstructorCourseCertificateCandidatesResponseItem = zod.object({
+  "enrollmentId": zod.uuid(),
+  "learnerName": zod.string(),
+  "completedAt": zod.coerce.date(),
+  "certificateId": zod.uuid().nullable(),
+  "certificateIssuedAt": zod.coerce.date().nullable()
+})
+export const GetInstructorCourseCertificateCandidatesResponse = zod.array(GetInstructorCourseCertificateCandidatesResponseItem)
+
+
+
+
+
+export const IssueInstructorCourseCertificateParams = zod.object({
+  "courseId": zod.coerce.string().min(1),
+  "enrollmentId": zod.uuid()
+})
+
+export const IssueInstructorCourseCertificateResponse = zod.object({
+  "id": zod.uuid(),
+  "issuedAt": zod.coerce.date()
+})
+
+
 export const getInstructorContentDraftsResponseDraftsItemPayloadOneDisplayNameMax = 120;
 
 export const getInstructorContentDraftsResponseDraftsItemPayloadOneBiographyMax = 3000;
@@ -12698,6 +12729,43 @@ export const GetMemberCourseResponse = zod.object({
 })),
   "lastAccessAt": zod.coerce.date().nullable()
 }))
+
+
+export const GetMemberCourseCertificateParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getMemberCourseCertificateResponseLocalizedCourseTitleEnMax = 240;
+
+export const getMemberCourseCertificateResponseLocalizedCourseTitleArMax = 240;
+
+export const getMemberCourseCertificateResponseLocalizedCourseTitleKuMax = 240;
+
+export const getMemberCourseCertificateResponseLocalizedInstructorEnMax = 240;
+
+export const getMemberCourseCertificateResponseLocalizedInstructorArMax = 240;
+
+export const getMemberCourseCertificateResponseLocalizedInstructorKuMax = 240;
+
+
+
+export const GetMemberCourseCertificateResponse = zod.object({
+  "id": zod.uuid(),
+  "learnerName": zod.string(),
+  "localizedCourseTitle": zod.object({
+  "en": zod.string().min(1).max(getMemberCourseCertificateResponseLocalizedCourseTitleEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseCertificateResponseLocalizedCourseTitleArMax),
+  "ku": zod.string().min(1).max(getMemberCourseCertificateResponseLocalizedCourseTitleKuMax)
+}),
+  "localizedInstructor": zod.object({
+  "en": zod.string().min(1).max(getMemberCourseCertificateResponseLocalizedInstructorEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseCertificateResponseLocalizedInstructorArMax),
+  "ku": zod.string().min(1).max(getMemberCourseCertificateResponseLocalizedInstructorKuMax)
+}),
+  "completedAt": zod.coerce.date(),
+  "issuedAt": zod.coerce.date(),
+  "disclaimer": zod.string()
+})
 
 
 export const SetMemberCourseFavoriteParams = zod.object({
