@@ -3149,7 +3149,7 @@ components:
       enum: [open, in_progress, waiting_member, resolved, closed]
     SupportTicketCategory:
       type: string
-      enum: [booking, account, access, safety, other]
+      enum: [membership, payment, booking, checkin, facility, course, live_class, refund, event, corporate_membership, technical_issue, account_security, account, access, safety, other]
     PrivacyRequestKind:
       type: string
       enum: [data_export, account_deletion]

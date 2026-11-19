@@ -26,11 +26,18 @@ import { translate, type MessageKey } from '@/lib/i18n';
 import { SupportAttachmentPicker } from '@/components/SupportAttachmentPicker';
 import { uploadSupportAttachments, type SupportAttachmentDraft } from '@/lib/support-attachments';
 
-type Category = 'booking' | 'account' | 'access' | 'safety' | 'other';
+type Category =
+  | 'membership' | 'payment' | 'booking' | 'checkin' | 'facility' | 'course'
+  | 'live_class' | 'refund' | 'event' | 'corporate_membership'
+  | 'technical_issue' | 'account_security' | 'account' | 'access' | 'safety' | 'other';
 type Status = 'open' | 'in_progress' | 'waiting_member' | 'resolved' | 'closed';
 const categoryKeys: Record<Category, MessageKey> = {
+  membership: 'categoryMembership', payment: 'categoryPayment',
   booking: 'categoryBooking', account: 'categoryAccount', access: 'categoryAccess',
-  safety: 'categorySafety', other: 'categoryOther',
+  checkin: 'categoryCheckin', facility: 'categoryFacility', course: 'categoryCourse',
+  live_class: 'categoryLiveClass', refund: 'categoryRefund', event: 'categoryEvent',
+  corporate_membership: 'categoryCorporateMembership', technical_issue: 'categoryTechnicalIssue',
+  account_security: 'categoryAccountSecurity', safety: 'categorySafety', other: 'categoryOther',
 };
 const statusKeys: Record<Status, MessageKey> = {
   open: 'supportStatusOpen', in_progress: 'supportStatusInProgress',

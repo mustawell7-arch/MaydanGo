@@ -49,7 +49,11 @@ export const memberSupportRouter = Router();
 const staffRouter = Router();
 const languageSchema = z.enum(["en", "ar", "ku"]);
 const ticketStatusSchema = z.enum(["open", "in_progress", "waiting_member", "resolved", "closed"]);
-const ticketCategorySchema = z.enum(["booking", "account", "access", "safety", "other"]);
+const ticketCategorySchema = z.enum([
+  "membership", "payment", "booking", "checkin", "facility", "course", "live_class",
+  "refund", "event", "corporate_membership", "technical_issue", "account_security",
+  "account", "access", "safety", "other",
+]);
 const activeTicketStatuses = new Set(["open", "in_progress", "waiting_member"]);
 
 function isUrgentOverdue(ticket: typeof supportTickets.$inferSelect, now = new Date()) {

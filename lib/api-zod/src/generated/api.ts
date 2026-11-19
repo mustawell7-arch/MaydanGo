@@ -8590,7 +8590,7 @@ export const SubmitInstructorAccessRequestResponse = zod.object({
 export const GetInstructorSupportTicketsResponseItem = zod.object({
   "id": zod.string(),
   "subject": zod.string(),
-  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "category": zod.enum(['membership', 'payment', 'booking', 'checkin', 'facility', 'course', 'live_class', 'refund', 'event', 'corporate_membership', 'technical_issue', 'account_security', 'account', 'access', 'safety', 'other']),
   "urgent": zod.boolean(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
   "language": zod.enum(['en', 'ar', 'ku']),
@@ -8618,7 +8618,7 @@ export const CreateInstructorSupportTicketBody = zod.object({
 export const CreateInstructorSupportTicketResponse = zod.object({
   "id": zod.string(),
   "subject": zod.string(),
-  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "category": zod.enum(['membership', 'payment', 'booking', 'checkin', 'facility', 'course', 'live_class', 'refund', 'event', 'corporate_membership', 'technical_issue', 'account_security', 'account', 'access', 'safety', 'other']),
   "urgent": zod.boolean(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
   "language": zod.enum(['en', 'ar', 'ku']),
@@ -8649,7 +8649,7 @@ export const GetInstructorSupportTicketParams = zod.object({
 export const GetInstructorSupportTicketResponse = zod.object({
   "id": zod.string(),
   "subject": zod.string(),
-  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "category": zod.enum(['membership', 'payment', 'booking', 'checkin', 'facility', 'course', 'live_class', 'refund', 'event', 'corporate_membership', 'technical_issue', 'account_security', 'account', 'access', 'safety', 'other']),
   "urgent": zod.boolean(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
   "language": zod.enum(['en', 'ar', 'ku']),
@@ -8689,7 +8689,7 @@ export const ReplyInstructorSupportTicketBody = zod.object({
 export const ReplyInstructorSupportTicketResponse = zod.object({
   "id": zod.string(),
   "subject": zod.string(),
-  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "category": zod.enum(['membership', 'payment', 'booking', 'checkin', 'facility', 'course', 'live_class', 'refund', 'event', 'corporate_membership', 'technical_issue', 'account_security', 'account', 'access', 'safety', 'other']),
   "urgent": zod.boolean(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
   "language": zod.enum(['en', 'ar', 'ku']),
@@ -12777,7 +12777,7 @@ export const AcceptMemberWaitlistOfferResponse = zod.object({
 export const GetMemberSupportTicketsResponseItem = zod.object({
   "id": zod.string(),
   "subject": zod.string(),
-  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "category": zod.enum(['membership', 'payment', 'booking', 'checkin', 'facility', 'course', 'live_class', 'refund', 'event', 'corporate_membership', 'technical_issue', 'account_security', 'account', 'access', 'safety', 'other']),
   "urgent": zod.boolean(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
   "language": zod.enum(['en', 'ar', 'ku']),
@@ -12798,7 +12798,7 @@ export const createMemberSupportTicketBodyUrgentDefault = false;
 
 export const CreateMemberSupportTicketBody = zod.object({
   "subject": zod.string().min(createMemberSupportTicketBodySubjectMin).max(createMemberSupportTicketBodySubjectMax),
-  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "category": zod.enum(['membership', 'payment', 'booking', 'checkin', 'facility', 'course', 'live_class', 'refund', 'event', 'corporate_membership', 'technical_issue', 'account_security', 'account', 'access', 'safety', 'other']),
   "message": zod.string().min(createMemberSupportTicketBodyMessageMin).max(createMemberSupportTicketBodyMessageMax),
   "language": zod.enum(['en', 'ar', 'ku']),
   "urgent": zod.boolean().default(createMemberSupportTicketBodyUrgentDefault)
@@ -12807,7 +12807,7 @@ export const CreateMemberSupportTicketBody = zod.object({
 export const CreateMemberSupportTicketResponse = zod.object({
   "id": zod.string(),
   "subject": zod.string(),
-  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "category": zod.enum(['membership', 'payment', 'booking', 'checkin', 'facility', 'course', 'live_class', 'refund', 'event', 'corporate_membership', 'technical_issue', 'account_security', 'account', 'access', 'safety', 'other']),
   "urgent": zod.boolean(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
   "language": zod.enum(['en', 'ar', 'ku']),
@@ -12838,7 +12838,7 @@ export const GetMemberSupportTicketParams = zod.object({
 export const GetMemberSupportTicketResponse = zod.object({
   "id": zod.string(),
   "subject": zod.string(),
-  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "category": zod.enum(['membership', 'payment', 'booking', 'checkin', 'facility', 'course', 'live_class', 'refund', 'event', 'corporate_membership', 'technical_issue', 'account_security', 'account', 'access', 'safety', 'other']),
   "urgent": zod.boolean(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
   "language": zod.enum(['en', 'ar', 'ku']),
@@ -12878,7 +12878,7 @@ export const ReplyMemberSupportTicketBody = zod.object({
 export const ReplyMemberSupportTicketResponse = zod.object({
   "id": zod.string(),
   "subject": zod.string(),
-  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "category": zod.enum(['membership', 'payment', 'booking', 'checkin', 'facility', 'course', 'live_class', 'refund', 'event', 'corporate_membership', 'technical_issue', 'account_security', 'account', 'access', 'safety', 'other']),
   "urgent": zod.boolean(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
   "language": zod.enum(['en', 'ar', 'ku']),
@@ -13308,7 +13308,7 @@ export const GetSupportStaffTicketsQueryParams = zod.object({
 export const GetSupportStaffTicketsResponseItem = zod.object({
   "id": zod.string(),
   "subject": zod.string(),
-  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "category": zod.enum(['membership', 'payment', 'booking', 'checkin', 'facility', 'course', 'live_class', 'refund', 'event', 'corporate_membership', 'technical_issue', 'account_security', 'account', 'access', 'safety', 'other']),
   "urgent": zod.boolean(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
   "language": zod.enum(['en', 'ar', 'ku']),
@@ -13332,7 +13332,7 @@ export const GetSupportStaffTicketParams = zod.object({
 export const GetSupportStaffTicketResponse = zod.object({
   "id": zod.string(),
   "subject": zod.string(),
-  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "category": zod.enum(['membership', 'payment', 'booking', 'checkin', 'facility', 'course', 'live_class', 'refund', 'event', 'corporate_membership', 'technical_issue', 'account_security', 'account', 'access', 'safety', 'other']),
   "urgent": zod.boolean(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
   "language": zod.enum(['en', 'ar', 'ku']),
@@ -13384,7 +13384,7 @@ export const UpdateSupportStaffTicketBody = zod.object({
 export const UpdateSupportStaffTicketResponse = zod.object({
   "id": zod.string(),
   "subject": zod.string(),
-  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "category": zod.enum(['membership', 'payment', 'booking', 'checkin', 'facility', 'course', 'live_class', 'refund', 'event', 'corporate_membership', 'technical_issue', 'account_security', 'account', 'access', 'safety', 'other']),
   "urgent": zod.boolean(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
   "language": zod.enum(['en', 'ar', 'ku']),
@@ -13454,7 +13454,7 @@ export const ReplySupportStaffTicketBody = zod.object({
 export const ReplySupportStaffTicketResponse = zod.object({
   "id": zod.string(),
   "subject": zod.string(),
-  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "category": zod.enum(['membership', 'payment', 'booking', 'checkin', 'facility', 'course', 'live_class', 'refund', 'event', 'corporate_membership', 'technical_issue', 'account_security', 'account', 'access', 'safety', 'other']),
   "urgent": zod.boolean(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
   "language": zod.enum(['en', 'ar', 'ku']),
@@ -13743,7 +13743,7 @@ export const AddSupportStaffInternalNoteBody = zod.object({
 export const AddSupportStaffInternalNoteResponse = zod.object({
   "id": zod.string(),
   "subject": zod.string(),
-  "category": zod.enum(['booking', 'account', 'access', 'safety', 'other']),
+  "category": zod.enum(['membership', 'payment', 'booking', 'checkin', 'facility', 'course', 'live_class', 'refund', 'event', 'corporate_membership', 'technical_issue', 'account_security', 'account', 'access', 'safety', 'other']),
   "urgent": zod.boolean(),
   "status": zod.enum(['open', 'in_progress', 'waiting_member', 'resolved', 'closed']),
   "language": zod.enum(['en', 'ar', 'ku']),

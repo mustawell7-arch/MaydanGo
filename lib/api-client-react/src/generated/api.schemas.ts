@@ -1176,7 +1176,18 @@ export type SupportTicketCategory = typeof SupportTicketCategory[keyof typeof Su
 
 
 export const SupportTicketCategory = {
+  membership: 'membership',
+  payment: 'payment',
   booking: 'booking',
+  checkin: 'checkin',
+  facility: 'facility',
+  course: 'course',
+  live_class: 'live_class',
+  refund: 'refund',
+  event: 'event',
+  corporate_membership: 'corporate_membership',
+  technical_issue: 'technical_issue',
+  account_security: 'account_security',
   account: 'account',
   access: 'access',
   safety: 'safety',

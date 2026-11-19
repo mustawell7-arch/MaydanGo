@@ -49,8 +49,12 @@ const statusKeys: Record<Status, MessageKey> = {
   waiting_member: 'supportStatusWaiting', resolved: 'supportStatusResolved', closed: 'supportStatusClosed',
 };
 const categoryKeys: Record<string, MessageKey> = {
+  membership: 'categoryMembership', payment: 'categoryPayment',
   booking: 'categoryBooking', account: 'categoryAccount', access: 'categoryAccess',
-  safety: 'categorySafety', other: 'categoryOther',
+  checkin: 'categoryCheckin', facility: 'categoryFacility', course: 'categoryCourse',
+  live_class: 'categoryLiveClass', refund: 'categoryRefund', event: 'categoryEvent',
+  corporate_membership: 'categoryCorporateMembership', technical_issue: 'categoryTechnicalIssue',
+  account_security: 'categoryAccountSecurity', safety: 'categorySafety', other: 'categoryOther',
 };
 const urgentDeliverySendKeys: Record<string, MessageKey> = {
   accepted: 'urgentDeliverySendAccepted',

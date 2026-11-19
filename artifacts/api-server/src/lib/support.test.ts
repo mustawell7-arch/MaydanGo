@@ -6,7 +6,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import express from "express";
 import {
   attendance, attendanceEvents, db, pool, memberNotificationPreferences, memberships, offerings,
-  operationAudit, operators, partners, pushDeliveries, pushDevices, reservations, supportTickets,
+  memberConsentEvents, operationAudit, operators, partners, pushDeliveries, pushDevices, reservations, supportTickets,
   supportResponseTemplates,
 } from "@workspace/db";
 import memberRouter from "../routes/member";
@@ -15,6 +15,7 @@ import {
   checkPendingPushReceipts, refreshUrgentAlertFallbackStatus, retryPendingPushDeliveries,
   sendMemberNotification, sendUrgentEscalationReminder, URGENT_UNASSIGNED_ESCALATION_DELAY_MS,
 } from "./notifications";
+import { MEMBER_POLICY_VERSIONS } from "./member-consents";
 
 const prefix = `support-test-${randomUUID()}`;
 const alice = `${prefix}-member`;
@@ -58,6 +59,7 @@ after(async () => {
   restoreFetch?.();
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
   if (ticketIds.length) await db.delete(supportTickets).where(inArray(supportTickets.id, ticketIds));
+  await db.delete(memberConsentEvents).where(eq(memberConsentEvents.userId, alice));
   if (responseTemplateIds.length) {
     await db.delete(supportResponseTemplates).where(inArray(supportResponseTemplates.id, responseTemplateIds));
   }
@@ -100,6 +102,29 @@ test("support conversations are private, triaged, audited, and replyable", async
   ticketIds.push(created.data.id);
   assert.equal(created.data.status, "open");
   assert.equal(created.data.messages[0].authorRole, "member");
+  const pdfSupportCategories = [
+    "membership", "payment", "booking", "checkin", "facility", "course", "live_class",
+    "refund", "event", "corporate_membership", "technical_issue", "account_security",
+    "account", "access", "safety", "other",
+  ];
+  for (const category of pdfSupportCategories) {
+    const categoryTicket = await call("/member/support/tickets", alice, "POST", {
+      subject: `Help with ${category}`,
+      category,
+      message: `Please help me with this ${category} question.`,
+      language: "en",
+    });
+    assert.equal(categoryTicket.status, 201, `support category ${category} should be accepted`);
+    assert.equal(categoryTicket.data.category, category);
+    ticketIds.push(categoryTicket.data.id);
+  }
+  const invalidCategory = await call("/member/support/tickets", alice, "POST", {
+    subject: "Help with something",
+    category: "not_a_support_category",
+    message: "Please help me with this question.",
+    language: "en",
+  });
+  assert.equal(invalidCategory.status, 400);
   assert.equal((await call(`/member/support/tickets/${created.data.id}`, bob)).status, 404);
   assert.equal((await call(`/member/support/tickets/${created.data.id}`, undefined)).status, 401);
   assert.equal((await call("/support/staff/tickets", partnerId)).status, 403);
@@ -606,6 +631,13 @@ test("push opt-out is respected, and provider failure stays visible without chan
     startsAt: new Date(Date.now() - 60000), endsAt: new Date(Date.now() + 7 * 86400000),
     rules: { quota: 8, dailyLimit: 3, trialAllowedTypes: ["physical"] },
   });
+  await db.insert(memberConsentEvents).values((["terms_of_use", "privacy_policy"] as const).map(purpose => ({
+    id: `${prefix}-consent-${purpose}`,
+    userId: alice,
+    purpose,
+    policyVersion: MEMBER_POLICY_VERSIONS[purpose],
+    choice: "accepted" as const,
+  })));
 
   const originalFetch = globalThis.fetch;
   let expoCalls = 0;
@@ -666,7 +698,7 @@ test("push opt-out is respected, and provider failure stays visible without chan
 
   simulateFailure = true;
   const booking = await call("/member/bookings", alice, "POST", { kind: "session", targetId: offeringId, slot: "" });
-  assert.equal(booking.status, 201);
+  assert.equal(booking.status, 201, JSON.stringify(booking.data));
   assert.ok(booking.data.bookings.some((row: { targetId: string; status: string }) => row.targetId === offeringId && row.status === "reserved"));
   let failed: { status: number; data: any } | null = null;
   for (let attempt = 0; attempt < 50; attempt++) {

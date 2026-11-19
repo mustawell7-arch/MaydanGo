@@ -41,7 +41,7 @@ const words: Record<Lang, Record<string, string>> = {
     eyebrow: 'MAYDANGO · OPERATIONS', title: 'Support desk', subtitle: 'A clear view of member and partner requests across Iraq.',
     escalated: 'Case escalated', escalationCloseHint: 'Resolve the case escalation before closing this ticket.',
     queue: 'Ticket queue', inbox: 'tickets', all: 'All tickets', open: 'Open', in_progress: 'In progress', waiting_member: 'Waiting on member', resolved: 'Resolved', closed: 'Closed',
-    urgent: 'Urgent', overdue: 'Overdue', member: 'Member', partner: 'Partner', safety: 'Safety', booking: 'Booking', account: 'Account', access: 'Access', other: 'Other',
+    urgent: 'Urgent', overdue: 'Overdue', member: 'Member', partner: 'Partner', safety: 'Safety', membership: 'Membership', payment: 'Payment', booking: 'Booking', checkin: 'Check-in', facility: 'Facility', course: 'Course', live_class: 'Live class', refund: 'Refund', event: 'Event', corporate_membership: 'Corporate membership', technical_issue: 'Technical issue', account_security: 'Account security', account: 'Account', access: 'Access', other: 'Other',
     selectTicket: 'Choose a ticket', selectHint: 'Select a request to review its conversation, alert outcome and audit history.',
     conversation: 'Conversation', timeline: 'Activity history', assigned: 'Assigned to', unassigned: 'Unassigned', assign: 'Assign to…', status: 'Status',
     reply: 'Public reply', replyHint: 'This message will be visible to the member or partner.', replyPlaceholder: 'Write a clear, helpful response…', send: 'Send reply', sending: 'Sending…',
@@ -63,7 +63,7 @@ const words: Record<Lang, Record<string, string>> = {
     alertOverdue: 'Urgent response is overdue. Review the request and follow your safety procedures.',
     noMessages: 'No messages yet.', noEvents: 'No recorded activity yet.', failedReply: 'Reply could not be sent. Try again.', updateError: 'Update could not be saved. Try again.', replySent: 'Reply sent.',
     memberLabel: 'Member', supportLabel: 'Support', adminLabel: 'Administrator', language: 'Language', customerId: 'Member ID',
-    event: 'Update', assignedEvent: 'Assignment changed', statusEvent: 'Status changed',
+    updateLabel: 'Update', assignedEvent: 'Assignment changed', statusEvent: 'Status changed',
     alertNote: 'Push notifications can fail or remain unconfirmed. There is no external email fallback. Follow the established safety process for urgent reports.',
     security: 'Staff access only', refresh: 'Refresh queue', lastActivity: 'Last activity', noAgent: 'Unassigned',
     signIn: 'Sign in to open the support desk', signInHint: 'This workspace is limited to authorized MaydanGo support staff.',
@@ -77,7 +77,7 @@ const words: Record<Lang, Record<string, string>> = {
     eyebrow: 'ميدان جو · العمليات', title: 'مكتب الدعم', subtitle: 'عرض واضح لطلبات الأعضاء والشركاء في أنحاء العراق.',
     escalated: 'طلب مصعّد', escalationCloseHint: 'عالج التصعيد قبل إغلاق هذا الطلب.',
     queue: 'قائمة الطلبات', inbox: 'طلبات', all: 'كل الطلبات', open: 'مفتوح', in_progress: 'قيد المعالجة', waiting_member: 'بانتظار العضو', resolved: 'تم الحل', closed: 'مغلق',
-    urgent: 'عاجل', overdue: 'متأخر', member: 'عضو', partner: 'شريك', safety: 'السلامة', booking: 'الحجز', account: 'الحساب', access: 'الوصول', other: 'أخرى',
+    urgent: 'عاجل', overdue: 'متأخر', member: 'عضو', partner: 'شريك', safety: 'السلامة', membership: 'العضوية', payment: 'الدفع', booking: 'الحجز', checkin: 'تسجيل الحضور', facility: 'المنشأة', course: 'الدورة', live_class: 'الحصة المباشرة', refund: 'استرداد المبلغ', event: 'الفعالية', corporate_membership: 'عضوية الشركات', technical_issue: 'مشكلة تقنية', account_security: 'أمان الحساب', account: 'الحساب', access: 'الوصول', other: 'أخرى',
     selectTicket: 'اختر طلباً', selectHint: 'اختر طلباً لمراجعة المحادثة ونتيجة التنبيه وسجل النشاط.',
     conversation: 'المحادثة', timeline: 'سجل النشاط', assigned: 'مسند إلى', unassigned: 'غير مسند', assign: 'إسناد إلى…', status: 'الحالة',
     reply: 'رد علني', replyHint: 'ستظهر هذه الرسالة للعضو أو الشريك.', replyPlaceholder: 'اكتب رداً واضحاً ومفيداً…', send: 'إرسال الرد', sending: 'جارٍ الإرسال…',
@@ -99,7 +99,7 @@ const words: Record<Lang, Record<string, string>> = {
     alertOverdue: 'تجاوز طلب عاجل وقت الاستجابة. راجع الطلب واتبع إجراءات السلامة المعتمدة.',
     noMessages: 'لا توجد رسائل بعد.', noEvents: 'لا يوجد نشاط مسجل بعد.', failedReply: 'تعذر إرسال الرد. حاول مرة أخرى.', updateError: 'تعذر حفظ التحديث. حاول مرة أخرى.', replySent: 'تم إرسال الرد.',
     memberLabel: 'العضو', supportLabel: 'الدعم', adminLabel: 'المسؤول', language: 'اللغة', customerId: 'معرّف العضو',
-    event: 'تحديث', assignedEvent: 'تغيير الإسناد', statusEvent: 'تغيير الحالة',
+    updateLabel: 'تحديث', assignedEvent: 'تغيير الإسناد', statusEvent: 'تغيير الحالة',
     alertNote: 'قد تفشل الإشعارات الفورية أو تبقى دون تأكيد. لا يوجد بديل عبر البريد الإلكتروني الخارجي. اتبع إجراءات السلامة المعتمدة للبلاغات العاجلة.',
     security: 'للموظفين المعتمدين فقط', refresh: 'تحديث القائمة', lastActivity: 'آخر نشاط', noAgent: 'غير مسند',
     signIn: 'سجّل الدخول لفتح مكتب الدعم', signInHint: 'مساحة العمل هذه مخصصة لموظفي دعم ميدان جو المعتمدين.',
@@ -113,7 +113,7 @@ const words: Record<Lang, Record<string, string>> = {
     eyebrow: 'مەیدان گۆ · کارگێڕی', title: 'مێزی پشتگیری', subtitle: 'بینینێکی ڕوون بۆ داواکاریی ئەندامان و هاوبەشان لە سەرانسەری عێراق.',
     escalated: 'داواکاری ئاستبەرزکراوەتەوە', escalationCloseHint: 'پێش داخستنی داواکاری، ئاستبەرزکردنەوەکە چارەسەر بکە.',
     queue: 'ڕیزی داواکارییەکان', inbox: 'داواکاری', all: 'هەموو داواکارییەکان', open: 'کراوە', in_progress: 'لە پێشچووندایە', waiting_member: 'چاوەڕوانی ئەندام', resolved: 'چارەسەرکرا', closed: 'داخرا',
-    urgent: 'پەلە', overdue: 'دواکەوتوو', member: 'ئەندام', partner: 'هاوبەش', safety: 'سەلامەتی', booking: 'حجزکردن', account: 'هەژمار', access: 'دەستگەیشتن', other: 'هیتر',
+    urgent: 'پەلە', overdue: 'دواکەوتوو', member: 'ئەندام', partner: 'هاوبەش', safety: 'سەلامەتی', membership: 'ئەندامێتی', payment: 'پارەدان', booking: 'حجزکردن', checkin: 'تۆمارکردنی ئامادەبوون', facility: 'شوێن', course: 'کۆرس', live_class: 'وانەی ڕاستەوخۆ', refund: 'گەڕاندنەوەی پارە', event: 'چالاکی', corporate_membership: 'ئەندامێتی کۆمپانیا', technical_issue: 'کێشەی تەکنیکی', account_security: 'پاراستنی هەژمار', account: 'هەژمار', access: 'دەستگەیشتن', other: 'هیتر',
     selectTicket: 'داواکارییەک هەڵبژێرە', selectHint: 'داواکارییەک هەڵبژێرە بۆ پێداچوونەوەی گفتوگۆ، ئەنجامی ئاگادارکردنەوە و مێژووی کار.',
     conversation: 'گفتوگۆ', timeline: 'مێژووی چالاکی', assigned: 'سپێردراوە بە', unassigned: 'نەسپێردراوە', assign: 'بسپێرە بە…', status: 'دۆخ',
     reply: 'وەڵامی گشتی', replyHint: 'ئەم نامەیە بۆ ئەندام یان هاوبەش دەردەکەوێت.', replyPlaceholder: 'وەڵامێکی ڕوون و یارمەتیدەر بنووسە…', send: 'ناردنی وەڵام', sending: 'لە ناردندایە…',
@@ -135,7 +135,7 @@ const words: Record<Lang, Record<string, string>> = {
     alertOverdue: 'داواکارییەکی پەلە لە وەڵامدانەوە دواکەوتووە. داواکارییەکە بپشکنە و ڕێکارەکانی سەلامەتی جێبەجێ بکە.',
     noMessages: 'هێشتا هیچ نامەیەک نییە.', noEvents: 'هێشتا هیچ چالاکییەکی تۆمارکراو نییە.', failedReply: 'ناردنی وەڵام سەرکەوتوو نەبوو. دووبارە هەوڵ بدەوە.', updateError: 'پاشەکەوتکردنی نوێکاری سەرکەوتوو نەبوو. دووبارە هەوڵ بدەوە.', replySent: 'وەڵام نێردرا.',
     memberLabel: 'ئەندام', supportLabel: 'پشتگیری', adminLabel: 'بەڕێوەبەر', language: 'زمان', customerId: 'ناسنامەی ئەندام',
-    event: 'نوێکردنەوە', assignedEvent: 'گۆڕینی سپاردن', statusEvent: 'گۆڕینی دۆخ',
+    updateLabel: 'نوێکردنەوە', assignedEvent: 'گۆڕینی سپاردن', statusEvent: 'گۆڕینی دۆخ',
     alertNote: 'ئاگادارکردنەوەی پۆش دەکرێت سەرنەکەوێت یان پشتڕاست نەکرێتەوە. هیچ جێگرەوەی ئیمەیڵی دەرەکی نییە. بۆ ڕاپۆرتی پەلە ڕێکاری سەلامەتی جێبەجێ بکە.',
     security: 'تەنها بۆ کارمەندانی ڕێگەپێدراو', refresh: 'نوێکردنەوەی ڕیز', lastActivity: 'دوایین چالاکی', noAgent: 'نەسپێردراو',
     signIn: 'بچۆ ژوورەوە بۆ کردنەوەی مێزی پشتگیری', signInHint: 'ئەم شوێنی کارە تەنها بۆ تیمی ڕێگەپێدراوی پشتگیریی MaydanGo ـە.',
@@ -461,7 +461,7 @@ export function SupportDeskPage() {
               </div>}
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[10px] text-[#75847c]"><span className="inline-flex items-center gap-1.5"><UserRound size={12}/>{t.customerId}: {active.memberUserId}</span><span className="inline-flex items-center gap-1.5"><Clock3 size={12}/>{t.lastActivity}: {dateLabel(active.lastMessageAt, language)}</span></div>
               {feedback && <p role="status" data-testid="status-ticket-action" className={`mt-3 text-xs font-semibold ${['error', 'reply-error', 'note-error', 'related-error', 'attachment-error', 'attachment-invalid', 'attachment-limit', 'download-error', 'privacy-export-error'].includes(feedback) ? 'text-[#9a4435]' : 'text-[#28695a]'}`}>
-                {feedback === 'sent' ? t.replySent : feedback === 'reply-error' ? t.failedReply : feedback === 'error' ? t.updateError : feedback === 'saved' ? <><Check size={12} className="inline"/> {t.event}</> : feedback === 'note-sent' ? t.internalNoteSent : feedback === 'note-error' ? t.internalNoteError : feedback === 'related-linked' ? t.relatedRecordLinked : feedback === 'related-unlinked' ? t.relatedRecordUnlinked : feedback === 'related-error' ? t.relatedRecordError : feedback === 'attachment-error' ? t.attachmentUploadError : feedback === 'attachment-invalid' ? t.attachmentInvalid : feedback === 'attachment-limit' ? t.attachmentLimit : feedback === 'attachment-uploaded' ? t.attachmentUploadSuccess : feedback === 'download-error' ? t.attachmentDownloadError : feedback === 'privacy-export-prepared' ? t.privacyExportPrepared : feedback === 'privacy-export-error' ? t.privacyExportError : ''}
+                {feedback === 'sent' ? t.replySent : feedback === 'reply-error' ? t.failedReply : feedback === 'error' ? t.updateError : feedback === 'saved' ? <><Check size={12} className="inline"/> {t.updateLabel}</> : feedback === 'note-sent' ? t.internalNoteSent : feedback === 'note-error' ? t.internalNoteError : feedback === 'related-linked' ? t.relatedRecordLinked : feedback === 'related-unlinked' ? t.relatedRecordUnlinked : feedback === 'related-error' ? t.relatedRecordError : feedback === 'attachment-error' ? t.attachmentUploadError : feedback === 'attachment-invalid' ? t.attachmentInvalid : feedback === 'attachment-limit' ? t.attachmentLimit : feedback === 'attachment-uploaded' ? t.attachmentUploadSuccess : feedback === 'download-error' ? t.attachmentDownloadError : feedback === 'privacy-export-prepared' ? t.privacyExportPrepared : feedback === 'privacy-export-error' ? t.privacyExportError : ''}
                </p>}
             </div>
 
@@ -599,7 +599,7 @@ export function SupportDeskPage() {
                       </>}
                 </section>
                 <h3 className="text-xs font-extrabold uppercase tracking-[.12em] text-[#536b61]">{t.timeline}</h3>
-                {active.events.length ? <ol className="mt-4 space-y-0" data-testid={`ticket-timeline-${active.id}`}>{active.events.map((event, index) => <li key={`${event.createdAt}-${index}`} data-testid={`ticket-event-${active.id}-${index}`} className="relative border-s border-[#d8d2c4] pb-5 ps-4 last:border-transparent last:pb-0"><span className="absolute -start-[5px] top-1 h-2.5 w-2.5 rounded-full border-2 border-[#fbf9f2] bg-[#6c8877]"/><p className="text-xs font-bold text-[#36564b]">{event.previousStatus !== event.nextStatus ? t.statusEvent : event.previousAssignee !== event.nextAssignee ? t.assignedEvent : event.action || t.event}</p><p className="mt-1 text-[10px] leading-4 text-[#75847c]">{event.detail || event.action}</p><p className="mt-1 text-[9px] text-[#919b93]">{dateLabel(event.createdAt, language)} · {event.actorId}</p></li>)}</ol> : <p data-testid="support-no-events" className="mt-4 text-xs leading-5 text-[#75847c]">{t.noEvents}</p>}
+                {active.events.length ? <ol className="mt-4 space-y-0" data-testid={`ticket-timeline-${active.id}`}>{active.events.map((event, index) => <li key={`${event.createdAt}-${index}`} data-testid={`ticket-event-${active.id}-${index}`} className="relative border-s border-[#d8d2c4] pb-5 ps-4 last:border-transparent last:pb-0"><span className="absolute -start-[5px] top-1 h-2.5 w-2.5 rounded-full border-2 border-[#fbf9f2] bg-[#6c8877]"/><p className="text-xs font-bold text-[#36564b]">{event.previousStatus !== event.nextStatus ? t.statusEvent : event.previousAssignee !== event.nextAssignee ? t.assignedEvent : event.action || t.updateLabel}</p><p className="mt-1 text-[10px] leading-4 text-[#75847c]">{event.detail || event.action}</p><p className="mt-1 text-[9px] text-[#919b93]">{dateLabel(event.createdAt, language)} · {event.actorId}</p></li>)}</ol> : <p data-testid="support-no-events" className="mt-4 text-xs leading-5 text-[#75847c]">{t.noEvents}</p>}
                 <div className="mt-6 rounded-2xl border border-[#e4dfd2] bg-[#f5f2e9] p-3.5"><div className="flex items-center gap-2 text-[#536b61]"><Shield size={14}/><p className="text-[10px] font-extrabold">{t.security}</p></div><p className="mt-2 text-[10px] leading-5 text-[#75847c]">{t.alertNote}</p></div>
               </aside>
             </div>
