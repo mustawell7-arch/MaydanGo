@@ -3,6 +3,7 @@ import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { Router, type Request, type Response } from "express";
 import {
+  CreatePartnerOnboardingInspectionBody,
   ReviewPartnerApplicationDocumentBody,
   RequestPartnerApplicationUploadUrlBody,
   SubmitPartnerApplicationBody,
@@ -17,7 +18,10 @@ import {
   partnerOnboardingApplications,
   partnerOnboardingDocuments,
   partnerOnboardingEvents,
+  partnerOnboardingInspections,
   partners,
+  type FacilityHygieneChecklist,
+  type FacilitySafetyChecklist,
   type PartnerOnboardingStatus,
 } from "@workspace/db";
 import { hasAdminPermission } from "../lib/admin-roles";
@@ -70,7 +74,7 @@ async function applicationDetails(applicationId: string) {
   const [application] = await db.select().from(partnerOnboardingApplications)
     .where(eq(partnerOnboardingApplications.id, applicationId)).limit(1);
   if (!application) return null;
-  const [documentRows, eventRows] = await Promise.all([
+  const [documentRows, eventRows, inspectionRows] = await Promise.all([
     db.select({
       id: partnerOnboardingDocuments.id,
       applicationId: partnerOnboardingDocuments.applicationId,
@@ -89,6 +93,20 @@ async function applicationDetails(applicationId: string) {
     db.select().from(partnerOnboardingEvents)
       .where(eq(partnerOnboardingEvents.applicationId, applicationId))
       .orderBy(partnerOnboardingEvents.createdAt),
+    db.select({
+      id: partnerOnboardingInspections.id,
+      applicationId: partnerOnboardingInspections.applicationId,
+      inspectedOn: partnerOnboardingInspections.inspectedOn,
+      hygieneChecklist: partnerOnboardingInspections.hygieneChecklist,
+      safetyChecklist: partnerOnboardingInspections.safetyChecklist,
+      status: partnerOnboardingInspections.status,
+      findings: partnerOnboardingInspections.findings,
+      correctiveAction: partnerOnboardingInspections.correctiveAction,
+      correctiveDueOn: partnerOnboardingInspections.correctiveDueOn,
+      createdAt: partnerOnboardingInspections.createdAt,
+    }).from(partnerOnboardingInspections)
+      .where(eq(partnerOnboardingInspections.applicationId, applicationId))
+      .orderBy(desc(partnerOnboardingInspections.createdAt)),
   ]);
   return {
     application,
@@ -97,6 +115,7 @@ async function applicationDetails(applicationId: string) {
       ...event,
       actorKind: actorUserId === application.applicantUserId ? "applicant" as const : "team" as const,
     })),
+    inspections: inspectionRows,
   };
 }
 
@@ -133,6 +152,42 @@ function validCoordinates(input: { latitude?: number | null; longitude?: number 
     || (input.latitude != null && input.longitude != null);
 }
 
+function isValidDateOnly(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function inspectionError(input: {
+  inspectedOn: string | Date;
+  hygieneChecklist: FacilityHygieneChecklist;
+  safetyChecklist: FacilitySafetyChecklist;
+  status: "approved" | "action_required";
+  findings: string;
+  correctiveAction: string | null;
+  correctiveDueOn: string | Date | null;
+}): string | null {
+  const inspectedOn = toDateOnly(input.inspectedOn);
+  const correctiveDueOn = toDateOnly(input.correctiveDueOn);
+  if (!inspectedOn || !isValidDateOnly(inspectedOn)) return "Enter a valid inspection date.";
+  if (input.findings.trim().length < 4) return "Add clear inspection findings.";
+  const hasActionRequired = [
+    ...Object.values(input.hygieneChecklist),
+    ...Object.values(input.safetyChecklist),
+  ].includes("action_required");
+  if (input.status === "approved" && hasActionRequired) {
+    return "An inspection with required corrective action cannot be approved.";
+  }
+  if (input.status === "action_required") {
+    if (!input.correctiveAction || input.correctiveAction.trim().length < 4
+      || !correctiveDueOn || !isValidDateOnly(correctiveDueOn)
+      || correctiveDueOn < inspectedOn) {
+      return "Provide a corrective action and a valid due date on or after the inspection.";
+    }
+  }
+  return null;
+}
+
 export function createPartnerOnboardingRouter(
   storage: PartnerOnboardingStorage = new ObjectStorageService(),
   emailForUser: (userId: string) => Promise<string | null> = verifiedEmailFor,
@@ -147,7 +202,7 @@ router.get("/partner-onboarding/mine", async (req, res) => {
     .where(eq(partnerOnboardingApplications.applicantUserId, userId))
     .orderBy(desc(partnerOnboardingApplications.createdAt)).limit(1);
   if (!application) {
-    res.json({ application: null, documents: [], history: [] });
+    res.json({ application: null, documents: [], history: [], inspections: [] });
     return;
   }
   const details = await applicationDetails(application.id);
@@ -461,6 +516,82 @@ router.get("/operations/partner-onboarding/applications/:id", async (req, res) =
   res.json(details);
 });
 
+router.post("/operations/partner-onboarding/applications/:id/inspections", async (req, res) => {
+  const userId = authenticatedUserId(req, res);
+  if (!userId) return;
+  if (!await isPartnerOperationsAdmin(userId)) {
+    res.status(403).json({ message: "Partner-operations administrator access is required." });
+    return;
+  }
+  const parsed = CreatePartnerOnboardingInspectionBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Complete every hygiene and safety checklist item." });
+    return;
+  }
+  const input = parsed.data;
+  const validationError = inspectionError(input);
+  if (validationError) {
+    res.status(400).json({ message: validationError });
+    return;
+  }
+
+  const inspectedOn = toDateOnly(input.inspectedOn);
+  const correctiveDueOn = toDateOnly(input.correctiveDueOn);
+  if (!inspectedOn) {
+    res.status(400).json({ message: "Enter a valid inspection date." });
+    return;
+  }
+  const applicationId = String(req.params.id);
+  const result = await db.transaction(async tx => {
+    const [application] = await tx.select().from(partnerOnboardingApplications)
+      .where(eq(partnerOnboardingApplications.id, applicationId)).for("update");
+    if (!application) return { kind: "not_found" as const };
+    if (application.status === "live" || application.status === "rejected") {
+      return { kind: "closed" as const };
+    }
+    const [inspection] = await tx.insert(partnerOnboardingInspections).values({
+      id: randomUUID(),
+      applicationId,
+      inspectedOn,
+      hygieneChecklist: input.hygieneChecklist,
+      safetyChecklist: input.safetyChecklist,
+      status: input.status,
+      findings: input.findings.trim(),
+      correctiveAction: input.correctiveAction?.trim() || null,
+      correctiveDueOn,
+      inspectedBy: userId,
+    }).returning({
+      id: partnerOnboardingInspections.id,
+      applicationId: partnerOnboardingInspections.applicationId,
+      inspectedOn: partnerOnboardingInspections.inspectedOn,
+      hygieneChecklist: partnerOnboardingInspections.hygieneChecklist,
+      safetyChecklist: partnerOnboardingInspections.safetyChecklist,
+      status: partnerOnboardingInspections.status,
+      findings: partnerOnboardingInspections.findings,
+      correctiveAction: partnerOnboardingInspections.correctiveAction,
+      correctiveDueOn: partnerOnboardingInspections.correctiveDueOn,
+      createdAt: partnerOnboardingInspections.createdAt,
+    });
+    await tx.insert(operationAudit).values({
+      id: randomUUID(),
+      actorId: userId,
+      action: "partner.onboarding.inspection_recorded",
+      targetId: applicationId,
+      detail: `inspection=${inspection.id};date=${inspection.inspectedOn};status=${inspection.status}`,
+    });
+    return { kind: "created" as const, inspection };
+  });
+  if (result.kind === "not_found") {
+    res.status(404).json({ message: "Partner application not found." });
+    return;
+  }
+  if (result.kind === "closed") {
+    res.status(409).json({ message: "An inspection cannot be added to a live or rejected application." });
+    return;
+  }
+  res.status(201).json(result.inspection);
+});
+
 router.patch("/operations/partner-onboarding/applications/:id/documents/:documentId/review", async (req, res) => {
   const userId = authenticatedUserId(req, res);
   if (!userId) return;
@@ -572,6 +703,17 @@ router.patch("/operations/partner-onboarding/applications/:id/status", async (re
       if (!canTransitionPartnerOnboarding(application.status, nextStatus)) {
         return { kind: "invalid_transition" as const, currentStatus: application.status };
       }
+      if (nextStatus === "approved" || nextStatus === "live") {
+        const [latestInspection] = await tx.select({
+          status: partnerOnboardingInspections.status,
+        }).from(partnerOnboardingInspections)
+          .where(eq(partnerOnboardingInspections.applicationId, application.id))
+          .orderBy(desc(partnerOnboardingInspections.createdAt))
+          .limit(1);
+        if (latestInspection?.status !== "approved") {
+          return { kind: "inspection_required" as const };
+        }
+      }
       let partnerId = application.partnerId;
       if (nextStatus === "facility_setup" && !partnerId) {
         const [existingOperator] = await tx.select({ userId: operators.userId })
@@ -631,6 +773,10 @@ router.patch("/operations/partner-onboarding/applications/:id/status", async (re
     }
     if (outcome.kind === "invalid_transition") {
       res.status(400).json({ message: `Cannot move an application from ${outcome.currentStatus} to ${parsed.data.status}.` });
+      return;
+    }
+    if (outcome.kind === "inspection_required") {
+      res.status(409).json({ message: "Record an approved facility inspection before approval or launch." });
       return;
     }
     if (outcome.kind === "staff_assignment_conflict") {

@@ -12,6 +12,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { partners } from "./operations";
+import type { FacilityHygieneChecklist, FacilitySafetyChecklist } from "./quality-control";
 
 export const partnerOnboardingStatuses = [
   "application_received",
@@ -138,5 +139,32 @@ export const partnerOnboardingDocuments = pgTable("partner_onboarding_documents"
   check(
     "partner_onboarding_document_file_size_valid",
     sql`${table.fileSize} IS NULL OR (${table.fileSize} > 0 AND ${table.fileSize} <= 10485760)`,
+  ),
+]);
+
+export const partnerOnboardingInspections = pgTable("partner_onboarding_inspections", {
+  id: text("id").primaryKey(),
+  applicationId: text("application_id").notNull()
+    .references(() => partnerOnboardingApplications.id, { onDelete: "restrict" }),
+  inspectedOn: date("inspected_on", { mode: "string" }).notNull(),
+  hygieneChecklist: jsonb("hygiene_checklist").$type<FacilityHygieneChecklist>().notNull(),
+  safetyChecklist: jsonb("safety_checklist").$type<FacilitySafetyChecklist>().notNull(),
+  status: text("status").notNull(),
+  findings: text("findings").notNull(),
+  correctiveAction: text("corrective_action"),
+  correctiveDueOn: date("corrective_due_on", { mode: "string" }),
+  inspectedBy: text("inspected_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  index("partner_onboarding_inspections_application_created").on(table.applicationId, table.createdAt),
+  check("partner_onboarding_inspection_status_valid", sql`${table.status} IN ('approved', 'action_required')`),
+  check(
+    "partner_onboarding_inspection_action_plan_required",
+    sql`${table.status} <> 'action_required' OR (
+      length(btrim(${table.findings})) >= 4
+      AND ${table.correctiveAction} IS NOT NULL
+      AND length(btrim(${table.correctiveAction})) >= 4
+      AND ${table.correctiveDueOn} IS NOT NULL
+    )`,
   ),
 ]);

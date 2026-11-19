@@ -1440,6 +1440,25 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/PartnerApplicationDetails" }
         "404": { description: Application not found }
+  /operations/partner-onboarding/applications/{id}/inspections:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      operationId: createPartnerOnboardingInspection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerOnboardingInspectionInput" }
+      responses:
+        "201":
+          description: Initial facility inspection recorded in the application history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PartnerOnboardingInspection" }
+        "400": { description: Invalid inspection or checklist details }
+        "403": { description: Partner-operations administrator access is required }
+        "404": { description: Application not found }
+        "409": { description: Inspection cannot be recorded at this application stage }
   /operations/partner-onboarding/applications/{id}/status:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     patch:
@@ -1457,6 +1476,7 @@ paths:
               schema: { $ref: "#/components/schemas/PartnerApplicationDetails" }
         "400": { description: Invalid status transition or note }
         "404": { description: Application not found }
+        "409": { description: An approved inspection is required before approval or launch }
   /operations/partner-onboarding/applications/{id}/documents/{documentId}/review:
     parameters:
       - { $ref: "#/components/parameters/Id" }
@@ -4262,22 +4282,72 @@ components:
         note: { type: ["string", "null"] }
         actorKind: { type: string, enum: [applicant, team] }
         createdAt: { type: string, format: date-time }
+    PartnerOnboardingChecklistStatus:
+      type: string
+      enum: [pass, action_required, not_applicable]
+    PartnerOnboardingHygieneChecklist:
+      type: object
+      additionalProperties: false
+      required: [cleanliness, changingAreas, showers, waterSanitation]
+      properties:
+        cleanliness: { $ref: "#/components/schemas/PartnerOnboardingChecklistStatus" }
+        changingAreas: { $ref: "#/components/schemas/PartnerOnboardingChecklistStatus" }
+        showers: { $ref: "#/components/schemas/PartnerOnboardingChecklistStatus" }
+        waterSanitation: { $ref: "#/components/schemas/PartnerOnboardingChecklistStatus" }
+    PartnerOnboardingSafetyChecklist:
+      type: object
+      additionalProperties: false
+      required: [emergencyExits, firstAid, equipmentCondition, incidentPlan]
+      properties:
+        emergencyExits: { $ref: "#/components/schemas/PartnerOnboardingChecklistStatus" }
+        firstAid: { $ref: "#/components/schemas/PartnerOnboardingChecklistStatus" }
+        equipmentCondition: { $ref: "#/components/schemas/PartnerOnboardingChecklistStatus" }
+        incidentPlan: { $ref: "#/components/schemas/PartnerOnboardingChecklistStatus" }
+    PartnerOnboardingInspection:
+      type: object
+      additionalProperties: false
+      required: [id, applicationId, inspectedOn, hygieneChecklist, safetyChecklist, status, findings, correctiveAction, correctiveDueOn, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        applicationId: { type: string, format: uuid }
+        inspectedOn: { type: string, format: date }
+        hygieneChecklist: { $ref: "#/components/schemas/PartnerOnboardingHygieneChecklist" }
+        safetyChecklist: { $ref: "#/components/schemas/PartnerOnboardingSafetyChecklist" }
+        status: { type: string, enum: [approved, action_required] }
+        findings: { type: string }
+        correctiveAction: { type: ["string", "null"] }
+        correctiveDueOn: { type: ["string", "null"], format: date }
+        createdAt: { type: string, format: date-time }
+    PartnerOnboardingInspectionInput:
+      type: object
+      additionalProperties: false
+      required: [inspectedOn, hygieneChecklist, safetyChecklist, status, findings, correctiveAction, correctiveDueOn]
+      properties:
+        inspectedOn: { type: string, format: date }
+        hygieneChecklist: { $ref: "#/components/schemas/PartnerOnboardingHygieneChecklist" }
+        safetyChecklist: { $ref: "#/components/schemas/PartnerOnboardingSafetyChecklist" }
+        status: { type: string, enum: [approved, action_required] }
+        findings: { type: string, minLength: 4, maxLength: 2000 }
+        correctiveAction: { type: ["string", "null"], minLength: 4, maxLength: 2000 }
+        correctiveDueOn: { type: ["string", "null"], format: date }
     PartnerApplicationDetails:
       type: object
       additionalProperties: false
-      required: [application, documents, history]
+      required: [application, documents, history, inspections]
       properties:
         application: { $ref: "#/components/schemas/PartnerApplication" }
         documents: { type: array, items: { $ref: "#/components/schemas/PartnerApplicationDocument" } }
         history: { type: array, items: { $ref: "#/components/schemas/PartnerApplicationEvent" } }
+        inspections: { type: array, items: { $ref: "#/components/schemas/PartnerOnboardingInspection" } }
     PartnerApplicationDetailsResponse:
       type: object
       additionalProperties: false
-      required: [application, documents, history]
+      required: [application, documents, history, inspections]
       properties:
         application: { anyOf: [{ $ref: "#/components/schemas/PartnerApplication" }, { type: "null" }] }
         documents: { type: array, items: { $ref: "#/components/schemas/PartnerApplicationDocument" } }
         history: { type: array, items: { $ref: "#/components/schemas/PartnerApplicationEvent" } }
+        inspections: { type: array, items: { $ref: "#/components/schemas/PartnerOnboardingInspection" } }
     PartnerApplicationStatusUpdate:
       type: object
       additionalProperties: false

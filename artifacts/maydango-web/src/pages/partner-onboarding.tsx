@@ -13,6 +13,7 @@ import {
   useRequestPartnerApplicationUploadUrl,
   useSubmitPartnerApplication,
   useReviewPartnerApplicationDocument,
+  useCreatePartnerOnboardingInspection,
   useUpdateMyPartnerApplication,
   useUpdatePartnerOnboardingStatus,
 } from '@workspace/api-client-react';
@@ -22,6 +23,11 @@ import type {
   PartnerApplicationInput,
   PartnerApplicationHours,
   PartnerApplicationUploadInput,
+  PartnerOnboardingChecklistStatus,
+  PartnerOnboardingHygieneChecklist,
+  PartnerOnboardingInspection,
+  PartnerOnboardingInspectionInput,
+  PartnerOnboardingSafetyChecklist,
   PartnerOnboardingStatus,
 } from '@workspace/api-client-react';
 import {
@@ -31,6 +37,7 @@ import {
   Check,
   ChevronRight,
   Clock3,
+  ClipboardCheck,
   FileText,
   LockKeyhole,
   MapPin,
@@ -170,6 +177,119 @@ function ApplicantStatus({ app, history }: { app: PartnerApplication; history: {
   </Section>;
 }
 
+type ChecklistDraft<T extends object> = { [K in keyof T]: PartnerOnboardingChecklistStatus | '' };
+type InspectionCheckKey = keyof PartnerOnboardingHygieneChecklist | keyof PartnerOnboardingSafetyChecklist;
+
+const emptyHygieneChecklist = (): ChecklistDraft<PartnerOnboardingHygieneChecklist> => ({
+  cleanliness: '',
+  changingAreas: '',
+  showers: '',
+  waterSanitation: '',
+});
+const emptySafetyChecklist = (): ChecklistDraft<PartnerOnboardingSafetyChecklist> => ({
+  emergencyExits: '',
+  firstAid: '',
+  equipmentCondition: '',
+  incidentPlan: '',
+});
+const inspectionCheckLabels: Record<InspectionCheckKey, string> = {
+  cleanliness: 'Cleanliness',
+  changingAreas: 'Changing areas',
+  showers: 'Showers',
+  waterSanitation: 'Water and sanitation',
+  emergencyExits: 'Emergency exits',
+  firstAid: 'First aid',
+  equipmentCondition: 'Equipment condition',
+  incidentPlan: 'Incident plan',
+};
+const hygieneCheckKeys: (keyof PartnerOnboardingHygieneChecklist)[] = [
+  'cleanliness', 'changingAreas', 'showers', 'waterSanitation',
+];
+const safetyCheckKeys: (keyof PartnerOnboardingSafetyChecklist)[] = [
+  'emergencyExits', 'firstAid', 'equipmentCondition', 'incidentPlan',
+];
+const checklistStatusLabel = (status: PartnerOnboardingChecklistStatus) => status === 'pass'
+  ? 'Passed'
+  : status === 'action_required' ? 'Action required' : 'Not applicable';
+const baghdadDate = () => {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Baghdad',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const part = (type: string) => parts.find(item => item.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
+};
+
+function InspectionHistory({ inspections }: { inspections: PartnerOnboardingInspection[] }) {
+  if (inspections.length === 0) return null;
+  return <Section number="✓" title="Facility inspection history" description="The inspection outcome and any required corrective action are shared with the applicant.">
+    <ol className="space-y-3">
+      {inspections.map(inspection => <li key={inspection.id} className="rounded-xl border border-[#e4e1d7] bg-[#fffef9] p-4" data-testid={`inspection-history-${inspection.id}`}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-bold">{formatDate(inspection.inspectedOn)}</p>
+          <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${inspection.status === 'approved' ? 'bg-[#e5eee5] text-[#315d43]' : 'bg-[#fff1e6] text-[#8b5631]'}`}>
+            {inspection.status === 'approved' ? 'Approved' : 'Corrective action required'}
+          </span>
+        </div>
+        <p className="mt-2 text-sm leading-6 text-[#53685e]">{inspection.findings}</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {([
+            { group: 'Hygiene', checklist: inspection.hygieneChecklist },
+            { group: 'Safety', checklist: inspection.safetyChecklist },
+          ] as const).map(({ group, checklist }) => <div key={group} className="rounded-lg bg-[#f3f1e9] p-3">
+            <h4 className="mb-2 text-[10px] font-bold uppercase tracking-[.12em] text-[#7a8981]">{group}</h4>
+            <ul className="space-y-1.5">{Object.entries(checklist).map(([key, status]) => <li key={key} className="flex justify-between gap-2 text-xs">
+              <span>{inspectionCheckLabels[key as InspectionCheckKey]}</span>
+              <span className={status === 'action_required' ? 'font-semibold text-[#8b5631]' : 'text-[#718078]'}>{checklistStatusLabel(status as PartnerOnboardingChecklistStatus)}</span>
+            </li>)}</ul>
+          </div>)}
+        </div>
+        {inspection.correctiveAction && <div className="mt-3 rounded-lg border border-[#eadcc0] bg-[#fff8e9] p-3">
+          <p className="text-xs font-bold text-[#715533]">Corrective action</p>
+          <p className="mt-1 text-sm leading-5 text-[#715533]">{inspection.correctiveAction}</p>
+          {inspection.correctiveDueOn && <p className="mt-1 text-xs text-[#806944]">Due {formatDate(inspection.correctiveDueOn)}</p>}
+        </div>}
+      </li>)}
+    </ol>
+  </Section>;
+}
+
+function InspectionChecklistFields<K extends string>({
+  title,
+  keys,
+  labels,
+  values,
+  onChange,
+}: {
+  title: string;
+  keys: readonly K[];
+  labels: Record<K, string>;
+  values: Record<K, PartnerOnboardingChecklistStatus | ''>;
+  onChange: (key: K, value: PartnerOnboardingChecklistStatus | '') => void;
+}) {
+  return <fieldset className="rounded-xl border border-[#dedbd1] bg-[#fffef9] p-3">
+    <legend className="px-1 text-xs font-bold">{title}</legend>
+    <div className="grid gap-3 sm:grid-cols-2">
+      {keys.map(key => <Field key={key} label={labels[key]}>
+        <select
+          data-testid={`select-onboarding-inspection-${key}`}
+          className={inputClass}
+          required
+          value={values[key]}
+          onChange={event => onChange(key, event.target.value as PartnerOnboardingChecklistStatus | '')}
+        >
+          <option value="">Choose result</option>
+          <option value="pass">Passed</option>
+          <option value="action_required">Action required</option>
+          <option value="not_applicable">Not applicable</option>
+        </select>
+      </Field>)}
+    </div>
+  </fieldset>;
+}
+
 export function PartnerApplicationPage() {
   const { isLoaded, isSignedIn } = useAuth();
   const queryClient = useQueryClient();
@@ -262,6 +382,7 @@ export function PartnerApplicationPage() {
     </div>
     {query.isError && <div className="mb-5 flex items-center justify-between gap-4 rounded-xl border border-[#e4c3b7] bg-[#fff5f1] p-4 text-sm text-[#8f4436]" role="alert"><span>{errorStatus(query.error) === 401 ? 'Your session could not be verified. Sign in again to access your application.' : 'We could not load your application.'}</span>{errorStatus(query.error) === 401 ? <a href="/sign-in" className="font-bold underline">Sign in</a> : <button type="button" className={mutedButton} onClick={() => void query.refetch()}><RefreshCw size={15} /> Retry</button>}</div>}
     {app && <div className="mb-6"><ApplicantStatus app={app} history={response?.history ?? []} /></div>}
+    {app && <div className="mb-6"><InspectionHistory inspections={response?.inspections ?? []} /></div>}
     {savedApplication?.status === 'rejected' && !startingNewApplication && <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#e4c3b7] bg-[#fff5f1] p-4"><p className="text-sm text-[#8f4436]">You can submit a new application with updated details.</p><button data-testid="button-new-application" type="button" className={mutedButton} onClick={() => { setForm(initialForm()); setInitialized(false); setStartingNewApplication(true); setNotice(''); setFormError(''); }}>Start a new application <ArrowRight size={15} /></button></div>}
     <form onSubmit={saveApplication} className="grid gap-5">
       <Section number="01" title="Your business and facility" description="Use the names and contact details your team can verify with you.">
@@ -331,16 +452,28 @@ export function PartnerOnboardingAdminPage() {
   const [selectedId, setSelectedId] = useState('');
   const detailQuery = useGetPartnerOnboardingApplication(selectedId, { query: { enabled: isLoaded && isSignedIn && !!selectedId, retry: false, queryKey: getGetPartnerOnboardingApplicationQueryKey(selectedId) } });
   const updateStatus = useUpdatePartnerOnboardingStatus();
+  const createInspection = useCreatePartnerOnboardingInspection();
   const reviewDocument = useReviewPartnerApplicationDocument();
   const [targetStatus, setTargetStatus] = useState<PartnerOnboardingStatus | ''>('');
   const [note, setNote] = useState('');
+  const [inspectionDate, setInspectionDate] = useState(baghdadDate);
+  const [inspectionFindings, setInspectionFindings] = useState('');
+  const [inspectionHygiene, setInspectionHygiene] = useState(emptyHygieneChecklist);
+  const [inspectionSafety, setInspectionSafety] = useState(emptySafetyChecklist);
+  const [correctiveAction, setCorrectiveAction] = useState('');
+  const [correctiveDueOn, setCorrectiveDueOn] = useState('');
   const [documentNotes, setDocumentNotes] = useState<Record<string, string>>({});
   const [actionError, setActionError] = useState('');
   const [feedback, setFeedback] = useState('');
   const [downloadBusy, setDownloadBusy] = useState('');
   const applications = listQuery.data ?? [];
   const current = detailQuery.data;
-  const availableStatuses = useMemo(() => current ? allowedNextStatuses[current.application.status] : [], [current]);
+  const latestInspection = current?.inspections[0] ?? null;
+  const hasApprovedInspection = latestInspection?.status === 'approved';
+  const availableStatuses = useMemo(() => current
+    ? allowedNextStatuses[current.application.status].filter(status =>
+      !['approved', 'live'].includes(status) || hasApprovedInspection)
+    : [], [current, hasApprovedInspection]);
   if (!isLoaded) return <Shell admin><div className="animate-pulse space-y-5"><div className="h-10 w-1/3 rounded-xl bg-[#e4e1d6]" /><div className="h-64 rounded-2xl bg-[#e4e1d6]" /></div></Shell>;
   if (!isSignedIn) return <AccessMessage admin />;
   if (listQuery.isLoading) return <Shell admin><div className="animate-pulse space-y-5"><div className="h-10 w-1/3 rounded-xl bg-[#e4e1d6]" /><div className="h-64 rounded-2xl bg-[#e4e1d6]" /></div></Shell>;
@@ -384,6 +517,56 @@ export function PartnerOnboardingAdminPage() {
         : 'The document review could not be saved. Please check the application stage and try again.');
     }
   };
+  const recordInspection = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!current) return;
+    setActionError('');
+    setFeedback('');
+    const hygieneValues = Object.values(inspectionHygiene);
+    const safetyValues = Object.values(inspectionSafety);
+    if ([...hygieneValues, ...safetyValues].some(value => !value)) {
+      setActionError('Complete every hygiene and safety checklist item.');
+      return;
+    }
+    if (inspectionFindings.trim().length < 4) {
+      setActionError('Add clear inspection findings.');
+      return;
+    }
+    const needsCorrectiveAction = [...hygieneValues, ...safetyValues].includes('action_required');
+    if (needsCorrectiveAction && (correctiveAction.trim().length < 4 || !correctiveDueOn || correctiveDueOn < inspectionDate)) {
+      setActionError('Add a corrective action and a due date on or after the inspection date.');
+      return;
+    }
+    const payload: PartnerOnboardingInspectionInput = {
+      inspectedOn: inspectionDate,
+      hygieneChecklist: inspectionHygiene as PartnerOnboardingHygieneChecklist,
+      safetyChecklist: inspectionSafety as PartnerOnboardingSafetyChecklist,
+      status: needsCorrectiveAction ? 'action_required' : 'approved',
+      findings: inspectionFindings.trim(),
+      correctiveAction: needsCorrectiveAction ? correctiveAction.trim() : null,
+      correctiveDueOn: needsCorrectiveAction ? correctiveDueOn : null,
+    };
+    try {
+      await createInspection.mutateAsync({ id: current.application.id, data: payload });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetPartnerOnboardingApplicationQueryKey(current.application.id) }),
+        queryClient.invalidateQueries({ queryKey: getGetPartnerOnboardingApplicationsQueryKey() }),
+      ]);
+      setInspectionDate(baghdadDate());
+      setInspectionFindings('');
+      setInspectionHygiene(emptyHygieneChecklist());
+      setInspectionSafety(emptySafetyChecklist());
+      setCorrectiveAction('');
+      setCorrectiveDueOn('');
+      setFeedback('Inspection recorded in the application history.');
+    } catch (error) {
+      setActionError(errorStatus(error) === 403
+        ? 'The service did not authorize this inspection.'
+        : errorStatus(error) === 409
+          ? 'An inspection cannot be added after an application is live or rejected.'
+          : 'The inspection could not be recorded. Check the date and checklist details.');
+    }
+  };
   const advance = async (event: FormEvent) => {
     event.preventDefault(); setActionError(''); setFeedback('');
     if (!current || !targetStatus || note.trim().length < 4) { setActionError('Choose a permitted next status and enter a note of at least four characters.'); return; }
@@ -396,7 +579,11 @@ export function PartnerOnboardingAdminPage() {
       ]);
       setTargetStatus(''); setNote(''); setFeedback('Application status updated.');
     } catch (error) {
-      setActionError(errorStatus(error) === 403 ? 'The service did not authorize this action.' : 'The status could not be updated. Confirm the permitted next step and try again.');
+      setActionError(errorStatus(error) === 403
+        ? 'The service did not authorize this action.'
+        : errorStatus(error) === 409
+          ? 'Record an approved facility inspection before approving or launching this partner.'
+          : 'The status could not be updated. Confirm the permitted next step and try again.');
     }
   };
   return <Shell admin>
@@ -439,6 +626,41 @@ export function PartnerOnboardingAdminPage() {
                <div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="truncate text-xs font-bold">{documentNames[doc.documentType]}</p><p className="mt-1 truncate text-[10px] text-[#7b8981]">{doc.documentName} · {doc.status.replaceAll('_', ' ')}{doc.expiresOn ? ` · expires ${formatDate(doc.expiresOn)}` : ''}</p>{doc.reviewNote && <p className="mt-1 text-xs leading-5 text-[#9a4435]">{doc.reviewNote}</p>}</div><button data-testid={`button-download-document-${doc.id}`} type="button" className={mutedButton} disabled={!!downloadBusy} onClick={() => void download(doc)} aria-label={`Download ${doc.documentName}`}>{downloadBusy === doc.id ? 'Loading…' : <ArrowDownToLine size={15} />}</button></div>
                {doc.status === 'submitted' && <div className="mt-3 border-t border-[#ece9e0] pt-3"><label className="block text-[10px] font-bold uppercase tracking-[.12em] text-[#87938c]">Review note<textarea data-testid={`input-document-review-${doc.id}`} className={`${inputClass} mt-1 min-h-16`} minLength={4} maxLength={1000} value={documentNotes[doc.id] ?? ''} onChange={e => setDocumentNotes(notes => ({ ...notes, [doc.id]: e.target.value }))} placeholder="Explain the decision and any required correction." /></label><div className="mt-2 flex flex-wrap gap-2"><button data-testid={`button-approve-document-${doc.id}`} type="button" className={mutedButton} disabled={reviewDocument.isPending} onClick={() => void reviewFile(doc, 'approved')}><Check size={14} />Accept document</button><button data-testid={`button-reject-document-${doc.id}`} type="button" className="inline-flex items-center gap-2 rounded-lg border border-[#e2c7be] px-3 py-2 text-xs font-semibold text-[#914d40] hover:bg-[#fff4f0]" disabled={reviewDocument.isPending} onClick={() => void reviewFile(doc, 'rejected')}>Request replacement</button></div></div>}
              </article>)}</div>}
+          </div>
+          <div className="border-t border-[#e6e3d9] py-5">
+            <div className="mb-4 flex items-start gap-2.5"><ClipboardCheck size={17} className="mt-0.5 shrink-0 text-[#557968]" /><div><h3 className="text-sm font-bold">Initial facility inspection</h3><p className="mt-1 text-xs leading-5 text-[#718078]">Record hygiene and safety findings before approving or launching this partner. Every inspection is retained in the application history.</p></div></div>
+            {(current.application.status === 'test_checkin_completed' || current.application.status === 'approved')
+              && !hasApprovedInspection
+              && <p className="mb-4 rounded-xl border border-[#eadcc0] bg-[#fff8e9] p-3 text-xs leading-5 text-[#715533]" role="status">An approved inspection is required before this application can be approved or launched.</p>}
+            <InspectionHistory inspections={current.inspections} />
+            {!['live', 'rejected'].includes(current.application.status) && <form onSubmit={recordInspection} className="rounded-xl bg-[#f3f1e9] p-4 md:p-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Inspection date"><input data-testid="input-onboarding-inspection-date" className={inputClass} type="date" required value={inspectionDate} onChange={e => setInspectionDate(e.target.value)} /></Field>
+                <Field label="Inspection findings"><textarea data-testid="input-onboarding-inspection-findings" className={`${inputClass} min-h-12`} required minLength={4} maxLength={2000} value={inspectionFindings} onChange={e => setInspectionFindings(e.target.value)} placeholder="Summarize the inspection." /></Field>
+              </div>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <InspectionChecklistFields
+                  title="Hygiene checklist"
+                  keys={hygieneCheckKeys}
+                  labels={inspectionCheckLabels}
+                  values={inspectionHygiene}
+                  onChange={(key, value) => setInspectionHygiene(currentValues => ({ ...currentValues, [key]: value }))}
+                />
+                <InspectionChecklistFields
+                  title="Safety checklist"
+                  keys={safetyCheckKeys}
+                  labels={inspectionCheckLabels}
+                  values={inspectionSafety}
+                  onChange={(key, value) => setInspectionSafety(currentValues => ({ ...currentValues, [key]: value }))}
+                />
+              </div>
+              {[...Object.values(inspectionHygiene), ...Object.values(inspectionSafety)].includes('action_required') && <div className="mt-4 grid gap-4 rounded-xl border border-[#eadcc0] bg-[#fff8e9] p-3 md:grid-cols-2">
+                <Field label="Corrective action"><textarea data-testid="input-onboarding-corrective-action" className={`${inputClass} min-h-20`} required minLength={4} maxLength={2000} value={correctiveAction} onChange={e => setCorrectiveAction(e.target.value)} /></Field>
+                <Field label="Corrective-action due date"><input data-testid="input-onboarding-corrective-due" className={inputClass} type="date" required min={inspectionDate} value={correctiveDueOn} onChange={e => setCorrectiveDueOn(e.target.value)} /></Field>
+              </div>}
+              <p className="mt-3 text-xs leading-5 text-[#718078]">Outcome: {[...Object.values(inspectionHygiene), ...Object.values(inspectionSafety)].includes('action_required') ? 'Corrective action required' : 'Approved after all checklist items are completed'}</p>
+              <button data-testid="button-record-onboarding-inspection" type="submit" className={`${mutedButton} mt-3`} disabled={createInspection.isPending}>{createInspection.isPending ? 'Saving inspection…' : 'Record inspection'}</button>
+            </form>}
           </div>
           <div className="border-t border-[#e6e3d9] py-5"><h3 className="mb-3 text-sm font-bold">Status history</h3>{current.history.length === 0 ? <p className="text-xs text-[#7b8981]">No status changes recorded.</p> : <ol className="space-y-3">{current.history.map(event => <li key={event.id} className="flex gap-3"><span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#bd754d]" /><div><p className="text-xs font-semibold">{labels[event.toStatus]}</p><p className="mt-1 text-[10px] text-[#839088]">{formatDate(event.createdAt)} · {event.actorKind === 'team' ? 'MaydanGo team' : 'Applicant'}</p>{event.note && <p className="mt-1 text-xs leading-5 text-[#64776d]">{event.note}</p>}</div></li>)}</ol>}</div>
           {availableStatuses.length > 0 && <form onSubmit={advance} className="rounded-2xl bg-[#eef1e8] p-4 md:p-5">

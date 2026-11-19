@@ -523,6 +523,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1partner-onboarding~1applications"
   /operations/partner-onboarding/applications/{id}:
     $ref: "./operations.yaml#/paths/~1operations~1partner-onboarding~1applications~1{id}"
+  /operations/partner-onboarding/applications/{id}/inspections:
+    $ref: "./operations.yaml#/paths/~1operations~1partner-onboarding~1applications~1{id}~1inspections"
   /operations/partner-onboarding/applications/{id}/status:
     $ref: "./operations.yaml#/paths/~1operations~1partner-onboarding~1applications~1{id}~1status"
   /operations/partner-onboarding/applications/{id}/documents/{documentId}/review:

@@ -12,6 +12,7 @@ import {
   partnerOnboardingApplications,
   partnerOnboardingDocuments,
   partnerOnboardingEvents,
+  partnerOnboardingInspections,
   partners,
 } from "@workspace/db";
 import { ObjectNotFoundError, type ObjectStorageService } from "../lib/objectStorage";
@@ -121,6 +122,7 @@ after(async () => {
     const docs = await db.select({ documentPath: partnerOnboardingDocuments.documentPath })
       .from(partnerOnboardingDocuments).where(eq(partnerOnboardingDocuments.applicationId, applicationId));
     for (const doc of docs) storedFiles.delete(doc.documentPath);
+    await db.delete(partnerOnboardingInspections).where(eq(partnerOnboardingInspections.applicationId, applicationId));
     await db.delete(partnerOnboardingEvents).where(eq(partnerOnboardingEvents.applicationId, applicationId));
     await db.delete(partnerOnboardingDocuments).where(eq(partnerOnboardingDocuments.applicationId, applicationId));
     await db.delete(partnerOnboardingApplications).where(eq(partnerOnboardingApplications.id, applicationId));
@@ -293,9 +295,63 @@ test("partner applications are private, documents are scoped, and staff creation
   const [privateFacility] = await db.select({ publishedAt: facilityProfiles.publishedAt })
     .from(facilityProfiles).where(eq(facilityProfiles.id, facilityId)).limit(1);
   assert.equal(privateFacility?.publishedAt, null);
-  for (const status of ["qr_code_issued", "staff_training_completed", "test_checkin_completed", "approved", "live"]) {
+  for (const status of ["qr_code_issued", "staff_training_completed", "test_checkin_completed"]) {
     assert.equal((await changeStatus(status)).status, 200);
   }
+  assert.equal((await changeStatus("approved")).status, 409);
+  const inspectionPath = `/api/operations/partner-onboarding/applications/${applicationId}/inspections`;
+  const baseInspection = {
+    inspectedOn: "2026-11-18",
+    hygieneChecklist: {
+      cleanliness: "pass",
+      changingAreas: "pass",
+      showers: "pass",
+      waterSanitation: "pass",
+    },
+    safetyChecklist: {
+      emergencyExits: "pass",
+      firstAid: "pass",
+      equipmentCondition: "pass",
+      incidentPlan: "pass",
+    },
+    findings: "The facility is ready for partner approval.",
+    correctiveAction: null,
+    correctiveDueOn: null,
+  };
+  const deniedInspection = await call(inspectionPath, otherUserId, "POST", {
+    ...baseInspection,
+    status: "approved",
+  });
+  assert.equal(deniedInspection.status, 403);
+  const inconsistentInspection = await call(inspectionPath, adminId, "POST", {
+    ...baseInspection,
+    hygieneChecklist: { ...baseInspection.hygieneChecklist, cleanliness: "action_required" },
+    status: "approved",
+  });
+  assert.equal(inconsistentInspection.status, 400);
+  const actionRequiredInspection = await call(inspectionPath, adminId, "POST", {
+    ...baseInspection,
+    hygieneChecklist: { ...baseInspection.hygieneChecklist, cleanliness: "action_required" },
+    findings: "The changing area needs attention.",
+    status: "action_required",
+    correctiveAction: "Clean and re-inspect the area.",
+    correctiveDueOn: "2026-12-02",
+  });
+  assert.equal(actionRequiredInspection.status, 201);
+  assert.equal((await changeStatus("approved")).status, 409);
+  const approvedInspection = await call(inspectionPath, adminId, "POST", {
+    ...baseInspection,
+    status: "approved",
+  });
+  assert.equal(approvedInspection.status, 201);
+  const inspectionDetails = await call(`/api/operations/partner-onboarding/applications/${applicationId}`, adminId);
+  const inspectionHistory = (inspectionDetails.data as { inspections: Array<{ status: string }> }).inspections;
+  assert.equal(inspectionHistory.length, 2);
+  assert.equal(inspectionHistory[0]?.status, "approved");
+  const applicantDetails = await call("/api/partner-onboarding/mine", applicantId);
+  assert.equal((applicantDetails.data as { inspections: Array<{ status: string }> }).inspections.length, 2);
+  assert.equal((await changeStatus("approved")).status, 200);
+  assert.equal((await changeStatus("live")).status, 200);
   const [publishedFacility] = await db.select({ publishedAt: facilityProfiles.publishedAt })
     .from(facilityProfiles).where(eq(facilityProfiles.id, facilityId)).limit(1);
   assert.ok(publishedFacility?.publishedAt instanceof Date);

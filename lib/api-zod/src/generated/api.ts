@@ -3229,7 +3229,85 @@ export const GetPartnerOnboardingApplicationResponse = zod.object({
   "note": zod.string().nullable(),
   "actorKind": zod.enum(['applicant', 'team']),
   "createdAt": zod.coerce.date()
+})),
+  "inspections": zod.array(zod.object({
+  "id": zod.uuid(),
+  "applicationId": zod.uuid(),
+  "inspectedOn": zod.coerce.date(),
+  "hygieneChecklist": zod.object({
+  "cleanliness": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "changingAreas": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "showers": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "waterSanitation": zod.enum(['pass', 'action_required', 'not_applicable'])
+}),
+  "safetyChecklist": zod.object({
+  "emergencyExits": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "firstAid": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "equipmentCondition": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "incidentPlan": zod.enum(['pass', 'action_required', 'not_applicable'])
+}),
+  "status": zod.enum(['approved', 'action_required']),
+  "findings": zod.string(),
+  "correctiveAction": zod.string().nullable(),
+  "correctiveDueOn": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date()
 }))
+})
+
+
+export const CreatePartnerOnboardingInspectionParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const createPartnerOnboardingInspectionBodyFindingsMin = 4;
+export const createPartnerOnboardingInspectionBodyFindingsMax = 2000;
+
+export const createPartnerOnboardingInspectionBodyCorrectiveActionMin = 4;
+export const createPartnerOnboardingInspectionBodyCorrectiveActionMax = 2000;
+
+
+
+export const CreatePartnerOnboardingInspectionBody = zod.object({
+  "inspectedOn": zod.coerce.date(),
+  "hygieneChecklist": zod.object({
+  "cleanliness": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "changingAreas": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "showers": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "waterSanitation": zod.enum(['pass', 'action_required', 'not_applicable'])
+}),
+  "safetyChecklist": zod.object({
+  "emergencyExits": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "firstAid": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "equipmentCondition": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "incidentPlan": zod.enum(['pass', 'action_required', 'not_applicable'])
+}),
+  "status": zod.enum(['approved', 'action_required']),
+  "findings": zod.string().min(createPartnerOnboardingInspectionBodyFindingsMin).max(createPartnerOnboardingInspectionBodyFindingsMax),
+  "correctiveAction": zod.string().min(createPartnerOnboardingInspectionBodyCorrectiveActionMin).max(createPartnerOnboardingInspectionBodyCorrectiveActionMax).nullable(),
+  "correctiveDueOn": zod.coerce.date().nullable()
+})
+
+export const CreatePartnerOnboardingInspectionResponse = zod.object({
+  "id": zod.uuid(),
+  "applicationId": zod.uuid(),
+  "inspectedOn": zod.coerce.date(),
+  "hygieneChecklist": zod.object({
+  "cleanliness": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "changingAreas": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "showers": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "waterSanitation": zod.enum(['pass', 'action_required', 'not_applicable'])
+}),
+  "safetyChecklist": zod.object({
+  "emergencyExits": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "firstAid": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "equipmentCondition": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "incidentPlan": zod.enum(['pass', 'action_required', 'not_applicable'])
+}),
+  "status": zod.enum(['approved', 'action_required']),
+  "findings": zod.string(),
+  "correctiveAction": zod.string().nullable(),
+  "correctiveDueOn": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date()
 })
 
 
@@ -3347,6 +3425,28 @@ export const UpdatePartnerOnboardingStatusResponse = zod.object({
   "toStatus": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
   "note": zod.string().nullable(),
   "actorKind": zod.enum(['applicant', 'team']),
+  "createdAt": zod.coerce.date()
+})),
+  "inspections": zod.array(zod.object({
+  "id": zod.uuid(),
+  "applicationId": zod.uuid(),
+  "inspectedOn": zod.coerce.date(),
+  "hygieneChecklist": zod.object({
+  "cleanliness": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "changingAreas": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "showers": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "waterSanitation": zod.enum(['pass', 'action_required', 'not_applicable'])
+}),
+  "safetyChecklist": zod.object({
+  "emergencyExits": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "firstAid": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "equipmentCondition": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "incidentPlan": zod.enum(['pass', 'action_required', 'not_applicable'])
+}),
+  "status": zod.enum(['approved', 'action_required']),
+  "findings": zod.string(),
+  "correctiveAction": zod.string().nullable(),
+  "correctiveDueOn": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date()
 }))
 })
@@ -3482,6 +3582,28 @@ export const GetMyPartnerApplicationResponse = zod.object({
   "toStatus": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
   "note": zod.string().nullable(),
   "actorKind": zod.enum(['applicant', 'team']),
+  "createdAt": zod.coerce.date()
+})),
+  "inspections": zod.array(zod.object({
+  "id": zod.uuid(),
+  "applicationId": zod.uuid(),
+  "inspectedOn": zod.coerce.date(),
+  "hygieneChecklist": zod.object({
+  "cleanliness": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "changingAreas": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "showers": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "waterSanitation": zod.enum(['pass', 'action_required', 'not_applicable'])
+}),
+  "safetyChecklist": zod.object({
+  "emergencyExits": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "firstAid": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "equipmentCondition": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "incidentPlan": zod.enum(['pass', 'action_required', 'not_applicable'])
+}),
+  "status": zod.enum(['approved', 'action_required']),
+  "findings": zod.string(),
+  "correctiveAction": zod.string().nullable(),
+  "correctiveDueOn": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date()
 }))
 })
@@ -3659,6 +3781,28 @@ export const SubmitPartnerApplicationResponse = zod.object({
   "toStatus": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
   "note": zod.string().nullable(),
   "actorKind": zod.enum(['applicant', 'team']),
+  "createdAt": zod.coerce.date()
+})),
+  "inspections": zod.array(zod.object({
+  "id": zod.uuid(),
+  "applicationId": zod.uuid(),
+  "inspectedOn": zod.coerce.date(),
+  "hygieneChecklist": zod.object({
+  "cleanliness": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "changingAreas": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "showers": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "waterSanitation": zod.enum(['pass', 'action_required', 'not_applicable'])
+}),
+  "safetyChecklist": zod.object({
+  "emergencyExits": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "firstAid": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "equipmentCondition": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "incidentPlan": zod.enum(['pass', 'action_required', 'not_applicable'])
+}),
+  "status": zod.enum(['approved', 'action_required']),
+  "findings": zod.string(),
+  "correctiveAction": zod.string().nullable(),
+  "correctiveDueOn": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date()
 }))
 })
@@ -3840,6 +3984,28 @@ export const UpdateMyPartnerApplicationResponse = zod.object({
   "toStatus": zod.enum(['application_received', 'under_review', 'additional_documents_required', 'commercial_negotiation', 'contract_issued', 'contract_signed', 'facility_setup', 'qr_code_issued', 'staff_training_completed', 'test_checkin_completed', 'approved', 'live', 'rejected']),
   "note": zod.string().nullable(),
   "actorKind": zod.enum(['applicant', 'team']),
+  "createdAt": zod.coerce.date()
+})),
+  "inspections": zod.array(zod.object({
+  "id": zod.uuid(),
+  "applicationId": zod.uuid(),
+  "inspectedOn": zod.coerce.date(),
+  "hygieneChecklist": zod.object({
+  "cleanliness": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "changingAreas": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "showers": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "waterSanitation": zod.enum(['pass', 'action_required', 'not_applicable'])
+}),
+  "safetyChecklist": zod.object({
+  "emergencyExits": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "firstAid": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "equipmentCondition": zod.enum(['pass', 'action_required', 'not_applicable']),
+  "incidentPlan": zod.enum(['pass', 'action_required', 'not_applicable'])
+}),
+  "status": zod.enum(['approved', 'action_required']),
+  "findings": zod.string(),
+  "correctiveAction": zod.string().nullable(),
+  "correctiveDueOn": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date()
 }))
 })

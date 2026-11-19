@@ -2573,16 +2573,92 @@ export interface PartnerApplicationEvent {
   createdAt: string;
 }
 
+export type PartnerOnboardingChecklistStatus = typeof PartnerOnboardingChecklistStatus[keyof typeof PartnerOnboardingChecklistStatus];
+
+
+export const PartnerOnboardingChecklistStatus = {
+  pass: 'pass',
+  action_required: 'action_required',
+  not_applicable: 'not_applicable',
+} as const;
+
+export interface PartnerOnboardingHygieneChecklist {
+  cleanliness: PartnerOnboardingChecklistStatus;
+  changingAreas: PartnerOnboardingChecklistStatus;
+  showers: PartnerOnboardingChecklistStatus;
+  waterSanitation: PartnerOnboardingChecklistStatus;
+}
+
+export interface PartnerOnboardingSafetyChecklist {
+  emergencyExits: PartnerOnboardingChecklistStatus;
+  firstAid: PartnerOnboardingChecklistStatus;
+  equipmentCondition: PartnerOnboardingChecklistStatus;
+  incidentPlan: PartnerOnboardingChecklistStatus;
+}
+
+export type PartnerOnboardingInspectionStatus = typeof PartnerOnboardingInspectionStatus[keyof typeof PartnerOnboardingInspectionStatus];
+
+
+export const PartnerOnboardingInspectionStatus = {
+  approved: 'approved',
+  action_required: 'action_required',
+} as const;
+
+export interface PartnerOnboardingInspection {
+  id: string;
+  applicationId: string;
+  inspectedOn: string;
+  hygieneChecklist: PartnerOnboardingHygieneChecklist;
+  safetyChecklist: PartnerOnboardingSafetyChecklist;
+  status: PartnerOnboardingInspectionStatus;
+  findings: string;
+  /** @nullable */
+  correctiveAction: string | null;
+  /** @nullable */
+  correctiveDueOn: string | null;
+  createdAt: string;
+}
+
+export type PartnerOnboardingInspectionInputStatus = typeof PartnerOnboardingInspectionInputStatus[keyof typeof PartnerOnboardingInspectionInputStatus];
+
+
+export const PartnerOnboardingInspectionInputStatus = {
+  approved: 'approved',
+  action_required: 'action_required',
+} as const;
+
+export interface PartnerOnboardingInspectionInput {
+  inspectedOn: string;
+  hygieneChecklist: PartnerOnboardingHygieneChecklist;
+  safetyChecklist: PartnerOnboardingSafetyChecklist;
+  status: PartnerOnboardingInspectionInputStatus;
+  /**
+     * @minLength 4
+     * @maxLength 2000
+     */
+  findings: string;
+  /**
+     * @minLength 4
+     * @maxLength 2000
+     * @nullable
+     */
+  correctiveAction: string | null;
+  /** @nullable */
+  correctiveDueOn: string | null;
+}
+
 export interface PartnerApplicationDetails {
   application: PartnerApplication;
   documents: PartnerApplicationDocument[];
   history: PartnerApplicationEvent[];
+  inspections: PartnerOnboardingInspection[];
 }
 
 export interface PartnerApplicationDetailsResponse {
   application: PartnerApplication | null;
   documents: PartnerApplicationDocument[];
   history: PartnerApplicationEvent[];
+  inspections: PartnerOnboardingInspection[];
 }
 
 export interface PartnerApplicationStatusUpdate {
