@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Image, Linking, ScrollView, StyleSheet, View } from 'react-native';
-import { Text, Pressable } from '@/components/Localized';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { Text, TextInput, Pressable } from '@/components/Localized';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -19,6 +20,7 @@ import { useColors } from '@/hooks/useColors';
 import { translate, type Language, type MessageKey } from '@/lib/i18n';
 import { errorCopy } from '@/lib/content';
 import { recommendOnlineCourses } from '@/lib/course-recommendations';
+import { courseMatchesSearch } from '@/lib/course-search';
 import { findSponsoredContentPlacement, useSponsoredContentTracking } from '@/lib/sponsored-content';
 
 type Mode = 'courses' | 'live' | 'coaching';
@@ -28,13 +30,13 @@ const iraqDateTime = (value: string, language: Language) => new Intl.DateTimeFor
   language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ',
   { timeZone: 'Asia/Baghdad', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' },
 ).format(new Date(value));
-
 export default function OnlineScreen() {
   const colors = useColors();
   const app = useApp();
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<Mode>('courses');
   const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [courseSearch, setCourseSearch] = useState('');
   const [slotChoice, setSlotChoice] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const t = (key: MessageKey) => translate(app.language, key);
@@ -57,10 +59,12 @@ export default function OnlineScreen() {
   const favoriteMutation = useSetMemberCourseFavorite();
   const courseRows = coursesQuery.data ?? [];
   const savedCourseRows = courseRows.filter((course) => course.isSaved);
-  const visibleCourseRows = showSavedOnly ? savedCourseRows : courseRows;
+  const matchesCourse = (course: (typeof courseRows)[number]) => courseMatchesSearch(course, courseSearch);
+  const visibleCourseRows = (showSavedOnly ? savedCourseRows : courseRows).filter(matchesCourse);
   const liveClasses = liveQuery.data ?? [];
-  const started = showSavedOnly ? [] : courseRows.filter((course) => course.enrolled && course.completedLessons < course.lessonCount);
-  const recommendations = showSavedOnly ? [] : recommendOnlineCourses(courseRows);
+  const started = showSavedOnly ? [] : courseRows.filter((course) =>
+    course.enrolled && course.completedLessons < course.lessonCount && matchesCourse(course));
+  const recommendations = showSavedOnly ? [] : recommendOnlineCourses(courseRows).filter(matchesCourse);
   const coursePlacement = (id: string, category: string) => {
     const featured = findSponsoredContentPlacement(sponsoredContentQuery.data ?? [], 'course', id, 'featured_course');
     if (featured) return { campaignId: featured.campaignId, placementType: 'featured_course' as const };
@@ -145,9 +149,12 @@ export default function OnlineScreen() {
   return (
     <ScreenShell>
       <ScreenHeader eyebrow={t('onlineEyebrow')} title={t('online')} />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={0}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         onScroll={sponsoredContentTracking.checkVisible}
         onContentSizeChange={sponsoredContentTracking.checkVisible}
         scrollEventThrottle={250}
@@ -184,6 +191,33 @@ export default function OnlineScreen() {
 
         {mode === 'courses' ? (
           <>
+            {!coursesQuery.isLoading && !coursesQuery.isError && (courseRows.length > 0 || courseSearch.trim()) ? (
+              <View style={[styles.searchField, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: colors.radius }]}>
+                <Ionicons name="search" size={18} color={colors.mutedForeground} />
+                <TextInput
+                  accessibilityLabel={t('searchCourses')}
+                  value={courseSearch}
+                  onChangeText={setCourseSearch}
+                  placeholder={t('searchCourses')}
+                  placeholderTextColor={colors.mutedForeground}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="search"
+                  style={[styles.searchInput, { color: colors.foreground }]}
+                />
+                {courseSearch.length > 0 ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('clearCourseSearch')}
+                    onPress={() => setCourseSearch('')}
+                    hitSlop={8}
+                    style={styles.clearSearchButton}
+                  >
+                    <Ionicons name="close-circle" size={19} color={colors.mutedForeground} />
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
             {coursesQuery.isLoading ? <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={{ color: colors.mutedForeground }}>{t('coursesLoading')}</Text></View> : null}
             {coursesQuery.isError ? <Text style={[styles.catalogMeta, { color: colors.destructive, textAlign: align }]}>{t('catalogLoadError')}</Text> : null}
             {!coursesQuery.isLoading && !coursesQuery.isError && courseRows.length > 0 ? (
@@ -206,11 +240,14 @@ export default function OnlineScreen() {
                 </Pressable>
               </View>
             ) : null}
-            {!coursesQuery.isLoading && !coursesQuery.isError
+            {!coursesQuery.isLoading && !coursesQuery.isError && !courseSearch.trim()
               && (showSavedOnly ? savedCourseRows.length === 0 : courseRows.length === 0)
               ? <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
                 {showSavedOnly ? t('noSavedCourses') : t('noPublishedCourses')}
               </Text> : null}
+            {!coursesQuery.isLoading && !coursesQuery.isError && courseSearch.trim() && visibleCourseRows.length === 0
+              ? <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{t('noCourseSearchResults')}</Text>
+              : null}
             {started.length > 0 ? <>
               <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: align }]}>{t('continueLearning')}</Text>
               {started.map((course) => {
@@ -467,6 +504,7 @@ export default function OnlineScreen() {
           </>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenShell>
   );
 }
@@ -482,6 +520,9 @@ const styles = StyleSheet.create({
   segment: { flexDirection: 'row', padding: 4, borderRadius: 15, marginBottom: 16 },
   segmentOption: { flex: 1, minHeight: 40, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 },
   courseFilter: { marginTop: -5, marginBottom: 14 },
+  searchField: { minHeight: 48, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, marginBottom: 16 },
+  searchInput: { flex: 1, minHeight: 46, paddingVertical: 9, fontSize: 14 },
+  clearSearchButton: { padding: 4 },
   segmentText: { fontSize: 11, fontWeight: '800' },
   liveDot: { width: 6, height: 6, borderRadius: 4, backgroundColor: '#d85c4e' },
   loading: { minHeight: 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },

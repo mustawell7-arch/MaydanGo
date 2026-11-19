@@ -70,6 +70,13 @@ for (const key of ['favoriteActivities', 'favoriteActivitiesHint', 'favoriteActi
   assert.notEqual(translate('ar', key), translate('en', key), `Arabic translation missing: ${key}`);
   assert.notEqual(translate('ku', key), translate('en', key), `Sorani translation missing: ${key}`);
 }
+for (const key of ['searchCourses', 'clearCourseSearch', 'noCourseSearchResults']) {
+  assert.ok(translate('en', key).trim());
+  assert.ok(translate('ar', key).trim());
+  assert.ok(translate('ku', key).trim());
+  assert.notEqual(translate('ar', key), translate('en', key), `Arabic translation missing: ${key}`);
+  assert.notEqual(translate('ku', key), translate('en', key), `Sorani translation missing: ${key}`);
+}
 assert.equal(translate('en', 'visitsLeft'), '{n} visits left');
 assert.equal(translate('en', 'spotsLeft'), '{n} spots left');
 assert.equal(translate('en', 'cancelled'), 'Booking canceled');
