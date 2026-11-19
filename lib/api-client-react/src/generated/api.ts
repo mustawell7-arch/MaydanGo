@@ -120,6 +120,10 @@ import type {
   FinanceRefundRequest,
   FinanceReviewItem,
   FinanceSettlementSummary,
+  FraudInvestigation,
+  FraudInvestigationInput,
+  FraudInvestigationQueueItem,
+  FraudInvestigationUpdate,
   GetAttendance200,
   GetBookingCatalog200Item,
   GetFinanceSettlementsParams,
@@ -14097,6 +14101,266 @@ export function useGetFacilityQualityControl<TData = Awaited<ReturnType<typeof g
 
 
 
+
+export const getGetFraudInvestigationQueueUrl = () => {
+
+
+
+
+  return `/api/operations/fraud/signals`
+}
+
+export const getFraudInvestigationQueue = async ( options?: Parameters<typeof customFetch>[1]): Promise<FraudInvestigationQueueItem[]> => {
+
+  return customFetch<FraudInvestigationQueueItem[]>(getGetFraudInvestigationQueueUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFraudInvestigationQueueQueryKey = () => {
+    return [
+    `/api/operations/fraud/signals`
+    ] as const;
+    }
+
+
+export const getGetFraudInvestigationQueueQueryOptions = <TData = Awaited<ReturnType<typeof getFraudInvestigationQueue>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFraudInvestigationQueue>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFraudInvestigationQueueQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFraudInvestigationQueue>>> = ({ signal }) => getFraudInvestigationQueue({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFraudInvestigationQueue>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetFraudInvestigationQueueQueryResult = NonNullable<Awaited<ReturnType<typeof getFraudInvestigationQueue>>>
+export type GetFraudInvestigationQueueQueryError = ErrorType<void>
+
+
+export function useGetFraudInvestigationQueue<TData = Awaited<ReturnType<typeof getFraudInvestigationQueue>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFraudInvestigationQueue>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFraudInvestigationQueue>>,
+          TError,
+          Awaited<ReturnType<typeof getFraudInvestigationQueue>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFraudInvestigationQueue<TData = Awaited<ReturnType<typeof getFraudInvestigationQueue>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFraudInvestigationQueue>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFraudInvestigationQueue>>,
+          TError,
+          Awaited<ReturnType<typeof getFraudInvestigationQueue>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFraudInvestigationQueue<TData = Awaited<ReturnType<typeof getFraudInvestigationQueue>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFraudInvestigationQueue>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetFraudInvestigationQueue<TData = Awaited<ReturnType<typeof getFraudInvestigationQueue>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFraudInvestigationQueue>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetFraudInvestigationQueueQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateFraudInvestigationUrl = () => {
+
+
+
+
+  return `/api/operations/fraud/investigations`
+}
+
+export const createFraudInvestigation = async (fraudInvestigationInput: FraudInvestigationInput, options?: Parameters<typeof customFetch>[1]): Promise<FraudInvestigation> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FraudInvestigation>(getCreateFraudInvestigationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(fraudInvestigationInput)
+  }
+);}
+
+
+
+
+
+export const getCreateFraudInvestigationMutationKey = () => ['createFraudInvestigation'] as const;
+
+export const getCreateFraudInvestigationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFraudInvestigation>>, TError,CreateFraudInvestigationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createFraudInvestigation>>, TError,CreateFraudInvestigationMutationVariables, TContext> => {
+
+const mutationKey = getCreateFraudInvestigationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createFraudInvestigation>>, CreateFraudInvestigationMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createFraudInvestigation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateFraudInvestigationMutationResult = NonNullable<Awaited<ReturnType<typeof createFraudInvestigation>>>
+    export type CreateFraudInvestigationMutationBody = BodyType<FraudInvestigationInput>
+    export type CreateFraudInvestigationMutationError = ErrorType<void>
+    export type CreateFraudInvestigationMutationVariables = {data: BodyType<FraudInvestigationInput>}
+
+    export const useCreateFraudInvestigation = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFraudInvestigation>>, TError,CreateFraudInvestigationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createFraudInvestigation>>,
+        TError,
+        CreateFraudInvestigationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateFraudInvestigationMutationOptions(options), queryClient);
+    }
+
+export const getUpdateFraudInvestigationUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/fraud/investigations/${id}`
+}
+
+export const updateFraudInvestigation = async (id: string,
+    fraudInvestigationUpdate: FraudInvestigationUpdate, options?: Parameters<typeof customFetch>[1]): Promise<FraudInvestigation> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FraudInvestigation>(getUpdateFraudInvestigationUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(fraudInvestigationUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateFraudInvestigationMutationKey = () => ['updateFraudInvestigation'] as const;
+
+export const getUpdateFraudInvestigationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFraudInvestigation>>, TError,UpdateFraudInvestigationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateFraudInvestigation>>, TError,UpdateFraudInvestigationMutationVariables, TContext> => {
+
+const mutationKey = getUpdateFraudInvestigationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateFraudInvestigation>>, UpdateFraudInvestigationMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateFraudInvestigation(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateFraudInvestigationMutationResult = NonNullable<Awaited<ReturnType<typeof updateFraudInvestigation>>>
+    export type UpdateFraudInvestigationMutationBody = BodyType<FraudInvestigationUpdate>
+    export type UpdateFraudInvestigationMutationError = ErrorType<void>
+    export type UpdateFraudInvestigationMutationVariables = {id: string;data: BodyType<FraudInvestigationUpdate>}
+
+    export const useUpdateFraudInvestigation = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFraudInvestigation>>, TError,UpdateFraudInvestigationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateFraudInvestigation>>,
+        TError,
+        UpdateFraudInvestigationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateFraudInvestigationMutationOptions(options), queryClient);
+    }
 
 export const getGetPublicLegalPoliciesUrl = () => {
 

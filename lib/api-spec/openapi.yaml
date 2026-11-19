@@ -707,6 +707,12 @@ paths:
     $ref: "./operations.yaml#/paths/~1super-admin~1guardian-consents~1{id}~1document"
   /operations/quality:
     $ref: "./operations.yaml#/paths/~1operations~1quality"
+  /operations/fraud/signals:
+    $ref: "./operations.yaml#/paths/~1operations~1fraud~1signals"
+  /operations/fraud/investigations:
+    $ref: "./operations.yaml#/paths/~1operations~1fraud~1investigations"
+  /operations/fraud/investigations/{id}:
+    $ref: "./operations.yaml#/paths/~1operations~1fraud~1investigations~1{id}"
   /policies:
     $ref: "./operations.yaml#/paths/~1policies"
   /policies/{policyKey}:

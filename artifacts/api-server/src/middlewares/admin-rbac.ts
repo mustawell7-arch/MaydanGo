@@ -116,6 +116,7 @@ export function requiredAdminActions(method: string, pathname: string, body?: un
   const sensitivePath = path === "/api/operations"
     || path.startsWith("/api/operations/finance")
     || path.startsWith("/api/operations/quality")
+    || path.startsWith("/api/operations/fraud")
     || path.startsWith("/api/operations/reviews")
     || path.startsWith("/api/support/staff")
     || path.startsWith("/api/attendance");

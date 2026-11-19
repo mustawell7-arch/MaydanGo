@@ -23,6 +23,7 @@ export * from "./legal-policy-versions";
 export * from "./guardian-consents";
 export * from "./referrals";
 export * from "./member-profile-photos";
+export * from "./fraud-investigations";
 // Export your models here. Add one export per file
 // export * from "./posts";
 //

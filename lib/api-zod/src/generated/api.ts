@@ -10693,6 +10693,67 @@ export const GetFacilityQualityControlResponse = zod.object({
 })
 
 
+export const GetFraudInvestigationQueueResponseItem = zod.object({
+  "activityId": zod.uuid(),
+  "facilityId": zod.uuid(),
+  "facilityName": zod.string(),
+  "city": zod.string(),
+  "partnerName": zod.string(),
+  "actorId": zod.string().nullable(),
+  "action": zod.string(),
+  "reason": zod.string(),
+  "occurredAt": zod.coerce.date(),
+  "investigationId": zod.uuid().nullable(),
+  "investigationStatus": zod.union([zod.enum(['open', 'under_review', 'resolved_no_action', 'action_taken']),zod.null()]),
+  "investigationOpenedAt": zod.coerce.date().nullable(),
+  "investigationUpdatedAt": zod.coerce.date().nullable(),
+  "resolutionReason": zod.string().nullable()
+})
+export const GetFraudInvestigationQueueResponse = zod.array(GetFraudInvestigationQueueResponseItem)
+
+
+export const CreateFraudInvestigationBody = zod.object({
+  "sourceActivityId": zod.uuid()
+})
+
+export const CreateFraudInvestigationResponse = zod.object({
+  "id": zod.uuid(),
+  "sourceActivityId": zod.uuid(),
+  "status": zod.enum(['open', 'under_review', 'resolved_no_action', 'action_taken']),
+  "openedBy": zod.string(),
+  "resolutionReason": zod.string().nullable(),
+  "resolvedBy": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const UpdateFraudInvestigationParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updateFraudInvestigationBodyResolutionReasonMin = 10;
+export const updateFraudInvestigationBodyResolutionReasonMax = 1000;
+
+
+
+export const UpdateFraudInvestigationBody = zod.object({
+  "status": zod.enum(['open', 'under_review', 'resolved_no_action', 'action_taken']),
+  "resolutionReason": zod.string().min(updateFraudInvestigationBodyResolutionReasonMin).max(updateFraudInvestigationBodyResolutionReasonMax).nullish()
+})
+
+export const UpdateFraudInvestigationResponse = zod.object({
+  "id": zod.uuid(),
+  "sourceActivityId": zod.uuid(),
+  "status": zod.enum(['open', 'under_review', 'resolved_no_action', 'action_taken']),
+  "openedBy": zod.string(),
+  "resolutionReason": zod.string().nullable(),
+  "resolvedBy": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
 export const getPublicLegalPoliciesResponseTranslationsEnTitleMax = 160;
 
 export const getPublicLegalPoliciesResponseTranslationsEnIntroductionMax = 5000;

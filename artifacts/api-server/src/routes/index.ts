@@ -24,6 +24,7 @@ import operationsCorporateRouter from "./operations-corporate";
 import partnerContractsRouter from "./partner-contracts";
 import corporateAgreementsRouter from "./corporate-agreements";
 import superAdminRouter from "./super-admin";
+import operationsFraudRouter from "./operations-fraud";
 
 const router: IRouter = Router();
 router.use("/public", publicReviewsRouter);
@@ -45,6 +46,7 @@ router.use("/operations/instructor-content-drafts", instructorContentReviewRoute
 router.use("/operations", operationsReviewsRouter);
 router.use("/operations", operationsMarketingRouter);
 router.use("/operations", operationsAnalyticsRouter);
+router.use("/operations", operationsFraudRouter);
 router.use("/operations", operationsRouter);
 router.use("/attendance", attendanceRouter);
 router.use("/member", memberSupportAttachmentRouter);

@@ -1194,6 +1194,65 @@ export const SupportTicketCategory = {
   other: 'other',
 } as const;
 
+export type FraudInvestigationStatus = typeof FraudInvestigationStatus[keyof typeof FraudInvestigationStatus];
+
+
+export const FraudInvestigationStatus = {
+  open: 'open',
+  under_review: 'under_review',
+  resolved_no_action: 'resolved_no_action',
+  action_taken: 'action_taken',
+} as const;
+
+export interface FraudInvestigation {
+  id: string;
+  sourceActivityId: string;
+  status: FraudInvestigationStatus;
+  openedBy: string;
+  /** @nullable */
+  resolutionReason: string | null;
+  /** @nullable */
+  resolvedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FraudInvestigationQueueItem {
+  activityId: string;
+  facilityId: string;
+  facilityName: string;
+  city: string;
+  partnerName: string;
+  /** @nullable */
+  actorId: string | null;
+  action: string;
+  reason: string;
+  occurredAt: string;
+  /** @nullable */
+  investigationId: string | null;
+  investigationStatus: FraudInvestigationStatus | null;
+  /** @nullable */
+  investigationOpenedAt: string | null;
+  /** @nullable */
+  investigationUpdatedAt: string | null;
+  /** @nullable */
+  resolutionReason: string | null;
+}
+
+export interface FraudInvestigationInput {
+  sourceActivityId: string;
+}
+
+export interface FraudInvestigationUpdate {
+  status: FraudInvestigationStatus;
+  /**
+     * @minLength 10
+     * @maxLength 1000
+     * @nullable
+     */
+  resolutionReason?: string | null;
+}
+
 export type PrivacyRequestKind = typeof PrivacyRequestKind[keyof typeof PrivacyRequestKind];
 
 

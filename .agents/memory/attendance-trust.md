@@ -14,6 +14,12 @@ Closed attendance cannot be silently edited by ordinary administrators.
 
 **How to apply:** Fail closed after the correction window; introducing a post-close override requires a distinct approval workflow rather than weakening the existing administrator permission.
 
+Fraud, device, and QR risk signals are prompts for authorized human review, not proof of wrongdoing. They must not automatically suspend a member or partner.
+
+**Why:** MaydanGo must treat people fairly across Iraq; shared devices and location anomalies can have innocent explanations.
+
+**How to apply:** Keep detection separate from enforcement. Require a documented review outcome, and use the existing restricted, auditable access workflow for any suspension.
+
 Reconciliation uses eligibility established at arrival, not membership validity on the day staff review it. No-shows retain allowance until explicitly waived; void corrections release both the visit and its reservation hold.
 
 **Why:** Membership expiry must not prevent confirmation of a valid earlier visit, and leaving the reservation hold after voiding attendance would silently keep consuming quota.

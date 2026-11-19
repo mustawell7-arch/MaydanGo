@@ -69,6 +69,14 @@ test("action mapping distinguishes approvals, sensitive data, refunds, and expor
     requiredAdminActions("GET", "/api/operations/finance/invoices/item/document"),
     ["export", "view_sensitive_data"],
   );
+  assert.deepEqual(
+    requiredAdminActions("GET", "/api/operations/fraud/signals"),
+    ["view", "view_sensitive_data"],
+  );
+  assert.deepEqual(
+    requiredAdminActions("POST", "/api/operations/fraud/investigations"),
+    ["create", "view_sensitive_data"],
+  );
 });
 
 test("configured role permissions block sensitive actions until explicitly granted", async () => {

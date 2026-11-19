@@ -862,6 +862,56 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/FacilityQualityControl" }
+  /operations/fraud/signals:
+    get:
+      operationId: getFraudInvestigationQueue
+      responses:
+        "200":
+          description: Recent risk-flagged facility QR activity and its investigation status
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FraudInvestigationQueueItem" }
+        "401": { description: Sign-in required }
+        "403": { description: Fraud and Compliance access required }
+  /operations/fraud/investigations:
+    post:
+      operationId: createFraudInvestigation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FraudInvestigationInput" }
+      responses:
+        "201":
+          description: Investigation opened for a recorded risk flag
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FraudInvestigation" }
+        "400": { description: Invalid activity identifier }
+        "403": { description: Fraud and Compliance access required }
+        "404": { description: Flagged activity not found }
+        "409": { description: Activity is not flagged or already has an investigation }
+  /operations/fraud/investigations/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    patch:
+      operationId: updateFraudInvestigation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FraudInvestigationUpdate" }
+      responses:
+        "200":
+          description: Investigation status updated and audit recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FraudInvestigation" }
+        "400": { description: Invalid transition or missing resolution reason }
+        "403": { description: Fraud and Compliance access required }
+        "404": { description: Investigation not found }
+        "409": { description: Investigation cannot move to the requested status }
   /operations/contracts:
     get:
       operationId: getPartnerContractVersions
@@ -3150,6 +3200,57 @@ components:
     SupportTicketCategory:
       type: string
       enum: [membership, payment, booking, checkin, facility, course, live_class, refund, event, corporate_membership, technical_issue, account_security, account, access, safety, other]
+    FraudInvestigationStatus:
+      type: string
+      enum: [open, under_review, resolved_no_action, action_taken]
+    FraudInvestigation:
+      type: object
+      additionalProperties: false
+      required: [id, sourceActivityId, status, openedBy, resolutionReason, resolvedBy, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        sourceActivityId: { type: string, format: uuid }
+        status: { $ref: "#/components/schemas/FraudInvestigationStatus" }
+        openedBy: { type: string }
+        resolutionReason: { type: ["string", "null"] }
+        resolvedBy: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    FraudInvestigationQueueItem:
+      type: object
+      additionalProperties: false
+      required: [activityId, facilityId, facilityName, city, partnerName, actorId, action, reason, occurredAt, investigationId, investigationStatus, investigationOpenedAt, investigationUpdatedAt, resolutionReason]
+      properties:
+        activityId: { type: string, format: uuid }
+        facilityId: { type: string, format: uuid }
+        facilityName: { type: string }
+        city: { type: string }
+        partnerName: { type: string }
+        actorId: { type: ["string", "null"] }
+        action: { type: string }
+        reason: { type: string }
+        occurredAt: { type: string, format: date-time }
+        investigationId: { type: ["string", "null"], format: uuid }
+        investigationStatus:
+          anyOf:
+            - { $ref: "#/components/schemas/FraudInvestigationStatus" }
+            - { type: "null" }
+        investigationOpenedAt: { type: ["string", "null"], format: date-time }
+        investigationUpdatedAt: { type: ["string", "null"], format: date-time }
+        resolutionReason: { type: ["string", "null"] }
+    FraudInvestigationInput:
+      type: object
+      additionalProperties: false
+      required: [sourceActivityId]
+      properties:
+        sourceActivityId: { type: string, format: uuid }
+    FraudInvestigationUpdate:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: { $ref: "#/components/schemas/FraudInvestigationStatus" }
+        resolutionReason: { type: ["string", "null"], minLength: 10, maxLength: 1000 }
     PrivacyRequestKind:
       type: string
       enum: [data_export, account_deletion]

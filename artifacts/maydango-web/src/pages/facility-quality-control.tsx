@@ -5,6 +5,7 @@ import {
   useCreateFacilityQualityIncident, useGetFacilityQualityControl,
   useUpdateFacilityQualityAssessment, useUpdateFacilityQualityIncident, useUpsertFacilityEmergencyContact,
 } from '@workspace/api-client-react';
+import { FraudInvestigationReview } from '@/components/fraud-investigation-review';
 import { PartnerComplianceDocuments } from '@/components/partner-compliance-documents';
 import { PartnerContractVersions } from '@/components/partner-contract-versions';
 import type {
@@ -455,6 +456,8 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
     </header>
     {notice && <p role="status" className="rounded-xl bg-[#e1efdf] px-4 py-3 text-sm text-[#2d6d4a]">{notice}</p>}
     {error && <p role="alert" className="rounded-xl bg-[#fff7f3] px-4 py-3 text-sm text-[#9a4435]">{error}</p>}
+
+    {qualityAdmin && <FraudInvestigationReview lang={lang} />}
 
     {qualityAdmin && <section aria-labelledby="document-expiry-alerts-title" className="rounded-3xl border border-[#e5b5a5] bg-[#fff5f1] p-5 sm:p-6">
       <div className="flex items-start gap-3">
