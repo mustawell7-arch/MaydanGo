@@ -25,6 +25,7 @@ import { hasAdminPermission } from "../lib/admin-roles";
 import { ObjectStorageService } from "../lib/objectStorage";
 import { suspendedEntityIds } from "../lib/account-access-restrictions";
 import { streamInstructorDraftUpload } from "./instructor-content";
+import { validateCourseQuizDraft } from "../lib/course-quizzes";
 
 const router = Router();
 const objectStorage = new ObjectStorageService();
@@ -384,7 +385,11 @@ async function publishCourseDraft(
   const courseId = draftId;
   const lessons = payload.lessons as Array<Record<string, unknown>>;
   const materials = payload.materials as Array<Record<string, unknown>>;
-  const promotedLessons: Array<{ lesson: Record<string, unknown>; mediaUrl: string }> = [];
+  const promotedLessons: Array<{
+    lesson: Record<string, unknown>;
+    mediaUrl: string;
+    quiz: ReturnType<typeof validateCourseQuizDraft>;
+  }> = [];
   for (const lesson of lessons) {
     const upload = uploads.get(String(lesson.recordingUploadId))!;
     const mediaUrl = await promoteUpload(
@@ -392,7 +397,19 @@ async function publishCourseDraft(
       upload,
       `/objects/course-recordings/${upload.id}.${extensionFor(upload)}`,
     );
-    promotedLessons.push({ lesson, mediaUrl });
+    let quiz: ReturnType<typeof validateCourseQuizDraft>;
+    try {
+      const questions = Array.isArray(lesson.quiz) ? lesson.quiz : [];
+      quiz = questions.length
+        ? validateCourseQuizDraft({
+          passingScorePercent: lesson.quizPassingScorePercent ?? 70,
+          questions,
+        })
+        : null;
+    } catch (error) {
+      throw new ReviewValidationError(error instanceof Error ? error.message : "The course quiz is invalid.");
+    }
+    promotedLessons.push({ lesson, mediaUrl, quiz });
   }
   const promotedMaterials: Array<{
     material: Record<string, unknown>;
@@ -429,7 +446,7 @@ async function publishCourseDraft(
       published: true,
       publishedAt: new Date(),
     });
-    await tx.insert(learningLessons).values(promotedLessons.map(({ lesson, mediaUrl }, index) => ({
+    await tx.insert(learningLessons).values(promotedLessons.map(({ lesson, mediaUrl, quiz }, index) => ({
       id: randomUUID(),
       courseId,
       position: index + 1,
@@ -437,6 +454,7 @@ async function publishCourseDraft(
       localizedContent: lesson.localizedContent as { en: string; ar: string; ku: string },
       durationMinutes: Number(lesson.durationMinutes),
       mediaUrl,
+      quiz,
     })));
     if (promotedMaterials.length) {
       await tx.insert(courseMaterials).values(promotedMaterials.map(({ material, upload, objectPath }) => ({

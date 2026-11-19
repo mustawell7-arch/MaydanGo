@@ -2,6 +2,16 @@ import { pgTable, text, jsonb, integer, boolean, timestamp, uniqueIndex, index }
 
 export type LocalizedText = { en: string; ar: string; ku: string };
 export type CourseLanguage = "en" | "ar" | "ku";
+export type CourseQuizQuestion = {
+  prompt: LocalizedText;
+  options: LocalizedText[];
+  correctOptionIndex: number;
+  explanation: LocalizedText | null;
+};
+export type CourseQuiz = {
+  passingScorePercent: number;
+  questions: CourseQuizQuestion[];
+};
 
 export const learningCourses = pgTable("learning_courses", {
   id: text("id").primaryKey(),
@@ -36,6 +46,7 @@ export const learningLessons = pgTable("learning_lessons", {
   localizedContent: jsonb("localized_content").$type<LocalizedText>().notNull(),
   durationMinutes: integer("duration_minutes").notNull(),
   mediaUrl: text("media_url"),
+  quiz: jsonb("quiz").$type<CourseQuiz | null>(),
 }, table => [
   uniqueIndex("learning_lessons_course_position").on(table.courseId, table.position),
   index("learning_lessons_course").on(table.courseId),
@@ -96,4 +107,16 @@ export const lessonProgress = pgTable("lesson_progress", {
 }, table => [
   uniqueIndex("lesson_progress_enrollment_lesson").on(table.enrollmentId, table.lessonId),
   index("lesson_progress_enrollment").on(table.enrollmentId),
+]);
+
+export const courseQuizAttempts = pgTable("course_quiz_attempts", {
+  id: text("id").primaryKey(),
+  enrollmentId: text("enrollment_id").notNull().references(() => courseEnrollments.id, { onDelete: "cascade" }),
+  lessonId: text("lesson_id").notNull().references(() => learningLessons.id, { onDelete: "cascade" }),
+  answers: jsonb("answers").$type<number[]>().notNull(),
+  scorePercent: integer("score_percent").notNull(),
+  passed: boolean("passed").notNull(),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  index("course_quiz_attempt_enrollment_lesson_submitted").on(table.enrollmentId, table.lessonId, table.submittedAt),
 ]);

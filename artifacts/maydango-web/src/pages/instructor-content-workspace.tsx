@@ -48,6 +48,9 @@ const labels = {
     attachPhoto: 'Profile photo', attachRecording: 'Course recording', attachMaterial: 'Course material',
     addLesson: 'Add another lesson', removeLesson: 'Remove lesson', lesson: 'Lesson', lessonDuration: 'Duration (minutes)',
     recordingForLesson: 'Recording for lesson', recordingAttached: 'Recording attached', removeFile: 'Remove file',
+    quiz: 'Lesson quiz', quizHelp: 'Optional practice questions. Members can retry; MaydanGo grades answers on the server.',
+    addQuestion: 'Add question', removeQuestion: 'Remove question', question: 'Question', answerOption: 'Answer option',
+    addOption: 'Add answer', removeOption: 'Remove answer', correctAnswer: 'Correct answer', passingScore: 'Passing score (%)',
     statusNote: 'Review status', unpublished: 'Nothing is public until approval.', livePending: 'MaydanGo approval is one step. The hosting partner must also approve before members can book.',
     adminTitle: 'Content review', adminIntro: 'Review instructor profiles, courses, and live-class proposals before they appear in public listings.',
     queue: 'Review queue', noQueue: 'Nothing is waiting for review.', select: 'Select a submission to inspect its full content.',
@@ -72,6 +75,9 @@ const labels = {
     attachPhoto: 'صورة الملف', attachRecording: 'تسجيل الدورة', attachMaterial: 'مادة الدورة',
     addLesson: 'إضافة درس آخر', removeLesson: 'إزالة الدرس', lesson: 'الدرس', lessonDuration: 'المدة (بالدقائق)',
     recordingForLesson: 'تسجيل الدرس', recordingAttached: 'تم إرفاق التسجيل', removeFile: 'إزالة الملف',
+    quiz: 'اختبار الدرس', quizHelp: 'أسئلة تدريبية اختيارية. يمكن للعضو إعادة المحاولة، وتُصحّح MaydanGo الإجابات على الخادم.',
+    addQuestion: 'إضافة سؤال', removeQuestion: 'إزالة السؤال', question: 'السؤال', answerOption: 'خيار الإجابة',
+    addOption: 'إضافة إجابة', removeOption: 'إزالة الإجابة', correctAnswer: 'الإجابة الصحيحة', passingScore: 'درجة النجاح (%)',
     statusNote: 'حالة المراجعة', unpublished: 'لن يظهر المحتوى للعامة قبل اعتماده.', livePending: 'اعتماد MaydanGo خطوة أولى؛ ويجب أن يوافق الشريك المستضيف أيضاً قبل الحجز.',
     adminTitle: 'مراجعة المحتوى', adminIntro: 'راجع ملفات المدرّبين والدورات ومقترحات الحصص قبل ظهورها في القوائم العامة.',
     queue: 'قائمة المراجعة', noQueue: 'لا توجد عناصر بانتظار المراجعة.', select: 'اختر طلباً لعرض محتواه كاملاً.',
@@ -96,6 +102,9 @@ const labels = {
     attachPhoto: 'وێنەی پرۆفایل', attachRecording: 'تۆماری کۆرس', attachMaterial: 'مادەی کۆرس',
     addLesson: 'زیادکردنی وانەیەکی تر', removeLesson: 'سڕینەوەی وانە', lesson: 'وانە', lessonDuration: 'ماوە (خولەک)',
     recordingForLesson: 'تۆماری وانە', recordingAttached: 'تۆمار پەیوەست کرا', removeFile: 'سڕینەوەی فایل',
+    quiz: 'تاقیکردنەوەی وانە', quizHelp: 'پرسیاری ڕاهێنانی هەڵبژاردەیی. ئەندام دەتوانێت دووبارە هەوڵ بدات و MaydanGo وەڵامەکان لەسەر سێرڤەر هەڵدەسەنگێنێت.',
+    addQuestion: 'زیادکردنی پرسیار', removeQuestion: 'سڕینەوەی پرسیار', question: 'پرسیار', answerOption: 'هەڵبژاردەی وەڵام',
+    addOption: 'زیادکردنی وەڵام', removeOption: 'سڕینەوەی وەڵام', correctAnswer: 'وەڵامی ڕاست', passingScore: 'نمرەی دەرچوون (%)',
     statusNote: 'دۆخی پێداچوونەوە', unpublished: 'پێش پەسەندکردن ناوەڕۆک بۆ گشتی نابێت.', livePending: 'پەسەندکردنی MaydanGo هەنگاوێکە؛ هاوبەشی میواندار دەبێت پێش حجزکردنی ئەندامان ئەویش پەسەند بکات.',
     adminTitle: 'پێداچوونەوەی ناوەڕۆک', adminIntro: 'پرۆفایل، کۆرس و پێشنیاری وانەی ڕاستەوخۆ بپشکنە پێش ئەوەی لە لیستی گشتیدا دەرکەون.',
     queue: 'لیستی پێداچوونەوە', noQueue: 'هیچ بابەتێک چاوەڕوانی پێداچوونەوە ناکات.', select: 'بابەتێک هەڵبژێرە بۆ بینینی ناوەڕۆکی تەواو.',
@@ -119,7 +128,7 @@ function initialPayload(type: DraftType): InstructorContentDraftPayload {
     localizedTitle: localized, localizedSummary: localized, localizedInstructor: localized,
     category: '', level: 'all-levels', durationMinutes: 30, courseLanguages: ['en'], subtitleLanguages: [],
     requiredEquipment: null, disclaimers: null, supportingMaterials: null,
-    lessons: [{ localizedTitle: localized, localizedContent: localized, durationMinutes: 10, recordingUploadId: null }],
+    lessons: [{ localizedTitle: localized, localizedContent: localized, durationMinutes: 10, recordingUploadId: null, quiz: [], quizPassingScorePercent: 70 }],
     materials: [],
   };
   return {
@@ -143,6 +152,24 @@ function parsePayload(type: DraftType, source: string): InstructorContentDraftPa
     if (type === 'course') {
       if (!String(value.category ?? '').trim() || !Array.isArray(value.lessons) || value.lessons.length < 1) return null;
       if (!(value.lessons as Record<string, unknown>[]).every((lesson) => isLocalized(lesson.localizedTitle) && isLocalized(lesson.localizedContent))) return null;
+      if (!(value.lessons as Record<string, unknown>[]).every((lesson) => {
+        const questions = lesson.quiz ?? [];
+        const passScore = lesson.quizPassingScorePercent ?? 70;
+        if (!Array.isArray(questions) || questions.length > 25 || !Number.isInteger(passScore) || Number(passScore) < 1 || Number(passScore) > 100) return false;
+        return questions.every((rawQuestion) => {
+          if (!rawQuestion || typeof rawQuestion !== 'object') return false;
+          const question = rawQuestion as Record<string, unknown>;
+          return isLocalized(question.prompt)
+            && Array.isArray(question.options)
+            && question.options.length >= 2
+            && question.options.length <= 6
+            && question.options.every(isLocalized)
+            && Number.isInteger(question.correctOptionIndex)
+            && Number(question.correctOptionIndex) >= 0
+            && Number(question.correctOptionIndex) < question.options.length
+            && (question.explanation === null || question.explanation === undefined || isLocalized(question.explanation));
+        });
+      })) return null;
       for (const key of ['requiredEquipment', 'disclaimers', 'supportingMaterials']) {
         if (value[key] !== null && !isLocalized(value[key])) return null;
       }
@@ -387,6 +414,8 @@ function InstructorDrafts({ lang }: { lang: Language }) {
       localizedContent: { en: '', ar: '', ku: '' },
       durationMinutes: 10,
       recordingUploadId: null,
+      quiz: [],
+      quizPassingScorePercent: 70,
     });
     next.lessons = lessons;
     setRecordingLessonIndex(lessons.length - 1);
@@ -467,6 +496,64 @@ function InstructorDrafts({ lang }: { lang: Language }) {
                   <label className="mt-3 block max-w-xs text-xs font-bold text-[#60756b]">{strings.lessonDuration}
                     <input type="number" min={1} max={10000} value={lesson.durationMinutes ?? 10} onChange={(event) => updateField(['lessons', index, 'durationMinutes'], Number(event.target.value))} className="mt-2 block h-11 w-full rounded-xl border border-[#d8d2c4] bg-[#fffdf7] px-3 text-sm font-normal" />
                   </label>
+                  <div className="mt-5 rounded-2xl border border-[#e3dfd3] bg-white p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h4 className="text-sm font-bold">{strings.quiz}</h4>
+                        <p className="mt-1 max-w-2xl text-xs leading-5 text-[#718077]">{strings.quizHelp}</p>
+                      </div>
+                      <label className="text-xs font-bold text-[#60756b]">{strings.passingScore}
+                        <input type="number" min={1} max={100} value={lesson.quizPassingScorePercent ?? 70} onChange={(event) => updateField(['lessons', index, 'quizPassingScorePercent'], Number(event.target.value))} className="mt-2 block h-10 w-28 rounded-xl border border-[#d8d2c4] bg-[#fffdf7] px-3 text-sm font-normal" />
+                      </label>
+                    </div>
+                    <div className="mt-4 space-y-4">
+                      {(lesson.quiz ?? []).map((question: DraftObject, questionIndex: number) => (
+                        <div key={questionIndex} className="rounded-xl border border-[#e3dfd3] bg-[#faf8f0] p-3">
+                          <div className="mb-3 flex items-center justify-between gap-2">
+                            <h5 className="text-xs font-bold">{strings.question} {questionIndex + 1}</h5>
+                            <button type="button" onClick={() => updateField(['lessons', index, 'quiz'], lesson.quiz.filter((_: unknown, itemIndex: number) => itemIndex !== questionIndex))} className="text-xs font-semibold text-[#944632] underline underline-offset-4">{strings.removeQuestion}</button>
+                          </div>
+                          <LocalizedFields title={`${strings.question} ${questionIndex + 1} · ${strings.languages}`} value={question.prompt} onChange={(language, text) => updateField(['lessons', index, 'quiz', questionIndex, 'prompt', language], text)} multiline />
+                          <div className="mt-3 space-y-3">
+                            {(question.options ?? []).map((option: DraftObject, optionIndex: number) => (
+                              <div key={optionIndex} className="rounded-xl bg-white p-3">
+                                <div className="mb-2 flex items-center justify-between gap-2">
+                                  <span className="text-xs font-bold">{strings.answerOption} {optionIndex + 1}</span>
+                                  {(question.options?.length ?? 0) > 2 && <button type="button" onClick={() => {
+                                    const nextOptions = question.options.filter((_: unknown, itemIndex: number) => itemIndex !== optionIndex);
+                                    const nextCorrect = Number(question.correctOptionIndex) === optionIndex
+                                      ? 0
+                                      : Number(question.correctOptionIndex) > optionIndex ? Number(question.correctOptionIndex) - 1 : Number(question.correctOptionIndex);
+                                    const nextQuiz = lesson.quiz.map((currentQuestion: DraftObject, currentIndex: number) =>
+                                      currentIndex === questionIndex
+                                        ? { ...currentQuestion, options: nextOptions, correctOptionIndex: nextCorrect }
+                                        : currentQuestion,
+                                    );
+                                    updateField(['lessons', index, 'quiz'], nextQuiz);
+                                  }} className="text-[11px] font-semibold text-[#944632] underline underline-offset-4">{strings.removeOption}</button>}
+                                </div>
+                                <LocalizedFields title={`${strings.answerOption} ${optionIndex + 1} · ${strings.languages}`} value={option} onChange={(language, text) => updateField(['lessons', index, 'quiz', questionIndex, 'options', optionIndex, language], text)} />
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-3 flex flex-wrap items-end gap-3">
+                            <button type="button" disabled={(question.options?.length ?? 0) >= 6} onClick={() => updateField(['lessons', index, 'quiz', questionIndex, 'options'], [...question.options, { en: '', ar: '', ku: '' }])} className="rounded-full border border-[#174d43] px-3 py-2 text-xs font-bold text-[#174d43] disabled:opacity-50">{strings.addOption}</button>
+                            <label className="text-xs font-bold text-[#60756b]">{strings.correctAnswer}
+                              <select value={question.correctOptionIndex ?? 0} onChange={(event) => updateField(['lessons', index, 'quiz', questionIndex, 'correctOptionIndex'], Number(event.target.value))} className="mt-1 block h-10 rounded-xl border border-[#d8d2c4] bg-[#fffdf7] px-3 text-sm font-normal">
+                                {(question.options ?? []).map((_: unknown, optionIndex: number) => <option key={optionIndex} value={optionIndex}>{strings.answerOption} {optionIndex + 1}</option>)}
+                              </select>
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                      <button type="button" disabled={(lesson.quiz?.length ?? 0) >= 25} onClick={() => updateField(['lessons', index, 'quiz'], [...(lesson.quiz ?? []), {
+                        prompt: { en: '', ar: '', ku: '' },
+                        options: [{ en: '', ar: '', ku: '' }, { en: '', ar: '', ku: '' }],
+                        correctOptionIndex: 0,
+                        explanation: null,
+                      }])} className="rounded-full border border-[#174d43] px-4 py-2 text-xs font-bold text-[#174d43] disabled:opacity-50">{strings.addQuestion}</button>
+                    </div>
+                  </div>
                   {lesson.recordingUploadId ? <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#eef5eb] px-3 py-2 text-xs text-[#2d6d4a]">
                     <span>{strings.recordingAttached} · {String(lesson.recordingUploadId).slice(0, 8)}</span>
                     <button type="button" onClick={() => updateField(['lessons', index, 'recordingUploadId'], null)} className="font-semibold underline underline-offset-4">{strings.removeFile}</button>

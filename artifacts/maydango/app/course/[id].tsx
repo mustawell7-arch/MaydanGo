@@ -10,11 +10,12 @@ import {
   getGetMemberCourseQueryKey, getGetMemberCoursesQueryKey,
   useCreateMemberCourseMaterialDownloadLink, useCreateMemberCoursePlaybackLink,
   useEnrollMemberCourse, useGetMemberCourse, useRecordMemberCourseLessonView,
+  useSubmitMemberCourseQuizAttempt,
   useSetMemberCourseFavorite, useUpdateCourseProgress,
   useUpdateMemberCoursePlaybackProgress,
   type SponsoredContentPlacementType,
 } from '@workspace/api-client-react';
-import type { CourseDetail } from '@workspace/api-client-react';
+import type { CourseDetail, CourseQuizAttemptResult } from '@workspace/api-client-react';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { translate, type MessageKey } from '@/lib/i18n';
@@ -39,6 +40,7 @@ export default function CourseDetailScreen() {
   const playbackProgressMutation = useUpdateMemberCoursePlaybackProgress();
   const materialDownloadMutation = useCreateMemberCourseMaterialDownloadLink();
   const lessonViewMutation = useRecordMemberCourseLessonView();
+  const quizMutation = useSubmitMemberCourseQuizAttempt();
   const favoriteMutation = useSetMemberCourseFavorite();
   const sponsoredTracking = useSponsoredContentTracking();
   const [activePlayback, setActivePlayback] = useState<{
@@ -50,6 +52,8 @@ export default function CourseDetailScreen() {
   const savedPlaybackPositions = useRef(new Map<string, { positionSeconds: number; durationSeconds: number }>());
   const lastPlaybackSaveAt = useRef(new Map<string, number>());
   const [openLesson, setOpenLesson] = useState<string | null>(null);
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, number[]>>({});
+  const [quizResults, setQuizResults] = useState<Record<string, CourseQuizAttemptResult>>({});
   const resumedCourseId = useRef<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const t = (key: MessageKey) => translate(app.language, key);
@@ -129,6 +133,24 @@ export default function CourseDetailScreen() {
         queryClient.invalidateQueries({ queryKey: getGetMemberCoursesQueryKey() }),
       ]);
     } catch (error) { setMessage(errorCopy(error)); }
+  };
+  const submitQuiz = async (lessonId: string, questionCount: number) => {
+    const answers = quizAnswers[lessonId] ?? [];
+    if (answers.length !== questionCount || answers.some(answer => answer < 0)) {
+      setMessage(t('quizSelectAll'));
+      return;
+    }
+    try {
+      const result = await quizMutation.mutateAsync({
+        id: course.id,
+        lessonId,
+        data: { answers },
+      });
+      setQuizResults(current => ({ ...current, [lessonId]: result }));
+      await queryClient.invalidateQueries({ queryKey: getGetMemberCourseQueryKey(course.id) });
+    } catch (error) {
+      setMessage(errorCopy(error));
+    }
   };
   const savePlaybackPosition = (
     lessonId: string,
@@ -404,6 +426,98 @@ export default function CourseDetailScreen() {
                         ) : null}
                       </View>
                     ) : null}
+                    {ready && lesson.quiz ? (
+                      <View style={[styles.quizCard, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+                        <View style={styles.quizHeader}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.quizTitle, { color: colors.foreground, textAlign: align }]}>{t('courseQuiz')}</Text>
+                            <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align }]}>
+                              {t('quizPassMark').replace('{score}', String(lesson.quiz.passingScorePercent))}
+                            </Text>
+                          </View>
+                          <Ionicons name="help-circle-outline" size={21} color={colors.primary} />
+                        </View>
+                        {lesson.latestQuizAttempt ? (
+                          <View style={[styles.quizLastAttempt, { backgroundColor: colors.card }]}>
+                            <Text style={[styles.progressLabel, { color: colors.foreground, textAlign: align }]}>
+                              {t('quizScore').replace('{score}', String(lesson.latestQuizAttempt.scorePercent))}
+                            </Text>
+                            <Text style={[styles.quizStatus, { color: lesson.latestQuizAttempt.passed ? colors.primary : colors.mutedForeground, textAlign: align }]}>
+                              {t(lesson.latestQuizAttempt.passed ? 'quizPassed' : 'quizNeedsPractice')}
+                            </Text>
+                          </View>
+                        ) : null}
+                        {lesson.quiz.questions.map((question, questionIndex) => {
+                          const currentAnswers = quizAnswers[lesson.id] ?? [];
+                          const selectedOption = currentAnswers[questionIndex];
+                          const result = quizResults[lesson.id]?.questionResults[questionIndex];
+                          return (
+                            <View key={questionIndex} style={[styles.quizQuestion, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                              <Text style={[styles.quizQuestionTitle, { color: colors.foreground, textAlign: align }]}>
+                                {t('quizQuestionLabel').replace('{number}', String(questionIndex + 1))}
+                              </Text>
+                              <Text style={[styles.lessonText, { color: colors.foreground, textAlign: align, marginTop: 7 }]}>
+                                {question.prompt[app.language] || question.prompt.en}
+                              </Text>
+                              <View style={styles.quizOptions}>
+                                {question.options.map((option, optionIndex) => {
+                                  const selected = selectedOption === optionIndex;
+                                  const isCorrectOption = result?.correctOptionIndex === optionIndex;
+                                  const isWrongSelection = result?.selectedOptionIndex === optionIndex && !result.correct;
+                                  return (
+                                    <Pressable
+                                      key={optionIndex}
+                                      testID={`button-course-quiz-${lesson.id}-${questionIndex}-${optionIndex}`}
+                                      accessibilityRole="radio"
+                                      accessibilityState={{ selected, disabled: quizMutation.isPending }}
+                                      disabled={quizMutation.isPending}
+                                      onPress={() => setQuizAnswers(current => {
+                                        const next = [...(current[lesson.id] ?? Array.from({ length: lesson.quiz!.questions.length }, () => -1))];
+                                        next[questionIndex] = optionIndex;
+                                        return { ...current, [lesson.id]: next };
+                                      })}
+                                      style={[
+                                        styles.quizOption,
+                                        { borderColor: isCorrectOption ? colors.primary : isWrongSelection ? colors.destructive : selected ? colors.primary : colors.border },
+                                        selected && { backgroundColor: colors.secondary },
+                                      ]}
+                                    >
+                                      <View style={[styles.quizRadio, { borderColor: selected || isCorrectOption ? colors.primary : colors.mutedForeground, backgroundColor: selected || isCorrectOption ? colors.primary : 'transparent' }]}>
+                                        {(selected || isCorrectOption) ? <Ionicons name="checkmark" size={11} color={colors.primaryForeground} /> : null}
+                                      </View>
+                                      <Text style={[styles.quizOptionText, { color: colors.foreground, textAlign: align }]}>
+                                        {option[app.language] || option.en}
+                                      </Text>
+                                    </Pressable>
+                                  );
+                                })}
+                              </View>
+                              {result ? (
+                                <View style={{ marginTop: 8 }}>
+                                  <Text style={[styles.quizStatus, { color: result.correct ? colors.primary : colors.destructive, textAlign: align }]}>
+                                    {t(result.correct ? 'quizCorrect' : 'quizIncorrect')}
+                                  </Text>
+                                  {result.explanation ? <Text style={[styles.progressLabel, { color: colors.mutedForeground, textAlign: align, marginTop: 4 }]}>
+                                    {result.explanation[app.language] || result.explanation.en}
+                                  </Text> : null}
+                                </View>
+                              ) : null}
+                            </View>
+                          );
+                        })}
+                        <Pressable
+                          testID={`button-submit-course-quiz-${lesson.id}`}
+                          accessibilityRole="button"
+                          disabled={quizMutation.isPending}
+                          onPress={() => void submitQuiz(lesson.id, lesson.quiz!.questions.length)}
+                          style={[styles.quizSubmit, { backgroundColor: colors.primary, opacity: quizMutation.isPending ? 0.55 : 1 }]}
+                        >
+                          <Text style={[styles.doneText, { color: colors.primaryForeground }]}>
+                            {quizMutation.isPending ? t('quizSubmitting') : t('quizSubmit')}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    ) : null}
                     {ready ? (
                       <Pressable
                         accessibilityRole="checkbox"
@@ -465,6 +579,18 @@ const styles = StyleSheet.create({
   lessonTitle: { fontSize: 14, fontWeight: '800', marginTop: 2 },
   lessonBody: { paddingHorizontal: 14, paddingBottom: 14 },
   lessonText: { fontSize: 13, lineHeight: 21 },
+  quizCard: { borderWidth: 1, borderRadius: 17, padding: 12, marginTop: 12, gap: 10 },
+  quizHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  quizTitle: { fontSize: 14, fontWeight: '900' },
+  quizLastAttempt: { borderRadius: 12, padding: 10, gap: 2 },
+  quizStatus: { fontSize: 11, fontWeight: '800' },
+  quizQuestion: { borderWidth: 1, borderRadius: 13, padding: 11 },
+  quizQuestionTitle: { fontSize: 11, fontWeight: '900' },
+  quizOptions: { gap: 7, marginTop: 9 },
+  quizOption: { minHeight: 44, borderWidth: 1, borderRadius: 11, paddingHorizontal: 10, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  quizRadio: { width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  quizOptionText: { flex: 1, fontSize: 12, lineHeight: 17 },
+  quizSubmit: { minHeight: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13 },
   doneButton: { marginTop: 12, minHeight: 42, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   doneText: { fontSize: 12, fontWeight: '800' },
 });

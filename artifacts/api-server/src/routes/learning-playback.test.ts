@@ -127,6 +127,29 @@ test("private course recordings require current membership and enrollment", asyn
     localizedContent: { en: "Lesson text.", ar: "نص الدرس.", ku: "دەقی وانە." },
     durationMinutes: 9,
     mediaUrl: recordingPath,
+    quiz: {
+      passingScorePercent: 70,
+      questions: [
+        {
+          prompt: { en: "Which pace is appropriate?", ar: "ما الوتيرة المناسبة؟", ku: "کام خێرایی گونجاوە؟" },
+          options: [
+            { en: "Ignore discomfort", ar: "تجاهل الانزعاج", ku: "ناڕەحەتی پشتگوێ بخە" },
+            { en: "Choose a comfortable pace", ar: "اختر وتيرة مريحة", ku: "خێراییەکی ئاسوودە هەڵبژێرە" },
+          ],
+          correctOptionIndex: 1,
+          explanation: { en: "Movement should match your comfort and ability.", ar: "ينبغي أن تناسب الحركة راحتك وقدرتك.", ku: "جووڵە دەبێت لەگەڵ ئاسوودەیی و توانای تۆ بگونجێت." },
+        },
+        {
+          prompt: { en: "When should you stop?", ar: "متى ينبغي أن تتوقف؟", ku: "کەی دەبێت بوەستیت؟" },
+          options: [
+            { en: "If you feel sharp pain", ar: "إذا شعرت بألم حاد", ku: "ئەگەر ئازاری تیژت هەست پێکرد" },
+            { en: "Never", ar: "أبداً", ku: "هەرگیز" },
+          ],
+          correctOptionIndex: 0,
+          explanation: null,
+        },
+      ],
+    },
   });
   await db.insert(courseMaterials).values({
     id: materialId,
@@ -169,6 +192,7 @@ test("private course recordings require current membership and enrollment", asyn
   const restrictedLesson = (restrictedDetails.data as { lessons: Array<{ localizedContent: unknown; hasRecording: boolean }> }).lessons[0];
   assert.equal(restrictedLesson.localizedContent, null);
   assert.equal(restrictedLesson.hasRecording, false);
+  assert.equal((restrictedDetails.data as { lessons: Array<{ quiz: unknown }> }).lessons[0]?.quiz, null);
   assert.equal((restrictedDetails.data as { materials: unknown[] }).materials.length, 0);
 
   await db.update(memberships).set({ rules: courseRules(true) }).where(eq(memberships.userId, userId));
@@ -188,6 +212,28 @@ test("private course recordings require current membership and enrollment", asyn
   assert.equal(lesson.mediaUrl, null);
   assert.equal(lesson.hasRecording, true);
   assert.equal(lesson.recordingKind, "video");
+  const memberQuiz = (details.data as {
+    lessons: Array<{ quiz: { questions: Array<Record<string, unknown>> } | null }>;
+  }).lessons[0]?.quiz;
+  assert.equal(memberQuiz?.questions.length, 2);
+  assert.equal(Object.hasOwn(memberQuiz?.questions[0] ?? {}, "correctOptionIndex"), false, "correct answers stay server-side before submission");
+  const quizPath = `/api/member/courses/${courseId}/lessons/${lessonId}/quiz-attempts`;
+  assert.equal((await call(quizPath, userId, "POST", { answers: [1] })).response.status, 400);
+  assert.equal((await call(quizPath, `${prefix}-other`, "POST", { answers: [1, 0] })).response.status, 403);
+  const passedAttempt = await call(quizPath, userId, "POST", { answers: [1, 0] });
+  assert.equal(passedAttempt.response.status, 201);
+  assert.equal((passedAttempt.data as { scorePercent: number }).scorePercent, 100);
+  assert.equal((passedAttempt.data as { passed: boolean }).passed, true);
+  assert.equal((passedAttempt.data as { questionResults: Array<{ correctOptionIndex: number }> }).questionResults[0]?.correctOptionIndex, 1);
+  const failedRetake = await call(quizPath, userId, "POST", { answers: [0, 1] });
+  assert.equal(failedRetake.response.status, 201);
+  assert.equal((failedRetake.data as { scorePercent: number }).scorePercent, 0);
+  const afterQuiz = await call(`/api/member/courses/${courseId}`, userId);
+  const latestAttempt = (afterQuiz.data as {
+    lessons: Array<{ latestQuizAttempt: { scorePercent: number; passed: boolean } | null }>;
+  }).lessons[0]?.latestQuizAttempt;
+  assert.equal(latestAttempt?.scorePercent, 0);
+  assert.equal(latestAttempt?.passed, false);
   assert.equal((details.data as { materials: Array<{ id: string; title: string }> }).materials[0]?.title, "Training plan");
 
   const firstViewResponse = await call(viewPath, userId, "POST");

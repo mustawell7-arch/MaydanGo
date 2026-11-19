@@ -1,14 +1,14 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, gt, gte, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, isNull, sql } from "drizzle-orm";
 import {
-  ACTIVE_RESERVATION_STATUSES, BOOKED_RESERVATION_STATUSES, db, courseEnrollments, courseMaterials, lessonAccess, learningCourses, learningLessons, lessonProgress,
+  ACTIVE_RESERVATION_STATUSES, BOOKED_RESERVATION_STATUSES, db, courseEnrollments, courseMaterials, courseQuizAttempts, lessonAccess, learningCourses, learningLessons, lessonProgress,
   memberSavedCourses,
   memberships, offerings, partners, reservations,
 } from "@workspace/db";
 import {
-  CreateMemberCoursePlaybackLinkResponse,
+  SubmitMemberCourseQuizAttemptBody, SubmitMemberCourseQuizAttemptResponse, CreateMemberCoursePlaybackLinkResponse,
   CreateMemberCourseMaterialDownloadLinkResponse,
   CreateLiveClassJoinResponse, EnrollMemberCourseResponse, GetMemberCourseResponse,
   GetMemberCoursesResponse, GetMemberLiveClassesResponse, UpdateCourseProgressBody,
@@ -23,6 +23,7 @@ import { createCoursePlaybackToken, verifyCoursePlaybackToken } from "../lib/cou
 import { createCourseMaterialToken, verifyCourseMaterialToken } from "../lib/course-material-token";
 import { courseMaterialObjectPath, isPrivateCourseMaterialPath } from "../lib/course-materials";
 import { isAccessSuspended } from "../lib/account-access-restrictions";
+import { gradeCourseQuiz } from "../lib/course-quizzes";
 
 const router = Router();
 export const learningObjectStorage = new ObjectStorageService();
@@ -121,12 +122,29 @@ async function getCourseDetail(userId: string, id: string) {
         .where(eq(lessonAccess.enrollmentId, enrolled.id)),
     ])
     : [[], []];
+  const quizAttempts = enrolled && lessons.length
+    ? await db.selectDistinctOn([courseQuizAttempts.lessonId], {
+      lessonId: courseQuizAttempts.lessonId,
+      scorePercent: courseQuizAttempts.scorePercent,
+      passed: courseQuizAttempts.passed,
+      submittedAt: courseQuizAttempts.submittedAt,
+    }).from(courseQuizAttempts)
+      .where(and(
+        eq(courseQuizAttempts.enrollmentId, enrolled.id),
+        inArray(courseQuizAttempts.lessonId, lessons.map(lesson => lesson.id)),
+      ))
+      .orderBy(courseQuizAttempts.lessonId, desc(courseQuizAttempts.submittedAt))
+    : [];
   const completed = new Set(completedRows.map(row => row.lessonId));
   const latestCompletedAt = completedRows.reduce<Date | null>(
     (latest, row) => !latest || row.completedAt > latest ? row.completedAt : latest,
     null,
   );
   const viewedByLesson = new Map(viewedRows.map(row => [row.lessonId, row]));
+  const latestQuizAttemptByLesson = new Map<string, (typeof quizAttempts)[number]>();
+  for (const attempt of quizAttempts) {
+    if (!latestQuizAttemptByLesson.has(attempt.lessonId)) latestQuizAttemptByLesson.set(attempt.lessonId, attempt);
+  }
   const materials = accessState === "ready" && enrolled
     ? await db.select({
       id: courseMaterials.id,
@@ -159,6 +177,16 @@ async function getCourseDetail(userId: string, id: string) {
       viewed: viewedByLesson.has(lesson.id),
       playbackPositionSeconds: accessState === "ready" ? viewedByLesson.get(lesson.id)?.playbackPositionSeconds ?? 0 : 0,
       durationSeconds: accessState === "ready" ? viewedByLesson.get(lesson.id)?.durationSeconds ?? null : null,
+      quiz: accessState === "ready" && lesson.quiz
+        ? {
+          passingScorePercent: lesson.quiz.passingScorePercent,
+          questions: lesson.quiz.questions.map(question => ({
+            prompt: question.prompt,
+            options: question.options,
+          })),
+        }
+        : null,
+      latestQuizAttempt: accessState === "ready" ? latestQuizAttemptByLesson.get(lesson.id) ?? null : null,
     })),
   };
 }
@@ -409,6 +437,60 @@ router.put("/courses/:id/progress", async (req, res): Promise<void> => {
     ));
   }
   res.json(UpdateCourseProgressResponse.parse(await getCourseDetail(userId, courseId)));
+});
+
+router.post("/courses/:id/lessons/:lessonId/quiz-attempts", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) { res.status(401).json({ message: "Sign in to submit a course quiz." }); return; }
+  if (await isAccessSuspended("member", userId)) {
+    throw new BookingError(403, "This account is temporarily restricted from course changes. Contact MaydanGo support.");
+  }
+  const parsed = SubmitMemberCourseQuizAttemptBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Choose a valid answer for every quiz question." });
+    return;
+  }
+  const courseId = String(req.params.id);
+  const lessonId = String(req.params.lessonId);
+  const [course] = await db.select({ id: learningCourses.id }).from(learningCourses).where(and(
+    eq(learningCourses.id, courseId), eq(learningCourses.published, true),
+  ));
+  if (!course) throw new BookingError(404, "This course is not available.");
+  if (!await currentDigitalCourseMembership(userId)) {
+    throw new BookingError(403, "An eligible membership with digital course access is required to submit a quiz.");
+  }
+  const [enrollment] = await db.select({ id: courseEnrollments.id }).from(courseEnrollments).where(and(
+    eq(courseEnrollments.userId, userId), eq(courseEnrollments.courseId, courseId),
+  ));
+  if (!enrollment) throw new BookingError(403, "Enroll in this course before submitting its quiz.");
+  const [lesson] = await db.select({
+    id: learningLessons.id,
+    quiz: learningLessons.quiz,
+  }).from(learningLessons).where(and(
+    eq(learningLessons.id, lessonId), eq(learningLessons.courseId, courseId),
+  ));
+  if (!lesson) throw new BookingError(404, "This lesson is not part of the course.");
+  if (!lesson.quiz) throw new BookingError(404, "This lesson has no quiz.");
+
+  let graded;
+  try {
+    graded = gradeCourseQuiz(lesson.quiz, parsed.data.answers);
+  } catch (error) {
+    res.status(400).json({ message: error instanceof Error ? error.message : "The quiz answers are invalid." });
+    return;
+  }
+  const [attempt] = await db.insert(courseQuizAttempts).values({
+    id: randomUUID(),
+    enrollmentId: enrollment.id,
+    lessonId: lesson.id,
+    answers: parsed.data.answers,
+    scorePercent: graded.scorePercent,
+    passed: graded.passed,
+  }).returning({ submittedAt: courseQuizAttempts.submittedAt });
+  res.status(201).json(SubmitMemberCourseQuizAttemptResponse.parse({
+    ...graded,
+    submittedAt: attempt.submittedAt,
+  }));
 });
 
 router.post("/courses/:id/materials/:materialId/download-link", async (req, res): Promise<void> => {

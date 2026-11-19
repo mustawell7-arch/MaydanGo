@@ -76,6 +76,8 @@ import type {
   CoursePlaybackProgressInput,
   CoursePlaybackProgressResponse,
   CourseProgressInput,
+  CourseQuizAttemptInput,
+  CourseQuizAttemptResult,
   CourseSummary,
   CreateLegalPolicyDraftBody,
   CreateMemberBookingBody,
@@ -16594,6 +16596,91 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getUpdateCourseProgressMutationOptions(options), queryClient);
+    }
+
+export const getSubmitMemberCourseQuizAttemptUrl = (id: string,
+    lessonId: string,) => {
+
+
+
+
+  return `/api/member/courses/${id}/lessons/${lessonId}/quiz-attempts`
+}
+
+export const submitMemberCourseQuizAttempt = async (id: string,
+    lessonId: string,
+    courseQuizAttemptInput: CourseQuizAttemptInput, options?: Parameters<typeof customFetch>[1]): Promise<CourseQuizAttemptResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CourseQuizAttemptResult>(getSubmitMemberCourseQuizAttemptUrl(id,lessonId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(courseQuizAttemptInput)
+  }
+);}
+
+
+
+
+
+export const getSubmitMemberCourseQuizAttemptMutationKey = () => ['submitMemberCourseQuizAttempt'] as const;
+
+export const getSubmitMemberCourseQuizAttemptMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitMemberCourseQuizAttempt>>, TError,SubmitMemberCourseQuizAttemptMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitMemberCourseQuizAttempt>>, TError,SubmitMemberCourseQuizAttemptMutationVariables, TContext> => {
+
+const mutationKey = getSubmitMemberCourseQuizAttemptMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitMemberCourseQuizAttempt>>, SubmitMemberCourseQuizAttemptMutationVariables> = (props) => {
+          const {id,lessonId,data} = props ?? {};
+
+          return  submitMemberCourseQuizAttempt(id,lessonId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitMemberCourseQuizAttemptMutationResult = NonNullable<Awaited<ReturnType<typeof submitMemberCourseQuizAttempt>>>
+    export type SubmitMemberCourseQuizAttemptMutationBody = BodyType<CourseQuizAttemptInput>
+    export type SubmitMemberCourseQuizAttemptMutationError = ErrorType<void>
+    export type SubmitMemberCourseQuizAttemptMutationVariables = {id: string;lessonId: string;data: BodyType<CourseQuizAttemptInput>}
+
+    export const useSubmitMemberCourseQuizAttempt = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitMemberCourseQuizAttempt>>, TError,SubmitMemberCourseQuizAttemptMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof submitMemberCourseQuizAttempt>>,
+        TError,
+        SubmitMemberCourseQuizAttemptMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSubmitMemberCourseQuizAttemptMutationOptions(options), queryClient);
     }
 
 export const getCreateMemberCoursePlaybackLinkUrl = (id: string,

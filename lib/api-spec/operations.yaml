@@ -2730,6 +2730,29 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CourseDetail" }
+  /member/courses/{id}/lessons/{lessonId}/quiz-attempts:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: lessonId
+        in: path
+        required: true
+        schema: { type: string, minLength: 1 }
+    post:
+      operationId: submitMemberCourseQuizAttempt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CourseQuizAttemptInput" }
+      responses:
+        "201":
+          description: Server-graded quiz attempt for an enrolled member
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CourseQuizAttemptResult" }
+        "400": { description: Invalid answer selection }
+        "403": { description: Eligible membership and enrollment are required }
+        "404": { description: Course lesson or quiz not found }
   /member/courses/{id}/lessons/{lessonId}/playback-link:
     parameters:
       - { $ref: "#/components/parameters/Id" }
@@ -4927,6 +4950,27 @@ components:
         localizedContent: { $ref: "#/components/schemas/LocalizedText" }
         durationMinutes: { type: integer, minimum: 1, maximum: 1000 }
         recordingUploadId: { type: ["string", "null"], format: uuid }
+        quiz:
+          type: array
+          maxItems: 25
+          items: { $ref: "#/components/schemas/CourseQuizQuestionDraft" }
+        quizPassingScorePercent: { type: integer, minimum: 1, maximum: 100 }
+    CourseQuizQuestionDraft:
+      type: object
+      additionalProperties: false
+      required: [prompt, options, correctOptionIndex, explanation]
+      properties:
+        prompt: { $ref: "#/components/schemas/LocalizedCourseDetail" }
+        options:
+          type: array
+          minItems: 2
+          maxItems: 6
+          items: { $ref: "#/components/schemas/LocalizedText" }
+        correctOptionIndex: { type: integer, minimum: 0, maximum: 5 }
+        explanation:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedCourseDetail"
+            - type: "null"
     InstructorCourseMaterialDraft:
       type: object
       additionalProperties: false
@@ -5525,7 +5569,7 @@ components:
         savedAt: { type: ["string", "null"], format: date-time }
     CourseLesson:
       type: object
-      required: [id, position, localizedTitle, localizedContent, durationMinutes, mediaUrl, hasRecording, recordingKind, completed, viewed, playbackPositionSeconds, durationSeconds]
+      required: [id, position, localizedTitle, localizedContent, durationMinutes, mediaUrl, hasRecording, recordingKind, completed, viewed, playbackPositionSeconds, durationSeconds, quiz, latestQuizAttempt]
       properties:
         id: { type: string }
         position: { type: integer }
@@ -5542,6 +5586,77 @@ components:
         viewed: { type: boolean }
         playbackPositionSeconds: { type: integer, minimum: 0 }
         durationSeconds: { type: ["integer", "null"], minimum: 1 }
+        quiz:
+          anyOf:
+            - $ref: "#/components/schemas/MemberCourseQuiz"
+            - type: "null"
+        latestQuizAttempt:
+          anyOf:
+            - $ref: "#/components/schemas/CourseQuizAttemptSummary"
+            - type: "null"
+    MemberCourseQuiz:
+      type: object
+      additionalProperties: false
+      required: [passingScorePercent, questions]
+      properties:
+        passingScorePercent: { type: integer, minimum: 1, maximum: 100 }
+        questions:
+          type: array
+          minItems: 1
+          maxItems: 25
+          items: { $ref: "#/components/schemas/MemberCourseQuizQuestion" }
+    MemberCourseQuizQuestion:
+      type: object
+      additionalProperties: false
+      required: [prompt, options]
+      properties:
+        prompt: { $ref: "#/components/schemas/LocalizedCourseDetail" }
+        options:
+          type: array
+          minItems: 2
+          maxItems: 6
+          items: { $ref: "#/components/schemas/LocalizedText" }
+    CourseQuizAttemptInput:
+      type: object
+      additionalProperties: false
+      required: [answers]
+      properties:
+        answers:
+          type: array
+          minItems: 1
+          maxItems: 25
+          items: { type: integer, minimum: 0, maximum: 5 }
+    CourseQuizQuestionResult:
+      type: object
+      additionalProperties: false
+      required: [selectedOptionIndex, correctOptionIndex, correct, explanation]
+      properties:
+        selectedOptionIndex: { type: integer, minimum: 0, maximum: 5 }
+        correctOptionIndex: { type: integer, minimum: 0, maximum: 5 }
+        correct: { type: boolean }
+        explanation:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedCourseDetail"
+            - type: "null"
+    CourseQuizAttemptSummary:
+      type: object
+      additionalProperties: false
+      required: [scorePercent, passed, submittedAt]
+      properties:
+        scorePercent: { type: integer, minimum: 0, maximum: 100 }
+        passed: { type: boolean }
+        submittedAt: { type: string, format: date-time }
+    CourseQuizAttemptResult:
+      allOf:
+        - $ref: "#/components/schemas/CourseQuizAttemptSummary"
+        - type: object
+          required: [questionResults]
+          properties:
+            questionResults:
+              type: array
+              minItems: 1
+              maxItems: 25
+              items: { $ref: "#/components/schemas/CourseQuizQuestionResult" }
     CoursePlaybackProgressInput:
       type: object
       additionalProperties: false

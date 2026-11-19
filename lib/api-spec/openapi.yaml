@@ -763,6 +763,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1enroll"
   /member/courses/{id}/progress:
     $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1progress"
+  /member/courses/{id}/lessons/{lessonId}/quiz-attempts:
+    $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1lessons~1{lessonId}~1quiz-attempts"
   /member/courses/{id}/lessons/{lessonId}/playback-link:
     $ref: "./operations.yaml#/paths/~1member~1courses~1{id}~1lessons~1{lessonId}~1playback-link"
   /member/courses/{id}/lessons/{lessonId}/view:

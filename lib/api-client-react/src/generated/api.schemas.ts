@@ -3781,6 +3781,21 @@ export interface InstructorProfileDraftPayload {
   photoUploadId: string | null;
 }
 
+export interface CourseQuizQuestionDraft {
+  prompt: LocalizedCourseDetail47d80cf;
+  /**
+     * @minItems 2
+     * @maxItems 6
+     */
+  options: LocalizedText[];
+  /**
+     * @minimum 0
+     * @maximum 5
+     */
+  correctOptionIndex: number;
+  explanation: LocalizedCourseDetail47d80cf | null;
+}
+
 export interface InstructorCourseLessonDraft {
   localizedTitle: LocalizedText;
   localizedContent: LocalizedText;
@@ -3791,6 +3806,13 @@ export interface InstructorCourseLessonDraft {
   durationMinutes: number;
   /** @nullable */
   recordingUploadId: string | null;
+  /** @maxItems 25 */
+  quiz?: CourseQuizQuestionDraft[];
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  quizPassingScorePercent?: number;
 }
 
 export interface InstructorCourseMaterialDraft {
@@ -4665,6 +4687,38 @@ export const CourseLessonRecordingKind = {
   video: 'video',
 } as const;
 
+export interface MemberCourseQuizQuestion {
+  prompt: LocalizedCourseDetail47d80cf;
+  /**
+     * @minItems 2
+     * @maxItems 6
+     */
+  options: LocalizedText[];
+}
+
+export interface MemberCourseQuiz {
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  passingScorePercent: number;
+  /**
+     * @minItems 1
+     * @maxItems 25
+     */
+  questions: MemberCourseQuizQuestion[];
+}
+
+export interface CourseQuizAttemptSummary {
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  scorePercent: number;
+  passed: boolean;
+  submittedAt: string;
+}
+
 export interface CourseLesson {
   id: string;
   position: number;
@@ -4685,7 +4739,42 @@ export interface CourseLesson {
      * @nullable
      */
   durationSeconds: number | null;
+  quiz: MemberCourseQuiz | null;
+  latestQuizAttempt: CourseQuizAttemptSummary | null;
 }
+
+export interface CourseQuizAttemptInput {
+  /**
+     * @minItems 1
+     * @maxItems 25
+     * @items.minimum 0
+     * @items.maximum 5
+     */
+  answers: number[];
+}
+
+export interface CourseQuizQuestionResult {
+  /**
+     * @minimum 0
+     * @maximum 5
+     */
+  selectedOptionIndex: number;
+  /**
+     * @minimum 0
+     * @maximum 5
+     */
+  correctOptionIndex: number;
+  correct: boolean;
+  explanation: LocalizedCourseDetail47d80cf | null;
+}
+
+export type CourseQuizAttemptResult = CourseQuizAttemptSummary & {
+  /**
+     * @minItems 1
+     * @maxItems 25
+     */
+  questionResults: CourseQuizQuestionResult[];
+};
 
 export interface CoursePlaybackProgressInput {
   /**

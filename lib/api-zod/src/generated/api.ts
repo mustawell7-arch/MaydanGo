@@ -6835,6 +6835,28 @@ export const addLearningLessonResponseLocalizedContentOneKuMax = 240;
 export const addLearningLessonResponsePlaybackPositionSecondsMin = 0;
 
 
+export const addLearningLessonResponseQuizOnePassingScorePercentMax = 100;
+
+export const addLearningLessonResponseQuizOneQuestionsItemPromptEnMax = 2000;
+
+export const addLearningLessonResponseQuizOneQuestionsItemPromptArMax = 2000;
+
+export const addLearningLessonResponseQuizOneQuestionsItemPromptKuMax = 2000;
+
+export const addLearningLessonResponseQuizOneQuestionsItemOptionsItemEnMax = 240;
+
+export const addLearningLessonResponseQuizOneQuestionsItemOptionsItemArMax = 240;
+
+export const addLearningLessonResponseQuizOneQuestionsItemOptionsItemKuMax = 240;
+
+export const addLearningLessonResponseQuizOneQuestionsItemOptionsMin = 2;
+export const addLearningLessonResponseQuizOneQuestionsItemOptionsMax = 6;
+
+export const addLearningLessonResponseQuizOneQuestionsMax = 25;
+
+export const addLearningLessonResponseLatestQuizAttemptOneScorePercentMin = 0;
+export const addLearningLessonResponseLatestQuizAttemptOneScorePercentMax = 100;
+
 
 
 export const AddLearningLessonResponse = zod.object({
@@ -6857,7 +6879,27 @@ export const AddLearningLessonResponse = zod.object({
   "completed": zod.boolean(),
   "viewed": zod.boolean(),
   "playbackPositionSeconds": zod.int().min(addLearningLessonResponsePlaybackPositionSecondsMin),
-  "durationSeconds": zod.int().min(1).nullable()
+  "durationSeconds": zod.int().min(1).nullable(),
+  "quiz": zod.union([zod.object({
+  "passingScorePercent": zod.int().min(1).max(addLearningLessonResponseQuizOnePassingScorePercentMax),
+  "questions": zod.array(zod.object({
+  "prompt": zod.object({
+  "en": zod.string().min(1).max(addLearningLessonResponseQuizOneQuestionsItemPromptEnMax),
+  "ar": zod.string().min(1).max(addLearningLessonResponseQuizOneQuestionsItemPromptArMax),
+  "ku": zod.string().min(1).max(addLearningLessonResponseQuizOneQuestionsItemPromptKuMax)
+}),
+  "options": zod.array(zod.object({
+  "en": zod.string().min(1).max(addLearningLessonResponseQuizOneQuestionsItemOptionsItemEnMax),
+  "ar": zod.string().min(1).max(addLearningLessonResponseQuizOneQuestionsItemOptionsItemArMax),
+  "ku": zod.string().min(1).max(addLearningLessonResponseQuizOneQuestionsItemOptionsItemKuMax)
+})).min(addLearningLessonResponseQuizOneQuestionsItemOptionsMin).max(addLearningLessonResponseQuizOneQuestionsItemOptionsMax)
+})).min(1).max(addLearningLessonResponseQuizOneQuestionsMax)
+}),zod.null()]),
+  "latestQuizAttempt": zod.union([zod.object({
+  "scorePercent": zod.int().min(addLearningLessonResponseLatestQuizAttemptOneScorePercentMin).max(addLearningLessonResponseLatestQuizAttemptOneScorePercentMax),
+  "passed": zod.boolean(),
+  "submittedAt": zod.coerce.date()
+}),zod.null()])
 })
 
 
@@ -7091,6 +7133,34 @@ export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLess
 
 export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemDurationMinutesMax = 1000;
 
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemPromptEnMax = 2000;
+
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemPromptArMax = 2000;
+
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemPromptKuMax = 2000;
+
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsItemEnMax = 240;
+
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsItemArMax = 240;
+
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsItemKuMax = 240;
+
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsMin = 2;
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsMax = 6;
+
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemCorrectOptionIndexMin = 0;
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemCorrectOptionIndexMax = 5;
+
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemExplanationOneEnMax = 2000;
+
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemExplanationOneArMax = 2000;
+
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemExplanationOneKuMax = 2000;
+
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizMax = 25;
+
+export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizPassingScorePercentMax = 100;
+
 export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsMax = 200;
 
 export const getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoMaterialsItemTitleMax = 160;
@@ -7184,7 +7254,26 @@ export const GetInstructorContentDraftsForReviewResponse = zod.object({
   "ku": zod.string().min(1).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemLocalizedContentKuMax)
 }),
   "durationMinutes": zod.int().min(1).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemDurationMinutesMax),
-  "recordingUploadId": zod.uuid().nullable()
+  "recordingUploadId": zod.uuid().nullable(),
+  "quiz": zod.array(zod.object({
+  "prompt": zod.object({
+  "en": zod.string().min(1).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemPromptEnMax),
+  "ar": zod.string().min(1).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemPromptArMax),
+  "ku": zod.string().min(1).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemPromptKuMax)
+}),
+  "options": zod.array(zod.object({
+  "en": zod.string().min(1).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsItemEnMax),
+  "ar": zod.string().min(1).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsItemArMax),
+  "ku": zod.string().min(1).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsItemKuMax)
+})).min(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsMin).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsMax),
+  "correctOptionIndex": zod.int().min(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemCorrectOptionIndexMin).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemCorrectOptionIndexMax),
+  "explanation": zod.union([zod.object({
+  "en": zod.string().min(1).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemExplanationOneEnMax),
+  "ar": zod.string().min(1).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemExplanationOneArMax),
+  "ku": zod.string().min(1).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizItemExplanationOneKuMax)
+}),zod.null()])
+})).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizMax).optional(),
+  "quizPassingScorePercent": zod.int().min(1).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsItemQuizPassingScorePercentMax).optional()
 })).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoLessonsMax),
   "materials": zod.array(zod.object({
   "title": zod.string().min(1).max(getInstructorContentDraftsForReviewResponseDraftsItemPayloadTwoMaterialsItemTitleMax),
@@ -7419,6 +7508,34 @@ export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemLo
 
 export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemDurationMinutesMax = 1000;
 
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemPromptEnMax = 2000;
+
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemPromptArMax = 2000;
+
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemPromptKuMax = 2000;
+
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsItemEnMax = 240;
+
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsItemArMax = 240;
+
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsItemKuMax = 240;
+
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsMin = 2;
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsMax = 6;
+
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemCorrectOptionIndexMin = 0;
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemCorrectOptionIndexMax = 5;
+
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemExplanationOneEnMax = 2000;
+
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemExplanationOneArMax = 2000;
+
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemExplanationOneKuMax = 2000;
+
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizMax = 25;
+
+export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizPassingScorePercentMax = 100;
+
 export const getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsMax = 200;
 
 export const getInstructorContentDraftsResponseDraftsItemPayloadTwoMaterialsItemTitleMax = 160;
@@ -7523,7 +7640,26 @@ export const GetInstructorContentDraftsResponse = zod.object({
   "ku": zod.string().min(1).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemLocalizedContentKuMax)
 }),
   "durationMinutes": zod.int().min(1).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemDurationMinutesMax),
-  "recordingUploadId": zod.uuid().nullable()
+  "recordingUploadId": zod.uuid().nullable(),
+  "quiz": zod.array(zod.object({
+  "prompt": zod.object({
+  "en": zod.string().min(1).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemPromptEnMax),
+  "ar": zod.string().min(1).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemPromptArMax),
+  "ku": zod.string().min(1).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemPromptKuMax)
+}),
+  "options": zod.array(zod.object({
+  "en": zod.string().min(1).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsItemEnMax),
+  "ar": zod.string().min(1).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsItemArMax),
+  "ku": zod.string().min(1).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsItemKuMax)
+})).min(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsMin).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemOptionsMax),
+  "correctOptionIndex": zod.int().min(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemCorrectOptionIndexMin).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemCorrectOptionIndexMax),
+  "explanation": zod.union([zod.object({
+  "en": zod.string().min(1).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemExplanationOneEnMax),
+  "ar": zod.string().min(1).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemExplanationOneArMax),
+  "ku": zod.string().min(1).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizItemExplanationOneKuMax)
+}),zod.null()])
+})).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizMax).optional(),
+  "quizPassingScorePercent": zod.int().min(1).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsItemQuizPassingScorePercentMax).optional()
 })).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoLessonsMax),
   "materials": zod.array(zod.object({
   "title": zod.string().min(1).max(getInstructorContentDraftsResponseDraftsItemPayloadTwoMaterialsItemTitleMax),
@@ -7646,6 +7782,34 @@ export const createInstructorContentDraftBodyPayloadTwoLessonsItemLocalizedConte
 
 export const createInstructorContentDraftBodyPayloadTwoLessonsItemDurationMinutesMax = 1000;
 
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemPromptEnMax = 2000;
+
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemPromptArMax = 2000;
+
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemPromptKuMax = 2000;
+
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsItemEnMax = 240;
+
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsItemArMax = 240;
+
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsItemKuMax = 240;
+
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsMin = 2;
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsMax = 6;
+
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemCorrectOptionIndexMin = 0;
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemCorrectOptionIndexMax = 5;
+
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemExplanationOneEnMax = 2000;
+
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemExplanationOneArMax = 2000;
+
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemExplanationOneKuMax = 2000;
+
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizMax = 25;
+
+export const createInstructorContentDraftBodyPayloadTwoLessonsItemQuizPassingScorePercentMax = 100;
+
 export const createInstructorContentDraftBodyPayloadTwoLessonsMax = 200;
 
 export const createInstructorContentDraftBodyPayloadTwoMaterialsItemTitleMax = 160;
@@ -7747,7 +7911,26 @@ export const CreateInstructorContentDraftBody = zod.object({
   "ku": zod.string().min(1).max(createInstructorContentDraftBodyPayloadTwoLessonsItemLocalizedContentKuMax)
 }),
   "durationMinutes": zod.int().min(1).max(createInstructorContentDraftBodyPayloadTwoLessonsItemDurationMinutesMax),
-  "recordingUploadId": zod.uuid().nullable()
+  "recordingUploadId": zod.uuid().nullable(),
+  "quiz": zod.array(zod.object({
+  "prompt": zod.object({
+  "en": zod.string().min(1).max(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemPromptEnMax),
+  "ar": zod.string().min(1).max(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemPromptArMax),
+  "ku": zod.string().min(1).max(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemPromptKuMax)
+}),
+  "options": zod.array(zod.object({
+  "en": zod.string().min(1).max(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsItemEnMax),
+  "ar": zod.string().min(1).max(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsItemArMax),
+  "ku": zod.string().min(1).max(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsItemKuMax)
+})).min(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsMin).max(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsMax),
+  "correctOptionIndex": zod.int().min(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemCorrectOptionIndexMin).max(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemCorrectOptionIndexMax),
+  "explanation": zod.union([zod.object({
+  "en": zod.string().min(1).max(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemExplanationOneEnMax),
+  "ar": zod.string().min(1).max(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemExplanationOneArMax),
+  "ku": zod.string().min(1).max(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemExplanationOneKuMax)
+}),zod.null()])
+})).max(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizMax).optional(),
+  "quizPassingScorePercent": zod.int().min(1).max(createInstructorContentDraftBodyPayloadTwoLessonsItemQuizPassingScorePercentMax).optional()
 })).max(createInstructorContentDraftBodyPayloadTwoLessonsMax),
   "materials": zod.array(zod.object({
   "title": zod.string().min(1).max(createInstructorContentDraftBodyPayloadTwoMaterialsItemTitleMax),
@@ -7861,6 +8044,34 @@ export const createInstructorContentDraftResponsePayloadTwoLessonsItemLocalizedC
 
 export const createInstructorContentDraftResponsePayloadTwoLessonsItemDurationMinutesMax = 1000;
 
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptEnMax = 2000;
+
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptArMax = 2000;
+
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptKuMax = 2000;
+
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemEnMax = 240;
+
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemArMax = 240;
+
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemKuMax = 240;
+
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsMin = 2;
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsMax = 6;
+
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemCorrectOptionIndexMin = 0;
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemCorrectOptionIndexMax = 5;
+
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneEnMax = 2000;
+
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneArMax = 2000;
+
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneKuMax = 2000;
+
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizMax = 25;
+
+export const createInstructorContentDraftResponsePayloadTwoLessonsItemQuizPassingScorePercentMax = 100;
+
 export const createInstructorContentDraftResponsePayloadTwoLessonsMax = 200;
 
 export const createInstructorContentDraftResponsePayloadTwoMaterialsItemTitleMax = 160;
@@ -7964,7 +8175,26 @@ export const CreateInstructorContentDraftResponse = zod.object({
   "ku": zod.string().min(1).max(createInstructorContentDraftResponsePayloadTwoLessonsItemLocalizedContentKuMax)
 }),
   "durationMinutes": zod.int().min(1).max(createInstructorContentDraftResponsePayloadTwoLessonsItemDurationMinutesMax),
-  "recordingUploadId": zod.uuid().nullable()
+  "recordingUploadId": zod.uuid().nullable(),
+  "quiz": zod.array(zod.object({
+  "prompt": zod.object({
+  "en": zod.string().min(1).max(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptEnMax),
+  "ar": zod.string().min(1).max(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptArMax),
+  "ku": zod.string().min(1).max(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptKuMax)
+}),
+  "options": zod.array(zod.object({
+  "en": zod.string().min(1).max(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemEnMax),
+  "ar": zod.string().min(1).max(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemArMax),
+  "ku": zod.string().min(1).max(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemKuMax)
+})).min(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsMin).max(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsMax),
+  "correctOptionIndex": zod.int().min(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemCorrectOptionIndexMin).max(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemCorrectOptionIndexMax),
+  "explanation": zod.union([zod.object({
+  "en": zod.string().min(1).max(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneEnMax),
+  "ar": zod.string().min(1).max(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneArMax),
+  "ku": zod.string().min(1).max(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneKuMax)
+}),zod.null()])
+})).max(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizMax).optional(),
+  "quizPassingScorePercent": zod.int().min(1).max(createInstructorContentDraftResponsePayloadTwoLessonsItemQuizPassingScorePercentMax).optional()
 })).max(createInstructorContentDraftResponsePayloadTwoLessonsMax),
   "materials": zod.array(zod.object({
   "title": zod.string().min(1).max(createInstructorContentDraftResponsePayloadTwoMaterialsItemTitleMax),
@@ -8090,6 +8320,34 @@ export const updateInstructorContentDraftBodyPayloadTwoLessonsItemLocalizedConte
 
 export const updateInstructorContentDraftBodyPayloadTwoLessonsItemDurationMinutesMax = 1000;
 
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemPromptEnMax = 2000;
+
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemPromptArMax = 2000;
+
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemPromptKuMax = 2000;
+
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsItemEnMax = 240;
+
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsItemArMax = 240;
+
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsItemKuMax = 240;
+
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsMin = 2;
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsMax = 6;
+
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemCorrectOptionIndexMin = 0;
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemCorrectOptionIndexMax = 5;
+
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemExplanationOneEnMax = 2000;
+
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemExplanationOneArMax = 2000;
+
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemExplanationOneKuMax = 2000;
+
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizMax = 25;
+
+export const updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizPassingScorePercentMax = 100;
+
 export const updateInstructorContentDraftBodyPayloadTwoLessonsMax = 200;
 
 export const updateInstructorContentDraftBodyPayloadTwoMaterialsItemTitleMax = 160;
@@ -8191,7 +8449,26 @@ export const UpdateInstructorContentDraftBody = zod.object({
   "ku": zod.string().min(1).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemLocalizedContentKuMax)
 }),
   "durationMinutes": zod.int().min(1).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemDurationMinutesMax),
-  "recordingUploadId": zod.uuid().nullable()
+  "recordingUploadId": zod.uuid().nullable(),
+  "quiz": zod.array(zod.object({
+  "prompt": zod.object({
+  "en": zod.string().min(1).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemPromptEnMax),
+  "ar": zod.string().min(1).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemPromptArMax),
+  "ku": zod.string().min(1).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemPromptKuMax)
+}),
+  "options": zod.array(zod.object({
+  "en": zod.string().min(1).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsItemEnMax),
+  "ar": zod.string().min(1).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsItemArMax),
+  "ku": zod.string().min(1).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsItemKuMax)
+})).min(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsMin).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemOptionsMax),
+  "correctOptionIndex": zod.int().min(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemCorrectOptionIndexMin).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemCorrectOptionIndexMax),
+  "explanation": zod.union([zod.object({
+  "en": zod.string().min(1).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemExplanationOneEnMax),
+  "ar": zod.string().min(1).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemExplanationOneArMax),
+  "ku": zod.string().min(1).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizItemExplanationOneKuMax)
+}),zod.null()])
+})).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizMax).optional(),
+  "quizPassingScorePercent": zod.int().min(1).max(updateInstructorContentDraftBodyPayloadTwoLessonsItemQuizPassingScorePercentMax).optional()
 })).max(updateInstructorContentDraftBodyPayloadTwoLessonsMax),
   "materials": zod.array(zod.object({
   "title": zod.string().min(1).max(updateInstructorContentDraftBodyPayloadTwoMaterialsItemTitleMax),
@@ -8305,6 +8582,34 @@ export const updateInstructorContentDraftResponsePayloadTwoLessonsItemLocalizedC
 
 export const updateInstructorContentDraftResponsePayloadTwoLessonsItemDurationMinutesMax = 1000;
 
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptEnMax = 2000;
+
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptArMax = 2000;
+
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptKuMax = 2000;
+
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemEnMax = 240;
+
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemArMax = 240;
+
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemKuMax = 240;
+
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsMin = 2;
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsMax = 6;
+
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemCorrectOptionIndexMin = 0;
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemCorrectOptionIndexMax = 5;
+
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneEnMax = 2000;
+
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneArMax = 2000;
+
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneKuMax = 2000;
+
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizMax = 25;
+
+export const updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizPassingScorePercentMax = 100;
+
 export const updateInstructorContentDraftResponsePayloadTwoLessonsMax = 200;
 
 export const updateInstructorContentDraftResponsePayloadTwoMaterialsItemTitleMax = 160;
@@ -8408,7 +8713,26 @@ export const UpdateInstructorContentDraftResponse = zod.object({
   "ku": zod.string().min(1).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemLocalizedContentKuMax)
 }),
   "durationMinutes": zod.int().min(1).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemDurationMinutesMax),
-  "recordingUploadId": zod.uuid().nullable()
+  "recordingUploadId": zod.uuid().nullable(),
+  "quiz": zod.array(zod.object({
+  "prompt": zod.object({
+  "en": zod.string().min(1).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptEnMax),
+  "ar": zod.string().min(1).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptArMax),
+  "ku": zod.string().min(1).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptKuMax)
+}),
+  "options": zod.array(zod.object({
+  "en": zod.string().min(1).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemEnMax),
+  "ar": zod.string().min(1).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemArMax),
+  "ku": zod.string().min(1).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemKuMax)
+})).min(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsMin).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsMax),
+  "correctOptionIndex": zod.int().min(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemCorrectOptionIndexMin).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemCorrectOptionIndexMax),
+  "explanation": zod.union([zod.object({
+  "en": zod.string().min(1).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneEnMax),
+  "ar": zod.string().min(1).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneArMax),
+  "ku": zod.string().min(1).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneKuMax)
+}),zod.null()])
+})).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizMax).optional(),
+  "quizPassingScorePercent": zod.int().min(1).max(updateInstructorContentDraftResponsePayloadTwoLessonsItemQuizPassingScorePercentMax).optional()
 })).max(updateInstructorContentDraftResponsePayloadTwoLessonsMax),
   "materials": zod.array(zod.object({
   "title": zod.string().min(1).max(updateInstructorContentDraftResponsePayloadTwoMaterialsItemTitleMax),
@@ -8534,6 +8858,34 @@ export const submitInstructorContentDraftResponsePayloadTwoLessonsItemLocalizedC
 
 export const submitInstructorContentDraftResponsePayloadTwoLessonsItemDurationMinutesMax = 1000;
 
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptEnMax = 2000;
+
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptArMax = 2000;
+
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptKuMax = 2000;
+
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemEnMax = 240;
+
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemArMax = 240;
+
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemKuMax = 240;
+
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsMin = 2;
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsMax = 6;
+
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemCorrectOptionIndexMin = 0;
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemCorrectOptionIndexMax = 5;
+
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneEnMax = 2000;
+
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneArMax = 2000;
+
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneKuMax = 2000;
+
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizMax = 25;
+
+export const submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizPassingScorePercentMax = 100;
+
 export const submitInstructorContentDraftResponsePayloadTwoLessonsMax = 200;
 
 export const submitInstructorContentDraftResponsePayloadTwoMaterialsItemTitleMax = 160;
@@ -8637,7 +8989,26 @@ export const SubmitInstructorContentDraftResponse = zod.object({
   "ku": zod.string().min(1).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemLocalizedContentKuMax)
 }),
   "durationMinutes": zod.int().min(1).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemDurationMinutesMax),
-  "recordingUploadId": zod.uuid().nullable()
+  "recordingUploadId": zod.uuid().nullable(),
+  "quiz": zod.array(zod.object({
+  "prompt": zod.object({
+  "en": zod.string().min(1).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptEnMax),
+  "ar": zod.string().min(1).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptArMax),
+  "ku": zod.string().min(1).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemPromptKuMax)
+}),
+  "options": zod.array(zod.object({
+  "en": zod.string().min(1).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemEnMax),
+  "ar": zod.string().min(1).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemArMax),
+  "ku": zod.string().min(1).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsItemKuMax)
+})).min(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsMin).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemOptionsMax),
+  "correctOptionIndex": zod.int().min(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemCorrectOptionIndexMin).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemCorrectOptionIndexMax),
+  "explanation": zod.union([zod.object({
+  "en": zod.string().min(1).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneEnMax),
+  "ar": zod.string().min(1).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneArMax),
+  "ku": zod.string().min(1).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizItemExplanationOneKuMax)
+}),zod.null()])
+})).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizMax).optional(),
+  "quizPassingScorePercent": zod.int().min(1).max(submitInstructorContentDraftResponsePayloadTwoLessonsItemQuizPassingScorePercentMax).optional()
 })).max(submitInstructorContentDraftResponsePayloadTwoLessonsMax),
   "materials": zod.array(zod.object({
   "title": zod.string().min(1).max(submitInstructorContentDraftResponsePayloadTwoMaterialsItemTitleMax),
@@ -12198,6 +12569,28 @@ export const getMemberCourseResponseTwoLessonsItemLocalizedContentOneKuMax = 240
 export const getMemberCourseResponseTwoLessonsItemPlaybackPositionSecondsMin = 0;
 
 
+export const getMemberCourseResponseTwoLessonsItemQuizOnePassingScorePercentMax = 100;
+
+export const getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemPromptEnMax = 2000;
+
+export const getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemPromptArMax = 2000;
+
+export const getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemPromptKuMax = 2000;
+
+export const getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemEnMax = 240;
+
+export const getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemArMax = 240;
+
+export const getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemKuMax = 240;
+
+export const getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsMin = 2;
+export const getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsMax = 6;
+
+export const getMemberCourseResponseTwoLessonsItemQuizOneQuestionsMax = 25;
+
+export const getMemberCourseResponseTwoLessonsItemLatestQuizAttemptOneScorePercentMin = 0;
+export const getMemberCourseResponseTwoLessonsItemLatestQuizAttemptOneScorePercentMax = 100;
+
 export const getMemberCourseResponseTwoMaterialsItemTitleMax = 160;
 
 export const getMemberCourseResponseTwoMaterialsItemFileNameMax = 180;
@@ -12274,7 +12667,27 @@ export const GetMemberCourseResponse = zod.object({
   "completed": zod.boolean(),
   "viewed": zod.boolean(),
   "playbackPositionSeconds": zod.int().min(getMemberCourseResponseTwoLessonsItemPlaybackPositionSecondsMin),
-  "durationSeconds": zod.int().min(1).nullable()
+  "durationSeconds": zod.int().min(1).nullable(),
+  "quiz": zod.union([zod.object({
+  "passingScorePercent": zod.int().min(1).max(getMemberCourseResponseTwoLessonsItemQuizOnePassingScorePercentMax),
+  "questions": zod.array(zod.object({
+  "prompt": zod.object({
+  "en": zod.string().min(1).max(getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemPromptEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemPromptArMax),
+  "ku": zod.string().min(1).max(getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemPromptKuMax)
+}),
+  "options": zod.array(zod.object({
+  "en": zod.string().min(1).max(getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemArMax),
+  "ku": zod.string().min(1).max(getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemKuMax)
+})).min(getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsMin).max(getMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsMax)
+})).min(1).max(getMemberCourseResponseTwoLessonsItemQuizOneQuestionsMax)
+}),zod.null()]),
+  "latestQuizAttempt": zod.union([zod.object({
+  "scorePercent": zod.int().min(getMemberCourseResponseTwoLessonsItemLatestQuizAttemptOneScorePercentMin).max(getMemberCourseResponseTwoLessonsItemLatestQuizAttemptOneScorePercentMax),
+  "passed": zod.boolean(),
+  "submittedAt": zod.coerce.date()
+}),zod.null()])
 })),
   "materials": zod.array(zod.object({
   "id": zod.uuid(),
@@ -12368,6 +12781,28 @@ export const enrollMemberCourseResponseTwoLessonsItemLocalizedContentOneKuMax = 
 export const enrollMemberCourseResponseTwoLessonsItemPlaybackPositionSecondsMin = 0;
 
 
+export const enrollMemberCourseResponseTwoLessonsItemQuizOnePassingScorePercentMax = 100;
+
+export const enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemPromptEnMax = 2000;
+
+export const enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemPromptArMax = 2000;
+
+export const enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemPromptKuMax = 2000;
+
+export const enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemEnMax = 240;
+
+export const enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemArMax = 240;
+
+export const enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemKuMax = 240;
+
+export const enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsMin = 2;
+export const enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsMax = 6;
+
+export const enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsMax = 25;
+
+export const enrollMemberCourseResponseTwoLessonsItemLatestQuizAttemptOneScorePercentMin = 0;
+export const enrollMemberCourseResponseTwoLessonsItemLatestQuizAttemptOneScorePercentMax = 100;
+
 export const enrollMemberCourseResponseTwoMaterialsItemTitleMax = 160;
 
 export const enrollMemberCourseResponseTwoMaterialsItemFileNameMax = 180;
@@ -12444,7 +12879,27 @@ export const EnrollMemberCourseResponse = zod.object({
   "completed": zod.boolean(),
   "viewed": zod.boolean(),
   "playbackPositionSeconds": zod.int().min(enrollMemberCourseResponseTwoLessonsItemPlaybackPositionSecondsMin),
-  "durationSeconds": zod.int().min(1).nullable()
+  "durationSeconds": zod.int().min(1).nullable(),
+  "quiz": zod.union([zod.object({
+  "passingScorePercent": zod.int().min(1).max(enrollMemberCourseResponseTwoLessonsItemQuizOnePassingScorePercentMax),
+  "questions": zod.array(zod.object({
+  "prompt": zod.object({
+  "en": zod.string().min(1).max(enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemPromptEnMax),
+  "ar": zod.string().min(1).max(enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemPromptArMax),
+  "ku": zod.string().min(1).max(enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemPromptKuMax)
+}),
+  "options": zod.array(zod.object({
+  "en": zod.string().min(1).max(enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemEnMax),
+  "ar": zod.string().min(1).max(enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemArMax),
+  "ku": zod.string().min(1).max(enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemKuMax)
+})).min(enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsMin).max(enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsItemOptionsMax)
+})).min(1).max(enrollMemberCourseResponseTwoLessonsItemQuizOneQuestionsMax)
+}),zod.null()]),
+  "latestQuizAttempt": zod.union([zod.object({
+  "scorePercent": zod.int().min(enrollMemberCourseResponseTwoLessonsItemLatestQuizAttemptOneScorePercentMin).max(enrollMemberCourseResponseTwoLessonsItemLatestQuizAttemptOneScorePercentMax),
+  "passed": zod.boolean(),
+  "submittedAt": zod.coerce.date()
+}),zod.null()])
 })),
   "materials": zod.array(zod.object({
   "id": zod.uuid(),
@@ -12531,6 +12986,28 @@ export const updateCourseProgressResponseTwoLessonsItemLocalizedContentOneKuMax 
 export const updateCourseProgressResponseTwoLessonsItemPlaybackPositionSecondsMin = 0;
 
 
+export const updateCourseProgressResponseTwoLessonsItemQuizOnePassingScorePercentMax = 100;
+
+export const updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemPromptEnMax = 2000;
+
+export const updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemPromptArMax = 2000;
+
+export const updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemPromptKuMax = 2000;
+
+export const updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemEnMax = 240;
+
+export const updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemArMax = 240;
+
+export const updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemKuMax = 240;
+
+export const updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemOptionsMin = 2;
+export const updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemOptionsMax = 6;
+
+export const updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsMax = 25;
+
+export const updateCourseProgressResponseTwoLessonsItemLatestQuizAttemptOneScorePercentMin = 0;
+export const updateCourseProgressResponseTwoLessonsItemLatestQuizAttemptOneScorePercentMax = 100;
+
 export const updateCourseProgressResponseTwoMaterialsItemTitleMax = 160;
 
 export const updateCourseProgressResponseTwoMaterialsItemFileNameMax = 180;
@@ -12607,7 +13084,27 @@ export const UpdateCourseProgressResponse = zod.object({
   "completed": zod.boolean(),
   "viewed": zod.boolean(),
   "playbackPositionSeconds": zod.int().min(updateCourseProgressResponseTwoLessonsItemPlaybackPositionSecondsMin),
-  "durationSeconds": zod.int().min(1).nullable()
+  "durationSeconds": zod.int().min(1).nullable(),
+  "quiz": zod.union([zod.object({
+  "passingScorePercent": zod.int().min(1).max(updateCourseProgressResponseTwoLessonsItemQuizOnePassingScorePercentMax),
+  "questions": zod.array(zod.object({
+  "prompt": zod.object({
+  "en": zod.string().min(1).max(updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemPromptEnMax),
+  "ar": zod.string().min(1).max(updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemPromptArMax),
+  "ku": zod.string().min(1).max(updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemPromptKuMax)
+}),
+  "options": zod.array(zod.object({
+  "en": zod.string().min(1).max(updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemEnMax),
+  "ar": zod.string().min(1).max(updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemArMax),
+  "ku": zod.string().min(1).max(updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemOptionsItemKuMax)
+})).min(updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemOptionsMin).max(updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsItemOptionsMax)
+})).min(1).max(updateCourseProgressResponseTwoLessonsItemQuizOneQuestionsMax)
+}),zod.null()]),
+  "latestQuizAttempt": zod.union([zod.object({
+  "scorePercent": zod.int().min(updateCourseProgressResponseTwoLessonsItemLatestQuizAttemptOneScorePercentMin).max(updateCourseProgressResponseTwoLessonsItemLatestQuizAttemptOneScorePercentMax),
+  "passed": zod.boolean(),
+  "submittedAt": zod.coerce.date()
+}),zod.null()])
 })),
   "materials": zod.array(zod.object({
   "id": zod.uuid(),
@@ -12617,6 +13114,62 @@ export const UpdateCourseProgressResponse = zod.object({
   "approvedAt": zod.coerce.date()
 })),
   "lastAccessAt": zod.coerce.date().nullable()
+}))
+
+
+
+
+
+export const SubmitMemberCourseQuizAttemptParams = zod.object({
+  "id": zod.coerce.string(),
+  "lessonId": zod.coerce.string().min(1)
+})
+
+export const submitMemberCourseQuizAttemptBodyAnswersItemMin = 0;
+export const submitMemberCourseQuizAttemptBodyAnswersItemMax = 5;
+
+export const submitMemberCourseQuizAttemptBodyAnswersMax = 25;
+
+
+
+export const SubmitMemberCourseQuizAttemptBody = zod.object({
+  "answers": zod.array(zod.int().min(submitMemberCourseQuizAttemptBodyAnswersItemMin).max(submitMemberCourseQuizAttemptBodyAnswersItemMax)).min(1).max(submitMemberCourseQuizAttemptBodyAnswersMax)
+})
+
+export const submitMemberCourseQuizAttemptResponseOneScorePercentMin = 0;
+export const submitMemberCourseQuizAttemptResponseOneScorePercentMax = 100;
+
+export const submitMemberCourseQuizAttemptResponseTwoQuestionResultsItemSelectedOptionIndexMin = 0;
+export const submitMemberCourseQuizAttemptResponseTwoQuestionResultsItemSelectedOptionIndexMax = 5;
+
+export const submitMemberCourseQuizAttemptResponseTwoQuestionResultsItemCorrectOptionIndexMin = 0;
+export const submitMemberCourseQuizAttemptResponseTwoQuestionResultsItemCorrectOptionIndexMax = 5;
+
+export const submitMemberCourseQuizAttemptResponseTwoQuestionResultsItemExplanationOneEnMax = 2000;
+
+export const submitMemberCourseQuizAttemptResponseTwoQuestionResultsItemExplanationOneArMax = 2000;
+
+export const submitMemberCourseQuizAttemptResponseTwoQuestionResultsItemExplanationOneKuMax = 2000;
+
+export const submitMemberCourseQuizAttemptResponseTwoQuestionResultsMax = 25;
+
+
+
+export const SubmitMemberCourseQuizAttemptResponse = zod.object({
+  "scorePercent": zod.int().min(submitMemberCourseQuizAttemptResponseOneScorePercentMin).max(submitMemberCourseQuizAttemptResponseOneScorePercentMax),
+  "passed": zod.boolean(),
+  "submittedAt": zod.coerce.date()
+}).and(zod.object({
+  "questionResults": zod.array(zod.object({
+  "selectedOptionIndex": zod.int().min(submitMemberCourseQuizAttemptResponseTwoQuestionResultsItemSelectedOptionIndexMin).max(submitMemberCourseQuizAttemptResponseTwoQuestionResultsItemSelectedOptionIndexMax),
+  "correctOptionIndex": zod.int().min(submitMemberCourseQuizAttemptResponseTwoQuestionResultsItemCorrectOptionIndexMin).max(submitMemberCourseQuizAttemptResponseTwoQuestionResultsItemCorrectOptionIndexMax),
+  "correct": zod.boolean(),
+  "explanation": zod.union([zod.object({
+  "en": zod.string().min(1).max(submitMemberCourseQuizAttemptResponseTwoQuestionResultsItemExplanationOneEnMax),
+  "ar": zod.string().min(1).max(submitMemberCourseQuizAttemptResponseTwoQuestionResultsItemExplanationOneArMax),
+  "ku": zod.string().min(1).max(submitMemberCourseQuizAttemptResponseTwoQuestionResultsItemExplanationOneKuMax)
+}),zod.null()])
+})).min(1).max(submitMemberCourseQuizAttemptResponseTwoQuestionResultsMax)
 }))
 
 
