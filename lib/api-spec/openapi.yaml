@@ -711,6 +711,14 @@ paths:
     $ref: "./operations.yaml#/paths/~1super-admin~1policies~1{id}"
   /super-admin/policies/{id}/publish:
     $ref: "./operations.yaml#/paths/~1super-admin~1policies~1{id}~1publish"
+  /super-admin/fitness-challenges:
+    $ref: "./operations.yaml#/paths/~1super-admin~1fitness-challenges"
+  /super-admin/fitness-challenges/{challengeId}:
+    $ref: "./operations.yaml#/paths/~1super-admin~1fitness-challenges~1{challengeId}"
+  /super-admin/fitness-challenges/{challengeId}/publish:
+    $ref: "./operations.yaml#/paths/~1super-admin~1fitness-challenges~1{challengeId}~1publish"
+  /super-admin/fitness-challenges/{challengeId}/archive:
+    $ref: "./operations.yaml#/paths/~1super-admin~1fitness-challenges~1{challengeId}~1archive"
   /super-admin/guardian-consents:
     $ref: "./operations.yaml#/paths/~1super-admin~1guardian-consents"
   /super-admin/guardian-consents/{id}/document:
@@ -763,6 +771,14 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1device~1change"
   /member/courses:
     $ref: "./operations.yaml#/paths/~1member~1courses"
+  /member/fitness-challenges:
+    $ref: "./operations.yaml#/paths/~1member~1fitness-challenges"
+  /member/fitness-challenges/{challengeId}/join:
+    $ref: "./operations.yaml#/paths/~1member~1fitness-challenges~1{challengeId}~1join"
+  /member/fitness-challenges/{challengeId}/participation:
+    $ref: "./operations.yaml#/paths/~1member~1fitness-challenges~1{challengeId}~1participation"
+  /member/fitness-challenges/{challengeId}/log-today:
+    $ref: "./operations.yaml#/paths/~1member~1fitness-challenges~1{challengeId}~1log-today"
   /member/courses/{id}:
     $ref: "./operations.yaml#/paths/~1member~1courses~1{id}"
   /member/courses/{id}/certificate:

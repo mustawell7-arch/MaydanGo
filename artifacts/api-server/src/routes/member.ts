@@ -52,6 +52,7 @@ import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage"
 import learningRouter from "./learning";
 import { memberSupportRouter } from "./support";
 import memberReviewsRouter from "./member-reviews";
+import memberFitnessChallengeRouter from "./member-fitness-challenges";
 import { sendMemberNotification } from "../lib/notifications";
 import { filterSuspendedOfferings, isAccessSuspended } from "../lib/account-access-restrictions";
 import { PaymentError } from "../lib/payment-config";
@@ -74,6 +75,7 @@ router.use((req, res, next) => {
   if (!getAuth(req).userId) { res.status(401).json({ message: "Sign in to manage your bookings." }); return; }
   next();
 });
+router.use(memberFitnessChallengeRouter);
 async function ensureCurrentMemberConsent(req: import("express").Request, res: import("express").Response) {
   if (await hasCurrentRequiredMemberConsent(getAuth(req).userId!)) return true;
   res.status(403).json({

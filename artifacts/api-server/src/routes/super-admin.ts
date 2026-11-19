@@ -42,6 +42,7 @@ import { sendMemberNotification } from "../lib/notifications";
 import { lockVenueAccess } from "../lib/account-access-restrictions";
 import { cancelUpcomingVenueSessions, type UpcomingVenueTarget } from "../lib/venue-suspensions";
 import { isCompletePolicyTranslation, policyDocumentPath } from "../lib/legal-policies";
+import fitnessChallengeAdminRouter from "./super-admin-fitness-challenges";
 
 type ClerkAccount = { userId: string; email: string };
 type ClerkDirectory = {
@@ -114,6 +115,7 @@ export function createSuperAdminRouter(
     res.locals.superAdminUserId = userId;
     next();
   });
+  router.use(fitnessChallengeAdminRouter);
 
   router.get("/admin-accounts", async (_req, res): Promise<void> => {
     const rows = await db.select().from(operators)

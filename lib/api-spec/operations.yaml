@@ -157,6 +157,59 @@ paths:
           description: Verified email and current policy consent are required
         "409":
           description: A referral was already applied to this account
+  /member/fitness-challenges:
+    get:
+      operationId: getMemberFitnessChallenges
+      responses:
+        "200":
+          description: Published and joined archived challenges with only the signed-in member's private progress
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MemberFitnessChallenge" }
+        "403": { description: Current Terms of Use and Privacy Policy consent is required }
+  /member/fitness-challenges/{challengeId}/join:
+    parameters:
+      - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: joinMemberFitnessChallenge
+      responses:
+        "200":
+          description: The signed-in member joined the challenge
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberFitnessChallengeMembership" }
+        "404": { description: Published challenge not found or no longer accepting members }
+        "409": { description: Challenge cannot be joined at this time }
+  /member/fitness-challenges/{challengeId}/participation:
+    parameters:
+      - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+    delete:
+      operationId: leaveMemberFitnessChallenge
+      responses:
+        "204": { description: The member left and their private challenge entries were removed }
+        "404": { description: Challenge participation not found }
+  /member/fitness-challenges/{challengeId}/log-today:
+    parameters:
+      - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: logMemberFitnessChallengeToday
+      responses:
+        "200":
+          description: Today's self-reported activity day was recorded; active days remain private
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberFitnessChallengeActivityResponse" }
+        "403": { description: Challenge participation or current consent is required }
+        "404": { description: Active challenge not found }
+        "409": { description: Today is already counted from verified attendance }
+    delete:
+      operationId: undoMemberFitnessChallengeToday
+      responses:
+        "204": { description: Today's self-reported activity day was removed }
+        "403": { description: Challenge participation or current consent is required }
+        "404": { description: Today's self-reported activity entry was not found }
   /member/profile-photo:
     get:
       operationId: getMemberProfilePhoto
@@ -3256,6 +3309,74 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/MemberConsentRecord" }
+  /super-admin/fitness-challenges:
+    get:
+      operationId: getSuperAdminFitnessChallenges
+      responses:
+        "200":
+          description: Challenge definitions visible only to Super Admin; no member progress is included
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FitnessChallenge" }
+    post:
+      operationId: createSuperAdminFitnessChallenge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FitnessChallengeInput" }
+      responses:
+        "201":
+          description: A new unpublished challenge draft
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FitnessChallenge" }
+        "400": { description: Dates or active-day target are invalid }
+  /super-admin/fitness-challenges/{challengeId}:
+    parameters:
+      - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+    put:
+      operationId: updateSuperAdminFitnessChallenge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FitnessChallengeInput" }
+      responses:
+        "200":
+          description: Unpublished challenge draft updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FitnessChallenge" }
+        "404": { description: Challenge draft not found }
+        "409": { description: Published and archived challenges are immutable }
+  /super-admin/fitness-challenges/{challengeId}/publish:
+    parameters:
+      - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: publishSuperAdminFitnessChallenge
+      responses:
+        "200":
+          description: Challenge published for members
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FitnessChallenge" }
+        "404": { description: Challenge draft not found }
+        "409": { description: Challenge dates have ended or status cannot be published }
+  /super-admin/fitness-challenges/{challengeId}/archive:
+    parameters:
+      - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: archiveSuperAdminFitnessChallenge
+      responses:
+        "200":
+          description: Challenge archived; no longer available to members
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FitnessChallenge" }
+        "404": { description: Challenge not found }
   /super-admin/policies:
     get:
       operationId: getSuperAdminLegalPolicyVersions
@@ -3571,6 +3692,25 @@ components:
       properties:
         title: { type: string }
         savedAt: { type: string, format: date-time }
+    MemberDataExportFitnessChallenge:
+      type: object
+      additionalProperties: false
+      required: [challengeId, title, startDate, endDate, goalActiveDays, status, joinedAt, activeDays, selfReportedDates, verifiedAttendanceDates]
+      properties:
+        challengeId: { type: string }
+        title: { type: string }
+        startDate: { $ref: "#/components/schemas/CalendarDate" }
+        endDate: { $ref: "#/components/schemas/CalendarDate" }
+        goalActiveDays: { type: integer, minimum: 1, maximum: 366 }
+        status: { type: string, enum: [published, archived] }
+        joinedAt: { type: string, format: date-time }
+        activeDays: { type: integer, minimum: 0 }
+        selfReportedDates:
+          type: array
+          items: { $ref: "#/components/schemas/CalendarDate" }
+        verifiedAttendanceDates:
+          type: array
+          items: { $ref: "#/components/schemas/CalendarDate" }
     MemberDataExportReviewRatings:
       type: object
       additionalProperties: false
@@ -3658,9 +3798,9 @@ components:
     MemberDataExport:
       type: object
       additionalProperties: false
-      required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, savedCourses, reviews, consentHistory, supportConversations, referrals, privacyRequests, notificationPreferences, excludedData]
+      required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, savedCourses, fitnessChallenges, reviews, consentHistory, supportConversations, referrals, privacyRequests, notificationPreferences, excludedData]
       properties:
-        formatVersion: { type: string, enum: ["1.5"] }
+        formatVersion: { type: string, enum: ["1.6"] }
         generatedAt: { type: string, format: date-time }
         account: { $ref: "#/components/schemas/MemberDataExportAccount" }
         memberships:
@@ -3681,6 +3821,9 @@ components:
         savedCourses:
           type: array
           items: { $ref: "#/components/schemas/MemberDataExportSavedCourse" }
+        fitnessChallenges:
+          type: array
+          items: { $ref: "#/components/schemas/MemberDataExportFitnessChallenge" }
         reviews:
           type: array
           items: { $ref: "#/components/schemas/MemberDataExportReview" }
@@ -7157,3 +7300,78 @@ components:
       required: [ok]
       properties:
         ok: { type: boolean, const: true }
+    FitnessChallengeStatus:
+      type: string
+      enum: [draft, published, archived]
+    CalendarDate:
+      type: string
+      pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    LocalizedFitnessChallengeDescription:
+      type: object
+      additionalProperties: false
+      required: [en, ar, ku]
+      properties:
+        en: { type: string, minLength: 1, maxLength: 2000 }
+        ar: { type: string, minLength: 1, maxLength: 2000 }
+        ku: { type: string, minLength: 1, maxLength: 2000 }
+    FitnessChallengeInput:
+      type: object
+      additionalProperties: false
+      required: [localizedTitle, localizedDescription, startDate, endDate, goalActiveDays]
+      properties:
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedDescription: { $ref: "#/components/schemas/LocalizedFitnessChallengeDescription" }
+        startDate: { $ref: "#/components/schemas/CalendarDate" }
+        endDate: { $ref: "#/components/schemas/CalendarDate" }
+        goalActiveDays: { type: integer, minimum: 1, maximum: 366 }
+    FitnessChallenge:
+      type: object
+      additionalProperties: false
+      required: [id, localizedTitle, localizedDescription, startDate, endDate, goalActiveDays, status, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedDescription: { $ref: "#/components/schemas/LocalizedFitnessChallengeDescription" }
+        startDate: { $ref: "#/components/schemas/CalendarDate" }
+        endDate: { $ref: "#/components/schemas/CalendarDate" }
+        goalActiveDays: { type: integer, minimum: 1, maximum: 366 }
+        status: { $ref: "#/components/schemas/FitnessChallengeStatus" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    MemberFitnessChallenge:
+      type: object
+      additionalProperties: false
+      required: [id, localizedTitle, localizedDescription, startDate, endDate, goalActiveDays, status, joined, joinedAt, activeDays, selfLoggedDates, verifiedAttendanceDates, canJoin, canLogToday]
+      properties:
+        id: { type: string, format: uuid }
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedDescription: { $ref: "#/components/schemas/LocalizedFitnessChallengeDescription" }
+        startDate: { $ref: "#/components/schemas/CalendarDate" }
+        endDate: { $ref: "#/components/schemas/CalendarDate" }
+        goalActiveDays: { type: integer, minimum: 1, maximum: 366 }
+        status: { type: string, enum: [published, archived] }
+        joined: { type: boolean }
+        joinedAt: { type: ["string", "null"], format: date-time }
+        activeDays: { type: integer, minimum: 0 }
+        selfLoggedDates:
+          type: array
+          items: { $ref: "#/components/schemas/CalendarDate" }
+        verifiedAttendanceDates:
+          type: array
+          items: { $ref: "#/components/schemas/CalendarDate" }
+        canJoin: { type: boolean }
+        canLogToday: { type: boolean }
+    MemberFitnessChallengeMembership:
+      type: object
+      additionalProperties: false
+      required: [challengeId, joinedAt]
+      properties:
+        challengeId: { type: string, format: uuid }
+        joinedAt: { type: string, format: date-time }
+    MemberFitnessChallengeActivityResponse:
+      type: object
+      additionalProperties: false
+      required: [challengeId, activityDate]
+      properties:
+        challengeId: { type: string, format: uuid }
+        activityDate: { $ref: "#/components/schemas/CalendarDate" }

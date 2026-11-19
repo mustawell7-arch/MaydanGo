@@ -51,6 +51,22 @@ export default function ProfileScreen() {
           </View>
           <Ionicons name="chevron-forward" size={17} color={colors.mutedForeground} />
         </Pressable>
+        <Pressable
+          testID="profile-fitness-challenges"
+          accessibilityRole="button"
+          accessibilityLabel={translate(app.language, 'fitnessChallenges')}
+          onPress={() => router.push('/fitness-challenges')}
+          style={[styles.membershipRow, { backgroundColor: colors.card, borderColor: colors.border, marginTop: -12 }]}
+        >
+          <View style={[styles.rowIcon, { backgroundColor: colors.accent }]}>
+            <Ionicons name="walk-outline" size={19} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.rowTitle, { color: colors.foreground }]}>{translate(app.language, 'fitnessChallenges')}</Text>
+            <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>{translate(app.language, 'fitnessEyebrow')}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={17} color={colors.mutedForeground} />
+        </Pressable>
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t('settings')}</Text>
         <View style={[styles.languageCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.languageHeader}>

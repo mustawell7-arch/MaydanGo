@@ -26,6 +26,7 @@ const privacyCopy: Record<Language, {
         title: 'Information MaydanGo handles',
         paragraphs: [
           'Depending on the features you use, this may include account name and email, basic profile and eligibility details, membership status, reservations, waitlist activity, check-ins, attendance, course enrolment and progress, courses you save for later, and support or safety reports you choose to submit. For enrolled courses, progress includes lessons you open and the last saved playback position, so you can resume later.',
+          'If you join a fitness challenge, MaydanGo records your participation and active-day progress. You can log workout days yourself, and eligible partner-confirmed visits may count automatically. Progress is shown in your account and included in your data export; it is not shown on public leaderboards or in the challenge-management page.',
           'The mobile app may use your device location when you start a location-based check-in. It is used to support that check-in, not to continuously follow your movements.',
           'When you use a feature that needs a device notification, the app may store a device token and notification settings so it can deliver relevant service messages.',
           'If you choose to add a profile photo, MaydanGo stores it privately and makes it viewable only to staff authorized for one of your bookings, for a visual check at check-in. Staff compare it manually; MaydanGo does not use automated face recognition. A photo is optional and can be removed from your account.',
@@ -85,7 +86,7 @@ const privacyCopy: Record<Language, {
         id: 'rights',
         title: 'Your privacy requests',
         paragraphs: [
-          'If you have an account, use Account → Privacy requests to request a copy of your information or an account-deletion review. Authorized support staff verify your identity before approving a data copy. After approval, only the signed-in account holder can download it, for 24 hours. The export includes consent history, member-visible support conversations, your invite code, aggregate sign-up count, any code applied to your account, and your saved profile photo when present; it does not list other members by identity. It excludes payment instrument details, login credentials, device tokens, private class links, internal staff notes, and support attachment contents.',
+          'If you have an account, use Account → Privacy requests to request a copy of your information or an account-deletion review. Authorized support staff verify your identity before approving a data copy. After approval, only the signed-in account holder can download it, for 24 hours. The export includes consent history, member-visible support conversations, your invite code, aggregate sign-up count, any code applied to your account, your fitness-challenge participation and progress dates, and your saved profile photo when present; it does not list other members by identity. It excludes payment instrument details, login credentials, device tokens, private class links, internal staff notes, and support attachment contents.',
           'Account-deletion requests are reviewed by authorized support staff and are not immediate. MaydanGo may need to verify that a request relates to your account before acting. Some records may need to be retained for service safety, security, or other applicable requirements.',
         ],
       },
@@ -121,6 +122,7 @@ const privacyCopy: Record<Language, {
         title: 'المعلومات التي تتعامل معها MaydanGo',
         paragraphs: [
           'بحسب الميزات التي تستخدمها، قد تشمل المعلومات اسم الحساب والبريد الإلكتروني وتفاصيل الملف الشخصي والأهلية وحالة العضوية والحجوزات وقائمة الانتظار وتسجيلات الحضور والتقدم في الدورات والدورات التي تحفظها للرجوع إليها لاحقاً وبلاغات الدعم أو السلامة التي تختار إرسالها. ويشمل التقدم في الدورات المسجّل فيها الدروس التي تفتحها وآخر موضع محفوظ للتشغيل كي تتمكن من المتابعة لاحقاً.',
+          'إذا انضممت إلى تحدٍ رياضي، تسجل MaydanGo مشاركتك وتقدمك بالأيام النشطة. يمكنك تسجيل أيام التمرين بنفسك، وقد تُحتسب تلقائياً الزيارات المؤهلة التي يؤكدها الشريك. يظهر تقدمك في حسابك ويُدرج في نسخة بياناتك؛ ولا يظهر في لوحة ترتيب عامة أو في صفحة إدارة التحديات.',
           'قد يستخدم تطبيق الهاتف موقع جهازك عند بدء تسجيل حضور يعتمد على الموقع. يُستخدم ذلك لدعم تسجيل الحضور، وليس لتتبع تحركاتك باستمرار.',
           'عند استخدام ميزة تحتاج إلى إشعارات، قد يخزّن التطبيق رمز الجهاز وإعدادات الإشعارات لإرسال رسائل الخدمة المناسبة.',
           'إذا اخترت إضافة صورة شخصية، تحفظها MaydanGo في مساحة خاصة وتتيحها فقط للموظفين المخوّلين المرتبطين بأحد حجوزاتك، لإجراء مطابقة بصرية عند تسجيل الحضور. تتم المقارنة يدوياً؛ ولا تستخدم MaydanGo التعرّف الآلي على الوجه. الصورة اختيارية ويمكنك حذفها من حسابك.',
@@ -180,7 +182,7 @@ const privacyCopy: Record<Language, {
         id: 'rights',
         title: 'طلبات الخصوصية',
         paragraphs: [
-          'إذا كان لديك حساب، استخدم الحساب ← طلبات الخصوصية لطلب نسخة من معلوماتك أو مراجعة حذف الحساب. يتحقق فريق الدعم المخوّل من هويتك قبل الموافقة على نسخة البيانات. بعد الموافقة، يستطيع صاحب الحساب المسجّل فقط تنزيلها خلال 24 ساعة. تتضمن النسخة سجل الموافقات ومحادثات الدعم الظاهرة لك ورمز دعوتك والعدد الإجمالي للتسجيلات وأي رمز طُبق على حسابك وصورتك الشخصية المحفوظة إن وُجدت، ولا تعرض هويات الأعضاء الآخرين. ولا تتضمن تفاصيل أدوات الدفع أو بيانات الدخول أو رموز الأجهزة أو روابط الصفوف الخاصة أو ملاحظات الموظفين الداخلية أو محتوى مرفقات الدعم.',
+          'إذا كان لديك حساب، استخدم الحساب ← طلبات الخصوصية لطلب نسخة من معلوماتك أو مراجعة حذف الحساب. يتحقق فريق الدعم المخوّل من هويتك قبل الموافقة على نسخة البيانات. بعد الموافقة، يستطيع صاحب الحساب المسجّل فقط تنزيلها خلال 24 ساعة. تتضمن النسخة سجل الموافقات ومحادثات الدعم الظاهرة لك ورمز دعوتك والعدد الإجمالي للتسجيلات وأي رمز طُبق على حسابك ومشاركتك في التحديات وأيام التقدم فيها وصورتك الشخصية المحفوظة إن وُجدت، ولا تعرض هويات الأعضاء الآخرين. ولا تتضمن تفاصيل أدوات الدفع أو بيانات الدخول أو رموز الأجهزة أو روابط الصفوف الخاصة أو ملاحظات الموظفين الداخلية أو محتوى مرفقات الدعم.',
           'يراجع فريق الدعم المخوّل طلبات حذف الحساب، ولا يتم الحذف فوراً. قد تحتاج MaydanGo إلى التحقق من أن الطلب يخص حسابك قبل اتخاذ إجراء. وقد يلزم الاحتفاظ ببعض السجلات لأغراض سلامة الخدمة أو أمنها أو لمتطلبات أخرى واجبة التطبيق.',
         ],
       },
@@ -216,6 +218,7 @@ const privacyCopy: Record<Language, {
         title: 'زانیارییەکانی MaydanGo',
         paragraphs: [
           'بەپێی ئەو تایبەتمەندییانەی بەکاریان دەهێنیت، زانیارییەکان لەوانەیە ناوی هەژمار و ئیمەیڵ، وردەکاریی پڕۆفایل و شایستەیی، دۆخی ئەندامێتی، حجز، لیستی چاوەڕوانی، تۆماری حزوور، پێشکەوتنی کۆرس، کۆرسەکان کە بۆ گەڕانەوەی دواتر پاشەکەوتیان دەکەیت، و ڕاپۆرتی پشتگیری یان سەلامەتی بگرێتەوە کە خۆت دەنێریت. لە کۆرسەکانی تۆمارکراویتدا، پێشکەوتن ئەو وانانە دەگرێتەوە کە دەیکەیتەوە و دوا شوێنی پەخشکردنی پاشەکەوتکراو، بۆ ئەوەی دواتر لەوێوە بەردەوام بیت.',
+          'ئەگەر بەشداری ئاستەنگێکی وەرزشی بکەیت، MaydanGo بەشداری و پێشکەوتنی ڕۆژە چالاکەکانت تۆمار دەکات. دەتوانیت ڕۆژانی ڕاهێنان خۆت تۆمار بکەیت، و سەردانی گونجاو کە هاوبەش پشتڕاستی دەکاتەوە لەوانەیە خۆکارانە بژمێردرێت. پێشکەوتنەکەت لە هەژمارەکەتدا پیشان دەدرێت و لە کۆپیی داتاکەتدا دەبێت؛ لە خشتەی ڕیزبەندیی گشتی یان پەڕەی بەڕێوەبردنی ئاستەنگەکاندا پیشان نادرێت.',
           'ئەپی مۆبایل لەوانەیە کاتی دەستپێکردنی حزووری پشتبەستوو بە شوێن، شوێنی ئامێرەکەت بەکاربهێنێت. ئەمە بۆ پشتگیریی تۆمارکردنی حزوورە، نەک بۆ بەدواداچوونی بەردەوامی جووڵەکانت.',
           'کاتێک تایبەتمەندییەک پێویستی بە ئاگادارکردنەوە هەیە، ئەپەکە لەوانەیە تۆکنی ئامێر و ڕێکخستنەکانی ئاگادارکردنەوە هەڵبگرێت بۆ ناردنی پەیامی پەیوەندیدار بە خزمەتگوزاری.',
           'ئەگەر خۆت وێنەیەکی کەسی زیاد بکەیت، MaydanGo بە شێوەیەکی تایبەت هەڵی دەگرێت و تەنها بە کارمەندانی ڕێگەپێدراوی پەیوەندیدار بە یەکێک لە حجزەکانت پیشانی دەدات، بۆ پشکنینی بینراو لە کاتی تۆمارکردنی هاتن. کارمەندان بە دەستی بەراوردی دەکەن؛ MaydanGo ناسینەوەی خۆکاری ڕوو بەکارناهێنێت. وێنەکە ئارەزوومەندانەیە و دەتوانیت لە هەژمارەکەت بیسڕیتەوە.',
@@ -275,7 +278,7 @@ const privacyCopy: Record<Language, {
         id: 'rights',
         title: 'داواکارییەکانی تایبەتمەندی',
         paragraphs: [
-          'ئەگەر هەژمارت هەیە، لە هەژمار ← داواکارییەکانی تایبەتمەندی داوای کۆپیی زانیارییەکانت یان پێداچوونەوە بۆ سڕینەوەی هەژمار بکە. تیمی پشتگیریی ڕێگەپێدراو پێش پەسەندکردنی کۆپیی داتا ناسنامەکەت پشتڕاست دەکاتەوە. دوای پەسەندکردن، تەنها خاوەنی هەژماری چوونەژوورەوە دەتوانێت لە ماوەی ٢٤ کاتژمێردا دایبگرێت. کۆپییەکە مێژووی ڕەزامەندی، گفتوگۆکانی پشتگیریی بینراو بۆ تۆ، کۆدی بانگهێشتکردنت، کۆی گشتیی تۆمارکردنەکان، هەر کۆدێکی بەکارهاتوو لە هەژمارەکەت و وێنە کەسییە پاشەکەوتکراوەکەت ئەگەر هەبێت دەگرێتەوە؛ ناسنامەی ئەندامانی تر نیشان نادات. وردەکاریی پارەدان، زانیاریی چوونەژوورەوە، تۆکنی ئامێر، بەستەری وانەی تایبەت، تێبینیی ناوخۆی کارمەندان و ناوەڕۆکی هاوپێچەکانی پشتگیری تێدا نایەت.',
+          'ئەگەر هەژمارت هەیە، لە هەژمار ← داواکارییەکانی تایبەتمەندی داوای کۆپیی زانیارییەکانت یان پێداچوونەوە بۆ سڕینەوەی هەژمار بکە. تیمی پشتگیریی ڕێگەپێدراو پێش پەسەندکردنی کۆپیی داتا ناسنامەکەت پشتڕاست دەکاتەوە. دوای پەسەندکردن، تەنها خاوەنی هەژماری چوونەژوورەوە دەتوانێت لە ماوەی ٢٤ کاتژمێردا دایبگرێت. کۆپییەکە مێژووی ڕەزامەندی، گفتوگۆکانی پشتگیریی بینراو بۆ تۆ، کۆدی بانگهێشتکردنت، کۆی گشتیی تۆمارکردنەکان، هەر کۆدێکی بەکارهاتوو لە هەژمارەکەت، بەشداری و ڕۆژەکانی پێشکەوتنی ئاستەنگی وەرزشی، و وێنە کەسییە پاشەکەوتکراوەکەت ئەگەر هەبێت دەگرێتەوە؛ ناسنامەی ئەندامانی تر نیشان نادات. وردەکاریی پارەدان، زانیاریی چوونەژوورەوە، تۆکنی ئامێر، بەستەری وانەی تایبەت، تێبینیی ناوخۆی کارمەندان و ناوەڕۆکی هاوپێچەکانی پشتگیری تێدا نایەت.',
           'تیمی پشتگیریی ڕێگەپێدراو داواکاریی سڕینەوەی هەژمار پێداچوونەوەی بۆ دەکات و سڕینەوە دەستبەجێ نییە. لەوانەیە MaydanGo پێش هەر کارێک پشتڕاستی بکاتەوە کە داواکارییەکە پەیوەندی بە هەژمارەکەتەوە هەیە. هەندێک تۆمار لەوانەیە بۆ پاراستنی سەلامەتی و ئاسایشی خزمەتگوزاری یان داواکارییەکانی تر پێویست بێت بهێڵدرێنەوە.',
         ],
       },

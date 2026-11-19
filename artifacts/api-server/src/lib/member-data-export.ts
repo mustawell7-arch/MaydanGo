@@ -5,6 +5,9 @@ import {
   courseEnrollments,
   db,
   facilityReviews,
+  fitnessChallengeParticipants,
+  fitnessChallenges,
+  fitnessChallengeSelfReports,
   learningCourses,
   learningLessons,
   lessonAccess,
@@ -26,6 +29,7 @@ import {
 } from "@workspace/db";
 import { GetMemberPrivacyRequestExportResponse } from "@workspace/api-zod";
 import { getPrivacyRequestKind, privacyRequestSubjects } from "./privacy-requests";
+import { iraqDateKey } from "./fitness-challenges";
 import { ObjectNotFoundError, ObjectStorageService } from "./objectStorage";
 
 const memberDataExportStorage = new ObjectStorageService();
@@ -49,6 +53,8 @@ export async function createMemberDataExport(userId: string) {
     ownReferralRows,
     referralCountRows,
     appliedReferralRows,
+    fitnessChallengeRows,
+    fitnessChallengeSelfReportRows,
   ] = await Promise.all([
     clerkClient.users.getUser(userId),
     db.select({ gender: memberProfiles.gender, birthDate: memberProfiles.birthDate })
@@ -99,6 +105,7 @@ export async function createMemberDataExport(userId: string) {
       facility: offerings.facility,
       checkedInAt: attendance.checkedInAt,
       status: attendance.status,
+      settlementEligible: attendance.settlementEligible,
     }).from(attendance)
       .innerJoin(offerings, eq(attendance.offeringId, offerings.id))
       .where(eq(attendance.userId, userId))
@@ -174,6 +181,24 @@ export async function createMemberDataExport(userId: string) {
     }).from(memberReferralAttributions)
       .innerJoin(memberReferralCodes, eq(memberReferralAttributions.codeId, memberReferralCodes.id))
       .where(eq(memberReferralAttributions.referredUserId, userId)).limit(1),
+    db.select({
+      challengeId: fitnessChallenges.id,
+      title: fitnessChallenges.localizedTitle,
+      startDate: fitnessChallenges.startDate,
+      endDate: fitnessChallenges.endDate,
+      goalActiveDays: fitnessChallenges.goalActiveDays,
+      status: fitnessChallenges.status,
+      joinedAt: fitnessChallengeParticipants.joinedAt,
+    }).from(fitnessChallengeParticipants)
+      .innerJoin(fitnessChallenges, eq(fitnessChallengeParticipants.challengeId, fitnessChallenges.id))
+      .where(eq(fitnessChallengeParticipants.userId, userId))
+      .orderBy(asc(fitnessChallengeParticipants.joinedAt)),
+    db.select({
+      challengeId: fitnessChallengeSelfReports.challengeId,
+      activityDate: fitnessChallengeSelfReports.activityDate,
+    }).from(fitnessChallengeSelfReports)
+      .where(eq(fitnessChallengeSelfReports.userId, userId))
+      .orderBy(asc(fitnessChallengeSelfReports.activityDate)),
   ]);
 
   const enrollmentIds = enrollmentRows.map(row => row.id);
@@ -269,6 +294,31 @@ export async function createMemberDataExport(userId: string) {
   }
 
   const savedProfilePhoto = profilePhotoRows[0];
+  const fitnessChallengesExport = fitnessChallengeRows.map(challenge => {
+    const selfReportedDates = fitnessChallengeSelfReportRows
+      .filter(report => report.challengeId === challenge.challengeId)
+      .map(report => report.activityDate)
+      .filter(date => date >= challenge.startDate && date <= challenge.endDate)
+      .sort();
+    const verifiedAttendanceDates = attendanceRows
+      .filter(row => row.status === "confirmed" && row.settlementEligible && row.checkedInAt >= challenge.joinedAt)
+      .map(row => iraqDateKey(row.checkedInAt))
+      .filter(date => date >= challenge.startDate && date <= challenge.endDate)
+      .filter((date, index, dates) => dates.indexOf(date) === index)
+      .sort();
+    return {
+      challengeId: challenge.challengeId,
+      title: challenge.title.en,
+      startDate: challenge.startDate,
+      endDate: challenge.endDate,
+      goalActiveDays: challenge.goalActiveDays,
+      status: challenge.status as "published" | "archived",
+      joinedAt: challenge.joinedAt,
+      activeDays: new Set([...selfReportedDates, ...verifiedAttendanceDates]).size,
+      selfReportedDates,
+      verifiedAttendanceDates,
+    };
+  });
   const accountUnsafeMetadata = account.unsafeMetadata as Record<string, unknown>;
   const accountPrivateMetadata = account.privateMetadata as Record<string, unknown>;
   const contactPhoneNumber = typeof accountUnsafeMetadata.maydangoContactPhone === "string"
@@ -314,7 +364,7 @@ export async function createMemberDataExport(userId: string) {
   }
 
   return GetMemberPrivacyRequestExportResponse.parse({
-      formatVersion: "1.5",
+      formatVersion: "1.6",
     generatedAt: new Date(),
     account: {
       email: account.primaryEmailAddress?.emailAddress ?? null,
@@ -331,7 +381,9 @@ export async function createMemberDataExport(userId: string) {
     memberships: membershipRows,
     bookings: bookingRows,
     waitlist: waitlistRows,
-    attendance: attendanceRows,
+    attendance: attendanceRows.map(({ id, title, city, facility, checkedInAt, status }) => ({
+      id, title, city, facility, checkedInAt, status,
+    })),
     courses: enrollmentRows.map(row => ({
       title: row.title,
       enrolledAt: row.enrolledAt,
@@ -340,6 +392,7 @@ export async function createMemberDataExport(userId: string) {
       viewedLessons: viewedLessons.get(row.id) ?? [],
     })),
     savedCourses: savedCourseRows,
+    fitnessChallenges: fitnessChallengesExport,
     reviews: reviewRows,
     consentHistory: consentRows,
     supportConversations: supportTicketRows.map(ticket => ({

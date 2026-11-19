@@ -123,6 +123,8 @@ import type {
   FinanceRefundRequest,
   FinanceReviewItem,
   FinanceSettlementSummary,
+  FitnessChallenge,
+  FitnessChallengeInput,
   FraudInvestigation,
   FraudInvestigationInput,
   FraudInvestigationQueueItem,
@@ -187,6 +189,9 @@ import type {
   MemberDeviceRegistration,
   MemberDeviceStatus,
   MemberFacilityReviews,
+  MemberFitnessChallenge,
+  MemberFitnessChallengeActivityResponse,
+  MemberFitnessChallengeMembership,
   MemberLiveClass,
   MemberProfileInput,
   MemberProfilePhoto,
@@ -14403,6 +14408,402 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getPublishSuperAdminLegalPolicyVersionMutationOptions(options), queryClient);
     }
 
+export const getGetSuperAdminFitnessChallengesUrl = () => {
+
+
+
+
+  return `/api/super-admin/fitness-challenges`
+}
+
+export const getSuperAdminFitnessChallenges = async ( options?: Parameters<typeof customFetch>[1]): Promise<FitnessChallenge[]> => {
+
+  return customFetch<FitnessChallenge[]>(getGetSuperAdminFitnessChallengesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSuperAdminFitnessChallengesQueryKey = () => {
+    return [
+    `/api/super-admin/fitness-challenges`
+    ] as const;
+    }
+
+
+export const getGetSuperAdminFitnessChallengesQueryOptions = <TData = Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSuperAdminFitnessChallengesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>> = ({ signal }) => getSuperAdminFitnessChallenges({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSuperAdminFitnessChallengesQueryResult = NonNullable<Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>>
+export type GetSuperAdminFitnessChallengesQueryError = ErrorType<unknown>
+
+
+export function useGetSuperAdminFitnessChallenges<TData = Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminFitnessChallenges<TData = Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>,
+          TError,
+          Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuperAdminFitnessChallenges<TData = Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetSuperAdminFitnessChallenges<TData = Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuperAdminFitnessChallenges>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSuperAdminFitnessChallengesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSuperAdminFitnessChallengeUrl = () => {
+
+
+
+
+  return `/api/super-admin/fitness-challenges`
+}
+
+export const createSuperAdminFitnessChallenge = async (fitnessChallengeInput: FitnessChallengeInput, options?: Parameters<typeof customFetch>[1]): Promise<FitnessChallenge> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FitnessChallenge>(getCreateSuperAdminFitnessChallengeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(fitnessChallengeInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSuperAdminFitnessChallengeMutationKey = () => ['createSuperAdminFitnessChallenge'] as const;
+
+export const getCreateSuperAdminFitnessChallengeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSuperAdminFitnessChallenge>>, TError,CreateSuperAdminFitnessChallengeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSuperAdminFitnessChallenge>>, TError,CreateSuperAdminFitnessChallengeMutationVariables, TContext> => {
+
+const mutationKey = getCreateSuperAdminFitnessChallengeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSuperAdminFitnessChallenge>>, CreateSuperAdminFitnessChallengeMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSuperAdminFitnessChallenge(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSuperAdminFitnessChallengeMutationResult = NonNullable<Awaited<ReturnType<typeof createSuperAdminFitnessChallenge>>>
+    export type CreateSuperAdminFitnessChallengeMutationBody = BodyType<FitnessChallengeInput>
+    export type CreateSuperAdminFitnessChallengeMutationError = ErrorType<void>
+    export type CreateSuperAdminFitnessChallengeMutationVariables = {data: BodyType<FitnessChallengeInput>}
+
+    export const useCreateSuperAdminFitnessChallenge = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSuperAdminFitnessChallenge>>, TError,CreateSuperAdminFitnessChallengeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createSuperAdminFitnessChallenge>>,
+        TError,
+        CreateSuperAdminFitnessChallengeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateSuperAdminFitnessChallengeMutationOptions(options), queryClient);
+    }
+
+export const getUpdateSuperAdminFitnessChallengeUrl = (challengeId: string,) => {
+
+
+
+
+  return `/api/super-admin/fitness-challenges/${challengeId}`
+}
+
+export const updateSuperAdminFitnessChallenge = async (challengeId: string,
+    fitnessChallengeInput: FitnessChallengeInput, options?: Parameters<typeof customFetch>[1]): Promise<FitnessChallenge> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FitnessChallenge>(getUpdateSuperAdminFitnessChallengeUrl(challengeId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(fitnessChallengeInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateSuperAdminFitnessChallengeMutationKey = () => ['updateSuperAdminFitnessChallenge'] as const;
+
+export const getUpdateSuperAdminFitnessChallengeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSuperAdminFitnessChallenge>>, TError,UpdateSuperAdminFitnessChallengeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSuperAdminFitnessChallenge>>, TError,UpdateSuperAdminFitnessChallengeMutationVariables, TContext> => {
+
+const mutationKey = getUpdateSuperAdminFitnessChallengeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSuperAdminFitnessChallenge>>, UpdateSuperAdminFitnessChallengeMutationVariables> = (props) => {
+          const {challengeId,data} = props ?? {};
+
+          return  updateSuperAdminFitnessChallenge(challengeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSuperAdminFitnessChallengeMutationResult = NonNullable<Awaited<ReturnType<typeof updateSuperAdminFitnessChallenge>>>
+    export type UpdateSuperAdminFitnessChallengeMutationBody = BodyType<FitnessChallengeInput>
+    export type UpdateSuperAdminFitnessChallengeMutationError = ErrorType<void>
+    export type UpdateSuperAdminFitnessChallengeMutationVariables = {challengeId: string;data: BodyType<FitnessChallengeInput>}
+
+    export const useUpdateSuperAdminFitnessChallenge = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSuperAdminFitnessChallenge>>, TError,UpdateSuperAdminFitnessChallengeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateSuperAdminFitnessChallenge>>,
+        TError,
+        UpdateSuperAdminFitnessChallengeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateSuperAdminFitnessChallengeMutationOptions(options), queryClient);
+    }
+
+export const getPublishSuperAdminFitnessChallengeUrl = (challengeId: string,) => {
+
+
+
+
+  return `/api/super-admin/fitness-challenges/${challengeId}/publish`
+}
+
+export const publishSuperAdminFitnessChallenge = async (challengeId: string, options?: Parameters<typeof customFetch>[1]): Promise<FitnessChallenge> => {
+
+  return customFetch<FitnessChallenge>(getPublishSuperAdminFitnessChallengeUrl(challengeId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPublishSuperAdminFitnessChallengeMutationKey = () => ['publishSuperAdminFitnessChallenge'] as const;
+
+export const getPublishSuperAdminFitnessChallengeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishSuperAdminFitnessChallenge>>, TError,PublishSuperAdminFitnessChallengeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof publishSuperAdminFitnessChallenge>>, TError,PublishSuperAdminFitnessChallengeMutationVariables, TContext> => {
+
+const mutationKey = getPublishSuperAdminFitnessChallengeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishSuperAdminFitnessChallenge>>, PublishSuperAdminFitnessChallengeMutationVariables> = (props) => {
+          const {challengeId} = props ?? {};
+
+          return  publishSuperAdminFitnessChallenge(challengeId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PublishSuperAdminFitnessChallengeMutationResult = NonNullable<Awaited<ReturnType<typeof publishSuperAdminFitnessChallenge>>>
+
+    export type PublishSuperAdminFitnessChallengeMutationError = ErrorType<void>
+    export type PublishSuperAdminFitnessChallengeMutationVariables = {challengeId: string}
+
+    export const usePublishSuperAdminFitnessChallenge = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishSuperAdminFitnessChallenge>>, TError,PublishSuperAdminFitnessChallengeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof publishSuperAdminFitnessChallenge>>,
+        TError,
+        PublishSuperAdminFitnessChallengeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPublishSuperAdminFitnessChallengeMutationOptions(options), queryClient);
+    }
+
+export const getArchiveSuperAdminFitnessChallengeUrl = (challengeId: string,) => {
+
+
+
+
+  return `/api/super-admin/fitness-challenges/${challengeId}/archive`
+}
+
+export const archiveSuperAdminFitnessChallenge = async (challengeId: string, options?: Parameters<typeof customFetch>[1]): Promise<FitnessChallenge> => {
+
+  return customFetch<FitnessChallenge>(getArchiveSuperAdminFitnessChallengeUrl(challengeId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getArchiveSuperAdminFitnessChallengeMutationKey = () => ['archiveSuperAdminFitnessChallenge'] as const;
+
+export const getArchiveSuperAdminFitnessChallengeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveSuperAdminFitnessChallenge>>, TError,ArchiveSuperAdminFitnessChallengeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof archiveSuperAdminFitnessChallenge>>, TError,ArchiveSuperAdminFitnessChallengeMutationVariables, TContext> => {
+
+const mutationKey = getArchiveSuperAdminFitnessChallengeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof archiveSuperAdminFitnessChallenge>>, ArchiveSuperAdminFitnessChallengeMutationVariables> = (props) => {
+          const {challengeId} = props ?? {};
+
+          return  archiveSuperAdminFitnessChallenge(challengeId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ArchiveSuperAdminFitnessChallengeMutationResult = NonNullable<Awaited<ReturnType<typeof archiveSuperAdminFitnessChallenge>>>
+
+    export type ArchiveSuperAdminFitnessChallengeMutationError = ErrorType<void>
+    export type ArchiveSuperAdminFitnessChallengeMutationVariables = {challengeId: string}
+
+    export const useArchiveSuperAdminFitnessChallenge = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveSuperAdminFitnessChallenge>>, TError,ArchiveSuperAdminFitnessChallengeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof archiveSuperAdminFitnessChallenge>>,
+        TError,
+        ArchiveSuperAdminFitnessChallengeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getArchiveSuperAdminFitnessChallengeMutationOptions(options), queryClient);
+    }
+
 export const getGetSuperAdminGuardianConsentsUrl = (params?: GetSuperAdminGuardianConsentsParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -16774,6 +17175,373 @@ export function useGetMemberCourses<TData = Awaited<ReturnType<typeof getMemberC
 
 
 
+
+export const getGetMemberFitnessChallengesUrl = () => {
+
+
+
+
+  return `/api/member/fitness-challenges`
+}
+
+export const getMemberFitnessChallenges = async ( options?: Parameters<typeof customFetch>[1]): Promise<MemberFitnessChallenge[]> => {
+
+  return customFetch<MemberFitnessChallenge[]>(getGetMemberFitnessChallengesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberFitnessChallengesQueryKey = () => {
+    return [
+    `/api/member/fitness-challenges`
+    ] as const;
+    }
+
+
+export const getGetMemberFitnessChallengesQueryOptions = <TData = Awaited<ReturnType<typeof getMemberFitnessChallenges>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberFitnessChallenges>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberFitnessChallengesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberFitnessChallenges>>> = ({ signal }) => getMemberFitnessChallenges({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberFitnessChallenges>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberFitnessChallengesQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberFitnessChallenges>>>
+export type GetMemberFitnessChallengesQueryError = ErrorType<void>
+
+
+export function useGetMemberFitnessChallenges<TData = Awaited<ReturnType<typeof getMemberFitnessChallenges>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberFitnessChallenges>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberFitnessChallenges>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberFitnessChallenges>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberFitnessChallenges<TData = Awaited<ReturnType<typeof getMemberFitnessChallenges>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberFitnessChallenges>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberFitnessChallenges>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberFitnessChallenges>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberFitnessChallenges<TData = Awaited<ReturnType<typeof getMemberFitnessChallenges>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberFitnessChallenges>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberFitnessChallenges<TData = Awaited<ReturnType<typeof getMemberFitnessChallenges>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberFitnessChallenges>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberFitnessChallengesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getJoinMemberFitnessChallengeUrl = (challengeId: string,) => {
+
+
+
+
+  return `/api/member/fitness-challenges/${challengeId}/join`
+}
+
+export const joinMemberFitnessChallenge = async (challengeId: string, options?: Parameters<typeof customFetch>[1]): Promise<MemberFitnessChallengeMembership> => {
+
+  return customFetch<MemberFitnessChallengeMembership>(getJoinMemberFitnessChallengeUrl(challengeId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getJoinMemberFitnessChallengeMutationKey = () => ['joinMemberFitnessChallenge'] as const;
+
+export const getJoinMemberFitnessChallengeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof joinMemberFitnessChallenge>>, TError,JoinMemberFitnessChallengeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof joinMemberFitnessChallenge>>, TError,JoinMemberFitnessChallengeMutationVariables, TContext> => {
+
+const mutationKey = getJoinMemberFitnessChallengeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof joinMemberFitnessChallenge>>, JoinMemberFitnessChallengeMutationVariables> = (props) => {
+          const {challengeId} = props ?? {};
+
+          return  joinMemberFitnessChallenge(challengeId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type JoinMemberFitnessChallengeMutationResult = NonNullable<Awaited<ReturnType<typeof joinMemberFitnessChallenge>>>
+
+    export type JoinMemberFitnessChallengeMutationError = ErrorType<void>
+    export type JoinMemberFitnessChallengeMutationVariables = {challengeId: string}
+
+    export const useJoinMemberFitnessChallenge = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof joinMemberFitnessChallenge>>, TError,JoinMemberFitnessChallengeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof joinMemberFitnessChallenge>>,
+        TError,
+        JoinMemberFitnessChallengeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getJoinMemberFitnessChallengeMutationOptions(options), queryClient);
+    }
+
+export const getLeaveMemberFitnessChallengeUrl = (challengeId: string,) => {
+
+
+
+
+  return `/api/member/fitness-challenges/${challengeId}/participation`
+}
+
+export const leaveMemberFitnessChallenge = async (challengeId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getLeaveMemberFitnessChallengeUrl(challengeId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getLeaveMemberFitnessChallengeMutationKey = () => ['leaveMemberFitnessChallenge'] as const;
+
+export const getLeaveMemberFitnessChallengeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof leaveMemberFitnessChallenge>>, TError,LeaveMemberFitnessChallengeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof leaveMemberFitnessChallenge>>, TError,LeaveMemberFitnessChallengeMutationVariables, TContext> => {
+
+const mutationKey = getLeaveMemberFitnessChallengeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof leaveMemberFitnessChallenge>>, LeaveMemberFitnessChallengeMutationVariables> = (props) => {
+          const {challengeId} = props ?? {};
+
+          return  leaveMemberFitnessChallenge(challengeId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LeaveMemberFitnessChallengeMutationResult = NonNullable<Awaited<ReturnType<typeof leaveMemberFitnessChallenge>>>
+
+    export type LeaveMemberFitnessChallengeMutationError = ErrorType<void>
+    export type LeaveMemberFitnessChallengeMutationVariables = {challengeId: string}
+
+    export const useLeaveMemberFitnessChallenge = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof leaveMemberFitnessChallenge>>, TError,LeaveMemberFitnessChallengeMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof leaveMemberFitnessChallenge>>,
+        TError,
+        LeaveMemberFitnessChallengeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getLeaveMemberFitnessChallengeMutationOptions(options), queryClient);
+    }
+
+export const getLogMemberFitnessChallengeTodayUrl = (challengeId: string,) => {
+
+
+
+
+  return `/api/member/fitness-challenges/${challengeId}/log-today`
+}
+
+export const logMemberFitnessChallengeToday = async (challengeId: string, options?: Parameters<typeof customFetch>[1]): Promise<MemberFitnessChallengeActivityResponse> => {
+
+  return customFetch<MemberFitnessChallengeActivityResponse>(getLogMemberFitnessChallengeTodayUrl(challengeId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getLogMemberFitnessChallengeTodayMutationKey = () => ['logMemberFitnessChallengeToday'] as const;
+
+export const getLogMemberFitnessChallengeTodayMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logMemberFitnessChallengeToday>>, TError,LogMemberFitnessChallengeTodayMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof logMemberFitnessChallengeToday>>, TError,LogMemberFitnessChallengeTodayMutationVariables, TContext> => {
+
+const mutationKey = getLogMemberFitnessChallengeTodayMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof logMemberFitnessChallengeToday>>, LogMemberFitnessChallengeTodayMutationVariables> = (props) => {
+          const {challengeId} = props ?? {};
+
+          return  logMemberFitnessChallengeToday(challengeId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LogMemberFitnessChallengeTodayMutationResult = NonNullable<Awaited<ReturnType<typeof logMemberFitnessChallengeToday>>>
+
+    export type LogMemberFitnessChallengeTodayMutationError = ErrorType<void>
+    export type LogMemberFitnessChallengeTodayMutationVariables = {challengeId: string}
+
+    export const useLogMemberFitnessChallengeToday = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logMemberFitnessChallengeToday>>, TError,LogMemberFitnessChallengeTodayMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof logMemberFitnessChallengeToday>>,
+        TError,
+        LogMemberFitnessChallengeTodayMutationVariables,
+        TContext
+      > => {
+      return useMutation(getLogMemberFitnessChallengeTodayMutationOptions(options), queryClient);
+    }
+
+export const getUndoMemberFitnessChallengeTodayUrl = (challengeId: string,) => {
+
+
+
+
+  return `/api/member/fitness-challenges/${challengeId}/log-today`
+}
+
+export const undoMemberFitnessChallengeToday = async (challengeId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getUndoMemberFitnessChallengeTodayUrl(challengeId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getUndoMemberFitnessChallengeTodayMutationKey = () => ['undoMemberFitnessChallengeToday'] as const;
+
+export const getUndoMemberFitnessChallengeTodayMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof undoMemberFitnessChallengeToday>>, TError,UndoMemberFitnessChallengeTodayMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof undoMemberFitnessChallengeToday>>, TError,UndoMemberFitnessChallengeTodayMutationVariables, TContext> => {
+
+const mutationKey = getUndoMemberFitnessChallengeTodayMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof undoMemberFitnessChallengeToday>>, UndoMemberFitnessChallengeTodayMutationVariables> = (props) => {
+          const {challengeId} = props ?? {};
+
+          return  undoMemberFitnessChallengeToday(challengeId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UndoMemberFitnessChallengeTodayMutationResult = NonNullable<Awaited<ReturnType<typeof undoMemberFitnessChallengeToday>>>
+
+    export type UndoMemberFitnessChallengeTodayMutationError = ErrorType<void>
+    export type UndoMemberFitnessChallengeTodayMutationVariables = {challengeId: string}
+
+    export const useUndoMemberFitnessChallengeToday = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof undoMemberFitnessChallengeToday>>, TError,UndoMemberFitnessChallengeTodayMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof undoMemberFitnessChallengeToday>>,
+        TError,
+        UndoMemberFitnessChallengeTodayMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUndoMemberFitnessChallengeTodayMutationOptions(options), queryClient);
+    }
 
 export const getGetMemberCourseUrl = (id: string,) => {
 

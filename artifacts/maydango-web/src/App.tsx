@@ -53,6 +53,7 @@ const InstructorPortalPage = lazy(() =>
 );
 const SupportDeskPage = lazy(() => import('@/pages/support-desk'));
 const SuperAdminPage = lazy(() => import('@/pages/super-admin'));
+const FitnessChallengesAdminPage = lazy(() => import('@/pages/fitness-challenges-admin'));
 const SuperAdminPoliciesPage = lazy(() => import('@/pages/super-admin-policies'));
 const CourseMaterialsManagerPage = lazy(() => import('@/pages/course-materials-manager'));
 const CorporateAdminPage = lazy(() =>
@@ -1438,6 +1439,7 @@ function Router() {
   return <Suspense fallback={<main className="flex min-h-[50vh] items-center justify-center px-5 py-12 text-center text-sm text-muted-foreground" role="status" aria-live="polite">{translations[savedLanguage()].loading}</main>}>
     <Switch>
       <Route path="/super-admin" component={SuperAdminPage} />
+      <Route path="/admin/fitness-challenges" component={FitnessChallengesAdminPage} />
       <Route path="/super-admin/policies" component={SuperAdminPoliciesPage} />
       <Route path="/admin/course-materials" component={CourseMaterialsManagerPage} />
       <Route path="/admin/corporate" component={CorporateAdminPage} />

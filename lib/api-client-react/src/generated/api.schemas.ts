@@ -1416,6 +1416,37 @@ export interface MemberDataExportSavedCourse {
   savedAt: string;
 }
 
+export type MemberDataExportFitnessChallengeStatus = typeof MemberDataExportFitnessChallengeStatus[keyof typeof MemberDataExportFitnessChallengeStatus];
+
+
+export const MemberDataExportFitnessChallengeStatus = {
+  published: 'published',
+  archived: 'archived',
+} as const;
+
+/**
+ * @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
+ */
+export type CalendarDate = string;
+
+export interface MemberDataExportFitnessChallenge {
+  challengeId: string;
+  title: string;
+  startDate: CalendarDate;
+  endDate: CalendarDate;
+  /**
+     * @minimum 1
+     * @maximum 366
+     */
+  goalActiveDays: number;
+  status: MemberDataExportFitnessChallengeStatus;
+  joinedAt: string;
+  /** @minimum 0 */
+  activeDays: number;
+  selfReportedDates: CalendarDate[];
+  verifiedAttendanceDates: CalendarDate[];
+}
+
 export interface MemberDataExportReviewRatings {
   /** @nullable */
   cleanliness: number | null;
@@ -1510,7 +1541,7 @@ export type MemberDataExportFormatVersion = typeof MemberDataExportFormatVersion
 
 
 export const MemberDataExportFormatVersion = {
-  '15': '1.5',
+  '16': '1.6',
 } as const;
 
 export type MemberDataExportExcludedDataItem = typeof MemberDataExportExcludedDataItem[keyof typeof MemberDataExportExcludedDataItem];
@@ -1553,6 +1584,7 @@ export interface MemberDataExport {
   attendance: MemberDataExportAttendance[];
   courses: MemberDataExportCourse[];
   savedCourses: MemberDataExportSavedCourse[];
+  fitnessChallenges: MemberDataExportFitnessChallenge[];
   reviews: MemberDataExportReview[];
   consentHistory: MemberDataExportConsent[];
   supportConversations: MemberDataExportSupportConversation[];
@@ -7125,6 +7157,102 @@ export const PartnerStaffRemovalResponseValue = {
   ok: true,
 } as const;
 export type PartnerStaffRemovalResponse = typeof PartnerStaffRemovalResponseValue;
+
+export type FitnessChallengeStatus = typeof FitnessChallengeStatus[keyof typeof FitnessChallengeStatus];
+
+
+export const FitnessChallengeStatus = {
+  draft: 'draft',
+  published: 'published',
+  archived: 'archived',
+} as const;
+
+export interface LocalizedFitnessChallengeDescription {
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  en: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  ar: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  ku: string;
+}
+
+export interface FitnessChallengeInput {
+  localizedTitle: LocalizedText;
+  localizedDescription: LocalizedFitnessChallengeDescription;
+  startDate: CalendarDate;
+  endDate: CalendarDate;
+  /**
+     * @minimum 1
+     * @maximum 366
+     */
+  goalActiveDays: number;
+}
+
+export interface FitnessChallenge {
+  id: string;
+  localizedTitle: LocalizedText;
+  localizedDescription: LocalizedFitnessChallengeDescription;
+  startDate: CalendarDate;
+  endDate: CalendarDate;
+  /**
+     * @minimum 1
+     * @maximum 366
+     */
+  goalActiveDays: number;
+  status: FitnessChallengeStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MemberFitnessChallengeStatus = typeof MemberFitnessChallengeStatus[keyof typeof MemberFitnessChallengeStatus];
+
+
+export const MemberFitnessChallengeStatus = {
+  published: 'published',
+  archived: 'archived',
+} as const;
+
+export interface MemberFitnessChallenge {
+  id: string;
+  localizedTitle: LocalizedText;
+  localizedDescription: LocalizedFitnessChallengeDescription;
+  startDate: CalendarDate;
+  endDate: CalendarDate;
+  /**
+     * @minimum 1
+     * @maximum 366
+     */
+  goalActiveDays: number;
+  status: MemberFitnessChallengeStatus;
+  joined: boolean;
+  /** @nullable */
+  joinedAt: string | null;
+  /** @minimum 0 */
+  activeDays: number;
+  selfLoggedDates: CalendarDate[];
+  verifiedAttendanceDates: CalendarDate[];
+  canJoin: boolean;
+  canLogToday: boolean;
+}
+
+export interface MemberFitnessChallengeMembership {
+  challengeId: string;
+  joinedAt: string;
+}
+
+export interface MemberFitnessChallengeActivityResponse {
+  challengeId: string;
+  activityDate: CalendarDate;
+}
 
 export type GetPublicSponsoredContentParams = {
 /**

@@ -11308,6 +11308,282 @@ export const PublishSuperAdminLegalPolicyVersionResponse = zod.object({
 })
 
 
+export const getSuperAdminFitnessChallengesResponseLocalizedTitleEnMax = 240;
+
+export const getSuperAdminFitnessChallengesResponseLocalizedTitleArMax = 240;
+
+export const getSuperAdminFitnessChallengesResponseLocalizedTitleKuMax = 240;
+
+export const getSuperAdminFitnessChallengesResponseLocalizedDescriptionEnMax = 2000;
+
+export const getSuperAdminFitnessChallengesResponseLocalizedDescriptionArMax = 2000;
+
+export const getSuperAdminFitnessChallengesResponseLocalizedDescriptionKuMax = 2000;
+
+export const getSuperAdminFitnessChallengesResponseStartDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const getSuperAdminFitnessChallengesResponseEndDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const getSuperAdminFitnessChallengesResponseGoalActiveDaysMax = 366;
+
+
+
+export const GetSuperAdminFitnessChallengesResponseItem = zod.object({
+  "id": zod.uuid(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(getSuperAdminFitnessChallengesResponseLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(getSuperAdminFitnessChallengesResponseLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(getSuperAdminFitnessChallengesResponseLocalizedTitleKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(getSuperAdminFitnessChallengesResponseLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(getSuperAdminFitnessChallengesResponseLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(getSuperAdminFitnessChallengesResponseLocalizedDescriptionKuMax)
+}),
+  "startDate": zod.string().regex(getSuperAdminFitnessChallengesResponseStartDateRegExp),
+  "endDate": zod.string().regex(getSuperAdminFitnessChallengesResponseEndDateRegExp),
+  "goalActiveDays": zod.int().min(1).max(getSuperAdminFitnessChallengesResponseGoalActiveDaysMax),
+  "status": zod.enum(['draft', 'published', 'archived']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const GetSuperAdminFitnessChallengesResponse = zod.array(GetSuperAdminFitnessChallengesResponseItem)
+
+
+export const createSuperAdminFitnessChallengeBodyLocalizedTitleEnMax = 240;
+
+export const createSuperAdminFitnessChallengeBodyLocalizedTitleArMax = 240;
+
+export const createSuperAdminFitnessChallengeBodyLocalizedTitleKuMax = 240;
+
+export const createSuperAdminFitnessChallengeBodyLocalizedDescriptionEnMax = 2000;
+
+export const createSuperAdminFitnessChallengeBodyLocalizedDescriptionArMax = 2000;
+
+export const createSuperAdminFitnessChallengeBodyLocalizedDescriptionKuMax = 2000;
+
+export const createSuperAdminFitnessChallengeBodyStartDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const createSuperAdminFitnessChallengeBodyEndDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const createSuperAdminFitnessChallengeBodyGoalActiveDaysMax = 366;
+
+
+
+export const CreateSuperAdminFitnessChallengeBody = zod.object({
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(createSuperAdminFitnessChallengeBodyLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(createSuperAdminFitnessChallengeBodyLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(createSuperAdminFitnessChallengeBodyLocalizedTitleKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(createSuperAdminFitnessChallengeBodyLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(createSuperAdminFitnessChallengeBodyLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(createSuperAdminFitnessChallengeBodyLocalizedDescriptionKuMax)
+}),
+  "startDate": zod.string().regex(createSuperAdminFitnessChallengeBodyStartDateRegExp),
+  "endDate": zod.string().regex(createSuperAdminFitnessChallengeBodyEndDateRegExp),
+  "goalActiveDays": zod.int().min(1).max(createSuperAdminFitnessChallengeBodyGoalActiveDaysMax)
+})
+
+export const createSuperAdminFitnessChallengeResponseLocalizedTitleEnMax = 240;
+
+export const createSuperAdminFitnessChallengeResponseLocalizedTitleArMax = 240;
+
+export const createSuperAdminFitnessChallengeResponseLocalizedTitleKuMax = 240;
+
+export const createSuperAdminFitnessChallengeResponseLocalizedDescriptionEnMax = 2000;
+
+export const createSuperAdminFitnessChallengeResponseLocalizedDescriptionArMax = 2000;
+
+export const createSuperAdminFitnessChallengeResponseLocalizedDescriptionKuMax = 2000;
+
+export const createSuperAdminFitnessChallengeResponseStartDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const createSuperAdminFitnessChallengeResponseEndDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const createSuperAdminFitnessChallengeResponseGoalActiveDaysMax = 366;
+
+
+
+export const CreateSuperAdminFitnessChallengeResponse = zod.object({
+  "id": zod.uuid(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(createSuperAdminFitnessChallengeResponseLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(createSuperAdminFitnessChallengeResponseLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(createSuperAdminFitnessChallengeResponseLocalizedTitleKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(createSuperAdminFitnessChallengeResponseLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(createSuperAdminFitnessChallengeResponseLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(createSuperAdminFitnessChallengeResponseLocalizedDescriptionKuMax)
+}),
+  "startDate": zod.string().regex(createSuperAdminFitnessChallengeResponseStartDateRegExp),
+  "endDate": zod.string().regex(createSuperAdminFitnessChallengeResponseEndDateRegExp),
+  "goalActiveDays": zod.int().min(1).max(createSuperAdminFitnessChallengeResponseGoalActiveDaysMax),
+  "status": zod.enum(['draft', 'published', 'archived']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const UpdateSuperAdminFitnessChallengeParams = zod.object({
+  "challengeId": zod.uuid()
+})
+
+export const updateSuperAdminFitnessChallengeBodyLocalizedTitleEnMax = 240;
+
+export const updateSuperAdminFitnessChallengeBodyLocalizedTitleArMax = 240;
+
+export const updateSuperAdminFitnessChallengeBodyLocalizedTitleKuMax = 240;
+
+export const updateSuperAdminFitnessChallengeBodyLocalizedDescriptionEnMax = 2000;
+
+export const updateSuperAdminFitnessChallengeBodyLocalizedDescriptionArMax = 2000;
+
+export const updateSuperAdminFitnessChallengeBodyLocalizedDescriptionKuMax = 2000;
+
+export const updateSuperAdminFitnessChallengeBodyStartDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const updateSuperAdminFitnessChallengeBodyEndDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const updateSuperAdminFitnessChallengeBodyGoalActiveDaysMax = 366;
+
+
+
+export const UpdateSuperAdminFitnessChallengeBody = zod.object({
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(updateSuperAdminFitnessChallengeBodyLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(updateSuperAdminFitnessChallengeBodyLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(updateSuperAdminFitnessChallengeBodyLocalizedTitleKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(updateSuperAdminFitnessChallengeBodyLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(updateSuperAdminFitnessChallengeBodyLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(updateSuperAdminFitnessChallengeBodyLocalizedDescriptionKuMax)
+}),
+  "startDate": zod.string().regex(updateSuperAdminFitnessChallengeBodyStartDateRegExp),
+  "endDate": zod.string().regex(updateSuperAdminFitnessChallengeBodyEndDateRegExp),
+  "goalActiveDays": zod.int().min(1).max(updateSuperAdminFitnessChallengeBodyGoalActiveDaysMax)
+})
+
+export const updateSuperAdminFitnessChallengeResponseLocalizedTitleEnMax = 240;
+
+export const updateSuperAdminFitnessChallengeResponseLocalizedTitleArMax = 240;
+
+export const updateSuperAdminFitnessChallengeResponseLocalizedTitleKuMax = 240;
+
+export const updateSuperAdminFitnessChallengeResponseLocalizedDescriptionEnMax = 2000;
+
+export const updateSuperAdminFitnessChallengeResponseLocalizedDescriptionArMax = 2000;
+
+export const updateSuperAdminFitnessChallengeResponseLocalizedDescriptionKuMax = 2000;
+
+export const updateSuperAdminFitnessChallengeResponseStartDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const updateSuperAdminFitnessChallengeResponseEndDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const updateSuperAdminFitnessChallengeResponseGoalActiveDaysMax = 366;
+
+
+
+export const UpdateSuperAdminFitnessChallengeResponse = zod.object({
+  "id": zod.uuid(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(updateSuperAdminFitnessChallengeResponseLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(updateSuperAdminFitnessChallengeResponseLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(updateSuperAdminFitnessChallengeResponseLocalizedTitleKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(updateSuperAdminFitnessChallengeResponseLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(updateSuperAdminFitnessChallengeResponseLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(updateSuperAdminFitnessChallengeResponseLocalizedDescriptionKuMax)
+}),
+  "startDate": zod.string().regex(updateSuperAdminFitnessChallengeResponseStartDateRegExp),
+  "endDate": zod.string().regex(updateSuperAdminFitnessChallengeResponseEndDateRegExp),
+  "goalActiveDays": zod.int().min(1).max(updateSuperAdminFitnessChallengeResponseGoalActiveDaysMax),
+  "status": zod.enum(['draft', 'published', 'archived']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const PublishSuperAdminFitnessChallengeParams = zod.object({
+  "challengeId": zod.uuid()
+})
+
+export const publishSuperAdminFitnessChallengeResponseLocalizedTitleEnMax = 240;
+
+export const publishSuperAdminFitnessChallengeResponseLocalizedTitleArMax = 240;
+
+export const publishSuperAdminFitnessChallengeResponseLocalizedTitleKuMax = 240;
+
+export const publishSuperAdminFitnessChallengeResponseLocalizedDescriptionEnMax = 2000;
+
+export const publishSuperAdminFitnessChallengeResponseLocalizedDescriptionArMax = 2000;
+
+export const publishSuperAdminFitnessChallengeResponseLocalizedDescriptionKuMax = 2000;
+
+export const publishSuperAdminFitnessChallengeResponseStartDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const publishSuperAdminFitnessChallengeResponseEndDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const publishSuperAdminFitnessChallengeResponseGoalActiveDaysMax = 366;
+
+
+
+export const PublishSuperAdminFitnessChallengeResponse = zod.object({
+  "id": zod.uuid(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(publishSuperAdminFitnessChallengeResponseLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(publishSuperAdminFitnessChallengeResponseLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(publishSuperAdminFitnessChallengeResponseLocalizedTitleKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(publishSuperAdminFitnessChallengeResponseLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(publishSuperAdminFitnessChallengeResponseLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(publishSuperAdminFitnessChallengeResponseLocalizedDescriptionKuMax)
+}),
+  "startDate": zod.string().regex(publishSuperAdminFitnessChallengeResponseStartDateRegExp),
+  "endDate": zod.string().regex(publishSuperAdminFitnessChallengeResponseEndDateRegExp),
+  "goalActiveDays": zod.int().min(1).max(publishSuperAdminFitnessChallengeResponseGoalActiveDaysMax),
+  "status": zod.enum(['draft', 'published', 'archived']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const ArchiveSuperAdminFitnessChallengeParams = zod.object({
+  "challengeId": zod.uuid()
+})
+
+export const archiveSuperAdminFitnessChallengeResponseLocalizedTitleEnMax = 240;
+
+export const archiveSuperAdminFitnessChallengeResponseLocalizedTitleArMax = 240;
+
+export const archiveSuperAdminFitnessChallengeResponseLocalizedTitleKuMax = 240;
+
+export const archiveSuperAdminFitnessChallengeResponseLocalizedDescriptionEnMax = 2000;
+
+export const archiveSuperAdminFitnessChallengeResponseLocalizedDescriptionArMax = 2000;
+
+export const archiveSuperAdminFitnessChallengeResponseLocalizedDescriptionKuMax = 2000;
+
+export const archiveSuperAdminFitnessChallengeResponseStartDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const archiveSuperAdminFitnessChallengeResponseEndDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const archiveSuperAdminFitnessChallengeResponseGoalActiveDaysMax = 366;
+
+
+
+export const ArchiveSuperAdminFitnessChallengeResponse = zod.object({
+  "id": zod.uuid(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(archiveSuperAdminFitnessChallengeResponseLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(archiveSuperAdminFitnessChallengeResponseLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(archiveSuperAdminFitnessChallengeResponseLocalizedTitleKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(archiveSuperAdminFitnessChallengeResponseLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(archiveSuperAdminFitnessChallengeResponseLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(archiveSuperAdminFitnessChallengeResponseLocalizedDescriptionKuMax)
+}),
+  "startDate": zod.string().regex(archiveSuperAdminFitnessChallengeResponseStartDateRegExp),
+  "endDate": zod.string().regex(archiveSuperAdminFitnessChallengeResponseEndDateRegExp),
+  "goalActiveDays": zod.int().min(1).max(archiveSuperAdminFitnessChallengeResponseGoalActiveDaysMax),
+  "status": zod.enum(['draft', 'published', 'archived']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
 export const getSuperAdminGuardianConsentsQueryLimitDefault = 100;
 export const getSuperAdminGuardianConsentsQueryLimitMax = 100;
 
@@ -12421,6 +12697,14 @@ export const getMemberPrivacyRequestExportResponseAccountProfilePhotoImageBase64
 export const getMemberPrivacyRequestExportResponseCoursesItemViewedLessonsItemPlaybackPositionSecondsMin = 0;
 
 
+export const getMemberPrivacyRequestExportResponseFitnessChallengesItemStartDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const getMemberPrivacyRequestExportResponseFitnessChallengesItemEndDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const getMemberPrivacyRequestExportResponseFitnessChallengesItemGoalActiveDaysMax = 366;
+
+export const getMemberPrivacyRequestExportResponseFitnessChallengesItemActiveDaysMin = 0;
+
+export const getMemberPrivacyRequestExportResponseFitnessChallengesItemSelfReportedDatesItemRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const getMemberPrivacyRequestExportResponseFitnessChallengesItemVerifiedAttendanceDatesItemRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
 export const getMemberPrivacyRequestExportResponseSupportConversationsItemMessagesItemAttachmentsItemSizeMin = 0;
 
 export const getMemberPrivacyRequestExportResponseReferralsInviteCodeRegExp = new RegExp('^[A-HJ-NP-Z2-9]{10}$');
@@ -12430,7 +12714,7 @@ export const getMemberPrivacyRequestExportResponseReferralsCodeUsedRegExp = new 
 
 
 export const GetMemberPrivacyRequestExportResponse = zod.object({
-  "formatVersion": zod.enum(['1.5']),
+  "formatVersion": zod.enum(['1.6']),
   "generatedAt": zod.coerce.date(),
   "account": zod.object({
   "email": zod.string().nullable(),
@@ -12511,6 +12795,18 @@ export const GetMemberPrivacyRequestExportResponse = zod.object({
   "savedCourses": zod.array(zod.object({
   "title": zod.string(),
   "savedAt": zod.coerce.date()
+})),
+  "fitnessChallenges": zod.array(zod.object({
+  "challengeId": zod.string(),
+  "title": zod.string(),
+  "startDate": zod.string().regex(getMemberPrivacyRequestExportResponseFitnessChallengesItemStartDateRegExp),
+  "endDate": zod.string().regex(getMemberPrivacyRequestExportResponseFitnessChallengesItemEndDateRegExp),
+  "goalActiveDays": zod.int().min(1).max(getMemberPrivacyRequestExportResponseFitnessChallengesItemGoalActiveDaysMax),
+  "status": zod.enum(['published', 'archived']),
+  "joinedAt": zod.coerce.date(),
+  "activeDays": zod.int().min(getMemberPrivacyRequestExportResponseFitnessChallengesItemActiveDaysMin),
+  "selfReportedDates": zod.array(zod.string().regex(getMemberPrivacyRequestExportResponseFitnessChallengesItemSelfReportedDatesItemRegExp)),
+  "verifiedAttendanceDates": zod.array(zod.string().regex(getMemberPrivacyRequestExportResponseFitnessChallengesItemVerifiedAttendanceDatesItemRegExp))
 })),
   "reviews": zod.array(zod.object({
   "overallRating": zod.int(),
@@ -12719,6 +13015,92 @@ export const GetMemberCoursesResponseItem = zod.object({
   "isSaved": zod.boolean()
 }))
 export const GetMemberCoursesResponse = zod.array(GetMemberCoursesResponseItem)
+
+
+export const getMemberFitnessChallengesResponseLocalizedTitleEnMax = 240;
+
+export const getMemberFitnessChallengesResponseLocalizedTitleArMax = 240;
+
+export const getMemberFitnessChallengesResponseLocalizedTitleKuMax = 240;
+
+export const getMemberFitnessChallengesResponseLocalizedDescriptionEnMax = 2000;
+
+export const getMemberFitnessChallengesResponseLocalizedDescriptionArMax = 2000;
+
+export const getMemberFitnessChallengesResponseLocalizedDescriptionKuMax = 2000;
+
+export const getMemberFitnessChallengesResponseStartDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const getMemberFitnessChallengesResponseEndDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const getMemberFitnessChallengesResponseGoalActiveDaysMax = 366;
+
+export const getMemberFitnessChallengesResponseActiveDaysMin = 0;
+
+export const getMemberFitnessChallengesResponseSelfLoggedDatesItemRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const getMemberFitnessChallengesResponseVerifiedAttendanceDatesItemRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+
+
+export const GetMemberFitnessChallengesResponseItem = zod.object({
+  "id": zod.uuid(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(getMemberFitnessChallengesResponseLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(getMemberFitnessChallengesResponseLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(getMemberFitnessChallengesResponseLocalizedTitleKuMax)
+}),
+  "localizedDescription": zod.object({
+  "en": zod.string().min(1).max(getMemberFitnessChallengesResponseLocalizedDescriptionEnMax),
+  "ar": zod.string().min(1).max(getMemberFitnessChallengesResponseLocalizedDescriptionArMax),
+  "ku": zod.string().min(1).max(getMemberFitnessChallengesResponseLocalizedDescriptionKuMax)
+}),
+  "startDate": zod.string().regex(getMemberFitnessChallengesResponseStartDateRegExp),
+  "endDate": zod.string().regex(getMemberFitnessChallengesResponseEndDateRegExp),
+  "goalActiveDays": zod.int().min(1).max(getMemberFitnessChallengesResponseGoalActiveDaysMax),
+  "status": zod.enum(['published', 'archived']),
+  "joined": zod.boolean(),
+  "joinedAt": zod.coerce.date().nullable(),
+  "activeDays": zod.int().min(getMemberFitnessChallengesResponseActiveDaysMin),
+  "selfLoggedDates": zod.array(zod.string().regex(getMemberFitnessChallengesResponseSelfLoggedDatesItemRegExp)),
+  "verifiedAttendanceDates": zod.array(zod.string().regex(getMemberFitnessChallengesResponseVerifiedAttendanceDatesItemRegExp)),
+  "canJoin": zod.boolean(),
+  "canLogToday": zod.boolean()
+})
+export const GetMemberFitnessChallengesResponse = zod.array(GetMemberFitnessChallengesResponseItem)
+
+
+export const JoinMemberFitnessChallengeParams = zod.object({
+  "challengeId": zod.uuid()
+})
+
+export const JoinMemberFitnessChallengeResponse = zod.object({
+  "challengeId": zod.uuid(),
+  "joinedAt": zod.coerce.date()
+})
+
+
+export const LeaveMemberFitnessChallengeParams = zod.object({
+  "challengeId": zod.uuid()
+})
+
+export const LeaveMemberFitnessChallengeResponse = zod.void()
+
+
+export const LogMemberFitnessChallengeTodayParams = zod.object({
+  "challengeId": zod.uuid()
+})
+
+export const logMemberFitnessChallengeTodayResponseActivityDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+
+
+export const LogMemberFitnessChallengeTodayResponse = zod.object({
+  "challengeId": zod.uuid(),
+  "activityDate": zod.string().regex(logMemberFitnessChallengeTodayResponseActivityDateRegExp)
+})
+
+
+export const UndoMemberFitnessChallengeTodayParams = zod.object({
+  "challengeId": zod.uuid()
+})
+
+export const UndoMemberFitnessChallengeTodayResponse = zod.void()
 
 
 export const GetMemberCourseParams = zod.object({

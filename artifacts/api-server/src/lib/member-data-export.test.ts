@@ -5,7 +5,7 @@ import { GetMemberPrivacyRequestExportResponse } from "@workspace/api-zod";
 test("member export response contains only the declared, non-secret fields", () => {
   const now = new Date("2026-11-14T12:00:00.000Z");
   const parsed = GetMemberPrivacyRequestExportResponse.parse({
-    formatVersion: "1.5",
+    formatVersion: "1.6",
     generatedAt: now,
     account: {
       email: "member@example.test",
@@ -38,6 +38,18 @@ test("member export response contains only the declared, non-secret fields", () 
     bookings: [],
     waitlist: [],
     attendance: [],
+    fitnessChallenges: [{
+      challengeId: "challenge-1",
+      title: "Movement month",
+      startDate: "2026-11-01",
+      endDate: "2026-11-30",
+      goalActiveDays: 12,
+      status: "archived",
+      joinedAt: now,
+      activeDays: 2,
+      selfReportedDates: ["2026-11-10"],
+      verifiedAttendanceDates: ["2026-11-11"],
+    }],
     courses: [{
       title: "Movement basics",
       enrolledAt: now,
@@ -115,6 +127,8 @@ test("member export response contains only the declared, non-secret fields", () 
   assert.equal("rules" in parsed.memberships[0], false);
   assert.equal(parsed.courses[0]?.viewedLessons[0]?.playbackPositionSeconds, 45);
   assert.equal(parsed.savedCourses[0]?.title, "Strength basics");
+  assert.deepEqual(parsed.fitnessChallenges[0]?.selfReportedDates, ["2026-11-10"]);
+  assert.equal(parsed.fitnessChallenges[0]?.activeDays, 2);
   assert.equal(parsed.consentHistory[0]?.choice, "declined");
   assert.equal(parsed.supportConversations[0]?.messages[0]?.body, "Please help with my booking.");
   assert.equal(parsed.supportConversations[0]?.messages[0]?.attachments[0]?.fileName, "schedule.jpg");

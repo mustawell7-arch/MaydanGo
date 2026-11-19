@@ -80,6 +80,7 @@ const numericRuleFields: { key: NumericRuleKey; title: string; help: string; min
 ];
 
 const workspaceLinks = [
+  { href: "/admin/fitness-challenges", title: "Fitness challenges", description: "Create localized challenge drafts, publish reviewed definitions, and archive them safely." },
   { href: "/super-admin/policies", title: "Policy versions", description: "Draft, publish and review the history of public policies." },
   { href: "/partner-portal", title: "Partners and facilities", description: "Review partners, facilities, sessions and bookings." },
   { href: "/finance", title: "Finance and memberships", description: "Review memberships, invoices and gated finance actions." },
