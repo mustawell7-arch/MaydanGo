@@ -337,6 +337,18 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Check-in details saved. Members can reserve and check in to this resource.': 'تم حفظ تفاصيل تسجيل الحضور. يمكن للأعضاء حجز هذا المورد وتسجيل حضورهم.',
     'Session details': 'تفاصيل الجلسة',
     'Use clear, verified information so members can decide whether the session suits them.': 'استخدم معلومات واضحة ومتحققاً منها ليتمكن الأعضاء من تحديد مدى ملاءمة الجلسة لهم.',
+    'Session audience': 'فئة المشاركين',
+    'Women-only': 'للنساء فقط', 'Men-only': 'للرجال فقط', 'Mixed': 'مختلطة', 'Family': 'عائلية', 'Children': 'للأطفال', 'Private': 'خاصة',
+    'Instructor gender (optional)': 'جنس المدرب (اختياري)', 'Not specified': 'غير محدد',
+    'Woman instructor': 'مدربة', 'Man instructor': 'مدرب',
+    'Family or guardian requirements · English': 'متطلبات الأسرة أو ولي الأمر · الإنجليزية',
+    'Family or guardian requirements · Iraqi Arabic': 'متطلبات الأسرة أو ولي الأمر · العربية العراقية',
+    'Family or guardian requirements · Sorani Kurdish': 'متطلبات الأسرة أو ولي الأمر · الكردية السورانية',
+    'These access details apply to each session and its recurring dates. For members under 18, guardian consent is checked by the partner at the venue.': 'تُطبّق شروط الدخول على كل جلسة ومواعيد تكرارها. ويتحقق الشريك في المرفق من موافقة ولي الأمر للأعضاء دون 18 عاماً.',
+    'Children’s sessions need a maximum age below 18.': 'يجب تحديد حد أقصى للعمر أقل من 18 عاماً لجلسات الأطفال.',
+    'Complete family or guardian requirements in all three languages, or leave them blank.': 'أكمل متطلبات الأسرة أو ولي الأمر باللغات الثلاث، أو اتركها فارغة.',
+    'Match the access rule to the selected session audience.': 'اجعل شروط الدخول متوافقة مع فئة المشاركين المحددة.',
+    'Maximum age must not be lower than minimum age.': 'يجب ألا يكون الحد الأقصى للعمر أقل من الحد الأدنى.',
     'Session check-in settings': 'إعدادات تسجيل الحضور للجلسة',
     'Session check-in details saved. Members can check in during the configured window.': 'تم حفظ تفاصيل حضور الجلسة. يمكن للأعضاء تسجيل الحضور خلال الفترة المحددة.',
     'Instructor name · English': 'اسم المدرب · الإنجليزية', 'Instructor name · Iraqi Arabic': 'اسم المدرب · العربية العراقية', 'Instructor name · Sorani Kurdish': 'اسم المدرب · الكردية السورانية',
@@ -522,6 +534,18 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Check-in details saved. Members can reserve and check in to this resource.': 'زانیاریی پشکنینی گەیشتن پاشەکەوت کرا. ئەندامان دەتوانن ئەم سەرچاوەیە حجز بکەن و گەیشتنیان تۆمار بکەن.',
     'Session details': 'وردەکاریی وانە',
     'Use clear, verified information so members can decide whether the session suits them.': 'زانیاریی ڕوون و پشتڕاستکراو بەکاربهێنە تا ئەندامان بزانن ئەم وانەیە گونجاوە بۆیان یان نا.',
+    'Session audience': 'جۆری بەشداربووان',
+    'Women-only': 'تەنها بۆ ژنان', 'Men-only': 'تەنها بۆ پیاوان', 'Mixed': 'تێکەڵ', 'Family': 'خێزانی', 'Children': 'بۆ منداڵان', 'Private': 'تایبەت',
+    'Instructor gender (optional)': 'ڕەگەزی ڕاهێنەر (ئارەزوومەندانە)', 'Not specified': 'دیاری نەکراو',
+    'Woman instructor': 'ڕاهێنەری ژن', 'Man instructor': 'ڕاهێنەری پیاو',
+    'Family or guardian requirements · English': 'پێداویستیی خێزان یان سەرپەرشتیار · ئینگلیزی',
+    'Family or guardian requirements · Iraqi Arabic': 'پێداویستیی خێزان یان سەرپەرشتیار · عەرەبیی عێراقی',
+    'Family or guardian requirements · Sorani Kurdish': 'پێداویستیی خێزان یان سەرپەرشتیار · کوردیی سۆرانی',
+    'These access details apply to each session and its recurring dates. For members under 18, guardian consent is checked by the partner at the venue.': 'ئەم زانیارییانە بۆ هەر وانە و بەروارە دووبارەبووەکانی جێبەجێ دەبن. بۆ ئەندامانی خوار ١٨ ساڵ، هاوبەش لە شوێنەکەدا ڕەزامەندیی سەرپەرشتیار دەپشکنێت.',
+    'Children’s sessions need a maximum age below 18.': 'بۆ وانەی منداڵان، پێویستە تەمەنی زۆرترین بەشداربوو لە ١٨ ساڵ کەمتر بێت.',
+    'Complete family or guardian requirements in all three languages, or leave them blank.': 'پێداویستیی خێزان یان سەرپەرشتیار بە هەر سێ زمانەکە تەواو بکە، یان بەتاڵیان بهێڵەوە.',
+    'Match the access rule to the selected session audience.': 'مەرجی چوونەژوورەوە لەگەڵ جۆری بەشداربووانی هەڵبژێردراو بگونجێنە.',
+    'Maximum age must not be lower than minimum age.': 'تەمەنی زۆرترین نابێت لە تەمەنی کەمترین کەمتر بێت.',
     'Session check-in settings': 'ڕێکخستنەکانی تۆمارکردنی گەیشتن بۆ وانە',
     'Session check-in details saved. Members can check in during the configured window.': 'وردەکاریی تۆمارکردنی گەیشتن بۆ وانە پاشەکەوت کرا. ئەندامان دەتوانن لە ماوەی دیاریکراودا گەیشتن تۆمار بکەن.',
     'Instructor name · English': 'ناوی ڕاهێنەر · ئینگلیزی', 'Instructor name · Iraqi Arabic': 'ناوی ڕاهێنەر · عەرەبیی عێراقی', 'Instructor name · Sorani Kurdish': 'ناوی ڕاهێنەر · کوردیی سۆرانی',
@@ -608,7 +632,7 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
   const [selectedPartnerId, setSelectedPartnerId] = useState(partnerId);
   const [form, setForm] = useState({
     title: '', kind: 'session' as OfferingInput['kind'], bookingModel: 'booking_required' as NonNullable<OfferingInput['bookingModel']>, facilityProfileId: '', city: '', facility: '', category: '', accessType: 'physical' as OfferingInput['accessType'],
-    environment: '', startsAt: '', endsAt: '', cancellationDeadline: '', bookingCutoffMinutes: '0', capacity: '', waitlistOfferMinutes: '30', gender: 'all' as NonNullable<OfferingInput['gender']>, minAge: '', maxAge: '', joinUrl: '', tiers: '', instructions: '', active: false,
+    environment: '', startsAt: '', endsAt: '', cancellationDeadline: '', bookingCutoffMinutes: '0', capacity: '', waitlistOfferMinutes: '30', gender: 'all' as NonNullable<OfferingInput['gender']>, sessionType: 'mixed' as NonNullable<OfferingInput['sessionType']>, instructorGender: 'unspecified' as NonNullable<OfferingInput['instructorGender']>, minAge: '', maxAge: '', joinUrl: '', tiers: '', instructions: '', active: false,
     localizedTitleEn: '', localizedTitleAr: '', localizedTitleKu: '',
      activityTitleAr: '', activityTitleKu: '',
     localizedDescriptionEn: '', localizedDescriptionAr: '', localizedDescriptionKu: '',
@@ -617,7 +641,8 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
     instructionLanguage: 'mixed' as NonNullable<OfferingInput['instructionLanguage']>,
     requiredEquipmentEn: '', requiredEquipmentAr: '', requiredEquipmentKu: '',
      healthSafetyEn: '', healthSafetyAr: '', healthSafetyKu: '',
-     accessibilityEn: '', accessibilityAr: '', accessibilityKu: '',
+      accessibilityEn: '', accessibilityAr: '', accessibilityKu: '',
+      familyRequirementsEn: '', familyRequirementsAr: '', familyRequirementsKu: '',
     resourceNameEn: '', resourceNameAr: '', resourceNameKu: '',
   });
   const facilityRecords = (facilitiesQuery.data ?? []).filter(item => item.partnerId === selectedPartnerId);
@@ -679,6 +704,19 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
       return;
     }
     if (recurring && recurrenceIssue) { setMessage(recurrenceIssue); return; }
+    if (form.sessionType === 'children' && (!form.maxAge.trim() || Number(form.maxAge) >= 18)) {
+      setMessage(portalText(lang, 'Children’s sessions need a maximum age below 18.'));
+      return;
+    }
+    if (form.maxAge.trim() && Number(form.maxAge) < Number(form.minAge || 0)) {
+      setMessage(portalText(lang, 'Maximum age must not be lower than minimum age.'));
+      return;
+    }
+    const familyRequirementValues = [form.familyRequirementsEn, form.familyRequirementsAr, form.familyRequirementsKu];
+    if (familyRequirementValues.some(value => value.trim()) && familyRequirementValues.some(value => !value.trim())) {
+      setMessage(portalText(lang, 'Complete family or guardian requirements in all three languages, or leave them blank.'));
+      return;
+    }
     if (!selectedPartnerId) { setMessage('Select a partner before creating this offering.'); return; }
     if (!selectedFacility) { setMessage('Choose a shared facility record before creating this offering.'); return; }
     if (!selectedFacility.activities.length) { setMessage('Add at least one activity to the facility profile before creating an offering.'); return; }
@@ -765,6 +803,11 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
       imagePath,
       capacity: form.bookingModel === 'resource_booking' ? 1 : Number(form.capacity), waitlistOfferMinutes: Number(form.waitlistOfferMinutes),
       gender: form.gender, ...(form.minAge ? { minAge: Number(form.minAge) } : {}), maxAge: form.maxAge ? Number(form.maxAge) : null,
+      sessionType: form.sessionType,
+      instructorGender: form.instructorGender === 'unspecified' ? null : form.instructorGender,
+      familyRequirements: [form.familyRequirementsEn, form.familyRequirementsAr, form.familyRequirementsKu].some(value => value.trim())
+        ? { en: form.familyRequirementsEn.trim(), ar: form.familyRequirementsAr.trim(), ku: form.familyRequirementsKu.trim() }
+        : null,
       joinUrl: form.joinUrl.trim() || null, active: isAdmin && form.active,
       ...(isLive ? {
         instructionLanguage: form.instructionLanguage,
@@ -958,9 +1001,29 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
           ? <p className="rounded-xl bg-[#f2efe4] px-4 py-3 text-xs leading-5 text-[#687a71]">{portalText(lang, 'One reservation')}</p>
           : <LabelField label={form.bookingModel === 'open_access' ? portalText(lang, 'Maximum visits during this access window') : 'Capacity'}><input required min="1" type="number" className={fieldClass()} value={form.capacity} onChange={e => update('capacity', e.target.value)} /></LabelField>}
         {!['open_access', 'resource_booking'].includes(form.bookingModel) && <LabelField label="Waitlist offer window (minutes)"><input required min="5" max="1440" type="number" className={fieldClass()} value={form.waitlistOfferMinutes} onChange={e => update('waitlistOfferMinutes', e.target.value)} /></LabelField>}
-        <LabelField label="Gender access"><select className={fieldClass()} value={form.gender} onChange={e => update('gender', e.target.value)}><option value="all">All</option><option value="female">Female</option><option value="male">Male</option></select></LabelField>
-        <LabelField label="Minimum age"><input type="number" min="0" className={fieldClass()} value={form.minAge} onChange={e => update('minAge', e.target.value)} /></LabelField>
-        <LabelField label="Maximum age (optional)"><input type="number" min="0" className={fieldClass()} value={form.maxAge} onChange={e => update('maxAge', e.target.value)} /></LabelField>
+        <LabelField label={portalText(lang, 'Session audience')}><select className={fieldClass()} value={form.sessionType} onChange={e => {
+          const value = e.target.value as typeof form.sessionType;
+          update('sessionType', value);
+          if (value === 'women_only') update('gender', 'female');
+          else if (value === 'men_only') update('gender', 'male');
+          else if (value === 'mixed') update('gender', 'all');
+        }}><option value="women_only">{portalText(lang, 'Women-only')}</option><option value="men_only">{portalText(lang, 'Men-only')}</option><option value="mixed">{portalText(lang, 'Mixed')}</option><option value="family">{portalText(lang, 'Family')}</option><option value="children">{portalText(lang, 'Children')}</option><option value="private">{portalText(lang, 'Private')}</option></select></LabelField>
+        <LabelField label={portalText(lang, 'Instructor gender (optional)')}><select className={fieldClass()} value={form.instructorGender} onChange={e => update('instructorGender', e.target.value)}><option value="unspecified">{portalText(lang, 'Not specified')}</option><option value="female">{portalText(lang, 'Woman instructor')}</option><option value="male">{portalText(lang, 'Man instructor')}</option></select></LabelField>
+        <LabelField label={portalText(lang, 'Gender access')}><select className={fieldClass()} value={form.gender} onChange={e => {
+          const value = e.target.value as typeof form.gender;
+          update('gender', value);
+          if (value === 'female') update('sessionType', 'women_only');
+          else if (value === 'male') update('sessionType', 'men_only');
+          else if (form.sessionType === 'women_only' || form.sessionType === 'men_only') update('sessionType', 'mixed');
+        }}><option value="all">{portalText(lang, 'All')}</option><option value="female">{portalText(lang, 'Female')}</option><option value="male">{portalText(lang, 'Male')}</option></select></LabelField>
+        <LabelField label={portalText(lang, 'Minimum age')}><input type="number" min="0" className={fieldClass()} value={form.minAge} onChange={e => update('minAge', e.target.value)} /></LabelField>
+        <LabelField label={portalText(lang, 'Maximum age (optional)')}><input type="number" min="0" className={fieldClass()} value={form.maxAge} onChange={e => update('maxAge', e.target.value)} /></LabelField>
+        {(form.sessionType === 'family' || form.sessionType === 'children') && <div className="grid gap-3 rounded-2xl border border-[#d8d2c4] bg-white/70 p-4 sm:col-span-2 sm:grid-cols-3">
+          <p className="text-xs leading-5 text-[#687a71] sm:col-span-3">{portalText(lang, 'These access details apply to each session and its recurring dates. For members under 18, guardian consent is checked by the partner at the venue.')}</p>
+          <LabelField label={portalText(lang, 'Family or guardian requirements · English')}><textarea maxLength={2000} rows={2} className={fieldClass()} value={form.familyRequirementsEn} onChange={e => update('familyRequirementsEn', e.target.value)} /></LabelField>
+          <LabelField label={portalText(lang, 'Family or guardian requirements · Iraqi Arabic')}><textarea maxLength={2000} rows={2} dir="rtl" className={fieldClass()} value={form.familyRequirementsAr} onChange={e => update('familyRequirementsAr', e.target.value)} /></LabelField>
+          <LabelField label={portalText(lang, 'Family or guardian requirements · Sorani Kurdish')}><textarea maxLength={2000} rows={2} dir="rtl" className={fieldClass()} value={form.familyRequirementsKu} onChange={e => update('familyRequirementsKu', e.target.value)} /></LabelField>
+        </div>}
         <LabelField label="Membership tiers (comma separated)"><input required placeholder="Use tiers configured for your offering" className={fieldClass()} value={form.tiers} onChange={e => update('tiers', e.target.value)} /></LabelField>
         <LabelField label="Join URL (optional)"><input type="url" className={fieldClass()} value={form.joinUrl} onChange={e => update('joinUrl', e.target.value)} /></LabelField>
         {isAdmin && !['open_access', 'resource_booking'].includes(form.bookingModel) ? <label className="flex items-center gap-3 rounded-xl bg-[#eeeadc] px-4 py-3 text-sm font-medium text-[#36564b] sm:col-span-2"><input type="checkbox" checked={form.active} onChange={e => update('active', e.target.checked)} className="accent-[#174d43]" />Publish as active</label>
@@ -1549,6 +1612,48 @@ export default function PartnerPortal() {
       setNotice('Choose whether this in-person activity is indoors or outdoors.');
       return;
     }
+    const existingSessionType = item.sessionType && item.sessionType !== 'unspecified'
+      ? item.sessionType
+      : item.gender === 'female' ? 'women_only' : item.gender === 'male' ? 'men_only' : 'mixed';
+    const sessionType = String(values.get('sessionType') ?? existingSessionType) as OfferingUpdate['sessionType'];
+    const gender = String(values.get('gender') ?? item.gender ?? 'all') as OfferingUpdate['gender'];
+    const minAge = Number(values.get('minAge') ?? item.minAge ?? 0);
+    const maxAgeValue = String(values.get('maxAge') ?? item.maxAge ?? '');
+    const maxAge = maxAgeValue.trim() ? Number(maxAgeValue) : null;
+    const instructorGenderValue = String(values.get('instructorGender') ?? item.instructorGender ?? 'unspecified');
+    const instructorGender = instructorGenderValue === 'unspecified' ? null : instructorGenderValue as OfferingUpdate['instructorGender'];
+    const familyRequirementValues = [
+      String(values.get('familyRequirementsEn') ?? ''),
+      String(values.get('familyRequirementsAr') ?? ''),
+      String(values.get('familyRequirementsKu') ?? ''),
+    ];
+    if (sessionType === 'children' && (maxAge === null || maxAge >= 18)) {
+      setNotice(portalText(language, 'Children’s sessions need a maximum age below 18.'));
+      return;
+    }
+    if (maxAge !== null && maxAge < minAge) {
+      setNotice(portalText(language, 'Maximum age must not be lower than minimum age.'));
+      return;
+    }
+    if ((sessionType === 'women_only' && gender !== 'female')
+      || (sessionType === 'men_only' && gender !== 'male')
+      || (sessionType === 'mixed' && gender !== 'all')) {
+      setNotice(portalText(language, 'Match the access rule to the selected session audience.'));
+      return;
+    }
+    if (familyRequirementValues.some(value => value.trim()) && familyRequirementValues.some(value => !value.trim())) {
+      setNotice(portalText(language, 'Complete family or guardian requirements in all three languages, or leave them blank.'));
+      return;
+    }
+    const familyRequirements = familyRequirementValues.some(value => value.trim())
+      ? { en: familyRequirementValues[0].trim(), ar: familyRequirementValues[1].trim(), ku: familyRequirementValues[2].trim() }
+      : null;
+    const audienceDetailsChanged = sessionType !== existingSessionType
+      || gender !== item.gender
+      || minAge !== item.minAge
+      || maxAge !== item.maxAge
+      || instructorGender !== (item.instructorGender ?? null)
+      || JSON.stringify(familyRequirements) !== JSON.stringify(item.familyRequirements ?? null);
     const activityDetails = item.kind === 'session' ? {
       localizedTitle: {
         en: String(values.get('localizedTitleEn') || '').trim(),
@@ -1599,6 +1704,7 @@ export default function PartnerPortal() {
       cancellationDeadline: localIso(deadline),
       ...(localizedDetailsChanged && activityDetails ? activityDetails : {}),
       ...(localizedDetailsChanged && item.kind === 'session' ? { instructions: String(values.get('instructions') || '').trim() } : {}),
+      ...(audienceDetailsChanged ? { sessionType, gender, minAge, maxAge, instructorGender, familyRequirements } : {}),
     };
     const callbacks = {
       onSuccess: () => { invalidate(); setEditing(null); setNotice('Offering schedule saved.'); },
@@ -1786,6 +1892,17 @@ export default function PartnerPortal() {
                   <LabelField label="Cancellation deadline"><input required name="cancellationDeadline" type="datetime-local" defaultValue={dateTimeInputBaghdad(item.cancellationDeadline)} className={fieldClass()} /></LabelField>
                   <LabelField label="Capacity"><input required min="1" name="capacity" defaultValue={item.capacity} type="number" className={fieldClass()} /></LabelField>
                   {item.accessType !== 'live' && <LabelField label={portalText(language, 'Activity setting')}><select required name="environment" defaultValue={item.environment ?? ''} className={fieldClass()}><option value="" disabled>{portalText(language, 'Choose a setting')}</option><option value="indoor">{portalText(language, 'Indoors')}</option><option value="outdoor">{portalText(language, 'Outdoors')}</option></select></LabelField>}
+                   <div className="grid gap-3 rounded-2xl border border-[#d8d2c4] bg-white/70 p-4 sm:col-span-2 sm:grid-cols-3">
+                     <p className="text-xs leading-5 text-[#687a71] sm:col-span-3">{portalText(language, 'These access details apply to each session and its recurring dates. For members under 18, guardian consent is checked by the partner at the venue.')}</p>
+                     <LabelField label={portalText(language, 'Session audience')}><select name="sessionType" defaultValue={item.sessionType && item.sessionType !== 'unspecified' ? item.sessionType : item.gender === 'female' ? 'women_only' : item.gender === 'male' ? 'men_only' : 'mixed'} className={fieldClass()}><option value="women_only">{portalText(language, 'Women-only')}</option><option value="men_only">{portalText(language, 'Men-only')}</option><option value="mixed">{portalText(language, 'Mixed')}</option><option value="family">{portalText(language, 'Family')}</option><option value="children">{portalText(language, 'Children')}</option><option value="private">{portalText(language, 'Private')}</option></select></LabelField>
+                     <LabelField label={portalText(language, 'Gender access')}><select name="gender" defaultValue={item.gender ?? 'all'} className={fieldClass()}><option value="all">{portalText(language, 'All')}</option><option value="female">{portalText(language, 'Female')}</option><option value="male">{portalText(language, 'Male')}</option></select></LabelField>
+                     <LabelField label={portalText(language, 'Instructor gender (optional)')}><select name="instructorGender" defaultValue={item.instructorGender ?? 'unspecified'} className={fieldClass()}><option value="unspecified">{portalText(language, 'Not specified')}</option><option value="female">{portalText(language, 'Woman instructor')}</option><option value="male">{portalText(language, 'Man instructor')}</option></select></LabelField>
+                     <LabelField label={portalText(language, 'Minimum age')}><input min="0" max="120" name="minAge" defaultValue={item.minAge ?? 0} type="number" className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Maximum age (optional)')}><input min="0" max="120" name="maxAge" defaultValue={item.maxAge ?? ''} type="number" className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Family or guardian requirements · English')}><textarea maxLength={2000} rows={2} name="familyRequirementsEn" defaultValue={item.familyRequirements?.en ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Family or guardian requirements · Iraqi Arabic')}><textarea maxLength={2000} rows={2} dir="rtl" name="familyRequirementsAr" defaultValue={item.familyRequirements?.ar ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Family or guardian requirements · Sorani Kurdish')}><textarea maxLength={2000} rows={2} dir="rtl" name="familyRequirementsKu" defaultValue={item.familyRequirements?.ku ?? ''} className={fieldClass()} /></LabelField>
+                   </div>
                   <div className="flex items-end gap-2"><Button type="submit" disabled={updateOffering.isPending || updateOfferingSeries.isPending}>Save</Button><Button kind="quiet" onClick={() => setEditing(null)}>Close</Button></div>
                 </form>}
                 {!item.cancelledAt && !['open_access', 'resource_booking'].includes(item.bookingModel) && <form className="mt-4 flex flex-wrap items-end gap-3 rounded-2xl bg-[#f2efe4] p-4" onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); handleStatus(item.id, item.capacity, Number(data.get('waitlistOfferMinutes'))); }}>

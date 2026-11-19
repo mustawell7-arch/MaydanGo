@@ -1228,7 +1228,7 @@ components:
         ku: { type: string, minLength: 1, maxLength: 2000 }
     PublicFacilitySession:
       type: object
-      required: [id, title, localizedTitle, localizedDescription, localizedInstructor, instructions, requiredEquipment, healthSafetyInstructions, accessibilityInformation, category, startsAt, endsAt, cancellationDeadline, checkinOpensAt, checkinClosesAt, capacity, remaining, additionalPayment, accessType, bookingModel, resourceName, tiers, difficultyLevel, environment, gender, minAge, maxAge]
+      required: [id, title, localizedTitle, localizedDescription, localizedInstructor, sessionType, instructorGender, familyRequirements, instructions, requiredEquipment, healthSafetyInstructions, accessibilityInformation, category, startsAt, endsAt, cancellationDeadline, checkinOpensAt, checkinClosesAt, capacity, remaining, additionalPayment, accessType, bookingModel, resourceName, tiers, difficultyLevel, environment, gender, minAge, maxAge]
       properties:
         id: { type: string }
         title: { type: string }
@@ -1243,6 +1243,14 @@ components:
         localizedInstructor:
           anyOf:
             - { $ref: "#/components/schemas/LocalizedFacilityText" }
+            - { type: "null" }
+        sessionType: { type: string, enum: [unspecified, women_only, men_only, mixed, family, children, private] }
+        instructorGender:
+          type: ["string", "null"]
+          enum: [female, male, unspecified, null]
+        familyRequirements:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedActivityDetail" }
             - { type: "null" }
         instructions: { type: ["string", "null"], maxLength: 2000 }
         requiredEquipment:
@@ -1306,7 +1314,7 @@ components:
               items: { $ref: "#/components/schemas/PublicFacilitySession" }
     PublicOffering:
       type: object
-      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, localizedInstructor, instructions, requiredEquipment, healthSafetyInstructions, accessibilityInformation, city, facility, category, accessType, bookingModel, resourceName, tiers, difficultyLevel, environment, startsAt, endsAt, cancellationDeadline, checkinOpensAt, checkinClosesAt, bookingCutoffMinutes, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
+      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, localizedInstructor, sessionType, instructorGender, familyRequirements, instructions, requiredEquipment, healthSafetyInstructions, accessibilityInformation, city, facility, category, accessType, bookingModel, resourceName, tiers, difficultyLevel, environment, startsAt, endsAt, cancellationDeadline, checkinOpensAt, checkinClosesAt, bookingCutoffMinutes, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
       properties:
         id: { type: string }
         kind: { type: string, enum: [session, event, coach] }
@@ -1324,6 +1332,14 @@ components:
         localizedInstructor:
           anyOf:
             - { $ref: "#/components/schemas/LocalizedFacilityText" }
+            - { type: "null" }
+        sessionType: { type: string, enum: [unspecified, women_only, men_only, mixed, family, children, private] }
+        instructorGender:
+          type: ["string", "null"]
+          enum: [female, male, unspecified, null]
+        familyRequirements:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedActivityDetail" }
             - { type: "null" }
         instructions: { type: ["string", "null"], maxLength: 2000 }
         requiredEquipment:

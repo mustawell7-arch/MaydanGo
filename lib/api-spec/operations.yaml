@@ -4394,6 +4394,14 @@ components:
           anyOf:
             - $ref: "#/components/schemas/LocalizedText"
             - type: "null"
+        sessionType: { type: string, enum: [unspecified, women_only, men_only, mixed, family, children, private], default: mixed }
+        instructorGender:
+          type: ["string", "null"]
+          enum: [female, male, unspecified, null]
+        familyRequirements:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedActivityDetail"
+            - type: "null"
         healthSafetyInstructions:
           anyOf:
             - $ref: "#/components/schemas/LocalizedActivityDetail"
@@ -4496,7 +4504,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/OfferingInput"
         - type: object
-      required: [id, targetId, slot, scope, bookingModel, resourceName, approvalStatus, activityStatus]
+      required: [id, targetId, slot, scope, bookingModel, resourceName, sessionType, instructorGender, familyRequirements, approvalStatus, activityStatus]
       properties:
         id: { type: string }
         targetId: { type: string }
@@ -4505,6 +4513,14 @@ components:
         resourceName:
           anyOf:
             - $ref: "#/components/schemas/LocalizedText"
+            - type: "null"
+        sessionType: { type: string, enum: [unspecified, women_only, men_only, mixed, family, children, private] }
+        instructorGender:
+          type: ["string", "null"]
+          enum: [female, male, unspecified, null]
+        familyRequirements:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedActivityDetail"
             - type: "null"
         cancelledAt: { type: [string, "null"] }
         recurrenceGroupId: { type: [string, "null"], description: "Shared identifier for sessions created as one recurring series." }
@@ -4596,6 +4612,17 @@ components:
         capacity: { type: integer, minimum: 1 }
         waitlistOfferMinutes: { type: integer, minimum: 5, maximum: 1440 }
         environment: { type: string, enum: [indoor, outdoor] }
+        gender: { type: string, enum: [all, female, male] }
+        minAge: { type: integer, minimum: 0, maximum: 120 }
+        maxAge: { type: ["integer", "null"], minimum: 0, maximum: 120 }
+        sessionType: { type: string, enum: [unspecified, women_only, men_only, mixed, family, children, private] }
+        instructorGender:
+          type: ["string", "null"]
+          enum: [female, male, unspecified, null]
+        familyRequirements:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedActivityDetail"
+            - type: "null"
         localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
         localizedDescription: { $ref: "#/components/schemas/LocalizedText" }
         localizedInstructor: { $ref: "#/components/schemas/LocalizedText" }

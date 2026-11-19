@@ -21,6 +21,7 @@ import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollV
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import { dateTime, errorCopy, localize } from '@/lib/content';
+import { translate } from '@/lib/i18n';
 import { localizePartnerOperationsReview, splitPartnerOperationsList } from '@/lib/partner-operations-copy';
 import { HttpError, useAuthedResource, type Operations, type Offering, type Plan, type Rules } from '@/lib/live-api';
 
@@ -122,7 +123,7 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
     requiredEquipmentEn: '', requiredEquipmentAr: '', requiredEquipmentKu: '',
     difficultyLevel: 'all-levels' as NonNullable<Offering['difficultyLevel']>,
     instructionLanguage: 'mixed' as NonNullable<Offering['instructionLanguage']>,
-    accessType: 'physical' as Offering['accessType'], environment: 'not_set' as 'indoor' | 'outdoor' | 'not_set', tiers: ['M'] as string[], startsAt: '', endsAt: '', cancellationDeadline: '', capacity: '12', gender: 'all' as 'all' | 'female' | 'male', minAge: '0', maxAge: '', additionalPayment: false, active: true });
+    accessType: 'physical' as Offering['accessType'], environment: 'not_set' as 'indoor' | 'outdoor' | 'not_set', tiers: ['M'] as string[], startsAt: '', endsAt: '', cancellationDeadline: '', capacity: '12', gender: 'all' as 'all' | 'female' | 'male', sessionType: 'mixed' as NonNullable<Offering['sessionType']>, instructorGender: 'unspecified' as NonNullable<Offering['instructorGender']>, familyRequirementsEn: '', familyRequirementsAr: '', familyRequirementsKu: '', minAge: '0', maxAge: '', additionalPayment: false, active: true });
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [caps, setCaps] = useState<Record<string, string>>({});
@@ -134,6 +135,8 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
       : iraqInstant(f.endsAt) <= iraqInstant(f.startsAt) ? 'End must be after start.' : iraqInstant(f.cancellationDeadline) > iraqInstant(f.startsAt) ? 'Cancellation deadline must be before start.'
       : !isInt(f.capacity, 1) ? 'Capacity must be a whole number of at least 1.' : !f.tiers.length ? 'Select at least one tier.'
       : !isInt(f.minAge) || Number(f.minAge) > 120 || (f.maxAge && (!isInt(f.maxAge) || Number(f.maxAge) > 120 || Number(f.minAge) > Number(f.maxAge))) ? 'Check the age range.'
+      : f.sessionType === 'children' && (!f.maxAge || Number(f.maxAge) >= 18) ? translate(language, 'childrenAgeRule')
+      : [f.familyRequirementsEn, f.familyRequirementsAr, f.familyRequirementsKu].some(value => value.trim()) && [f.familyRequirementsEn, f.familyRequirementsAr, f.familyRequirementsKu].some(value => !value.trim()) ? translate(language, 'familyRequirementsTranslationsRule')
       : iraqInstant(f.startsAt).getTime() <= Date.now() ? 'Start must be in the future.'
       : f.accessType === 'live' && (!f.localizedTitleEn.trim() || !f.localizedTitleAr.trim() || !f.localizedTitleKu.trim()
         || !f.localizedDescriptionEn.trim() || !f.localizedDescriptionAr.trim() || !f.localizedDescriptionKu.trim()) ? 'Live classes need titles and descriptions in English, Iraqi Arabic and Sorani.'
@@ -148,6 +151,7 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
         localizedDescriptionEn, localizedDescriptionAr, localizedDescriptionKu,
         localizedInstructorEn, localizedInstructorAr, localizedInstructorKu,
         requiredEquipmentEn, requiredEquipmentAr, requiredEquipmentKu,
+        familyRequirementsEn, familyRequirementsAr, familyRequirementsKu, instructorGender,
         joinUrl, ...offering
       } = f;
       await api('/operations/offerings', { method: 'POST', body: { ...offering, title: f.title.trim(), city: f.city.trim(), facility: f.facility.trim(), category: f.category.trim(),
@@ -159,7 +163,11 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
           joinUrl: joinUrl.trim() || null,
         } : {}),
         startsAt: iraqInstant(f.startsAt).toISOString(), endsAt: iraqInstant(f.endsAt).toISOString(), cancellationDeadline: iraqInstant(f.cancellationDeadline).toISOString(),
-         environment: f.accessType === 'live' ? null : f.environment as 'indoor' | 'outdoor', capacity: Number(f.capacity), minAge: Number(f.minAge), maxAge: f.maxAge ? Number(f.maxAge) : null, additionalPayment: f.additionalPayment } });
+         environment: f.accessType === 'live' ? null : f.environment as 'indoor' | 'outdoor', capacity: Number(f.capacity), minAge: Number(f.minAge), maxAge: f.maxAge ? Number(f.maxAge) : null, additionalPayment: f.additionalPayment,
+         instructorGender: instructorGender === 'unspecified' ? null : instructorGender,
+         familyRequirements: [familyRequirementsEn, familyRequirementsAr, familyRequirementsKu].some(value => value.trim())
+           ? { en: familyRequirementsEn.trim(), ar: familyRequirementsAr.trim(), ku: familyRequirementsKu.trim() }
+           : null } });
       setMsg({ ok: true, text: 'Offering saved.' }); setF(x => ({ ...x, title: '' })); await refresh();
     } catch (e) { setMsg(fail(e)); } finally { setBusy(null); }
   };
@@ -204,7 +212,13 @@ function OfferingsTab({ c, d, api, refresh }: TabProps) {
       <View style={s.wrap}><Field c={c} label="STARTS" value={f.startsAt} onChange={set('startsAt')} placeholder="2025-06-01T18:00" /><Field c={c} label="ENDS" value={f.endsAt} onChange={set('endsAt')} placeholder="2025-06-01T19:00" /><Field c={c} label="CANCEL BY" value={f.cancellationDeadline} onChange={set('cancellationDeadline')} placeholder="2025-06-01T12:00" /></View>
       <View style={s.wrap}><Field c={c} label="CAPACITY" value={f.capacity} onChange={set('capacity')} numeric /><Field c={c} label="MIN AGE" value={f.minAge} onChange={set('minAge')} numeric /><Field c={c} label="MAX AGE" value={f.maxAge} onChange={set('maxAge')} numeric /></View>
       <Choice c={c} label="ADDITIONAL PAYMENT" options={['no', 'yes']} value={f.additionalPayment ? 'yes' : 'no'} onChange={v => setF(x => ({ ...x, additionalPayment: v === 'yes' }))} names={{ no: 'Included in membership', yes: 'Additional payment required (booking unavailable)' }} />
-      <Choice c={c} label="GENDER" options={['all', 'female', 'male'] as const} value={f.gender} onChange={v => setF(x => ({ ...x, gender: v }))} names={{ all: 'Everyone', female: 'Women only', male: 'Men only' }} />
+       <Choice c={c} label={translate(language, 'sessionAudience').toLocaleUpperCase()} options={['women_only', 'men_only', 'mixed', 'family', 'children', 'private'] as const} value={f.sessionType} onChange={v => setF(x => ({ ...x, sessionType: v, ...(v === 'women_only' ? { gender: 'female' as const } : v === 'men_only' ? { gender: 'male' as const } : v === 'mixed' ? { gender: 'all' as const } : {}) }))} names={{ women_only: translate(language, 'womenOnly'), men_only: translate(language, 'menOnly'), mixed: translate(language, 'mixedSession'), family: translate(language, 'familySession'), children: translate(language, 'childrenSession'), private: translate(language, 'privateSession') }} />
+       <Choice c={c} label={translate(language, 'instructorGender').toLocaleUpperCase()} options={['unspecified', 'female', 'male'] as const} value={f.instructorGender} onChange={v => setF(x => ({ ...x, instructorGender: v }))} names={{ unspecified: translate(language, 'notSpecified'), female: translate(language, 'femaleInstructor'), male: translate(language, 'maleInstructor') }} />
+       <Choice c={c} label="GENDER ACCESS" options={['all', 'female', 'male'] as const} value={f.gender} onChange={v => setF(x => ({ ...x, gender: v, ...(v === 'female' ? { sessionType: 'women_only' as const } : v === 'male' ? { sessionType: 'men_only' as const } : x.sessionType === 'women_only' || x.sessionType === 'men_only' ? { sessionType: 'mixed' as const } : {}) }))} names={{ all: translate(language, 'allMembers'), female: translate(language, 'womenOnly'), male: translate(language, 'menOnly') }} />
+       {(f.sessionType === 'family' || f.sessionType === 'children') ? <>
+         <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{translate(language, 'guardianVenueCheck')}</Text>
+         <View style={s.wrap}><Field c={c} label="FAMILY / GUARDIAN REQUIREMENTS · ENGLISH" value={f.familyRequirementsEn} onChange={set('familyRequirementsEn')} multiline /><Field c={c} label="متطلبات الأسرة أو ولي الأمر · العربية العراقية" value={f.familyRequirementsAr} onChange={set('familyRequirementsAr')} multiline /><Field c={c} label="پێداویستیی خێزان یان سەرپەرشتیار · سۆرانی" value={f.familyRequirementsKu} onChange={set('familyRequirementsKu')} multiline /></View>
+       </> : null}
       <Choice c={c} label="STATUS" options={['on', 'off']} value={f.active ? 'on' : 'off'} onChange={v => setF(x => ({ ...x, active: v === 'on' }))} names={{ on: 'Publish now', off: 'Save as draft' }} />
       <Msg c={c} m={msg} />
       <Btn c={c} title="Save offering" onPress={() => void create()} busy={busy === 'create'} id="ops-create-offering" />

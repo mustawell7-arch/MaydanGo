@@ -349,6 +349,31 @@ export interface LocalizedActivityDetail {
   ku: string;
 }
 
+export type PublicFacilitySessionSessionType = typeof PublicFacilitySessionSessionType[keyof typeof PublicFacilitySessionSessionType];
+
+
+export const PublicFacilitySessionSessionType = {
+  unspecified: 'unspecified',
+  women_only: 'women_only',
+  men_only: 'men_only',
+  mixed: 'mixed',
+  family: 'family',
+  children: 'children',
+  private: 'private',
+} as const;
+
+/**
+ * @nullable
+ */
+export type PublicFacilitySessionInstructorGender = typeof PublicFacilitySessionInstructorGender[keyof typeof PublicFacilitySessionInstructorGender] | null;
+
+
+export const PublicFacilitySessionInstructorGender = {
+  female: 'female',
+  male: 'male',
+  unspecified: 'unspecified',
+} as const;
+
 export type PublicFacilitySessionAccessType = typeof PublicFacilitySessionAccessType[keyof typeof PublicFacilitySessionAccessType];
 
 
@@ -403,6 +428,10 @@ export interface PublicFacilitySession {
   localizedTitle: LocalizedFacilityText | null;
   localizedDescription: LocalizedFacilityText | null;
   localizedInstructor: LocalizedFacilityText | null;
+  sessionType: PublicFacilitySessionSessionType;
+  /** @nullable */
+  instructorGender: PublicFacilitySessionInstructorGender;
+  familyRequirements: LocalizedActivityDetail | null;
   /**
      * @maxLength 2000
      * @nullable
@@ -477,6 +506,31 @@ export const PublicOfferingKind = {
   coach: 'coach',
 } as const;
 
+export type PublicOfferingSessionType = typeof PublicOfferingSessionType[keyof typeof PublicOfferingSessionType];
+
+
+export const PublicOfferingSessionType = {
+  unspecified: 'unspecified',
+  women_only: 'women_only',
+  men_only: 'men_only',
+  mixed: 'mixed',
+  family: 'family',
+  children: 'children',
+  private: 'private',
+} as const;
+
+/**
+ * @nullable
+ */
+export type PublicOfferingInstructorGender = typeof PublicOfferingInstructorGender[keyof typeof PublicOfferingInstructorGender] | null;
+
+
+export const PublicOfferingInstructorGender = {
+  female: 'female',
+  male: 'male',
+  unspecified: 'unspecified',
+} as const;
+
 export type PublicOfferingAccessType = typeof PublicOfferingAccessType[keyof typeof PublicOfferingAccessType];
 
 
@@ -534,6 +588,10 @@ export interface PublicOffering {
   localizedTitle: LocalizedFacilityText | null;
   localizedDescription: LocalizedFacilityText | null;
   localizedInstructor: LocalizedFacilityText | null;
+  sessionType: PublicOfferingSessionType;
+  /** @nullable */
+  instructorGender: PublicOfferingInstructorGender;
+  familyRequirements: LocalizedActivityDetail | null;
   /**
      * @maxLength 2000
      * @nullable
@@ -2745,6 +2803,31 @@ export interface OperationsAnalyticsResponse {
   unavailableMetrics: OperationsAnalyticsResponseUnavailableMetricsItem[];
 }
 
+export type OfferingInputSessionType = typeof OfferingInputSessionType[keyof typeof OfferingInputSessionType];
+
+
+export const OfferingInputSessionType = {
+  unspecified: 'unspecified',
+  women_only: 'women_only',
+  men_only: 'men_only',
+  mixed: 'mixed',
+  family: 'family',
+  children: 'children',
+  private: 'private',
+} as const;
+
+/**
+ * @nullable
+ */
+export type OfferingInputInstructorGender = typeof OfferingInputInstructorGender[keyof typeof OfferingInputInstructorGender] | null;
+
+
+export const OfferingInputInstructorGender = {
+  female: 'female',
+  male: 'male',
+  unspecified: 'unspecified',
+} as const;
+
 /**
  * @nullable
  */
@@ -2862,6 +2945,10 @@ export interface OfferingInput {
   title: string;
   localizedTitle?: LocalizedText | null;
   localizedDescription?: LocalizedText | null;
+  sessionType?: OfferingInputSessionType;
+  /** @nullable */
+  instructorGender?: OfferingInputInstructorGender;
+  familyRequirements?: LocalizedActivityDetail47d80cf | null;
   healthSafetyInstructions?: LocalizedActivityDetail47d80cf | null;
   accessibilityInformation?: LocalizedActivityDetail47d80cf | null;
   /**
@@ -2955,6 +3042,31 @@ export interface RecurringOfferingsInput {
   schedule: RecurringSchedule;
 }
 
+export type LiveOfferingSessionType = typeof LiveOfferingSessionType[keyof typeof LiveOfferingSessionType];
+
+
+export const LiveOfferingSessionType = {
+  unspecified: 'unspecified',
+  women_only: 'women_only',
+  men_only: 'men_only',
+  mixed: 'mixed',
+  family: 'family',
+  children: 'children',
+  private: 'private',
+} as const;
+
+/**
+ * @nullable
+ */
+export type LiveOfferingInstructorGender = typeof LiveOfferingInstructorGender[keyof typeof LiveOfferingInstructorGender] | null;
+
+
+export const LiveOfferingInstructorGender = {
+  female: 'female',
+  male: 'male',
+  unspecified: 'unspecified',
+} as const;
+
 export type OfferingApprovalStatus = typeof OfferingApprovalStatus[keyof typeof OfferingApprovalStatus];
 
 
@@ -2999,6 +3111,10 @@ export type LiveOffering = OfferingInput & { [key: string]: unknown } & ({
   slot: string;
   scope: string;
   resourceName: LocalizedText | null;
+  sessionType: LiveOfferingSessionType;
+  /** @nullable */
+  instructorGender: LiveOfferingInstructorGender;
+  familyRequirements: LocalizedActivityDetail47d80cf | null;
   /** @nullable */
   cancelledAt?: string | null;
   /**
@@ -3052,6 +3168,10 @@ export type LiveOffering = OfferingInput & { [key: string]: unknown } & ({
   slot: string;
   scope: string;
   resourceName: LocalizedText | null;
+  sessionType: LiveOfferingSessionType;
+  /** @nullable */
+  instructorGender: LiveOfferingInstructorGender;
+  familyRequirements: LocalizedActivityDetail47d80cf | null;
   /** @nullable */
   cancelledAt?: string | null;
   /**
@@ -3185,6 +3305,40 @@ export const OfferingUpdateEnvironment = {
   outdoor: 'outdoor',
 } as const;
 
+export type OfferingUpdateGender = typeof OfferingUpdateGender[keyof typeof OfferingUpdateGender];
+
+
+export const OfferingUpdateGender = {
+  all: 'all',
+  female: 'female',
+  male: 'male',
+} as const;
+
+export type OfferingUpdateSessionType = typeof OfferingUpdateSessionType[keyof typeof OfferingUpdateSessionType];
+
+
+export const OfferingUpdateSessionType = {
+  unspecified: 'unspecified',
+  women_only: 'women_only',
+  men_only: 'men_only',
+  mixed: 'mixed',
+  family: 'family',
+  children: 'children',
+  private: 'private',
+} as const;
+
+/**
+ * @nullable
+ */
+export type OfferingUpdateInstructorGender = typeof OfferingUpdateInstructorGender[keyof typeof OfferingUpdateInstructorGender] | null;
+
+
+export const OfferingUpdateInstructorGender = {
+  female: 'female',
+  male: 'male',
+  unspecified: 'unspecified',
+} as const;
+
 export type OfferingUpdateDifficultyLevel = typeof OfferingUpdateDifficultyLevel[keyof typeof OfferingUpdateDifficultyLevel];
 
 
@@ -3204,6 +3358,22 @@ export interface OfferingUpdate {
      */
   waitlistOfferMinutes?: number;
   environment?: OfferingUpdateEnvironment;
+  gender?: OfferingUpdateGender;
+  /**
+     * @minimum 0
+     * @maximum 120
+     */
+  minAge?: number;
+  /**
+     * @minimum 0
+     * @maximum 120
+     * @nullable
+     */
+  maxAge?: number | null;
+  sessionType?: OfferingUpdateSessionType;
+  /** @nullable */
+  instructorGender?: OfferingUpdateInstructorGender;
+  familyRequirements?: LocalizedActivityDetail47d80cf | null;
   localizedTitle?: LocalizedText;
   localizedDescription?: LocalizedText;
   localizedInstructor?: LocalizedText;

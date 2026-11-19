@@ -47,6 +47,8 @@ export type BookingModel =
   | "resource_booking"
   | "event"
   | "live_class";
+export type SessionType = "unspecified" | "women_only" | "men_only" | "mixed" | "family" | "children" | "private";
+export type InstructorGender = "female" | "male" | "unspecified";
 export type ReservationStatus =
   | "requested"
   | "reserved"
@@ -87,6 +89,9 @@ export const offerings = pgTable("booking_offerings", {
   title: text("title").notNull(),
   localizedTitle: jsonb("localized_title").$type<LocalizedText>(),
   localizedDescription: jsonb("localized_description").$type<LocalizedText>(),
+  sessionType: text("session_type").$type<SessionType>().notNull().default("unspecified"),
+  instructorGender: text("instructor_gender").$type<InstructorGender>(),
+  familyRequirements: jsonb("family_requirements").$type<LocalizedText | null>(),
   healthSafetyInstructions: jsonb("health_safety_instructions").$type<LocalizedText | null>(),
   accessibilityInformation: jsonb("accessibility_information").$type<LocalizedText | null>(),
   resourceName: jsonb("resource_name").$type<LocalizedText | null>(),

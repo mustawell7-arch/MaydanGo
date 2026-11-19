@@ -473,6 +473,8 @@ router.get("/live-catalog", async (_req, res) => {
     partnerId: o.partnerId, partnerName, title: o.title,
       localizedTitle: o.localizedTitle, localizedDescription: o.localizedDescription,
       localizedInstructor: o.localizedInstructor, difficultyLevel: o.difficultyLevel,
+      sessionType: o.sessionType, instructorGender: o.instructorGender,
+      familyRequirements: o.familyRequirements,
       requiredEquipment: o.requiredEquipment, instructions: o.instructions,
       healthSafetyInstructions: o.healthSafetyInstructions, accessibilityInformation: o.accessibilityInformation,
       resourceName: o.resourceName,

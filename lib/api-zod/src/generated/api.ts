@@ -83,6 +83,12 @@ export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstruct
 
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneKuMax = 500;
 
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemFamilyRequirementsOneEnMax = 2000;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemFamilyRequirementsOneArMax = 2000;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemFamilyRequirementsOneKuMax = 2000;
+
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemInstructionsMax = 2000;
 
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemRequiredEquipmentOneEnMax = 500;
@@ -209,6 +215,13 @@ export const GetPublicFacilitiesResponseItem = zod.object({
   "ar": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneArMax),
   "ku": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneKuMax)
 }),zod.null()]),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemFamilyRequirementsOneKuMax)
+}),zod.null()]),
   "instructions": zod.string().max(getPublicFacilitiesResponseTwoUpcomingSessionsItemInstructionsMax).nullable(),
   "requiredEquipment": zod.union([zod.object({
   "en": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemRequiredEquipmentOneEnMax),
@@ -330,6 +343,12 @@ export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructor
 export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneArMax = 500;
 
 export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneKuMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemFamilyRequirementsOneEnMax = 2000;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemFamilyRequirementsOneArMax = 2000;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemFamilyRequirementsOneKuMax = 2000;
 
 export const getPublicFacilityResponseTwoUpcomingSessionsItemInstructionsMax = 2000;
 
@@ -456,6 +475,13 @@ export const GetPublicFacilityResponse = zod.object({
   "en": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneArMax),
   "ku": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneKuMax)
+}),zod.null()]),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemFamilyRequirementsOneKuMax)
 }),zod.null()]),
   "instructions": zod.string().max(getPublicFacilityResponseTwoUpcomingSessionsItemInstructionsMax).nullable(),
   "requiredEquipment": zod.union([zod.object({
@@ -1372,6 +1398,12 @@ export const getPublicCatalogResponseLocalizedInstructorOneArMax = 500;
 
 export const getPublicCatalogResponseLocalizedInstructorOneKuMax = 500;
 
+export const getPublicCatalogResponseFamilyRequirementsOneEnMax = 2000;
+
+export const getPublicCatalogResponseFamilyRequirementsOneArMax = 2000;
+
+export const getPublicCatalogResponseFamilyRequirementsOneKuMax = 2000;
+
 export const getPublicCatalogResponseInstructionsMax = 2000;
 
 export const getPublicCatalogResponseRequiredEquipmentOneEnMax = 500;
@@ -1429,6 +1461,13 @@ export const GetPublicCatalogResponseItem = zod.object({
   "en": zod.string().min(1).max(getPublicCatalogResponseLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(getPublicCatalogResponseLocalizedInstructorOneArMax),
   "ku": zod.string().min(1).max(getPublicCatalogResponseLocalizedInstructorOneKuMax)
+}),zod.null()]),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicCatalogResponseFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(getPublicCatalogResponseFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(getPublicCatalogResponseFamilyRequirementsOneKuMax)
 }),zod.null()]),
   "instructions": zod.string().max(getPublicCatalogResponseInstructionsMax).nullable(),
   "requiredEquipment": zod.union([zod.object({
@@ -1799,6 +1838,13 @@ export const getOperationsResponseOfferingsItemOneLocalizedDescriptionOneArMax =
 
 export const getOperationsResponseOfferingsItemOneLocalizedDescriptionOneKuMax = 240;
 
+export const getOperationsResponseOfferingsItemOneSessionTypeDefault = `mixed`;
+export const getOperationsResponseOfferingsItemOneFamilyRequirementsOneEnMax = 2000;
+
+export const getOperationsResponseOfferingsItemOneFamilyRequirementsOneArMax = 2000;
+
+export const getOperationsResponseOfferingsItemOneFamilyRequirementsOneKuMax = 2000;
+
 export const getOperationsResponseOfferingsItemOneHealthSafetyInstructionsOneEnMax = 2000;
 
 export const getOperationsResponseOfferingsItemOneHealthSafetyInstructionsOneArMax = 2000;
@@ -1850,6 +1896,12 @@ export const getOperationsResponseOfferingsItemThreeResourceNameOneEnMax = 240;
 export const getOperationsResponseOfferingsItemThreeResourceNameOneArMax = 240;
 
 export const getOperationsResponseOfferingsItemThreeResourceNameOneKuMax = 240;
+
+export const getOperationsResponseOfferingsItemThreeFamilyRequirementsOneEnMax = 2000;
+
+export const getOperationsResponseOfferingsItemThreeFamilyRequirementsOneArMax = 2000;
+
+export const getOperationsResponseOfferingsItemThreeFamilyRequirementsOneKuMax = 2000;
 
 export const getOperationsResponseOfferingsItemThreeApprovalReasonMax = 1000;
 
@@ -1944,6 +1996,13 @@ export const GetOperationsResponse = zod.object({
   "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']).default(getOperationsResponseOfferingsItemOneSessionTypeDefault),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(getOperationsResponseOfferingsItemOneFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemOneFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemOneFamilyRequirementsOneKuMax)
+}),zod.null()]),
   "healthSafetyInstructions": zod.union([zod.object({
   "en": zod.string().min(1).max(getOperationsResponseOfferingsItemOneHealthSafetyInstructionsOneEnMax),
   "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemOneHealthSafetyInstructionsOneArMax),
@@ -2004,6 +2063,13 @@ export const GetOperationsResponse = zod.object({
   "en": zod.string().min(1).max(getOperationsResponseOfferingsItemThreeResourceNameOneEnMax),
   "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemThreeResourceNameOneArMax),
   "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemThreeResourceNameOneKuMax)
+}),zod.null()]),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(getOperationsResponseOfferingsItemThreeFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemThreeFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemThreeFamilyRequirementsOneKuMax)
 }),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
@@ -3644,6 +3710,13 @@ export const addLiveOfferingBodyLocalizedDescriptionOneArMax = 240;
 
 export const addLiveOfferingBodyLocalizedDescriptionOneKuMax = 240;
 
+export const addLiveOfferingBodySessionTypeDefault = `mixed`;
+export const addLiveOfferingBodyFamilyRequirementsOneEnMax = 2000;
+
+export const addLiveOfferingBodyFamilyRequirementsOneArMax = 2000;
+
+export const addLiveOfferingBodyFamilyRequirementsOneKuMax = 2000;
+
 export const addLiveOfferingBodyHealthSafetyInstructionsOneEnMax = 2000;
 
 export const addLiveOfferingBodyHealthSafetyInstructionsOneArMax = 2000;
@@ -3704,6 +3777,13 @@ export const AddLiveOfferingBody = zod.object({
   "en": zod.string().min(1).max(addLiveOfferingBodyLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(addLiveOfferingBodyLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(addLiveOfferingBodyLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']).default(addLiveOfferingBodySessionTypeDefault),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullish(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(addLiveOfferingBodyFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(addLiveOfferingBodyFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(addLiveOfferingBodyFamilyRequirementsOneKuMax)
 }),zod.null()]).optional(),
   "healthSafetyInstructions": zod.union([zod.object({
   "en": zod.string().min(1).max(addLiveOfferingBodyHealthSafetyInstructionsOneEnMax),
@@ -3768,6 +3848,13 @@ export const addLiveOfferingResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const addLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const addLiveOfferingResponseOneSessionTypeDefault = `mixed`;
+export const addLiveOfferingResponseOneFamilyRequirementsOneEnMax = 2000;
+
+export const addLiveOfferingResponseOneFamilyRequirementsOneArMax = 2000;
+
+export const addLiveOfferingResponseOneFamilyRequirementsOneKuMax = 2000;
+
 export const addLiveOfferingResponseOneHealthSafetyInstructionsOneEnMax = 2000;
 
 export const addLiveOfferingResponseOneHealthSafetyInstructionsOneArMax = 2000;
@@ -3820,6 +3907,12 @@ export const addLiveOfferingResponseThreeResourceNameOneArMax = 240;
 
 export const addLiveOfferingResponseThreeResourceNameOneKuMax = 240;
 
+export const addLiveOfferingResponseThreeFamilyRequirementsOneEnMax = 2000;
+
+export const addLiveOfferingResponseThreeFamilyRequirementsOneArMax = 2000;
+
+export const addLiveOfferingResponseThreeFamilyRequirementsOneKuMax = 2000;
+
 export const addLiveOfferingResponseThreeApprovalReasonMax = 1000;
 
 export const addLiveOfferingResponseThreePartnerResponseMax = 1000;
@@ -3842,6 +3935,13 @@ export const AddLiveOfferingResponse = zod.object({
   "ar": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']).default(addLiveOfferingResponseOneSessionTypeDefault),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(addLiveOfferingResponseOneFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(addLiveOfferingResponseOneFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(addLiveOfferingResponseOneFamilyRequirementsOneKuMax)
+}),zod.null()]),
   "healthSafetyInstructions": zod.union([zod.object({
   "en": zod.string().min(1).max(addLiveOfferingResponseOneHealthSafetyInstructionsOneEnMax),
   "ar": zod.string().min(1).max(addLiveOfferingResponseOneHealthSafetyInstructionsOneArMax),
@@ -3902,6 +4002,13 @@ export const AddLiveOfferingResponse = zod.object({
   "en": zod.string().min(1).max(addLiveOfferingResponseThreeResourceNameOneEnMax),
   "ar": zod.string().min(1).max(addLiveOfferingResponseThreeResourceNameOneArMax),
   "ku": zod.string().min(1).max(addLiveOfferingResponseThreeResourceNameOneKuMax)
+}),zod.null()]),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(addLiveOfferingResponseThreeFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(addLiveOfferingResponseThreeFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(addLiveOfferingResponseThreeFamilyRequirementsOneKuMax)
 }),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
@@ -4006,6 +4113,13 @@ export const createRecurringOfferingsBodyTemplateLocalizedDescriptionOneArMax = 
 
 export const createRecurringOfferingsBodyTemplateLocalizedDescriptionOneKuMax = 240;
 
+export const createRecurringOfferingsBodyTemplateSessionTypeDefault = `mixed`;
+export const createRecurringOfferingsBodyTemplateFamilyRequirementsOneEnMax = 2000;
+
+export const createRecurringOfferingsBodyTemplateFamilyRequirementsOneArMax = 2000;
+
+export const createRecurringOfferingsBodyTemplateFamilyRequirementsOneKuMax = 2000;
+
 export const createRecurringOfferingsBodyTemplateHealthSafetyInstructionsOneEnMax = 2000;
 
 export const createRecurringOfferingsBodyTemplateHealthSafetyInstructionsOneArMax = 2000;
@@ -4081,6 +4195,13 @@ export const CreateRecurringOfferingsBody = zod.object({
   "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']).default(createRecurringOfferingsBodyTemplateSessionTypeDefault),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullish(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsBodyTemplateFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsBodyTemplateFamilyRequirementsOneKuMax)
+}),zod.null()]).optional(),
   "healthSafetyInstructions": zod.union([zod.object({
   "en": zod.string().min(1).max(createRecurringOfferingsBodyTemplateHealthSafetyInstructionsOneEnMax),
   "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateHealthSafetyInstructionsOneArMax),
@@ -4153,6 +4274,13 @@ export const createRecurringOfferingsResponseOneLocalizedDescriptionOneArMax = 2
 
 export const createRecurringOfferingsResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const createRecurringOfferingsResponseOneSessionTypeDefault = `mixed`;
+export const createRecurringOfferingsResponseOneFamilyRequirementsOneEnMax = 2000;
+
+export const createRecurringOfferingsResponseOneFamilyRequirementsOneArMax = 2000;
+
+export const createRecurringOfferingsResponseOneFamilyRequirementsOneKuMax = 2000;
+
 export const createRecurringOfferingsResponseOneHealthSafetyInstructionsOneEnMax = 2000;
 
 export const createRecurringOfferingsResponseOneHealthSafetyInstructionsOneArMax = 2000;
@@ -4205,6 +4333,12 @@ export const createRecurringOfferingsResponseThreeResourceNameOneArMax = 240;
 
 export const createRecurringOfferingsResponseThreeResourceNameOneKuMax = 240;
 
+export const createRecurringOfferingsResponseThreeFamilyRequirementsOneEnMax = 2000;
+
+export const createRecurringOfferingsResponseThreeFamilyRequirementsOneArMax = 2000;
+
+export const createRecurringOfferingsResponseThreeFamilyRequirementsOneKuMax = 2000;
+
 export const createRecurringOfferingsResponseThreeApprovalReasonMax = 1000;
 
 export const createRecurringOfferingsResponseThreePartnerResponseMax = 1000;
@@ -4227,6 +4361,13 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']).default(createRecurringOfferingsResponseOneSessionTypeDefault),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsResponseOneFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsResponseOneFamilyRequirementsOneKuMax)
+}),zod.null()]),
   "healthSafetyInstructions": zod.union([zod.object({
   "en": zod.string().min(1).max(createRecurringOfferingsResponseOneHealthSafetyInstructionsOneEnMax),
   "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneHealthSafetyInstructionsOneArMax),
@@ -4288,6 +4429,13 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "ar": zod.string().min(1).max(createRecurringOfferingsResponseThreeResourceNameOneArMax),
   "ku": zod.string().min(1).max(createRecurringOfferingsResponseThreeResourceNameOneKuMax)
 }),zod.null()]),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsResponseThreeFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsResponseThreeFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsResponseThreeFamilyRequirementsOneKuMax)
+}),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
   "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
@@ -4327,6 +4475,18 @@ export const ChangeLiveOfferingParams = zod.object({
 
 export const changeLiveOfferingBodyWaitlistOfferMinutesMin = 5;
 export const changeLiveOfferingBodyWaitlistOfferMinutesMax = 1440;
+
+export const changeLiveOfferingBodyMinAgeMin = 0;
+export const changeLiveOfferingBodyMinAgeMax = 120;
+
+export const changeLiveOfferingBodyMaxAgeMin = 0;
+export const changeLiveOfferingBodyMaxAgeMax = 120;
+
+export const changeLiveOfferingBodyFamilyRequirementsOneEnMax = 2000;
+
+export const changeLiveOfferingBodyFamilyRequirementsOneArMax = 2000;
+
+export const changeLiveOfferingBodyFamilyRequirementsOneKuMax = 2000;
 
 export const changeLiveOfferingBodyLocalizedTitleEnMax = 240;
 
@@ -4372,6 +4532,16 @@ export const ChangeLiveOfferingBody = zod.object({
   "capacity": zod.int().min(1),
   "waitlistOfferMinutes": zod.int().min(changeLiveOfferingBodyWaitlistOfferMinutesMin).max(changeLiveOfferingBodyWaitlistOfferMinutesMax).optional(),
   "environment": zod.enum(['indoor', 'outdoor']).optional(),
+  "gender": zod.enum(['all', 'female', 'male']).optional(),
+  "minAge": zod.int().min(changeLiveOfferingBodyMinAgeMin).max(changeLiveOfferingBodyMinAgeMax).optional(),
+  "maxAge": zod.int().min(changeLiveOfferingBodyMaxAgeMin).max(changeLiveOfferingBodyMaxAgeMax).nullish(),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']).optional(),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullish(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeLiveOfferingBodyFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(changeLiveOfferingBodyFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(changeLiveOfferingBodyFamilyRequirementsOneKuMax)
+}),zod.null()]).optional(),
   "localizedTitle": zod.object({
   "en": zod.string().min(1).max(changeLiveOfferingBodyLocalizedTitleEnMax),
   "ar": zod.string().min(1).max(changeLiveOfferingBodyLocalizedTitleArMax),
@@ -4421,6 +4591,13 @@ export const changeLiveOfferingResponseOneLocalizedDescriptionOneEnMax = 240;
 export const changeLiveOfferingResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const changeLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
+
+export const changeLiveOfferingResponseOneSessionTypeDefault = `mixed`;
+export const changeLiveOfferingResponseOneFamilyRequirementsOneEnMax = 2000;
+
+export const changeLiveOfferingResponseOneFamilyRequirementsOneArMax = 2000;
+
+export const changeLiveOfferingResponseOneFamilyRequirementsOneKuMax = 2000;
 
 export const changeLiveOfferingResponseOneHealthSafetyInstructionsOneEnMax = 2000;
 
@@ -4474,6 +4651,12 @@ export const changeLiveOfferingResponseThreeResourceNameOneArMax = 240;
 
 export const changeLiveOfferingResponseThreeResourceNameOneKuMax = 240;
 
+export const changeLiveOfferingResponseThreeFamilyRequirementsOneEnMax = 2000;
+
+export const changeLiveOfferingResponseThreeFamilyRequirementsOneArMax = 2000;
+
+export const changeLiveOfferingResponseThreeFamilyRequirementsOneKuMax = 2000;
+
 export const changeLiveOfferingResponseThreeApprovalReasonMax = 1000;
 
 export const changeLiveOfferingResponseThreePartnerResponseMax = 1000;
@@ -4496,6 +4679,13 @@ export const ChangeLiveOfferingResponse = zod.object({
   "ar": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']).default(changeLiveOfferingResponseOneSessionTypeDefault),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeLiveOfferingResponseOneFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(changeLiveOfferingResponseOneFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(changeLiveOfferingResponseOneFamilyRequirementsOneKuMax)
+}),zod.null()]),
   "healthSafetyInstructions": zod.union([zod.object({
   "en": zod.string().min(1).max(changeLiveOfferingResponseOneHealthSafetyInstructionsOneEnMax),
   "ar": zod.string().min(1).max(changeLiveOfferingResponseOneHealthSafetyInstructionsOneArMax),
@@ -4556,6 +4746,13 @@ export const ChangeLiveOfferingResponse = zod.object({
   "en": zod.string().min(1).max(changeLiveOfferingResponseThreeResourceNameOneEnMax),
   "ar": zod.string().min(1).max(changeLiveOfferingResponseThreeResourceNameOneArMax),
   "ku": zod.string().min(1).max(changeLiveOfferingResponseThreeResourceNameOneKuMax)
+}),zod.null()]),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeLiveOfferingResponseThreeFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(changeLiveOfferingResponseThreeFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(changeLiveOfferingResponseThreeFamilyRequirementsOneKuMax)
 }),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
@@ -4623,6 +4820,18 @@ export const ChangeRecurringOfferingSeriesParams = zod.object({
 export const changeRecurringOfferingSeriesBodyWaitlistOfferMinutesMin = 5;
 export const changeRecurringOfferingSeriesBodyWaitlistOfferMinutesMax = 1440;
 
+export const changeRecurringOfferingSeriesBodyMinAgeMin = 0;
+export const changeRecurringOfferingSeriesBodyMinAgeMax = 120;
+
+export const changeRecurringOfferingSeriesBodyMaxAgeMin = 0;
+export const changeRecurringOfferingSeriesBodyMaxAgeMax = 120;
+
+export const changeRecurringOfferingSeriesBodyFamilyRequirementsOneEnMax = 2000;
+
+export const changeRecurringOfferingSeriesBodyFamilyRequirementsOneArMax = 2000;
+
+export const changeRecurringOfferingSeriesBodyFamilyRequirementsOneKuMax = 2000;
+
 export const changeRecurringOfferingSeriesBodyLocalizedTitleEnMax = 240;
 
 export const changeRecurringOfferingSeriesBodyLocalizedTitleArMax = 240;
@@ -4667,6 +4876,16 @@ export const ChangeRecurringOfferingSeriesBody = zod.object({
   "capacity": zod.int().min(1),
   "waitlistOfferMinutes": zod.int().min(changeRecurringOfferingSeriesBodyWaitlistOfferMinutesMin).max(changeRecurringOfferingSeriesBodyWaitlistOfferMinutesMax).optional(),
   "environment": zod.enum(['indoor', 'outdoor']).optional(),
+  "gender": zod.enum(['all', 'female', 'male']).optional(),
+  "minAge": zod.int().min(changeRecurringOfferingSeriesBodyMinAgeMin).max(changeRecurringOfferingSeriesBodyMinAgeMax).optional(),
+  "maxAge": zod.int().min(changeRecurringOfferingSeriesBodyMaxAgeMin).max(changeRecurringOfferingSeriesBodyMaxAgeMax).nullish(),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']).optional(),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullish(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesBodyFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesBodyFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesBodyFamilyRequirementsOneKuMax)
+}),zod.null()]).optional(),
   "localizedTitle": zod.object({
   "en": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedTitleEnMax),
   "ar": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedTitleArMax),
@@ -4716,6 +4935,13 @@ export const changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneEnMa
 export const changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneKuMax = 240;
+
+export const changeRecurringOfferingSeriesResponseOneSessionTypeDefault = `mixed`;
+export const changeRecurringOfferingSeriesResponseOneFamilyRequirementsOneEnMax = 2000;
+
+export const changeRecurringOfferingSeriesResponseOneFamilyRequirementsOneArMax = 2000;
+
+export const changeRecurringOfferingSeriesResponseOneFamilyRequirementsOneKuMax = 2000;
 
 export const changeRecurringOfferingSeriesResponseOneHealthSafetyInstructionsOneEnMax = 2000;
 
@@ -4769,6 +4995,12 @@ export const changeRecurringOfferingSeriesResponseThreeResourceNameOneArMax = 24
 
 export const changeRecurringOfferingSeriesResponseThreeResourceNameOneKuMax = 240;
 
+export const changeRecurringOfferingSeriesResponseThreeFamilyRequirementsOneEnMax = 2000;
+
+export const changeRecurringOfferingSeriesResponseThreeFamilyRequirementsOneArMax = 2000;
+
+export const changeRecurringOfferingSeriesResponseThreeFamilyRequirementsOneKuMax = 2000;
+
 export const changeRecurringOfferingSeriesResponseThreeApprovalReasonMax = 1000;
 
 export const changeRecurringOfferingSeriesResponseThreePartnerResponseMax = 1000;
@@ -4791,6 +5023,13 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
   "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']).default(changeRecurringOfferingSeriesResponseOneSessionTypeDefault),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneFamilyRequirementsOneKuMax)
+}),zod.null()]),
   "healthSafetyInstructions": zod.union([zod.object({
   "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneHealthSafetyInstructionsOneEnMax),
   "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneHealthSafetyInstructionsOneArMax),
@@ -4852,6 +5091,13 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
   "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseThreeResourceNameOneArMax),
   "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseThreeResourceNameOneKuMax)
 }),zod.null()]),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseThreeFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseThreeFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseThreeFamilyRequirementsOneKuMax)
+}),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
   "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
@@ -4911,6 +5157,13 @@ export const submitLiveOfferingResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const submitLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const submitLiveOfferingResponseOneSessionTypeDefault = `mixed`;
+export const submitLiveOfferingResponseOneFamilyRequirementsOneEnMax = 2000;
+
+export const submitLiveOfferingResponseOneFamilyRequirementsOneArMax = 2000;
+
+export const submitLiveOfferingResponseOneFamilyRequirementsOneKuMax = 2000;
+
 export const submitLiveOfferingResponseOneHealthSafetyInstructionsOneEnMax = 2000;
 
 export const submitLiveOfferingResponseOneHealthSafetyInstructionsOneArMax = 2000;
@@ -4963,6 +5216,12 @@ export const submitLiveOfferingResponseThreeResourceNameOneArMax = 240;
 
 export const submitLiveOfferingResponseThreeResourceNameOneKuMax = 240;
 
+export const submitLiveOfferingResponseThreeFamilyRequirementsOneEnMax = 2000;
+
+export const submitLiveOfferingResponseThreeFamilyRequirementsOneArMax = 2000;
+
+export const submitLiveOfferingResponseThreeFamilyRequirementsOneKuMax = 2000;
+
 export const submitLiveOfferingResponseThreeApprovalReasonMax = 1000;
 
 export const submitLiveOfferingResponseThreePartnerResponseMax = 1000;
@@ -4985,6 +5244,13 @@ export const SubmitLiveOfferingResponse = zod.object({
   "ar": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']).default(submitLiveOfferingResponseOneSessionTypeDefault),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(submitLiveOfferingResponseOneFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(submitLiveOfferingResponseOneFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(submitLiveOfferingResponseOneFamilyRequirementsOneKuMax)
+}),zod.null()]),
   "healthSafetyInstructions": zod.union([zod.object({
   "en": zod.string().min(1).max(submitLiveOfferingResponseOneHealthSafetyInstructionsOneEnMax),
   "ar": zod.string().min(1).max(submitLiveOfferingResponseOneHealthSafetyInstructionsOneArMax),
@@ -5046,6 +5312,13 @@ export const SubmitLiveOfferingResponse = zod.object({
   "ar": zod.string().min(1).max(submitLiveOfferingResponseThreeResourceNameOneArMax),
   "ku": zod.string().min(1).max(submitLiveOfferingResponseThreeResourceNameOneKuMax)
 }),zod.null()]),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(submitLiveOfferingResponseThreeFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(submitLiveOfferingResponseThreeFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(submitLiveOfferingResponseThreeFamilyRequirementsOneKuMax)
+}),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
   "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
@@ -5102,6 +5375,13 @@ export const respondToOfferingCorrectionResponseOneLocalizedDescriptionOneArMax 
 
 export const respondToOfferingCorrectionResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const respondToOfferingCorrectionResponseOneSessionTypeDefault = `mixed`;
+export const respondToOfferingCorrectionResponseOneFamilyRequirementsOneEnMax = 2000;
+
+export const respondToOfferingCorrectionResponseOneFamilyRequirementsOneArMax = 2000;
+
+export const respondToOfferingCorrectionResponseOneFamilyRequirementsOneKuMax = 2000;
+
 export const respondToOfferingCorrectionResponseOneHealthSafetyInstructionsOneEnMax = 2000;
 
 export const respondToOfferingCorrectionResponseOneHealthSafetyInstructionsOneArMax = 2000;
@@ -5154,6 +5434,12 @@ export const respondToOfferingCorrectionResponseThreeResourceNameOneArMax = 240;
 
 export const respondToOfferingCorrectionResponseThreeResourceNameOneKuMax = 240;
 
+export const respondToOfferingCorrectionResponseThreeFamilyRequirementsOneEnMax = 2000;
+
+export const respondToOfferingCorrectionResponseThreeFamilyRequirementsOneArMax = 2000;
+
+export const respondToOfferingCorrectionResponseThreeFamilyRequirementsOneKuMax = 2000;
+
 export const respondToOfferingCorrectionResponseThreeApprovalReasonMax = 1000;
 
 export const respondToOfferingCorrectionResponseThreePartnerResponseMax = 1000;
@@ -5176,6 +5462,13 @@ export const RespondToOfferingCorrectionResponse = zod.object({
   "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']).default(respondToOfferingCorrectionResponseOneSessionTypeDefault),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(respondToOfferingCorrectionResponseOneFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseOneFamilyRequirementsOneKuMax)
+}),zod.null()]),
   "healthSafetyInstructions": zod.union([zod.object({
   "en": zod.string().min(1).max(respondToOfferingCorrectionResponseOneHealthSafetyInstructionsOneEnMax),
   "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneHealthSafetyInstructionsOneArMax),
@@ -5237,6 +5530,13 @@ export const RespondToOfferingCorrectionResponse = zod.object({
   "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseThreeResourceNameOneArMax),
   "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseThreeResourceNameOneKuMax)
 }),zod.null()]),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(respondToOfferingCorrectionResponseThreeFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseThreeFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseThreeFamilyRequirementsOneKuMax)
+}),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
   "approvalStatus": zod.enum(['draft', 'submitted', 'under_review', 'changes_requested', 'approved', 'published', 'suspended', 'rejected', 'archived']),
@@ -5294,6 +5594,13 @@ export const reviewOfferingApprovalResponseOneLocalizedDescriptionOneArMax = 240
 
 export const reviewOfferingApprovalResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const reviewOfferingApprovalResponseOneSessionTypeDefault = `mixed`;
+export const reviewOfferingApprovalResponseOneFamilyRequirementsOneEnMax = 2000;
+
+export const reviewOfferingApprovalResponseOneFamilyRequirementsOneArMax = 2000;
+
+export const reviewOfferingApprovalResponseOneFamilyRequirementsOneKuMax = 2000;
+
 export const reviewOfferingApprovalResponseOneHealthSafetyInstructionsOneEnMax = 2000;
 
 export const reviewOfferingApprovalResponseOneHealthSafetyInstructionsOneArMax = 2000;
@@ -5346,6 +5653,12 @@ export const reviewOfferingApprovalResponseThreeResourceNameOneArMax = 240;
 
 export const reviewOfferingApprovalResponseThreeResourceNameOneKuMax = 240;
 
+export const reviewOfferingApprovalResponseThreeFamilyRequirementsOneEnMax = 2000;
+
+export const reviewOfferingApprovalResponseThreeFamilyRequirementsOneArMax = 2000;
+
+export const reviewOfferingApprovalResponseThreeFamilyRequirementsOneKuMax = 2000;
+
 export const reviewOfferingApprovalResponseThreeApprovalReasonMax = 1000;
 
 export const reviewOfferingApprovalResponseThreePartnerResponseMax = 1000;
@@ -5368,6 +5681,13 @@ export const ReviewOfferingApprovalResponse = zod.object({
   "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']).default(reviewOfferingApprovalResponseOneSessionTypeDefault),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(reviewOfferingApprovalResponseOneFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(reviewOfferingApprovalResponseOneFamilyRequirementsOneKuMax)
+}),zod.null()]),
   "healthSafetyInstructions": zod.union([zod.object({
   "en": zod.string().min(1).max(reviewOfferingApprovalResponseOneHealthSafetyInstructionsOneEnMax),
   "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneHealthSafetyInstructionsOneArMax),
@@ -5428,6 +5748,13 @@ export const ReviewOfferingApprovalResponse = zod.object({
   "en": zod.string().min(1).max(reviewOfferingApprovalResponseThreeResourceNameOneEnMax),
   "ar": zod.string().min(1).max(reviewOfferingApprovalResponseThreeResourceNameOneArMax),
   "ku": zod.string().min(1).max(reviewOfferingApprovalResponseThreeResourceNameOneKuMax)
+}),zod.null()]),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(reviewOfferingApprovalResponseThreeFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(reviewOfferingApprovalResponseThreeFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(reviewOfferingApprovalResponseThreeFamilyRequirementsOneKuMax)
 }),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),
@@ -10831,6 +11158,13 @@ export const getLiveCatalogResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const getLiveCatalogResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const getLiveCatalogResponseOneSessionTypeDefault = `mixed`;
+export const getLiveCatalogResponseOneFamilyRequirementsOneEnMax = 2000;
+
+export const getLiveCatalogResponseOneFamilyRequirementsOneArMax = 2000;
+
+export const getLiveCatalogResponseOneFamilyRequirementsOneKuMax = 2000;
+
 export const getLiveCatalogResponseOneHealthSafetyInstructionsOneEnMax = 2000;
 
 export const getLiveCatalogResponseOneHealthSafetyInstructionsOneArMax = 2000;
@@ -10883,6 +11217,12 @@ export const getLiveCatalogResponseThreeResourceNameOneArMax = 240;
 
 export const getLiveCatalogResponseThreeResourceNameOneKuMax = 240;
 
+export const getLiveCatalogResponseThreeFamilyRequirementsOneEnMax = 2000;
+
+export const getLiveCatalogResponseThreeFamilyRequirementsOneArMax = 2000;
+
+export const getLiveCatalogResponseThreeFamilyRequirementsOneKuMax = 2000;
+
 export const getLiveCatalogResponseThreeApprovalReasonMax = 1000;
 
 export const getLiveCatalogResponseThreePartnerResponseMax = 1000;
@@ -10905,6 +11245,13 @@ export const GetLiveCatalogResponseItem = zod.object({
   "ar": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']).default(getLiveCatalogResponseOneSessionTypeDefault),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(getLiveCatalogResponseOneFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(getLiveCatalogResponseOneFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(getLiveCatalogResponseOneFamilyRequirementsOneKuMax)
+}),zod.null()]),
   "healthSafetyInstructions": zod.union([zod.object({
   "en": zod.string().min(1).max(getLiveCatalogResponseOneHealthSafetyInstructionsOneEnMax),
   "ar": zod.string().min(1).max(getLiveCatalogResponseOneHealthSafetyInstructionsOneArMax),
@@ -10965,6 +11312,13 @@ export const GetLiveCatalogResponseItem = zod.object({
   "en": zod.string().min(1).max(getLiveCatalogResponseThreeResourceNameOneEnMax),
   "ar": zod.string().min(1).max(getLiveCatalogResponseThreeResourceNameOneArMax),
   "ku": zod.string().min(1).max(getLiveCatalogResponseThreeResourceNameOneKuMax)
+}),zod.null()]),
+  "sessionType": zod.enum(['unspecified', 'women_only', 'men_only', 'mixed', 'family', 'children', 'private']),
+  "instructorGender": zod.union([zod.literal('female'),zod.literal('male'),zod.literal('unspecified'),zod.literal(null)]).nullable(),
+  "familyRequirements": zod.union([zod.object({
+  "en": zod.string().min(1).max(getLiveCatalogResponseThreeFamilyRequirementsOneEnMax),
+  "ar": zod.string().min(1).max(getLiveCatalogResponseThreeFamilyRequirementsOneArMax),
+  "ku": zod.string().min(1).max(getLiveCatalogResponseThreeFamilyRequirementsOneKuMax)
 }),zod.null()]),
   "cancelledAt": zod.string().nullish(),
   "recurrenceGroupId": zod.string().nullish().describe('Shared identifier for sessions created as one recurring series.'),

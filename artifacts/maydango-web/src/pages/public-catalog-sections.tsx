@@ -84,6 +84,10 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     sessions: 'Upcoming sessions',
     noSessions: 'No upcoming sessions are listed for this facility.',
     sessionDescription: 'Description', sessionInstructor: 'Instructor', skillLevel: 'Skill level',
+    sessionAudience: 'Participant access', allParticipants: 'All participants', womenOnly: 'Women only', menOnly: 'Men only',
+    mixedAudience: 'Mixed session', familyAudience: 'Family session', childrenAudience: 'Children’s session', privateAudience: 'Private session',
+    instructorGender: 'Instructor gender', femaleInstructor: 'Female', maleInstructor: 'Male', familyRequirements: 'Family and guardian requirements',
+    ageRequirements: 'Age requirements', ages: 'Ages', upToAge: 'Up to age',
     equipment: 'Required equipment', healthSafety: 'Health and safety', sessionAccessibility: 'Accessibility information',
     sessionInstructions: 'Participant instructions', sessionCheckin: 'Check-in window', sessionCapacity: 'Places remaining',
     profileLoading: 'Loading facility details',
@@ -191,6 +195,10 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     sessions: 'الجلسات القادمة',
     noSessions: 'لا توجد جلسات قادمة مدرجة لهذا المرفق.',
     sessionDescription: 'الوصف', sessionInstructor: 'المدرب', skillLevel: 'مستوى المهارة',
+    sessionAudience: 'فئة المشاركين', allParticipants: 'جميع المشاركين', womenOnly: 'للنساء فقط', menOnly: 'للرجال فقط',
+    mixedAudience: 'جلسة مختلطة', familyAudience: 'جلسة عائلية', childrenAudience: 'جلسة للأطفال', privateAudience: 'جلسة خاصة',
+    instructorGender: 'جنس المدرب', femaleInstructor: 'امرأة', maleInstructor: 'رجل', familyRequirements: 'متطلبات الأسرة وولي الأمر',
+    ageRequirements: 'الفئة العمرية', ages: 'الأعمار', upToAge: 'حتى عمر',
     equipment: 'المعدات المطلوبة', healthSafety: 'الصحة والسلامة', sessionAccessibility: 'معلومات إمكانية الوصول',
     sessionInstructions: 'تعليمات المشاركين', sessionCheckin: 'فترة تسجيل الحضور', sessionCapacity: 'الأماكن المتبقية',
     profileLoading: 'جارٍ تحميل تفاصيل المرفق',
@@ -298,6 +306,10 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     sessions: 'وانەکانی داهاتوو',
     noSessions: 'هیچ وانەیەکی داهاتوو بۆ ئەم شوێنە لیست نەکراوە.',
     sessionDescription: 'وەسف', sessionInstructor: 'ڕاهێنەر', skillLevel: 'ئاستی شارەزایی',
+    sessionAudience: 'جۆری بەشداربووان', allParticipants: 'هەموو بەشداربووان', womenOnly: 'تەنها بۆ ژنان', menOnly: 'تەنها بۆ پیاوان',
+    mixedAudience: 'وانەی تێکەڵ', familyAudience: 'وانەی خێزانی', childrenAudience: 'وانەی منداڵان', privateAudience: 'وانەی تایبەت',
+    instructorGender: 'ڕەگەزی ڕاهێنەر', femaleInstructor: 'ژن', maleInstructor: 'پیاو', familyRequirements: 'پێداویستیی خێزان و سەرپەرشتیار',
+    ageRequirements: 'مەرجی تەمەن', ages: 'تەمەن', upToAge: 'تا تەمەنی',
     equipment: 'کەرەستەی پێویست', healthSafety: 'تەندروستی و سەلامەتی', sessionAccessibility: 'زانیاریی دەستڕاگەیشتن',
     sessionInstructions: 'ڕێنمایی بەشداربووان', sessionCheckin: 'ماوەی تۆمارکردنی گەیشتن', sessionCapacity: 'شوێنی ماوە',
     profileLoading: 'وردەکاریی شوێن بار دەکرێت',
@@ -365,6 +377,32 @@ const courseLanguageNames: Record<PublicCatalogLanguage, Record<CourseLanguageCo
 
 function localized(value: { en: string; ar: string; ku: string } | null | undefined, language: PublicCatalogLanguage) {
   return value?.[language] || value?.en || '';
+}
+
+function sessionAudienceLabel(sessionType: string | undefined, gender: string | undefined, labels: Copy) {
+  const effectiveType = sessionType && sessionType !== 'unspecified'
+    ? sessionType
+    : gender === 'female' ? 'women_only' : gender === 'male' ? 'men_only' : 'mixed';
+  const audienceLabels: Record<string, string> = {
+    women_only: labels.womenOnly,
+    men_only: labels.menOnly,
+    mixed: labels.mixedAudience,
+    family: labels.familyAudience,
+    children: labels.childrenAudience,
+    private: labels.privateAudience,
+  };
+  return audienceLabels[effectiveType] ?? labels.allParticipants;
+}
+
+function instructorGenderLabel(value: string | null | undefined, labels: Copy) {
+  if (value === 'female') return labels.femaleInstructor;
+  if (value === 'male') return labels.maleInstructor;
+  return '';
+}
+
+function sessionAgeLabel(minAge: number, maxAge: number | null, labels: Copy) {
+  if (maxAge !== null) return minAge > 0 ? `${labels.ages} ${minAge}–${maxAge}` : `${labels.upToAge} ${maxAge}`;
+  return minAge > 0 ? `${minAge}+` : '';
 }
 
 function QueryError({ message, retry, retryLabel, id }: { message: string; retry: () => void; retryLabel: string; id: string }) {
@@ -446,8 +484,12 @@ function FacilityProfileDetails({ facility, language }: { facility: PublicFacili
                 <p className="font-semibold">{localized(session.localizedTitle, language) || session.title}</p>
                 <p className="mt-1 text-muted-foreground">{session.category} · {new Date(session.startsAt).toLocaleString(language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ', { timeZone: 'Asia/Baghdad', dateStyle: 'medium', timeStyle: 'short' })} – {new Date(session.endsAt).toLocaleTimeString(language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ', { timeZone: 'Asia/Baghdad', hour: '2-digit', minute: '2-digit' })}</p>
                 <p className="mt-1 text-muted-foreground">{text.sessionCapacity}: {session.remaining}/{session.capacity}</p>
+                 <p className="mt-1"><span className="font-semibold">{text.sessionAudience}:</span> {sessionAudienceLabel(session.sessionType, session.gender, text)}</p>
+                 {sessionAgeLabel(session.minAge, session.maxAge, text) && <p className="mt-1"><span className="font-semibold">{text.ageRequirements}:</span> {sessionAgeLabel(session.minAge, session.maxAge, text)}</p>}
                 {localized(session.localizedDescription, language) && <p className="mt-2 leading-6"><span className="font-semibold">{text.sessionDescription}:</span> {localized(session.localizedDescription, language)}</p>}
                 {localized(session.localizedInstructor, language) && <p className="mt-1"><span className="font-semibold">{text.sessionInstructor}:</span> {localized(session.localizedInstructor, language)}</p>}
+                 {instructorGenderLabel(session.instructorGender, text) && <p className="mt-1"><span className="font-semibold">{text.instructorGender}:</span> {instructorGenderLabel(session.instructorGender, text)}</p>}
+                 {localized(session.familyRequirements, language) && <p className="mt-1"><span className="font-semibold">{text.familyRequirements}:</span> {localized(session.familyRequirements, language)}</p>}
                 {session.difficultyLevel && <p className="mt-1"><span className="font-semibold">{text.skillLevel}:</span> {session.difficultyLevel === 'all-levels' ? (language === 'ar' ? 'جميع المستويات' : language === 'ku' ? 'هەموو ئاستەکان' : 'All levels') : session.difficultyLevel}</p>}
                 {localized(session.requiredEquipment, language) && <p className="mt-1"><span className="font-semibold">{text.equipment}:</span> {localized(session.requiredEquipment, language)}</p>}
                 {session.instructions && <p className="mt-1"><span className="font-semibold">{text.sessionInstructions}:</span> {session.instructions}</p>}
@@ -676,6 +718,10 @@ export function PublicHomeShowcase({ language = 'en' }: { language?: PublicCatal
                   </div>
                   <h4 className="font-display mt-3 text-lg font-bold leading-snug">{localized(offering.localizedTitle, language) || offering.title}</h4>
                   <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />{offering.city} · {offering.facility}</p>
+                  <p className="mt-2 text-xs text-muted-foreground"><span className="font-semibold">{text.sessionAudience}:</span> {sessionAudienceLabel(offering.sessionType, offering.gender, text)}</p>
+                  {sessionAgeLabel(offering.minAge, offering.maxAge, text) && <p className="mt-1 text-xs text-muted-foreground"><span className="font-semibold">{text.ageRequirements}:</span> {sessionAgeLabel(offering.minAge, offering.maxAge, text)}</p>}
+                  {instructorGenderLabel(offering.instructorGender, text) && <p className="mt-1 text-xs text-muted-foreground"><span className="font-semibold">{text.instructorGender}:</span> {instructorGenderLabel(offering.instructorGender, text)}</p>}
+                  {localized(offering.familyRequirements, language) && <p className="mt-1 text-xs leading-5 text-muted-foreground">{text.familyRequirements}: {localized(offering.familyRequirements, language)}</p>}
                   {offering.localizedDescription && <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">{localized(offering.localizedDescription, language)}</p>}
                   {offering.instructions && <p className="mt-2 whitespace-pre-line text-xs leading-5 text-muted-foreground">{offering.instructions}</p>}
                 </article>;

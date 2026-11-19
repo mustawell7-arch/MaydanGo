@@ -46,6 +46,7 @@ import { hasAccessRestrictionRecord, isAccessSuspended } from "../lib/account-ac
 import { completeGuardianConsentUpload, requestGuardianConsentUpload } from "../lib/guardian-consents";
 import { saveOfferingPolicy, policyInput } from "../lib/checkin";
 import { getOfferingBookingModel } from "../lib/booking-model";
+import { sessionAudienceIssue, type SessionType } from "../lib/session-audience";
 import {
   GetPartnerInvoicesResponse, GetPartnerSettlementSummaryResponse, RequestPartnerInvoiceUploadUrlBody,
   RequestPartnerInvoiceUploadUrlResponse, SubmitPartnerInvoiceBody, SubmitPartnerInvoiceResponse,
@@ -897,6 +898,12 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
     if (selected.accessType === "live" && data.environment !== undefined) {
       throw new BookingError(400, "Live online classes do not use an indoor or outdoor setting.");
     }
+    const nextSessionType = data.sessionType ?? selected.sessionType;
+    const nextGender = data.gender ?? selected.gender;
+    const nextMinAge = data.minAge ?? selected.minAge;
+    const nextMaxAge = data.maxAge !== undefined ? data.maxAge : selected.maxAge;
+    const audienceIssue = sessionAudienceIssue(nextSessionType as SessionType, nextGender as "all" | "female" | "male", nextMinAge, nextMaxAge);
+    if (audienceIssue) throw new BookingError(400, audienceIssue);
     if (isPartnerOperatorRole(res.locals.operator.role) && selected.partnerId) {
       const [facility] = await tx.select({ id: facilityProfiles.id }).from(facilityProfiles).where(and(
         eq(facilityProfiles.partnerId, selected.partnerId),
@@ -936,6 +943,12 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
       || data.requiredEquipment !== undefined
       || data.healthSafetyInstructions !== undefined
       || data.accessibilityInformation !== undefined
+      || data.sessionType !== undefined
+      || data.instructorGender !== undefined
+      || data.familyRequirements !== undefined
+      || data.gender !== undefined
+      || data.minAge !== undefined
+      || data.maxAge !== undefined
       || data.instructions !== undefined
       || data.joinUrl !== undefined || data.environment !== undefined;
     const partnerContentEdit = isPartnerOperatorRole(res.locals.operator.role) && contentChanged;
@@ -1101,6 +1114,12 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
         ...(data.requiredEquipment !== undefined ? { requiredEquipment: data.requiredEquipment } : {}),
         ...(data.healthSafetyInstructions !== undefined ? { healthSafetyInstructions: data.healthSafetyInstructions } : {}),
         ...(data.accessibilityInformation !== undefined ? { accessibilityInformation: data.accessibilityInformation } : {}),
+        ...(data.sessionType !== undefined ? { sessionType: data.sessionType } : {}),
+        ...(data.instructorGender !== undefined ? { instructorGender: data.instructorGender } : {}),
+        ...(data.familyRequirements !== undefined ? { familyRequirements: data.familyRequirements } : {}),
+        ...(data.gender !== undefined ? { gender: data.gender } : {}),
+        ...(data.minAge !== undefined ? { minAge: data.minAge } : {}),
+        ...(data.maxAge !== undefined ? { maxAge: data.maxAge } : {}),
         ...(data.instructions !== undefined ? { instructions: data.instructions } : {}),
         ...(data.joinUrl !== undefined ? { joinUrl: data.joinUrl } : {}),
         ...(scheduleChanged ? {

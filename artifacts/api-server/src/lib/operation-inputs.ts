@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getOfferingBookingModel } from "./booking-model";
+import { sessionAudienceIssue, type SessionType } from "./session-audience";
 
 const label = z.string().trim().min(1).max(160);
 const quota = z.number().int().min(0).max(100000);
@@ -148,6 +149,9 @@ export const offeringInput = z.object({
   resourceName: localizedText.nullable().optional(),
   localizedTitle: localizedText.nullable().optional(),
   localizedDescription: localizedText.nullable().optional(),
+  sessionType: z.enum(["unspecified", "women_only", "men_only", "mixed", "family", "children", "private"]).default("mixed"),
+  instructorGender: z.enum(["female", "male", "unspecified"]).nullable().optional(),
+  familyRequirements: localizedActivityDetail.nullable().optional(),
   healthSafetyInstructions: localizedActivityDetail.nullable().optional(),
   accessibilityInformation: localizedActivityDetail.nullable().optional(),
   instructions: z.string().trim().max(2000).nullable().optional(),
@@ -202,6 +206,14 @@ export const offeringInput = z.object({
   }
   if (o.accessType !== "live" && o.environment === null) {
     ctx.addIssue({ code: "custom", path: ["environment"], message: "Choose whether this in-person activity is indoors or outdoors." });
+  }
+  const audienceIssue = sessionAudienceIssue(o.sessionType as SessionType, o.gender, o.minAge, o.maxAge);
+  if (audienceIssue) {
+    ctx.addIssue({
+      code: "custom",
+      path: o.sessionType === "children" || audienceIssue.startsWith("Maximum age") ? ["maxAge"] : ["gender"],
+      message: audienceIssue,
+    });
   }
   if (o.accessType === "live" && o.active) {
     if (!o.localizedTitle) ctx.addIssue({ code: "custom", path: ["localizedTitle"], message: "Live classes need English, Arabic and Sorani titles." });

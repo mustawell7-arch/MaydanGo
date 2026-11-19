@@ -34,6 +34,24 @@ const reportReasons = [
   ['other', 'reportOther'],
 ] as const;
 
+function sessionAudienceLabel(
+  sessionType: string | undefined,
+  gender: string | undefined,
+  language: Parameters<typeof translate>[0],
+) {
+  const type = sessionType && sessionType !== 'unspecified'
+    ? sessionType
+    : gender === 'female' ? 'women_only' : gender === 'male' ? 'men_only' : 'mixed';
+  switch (type) {
+    case 'women_only': return translate(language, 'womenOnly');
+    case 'men_only': return translate(language, 'menOnly');
+    case 'family': return translate(language, 'familySession');
+    case 'children': return translate(language, 'childrenSession');
+    case 'private': return translate(language, 'privateSession');
+    default: return translate(language, 'mixedSession');
+  }
+}
+
 export default function FacilityDetailScreen() {
   const colors = useColors();
   const app = useApp();
@@ -373,8 +391,17 @@ function FacilityDetails({ facility }: { facility: PublicFacility }) {
                     {session.category} · {session.accessType} · {session.environment ? t(session.environment) : t('settingNotListed')}
                   </Text>
                   <Text style={[styles.sessionEligibility, { color: colors.mutedForeground }]}>
+                    {t('sessionAudience')}: {sessionAudienceLabel(session.sessionType, session.gender, app.language)}
+                  </Text>
+                  <Text style={[styles.sessionEligibility, { color: colors.mutedForeground }]}>
                     {t('sessionSuitability')}: {eligibilityLabel(session, app.language)}
                   </Text>
+                  {session.instructorGender && session.instructorGender !== 'unspecified' ? <Text style={[styles.sessionEligibility, { color: colors.mutedForeground }]}>
+                    {t('instructorGender')}: {session.instructorGender === 'female' ? t('femaleInstructor') : t('maleInstructor')}
+                  </Text> : null}
+                  {session.familyRequirements ? <Text style={[styles.sessionEligibility, { color: colors.mutedForeground }]}>
+                    {t('familyRequirements')}: {facilityText(session.familyRequirements, app.language)}
+                  </Text> : null}
                 </View>
               </View>
             )) : <Text style={[styles.bodyCopy, { color: colors.mutedForeground }]}>{t('noPublishedSessions')}</Text>}

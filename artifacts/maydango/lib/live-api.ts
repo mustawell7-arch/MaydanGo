@@ -24,6 +24,9 @@ export type Offering = {
   localizedTitle?: { en: string; ar: string; ku: string } | null;
   localizedDescription?: { en: string; ar: string; ku: string } | null;
   localizedInstructor?: { en: string; ar: string; ku: string } | null;
+  sessionType?: 'unspecified' | 'women_only' | 'men_only' | 'mixed' | 'family' | 'children' | 'private';
+  instructorGender?: 'female' | 'male' | 'unspecified' | null;
+  familyRequirements?: { en: string; ar: string; ku: string } | null;
   difficultyLevel?: 'all-levels' | 'beginner' | 'intermediate' | 'advanced' | null;
   healthSafetyInstructions?: { en: string; ar: string; ku: string } | null;
   accessibilityInformation?: { en: string; ar: string; ku: string } | null;
