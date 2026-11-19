@@ -68,6 +68,22 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={17} color={colors.mutedForeground} />
         </Pressable>
         <Pressable
+          testID="profile-activity-sync"
+          accessibilityRole="button"
+          accessibilityLabel={translate(app.language, 'activitySyncTitle')}
+          onPress={() => router.push('/activity-sync')}
+          style={[styles.membershipRow, { backgroundColor: colors.card, borderColor: colors.border, marginTop: -12 }]}
+        >
+          <View style={[styles.rowIcon, { backgroundColor: colors.accent }]}>
+            <Ionicons name="footsteps-outline" size={19} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.rowTitle, { color: colors.foreground }]}>{translate(app.language, 'activitySyncTitle')}</Text>
+            <Text style={[styles.rowSub, { color: colors.mutedForeground }]}>{translate(app.language, 'activitySyncEyebrow')}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={17} color={colors.mutedForeground} />
+        </Pressable>
+        <Pressable
           testID="profile-loyalty-points"
           accessibilityRole="button"
           accessibilityLabel={translate(app.language, 'loyaltyTitle')}

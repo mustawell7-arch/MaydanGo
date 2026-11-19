@@ -12705,6 +12705,15 @@ export const getMemberPrivacyRequestExportResponseFitnessChallengesItemActiveDay
 
 export const getMemberPrivacyRequestExportResponseFitnessChallengesItemSelfReportedDatesItemRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
 export const getMemberPrivacyRequestExportResponseFitnessChallengesItemVerifiedAttendanceDatesItemRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const getMemberPrivacyRequestExportResponseWearableActivityConsentHistoryItemPolicyVersionMax = 40;
+
+export const getMemberPrivacyRequestExportResponseWearableActivityRecordsItemActivityDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const getMemberPrivacyRequestExportResponseWearableActivityRecordsItemStepsMin = 0;
+export const getMemberPrivacyRequestExportResponseWearableActivityRecordsItemStepsMax = 300000;
+
+export const getMemberPrivacyRequestExportResponseWearableActivityRecordsItemCompletedWorkoutsMin = 0;
+export const getMemberPrivacyRequestExportResponseWearableActivityRecordsItemCompletedWorkoutsMax = 100;
+
 export const getMemberPrivacyRequestExportResponseLoyaltyPointsBalanceMin = 0;
 
 export const getMemberPrivacyRequestExportResponseLoyaltyPointsEntriesItemLocalizedTitleEnMax = 240;
@@ -12722,7 +12731,7 @@ export const getMemberPrivacyRequestExportResponseReferralsCodeUsedRegExp = new 
 
 
 export const GetMemberPrivacyRequestExportResponse = zod.object({
-  "formatVersion": zod.enum(['1.7']),
+  "formatVersion": zod.enum(['1.8']),
   "generatedAt": zod.coerce.date(),
   "account": zod.object({
   "email": zod.string().nullable(),
@@ -12816,6 +12825,20 @@ export const GetMemberPrivacyRequestExportResponse = zod.object({
   "selfReportedDates": zod.array(zod.string().regex(getMemberPrivacyRequestExportResponseFitnessChallengesItemSelfReportedDatesItemRegExp)),
   "verifiedAttendanceDates": zod.array(zod.string().regex(getMemberPrivacyRequestExportResponseFitnessChallengesItemVerifiedAttendanceDatesItemRegExp))
 })),
+  "wearableActivity": zod.object({
+  "consentHistory": zod.array(zod.object({
+  "action": zod.enum(['accepted', 'revoked']),
+  "policyVersion": zod.string().max(getMemberPrivacyRequestExportResponseWearableActivityConsentHistoryItemPolicyVersionMax),
+  "recordedAt": zod.coerce.date()
+})),
+  "records": zod.array(zod.object({
+  "activityDate": zod.string().regex(getMemberPrivacyRequestExportResponseWearableActivityRecordsItemActivityDateRegExp),
+  "steps": zod.int().min(getMemberPrivacyRequestExportResponseWearableActivityRecordsItemStepsMin).max(getMemberPrivacyRequestExportResponseWearableActivityRecordsItemStepsMax).nullable(),
+  "completedWorkouts": zod.int().min(getMemberPrivacyRequestExportResponseWearableActivityRecordsItemCompletedWorkoutsMin).max(getMemberPrivacyRequestExportResponseWearableActivityRecordsItemCompletedWorkoutsMax),
+  "source": zod.enum(['apple_health', 'health_connect']),
+  "syncedAt": zod.coerce.date()
+}))
+}),
   "loyaltyPoints": zod.object({
   "balance": zod.int().min(getMemberPrivacyRequestExportResponseLoyaltyPointsBalanceMin),
   "entries": zod.array(zod.object({
@@ -13113,6 +13136,129 @@ export const GetMemberLoyaltyPointsResponse = zod.object({
 }),
   "facility": zod.string().nullable()
 }))
+})
+
+
+export const getMemberActivitySyncResponseConsentPolicyVersionMax = 40;
+
+export const getMemberActivitySyncResponseConsentHistoryItemPolicyVersionMax = 40;
+
+export const getMemberActivitySyncResponseRecordsItemActivityDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const getMemberActivitySyncResponseRecordsItemStepsMin = 0;
+export const getMemberActivitySyncResponseRecordsItemStepsMax = 300000;
+
+export const getMemberActivitySyncResponseRecordsItemCompletedWorkoutsMin = 0;
+export const getMemberActivitySyncResponseRecordsItemCompletedWorkoutsMax = 100;
+
+
+
+export const GetMemberActivitySyncResponse = zod.object({
+  "syncAvailable": zod.literal(false),
+  "consent": zod.object({
+  "status": zod.enum(['not_enabled', 'enabled', 'revoked']),
+  "policyVersion": zod.string().max(getMemberActivitySyncResponseConsentPolicyVersionMax).nullable(),
+  "changedAt": zod.coerce.date().nullable()
+}),
+  "consentHistory": zod.array(zod.object({
+  "action": zod.enum(['accepted', 'revoked']),
+  "policyVersion": zod.string().max(getMemberActivitySyncResponseConsentHistoryItemPolicyVersionMax),
+  "recordedAt": zod.coerce.date()
+})),
+  "records": zod.array(zod.object({
+  "activityDate": zod.string().regex(getMemberActivitySyncResponseRecordsItemActivityDateRegExp),
+  "steps": zod.int().min(getMemberActivitySyncResponseRecordsItemStepsMin).max(getMemberActivitySyncResponseRecordsItemStepsMax).nullable(),
+  "completedWorkouts": zod.int().min(getMemberActivitySyncResponseRecordsItemCompletedWorkoutsMin).max(getMemberActivitySyncResponseRecordsItemCompletedWorkoutsMax),
+  "source": zod.enum(['apple_health', 'health_connect']),
+  "syncedAt": zod.coerce.date()
+}))
+})
+
+
+export const acceptMemberActivitySyncBodyPolicyVersionMax = 40;
+
+
+
+export const AcceptMemberActivitySyncBody = zod.object({
+  "accept": zod.literal(true),
+  "policyVersion": zod.string().min(1).max(acceptMemberActivitySyncBodyPolicyVersionMax)
+})
+
+export const acceptMemberActivitySyncResponseConsentPolicyVersionMax = 40;
+
+export const acceptMemberActivitySyncResponseConsentHistoryItemPolicyVersionMax = 40;
+
+export const acceptMemberActivitySyncResponseRecordsItemActivityDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const acceptMemberActivitySyncResponseRecordsItemStepsMin = 0;
+export const acceptMemberActivitySyncResponseRecordsItemStepsMax = 300000;
+
+export const acceptMemberActivitySyncResponseRecordsItemCompletedWorkoutsMin = 0;
+export const acceptMemberActivitySyncResponseRecordsItemCompletedWorkoutsMax = 100;
+
+
+
+export const AcceptMemberActivitySyncResponse = zod.object({
+  "syncAvailable": zod.literal(false),
+  "consent": zod.object({
+  "status": zod.enum(['not_enabled', 'enabled', 'revoked']),
+  "policyVersion": zod.string().max(acceptMemberActivitySyncResponseConsentPolicyVersionMax).nullable(),
+  "changedAt": zod.coerce.date().nullable()
+}),
+  "consentHistory": zod.array(zod.object({
+  "action": zod.enum(['accepted', 'revoked']),
+  "policyVersion": zod.string().max(acceptMemberActivitySyncResponseConsentHistoryItemPolicyVersionMax),
+  "recordedAt": zod.coerce.date()
+})),
+  "records": zod.array(zod.object({
+  "activityDate": zod.string().regex(acceptMemberActivitySyncResponseRecordsItemActivityDateRegExp),
+  "steps": zod.int().min(acceptMemberActivitySyncResponseRecordsItemStepsMin).max(acceptMemberActivitySyncResponseRecordsItemStepsMax).nullable(),
+  "completedWorkouts": zod.int().min(acceptMemberActivitySyncResponseRecordsItemCompletedWorkoutsMin).max(acceptMemberActivitySyncResponseRecordsItemCompletedWorkoutsMax),
+  "source": zod.enum(['apple_health', 'health_connect']),
+  "syncedAt": zod.coerce.date()
+}))
+})
+
+
+export const revokeMemberActivitySyncResponseConsentPolicyVersionMax = 40;
+
+export const revokeMemberActivitySyncResponseConsentHistoryItemPolicyVersionMax = 40;
+
+export const revokeMemberActivitySyncResponseRecordsItemActivityDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const revokeMemberActivitySyncResponseRecordsItemStepsMin = 0;
+export const revokeMemberActivitySyncResponseRecordsItemStepsMax = 300000;
+
+export const revokeMemberActivitySyncResponseRecordsItemCompletedWorkoutsMin = 0;
+export const revokeMemberActivitySyncResponseRecordsItemCompletedWorkoutsMax = 100;
+
+
+
+export const RevokeMemberActivitySyncResponse = zod.object({
+  "syncAvailable": zod.literal(false),
+  "consent": zod.object({
+  "status": zod.enum(['not_enabled', 'enabled', 'revoked']),
+  "policyVersion": zod.string().max(revokeMemberActivitySyncResponseConsentPolicyVersionMax).nullable(),
+  "changedAt": zod.coerce.date().nullable()
+}),
+  "consentHistory": zod.array(zod.object({
+  "action": zod.enum(['accepted', 'revoked']),
+  "policyVersion": zod.string().max(revokeMemberActivitySyncResponseConsentHistoryItemPolicyVersionMax),
+  "recordedAt": zod.coerce.date()
+})),
+  "records": zod.array(zod.object({
+  "activityDate": zod.string().regex(revokeMemberActivitySyncResponseRecordsItemActivityDateRegExp),
+  "steps": zod.int().min(revokeMemberActivitySyncResponseRecordsItemStepsMin).max(revokeMemberActivitySyncResponseRecordsItemStepsMax).nullable(),
+  "completedWorkouts": zod.int().min(revokeMemberActivitySyncResponseRecordsItemCompletedWorkoutsMin).max(revokeMemberActivitySyncResponseRecordsItemCompletedWorkoutsMax),
+  "source": zod.enum(['apple_health', 'health_connect']),
+  "syncedAt": zod.coerce.date()
+}))
+})
+
+
+export const deleteMemberActivitySyncDataResponseDeletedRecordsMin = 0;
+
+
+
+export const DeleteMemberActivitySyncDataResponse = zod.object({
+  "deletedRecords": zod.int().min(deleteMemberActivitySyncDataResponseDeletedRecordsMin)
 })
 
 

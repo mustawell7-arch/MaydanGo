@@ -13,6 +13,8 @@ import {
   lessonAccess,
   lessonProgress,
   memberConsentEvents,
+  memberActivitySyncConsentEvents,
+  memberActivitySyncSummaries,
   memberProfilePhotos,
   memberSavedCourses,
   memberNotificationPreferences,
@@ -50,6 +52,8 @@ export async function createMemberDataExport(userId: string) {
     notificationRows,
     privacyRows,
     consentRows,
+    activitySyncConsentRows,
+    activitySyncRows,
     supportTicketRows,
     ownReferralRows,
     referralCountRows,
@@ -162,6 +166,22 @@ export async function createMemberDataExport(userId: string) {
     }).from(memberConsentEvents)
       .where(eq(memberConsentEvents.userId, userId))
       .orderBy(desc(memberConsentEvents.recordedAt), desc(memberConsentEvents.id)),
+    db.select({
+      action: memberActivitySyncConsentEvents.action,
+      policyVersion: memberActivitySyncConsentEvents.policyVersion,
+      recordedAt: memberActivitySyncConsentEvents.recordedAt,
+    }).from(memberActivitySyncConsentEvents)
+      .where(eq(memberActivitySyncConsentEvents.userId, userId))
+      .orderBy(desc(memberActivitySyncConsentEvents.recordedAt), desc(memberActivitySyncConsentEvents.id)),
+    db.select({
+      activityDate: memberActivitySyncSummaries.activityDate,
+      steps: memberActivitySyncSummaries.steps,
+      completedWorkouts: memberActivitySyncSummaries.completedWorkouts,
+      source: memberActivitySyncSummaries.provider,
+      syncedAt: memberActivitySyncSummaries.syncedAt,
+    }).from(memberActivitySyncSummaries)
+      .where(eq(memberActivitySyncSummaries.userId, userId))
+      .orderBy(asc(memberActivitySyncSummaries.activityDate), asc(memberActivitySyncSummaries.provider)),
     db.select({
       id: supportTickets.id,
       subject: supportTickets.subject,
@@ -367,7 +387,7 @@ export async function createMemberDataExport(userId: string) {
   }
 
   return GetMemberPrivacyRequestExportResponse.parse({
-      formatVersion: "1.7",
+      formatVersion: "1.8",
     generatedAt: new Date(),
     account: {
       email: account.primaryEmailAddress?.emailAddress ?? null,
@@ -396,6 +416,16 @@ export async function createMemberDataExport(userId: string) {
     })),
     savedCourses: savedCourseRows,
     fitnessChallenges: fitnessChallengesExport,
+    wearableActivity: {
+      consentHistory: activitySyncConsentRows.map(row => ({
+        ...row,
+        recordedAt: row.recordedAt.toISOString(),
+      })),
+      records: activitySyncRows.map(row => ({
+        ...row,
+        syncedAt: row.syncedAt.toISOString(),
+      })),
+    },
     loyaltyPoints,
     reviews: reviewRows,
     consentHistory: consentRows,

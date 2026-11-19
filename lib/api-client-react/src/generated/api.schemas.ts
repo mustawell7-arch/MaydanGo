@@ -1447,6 +1447,92 @@ export interface MemberDataExportFitnessChallenge {
   verifiedAttendanceDates: CalendarDate[];
 }
 
+export type MemberActivitySyncAction = typeof MemberActivitySyncAction[keyof typeof MemberActivitySyncAction];
+
+
+export const MemberActivitySyncAction = {
+  accepted: 'accepted',
+  revoked: 'revoked',
+} as const;
+
+export type MemberActivitySyncStatus = typeof MemberActivitySyncStatus[keyof typeof MemberActivitySyncStatus];
+
+
+export const MemberActivitySyncStatus = {
+  not_enabled: 'not_enabled',
+  enabled: 'enabled',
+  revoked: 'revoked',
+} as const;
+
+export type MemberActivitySyncSource = typeof MemberActivitySyncSource[keyof typeof MemberActivitySyncSource];
+
+
+export const MemberActivitySyncSource = {
+  apple_health: 'apple_health',
+  health_connect: 'health_connect',
+} as const;
+
+export interface MemberActivitySyncConsentHistoryEntry {
+  action: MemberActivitySyncAction;
+  /** @maxLength 40 */
+  policyVersion: string;
+  recordedAt: string;
+}
+
+export interface MemberActivitySyncRecord {
+  activityDate: CalendarDate;
+  /**
+     * @minimum 0
+     * @maximum 300000
+     * @nullable
+     */
+  steps: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  completedWorkouts: number;
+  source: MemberActivitySyncSource;
+  syncedAt: string;
+}
+
+export interface MemberActivitySyncConsent {
+  status: MemberActivitySyncStatus;
+  /**
+     * @maxLength 40
+     * @nullable
+     */
+  policyVersion: string | null;
+  /** @nullable */
+  changedAt: string | null;
+}
+
+export interface MemberActivitySyncState {
+  syncAvailable: false;
+  consent: MemberActivitySyncConsent;
+  consentHistory: MemberActivitySyncConsentHistoryEntry[];
+  records: MemberActivitySyncRecord[];
+}
+
+export interface AcceptMemberActivitySyncBody {
+  accept: true;
+  /**
+     * @minLength 1
+     * @maxLength 40
+     */
+  policyVersion: string;
+}
+
+export interface DeleteMemberActivitySyncDataResponse {
+  /** @minimum 0 */
+  deletedRecords: number;
+}
+
+export interface MemberDataExportActivitySync {
+  consentHistory: MemberActivitySyncConsentHistoryEntry[];
+  records: MemberActivitySyncRecord[];
+}
+
 export type MemberLoyaltyPointEntrySource = typeof MemberLoyaltyPointEntrySource[keyof typeof MemberLoyaltyPointEntrySource];
 
 
@@ -1592,7 +1678,7 @@ export type MemberDataExportFormatVersion = typeof MemberDataExportFormatVersion
 
 
 export const MemberDataExportFormatVersion = {
-  '17': '1.7',
+  '18': '1.8',
 } as const;
 
 export type MemberDataExportExcludedDataItem = typeof MemberDataExportExcludedDataItem[keyof typeof MemberDataExportExcludedDataItem];
@@ -1636,6 +1722,7 @@ export interface MemberDataExport {
   courses: MemberDataExportCourse[];
   savedCourses: MemberDataExportSavedCourse[];
   fitnessChallenges: MemberDataExportFitnessChallenge[];
+  wearableActivity: MemberDataExportActivitySync;
   loyaltyPoints: MemberLoyaltyPointsSummary;
   reviews: MemberDataExportReview[];
   consentHistory: MemberDataExportConsent[];

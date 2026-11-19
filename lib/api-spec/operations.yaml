@@ -179,6 +179,48 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/MemberLoyaltyPointsSummary" }
         "403": { description: Current Terms of Use and Privacy Policy consent is required }
+  /member/activity-sync:
+    get:
+      operationId: getMemberActivitySync
+      responses:
+        "200":
+          description: Activity sync consent and private daily steps/workout summaries for the signed-in member
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberActivitySyncState" }
+  /member/activity-sync/consent:
+    post:
+      operationId: acceptMemberActivitySync
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AcceptMemberActivitySyncBody" }
+      responses:
+        "200":
+          description: The member's activity-data choice was recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberActivitySyncState" }
+        "400": { description: The activity-data notice version is invalid or outdated }
+        "403": { description: Current policy consent or account access is required }
+    delete:
+      operationId: revokeMemberActivitySync
+      responses:
+        "200":
+          description: Consent was withdrawn and saved activity summaries were deleted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberActivitySyncState" }
+  /member/activity-sync/data:
+    delete:
+      operationId: deleteMemberActivitySyncData
+      responses:
+        "200":
+          description: The member's stored activity summaries were deleted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeleteMemberActivitySyncDataResponse" }
   /member/fitness-challenges/{challengeId}/join:
     parameters:
       - { name: challengeId, in: path, required: true, schema: { type: string, format: uuid } }
@@ -3721,6 +3763,78 @@ components:
         verifiedAttendanceDates:
           type: array
           items: { $ref: "#/components/schemas/CalendarDate" }
+    MemberActivitySyncAction:
+      type: string
+      enum: [accepted, revoked]
+    MemberActivitySyncStatus:
+      type: string
+      enum: [not_enabled, enabled, revoked]
+    MemberActivitySyncSource:
+      type: string
+      enum: [apple_health, health_connect]
+    MemberActivitySyncConsentHistoryEntry:
+      type: object
+      additionalProperties: false
+      required: [action, policyVersion, recordedAt]
+      properties:
+        action: { $ref: "#/components/schemas/MemberActivitySyncAction" }
+        policyVersion: { type: string, maxLength: 40 }
+        recordedAt: { type: string, format: date-time }
+    MemberActivitySyncRecord:
+      type: object
+      additionalProperties: false
+      required: [activityDate, steps, completedWorkouts, source, syncedAt]
+      properties:
+        activityDate: { $ref: "#/components/schemas/CalendarDate" }
+        steps: { type: ["integer", "null"], minimum: 0, maximum: 300000 }
+        completedWorkouts: { type: integer, minimum: 0, maximum: 100 }
+        source: { $ref: "#/components/schemas/MemberActivitySyncSource" }
+        syncedAt: { type: string, format: date-time }
+    MemberActivitySyncConsent:
+      type: object
+      additionalProperties: false
+      required: [status, policyVersion, changedAt]
+      properties:
+        status: { $ref: "#/components/schemas/MemberActivitySyncStatus" }
+        policyVersion: { type: ["string", "null"], maxLength: 40 }
+        changedAt: { type: ["string", "null"], format: date-time }
+    MemberActivitySyncState:
+      type: object
+      additionalProperties: false
+      required: [syncAvailable, consent, consentHistory, records]
+      properties:
+        syncAvailable: { type: boolean, enum: [false] }
+        consent: { $ref: "#/components/schemas/MemberActivitySyncConsent" }
+        consentHistory:
+          type: array
+          items: { $ref: "#/components/schemas/MemberActivitySyncConsentHistoryEntry" }
+        records:
+          type: array
+          items: { $ref: "#/components/schemas/MemberActivitySyncRecord" }
+    AcceptMemberActivitySyncBody:
+      type: object
+      additionalProperties: false
+      required: [accept, policyVersion]
+      properties:
+        accept: { type: boolean, enum: [true] }
+        policyVersion: { type: string, minLength: 1, maxLength: 40 }
+    DeleteMemberActivitySyncDataResponse:
+      type: object
+      additionalProperties: false
+      required: [deletedRecords]
+      properties:
+        deletedRecords: { type: integer, minimum: 0 }
+    MemberDataExportActivitySync:
+      type: object
+      additionalProperties: false
+      required: [consentHistory, records]
+      properties:
+        consentHistory:
+          type: array
+          items: { $ref: "#/components/schemas/MemberActivitySyncConsentHistoryEntry" }
+        records:
+          type: array
+          items: { $ref: "#/components/schemas/MemberActivitySyncRecord" }
     MemberDataExportLoyaltyPoints:
       $ref: "#/components/schemas/MemberLoyaltyPointsSummary"
     MemberDataExportReviewRatings:
@@ -3810,9 +3924,9 @@ components:
     MemberDataExport:
       type: object
       additionalProperties: false
-      required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, savedCourses, fitnessChallenges, loyaltyPoints, reviews, consentHistory, supportConversations, referrals, privacyRequests, notificationPreferences, excludedData]
+      required: [formatVersion, generatedAt, account, memberships, bookings, waitlist, attendance, courses, savedCourses, fitnessChallenges, wearableActivity, loyaltyPoints, reviews, consentHistory, supportConversations, referrals, privacyRequests, notificationPreferences, excludedData]
       properties:
-        formatVersion: { type: string, enum: ["1.7"] }
+        formatVersion: { type: string, enum: ["1.8"] }
         generatedAt: { type: string, format: date-time }
         account: { $ref: "#/components/schemas/MemberDataExportAccount" }
         memberships:
@@ -3836,6 +3950,7 @@ components:
         fitnessChallenges:
           type: array
           items: { $ref: "#/components/schemas/MemberDataExportFitnessChallenge" }
+        wearableActivity: { $ref: "#/components/schemas/MemberDataExportActivitySync" }
         loyaltyPoints: { $ref: "#/components/schemas/MemberDataExportLoyaltyPoints" }
         reviews:
           type: array

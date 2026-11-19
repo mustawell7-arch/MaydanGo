@@ -775,6 +775,12 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1fitness-challenges"
   /member/loyalty-points:
     $ref: "./operations.yaml#/paths/~1member~1loyalty-points"
+  /member/activity-sync:
+    $ref: "./operations.yaml#/paths/~1member~1activity-sync"
+  /member/activity-sync/consent:
+    $ref: "./operations.yaml#/paths/~1member~1activity-sync~1consent"
+  /member/activity-sync/data:
+    $ref: "./operations.yaml#/paths/~1member~1activity-sync~1data"
   /member/fitness-challenges/{challengeId}/join:
     $ref: "./operations.yaml#/paths/~1member~1fitness-challenges~1{challengeId}~1join"
   /member/fitness-challenges/{challengeId}/participation:

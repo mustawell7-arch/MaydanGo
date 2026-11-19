@@ -14,3 +14,9 @@ The user explicitly skipped the Customer Community milestone.
 **Why:** The user asked not to build it and to move on.
 
 **How to apply:** Do not implement or reopen Customer Community unless the user asks. Continue with Wearable Integration next.
+
+The user selected daily step totals and completed-workout counts only, with a provider-neutral privacy/data foundation before live health-platform connections.
+
+**Why:** The user chose a foundation-first approach after learning Apple Health and Health Connect need native access beyond the current Expo Go preview.
+
+**How to apply:** Keep health data private to the member, exclude heart rate, sleep, and location, and do not count wearable summaries toward fitness challenges. Implement Apple Health and Google Health Connect later in PDF order; do not claim a live sync until those integrations are built and tested.

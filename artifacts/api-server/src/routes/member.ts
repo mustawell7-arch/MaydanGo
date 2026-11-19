@@ -54,6 +54,7 @@ import { memberSupportRouter } from "./support";
 import memberReviewsRouter from "./member-reviews";
 import memberFitnessChallengeRouter from "./member-fitness-challenges";
 import memberLoyaltyPointsRouter from "./member-loyalty-points";
+import memberActivitySyncRouter from "./member-activity-sync";
 import { sendMemberNotification } from "../lib/notifications";
 import { filterSuspendedOfferings, isAccessSuspended } from "../lib/account-access-restrictions";
 import { PaymentError } from "../lib/payment-config";
@@ -78,6 +79,7 @@ router.use((req, res, next) => {
 });
 router.use(memberFitnessChallengeRouter);
 router.use(memberLoyaltyPointsRouter);
+router.use(memberActivitySyncRouter);
 async function ensureCurrentMemberConsent(req: import("express").Request, res: import("express").Response) {
   if (await hasCurrentRequiredMemberConsent(getAuth(req).userId!)) return true;
   res.status(403).json({
