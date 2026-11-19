@@ -144,9 +144,9 @@ export const reservations = pgTable("reservations", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
 }, t => [
-  uniqueIndex("one_active_reservation").on(t.userId, t.offeringId)
+  uniqueIndex("one_active_reservation_including_confirmed").on(t.userId, t.offeringId)
     .where(sql`${t.status} in ('reserved', 'requested', 'confirmed')`),
-  index("reservation_active_offering").on(t.offeringId)
+  index("reservation_active_offering_including_confirmed").on(t.offeringId)
     .where(sql`${t.status} in ('reserved', 'requested', 'confirmed')`),
 ]);
 

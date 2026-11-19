@@ -176,7 +176,7 @@ test("analytics are aggregated, date-bounded, and scoped to each approved partne
     id,
     userId: index === 2 ? `${prefix}-other-member` : userId,
     offeringId: offeringIds[index],
-    status: "reserved",
+    status: "reserved" as const,
     createdAt: now,
   })));
   await db.insert(attendance).values(reservationIds.map((id, index) => ({

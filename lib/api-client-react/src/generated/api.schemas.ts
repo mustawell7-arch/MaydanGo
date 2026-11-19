@@ -759,6 +759,31 @@ export const MemberBookingBookingModel = {
   live_class: 'live_class',
 } as const;
 
+export type MemberBookingStatus = typeof MemberBookingStatus[keyof typeof MemberBookingStatus];
+
+
+export const MemberBookingStatus = {
+  requested: 'requested',
+  reserved: 'reserved',
+  confirmed: 'confirmed',
+  cancelled: 'cancelled',
+  partner_cancelled: 'partner_cancelled',
+  admin_cancelled: 'admin_cancelled',
+  rejected: 'rejected',
+} as const;
+
+export type MemberBookingAttendanceStatus = typeof MemberBookingAttendanceStatus[keyof typeof MemberBookingAttendanceStatus];
+
+
+export const MemberBookingAttendanceStatus = {
+  not_checked_in: 'not_checked_in',
+  pending: 'pending',
+  confirmed: 'confirmed',
+  no_show: 'no_show',
+  disputed: 'disputed',
+  void: 'void',
+} as const;
+
 export interface MemberBooking {
   id: string;
   kind: string;
@@ -773,7 +798,11 @@ export interface MemberBooking {
   cancellationDeadline: string;
   scope: string;
   startsAt: string;
-  status: string;
+  status: MemberBookingStatus;
+  attendanceStatus: MemberBookingAttendanceStatus;
+  /** @nullable */
+  checkedInAt: string | null;
+  settlementEligible: boolean;
   createdAt: string;
   /** @nullable */
   cancelledAt?: string | null;

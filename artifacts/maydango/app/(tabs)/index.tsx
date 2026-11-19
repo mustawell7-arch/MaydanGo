@@ -154,7 +154,7 @@ export default function HomeScreen() {
       app.serverBookings
         .filter(booking => booking.kind === 'session'
           && Date.parse(booking.startsAt) <= Date.now()
-          && !['cancelled', 'partner_cancelled'].includes(booking.status))
+          && ['reserved', 'confirmed'].includes(booking.status))
         .map(booking => booking.facility.trim().toLocaleLowerCase('en'))
         .filter(Boolean),
     );
@@ -182,7 +182,7 @@ export default function HomeScreen() {
   );
   const upcomingBooking = useMemo(() => app.serverBookings
     .filter((booking) =>
-      !['cancelled', 'partner_cancelled'].includes(String(booking.status)) &&
+      ['requested', 'reserved', 'confirmed'].includes(booking.status) &&
       Date.parse(booking.startsAt) > Date.now(),
     )
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0], [app.serverBookings]);

@@ -421,7 +421,7 @@ export async function review(actor: string, id: string, input: z.infer<typeof re
     if (action === "reject_request") {
       if (c.r.status !== "requested" || c.o.startsAt <= now || !c.o.active || c.o.cancelledAt)
         throw new BookingError(409, "Only upcoming active booking requests may be rejected.");
-      await tx.update(reservations).set({ status: "rejected", cancelledAt: now }).where(eq(reservations.id, id));
+      await tx.update(reservations).set({ status: "rejected" }).where(eq(reservations.id, id));
       await event(tx, id, actor, action, "requested", "rejected", reason);
       return c.o.id;
     }

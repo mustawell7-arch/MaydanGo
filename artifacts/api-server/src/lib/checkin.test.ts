@@ -166,14 +166,14 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
       action: "reject_request", reason: "The requested session is unavailable",
     });
     const [booking] = await db.select().from(reservations).where(eq(reservations.id, requestReservation));
-    assert.equal(booking.status, "partner_cancelled");
-    assert.ok(booking.cancelledAt);
+    assert.equal(booking.status, "rejected");
+    assert.equal(booking.cancelledAt, null);
     const [decision] = await db.select().from(attendanceEvents).where(and(
       eq(attendanceEvents.reservationId, requestReservation),
       eq(attendanceEvents.action, "reject_request"),
     ));
     assert.equal(decision.before, "requested");
-    assert.equal(decision.after, "partner_cancelled");
+    assert.equal(decision.after, "rejected");
     assert.equal(decision.reason, "The requested session is unavailable");
     await reject(() => review(staff, requestReservation, {
       action: "reject_request", reason: "Reject the same request again",
@@ -200,7 +200,7 @@ test("secure attendance: authentication, partner scope, eligibility, atomic repl
   });
   let token: string;
   await t.test("requested, cancelled, sample, unapproved and expired memberships rejected", async () => {
-    for (const status of ["requested", "cancelled", "partner_cancelled"]) {
+    for (const status of ["requested", "cancelled", "partner_cancelled"] as const) {
       await db.update(reservations).set({ status }).where(eq(reservations.id, r));
       await reject(() => issueQr(staff, r), 409);
     }

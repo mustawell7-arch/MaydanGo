@@ -50,6 +50,7 @@ const copy = {
     missingCoordinates: 'Add facility coordinates before setting the attendance policy.', bookingCount: 'Bookings',
     confirmed: 'Confirmed', reserved: 'Reserved', requested: 'Requested', pending: 'Pending', disputed: 'Disputed',
     noShow: 'No-show', notCheckedIn: 'Not checked in', cancelledStatus: 'Cancelled',
+    requestRejected: 'Request declined', adminCancelledStatus: 'Cancelled by MaydanGo', voidedStatus: 'Voided',
   },
   ar: {
     facilities: 'المرافق', addFacility: 'إضافة مرفق', edit: 'تعديل التفاصيل', save: 'حفظ التغييرات', city: 'المدينة', name: 'اسم المرفق',
@@ -81,6 +82,7 @@ const copy = {
     missingCoordinates: 'أضف إحداثيات المرفق قبل إعداد سياسة الحضور.', bookingCount: 'الحجوزات',
     confirmed: 'مؤكد', reserved: 'محجوز', requested: 'مطلوب', pending: 'قيد الانتظار', disputed: 'متنازع عليه',
     noShow: 'لم يحضر', notCheckedIn: 'لم يسجل الحضور', cancelledStatus: 'ملغى',
+    requestRejected: 'تم رفض الطلب', adminCancelledStatus: 'ألغاه فريق MaydanGo', voidedStatus: 'مبطل',
   },
   ku: {
     facilities: 'شوێنەکان', addFacility: 'شوێنێک زیاد بکە', edit: 'دەستکاری وردەکارییەکان', save: 'گۆڕانکارییەکان پاشەکەوت بکە', city: 'شار', name: 'ناوی شوێن',
@@ -112,6 +114,7 @@ const copy = {
     missingCoordinates: 'پێش دانانی ڕێسای ئامادەبوون، خاڵەکانی شوێن زیاد بکە.', bookingCount: 'حجزەکان',
     confirmed: 'پشتڕاستکراوە', reserved: 'حجزکراوە', requested: 'داواکراوە', pending: 'لە چاوەڕوانیدایە', disputed: 'مشتومڕی لەسەرە',
     noShow: 'ئامادە نەبوو', notCheckedIn: 'ئامادەبوون تۆمار نەکراوە', cancelledStatus: 'هەڵوەشێنراوەتەوە',
+    requestRejected: 'داواکارییەکە ڕەتکرایەوە', adminCancelledStatus: 'لە لایەن تیمی MaydanGo ـەوە هەڵوەشێنرایەوە', voidedStatus: 'هەڵوەشاوەتەوە',
   },
 } as const;
 const t = (lang: PortalLanguage, key: CopyKey) => getPartnerPortalCopy(lang, copy.en[key]) ?? copy[lang][key];
@@ -356,7 +359,8 @@ function Bookings({ lang, attendance, offerings, partnerId, onNotice }: { lang: 
     confirmed: t(lang, 'confirmed'), reserved: t(lang, 'reserved'), requested: t(lang, 'requested'),
     pending: t(lang, 'pending'), disputed: t(lang, 'disputed'), no_show: t(lang, 'noShow'),
     not_checked_in: t(lang, 'notCheckedIn'), partner_cancelled: t(lang, 'cancelledStatus'),
-    cancelled: t(lang, 'cancelledStatus'),
+    cancelled: t(lang, 'cancelledStatus'), admin_cancelled: t(lang, 'adminCancelledStatus'),
+    rejected: t(lang, 'requestRejected'), void: t(lang, 'voidedStatus'),
   }[value] ?? value.replaceAll('_', ' '));
   const submitPolicy = (event: FormEvent) => {
     event.preventDefault();

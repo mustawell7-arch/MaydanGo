@@ -139,8 +139,8 @@ export function useMemberBookings(language: Language) {
     cancelBooking: (id: string) => cancel('session', id),
     cancelEvent: (id: string) => cancel('event', id),
     cancelCoachRequest: (id: string, slot: string) => cancel('coach', id, slot),
-    isSessionBooked: (id: string) => bookings.some(b => b.sessionId === id && b.status === 'reserved'),
-    isEventReserved: (id: string) => eventBookings.some(b => b.eventId === id && b.status === 'reserved'),
-    activeCoachRequest: (id: string) => coachRequests.find(b => b.coachId === id && b.status === 'requested'),
+    isSessionBooked: (id: string) => bookings.some(b => b.sessionId === id && ['reserved', 'confirmed'].includes(b.status)),
+    isEventReserved: (id: string) => eventBookings.some(b => b.eventId === id && ['reserved', 'confirmed'].includes(b.status)),
+    activeCoachRequest: (id: string) => coachRequests.find(b => b.coachId === id && ['requested', 'confirmed'].includes(b.status)),
   };
 }

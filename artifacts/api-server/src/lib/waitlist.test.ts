@@ -5,7 +5,7 @@ import type { Server } from "node:http";
 import { and, eq, inArray } from "drizzle-orm";
 import express from "express";
 import {
-  db, pool, memberNotificationPreferences, memberships, offerings, operators, partners,
+  ACTIVE_RESERVATION_STATUSES, db, pool, memberNotificationPreferences, memberships, offerings, operators, partners,
   memberConsentEvents, memberUpdates, pushDeliveries, pushDevices, reservations, waitlistEntries,
 } from "@workspace/db";
 import memberRouter from "../routes/member";
@@ -291,7 +291,7 @@ test("full live classes promote the first eligible member after a cancellation",
   assert.equal(expiredRetry?.status, "cancelled");
 
   const activePlaces = await db.select().from(reservations).where(and(
-    eq(reservations.offeringId, offeringId), inArray(reservations.status, ["reserved", "requested"]),
+    eq(reservations.offeringId, offeringId), inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
   ));
   assert.equal(activePlaces.length, 1);
   const trial = await db.select().from(memberships).where(and(
