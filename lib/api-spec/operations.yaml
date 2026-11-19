@@ -6118,6 +6118,22 @@ components:
         documentType: { type: string, enum: [licence, insurance] }
         expiresOn: { type: string, format: date }
         daysRemaining: { type: integer }
+    FacilityReapprovalAlert:
+      type: object
+      additionalProperties: false
+      required: [assessmentId, facilityId, partnerId, partnerName, facility, city, reviewedOn, nextReviewOn, daysRemaining, alertStatus, inspectionStatus]
+      properties:
+        assessmentId: { type: string }
+        facilityId: { type: string }
+        partnerId: { type: string }
+        partnerName: { type: string }
+        facility: { type: string }
+        city: { type: string }
+        reviewedOn: { type: string, format: date }
+        nextReviewOn: { type: string, format: date }
+        daysRemaining: { type: integer }
+        alertStatus: { type: string, enum: [due_soon, overdue] }
+        inspectionStatus: { type: string, enum: [approved, action_required, suspended] }
     PartnerComplianceDocument:
       type: object
       additionalProperties: false
@@ -6236,13 +6252,14 @@ components:
     FacilityQualityControl:
       type: object
       additionalProperties: false
-      required: [role, facilities, assessments, incidents, expiringDocuments, emergencyContacts, complianceDocuments]
+      required: [role, facilities, assessments, incidents, expiringDocuments, reapprovalAlerts, emergencyContacts, complianceDocuments]
       properties:
         role: { type: string, enum: [fraud_compliance_admin, partner, super_admin] }
         facilities: { type: array, items: { $ref: "#/components/schemas/FacilityQualityFacility" } }
         assessments: { type: array, items: { $ref: "#/components/schemas/FacilityQualityAssessment" } }
         incidents: { type: array, items: { $ref: "#/components/schemas/FacilityQualityIncident" } }
         expiringDocuments: { type: array, items: { $ref: "#/components/schemas/FacilityDocumentExpiryAlert" } }
+        reapprovalAlerts: { type: array, items: { $ref: "#/components/schemas/FacilityReapprovalAlert" } }
         emergencyContacts: { type: array, items: { $ref: "#/components/schemas/FacilityEmergencyContact" } }
         complianceDocuments: { type: array, items: { $ref: "#/components/schemas/PartnerComplianceDocument" } }
     ReviewCategoryRatings:

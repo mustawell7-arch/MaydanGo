@@ -121,6 +121,7 @@ test("facility quality records are scoped, validated, and audited", async () => 
     assessments: unknown[];
     incidents: unknown[];
     expiringDocuments: unknown[];
+    reapprovalAlerts: unknown[];
     emergencyContacts: unknown[];
     complianceDocuments: unknown[];
   };
@@ -128,6 +129,7 @@ test("facility quality records are scoped, validated, and audited", async () => 
   assert.equal(scopedData.assessments.length, 0);
   assert.equal(scopedData.incidents.length, 0);
   assert.equal(scopedData.expiringDocuments.length, 0);
+  assert.equal(scopedData.reapprovalAlerts.length, 0);
   assert.equal(scopedData.emergencyContacts.length, 0);
   assert.equal(scopedData.complianceDocuments.length, 0);
 
@@ -195,6 +197,60 @@ test("facility quality records are scoped, validated, and audited", async () => 
     .expiringDocuments;
   assert.deepEqual(firstAlerts.map(item => item.documentType), ["licence", "insurance"]);
   assert.deepEqual(firstAlerts.map(item => item.daysRemaining), [10, 20]);
+
+  const passingChecklist = {
+    cleanliness: "pass", changingAreas: "pass", showers: "pass", waterSanitation: "pass",
+  };
+  const passingSafetyChecklist = {
+    emergencyExits: "pass", firstAid: "pass", equipmentCondition: "pass", incidentPlan: "pass",
+  };
+  const dueSoonAssessment = await call("/operations/quality/assessments", adminUser, "POST", {
+    ...assessmentBody,
+    reviewedOn: dateOffset(-1),
+    nextReviewOn: dateOffset(14),
+    licenceExpiresOn: null,
+    insuranceExpiresOn: null,
+    hygieneChecklist: passingChecklist,
+    safetyChecklist: passingSafetyChecklist,
+    status: "approved",
+    findings: "Facility inspection completed successfully.",
+    correctiveAction: null,
+    correctiveDueOn: null,
+  });
+  assert.equal(dueSoonAssessment.status, 201);
+  const dueSoonAssessmentId = (dueSoonAssessment.data as { id: string }).id;
+  assessmentIds.push(dueSoonAssessmentId);
+  const overdueAssessment = await call("/operations/quality/assessments", adminUser, "POST", {
+    ...assessmentBody,
+    facilityId: facilityB,
+    reviewedOn: dateOffset(-6),
+    nextReviewOn: dateOffset(-2),
+    licenceExpiresOn: null,
+    insuranceExpiresOn: null,
+    hygieneChecklist: passingChecklist,
+    safetyChecklist: passingSafetyChecklist,
+    status: "approved",
+    findings: "Facility inspection completed successfully.",
+    correctiveAction: null,
+    correctiveDueOn: null,
+  });
+  assert.equal(overdueAssessment.status, 201);
+  assessmentIds.push((overdueAssessment.data as { id: string }).id);
+  const reapprovalAdminView = await call("/operations/quality", adminUser);
+  const reapprovalAlerts = (reapprovalAdminView.data as {
+    reapprovalAlerts: Array<{ facilityId: string; alertStatus: string; nextReviewOn: string }>;
+  }).reapprovalAlerts;
+  assert.deepEqual(reapprovalAlerts.map(item => item.facilityId), [facilityB, facilityA]);
+  assert.equal(reapprovalAlerts[0]?.alertStatus, "overdue");
+  assert.equal(reapprovalAlerts[1]?.alertStatus, "due_soon");
+  assert.equal(reapprovalAlerts[0]?.nextReviewOn.slice(0, 10), dateOffset(-2));
+  assert.equal(reapprovalAlerts[1]?.nextReviewOn.slice(0, 10), dateOffset(14));
+  const partnerAReapprovals = await call("/operations/quality", partnerUserA);
+  assert.deepEqual((partnerAReapprovals.data as { reapprovalAlerts: Array<{ facilityId: string }> })
+    .reapprovalAlerts.map(item => item.facilityId), [facilityA]);
+  const partnerBReapprovals = await call("/operations/quality", partnerUserB);
+  assert.deepEqual((partnerBReapprovals.data as { reapprovalAlerts: Array<{ facilityId: string }> })
+    .reapprovalAlerts.map(item => item.facilityId), [facilityB]);
 
   const approvedDocumentId = randomUUID();
   const reviewDocumentId = randomUUID();
@@ -375,7 +431,9 @@ test("facility quality records are scoped, validated, and audited", async () => 
     emergencyContacts: Array<{ facilityId: string; contactPhone: string; verificationStatus: string }>;
     complianceDocuments: Array<{ id: string; status: string }>;
   };
-  assert.deepEqual(history.assessments.map(item => item.id), [refreshedAssessment.id, assessment.id]);
+  assert.deepEqual(history.assessments.map(item => item.id), [
+    refreshedAssessment.id, dueSoonAssessmentId, assessment.id,
+  ]);
   assert.deepEqual(history.incidents.map(item => item.id), [incident.id]);
   assert.equal(history.incidents[0].status, "resolved");
   assert.deepEqual(

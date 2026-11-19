@@ -29,6 +29,7 @@ import {
 const router = Router();
 const objectStorage = new ObjectStorageService();
 const MAX_COMPLIANCE_DOCUMENT_BYTES = 10 * 1024 * 1024;
+const REAPPROVAL_NOTICE_DAYS = 30;
 const allowedComplianceMimeTypes = new Set(["application/pdf", "image/jpeg", "image/png"]);
 type Operator = typeof operators.$inferSelect;
 type QualityStatus = "approved" | "action_required" | "suspended";
@@ -121,6 +122,22 @@ function operatorFor(res: Response): Operator {
 
 function toDateOnly(value: Date | null): string | null {
   return value ? value.toISOString().slice(0, 10) : null;
+}
+
+function baghdadDateOnly(value = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Baghdad",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(value);
+  const part = (type: string) => parts.find(item => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function daysUntilDate(value: string, today = baghdadDateOnly()): number {
+  return Math.floor((Date.parse(`${value.slice(0, 10)}T00:00:00.000Z`)
+    - Date.parse(`${today}T00:00:00.000Z`)) / 86_400_000);
 }
 
 function isCalendarDate(value: string | null) {
@@ -249,7 +266,7 @@ router.get("/", async (_req, res): Promise<void> => {
     ne(partnerComplianceDocuments.status, "upload_pending"),
     partnerScope ? eq(partnerComplianceDocuments.partnerId, partnerScope) : undefined,
   );
-  const [facilities, assessmentRows, incidentRows, contactRows, complianceDocuments] = await Promise.all([
+  const [facilities, assessmentRows, incidentRows, contactRows, complianceDocuments, latestReviewRows] = await Promise.all([
     db.select({
       id: facilityProfiles.id,
       partnerId: facilityProfiles.partnerId,
@@ -287,7 +304,7 @@ router.get("/", async (_req, res): Promise<void> => {
       .innerJoin(partners, eq(partners.id, facilityQualityAssessments.partnerId))
       .where(assessmentCondition)
       .orderBy(desc(facilityQualityAssessments.reviewedOn), desc(facilityQualityAssessments.createdAt))
-      .limit(250),
+      .limit(500),
     db.select({
       id: facilityQualityIncidents.id,
       facilityId: facilityQualityIncidents.facilityId,
@@ -349,14 +366,44 @@ router.get("/", async (_req, res): Promise<void> => {
       .where(documentCondition)
       .orderBy(desc(partnerComplianceDocuments.createdAt))
       .limit(500),
+    db.selectDistinctOn([facilityQualityAssessments.facilityId], {
+      assessmentId: facilityQualityAssessments.id,
+      facilityId: facilityQualityAssessments.facilityId,
+      partnerId: facilityQualityAssessments.partnerId,
+      partnerName: partners.name,
+      facility: facilityProfiles.facility,
+      city: facilityProfiles.city,
+      reviewedOn: facilityQualityAssessments.reviewedOn,
+      nextReviewOn: facilityQualityAssessments.nextReviewOn,
+      inspectionStatus: facilityQualityAssessments.status,
+    }).from(facilityQualityAssessments)
+      .innerJoin(facilityProfiles, eq(facilityProfiles.id, facilityQualityAssessments.facilityId))
+      .innerJoin(partners, eq(partners.id, facilityQualityAssessments.partnerId))
+      .where(assessmentCondition)
+      .orderBy(
+        facilityQualityAssessments.facilityId,
+        desc(facilityQualityAssessments.reviewedOn),
+        desc(facilityQualityAssessments.createdAt),
+      ),
   ]);
   const expiringDocuments = await listExpiringPartnerDocuments(partnerScope);
+  const reapprovalAlerts = latestReviewRows.flatMap(row => {
+    if (!row.nextReviewOn) return [];
+    const daysRemaining = daysUntilDate(row.nextReviewOn);
+    if (daysRemaining > REAPPROVAL_NOTICE_DAYS) return [];
+    return [{
+      ...row,
+      daysRemaining,
+      alertStatus: daysRemaining < 0 ? "overdue" as const : "due_soon" as const,
+    }];
+  }).sort((a, b) => a.daysRemaining - b.daysRemaining);
   res.json(GetFacilityQualityControlResponse.parse({
     role: operator.role,
     facilities,
     assessments: assessmentRows,
     incidents: incidentRows,
     expiringDocuments,
+    reapprovalAlerts,
     emergencyContacts: contactRows.map(row => ({
       ...row,
       verificationStatus: row.verifiedAt ? "verified" : "pending",

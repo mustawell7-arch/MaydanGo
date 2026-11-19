@@ -82,6 +82,15 @@ const copy = {
     expiryAlertTitle: 'Partner document expiry alerts',
     expiryAlertIntro: 'Expired licences and insurance, plus documents due within 30 days, are listed here.',
     noExpiryAlerts: 'No partner licences or insurance are expired or due within 30 days.',
+    reapprovalTitle: 'Facility reapproval reminders',
+    reapprovalIntro: 'The latest inspection is due within 30 days or overdue. These reminders do not suspend facilities or change bookings.',
+    reapprovalDueSoon: 'Due soon',
+    reapprovalOverdue: 'Overdue',
+    reapprovalDueBy: 'Reapproval due',
+    lastInspected: 'Last inspected',
+    recordReapproval: 'Record reinspection',
+    viewInspection: 'View inspection history',
+    noReapprovals: 'No facility reapprovals are due within 30 days.',
     viewQualityRecord: 'View quality record',
     emergencyContacts: 'Facility emergency contacts',
     emergencyContactsIntro: 'Operational contacts are visible only to authorized partner and safety staff.',
@@ -255,7 +264,8 @@ const copy = {
   },
 } as const;
 
-const t = (lang: PortalLanguage, key: CopyKey) => copy[lang][key];
+const t = (lang: PortalLanguage, key: CopyKey) =>
+  (copy[lang] as Partial<Record<CopyKey, string>>)[key] ?? copy.en[key];
 const inputClass = 'mt-1 w-full rounded-xl border border-[#d8d2c4] bg-[#fffdf7] px-3 py-2.5 text-sm text-[#173d35] focus:border-[#28695a] focus:outline-none focus:ring-2 focus:ring-[#28695a]/15';
 const buttonClass = 'inline-flex items-center justify-center gap-2 rounded-xl bg-[#174d43] px-4 py-2.5 text-sm font-semibold text-[#fff9e9] hover:bg-[#226556] disabled:opacity-50';
 const hygieneKeys = ['cleanliness', 'changingAreas', 'showers', 'waterSanitation'] as const;
@@ -436,6 +446,7 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
 
   const facilities = query.data.facilities;
   const expiryAlerts = qualityAdmin ? query.data.expiringDocuments : [];
+  const reapprovalAlerts = query.data.reapprovalAlerts;
   const emergencyContactByFacility = new Map(query.data.emergencyContacts.map(item => [item.facilityId, item]));
   const statusLabel = (value: AssessmentStatus) => t(lang, value === 'approved' ? 'approved' : value === 'suspended' ? 'suspended' : 'actionRequired');
   const incidentStatusLabel = (value: IncidentStatus) => t(lang, value === 'resolved' ? 'resolved' : value === 'under_review' ? 'underReview' : 'open');
@@ -458,6 +469,42 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
     {error && <p role="alert" className="rounded-xl bg-[#fff7f3] px-4 py-3 text-sm text-[#9a4435]">{error}</p>}
 
     {qualityAdmin && <FraudInvestigationReview lang={lang} />}
+
+    <section aria-labelledby="facility-reapproval-title" className="rounded-3xl border border-[#e5c59b] bg-[#fff8e9] p-5 sm:p-6">
+      <div className="flex items-start gap-3">
+        <AlertTriangle size={19} className="mt-1 shrink-0 text-[#8a5b20]" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 id="facility-reapproval-title" className="font-display text-xl font-bold">{t(lang, 'reapprovalTitle')}</h3>
+            <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-bold text-[#76532d]" data-testid="text-reapproval-alert-count">{reapprovalAlerts.length}</span>
+          </div>
+          <p className="mt-1 text-sm leading-6 text-[#76532d]">{t(lang, 'reapprovalIntro')}</p>
+          {reapprovalAlerts.length
+            ? <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+              {reapprovalAlerts.map(alert => <li key={alert.assessmentId} className="rounded-2xl border border-[#eadcc0] bg-white/85 p-4" data-testid="card-facility-reapproval-alert">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div><p className="font-bold">{alert.facility} · {alert.city}</p><p className="mt-1 text-xs text-[#687a71]">{alert.partnerName}</p></div>
+                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${alert.alertStatus === 'overdue' ? 'bg-[#f2dfd5] text-[#9a4435]' : 'bg-[#fff0d6] text-[#8a5b20]'}`}>
+                    {t(lang, alert.alertStatus === 'overdue' ? 'reapprovalOverdue' : 'reapprovalDueSoon')}
+                  </span>
+                </div>
+                <div className="mt-3 grid gap-1 text-sm text-[#51665e]">
+                  <p>{t(lang, 'reapprovalDueBy')}: {dateLabel(alert.nextReviewOn, lang)}</p>
+                  <p className="text-xs text-[#687a71]">{t(lang, 'lastInspected')}: {dateLabel(alert.reviewedOn, lang)}</p>
+                </div>
+                <a
+                  href={qualityAdmin ? '#facility-quality-inspection-form' : '#quality-inspection-history'}
+                  className="mt-3 inline-flex rounded-lg px-1 py-1 text-sm font-bold text-[#174d43] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                  data-testid="link-facility-reapproval-action"
+                >
+                  {t(lang, qualityAdmin ? 'recordReapproval' : 'viewInspection')}
+                </a>
+              </li>)}
+            </ul>
+            : <p className="mt-4 rounded-xl bg-white/85 p-4 text-sm text-[#51665e]" data-testid="text-no-reapproval-alerts">{t(lang, 'noReapprovals')}</p>}
+        </div>
+      </div>
+    </section>
 
     {qualityAdmin && <section aria-labelledby="document-expiry-alerts-title" className="rounded-3xl border border-[#e5b5a5] bg-[#fff5f1] p-5 sm:p-6">
       <div className="flex items-start gap-3">
@@ -547,7 +594,7 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
     <PartnerContractVersions lang={lang} role={query.data.role} />
 
     <div className="grid gap-6 xl:grid-cols-2">
-      {qualityAdmin && <form onSubmit={event => void submitAssessment(event)} className="grid content-start gap-4 rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6">
+      {qualityAdmin && <form id="facility-quality-inspection-form" onSubmit={event => void submitAssessment(event)} className="grid content-start gap-4 rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6">
         <div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a76445]">{t(lang, 'newInspection')}</p><h3 className="mt-2 font-display text-xl font-bold">{t(lang, 'hygiene')} · {t(lang, 'safety')}</h3></div>
         <label className="text-xs font-semibold">{t(lang, 'facility')}<select required value={facilityId} onChange={event => setFacilityId(event.target.value)} className={inputClass}><option value="">{t(lang, 'chooseFacility')}</option>{facilities.map(item => <option key={item.id} value={item.id}>{item.facility} · {item.city}</option>)}</select></label>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -584,7 +631,7 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
       </form>}
 
       <section className="rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6">
-        <h3 className="font-display text-xl font-bold">{t(lang, 'inspectionHistory')}</h3>
+        <h3 id="quality-inspection-history" className="font-display text-xl font-bold">{t(lang, 'inspectionHistory')}</h3>
         <div className="mt-4 space-y-3">
           {query.data.assessments.length ? query.data.assessments.map(item => <article key={item.id} id={`quality-assessment-${item.id}`} className="rounded-2xl border border-[#e7e1d4] bg-[#fbf9f1] p-4">
             <div className="flex flex-wrap items-start justify-between gap-2"><div><h4 className="font-bold">{item.facility} · {item.city}</h4><p className="mt-1 text-xs text-[#687a71]">{t(lang, 'reviewedOn')}: {dateLabel(item.reviewedOn, lang)}</p></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${item.status === 'approved' ? 'bg-[#e1efdf] text-[#2d6d4a]' : item.status === 'suspended' ? 'bg-[#f2dfd5] text-[#9a4435]' : 'bg-[#fff0d6] text-[#8a5b20]'}`}>{statusLabel(item.status)}</span></div>

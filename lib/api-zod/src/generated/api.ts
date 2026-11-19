@@ -10825,6 +10825,19 @@ export const GetFacilityQualityControlResponse = zod.object({
   "expiresOn": zod.coerce.date(),
   "daysRemaining": zod.int()
 })),
+  "reapprovalAlerts": zod.array(zod.object({
+  "assessmentId": zod.string(),
+  "facilityId": zod.string(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "reviewedOn": zod.coerce.date(),
+  "nextReviewOn": zod.coerce.date(),
+  "daysRemaining": zod.int(),
+  "alertStatus": zod.enum(['due_soon', 'overdue']),
+  "inspectionStatus": zod.enum(['approved', 'action_required', 'suspended'])
+})),
   "emergencyContacts": zod.array(zod.object({
   "facilityId": zod.string(),
   "partnerId": zod.string(),

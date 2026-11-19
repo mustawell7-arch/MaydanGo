@@ -5657,6 +5657,37 @@ export interface FacilityDocumentExpiryAlert {
   daysRemaining: number;
 }
 
+export type FacilityReapprovalAlertAlertStatus = typeof FacilityReapprovalAlertAlertStatus[keyof typeof FacilityReapprovalAlertAlertStatus];
+
+
+export const FacilityReapprovalAlertAlertStatus = {
+  due_soon: 'due_soon',
+  overdue: 'overdue',
+} as const;
+
+export type FacilityReapprovalAlertInspectionStatus = typeof FacilityReapprovalAlertInspectionStatus[keyof typeof FacilityReapprovalAlertInspectionStatus];
+
+
+export const FacilityReapprovalAlertInspectionStatus = {
+  approved: 'approved',
+  action_required: 'action_required',
+  suspended: 'suspended',
+} as const;
+
+export interface FacilityReapprovalAlert {
+  assessmentId: string;
+  facilityId: string;
+  partnerId: string;
+  partnerName: string;
+  facility: string;
+  city: string;
+  reviewedOn: string;
+  nextReviewOn: string;
+  daysRemaining: number;
+  alertStatus: FacilityReapprovalAlertAlertStatus;
+  inspectionStatus: FacilityReapprovalAlertInspectionStatus;
+}
+
 export type PartnerComplianceDocumentDocumentType = typeof PartnerComplianceDocumentDocumentType[keyof typeof PartnerComplianceDocumentDocumentType];
 
 
@@ -5938,6 +5969,7 @@ export interface FacilityQualityControl {
   assessments: FacilityQualityAssessment[];
   incidents: FacilityQualityIncident[];
   expiringDocuments: FacilityDocumentExpiryAlert[];
+  reapprovalAlerts: FacilityReapprovalAlert[];
   emergencyContacts: FacilityEmergencyContact[];
   complianceDocuments: PartnerComplianceDocument[];
 }
