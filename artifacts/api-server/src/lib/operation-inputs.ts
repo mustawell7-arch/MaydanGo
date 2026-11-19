@@ -10,6 +10,11 @@ const localizedText = z.object({
   ar: z.string().trim().min(1).max(240),
   ku: z.string().trim().min(1).max(240),
 }).strict();
+const localizedActivityDetail = z.object({
+  en: z.string().trim().min(1).max(2000),
+  ar: z.string().trim().min(1).max(2000),
+  ku: z.string().trim().min(1).max(2000),
+}).strict();
 const secureUrl = z.string().trim().url().max(2048).refine(value => {
   try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; }
   catch { return false; }
@@ -143,6 +148,8 @@ export const offeringInput = z.object({
   resourceName: localizedText.nullable().optional(),
   localizedTitle: localizedText.nullable().optional(),
   localizedDescription: localizedText.nullable().optional(),
+  healthSafetyInstructions: localizedActivityDetail.nullable().optional(),
+  accessibilityInformation: localizedActivityDetail.nullable().optional(),
   instructions: z.string().trim().max(2000).nullable().optional(),
   imagePath: z.string().trim().max(1000).nullable().optional(),
   bookingCutoffMinutes: z.number().int().min(0).max(10080).default(0),
@@ -204,6 +211,17 @@ export const offeringInput = z.object({
     if (!o.instructionLanguage) ctx.addIssue({ code: "custom", path: ["instructionLanguage"], message: "Choose the language used in the live class." });
     if (!o.requiredEquipment) ctx.addIssue({ code: "custom", path: ["requiredEquipment"], message: "Add the required equipment in English, Arabic and Sorani." });
     if (!o.joinUrl) ctx.addIssue({ code: "custom", path: ["joinUrl"], message: "An HTTPS class link is required before publishing." });
+  }
+  if (o.kind === "session" && o.active && (
+    !o.localizedTitle || !o.localizedDescription || !o.localizedInstructor
+    || !o.difficultyLevel || !o.requiredEquipment
+    || !o.healthSafetyInstructions || !o.accessibilityInformation
+  )) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["localizedTitle"],
+      message: "Published sessions need translated title, description, instructor, skill level, equipment, safety, and accessibility details.",
+    });
   }
   const cancellationDeadline = new Date(o.cancellationDeadline);
   const validCancellationDeadline = bookingModel === "open_access"

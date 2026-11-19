@@ -4394,6 +4394,14 @@ components:
           anyOf:
             - $ref: "#/components/schemas/LocalizedText"
             - type: "null"
+        healthSafetyInstructions:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedActivityDetail"
+            - type: "null"
+        accessibilityInformation:
+          anyOf:
+            - $ref: "#/components/schemas/LocalizedActivityDetail"
+            - type: "null"
         instructions: { type: ["string", "null"], maxLength: 2000 }
         imagePath: { type: ["string", "null"], maxLength: 1000 }
         bookingCutoffMinutes: { type: integer, minimum: 0, maximum: 10080, default: 0 }
@@ -4520,6 +4528,16 @@ components:
         walkInReady: { type: boolean, description: "Whether the member may start an open-access visit now; the server rechecks all rules." }
         walkInOpensAt: { type: ["string", "null"], format: date-time }
         walkInClosesAt: { type: ["string", "null"], format: date-time }
+        checkinOpensAt: { type: ["string", "null"], format: date-time }
+        checkinClosesAt: { type: ["string", "null"], format: date-time }
+    LocalizedActivityDetail:
+      type: object
+      additionalProperties: false
+      required: [en, ar, ku]
+      properties:
+        en: { type: string, minLength: 1, maxLength: 2000 }
+        ar: { type: string, minLength: 1, maxLength: 2000 }
+        ku: { type: string, minLength: 1, maxLength: 2000 }
     OfferingApprovalStatus:
       type: string
       enum: [draft, submitted, under_review, changes_requested, approved, published, suspended, rejected, archived]
@@ -4580,6 +4598,12 @@ components:
         environment: { type: string, enum: [indoor, outdoor] }
         localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
         localizedDescription: { $ref: "#/components/schemas/LocalizedText" }
+        localizedInstructor: { $ref: "#/components/schemas/LocalizedText" }
+        difficultyLevel: { type: string, enum: [all-levels, beginner, intermediate, advanced] }
+        requiredEquipment: { $ref: "#/components/schemas/LocalizedText" }
+        healthSafetyInstructions: { $ref: "#/components/schemas/LocalizedActivityDetail" }
+        accessibilityInformation: { $ref: "#/components/schemas/LocalizedActivityDetail" }
+        instructions: { type: string, maxLength: 2000 }
         joinUrl: { type: ["string", "null"], format: uri }
         startsAt: { type: string, format: date-time }
         endsAt: { type: string, format: date-time }

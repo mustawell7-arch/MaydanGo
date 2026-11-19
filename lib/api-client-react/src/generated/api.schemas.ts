@@ -331,6 +331,24 @@ export type OperationsFacility = FacilityProfile & {
   specialHours: FacilityHoursOverride[];
 };
 
+export interface LocalizedActivityDetail {
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  en: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  ar: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  ku: string;
+}
+
 export type PublicFacilitySessionAccessType = typeof PublicFacilitySessionAccessType[keyof typeof PublicFacilitySessionAccessType];
 
 
@@ -383,10 +401,29 @@ export interface PublicFacilitySession {
   id: string;
   title: string;
   localizedTitle: LocalizedFacilityText | null;
+  localizedDescription: LocalizedFacilityText | null;
   localizedInstructor: LocalizedFacilityText | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  instructions: string | null;
+  requiredEquipment: LocalizedFacilityText | null;
+  healthSafetyInstructions: LocalizedActivityDetail | null;
+  accessibilityInformation: LocalizedActivityDetail | null;
   category: string;
   startsAt: string;
   endsAt: string;
+  cancellationDeadline: string;
+  /** @nullable */
+  checkinOpensAt: string | null;
+  /** @nullable */
+  checkinClosesAt: string | null;
+  /** @minimum 1 */
+  capacity: number;
+  /** @minimum 0 */
+  remaining: number;
+  additionalPayment: boolean;
   accessType: PublicFacilitySessionAccessType;
   bookingModel: PublicFacilitySessionBookingModel;
   resourceName: LocalizedFacilityText | null;
@@ -501,7 +538,10 @@ export interface PublicOffering {
      * @maxLength 2000
      * @nullable
      */
-  instructions?: string | null;
+  instructions: string | null;
+  requiredEquipment: LocalizedFacilityText | null;
+  healthSafetyInstructions: LocalizedActivityDetail | null;
+  accessibilityInformation: LocalizedActivityDetail | null;
   /** @nullable */
   imageUrl?: string | null;
   city: string;
@@ -516,6 +556,10 @@ export interface PublicOffering {
   startsAt: string;
   endsAt: string;
   cancellationDeadline: string;
+  /** @nullable */
+  checkinOpensAt: string | null;
+  /** @nullable */
+  checkinClosesAt: string | null;
   /**
      * @minimum 0
      * @maximum 10080
@@ -2766,11 +2810,31 @@ export interface LocalizedText {
   ku: string;
 }
 
+export interface LocalizedActivityDetail47d80cf {
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  en: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  ar: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  ku: string;
+}
+
 export interface OfferingInput {
   partnerId: string;
   title: string;
   localizedTitle?: LocalizedText | null;
   localizedDescription?: LocalizedText | null;
+  healthSafetyInstructions?: LocalizedActivityDetail47d80cf | null;
+  accessibilityInformation?: LocalizedActivityDetail47d80cf | null;
   /**
      * @maxLength 2000
      * @nullable
@@ -2949,6 +3013,10 @@ export type LiveOffering = OfferingInput & { [key: string]: unknown } & ({
   walkInOpensAt?: string | null;
   /** @nullable */
   walkInClosesAt?: string | null;
+  /** @nullable */
+  checkinOpensAt?: string | null;
+  /** @nullable */
+  checkinClosesAt?: string | null;
 }) & Required<Pick<OfferingInput & { [key: string]: unknown } & ({
   id: string;
   targetId: string;
@@ -2998,6 +3066,10 @@ export type LiveOffering = OfferingInput & { [key: string]: unknown } & ({
   walkInOpensAt?: string | null;
   /** @nullable */
   walkInClosesAt?: string | null;
+  /** @nullable */
+  checkinOpensAt?: string | null;
+  /** @nullable */
+  checkinClosesAt?: string | null;
 }), 'bookingModel'>>;
 
 /**
@@ -3084,6 +3156,16 @@ export const OfferingUpdateEnvironment = {
   outdoor: 'outdoor',
 } as const;
 
+export type OfferingUpdateDifficultyLevel = typeof OfferingUpdateDifficultyLevel[keyof typeof OfferingUpdateDifficultyLevel];
+
+
+export const OfferingUpdateDifficultyLevel = {
+  'all-levels': 'all-levels',
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
+} as const;
+
 export interface OfferingUpdate {
   /** @minimum 1 */
   capacity: number;
@@ -3095,6 +3177,13 @@ export interface OfferingUpdate {
   environment?: OfferingUpdateEnvironment;
   localizedTitle?: LocalizedText;
   localizedDescription?: LocalizedText;
+  localizedInstructor?: LocalizedText;
+  difficultyLevel?: OfferingUpdateDifficultyLevel;
+  requiredEquipment?: LocalizedText;
+  healthSafetyInstructions?: LocalizedActivityDetail47d80cf;
+  accessibilityInformation?: LocalizedActivityDetail47d80cf;
+  /** @maxLength 2000 */
+  instructions?: string;
   /** @nullable */
   joinUrl?: string | null;
   startsAt?: string;

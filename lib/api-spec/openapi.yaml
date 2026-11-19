@@ -1218,9 +1218,17 @@ components:
             specialHours:
               type: array
               items: { $ref: "#/components/schemas/FacilityHoursOverride" }
+    LocalizedActivityDetail:
+      type: object
+      additionalProperties: false
+      required: [en, ar, ku]
+      properties:
+        en: { type: string, minLength: 1, maxLength: 2000 }
+        ar: { type: string, minLength: 1, maxLength: 2000 }
+        ku: { type: string, minLength: 1, maxLength: 2000 }
     PublicFacilitySession:
       type: object
-      required: [id, title, localizedTitle, localizedInstructor, category, startsAt, endsAt, accessType, bookingModel, resourceName, tiers, difficultyLevel, environment, gender, minAge, maxAge]
+      required: [id, title, localizedTitle, localizedDescription, localizedInstructor, instructions, requiredEquipment, healthSafetyInstructions, accessibilityInformation, category, startsAt, endsAt, cancellationDeadline, checkinOpensAt, checkinClosesAt, capacity, remaining, additionalPayment, accessType, bookingModel, resourceName, tiers, difficultyLevel, environment, gender, minAge, maxAge]
       properties:
         id: { type: string }
         title: { type: string }
@@ -1228,13 +1236,36 @@ components:
           anyOf:
             - { $ref: "#/components/schemas/LocalizedFacilityText" }
             - { type: "null" }
+        localizedDescription:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedFacilityText" }
+            - { type: "null" }
         localizedInstructor:
           anyOf:
             - { $ref: "#/components/schemas/LocalizedFacilityText" }
             - { type: "null" }
+        instructions: { type: ["string", "null"], maxLength: 2000 }
+        requiredEquipment:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedFacilityText" }
+            - { type: "null" }
+        healthSafetyInstructions:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedActivityDetail" }
+            - { type: "null" }
+        accessibilityInformation:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedActivityDetail" }
+            - { type: "null" }
         category: { type: string }
         startsAt: { type: string, format: date-time }
         endsAt: { type: string, format: date-time }
+        cancellationDeadline: { type: string, format: date-time }
+        checkinOpensAt: { type: ["string", "null"], format: date-time }
+        checkinClosesAt: { type: ["string", "null"], format: date-time }
+        capacity: { type: integer, minimum: 1 }
+        remaining: { type: integer, minimum: 0 }
+        additionalPayment: { type: boolean }
         accessType: { type: string, enum: [physical, premium, live] }
         bookingModel: { type: string, enum: [booking_required, booking_request, open_access, resource_booking, event, live_class] }
         resourceName:
@@ -1275,7 +1306,7 @@ components:
               items: { $ref: "#/components/schemas/PublicFacilitySession" }
     PublicOffering:
       type: object
-      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, localizedInstructor, city, facility, category, accessType, bookingModel, resourceName, tiers, difficultyLevel, environment, startsAt, endsAt, cancellationDeadline, bookingCutoffMinutes, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
+      required: [id, kind, targetId, slot, title, localizedTitle, localizedDescription, localizedInstructor, instructions, requiredEquipment, healthSafetyInstructions, accessibilityInformation, city, facility, category, accessType, bookingModel, resourceName, tiers, difficultyLevel, environment, startsAt, endsAt, cancellationDeadline, checkinOpensAt, checkinClosesAt, bookingCutoffMinutes, gender, minAge, maxAge, additionalPayment, remaining, partnerName]
       properties:
         id: { type: string }
         kind: { type: string, enum: [session, event, coach] }
@@ -1295,6 +1326,18 @@ components:
             - { $ref: "#/components/schemas/LocalizedFacilityText" }
             - { type: "null" }
         instructions: { type: ["string", "null"], maxLength: 2000 }
+        requiredEquipment:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedFacilityText" }
+            - { type: "null" }
+        healthSafetyInstructions:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedActivityDetail" }
+            - { type: "null" }
+        accessibilityInformation:
+          anyOf:
+            - { $ref: "#/components/schemas/LocalizedActivityDetail" }
+            - { type: "null" }
         imageUrl: { type: ["string", "null"] }
         city: { type: string }
         facility: { type: string }
@@ -1319,6 +1362,8 @@ components:
         startsAt: { type: string, format: date-time }
         endsAt: { type: string, format: date-time }
         cancellationDeadline: { type: string, format: date-time }
+        checkinOpensAt: { type: ["string", "null"], format: date-time }
+        checkinClosesAt: { type: ["string", "null"], format: date-time }
         bookingCutoffMinutes: { type: integer, minimum: 0, maximum: 10080 }
         gender: { type: string, enum: [all, female, male] }
         minAge: { type: integer, minimum: 0 }

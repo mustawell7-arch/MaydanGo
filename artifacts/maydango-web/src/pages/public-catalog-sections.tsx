@@ -83,6 +83,9 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     unavailable: 'Status unavailable',
     sessions: 'Upcoming sessions',
     noSessions: 'No upcoming sessions are listed for this facility.',
+    sessionDescription: 'Description', sessionInstructor: 'Instructor', skillLevel: 'Skill level',
+    equipment: 'Required equipment', healthSafety: 'Health and safety', sessionAccessibility: 'Accessibility information',
+    sessionInstructions: 'Participant instructions', sessionCheckin: 'Check-in window', sessionCapacity: 'Places remaining',
     profileLoading: 'Loading facility details',
     profileError: 'Facility details could not be loaded.',
     reviews: 'Public reviews',
@@ -187,6 +190,9 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     unavailable: 'الحالة غير متاحة',
     sessions: 'الجلسات القادمة',
     noSessions: 'لا توجد جلسات قادمة مدرجة لهذا المرفق.',
+    sessionDescription: 'الوصف', sessionInstructor: 'المدرب', skillLevel: 'مستوى المهارة',
+    equipment: 'المعدات المطلوبة', healthSafety: 'الصحة والسلامة', sessionAccessibility: 'معلومات إمكانية الوصول',
+    sessionInstructions: 'تعليمات المشاركين', sessionCheckin: 'فترة تسجيل الحضور', sessionCapacity: 'الأماكن المتبقية',
     profileLoading: 'جارٍ تحميل تفاصيل المرفق',
     profileError: 'تعذر تحميل تفاصيل المرفق.',
     reviews: 'التقييمات العامة',
@@ -291,6 +297,9 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     unavailable: 'دۆخ بەردەست نییە',
     sessions: 'وانەکانی داهاتوو',
     noSessions: 'هیچ وانەیەکی داهاتوو بۆ ئەم شوێنە لیست نەکراوە.',
+    sessionDescription: 'وەسف', sessionInstructor: 'ڕاهێنەر', skillLevel: 'ئاستی شارەزایی',
+    equipment: 'کەرەستەی پێویست', healthSafety: 'تەندروستی و سەلامەتی', sessionAccessibility: 'زانیاریی دەستڕاگەیشتن',
+    sessionInstructions: 'ڕێنمایی بەشداربووان', sessionCheckin: 'ماوەی تۆمارکردنی گەیشتن', sessionCapacity: 'شوێنی ماوە',
     profileLoading: 'وردەکاریی شوێن بار دەکرێت',
     profileError: 'نەتوانرا وردەکاریی شوێن باربکرێت.',
     reviews: 'هەڵسەنگاندنی گشتی',
@@ -435,7 +444,16 @@ function FacilityProfileDetails({ facility, language }: { facility: PublicFacili
             <div><h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{text.sessions}</h4>
               {profile.upcomingSessions.length ? <ul className="mt-2 space-y-3">{profile.upcomingSessions.map((session) => <li key={session.id} className="border-s-2 border-secondary ps-3 text-sm">
                 <p className="font-semibold">{localized(session.localizedTitle, language) || session.title}</p>
-                <p className="mt-1 text-muted-foreground">{session.category} · {new Date(session.startsAt).toLocaleString(language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                <p className="mt-1 text-muted-foreground">{session.category} · {new Date(session.startsAt).toLocaleString(language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ', { timeZone: 'Asia/Baghdad', dateStyle: 'medium', timeStyle: 'short' })} – {new Date(session.endsAt).toLocaleTimeString(language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ', { timeZone: 'Asia/Baghdad', hour: '2-digit', minute: '2-digit' })}</p>
+                <p className="mt-1 text-muted-foreground">{text.sessionCapacity}: {session.remaining}/{session.capacity}</p>
+                {localized(session.localizedDescription, language) && <p className="mt-2 leading-6"><span className="font-semibold">{text.sessionDescription}:</span> {localized(session.localizedDescription, language)}</p>}
+                {localized(session.localizedInstructor, language) && <p className="mt-1"><span className="font-semibold">{text.sessionInstructor}:</span> {localized(session.localizedInstructor, language)}</p>}
+                {session.difficultyLevel && <p className="mt-1"><span className="font-semibold">{text.skillLevel}:</span> {session.difficultyLevel === 'all-levels' ? (language === 'ar' ? 'جميع المستويات' : language === 'ku' ? 'هەموو ئاستەکان' : 'All levels') : session.difficultyLevel}</p>}
+                {localized(session.requiredEquipment, language) && <p className="mt-1"><span className="font-semibold">{text.equipment}:</span> {localized(session.requiredEquipment, language)}</p>}
+                {session.instructions && <p className="mt-1"><span className="font-semibold">{text.sessionInstructions}:</span> {session.instructions}</p>}
+                {localized(session.healthSafetyInstructions, language) && <p className="mt-1"><span className="font-semibold">{text.healthSafety}:</span> {localized(session.healthSafetyInstructions, language)}</p>}
+                {localized(session.accessibilityInformation, language) && <p className="mt-1"><span className="font-semibold">{text.sessionAccessibility}:</span> {localized(session.accessibilityInformation, language)}</p>}
+                {session.checkinOpensAt && session.checkinClosesAt && <p className="mt-1 text-muted-foreground">{text.sessionCheckin}: {new Date(session.checkinOpensAt).toLocaleTimeString(language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ', { timeZone: 'Asia/Baghdad', hour: '2-digit', minute: '2-digit' })} – {new Date(session.checkinClosesAt).toLocaleTimeString(language === 'ku' ? 'ckb-IQ' : language === 'ar' ? 'ar-IQ' : 'en-IQ', { timeZone: 'Asia/Baghdad', hour: '2-digit', minute: '2-digit' })}</p>}
               </li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">{text.noSessions}</p>}
             </div>
           </div>

@@ -335,6 +335,15 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
      'Check-in opens at': 'يبدأ تسجيل الحضور في', 'Check-in closes at': 'ينتهي تسجيل الحضور في', 'Attendance corrections due by': 'آخر موعد لتصحيح الحضور',
     'Save check-in details': 'حفظ تفاصيل تسجيل الحضور', 'Check-in details saved. Members can start walk-in visits only during this window.': 'تم حفظ تفاصيل تسجيل الحضور. يمكن للأعضاء بدء الزيارة المباشرة خلال هذه الفترة فقط.',
     'Check-in details saved. Members can reserve and check in to this resource.': 'تم حفظ تفاصيل تسجيل الحضور. يمكن للأعضاء حجز هذا المورد وتسجيل حضورهم.',
+    'Session details': 'تفاصيل الجلسة',
+    'Use clear, verified information so members can decide whether the session suits them.': 'استخدم معلومات واضحة ومتحققاً منها ليتمكن الأعضاء من تحديد مدى ملاءمة الجلسة لهم.',
+    'Session check-in settings': 'إعدادات تسجيل الحضور للجلسة',
+    'Session check-in details saved. Members can check in during the configured window.': 'تم حفظ تفاصيل حضور الجلسة. يمكن للأعضاء تسجيل الحضور خلال الفترة المحددة.',
+    'Instructor name · English': 'اسم المدرب · الإنجليزية', 'Instructor name · Iraqi Arabic': 'اسم المدرب · العربية العراقية', 'Instructor name · Sorani Kurdish': 'اسم المدرب · الكردية السورانية',
+    'Skill level': 'مستوى المهارة', 'All levels': 'جميع المستويات', 'Beginner': 'مبتدئ', 'Intermediate': 'متوسط', 'Advanced': 'متقدم',
+    'Required equipment · English': 'المعدات المطلوبة · الإنجليزية', 'Required equipment · Iraqi Arabic': 'المعدات المطلوبة · العربية العراقية', 'Required equipment · Sorani Kurdish': 'المعدات المطلوبة · الكردية السورانية',
+    'Health and safety instructions · English': 'تعليمات الصحة والسلامة · الإنجليزية', 'Health and safety instructions · Iraqi Arabic': 'تعليمات الصحة والسلامة · العربية العراقية', 'Health and safety instructions · Sorani Kurdish': 'تعليمات الصحة والسلامة · الكردية السورانية',
+    'Accessibility information · English': 'معلومات إمكانية الوصول · الإنجليزية', 'Accessibility information · Iraqi Arabic': 'معلومات إمكانية الوصول · العربية العراقية', 'Accessibility information · Sorani Kurdish': 'معلومات إمكانية الوصول · الكردية السورانية',
      'Check-in details could not be saved. Verify the coordinates and access times, then try again.': 'تعذر حفظ تفاصيل تسجيل الحضور. تحقق من الإحداثيات والأوقات ثم حاول مجدداً.',
   },
   ku: {
@@ -511,6 +520,15 @@ const localizedPhrases: Record<Exclude<PortalLanguage, 'en'>, Record<string, str
     'Check-in opens at': 'پشکنینی گەیشتن لەم کاتەوە دەست پێدەکات', 'Check-in closes at': 'پشکنینی گەیشتن لەم کاتەدا دادەخرێت', 'Attendance corrections due by': 'کۆتا کاتی ڕاستکردنەوەی ئامادەبوون',
     'Save check-in details': 'زانیاریی پشکنینی گەیشتن پاشەکەوت بکە', 'Check-in details saved. Members can start walk-in visits only during this window.': 'زانیاریی پشکنینی گەیشتن پاشەکەوت کرا. ئەندامان تەنها لەم ماوەیەدا دەتوانن سەردانی ڕاستەوخۆ دەست پێبکەن.',
     'Check-in details saved. Members can reserve and check in to this resource.': 'زانیاریی پشکنینی گەیشتن پاشەکەوت کرا. ئەندامان دەتوانن ئەم سەرچاوەیە حجز بکەن و گەیشتنیان تۆمار بکەن.',
+    'Session details': 'وردەکاریی وانە',
+    'Use clear, verified information so members can decide whether the session suits them.': 'زانیاریی ڕوون و پشتڕاستکراو بەکاربهێنە تا ئەندامان بزانن ئەم وانەیە گونجاوە بۆیان یان نا.',
+    'Session check-in settings': 'ڕێکخستنەکانی تۆمارکردنی گەیشتن بۆ وانە',
+    'Session check-in details saved. Members can check in during the configured window.': 'وردەکاریی تۆمارکردنی گەیشتن بۆ وانە پاشەکەوت کرا. ئەندامان دەتوانن لە ماوەی دیاریکراودا گەیشتن تۆمار بکەن.',
+    'Instructor name · English': 'ناوی ڕاهێنەر · ئینگلیزی', 'Instructor name · Iraqi Arabic': 'ناوی ڕاهێنەر · عەرەبیی عێراقی', 'Instructor name · Sorani Kurdish': 'ناوی ڕاهێنەر · کوردیی سۆرانی',
+    'Skill level': 'ئاستی شارەزایی', 'All levels': 'هەموو ئاستەکان', 'Beginner': 'سەرەتایی', 'Intermediate': 'ناوەند', 'Advanced': 'پێشکەوتوو',
+    'Required equipment · English': 'کەرەستەی پێویست · ئینگلیزی', 'Required equipment · Iraqi Arabic': 'کەرەستەی پێویست · عەرەبیی عێراقی', 'Required equipment · Sorani Kurdish': 'کەرەستەی پێویست · کوردیی سۆرانی',
+    'Health and safety instructions · English': 'ڕێنمایی تەندروستی و سەلامەتی · ئینگلیزی', 'Health and safety instructions · Iraqi Arabic': 'ڕێنمایی تەندروستی و سەلامەتی · عەرەبیی عێراقی', 'Health and safety instructions · Sorani Kurdish': 'ڕێنمایی تەندروستی و سەلامەتی · کوردیی سۆرانی',
+    'Accessibility information · English': 'زانیاریی دەستڕاگەیشتن · ئینگلیزی', 'Accessibility information · Iraqi Arabic': 'زانیاریی دەستڕاگەیشتن · عەرەبیی عێراقی', 'Accessibility information · Sorani Kurdish': 'زانیاریی دەستڕاگەیشتن · کوردیی سۆرانی',
     'Check-in details could not be saved. Verify the coordinates and access times, then try again.': 'نەتوانرا زانیاریی پشکنینی گەیشتن پاشەکەوت بکرێت. ئایندین و کاتەکان بپشکنە و دووبارە هەوڵ بدە.',
   },
 };
@@ -592,11 +610,14 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
     title: '', kind: 'session' as OfferingInput['kind'], bookingModel: 'booking_required' as NonNullable<OfferingInput['bookingModel']>, facilityProfileId: '', city: '', facility: '', category: '', accessType: 'physical' as OfferingInput['accessType'],
     environment: '', startsAt: '', endsAt: '', cancellationDeadline: '', bookingCutoffMinutes: '0', capacity: '', waitlistOfferMinutes: '30', gender: 'all' as NonNullable<OfferingInput['gender']>, minAge: '', maxAge: '', joinUrl: '', tiers: '', instructions: '', active: false,
     localizedTitleEn: '', localizedTitleAr: '', localizedTitleKu: '',
+     activityTitleAr: '', activityTitleKu: '',
     localizedDescriptionEn: '', localizedDescriptionAr: '', localizedDescriptionKu: '',
     localizedInstructorEn: '', localizedInstructorAr: '', localizedInstructorKu: '',
     difficultyLevel: 'all-levels' as NonNullable<OfferingInput['difficultyLevel']>,
     instructionLanguage: 'mixed' as NonNullable<OfferingInput['instructionLanguage']>,
     requiredEquipmentEn: '', requiredEquipmentAr: '', requiredEquipmentKu: '',
+     healthSafetyEn: '', healthSafetyAr: '', healthSafetyKu: '',
+     accessibilityEn: '', accessibilityAr: '', accessibilityKu: '',
     resourceNameEn: '', resourceNameAr: '', resourceNameKu: '',
   });
   const facilityRecords = (facilitiesQuery.data ?? []).filter(item => item.partnerId === selectedPartnerId);
@@ -667,6 +688,20 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
       setMessage('Live online offerings need a title, description, instructor name, and equipment details in English, Iraqi Arabic, and Sorani.');
       return;
     }
+    if (form.kind === 'session' && !isLive
+      && [form.activityTitleAr, form.activityTitleKu, form.localizedDescriptionEn, form.localizedDescriptionAr, form.localizedDescriptionKu,
+        form.localizedInstructorEn, form.localizedInstructorAr, form.localizedInstructorKu, form.requiredEquipmentEn, form.requiredEquipmentAr, form.requiredEquipmentKu,
+        form.healthSafetyEn, form.healthSafetyAr, form.healthSafetyKu, form.accessibilityEn, form.accessibilityAr, form.accessibilityKu]
+        .some(value => !value.trim())) {
+      setMessage('Complete the session title, description, instructor, equipment, safety, and accessibility details in all three languages.');
+      return;
+    }
+    if (form.kind === 'session'
+      && [form.healthSafetyEn, form.healthSafetyAr, form.healthSafetyKu, form.accessibilityEn, form.accessibilityAr, form.accessibilityKu]
+        .some(value => !value.trim())) {
+      setMessage('Add health, safety, and accessibility information in English, Iraqi Arabic, and Sorani.');
+      return;
+    }
     if (isLive && !/^https:\/\//i.test(form.joinUrl.trim())) {
       setMessage('Live online offerings require a secure HTTPS join URL.');
       return;
@@ -707,9 +742,20 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
       setUploadingImage(false);
     }
     const data: OfferingInput = {
-      partnerId: selectedPartnerId, title: form.title.trim(), kind: form.kind, city: selectedFacility.city, facility: selectedFacility.facility, category: form.category.trim(),
+      partnerId: selectedPartnerId, title: (isLive ? form.localizedTitleEn : form.title).trim(), kind: form.kind, city: selectedFacility.city, facility: selectedFacility.facility, category: form.category.trim(),
       accessType: form.accessType, environment: isLive ? null : form.environment as 'indoor' | 'outdoor', tiers: splitLocalizedCommaList(form.tiers),
       ...(form.kind === 'session' && !isLive ? { bookingModel: form.bookingModel } : {}),
+      ...(form.kind === 'session' ? {
+        localizedTitle: isLive
+          ? { en: form.localizedTitleEn.trim(), ar: form.localizedTitleAr.trim(), ku: form.localizedTitleKu.trim() }
+          : { en: form.title.trim(), ar: form.activityTitleAr.trim(), ku: form.activityTitleKu.trim() },
+        localizedDescription: { en: form.localizedDescriptionEn.trim(), ar: form.localizedDescriptionAr.trim(), ku: form.localizedDescriptionKu.trim() },
+        localizedInstructor: { en: form.localizedInstructorEn.trim(), ar: form.localizedInstructorAr.trim(), ku: form.localizedInstructorKu.trim() },
+        difficultyLevel: form.difficultyLevel,
+        requiredEquipment: { en: form.requiredEquipmentEn.trim(), ar: form.requiredEquipmentAr.trim(), ku: form.requiredEquipmentKu.trim() },
+        healthSafetyInstructions: { en: form.healthSafetyEn.trim(), ar: form.healthSafetyAr.trim(), ku: form.healthSafetyKu.trim() },
+        accessibilityInformation: { en: form.accessibilityEn.trim(), ar: form.accessibilityAr.trim(), ku: form.accessibilityKu.trim() },
+      } : {}),
       ...(form.bookingModel === 'resource_booking' ? {
         resourceName: { en: form.resourceNameEn.trim(), ar: form.resourceNameAr.trim(), ku: form.resourceNameKu.trim() },
       } : {}),
@@ -721,12 +767,7 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
       gender: form.gender, ...(form.minAge ? { minAge: Number(form.minAge) } : {}), maxAge: form.maxAge ? Number(form.maxAge) : null,
       joinUrl: form.joinUrl.trim() || null, active: isAdmin && form.active,
       ...(isLive ? {
-        localizedTitle: { en: form.localizedTitleEn.trim(), ar: form.localizedTitleAr.trim(), ku: form.localizedTitleKu.trim() },
-        localizedDescription: { en: form.localizedDescriptionEn.trim(), ar: form.localizedDescriptionAr.trim(), ku: form.localizedDescriptionKu.trim() },
-        localizedInstructor: { en: form.localizedInstructorEn.trim(), ar: form.localizedInstructorAr.trim(), ku: form.localizedInstructorKu.trim() },
-        difficultyLevel: form.difficultyLevel,
         instructionLanguage: form.instructionLanguage,
-        requiredEquipment: { en: form.requiredEquipmentEn.trim(), ar: form.requiredEquipmentAr.trim(), ku: form.requiredEquipmentKu.trim() },
       } : {}),
     };
     const onSuccess = () => { onSaved(); onClose(); };
@@ -814,6 +855,31 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
           </div>
           <p className="rounded-xl bg-[#f2efe4] px-4 py-3 text-xs leading-5 text-[#687a71] sm:col-span-2">{portalText(lang, 'Each named resource accepts one booking at a time. Overlapping reservations for the same resource are blocked.')}</p>
         </>}
+        {form.kind === 'session' && form.accessType !== 'live' && <div className="rounded-2xl border border-[#d8d2c4] bg-[#f2efe4] p-4 sm:col-span-2">
+          <p className="text-sm font-bold text-[#36564b]">{portalText(lang, 'Session details')}</p>
+          <p className="mt-1 text-xs leading-5 text-[#687a71]">{portalText(lang, 'Use clear, verified information so members can decide whether the session suits them.')}</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <LabelField label={portalText(lang, 'Title · Iraqi Arabic')}><input required maxLength={240} dir="rtl" className={fieldClass()} value={form.activityTitleAr} onChange={e => update('activityTitleAr', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Title · Sorani Kurdish')}><input required maxLength={240} dir="rtl" className={fieldClass()} value={form.activityTitleKu} onChange={e => update('activityTitleKu', e.target.value)} /></LabelField>
+            <span className="hidden sm:block" />
+            <LabelField label={portalText(lang, 'Description · English')}><textarea required maxLength={240} rows={3} className={fieldClass()} value={form.localizedDescriptionEn} onChange={e => update('localizedDescriptionEn', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Description · Iraqi Arabic')}><textarea required maxLength={240} rows={3} dir="rtl" className={fieldClass()} value={form.localizedDescriptionAr} onChange={e => update('localizedDescriptionAr', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Description · Sorani Kurdish')}><textarea required maxLength={240} rows={3} dir="rtl" className={fieldClass()} value={form.localizedDescriptionKu} onChange={e => update('localizedDescriptionKu', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Instructor name · English')}><input required maxLength={240} className={fieldClass()} value={form.localizedInstructorEn} onChange={e => update('localizedInstructorEn', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Instructor name · Iraqi Arabic')}><input required maxLength={240} dir="rtl" className={fieldClass()} value={form.localizedInstructorAr} onChange={e => update('localizedInstructorAr', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Instructor name · Sorani Kurdish')}><input required maxLength={240} dir="rtl" className={fieldClass()} value={form.localizedInstructorKu} onChange={e => update('localizedInstructorKu', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Skill level')}><select className={fieldClass()} value={form.difficultyLevel} onChange={e => update('difficultyLevel', e.target.value)}><option value="all-levels">{portalText(lang, 'All levels')}</option><option value="beginner">{portalText(lang, 'Beginner')}</option><option value="intermediate">{portalText(lang, 'Intermediate')}</option><option value="advanced">{portalText(lang, 'Advanced')}</option></select></LabelField>
+            <LabelField label={portalText(lang, 'Required equipment · English')}><textarea required maxLength={240} rows={2} className={fieldClass()} value={form.requiredEquipmentEn} onChange={e => update('requiredEquipmentEn', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Required equipment · Iraqi Arabic')}><textarea required maxLength={240} rows={2} dir="rtl" className={fieldClass()} value={form.requiredEquipmentAr} onChange={e => update('requiredEquipmentAr', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Required equipment · Sorani Kurdish')}><textarea required maxLength={240} rows={2} dir="rtl" className={fieldClass()} value={form.requiredEquipmentKu} onChange={e => update('requiredEquipmentKu', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Health and safety instructions · English')}><textarea required maxLength={2000} rows={3} className={fieldClass()} value={form.healthSafetyEn} onChange={e => update('healthSafetyEn', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Health and safety instructions · Iraqi Arabic')}><textarea required maxLength={2000} rows={3} dir="rtl" className={fieldClass()} value={form.healthSafetyAr} onChange={e => update('healthSafetyAr', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Health and safety instructions · Sorani Kurdish')}><textarea required maxLength={2000} rows={3} dir="rtl" className={fieldClass()} value={form.healthSafetyKu} onChange={e => update('healthSafetyKu', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Accessibility information · English')}><textarea required maxLength={2000} rows={3} className={fieldClass()} value={form.accessibilityEn} onChange={e => update('accessibilityEn', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Accessibility information · Iraqi Arabic')}><textarea required maxLength={2000} rows={3} dir="rtl" className={fieldClass()} value={form.accessibilityAr} onChange={e => update('accessibilityAr', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Accessibility information · Sorani Kurdish')}><textarea required maxLength={2000} rows={3} dir="rtl" className={fieldClass()} value={form.accessibilityKu} onChange={e => update('accessibilityKu', e.target.value)} /></LabelField>
+          </div>
+        </div>}
         {form.accessType === 'live' && <div className="rounded-2xl border border-[#dbcbb1] bg-[#f2ebda] p-4 sm:col-span-2">
           <p className="text-sm font-bold text-[#36564b]">Online class details</p>
           <p className="mt-1 text-xs leading-5 text-[#687a71]">Provide translations for all three supported languages and a secure HTTPS access link.</p>
@@ -833,6 +899,12 @@ function OfferingForm({ partnerId, partners, isAdmin, lang, onClose, onSaved }: 
             <LabelField label="Required equipment · English"><textarea required maxLength={240} rows={2} className={fieldClass()} value={form.requiredEquipmentEn} onChange={e => update('requiredEquipmentEn', e.target.value)} /></LabelField>
             <LabelField label="Required equipment · Iraqi Arabic"><textarea required maxLength={240} rows={2} dir="rtl" className={fieldClass()} value={form.requiredEquipmentAr} onChange={e => update('requiredEquipmentAr', e.target.value)} /></LabelField>
             <LabelField label="Required equipment · Sorani Kurdish"><textarea required maxLength={240} rows={2} dir="rtl" className={fieldClass()} value={form.requiredEquipmentKu} onChange={e => update('requiredEquipmentKu', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Health and safety instructions · English')}><textarea required maxLength={2000} rows={3} className={fieldClass()} value={form.healthSafetyEn} onChange={e => update('healthSafetyEn', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Health and safety instructions · Iraqi Arabic')}><textarea required maxLength={2000} rows={3} dir="rtl" className={fieldClass()} value={form.healthSafetyAr} onChange={e => update('healthSafetyAr', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Health and safety instructions · Sorani Kurdish')}><textarea required maxLength={2000} rows={3} dir="rtl" className={fieldClass()} value={form.healthSafetyKu} onChange={e => update('healthSafetyKu', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Accessibility information · English')}><textarea required maxLength={2000} rows={3} className={fieldClass()} value={form.accessibilityEn} onChange={e => update('accessibilityEn', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Accessibility information · Iraqi Arabic')}><textarea required maxLength={2000} rows={3} dir="rtl" className={fieldClass()} value={form.accessibilityAr} onChange={e => update('accessibilityAr', e.target.value)} /></LabelField>
+            <LabelField label={portalText(lang, 'Accessibility information · Sorani Kurdish')}><textarea required maxLength={2000} rows={3} dir="rtl" className={fieldClass()} value={form.accessibilityKu} onChange={e => update('accessibilityKu', e.target.value)} /></LabelField>
           </div>
           <p className="mt-3 text-xs leading-5 text-[#687a71]">MaydanGo staff assign the instructor’s account access after approval. The name above is the member-facing display name.</p>
         </div>}
@@ -946,7 +1018,9 @@ function OfferingCheckinPolicyForm({ item, lang }: { item: LiveOffering; lang: P
       await client.invalidateQueries({ queryKey: getGetOperationsQueryKey() });
       setFeedback(portalText(lang, item.bookingModel === 'resource_booking'
         ? 'Check-in details saved. Members can reserve and check in to this resource.'
-        : 'Check-in details saved. Members can start walk-in visits only during this window.'));
+        : item.bookingModel === 'open_access'
+          ? 'Check-in details saved. Members can start walk-in visits only during this window.'
+          : 'Session check-in details saved. Members can check in during the configured window.'));
     } catch (error) {
       const message = error instanceof Error && error.message ? error.message
         : 'Check-in details could not be saved. Verify the coordinates and access times, then try again.';
@@ -955,7 +1029,9 @@ function OfferingCheckinPolicyForm({ item, lang }: { item: LiveOffering; lang: P
   };
 
   return <LocalizedContent lang={lang}><form onSubmit={submit} className="mt-4 rounded-2xl border border-[#d8c6a5] bg-[#fff8e8] p-4">
-    <h3 className="text-sm font-bold text-[#36564b]">{portalText(lang, item.bookingModel === 'resource_booking' ? 'Resource booking check-in' : 'Walk-in access and check-in')}</h3>
+    <h3 className="text-sm font-bold text-[#36564b]">{portalText(lang,
+      item.bookingModel === 'resource_booking' ? 'Resource booking check-in'
+        : item.bookingModel === 'open_access' ? 'Walk-in access and check-in' : 'Session check-in settings')}</h3>
     <p className="mt-1 text-xs leading-5 text-[#687a71]">{portalText(lang, 'Use the facility entrance coordinates. Members scan a single-use QR displayed by staff; location supports check-in, and partner confirmation records attendance.')}</p>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
       <LabelField label={portalText(lang, 'Latitude')}><input required type="number" min="-90" max="90" step="any" className={fieldClass()} value={values.latitude} onChange={event => setValues(current => ({ ...current, latitude: event.target.value }))} /></LabelField>
@@ -1473,12 +1549,56 @@ export default function PartnerPortal() {
       setNotice('Choose whether this in-person activity is indoors or outdoors.');
       return;
     }
+    const activityDetails = item.kind === 'session' ? {
+      localizedTitle: {
+        en: String(values.get('localizedTitleEn') || '').trim(),
+        ar: String(values.get('localizedTitleAr') || '').trim(),
+        ku: String(values.get('localizedTitleKu') || '').trim(),
+      },
+      localizedDescription: {
+        en: String(values.get('localizedDescriptionEn') || '').trim(),
+        ar: String(values.get('localizedDescriptionAr') || '').trim(),
+        ku: String(values.get('localizedDescriptionKu') || '').trim(),
+      },
+      localizedInstructor: {
+        en: String(values.get('localizedInstructorEn') || '').trim(),
+        ar: String(values.get('localizedInstructorAr') || '').trim(),
+        ku: String(values.get('localizedInstructorKu') || '').trim(),
+      },
+      difficultyLevel: String(values.get('difficultyLevel') || 'all-levels') as NonNullable<OfferingInput['difficultyLevel']>,
+      requiredEquipment: {
+        en: String(values.get('requiredEquipmentEn') || '').trim(),
+        ar: String(values.get('requiredEquipmentAr') || '').trim(),
+        ku: String(values.get('requiredEquipmentKu') || '').trim(),
+      },
+      healthSafetyInstructions: {
+        en: String(values.get('healthSafetyEn') || '').trim(),
+        ar: String(values.get('healthSafetyAr') || '').trim(),
+        ku: String(values.get('healthSafetyKu') || '').trim(),
+      },
+      accessibilityInformation: {
+        en: String(values.get('accessibilityEn') || '').trim(),
+        ar: String(values.get('accessibilityAr') || '').trim(),
+        ku: String(values.get('accessibilityKu') || '').trim(),
+      },
+    } : undefined;
+    const localizedDetailsChanged = activityDetails && (
+      JSON.stringify(activityDetails.localizedTitle) !== JSON.stringify(item.localizedTitle ?? { en: item.title, ar: '', ku: '' })
+      || JSON.stringify(activityDetails.localizedDescription) !== JSON.stringify(item.localizedDescription ?? { en: '', ar: '', ku: '' })
+      || JSON.stringify(activityDetails.localizedInstructor) !== JSON.stringify(item.localizedInstructor ?? { en: '', ar: '', ku: '' })
+      || activityDetails.difficultyLevel !== (item.difficultyLevel ?? 'all-levels')
+      || JSON.stringify(activityDetails.requiredEquipment) !== JSON.stringify(item.requiredEquipment ?? { en: '', ar: '', ku: '' })
+      || JSON.stringify(activityDetails.healthSafetyInstructions) !== JSON.stringify(item.healthSafetyInstructions ?? { en: '', ar: '', ku: '' })
+      || JSON.stringify(activityDetails.accessibilityInformation) !== JSON.stringify(item.accessibilityInformation ?? { en: '', ar: '', ku: '' })
+    );
     const data: OfferingUpdate = {
       capacity: Number(values.get('capacity')),
       ...(item.accessType !== 'live' ? { environment: environment as 'indoor' | 'outdoor' } : {}),
       startsAt: localIso(start),
       endsAt: localIso(end),
       cancellationDeadline: localIso(deadline),
+      ...(localizedDetailsChanged && activityDetails ? activityDetails : {}),
+      ...(localizedDetailsChanged && item.kind === 'session' ? { instructions: String(values.get('instructions') || '').trim() } : {}),
     };
     const callbacks = {
       onSuccess: () => { invalidate(); setEditing(null); setNotice('Offering schedule saved.'); },
@@ -1638,6 +1758,29 @@ export default function PartnerPortal() {
                 </form>}
                 {editing?.id === item.id && !['open_access', 'resource_booking'].includes(item.bookingModel) && <form className="mt-5 grid gap-3 rounded-2xl bg-[#f2efe4] p-4 sm:grid-cols-2" onSubmit={event => saveOfferingEdit(event, item, editing?.id === item.id ? editing.scope : 'session')}>
                   {editing.scope === 'series' && <p className="text-xs leading-5 text-[#687a71] sm:col-span-2">Changes apply to this and all remaining future sessions. Reservations stay attached to their sessions. A session with an attendance record cannot have its date changed. Moving the selected date shifts the remaining dates by the same amount.</p>}
+                   {item.kind === 'session' && <div className="grid gap-3 rounded-2xl border border-[#d8d2c4] bg-white/70 p-4 sm:col-span-2 sm:grid-cols-3">
+                     <p className="text-sm font-bold text-[#36564b] sm:col-span-3">{portalText(language, 'Session details')}</p>
+                     <LabelField label={portalText(language, 'Title · English')}><input required maxLength={240} name="localizedTitleEn" defaultValue={item.localizedTitle?.en ?? item.title} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Title · Iraqi Arabic')}><input required maxLength={240} dir="rtl" name="localizedTitleAr" defaultValue={item.localizedTitle?.ar ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Title · Sorani Kurdish')}><input required maxLength={240} dir="rtl" name="localizedTitleKu" defaultValue={item.localizedTitle?.ku ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Description · English')}><textarea required maxLength={240} rows={3} name="localizedDescriptionEn" defaultValue={item.localizedDescription?.en ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Description · Iraqi Arabic')}><textarea required maxLength={240} rows={3} dir="rtl" name="localizedDescriptionAr" defaultValue={item.localizedDescription?.ar ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Description · Sorani Kurdish')}><textarea required maxLength={240} rows={3} dir="rtl" name="localizedDescriptionKu" defaultValue={item.localizedDescription?.ku ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Instructor name · English')}><input required maxLength={240} name="localizedInstructorEn" defaultValue={item.localizedInstructor?.en ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Instructor name · Iraqi Arabic')}><input required maxLength={240} dir="rtl" name="localizedInstructorAr" defaultValue={item.localizedInstructor?.ar ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Instructor name · Sorani Kurdish')}><input required maxLength={240} dir="rtl" name="localizedInstructorKu" defaultValue={item.localizedInstructor?.ku ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Skill level')}><select name="difficultyLevel" defaultValue={item.difficultyLevel ?? 'all-levels'} className={fieldClass()}><option value="all-levels">{portalText(language, 'All levels')}</option><option value="beginner">{portalText(language, 'Beginner')}</option><option value="intermediate">{portalText(language, 'Intermediate')}</option><option value="advanced">{portalText(language, 'Advanced')}</option></select></LabelField>
+                     <LabelField label={portalText(language, 'Required equipment · English')}><textarea required maxLength={240} rows={2} name="requiredEquipmentEn" defaultValue={item.requiredEquipment?.en ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Required equipment · Iraqi Arabic')}><textarea required maxLength={240} rows={2} dir="rtl" name="requiredEquipmentAr" defaultValue={item.requiredEquipment?.ar ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Required equipment · Sorani Kurdish')}><textarea required maxLength={240} rows={2} dir="rtl" name="requiredEquipmentKu" defaultValue={item.requiredEquipment?.ku ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Health and safety instructions · English')}><textarea required maxLength={2000} rows={3} name="healthSafetyEn" defaultValue={item.healthSafetyInstructions?.en ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Health and safety instructions · Iraqi Arabic')}><textarea required maxLength={2000} rows={3} dir="rtl" name="healthSafetyAr" defaultValue={item.healthSafetyInstructions?.ar ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Health and safety instructions · Sorani Kurdish')}><textarea required maxLength={2000} rows={3} dir="rtl" name="healthSafetyKu" defaultValue={item.healthSafetyInstructions?.ku ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Accessibility information · English')}><textarea required maxLength={2000} rows={3} name="accessibilityEn" defaultValue={item.accessibilityInformation?.en ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Accessibility information · Iraqi Arabic')}><textarea required maxLength={2000} rows={3} dir="rtl" name="accessibilityAr" defaultValue={item.accessibilityInformation?.ar ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Accessibility information · Sorani Kurdish')}><textarea required maxLength={2000} rows={3} dir="rtl" name="accessibilityKu" defaultValue={item.accessibilityInformation?.ku ?? ''} className={fieldClass()} /></LabelField>
+                     <LabelField label={portalText(language, 'Participant instructions')}><textarea maxLength={2000} rows={3} name="instructions" defaultValue={item.instructions ?? ''} className={fieldClass()} /></LabelField>
+                   </div>}
                   <LabelField label="Starts at"><input required name="startsAt" type="datetime-local" defaultValue={dateTimeInputBaghdad(item.startsAt)} className={fieldClass()} /></LabelField>
                   <LabelField label="Ends at"><input required name="endsAt" type="datetime-local" defaultValue={dateTimeInputBaghdad(item.endsAt)} className={fieldClass()} /></LabelField>
                   <LabelField label="Cancellation deadline"><input required name="cancellationDeadline" type="datetime-local" defaultValue={dateTimeInputBaghdad(item.cancellationDeadline)} className={fieldClass()} /></LabelField>
@@ -1649,7 +1792,7 @@ export default function PartnerPortal() {
                   <LabelField label="Waitlist offer window (minutes)"><input required min="5" max="1440" name="waitlistOfferMinutes" defaultValue={item.waitlistOfferMinutes ?? 30} type="number" className={fieldClass()} /></LabelField>
                   <Button type="submit" disabled={updateOffering.isPending}>Save offer window</Button>
                 </form>}
-                {['open_access', 'resource_booking'].includes(item.bookingModel) && !item.cancelledAt && <OfferingCheckinPolicyForm item={item} lang={language} />}
+                 {item.kind === 'session' && item.accessType !== 'live' && !item.cancelledAt && <OfferingCheckinPolicyForm item={item} lang={language} />}
                 {!['open_access', 'resource_booking'].includes(item.bookingModel) && <WaitlistPanel offeringId={item.id} lang={language} />}
               </article>)}</div> : <div className="rounded-3xl border border-dashed border-[#d5cfbf] bg-[#fffdf7]/60 p-10 text-center"><Dumbbell className="mx-auto text-[#a76445]" /><h2 className="mt-4 font-display text-xl font-bold">No offerings returned</h2><p className="mt-2 text-sm text-[#75847c]">Create an offering to start managing your available sessions and events.</p></div>}
             </section>}

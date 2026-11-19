@@ -661,6 +661,13 @@ async function assertOfferingReadyForReview(tx: Tx, row: OfferingRow) {
       .from(checkinPolicies).where(eq(checkinPolicies.offeringId, row.id));
     if (!policy) throw new BookingError(409, "Set up resource check-in details before submitting this activity.");
   }
+  if (row.kind === "session" && (
+    !row.localizedTitle || !row.localizedDescription || !row.localizedInstructor
+    || !row.difficultyLevel || !row.requiredEquipment
+    || !row.healthSafetyInstructions || !row.accessibilityInformation
+  )) {
+    throw new BookingError(400, "Complete the translated title, description, instructor, skill, equipment, safety, and accessibility details before publishing this session.");
+  }
   if (!row.partnerId) throw new BookingError(409, "This activity is not assigned to a partner.");
   const [partner] = await tx.select().from(partners).where(eq(partners.id, row.partnerId)).for("share");
   if (!partner?.approved) throw new BookingError(403, "Partner approval is required before activity review.");
@@ -923,7 +930,14 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
     for (const row of rows) own(res, row.partnerId);
 
     const contentChanged = data.localizedTitle !== undefined
-      || data.localizedDescription !== undefined || data.joinUrl !== undefined || data.environment !== undefined;
+      || data.localizedDescription !== undefined
+      || data.localizedInstructor !== undefined
+      || data.difficultyLevel !== undefined
+      || data.requiredEquipment !== undefined
+      || data.healthSafetyInstructions !== undefined
+      || data.accessibilityInformation !== undefined
+      || data.instructions !== undefined
+      || data.joinUrl !== undefined || data.environment !== undefined;
     const partnerContentEdit = isPartnerOperatorRole(res.locals.operator.role) && contentChanged;
     if (partnerContentEdit && rows.some(row =>
       ["submitted", "under_review", "rejected", "archived"].includes(row.approvalStatus))) {
@@ -1082,6 +1096,12 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
         } : {}),
         ...(data.localizedTitle !== undefined ? { localizedTitle: data.localizedTitle } : {}),
         ...(data.localizedDescription !== undefined ? { localizedDescription: data.localizedDescription } : {}),
+        ...(data.localizedInstructor !== undefined ? { localizedInstructor: data.localizedInstructor } : {}),
+        ...(data.difficultyLevel !== undefined ? { difficultyLevel: data.difficultyLevel } : {}),
+        ...(data.requiredEquipment !== undefined ? { requiredEquipment: data.requiredEquipment } : {}),
+        ...(data.healthSafetyInstructions !== undefined ? { healthSafetyInstructions: data.healthSafetyInstructions } : {}),
+        ...(data.accessibilityInformation !== undefined ? { accessibilityInformation: data.accessibilityInformation } : {}),
+        ...(data.instructions !== undefined ? { instructions: data.instructions } : {}),
         ...(data.joinUrl !== undefined ? { joinUrl: data.joinUrl } : {}),
         ...(scheduleChanged ? {
           startsAt: item.startsAt, endsAt: item.endsAt, cancellationDeadline: item.cancellationDeadline,

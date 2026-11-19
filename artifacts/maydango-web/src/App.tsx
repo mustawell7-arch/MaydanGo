@@ -887,16 +887,64 @@ function OfferingCards({ offerings, language, loading, error, retry, t, compact 
   if (!offerings.length) return <div className="mt-8 rounded-2xl border border-dashed border-border bg-card/65 px-6 py-10 text-center">
     <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-primary"><CalendarDays size={21} /></div><p className="font-display text-xl font-bold">{emptyTitle ?? (compact ? t.empty : t.noInventory)}</p><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">{emptyDescription ?? (compact ? t.emptySub : t.noInventoryText)}</p>
   </div>;
+  const detailLabels = language === 'ar' ? {
+    details: 'تفاصيل الجلسة', instructor: 'المدرب', skill: 'مستوى المهارة', equipment: 'المعدات المطلوبة',
+    safety: 'تعليمات الصحة والسلامة', accessibility: 'معلومات إمكانية الوصول', instructions: 'تعليمات المشاركين',
+    membership: 'متطلبات العضوية', eligibility: 'شروط المشاركة', cancelBy: 'آخر موعد للإلغاء',
+    checkin: 'فترة تسجيل الحضور', additionalPayment: 'تتطلب رسوماً إضافية',
+    women: 'للنساء فقط', men: 'للرجال فقط', all: 'الجميع', indoor: 'داخلي', outdoor: 'خارجي',
+    age: 'الأعمار', levels: 'جميع المستويات', beginner: 'مبتدئ', intermediate: 'متوسط', advanced: 'متقدم',
+  } : language === 'ku' ? {
+    details: 'وردەکاریی وانە', instructor: 'ڕاهێنەر', skill: 'ئاستی شارەزایی', equipment: 'کەرەستەی پێویست',
+    safety: 'ڕێنمایی تەندروستی و سەلامەتی', accessibility: 'زانیاریی دەستڕاگەیشتن', instructions: 'ڕێنمایی بەشداربووان',
+    membership: 'مەرجی ئەندامێتی', eligibility: 'مەرجەکانی بەشداری', cancelBy: 'کۆتا کاتی هەڵوەشاندنەوە',
+    checkin: 'ماوەی تۆمارکردنی گەیشتن', additionalPayment: 'پێویستی بە پارەدانی زیادەیە',
+    women: 'تەنها بۆ ژنان', men: 'تەنها بۆ پیاوان', all: 'هەمووان', indoor: 'لەناوەوە', outdoor: 'لەدەرەوە',
+    age: 'تەمەن', levels: 'هەموو ئاستەکان', beginner: 'سەرەتایی', intermediate: 'ناوەند', advanced: 'پێشکەوتوو',
+  } : {
+    details: 'Session details', instructor: 'Instructor', skill: 'Skill level', equipment: 'Required equipment',
+    safety: 'Health and safety', accessibility: 'Accessibility information', instructions: 'Participant instructions',
+    membership: 'Membership requirement', eligibility: 'Eligibility', cancelBy: 'Free cancellation until',
+    checkin: 'Check-in window', additionalPayment: 'Additional payment required',
+    women: 'Women only', men: 'Men only', all: 'All members', indoor: 'Indoors', outdoor: 'Outdoors',
+    age: 'Ages', levels: 'All levels', beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced',
+  };
+  const dateLocale = language === 'ar' ? 'ar-IQ' : language === 'ku' ? 'ckb-IQ' : 'en-IQ';
+  const localDate = (value: string) => new Date(value).toLocaleString(dateLocale, { timeZone: 'Asia/Baghdad', dateStyle: 'medium', timeStyle: 'short' });
+  const localizedText = (value: { en: string; ar: string; ku: string } | null, fallback = '') =>
+    value?.[language]?.trim() || value?.en?.trim() || fallback;
   return <div className={`mt-8 grid gap-4 ${compact ? 'md:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-3'}`}>
     {offerings.map(item => <article key={item.id} className="offering-card rounded-2xl border border-border bg-card p-5" data-testid={`card-offering-${item.id}`}>
       <div className="flex items-start justify-between gap-4"><span className="rounded-full bg-[#e7efe8] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-primary">{item.category}</span><span className="text-xs font-semibold text-foreground/45">{item.remaining} {countUnit(item.remaining, 'places', language, t)}</span></div>
-      <h3 className="mt-5 font-display text-2xl font-bold leading-tight tracking-[-.04em]">{item.title}</h3>
+      <h3 className="mt-5 font-display text-2xl font-bold leading-tight tracking-[-.04em]">{localizedText(item.localizedTitle, item.title)}</h3>
+      {item.localizedDescription && <p className="mt-2 line-clamp-3 text-sm leading-6 text-foreground/65">{localizedText(item.localizedDescription)}</p>}
        <p className="mt-2 text-sm text-foreground/55">{item.kind === 'session' ? t.sessionType : item.kind === 'event' ? t.eventType : t.coachType} · {item.accessType === 'physical' ? t.physicalType : item.accessType === 'premium' ? t.premiumType : t.liveType}</p>
       <div className="mt-5 grid gap-2 border-t border-border pt-4 text-xs text-foreground/65">
         <p className="flex items-center gap-2"><MapPin size={14} className="text-primary" />{item.facility}, {item.city}</p>
-         <p className="flex items-center gap-2"><Clock3 size={14} className="text-primary" />{new Date(item.startsAt).toLocaleString(language === 'ar' ? 'ar-IQ' : language === 'ku' ? 'ckb-IQ' : 'en-IQ', { timeZone: 'Asia/Baghdad', dateStyle: 'medium', timeStyle: 'short' })}</p>
+          <p className="flex items-center gap-2"><Clock3 size={14} className="text-primary" />{localDate(item.startsAt)} – {localDate(item.endsAt)}</p>
         <p className="flex items-center gap-2"><Users size={14} className="text-primary" />{item.partnerName}</p>
       </div>
+      {item.kind === 'session' && <details className="mt-4 rounded-xl bg-[#f7f4eb] px-4 py-3 text-sm">
+        <summary className="cursor-pointer font-semibold text-primary">{detailLabels.details}</summary>
+        <div className="mt-3 space-y-2 leading-6 text-foreground/70">
+          {item.localizedInstructor && <p><strong>{detailLabels.instructor}:</strong> {localizedText(item.localizedInstructor)}</p>}
+          <p><strong>{detailLabels.skill}:</strong> {item.difficultyLevel === 'all-levels' ? detailLabels.levels
+            : item.difficultyLevel === 'beginner' ? detailLabels.beginner
+              : item.difficultyLevel === 'intermediate' ? detailLabels.intermediate
+                : item.difficultyLevel === 'advanced' ? detailLabels.advanced : detailLabels.levels}</p>
+          {item.requiredEquipment && <p><strong>{detailLabels.equipment}:</strong> {localizedText(item.requiredEquipment)}</p>}
+          {item.instructions && <p><strong>{detailLabels.instructions}:</strong> {item.instructions}</p>}
+          {item.healthSafetyInstructions && <p><strong>{detailLabels.safety}:</strong> {localizedText(item.healthSafetyInstructions)}</p>}
+          {item.accessibilityInformation && <p><strong>{detailLabels.accessibility}:</strong> {localizedText(item.accessibilityInformation)}</p>}
+          {item.tiers.length > 0 && <p><strong>{detailLabels.membership}:</strong> {item.tiers.join(', ')}</p>}
+          <p><strong>{detailLabels.eligibility}:</strong> {item.gender === 'female' ? detailLabels.women : item.gender === 'male' ? detailLabels.men : detailLabels.all}
+            {item.minAge > 0 || item.maxAge !== null ? ` · ${detailLabels.age} ${item.minAge}${item.maxAge !== null ? `–${item.maxAge}` : '+'}` : ''}</p>
+          {item.environment && <p>{item.environment === 'indoor' ? detailLabels.indoor : detailLabels.outdoor}</p>}
+          <p><strong>{detailLabels.cancelBy}:</strong> {localDate(item.cancellationDeadline)}</p>
+          {item.checkinOpensAt && item.checkinClosesAt && <p><strong>{detailLabels.checkin}:</strong> {localDate(item.checkinOpensAt)} – {localDate(item.checkinClosesAt)}</p>}
+          {item.additionalPayment && <p className="font-semibold text-destructive">{detailLabels.additionalPayment}</p>}
+        </div>
+      </details>}
     </article>)}
   </div>;
 }

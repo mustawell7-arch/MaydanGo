@@ -170,6 +170,15 @@ export default function LiveScreen() {
         const mine = booked(o), full = (o.remaining ?? 1) <= 0;
         const isOpenAccess = o.bookingModel === 'open_access';
         const isResourceBooking = o.bookingModel === 'resource_booking';
+        const activityText = (value: { en: string; ar: string; ku: string } | null | undefined) =>
+          value?.[app.language]?.trim() || value?.en?.trim() || '';
+        const title = activityText(o.localizedTitle) || o.title;
+        const checkinOpensAt = o.checkinOpensAt ?? o.walkInOpensAt;
+        const checkinClosesAt = o.checkinClosesAt ?? o.walkInClosesAt;
+        const audience = o.gender === 'female' ? t('womenOnly') : o.gender === 'male' ? t('menOnly') : '';
+        const ageLabel = o.minAge > 0 || o.maxAge !== null
+          ? t('ageRangeLabel').replace('{min}', String(o.minAge)).replace('{max}', o.maxAge === null ? '∞' : String(o.maxAge))
+          : '';
         const walkInOpen = isOpenAccess && !!o.walkInReady && !!o.walkInOpensAt && !!o.walkInClosesAt
           && Date.now() >= Date.parse(o.walkInOpensAt) && Date.now() < Date.parse(o.walkInClosesAt);
         const waitlistEntry = isResourceBooking ? undefined : [...app.waitlists].filter(entry => entry.offeringId === o.id)
@@ -184,13 +193,13 @@ export default function LiveScreen() {
               {isResourceBooking ? full ? t('resourceUnavailable') : t('resourceAvailable') : full ? 'Full' : `${o.remaining ?? '—'} / ${o.capacity}`}
             </Text>
           </View>
-          <Text raw style={{ color: c.foreground, fontSize: 18, fontWeight: '800' }}>{o.title}</Text>
+           <Text raw style={{ color: c.foreground, fontSize: 18, fontWeight: '800' }}>{title}</Text>
           <Text raw style={{ color: c.mutedForeground }}>{o.partnerName ?? ''} · {o.facility} · {o.city}</Text>
           {isResourceBooking && o.resourceName ? <Text raw style={{ color: c.primary, fontWeight: '700' }}>{t('resourceLabel')}: {o.resourceName[app.language]}</Text> : null}
           {o.accessType !== 'live' ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
             {t('activitySettingFilter')}: {o.environment ? t(o.environment) : t('settingNotListed')}
           </Text> : null}
-           <Text style={{ color: c.foreground }}>{dateTime(o.startsAt, app.language)}</Text>
+            <Text style={{ color: c.foreground }}>{t('sessionTime')}: {dateTime(o.startsAt, app.language)} – {dateTime(o.endsAt, app.language, true)}</Text>
            {isOpenAccess
              ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{walkInOpen
                ? t('walkInAvailableNow')
@@ -198,8 +207,20 @@ export default function LiveScreen() {
                  : t('walkInNotReady')}</Text>
              : <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Free cancellation until {dateTime(o.cancellationDeadline, app.language)}</Text>}
           {o.additionalPayment ? <Text style={{ color: c.destructive, fontSize: 12, fontWeight: '700' }}>Additional payment required. Booking is unavailable until payments launch.</Text> : null}
-          {o.gender !== 'all' || o.minAge > 0 || o.maxAge !== null ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{o.gender === 'female' ? 'Women only' : o.gender === 'male' ? 'Men only' : 'Everyone'} · {o.minAge}{o.maxAge !== null ? `–${o.maxAge}` : '+'}</Text> : null}
-          <Text style={{ color: c.mutedForeground, fontSize: 12 }}>Tiers: {o.tiers.join(', ')}</Text>
+           {audience || ageLabel ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{[audience, ageLabel].filter(Boolean).join(' · ')}</Text> : null}
+           {o.tiers.length ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{t('membershipRequirement')}: {o.tiers.join(', ')}</Text> : null}
+           {o.kind === 'session' ? <View style={[styles.sessionDetails, { borderTopColor: c.border }]}>
+             {activityText(o.localizedDescription) ? <Text style={{ color: c.mutedForeground, lineHeight: 19 }}>{t('sessionDescription')}: {activityText(o.localizedDescription)}</Text> : null}
+             {activityText(o.localizedInstructor) ? <Text style={{ color: c.mutedForeground }}>{t('instructorName')}: {activityText(o.localizedInstructor)}</Text> : null}
+             {o.difficultyLevel ? <Text style={{ color: c.mutedForeground }}>{t('skillLevel')}: {o.difficultyLevel === 'all-levels' ? t('allLevels') : t(o.difficultyLevel)}</Text> : null}
+             {activityText(o.requiredEquipment) ? <Text style={{ color: c.mutedForeground, lineHeight: 19 }}>{t('requiredEquipment')}: {activityText(o.requiredEquipment)}</Text> : null}
+             {o.instructions?.trim() ? <Text style={{ color: c.mutedForeground, lineHeight: 19 }}>{t('participantInstructions')}: {o.instructions}</Text> : null}
+             {activityText(o.healthSafetyInstructions) ? <Text style={{ color: c.foreground, lineHeight: 19, fontWeight: '700' }}>{t('healthSafetyInstructions')}: {activityText(o.healthSafetyInstructions)}</Text> : null}
+             {activityText(o.accessibilityInformation) ? <Text style={{ color: c.mutedForeground, lineHeight: 19 }}>{t('accessibilityInformation')}: {activityText(o.accessibilityInformation)}</Text> : null}
+             {checkinOpensAt && checkinClosesAt ? <Text style={{ color: c.mutedForeground, fontSize: 12 }}>
+               {t('checkinWindow').replace('{opens}', dateTime(checkinOpensAt, app.language, true)).replace('{closes}', dateTime(checkinClosesAt, app.language, true))}
+             </Text> : null}
+           </View> : null}
           {activeWaitlistEntry ? <>
             <Text style={{ color: activeWaitlistEntry.status === 'offered' ? c.primary : c.mutedForeground, fontWeight: '700' }}>
               {t(waitlistStatusKey(activeWaitlistEntry.status))} · {t('waitlistPosition').replace('{n}', String(activeWaitlistEntry.queuePosition))}
@@ -283,6 +304,7 @@ const styles = StyleSheet.create({
   banner: { flexDirection: 'row', gap: 12, padding: 16, borderRadius: 18, alignItems: 'flex-start' },
   dot: { width: 10, height: 10, borderRadius: 5, marginTop: 5 },
   card: { borderWidth: 1, borderRadius: 18, padding: 16, gap: 6 },
+  sessionDetails: { borderTopWidth: 1, marginTop: 4, paddingTop: 10, gap: 7 },
   label: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },

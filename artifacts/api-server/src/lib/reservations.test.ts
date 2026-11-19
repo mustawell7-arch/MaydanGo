@@ -494,7 +494,15 @@ test("live operations: staff scope, approved inventory, server grants and quota 
     const p = await call("/operations/partners", adminId, "POST", { name: "Isolated test partner", groupId: prefix, ownerUserId: partnerUser });
     assert.equal(p.status, 201); partnerIds.push(p.data.id);
     const offerBody = { partnerId: p.data.id, title: "Isolated live test", kind: "session", city: "baghdad", facility: prefix,
-      category: "fitness", accessType: "physical", environment: "indoor", tiers: ["M"], startsAt: new Date(now + 86400000).toISOString(),
+      category: "fitness", accessType: "physical", environment: "indoor", tiers: ["M"],
+      localizedTitle: { en: "Isolated live test", ar: "اختبار النشاط", ku: "تاقیکردنەوەی چالاکی" },
+      localizedDescription: { en: "A session for integration tests.", ar: "جلسة لاختبارات التكامل.", ku: "وانەیەک بۆ تاقیکردنەوەی پەیوەندی." },
+      localizedInstructor: { en: "Test instructor", ar: "مدرب للاختبار", ku: "ڕاهێنەری تاقیکردنەوە" },
+      difficultyLevel: "all-levels",
+      requiredEquipment: { en: "Water bottle.", ar: "زجاجة ماء.", ku: "بوتڵێک ئاو." },
+      healthSafetyInstructions: { en: "Stop if you feel unwell.", ar: "توقف إذا شعرت بتوعك.", ku: "ئەگەر هەستت بە ناخۆشی کرد، بوەستە." },
+      accessibilityInformation: { en: "Contact the facility about access needs.", ar: "تواصل مع المرفق بشأن احتياجات الوصول.", ku: "بۆ پێداویستییەکانی دەستڕاگەیشتن پەیوەندی بە شوێنەکەوە بکە." },
+      startsAt: new Date(now + 86400000).toISOString(),
       endsAt: new Date(now + 90000000).toISOString(), cancellationDeadline: new Date(now + 80000000).toISOString(), capacity: 2, active: false };
     await t.test("partner cannot self-approve, manage plans, or publish unapproved inventory", async () => {
       assert.equal((await call(`/operations/partners/${p.data.id}`, partnerUser, "PATCH", { approved: true })).status, 403);
@@ -568,9 +576,18 @@ test("live operations: staff scope, approved inventory, server grants and quota 
         const overlappingSlot = catalog.data.find((row: any) => row.id === overlap.data.id);
         assert.equal(overlappingSlot?.remaining, 0);
         assert.deepEqual(overlappingSlot?.resourceName, resourceName);
+        assert.deepEqual(overlappingSlot?.healthSafetyInstructions, offerBody.healthSafetyInstructions);
+        assert.equal(overlappingSlot?.checkinOpensAt, new Date(resourceStart - 30 * 60_000).toISOString());
         const publicCatalog = await call("/public/catalog", adminId);
         const publicOverlap = publicCatalog.data.find((row: any) => row.id === overlap.data.id);
         assert.equal(publicOverlap?.remaining, 0);
+        assert.deepEqual(publicOverlap?.healthSafetyInstructions, offerBody.healthSafetyInstructions);
+        const facilitiesCatalog = await call("/public/facilities", adminId);
+        const facilityProfile = facilitiesCatalog.data.find((row: any) => row.id === `${prefix}-facility-profile`);
+        const publicFacilitySession = facilityProfile?.upcomingSessions.find((row: any) => row.id === resourceOffering.data.id);
+        assert.deepEqual(publicFacilitySession?.accessibilityInformation, offerBody.accessibilityInformation);
+        assert.equal(publicFacilitySession?.checkinOpensAt, new Date(resourceStart - 30 * 60_000).toISOString());
+        assert.equal(publicFacilitySession?.remaining, 0);
       } finally {
         const booking = (await memberState(alice)).bookings.find(row => row.targetId === resourceOffering.data.id);
         if (booking) await cancelReservation(alice, booking.id);

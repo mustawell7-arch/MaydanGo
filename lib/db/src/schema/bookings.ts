@@ -77,6 +77,8 @@ export const offerings = pgTable("booking_offerings", {
   title: text("title").notNull(),
   localizedTitle: jsonb("localized_title").$type<LocalizedText>(),
   localizedDescription: jsonb("localized_description").$type<LocalizedText>(),
+  healthSafetyInstructions: jsonb("health_safety_instructions").$type<LocalizedText | null>(),
+  accessibilityInformation: jsonb("accessibility_information").$type<LocalizedText | null>(),
   resourceName: jsonb("resource_name").$type<LocalizedText | null>(),
   instructions: text("instructions"),
   imagePath: text("image_path"),

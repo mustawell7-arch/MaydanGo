@@ -25,6 +25,9 @@ export type Offering = {
   localizedDescription?: { en: string; ar: string; ku: string } | null;
   localizedInstructor?: { en: string; ar: string; ku: string } | null;
   difficultyLevel?: 'all-levels' | 'beginner' | 'intermediate' | 'advanced' | null;
+  healthSafetyInstructions?: { en: string; ar: string; ku: string } | null;
+  accessibilityInformation?: { en: string; ar: string; ku: string } | null;
+  instructions?: string | null;
   environment: 'indoor' | 'outdoor' | null;
   instructionLanguage?: 'en' | 'ar' | 'ku' | 'mixed' | null;
   requiredEquipment?: { en: string; ar: string; ku: string } | null;
@@ -33,6 +36,7 @@ export type Offering = {
   bookingModel: 'booking_required' | 'booking_request' | 'open_access' | 'resource_booking' | 'event' | 'live_class';
   resourceName?: { en: string; ar: string; ku: string } | null;
   walkInReady?: boolean; walkInOpensAt?: string | null; walkInClosesAt?: string | null;
+  checkinOpensAt?: string | null; checkinClosesAt?: string | null;
   capacity: number; waitlistOfferMinutes?: number; gender: 'all' | 'female' | 'male'; minAge: number; maxAge: number | null; additionalPayment: boolean; active: boolean;
   targetId: string; slot: string; scope: string; cancelledAt: string | null; partnerName?: string; remaining?: number;
 };

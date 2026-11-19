@@ -71,11 +71,40 @@ export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOne
 
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOneKuMax = 500;
 
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedDescriptionOneEnMax = 500;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedDescriptionOneArMax = 500;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedDescriptionOneKuMax = 500;
+
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneEnMax = 500;
 
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneArMax = 500;
 
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneKuMax = 500;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemInstructionsMax = 2000;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemRequiredEquipmentOneEnMax = 500;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemRequiredEquipmentOneArMax = 500;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemRequiredEquipmentOneKuMax = 500;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemHealthSafetyInstructionsOneEnMax = 2000;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemHealthSafetyInstructionsOneArMax = 2000;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemHealthSafetyInstructionsOneKuMax = 2000;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemAccessibilityInformationOneEnMax = 2000;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemAccessibilityInformationOneArMax = 2000;
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemAccessibilityInformationOneKuMax = 2000;
+
+
+export const getPublicFacilitiesResponseTwoUpcomingSessionsItemRemainingMin = 0;
 
 export const getPublicFacilitiesResponseTwoUpcomingSessionsItemResourceNameOneEnMax = 500;
 
@@ -170,14 +199,41 @@ export const GetPublicFacilitiesResponseItem = zod.object({
   "ar": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOneArMax),
   "ku": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedTitleOneKuMax)
 }),zod.null()]),
+  "localizedDescription": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedDescriptionOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedDescriptionOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedDescriptionOneKuMax)
+}),zod.null()]),
   "localizedInstructor": zod.union([zod.object({
   "en": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneArMax),
   "ku": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemLocalizedInstructorOneKuMax)
 }),zod.null()]),
+  "instructions": zod.string().max(getPublicFacilitiesResponseTwoUpcomingSessionsItemInstructionsMax).nullable(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemRequiredEquipmentOneKuMax)
+}),zod.null()]),
+  "healthSafetyInstructions": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemHealthSafetyInstructionsOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemHealthSafetyInstructionsOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemHealthSafetyInstructionsOneKuMax)
+}),zod.null()]),
+  "accessibilityInformation": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemAccessibilityInformationOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemAccessibilityInformationOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilitiesResponseTwoUpcomingSessionsItemAccessibilityInformationOneKuMax)
+}),zod.null()]),
   "category": zod.string(),
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
+  "cancellationDeadline": zod.coerce.date(),
+  "checkinOpensAt": zod.coerce.date().nullable(),
+  "checkinClosesAt": zod.coerce.date().nullable(),
+  "capacity": zod.int().min(1),
+  "remaining": zod.int().min(getPublicFacilitiesResponseTwoUpcomingSessionsItemRemainingMin),
+  "additionalPayment": zod.boolean(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
   "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
   "resourceName": zod.union([zod.object({
@@ -263,11 +319,40 @@ export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneAr
 
 export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneKuMax = 500;
 
+export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedDescriptionOneEnMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedDescriptionOneArMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedDescriptionOneKuMax = 500;
+
 export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneEnMax = 500;
 
 export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneArMax = 500;
 
 export const getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneKuMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemInstructionsMax = 2000;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemRequiredEquipmentOneEnMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemRequiredEquipmentOneArMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemRequiredEquipmentOneKuMax = 500;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemHealthSafetyInstructionsOneEnMax = 2000;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemHealthSafetyInstructionsOneArMax = 2000;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemHealthSafetyInstructionsOneKuMax = 2000;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemAccessibilityInformationOneEnMax = 2000;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemAccessibilityInformationOneArMax = 2000;
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemAccessibilityInformationOneKuMax = 2000;
+
+
+export const getPublicFacilityResponseTwoUpcomingSessionsItemRemainingMin = 0;
 
 export const getPublicFacilityResponseTwoUpcomingSessionsItemResourceNameOneEnMax = 500;
 
@@ -362,14 +447,41 @@ export const GetPublicFacilityResponse = zod.object({
   "ar": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneArMax),
   "ku": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedTitleOneKuMax)
 }),zod.null()]),
+  "localizedDescription": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedDescriptionOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedDescriptionOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedDescriptionOneKuMax)
+}),zod.null()]),
   "localizedInstructor": zod.union([zod.object({
   "en": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneEnMax),
   "ar": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneArMax),
   "ku": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemLocalizedInstructorOneKuMax)
 }),zod.null()]),
+  "instructions": zod.string().max(getPublicFacilityResponseTwoUpcomingSessionsItemInstructionsMax).nullable(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemRequiredEquipmentOneKuMax)
+}),zod.null()]),
+  "healthSafetyInstructions": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemHealthSafetyInstructionsOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemHealthSafetyInstructionsOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemHealthSafetyInstructionsOneKuMax)
+}),zod.null()]),
+  "accessibilityInformation": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemAccessibilityInformationOneEnMax),
+  "ar": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemAccessibilityInformationOneArMax),
+  "ku": zod.string().min(1).max(getPublicFacilityResponseTwoUpcomingSessionsItemAccessibilityInformationOneKuMax)
+}),zod.null()]),
   "category": zod.string(),
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
+  "cancellationDeadline": zod.coerce.date(),
+  "checkinOpensAt": zod.coerce.date().nullable(),
+  "checkinClosesAt": zod.coerce.date().nullable(),
+  "capacity": zod.int().min(1),
+  "remaining": zod.int().min(getPublicFacilityResponseTwoUpcomingSessionsItemRemainingMin),
+  "additionalPayment": zod.boolean(),
   "accessType": zod.enum(['physical', 'premium', 'live']),
   "bookingModel": zod.enum(['booking_required', 'booking_request', 'open_access', 'resource_booking', 'event', 'live_class']),
   "resourceName": zod.union([zod.object({
@@ -1262,6 +1374,24 @@ export const getPublicCatalogResponseLocalizedInstructorOneKuMax = 500;
 
 export const getPublicCatalogResponseInstructionsMax = 2000;
 
+export const getPublicCatalogResponseRequiredEquipmentOneEnMax = 500;
+
+export const getPublicCatalogResponseRequiredEquipmentOneArMax = 500;
+
+export const getPublicCatalogResponseRequiredEquipmentOneKuMax = 500;
+
+export const getPublicCatalogResponseHealthSafetyInstructionsOneEnMax = 2000;
+
+export const getPublicCatalogResponseHealthSafetyInstructionsOneArMax = 2000;
+
+export const getPublicCatalogResponseHealthSafetyInstructionsOneKuMax = 2000;
+
+export const getPublicCatalogResponseAccessibilityInformationOneEnMax = 2000;
+
+export const getPublicCatalogResponseAccessibilityInformationOneArMax = 2000;
+
+export const getPublicCatalogResponseAccessibilityInformationOneKuMax = 2000;
+
 export const getPublicCatalogResponseResourceNameOneEnMax = 500;
 
 export const getPublicCatalogResponseResourceNameOneArMax = 500;
@@ -1300,7 +1430,22 @@ export const GetPublicCatalogResponseItem = zod.object({
   "ar": zod.string().min(1).max(getPublicCatalogResponseLocalizedInstructorOneArMax),
   "ku": zod.string().min(1).max(getPublicCatalogResponseLocalizedInstructorOneKuMax)
 }),zod.null()]),
-  "instructions": zod.string().max(getPublicCatalogResponseInstructionsMax).nullish(),
+  "instructions": zod.string().max(getPublicCatalogResponseInstructionsMax).nullable(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicCatalogResponseRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(getPublicCatalogResponseRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(getPublicCatalogResponseRequiredEquipmentOneKuMax)
+}),zod.null()]),
+  "healthSafetyInstructions": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicCatalogResponseHealthSafetyInstructionsOneEnMax),
+  "ar": zod.string().min(1).max(getPublicCatalogResponseHealthSafetyInstructionsOneArMax),
+  "ku": zod.string().min(1).max(getPublicCatalogResponseHealthSafetyInstructionsOneKuMax)
+}),zod.null()]),
+  "accessibilityInformation": zod.union([zod.object({
+  "en": zod.string().min(1).max(getPublicCatalogResponseAccessibilityInformationOneEnMax),
+  "ar": zod.string().min(1).max(getPublicCatalogResponseAccessibilityInformationOneArMax),
+  "ku": zod.string().min(1).max(getPublicCatalogResponseAccessibilityInformationOneKuMax)
+}),zod.null()]),
   "imageUrl": zod.string().nullish(),
   "city": zod.string(),
   "facility": zod.string(),
@@ -1318,6 +1463,8 @@ export const GetPublicCatalogResponseItem = zod.object({
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
   "cancellationDeadline": zod.coerce.date(),
+  "checkinOpensAt": zod.coerce.date().nullable(),
+  "checkinClosesAt": zod.coerce.date().nullable(),
   "bookingCutoffMinutes": zod.int().min(getPublicCatalogResponseBookingCutoffMinutesMin).max(getPublicCatalogResponseBookingCutoffMinutesMax),
   "gender": zod.enum(['all', 'female', 'male']),
   "minAge": zod.int().min(getPublicCatalogResponseMinAgeMin),
@@ -1652,6 +1799,18 @@ export const getOperationsResponseOfferingsItemOneLocalizedDescriptionOneArMax =
 
 export const getOperationsResponseOfferingsItemOneLocalizedDescriptionOneKuMax = 240;
 
+export const getOperationsResponseOfferingsItemOneHealthSafetyInstructionsOneEnMax = 2000;
+
+export const getOperationsResponseOfferingsItemOneHealthSafetyInstructionsOneArMax = 2000;
+
+export const getOperationsResponseOfferingsItemOneHealthSafetyInstructionsOneKuMax = 2000;
+
+export const getOperationsResponseOfferingsItemOneAccessibilityInformationOneEnMax = 2000;
+
+export const getOperationsResponseOfferingsItemOneAccessibilityInformationOneArMax = 2000;
+
+export const getOperationsResponseOfferingsItemOneAccessibilityInformationOneKuMax = 2000;
+
 export const getOperationsResponseOfferingsItemOneInstructionsMax = 2000;
 
 export const getOperationsResponseOfferingsItemOneImagePathMax = 1000;
@@ -1785,6 +1944,16 @@ export const GetOperationsResponse = zod.object({
   "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemOneLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "healthSafetyInstructions": zod.union([zod.object({
+  "en": zod.string().min(1).max(getOperationsResponseOfferingsItemOneHealthSafetyInstructionsOneEnMax),
+  "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemOneHealthSafetyInstructionsOneArMax),
+  "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemOneHealthSafetyInstructionsOneKuMax)
+}),zod.null()]).optional(),
+  "accessibilityInformation": zod.union([zod.object({
+  "en": zod.string().min(1).max(getOperationsResponseOfferingsItemOneAccessibilityInformationOneEnMax),
+  "ar": zod.string().min(1).max(getOperationsResponseOfferingsItemOneAccessibilityInformationOneArMax),
+  "ku": zod.string().min(1).max(getOperationsResponseOfferingsItemOneAccessibilityInformationOneKuMax)
+}),zod.null()]).optional(),
   "instructions": zod.string().max(getOperationsResponseOfferingsItemOneInstructionsMax).nullish(),
   "imagePath": zod.string().max(getOperationsResponseOfferingsItemOneImagePathMax).nullish(),
   "bookingCutoffMinutes": zod.int().min(getOperationsResponseOfferingsItemOneBookingCutoffMinutesMin).max(getOperationsResponseOfferingsItemOneBookingCutoffMinutesMax).default(getOperationsResponseOfferingsItemOneBookingCutoffMinutesDefault),
@@ -1861,7 +2030,9 @@ export const GetOperationsResponse = zod.object({
 }),zod.null()]).optional(),
   "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
   "walkInOpensAt": zod.coerce.date().nullish(),
-  "walkInClosesAt": zod.coerce.date().nullish()
+  "walkInClosesAt": zod.coerce.date().nullish(),
+  "checkinOpensAt": zod.coerce.date().nullish(),
+  "checkinClosesAt": zod.coerce.date().nullish()
 }))),
   "waitlist": zod.array(zod.object({
   "id": zod.string(),
@@ -3473,6 +3644,18 @@ export const addLiveOfferingBodyLocalizedDescriptionOneArMax = 240;
 
 export const addLiveOfferingBodyLocalizedDescriptionOneKuMax = 240;
 
+export const addLiveOfferingBodyHealthSafetyInstructionsOneEnMax = 2000;
+
+export const addLiveOfferingBodyHealthSafetyInstructionsOneArMax = 2000;
+
+export const addLiveOfferingBodyHealthSafetyInstructionsOneKuMax = 2000;
+
+export const addLiveOfferingBodyAccessibilityInformationOneEnMax = 2000;
+
+export const addLiveOfferingBodyAccessibilityInformationOneArMax = 2000;
+
+export const addLiveOfferingBodyAccessibilityInformationOneKuMax = 2000;
+
 export const addLiveOfferingBodyInstructionsMax = 2000;
 
 export const addLiveOfferingBodyImagePathMax = 1000;
@@ -3521,6 +3704,16 @@ export const AddLiveOfferingBody = zod.object({
   "en": zod.string().min(1).max(addLiveOfferingBodyLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(addLiveOfferingBodyLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(addLiveOfferingBodyLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "healthSafetyInstructions": zod.union([zod.object({
+  "en": zod.string().min(1).max(addLiveOfferingBodyHealthSafetyInstructionsOneEnMax),
+  "ar": zod.string().min(1).max(addLiveOfferingBodyHealthSafetyInstructionsOneArMax),
+  "ku": zod.string().min(1).max(addLiveOfferingBodyHealthSafetyInstructionsOneKuMax)
+}),zod.null()]).optional(),
+  "accessibilityInformation": zod.union([zod.object({
+  "en": zod.string().min(1).max(addLiveOfferingBodyAccessibilityInformationOneEnMax),
+  "ar": zod.string().min(1).max(addLiveOfferingBodyAccessibilityInformationOneArMax),
+  "ku": zod.string().min(1).max(addLiveOfferingBodyAccessibilityInformationOneKuMax)
 }),zod.null()]).optional(),
   "instructions": zod.string().max(addLiveOfferingBodyInstructionsMax).nullish(),
   "imagePath": zod.string().max(addLiveOfferingBodyImagePathMax).nullish(),
@@ -3574,6 +3767,18 @@ export const addLiveOfferingResponseOneLocalizedDescriptionOneEnMax = 240;
 export const addLiveOfferingResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const addLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
+
+export const addLiveOfferingResponseOneHealthSafetyInstructionsOneEnMax = 2000;
+
+export const addLiveOfferingResponseOneHealthSafetyInstructionsOneArMax = 2000;
+
+export const addLiveOfferingResponseOneHealthSafetyInstructionsOneKuMax = 2000;
+
+export const addLiveOfferingResponseOneAccessibilityInformationOneEnMax = 2000;
+
+export const addLiveOfferingResponseOneAccessibilityInformationOneArMax = 2000;
+
+export const addLiveOfferingResponseOneAccessibilityInformationOneKuMax = 2000;
 
 export const addLiveOfferingResponseOneInstructionsMax = 2000;
 
@@ -3636,6 +3841,16 @@ export const AddLiveOfferingResponse = zod.object({
   "en": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(addLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "healthSafetyInstructions": zod.union([zod.object({
+  "en": zod.string().min(1).max(addLiveOfferingResponseOneHealthSafetyInstructionsOneEnMax),
+  "ar": zod.string().min(1).max(addLiveOfferingResponseOneHealthSafetyInstructionsOneArMax),
+  "ku": zod.string().min(1).max(addLiveOfferingResponseOneHealthSafetyInstructionsOneKuMax)
+}),zod.null()]).optional(),
+  "accessibilityInformation": zod.union([zod.object({
+  "en": zod.string().min(1).max(addLiveOfferingResponseOneAccessibilityInformationOneEnMax),
+  "ar": zod.string().min(1).max(addLiveOfferingResponseOneAccessibilityInformationOneArMax),
+  "ku": zod.string().min(1).max(addLiveOfferingResponseOneAccessibilityInformationOneKuMax)
 }),zod.null()]).optional(),
   "instructions": zod.string().max(addLiveOfferingResponseOneInstructionsMax).nullish(),
   "imagePath": zod.string().max(addLiveOfferingResponseOneImagePathMax).nullish(),
@@ -3713,7 +3928,9 @@ export const AddLiveOfferingResponse = zod.object({
 }),zod.null()]).optional(),
   "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
   "walkInOpensAt": zod.coerce.date().nullish(),
-  "walkInClosesAt": zod.coerce.date().nullish()
+  "walkInClosesAt": zod.coerce.date().nullish(),
+  "checkinOpensAt": zod.coerce.date().nullish(),
+  "checkinClosesAt": zod.coerce.date().nullish()
 }))
 
 
@@ -3789,6 +4006,18 @@ export const createRecurringOfferingsBodyTemplateLocalizedDescriptionOneArMax = 
 
 export const createRecurringOfferingsBodyTemplateLocalizedDescriptionOneKuMax = 240;
 
+export const createRecurringOfferingsBodyTemplateHealthSafetyInstructionsOneEnMax = 2000;
+
+export const createRecurringOfferingsBodyTemplateHealthSafetyInstructionsOneArMax = 2000;
+
+export const createRecurringOfferingsBodyTemplateHealthSafetyInstructionsOneKuMax = 2000;
+
+export const createRecurringOfferingsBodyTemplateAccessibilityInformationOneEnMax = 2000;
+
+export const createRecurringOfferingsBodyTemplateAccessibilityInformationOneArMax = 2000;
+
+export const createRecurringOfferingsBodyTemplateAccessibilityInformationOneKuMax = 2000;
+
 export const createRecurringOfferingsBodyTemplateInstructionsMax = 2000;
 
 export const createRecurringOfferingsBodyTemplateImagePathMax = 1000;
@@ -3852,6 +4081,16 @@ export const CreateRecurringOfferingsBody = zod.object({
   "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(createRecurringOfferingsBodyTemplateLocalizedDescriptionOneKuMax)
 }),zod.null()]).optional(),
+  "healthSafetyInstructions": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsBodyTemplateHealthSafetyInstructionsOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateHealthSafetyInstructionsOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsBodyTemplateHealthSafetyInstructionsOneKuMax)
+}),zod.null()]).optional(),
+  "accessibilityInformation": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsBodyTemplateAccessibilityInformationOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsBodyTemplateAccessibilityInformationOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsBodyTemplateAccessibilityInformationOneKuMax)
+}),zod.null()]).optional(),
   "instructions": zod.string().max(createRecurringOfferingsBodyTemplateInstructionsMax).nullish(),
   "imagePath": zod.string().max(createRecurringOfferingsBodyTemplateImagePathMax).nullish(),
   "bookingCutoffMinutes": zod.int().min(createRecurringOfferingsBodyTemplateBookingCutoffMinutesMin).max(createRecurringOfferingsBodyTemplateBookingCutoffMinutesMax).default(createRecurringOfferingsBodyTemplateBookingCutoffMinutesDefault),
@@ -3914,6 +4153,18 @@ export const createRecurringOfferingsResponseOneLocalizedDescriptionOneArMax = 2
 
 export const createRecurringOfferingsResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const createRecurringOfferingsResponseOneHealthSafetyInstructionsOneEnMax = 2000;
+
+export const createRecurringOfferingsResponseOneHealthSafetyInstructionsOneArMax = 2000;
+
+export const createRecurringOfferingsResponseOneHealthSafetyInstructionsOneKuMax = 2000;
+
+export const createRecurringOfferingsResponseOneAccessibilityInformationOneEnMax = 2000;
+
+export const createRecurringOfferingsResponseOneAccessibilityInformationOneArMax = 2000;
+
+export const createRecurringOfferingsResponseOneAccessibilityInformationOneKuMax = 2000;
+
 export const createRecurringOfferingsResponseOneInstructionsMax = 2000;
 
 export const createRecurringOfferingsResponseOneImagePathMax = 1000;
@@ -3975,6 +4226,16 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
   "en": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(createRecurringOfferingsResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "healthSafetyInstructions": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsResponseOneHealthSafetyInstructionsOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneHealthSafetyInstructionsOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsResponseOneHealthSafetyInstructionsOneKuMax)
+}),zod.null()]).optional(),
+  "accessibilityInformation": zod.union([zod.object({
+  "en": zod.string().min(1).max(createRecurringOfferingsResponseOneAccessibilityInformationOneEnMax),
+  "ar": zod.string().min(1).max(createRecurringOfferingsResponseOneAccessibilityInformationOneArMax),
+  "ku": zod.string().min(1).max(createRecurringOfferingsResponseOneAccessibilityInformationOneKuMax)
 }),zod.null()]).optional(),
   "instructions": zod.string().max(createRecurringOfferingsResponseOneInstructionsMax).nullish(),
   "imagePath": zod.string().max(createRecurringOfferingsResponseOneImagePathMax).nullish(),
@@ -4052,7 +4313,9 @@ export const CreateRecurringOfferingsResponseItem = zod.object({
 }),zod.null()]).optional(),
   "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
   "walkInOpensAt": zod.coerce.date().nullish(),
-  "walkInClosesAt": zod.coerce.date().nullish()
+  "walkInClosesAt": zod.coerce.date().nullish(),
+  "checkinOpensAt": zod.coerce.date().nullish(),
+  "checkinClosesAt": zod.coerce.date().nullish()
 }))
 export const CreateRecurringOfferingsResponse = zod.array(CreateRecurringOfferingsResponseItem).min(1)
 
@@ -4077,6 +4340,32 @@ export const changeLiveOfferingBodyLocalizedDescriptionArMax = 240;
 
 export const changeLiveOfferingBodyLocalizedDescriptionKuMax = 240;
 
+export const changeLiveOfferingBodyLocalizedInstructorEnMax = 240;
+
+export const changeLiveOfferingBodyLocalizedInstructorArMax = 240;
+
+export const changeLiveOfferingBodyLocalizedInstructorKuMax = 240;
+
+export const changeLiveOfferingBodyRequiredEquipmentEnMax = 240;
+
+export const changeLiveOfferingBodyRequiredEquipmentArMax = 240;
+
+export const changeLiveOfferingBodyRequiredEquipmentKuMax = 240;
+
+export const changeLiveOfferingBodyHealthSafetyInstructionsEnMax = 2000;
+
+export const changeLiveOfferingBodyHealthSafetyInstructionsArMax = 2000;
+
+export const changeLiveOfferingBodyHealthSafetyInstructionsKuMax = 2000;
+
+export const changeLiveOfferingBodyAccessibilityInformationEnMax = 2000;
+
+export const changeLiveOfferingBodyAccessibilityInformationArMax = 2000;
+
+export const changeLiveOfferingBodyAccessibilityInformationKuMax = 2000;
+
+export const changeLiveOfferingBodyInstructionsMax = 2000;
+
 
 
 export const ChangeLiveOfferingBody = zod.object({
@@ -4093,6 +4382,28 @@ export const ChangeLiveOfferingBody = zod.object({
   "ar": zod.string().min(1).max(changeLiveOfferingBodyLocalizedDescriptionArMax),
   "ku": zod.string().min(1).max(changeLiveOfferingBodyLocalizedDescriptionKuMax)
 }).optional(),
+  "localizedInstructor": zod.object({
+  "en": zod.string().min(1).max(changeLiveOfferingBodyLocalizedInstructorEnMax),
+  "ar": zod.string().min(1).max(changeLiveOfferingBodyLocalizedInstructorArMax),
+  "ku": zod.string().min(1).max(changeLiveOfferingBodyLocalizedInstructorKuMax)
+}).optional(),
+  "difficultyLevel": zod.enum(['all-levels', 'beginner', 'intermediate', 'advanced']).optional(),
+  "requiredEquipment": zod.object({
+  "en": zod.string().min(1).max(changeLiveOfferingBodyRequiredEquipmentEnMax),
+  "ar": zod.string().min(1).max(changeLiveOfferingBodyRequiredEquipmentArMax),
+  "ku": zod.string().min(1).max(changeLiveOfferingBodyRequiredEquipmentKuMax)
+}).optional(),
+  "healthSafetyInstructions": zod.object({
+  "en": zod.string().min(1).max(changeLiveOfferingBodyHealthSafetyInstructionsEnMax),
+  "ar": zod.string().min(1).max(changeLiveOfferingBodyHealthSafetyInstructionsArMax),
+  "ku": zod.string().min(1).max(changeLiveOfferingBodyHealthSafetyInstructionsKuMax)
+}).optional(),
+  "accessibilityInformation": zod.object({
+  "en": zod.string().min(1).max(changeLiveOfferingBodyAccessibilityInformationEnMax),
+  "ar": zod.string().min(1).max(changeLiveOfferingBodyAccessibilityInformationArMax),
+  "ku": zod.string().min(1).max(changeLiveOfferingBodyAccessibilityInformationKuMax)
+}).optional(),
+  "instructions": zod.string().max(changeLiveOfferingBodyInstructionsMax).optional(),
   "joinUrl": zod.url().nullish(),
   "startsAt": zod.coerce.date().optional(),
   "endsAt": zod.coerce.date().optional(),
@@ -4110,6 +4421,18 @@ export const changeLiveOfferingResponseOneLocalizedDescriptionOneEnMax = 240;
 export const changeLiveOfferingResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const changeLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
+
+export const changeLiveOfferingResponseOneHealthSafetyInstructionsOneEnMax = 2000;
+
+export const changeLiveOfferingResponseOneHealthSafetyInstructionsOneArMax = 2000;
+
+export const changeLiveOfferingResponseOneHealthSafetyInstructionsOneKuMax = 2000;
+
+export const changeLiveOfferingResponseOneAccessibilityInformationOneEnMax = 2000;
+
+export const changeLiveOfferingResponseOneAccessibilityInformationOneArMax = 2000;
+
+export const changeLiveOfferingResponseOneAccessibilityInformationOneKuMax = 2000;
 
 export const changeLiveOfferingResponseOneInstructionsMax = 2000;
 
@@ -4172,6 +4495,16 @@ export const ChangeLiveOfferingResponse = zod.object({
   "en": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(changeLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "healthSafetyInstructions": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeLiveOfferingResponseOneHealthSafetyInstructionsOneEnMax),
+  "ar": zod.string().min(1).max(changeLiveOfferingResponseOneHealthSafetyInstructionsOneArMax),
+  "ku": zod.string().min(1).max(changeLiveOfferingResponseOneHealthSafetyInstructionsOneKuMax)
+}),zod.null()]).optional(),
+  "accessibilityInformation": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeLiveOfferingResponseOneAccessibilityInformationOneEnMax),
+  "ar": zod.string().min(1).max(changeLiveOfferingResponseOneAccessibilityInformationOneArMax),
+  "ku": zod.string().min(1).max(changeLiveOfferingResponseOneAccessibilityInformationOneKuMax)
 }),zod.null()]).optional(),
   "instructions": zod.string().max(changeLiveOfferingResponseOneInstructionsMax).nullish(),
   "imagePath": zod.string().max(changeLiveOfferingResponseOneImagePathMax).nullish(),
@@ -4249,7 +4582,9 @@ export const ChangeLiveOfferingResponse = zod.object({
 }),zod.null()]).optional(),
   "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
   "walkInOpensAt": zod.coerce.date().nullish(),
-  "walkInClosesAt": zod.coerce.date().nullish()
+  "walkInClosesAt": zod.coerce.date().nullish(),
+  "checkinOpensAt": zod.coerce.date().nullish(),
+  "checkinClosesAt": zod.coerce.date().nullish()
 }))
 
 
@@ -4300,6 +4635,32 @@ export const changeRecurringOfferingSeriesBodyLocalizedDescriptionArMax = 240;
 
 export const changeRecurringOfferingSeriesBodyLocalizedDescriptionKuMax = 240;
 
+export const changeRecurringOfferingSeriesBodyLocalizedInstructorEnMax = 240;
+
+export const changeRecurringOfferingSeriesBodyLocalizedInstructorArMax = 240;
+
+export const changeRecurringOfferingSeriesBodyLocalizedInstructorKuMax = 240;
+
+export const changeRecurringOfferingSeriesBodyRequiredEquipmentEnMax = 240;
+
+export const changeRecurringOfferingSeriesBodyRequiredEquipmentArMax = 240;
+
+export const changeRecurringOfferingSeriesBodyRequiredEquipmentKuMax = 240;
+
+export const changeRecurringOfferingSeriesBodyHealthSafetyInstructionsEnMax = 2000;
+
+export const changeRecurringOfferingSeriesBodyHealthSafetyInstructionsArMax = 2000;
+
+export const changeRecurringOfferingSeriesBodyHealthSafetyInstructionsKuMax = 2000;
+
+export const changeRecurringOfferingSeriesBodyAccessibilityInformationEnMax = 2000;
+
+export const changeRecurringOfferingSeriesBodyAccessibilityInformationArMax = 2000;
+
+export const changeRecurringOfferingSeriesBodyAccessibilityInformationKuMax = 2000;
+
+export const changeRecurringOfferingSeriesBodyInstructionsMax = 2000;
+
 
 
 export const ChangeRecurringOfferingSeriesBody = zod.object({
@@ -4316,6 +4677,28 @@ export const ChangeRecurringOfferingSeriesBody = zod.object({
   "ar": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedDescriptionArMax),
   "ku": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedDescriptionKuMax)
 }).optional(),
+  "localizedInstructor": zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedInstructorEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedInstructorArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesBodyLocalizedInstructorKuMax)
+}).optional(),
+  "difficultyLevel": zod.enum(['all-levels', 'beginner', 'intermediate', 'advanced']).optional(),
+  "requiredEquipment": zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesBodyRequiredEquipmentEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesBodyRequiredEquipmentArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesBodyRequiredEquipmentKuMax)
+}).optional(),
+  "healthSafetyInstructions": zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesBodyHealthSafetyInstructionsEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesBodyHealthSafetyInstructionsArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesBodyHealthSafetyInstructionsKuMax)
+}).optional(),
+  "accessibilityInformation": zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesBodyAccessibilityInformationEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesBodyAccessibilityInformationArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesBodyAccessibilityInformationKuMax)
+}).optional(),
+  "instructions": zod.string().max(changeRecurringOfferingSeriesBodyInstructionsMax).optional(),
   "joinUrl": zod.url().nullish(),
   "startsAt": zod.coerce.date().optional(),
   "endsAt": zod.coerce.date().optional(),
@@ -4333,6 +4716,18 @@ export const changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneEnMa
 export const changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneKuMax = 240;
+
+export const changeRecurringOfferingSeriesResponseOneHealthSafetyInstructionsOneEnMax = 2000;
+
+export const changeRecurringOfferingSeriesResponseOneHealthSafetyInstructionsOneArMax = 2000;
+
+export const changeRecurringOfferingSeriesResponseOneHealthSafetyInstructionsOneKuMax = 2000;
+
+export const changeRecurringOfferingSeriesResponseOneAccessibilityInformationOneEnMax = 2000;
+
+export const changeRecurringOfferingSeriesResponseOneAccessibilityInformationOneArMax = 2000;
+
+export const changeRecurringOfferingSeriesResponseOneAccessibilityInformationOneKuMax = 2000;
 
 export const changeRecurringOfferingSeriesResponseOneInstructionsMax = 2000;
 
@@ -4395,6 +4790,16 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
   "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "healthSafetyInstructions": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneHealthSafetyInstructionsOneEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneHealthSafetyInstructionsOneArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneHealthSafetyInstructionsOneKuMax)
+}),zod.null()]).optional(),
+  "accessibilityInformation": zod.union([zod.object({
+  "en": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneAccessibilityInformationOneEnMax),
+  "ar": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneAccessibilityInformationOneArMax),
+  "ku": zod.string().min(1).max(changeRecurringOfferingSeriesResponseOneAccessibilityInformationOneKuMax)
 }),zod.null()]).optional(),
   "instructions": zod.string().max(changeRecurringOfferingSeriesResponseOneInstructionsMax).nullish(),
   "imagePath": zod.string().max(changeRecurringOfferingSeriesResponseOneImagePathMax).nullish(),
@@ -4472,7 +4877,9 @@ export const ChangeRecurringOfferingSeriesResponseItem = zod.object({
 }),zod.null()]).optional(),
   "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
   "walkInOpensAt": zod.coerce.date().nullish(),
-  "walkInClosesAt": zod.coerce.date().nullish()
+  "walkInClosesAt": zod.coerce.date().nullish(),
+  "checkinOpensAt": zod.coerce.date().nullish(),
+  "checkinClosesAt": zod.coerce.date().nullish()
 }))
 export const ChangeRecurringOfferingSeriesResponse = zod.array(ChangeRecurringOfferingSeriesResponseItem).min(1)
 
@@ -4503,6 +4910,18 @@ export const submitLiveOfferingResponseOneLocalizedDescriptionOneEnMax = 240;
 export const submitLiveOfferingResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const submitLiveOfferingResponseOneLocalizedDescriptionOneKuMax = 240;
+
+export const submitLiveOfferingResponseOneHealthSafetyInstructionsOneEnMax = 2000;
+
+export const submitLiveOfferingResponseOneHealthSafetyInstructionsOneArMax = 2000;
+
+export const submitLiveOfferingResponseOneHealthSafetyInstructionsOneKuMax = 2000;
+
+export const submitLiveOfferingResponseOneAccessibilityInformationOneEnMax = 2000;
+
+export const submitLiveOfferingResponseOneAccessibilityInformationOneArMax = 2000;
+
+export const submitLiveOfferingResponseOneAccessibilityInformationOneKuMax = 2000;
 
 export const submitLiveOfferingResponseOneInstructionsMax = 2000;
 
@@ -4565,6 +4984,16 @@ export const SubmitLiveOfferingResponse = zod.object({
   "en": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(submitLiveOfferingResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "healthSafetyInstructions": zod.union([zod.object({
+  "en": zod.string().min(1).max(submitLiveOfferingResponseOneHealthSafetyInstructionsOneEnMax),
+  "ar": zod.string().min(1).max(submitLiveOfferingResponseOneHealthSafetyInstructionsOneArMax),
+  "ku": zod.string().min(1).max(submitLiveOfferingResponseOneHealthSafetyInstructionsOneKuMax)
+}),zod.null()]).optional(),
+  "accessibilityInformation": zod.union([zod.object({
+  "en": zod.string().min(1).max(submitLiveOfferingResponseOneAccessibilityInformationOneEnMax),
+  "ar": zod.string().min(1).max(submitLiveOfferingResponseOneAccessibilityInformationOneArMax),
+  "ku": zod.string().min(1).max(submitLiveOfferingResponseOneAccessibilityInformationOneKuMax)
 }),zod.null()]).optional(),
   "instructions": zod.string().max(submitLiveOfferingResponseOneInstructionsMax).nullish(),
   "imagePath": zod.string().max(submitLiveOfferingResponseOneImagePathMax).nullish(),
@@ -4642,7 +5071,9 @@ export const SubmitLiveOfferingResponse = zod.object({
 }),zod.null()]).optional(),
   "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
   "walkInOpensAt": zod.coerce.date().nullish(),
-  "walkInClosesAt": zod.coerce.date().nullish()
+  "walkInClosesAt": zod.coerce.date().nullish(),
+  "checkinOpensAt": zod.coerce.date().nullish(),
+  "checkinClosesAt": zod.coerce.date().nullish()
 }))
 
 
@@ -4670,6 +5101,18 @@ export const respondToOfferingCorrectionResponseOneLocalizedDescriptionOneEnMax 
 export const respondToOfferingCorrectionResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const respondToOfferingCorrectionResponseOneLocalizedDescriptionOneKuMax = 240;
+
+export const respondToOfferingCorrectionResponseOneHealthSafetyInstructionsOneEnMax = 2000;
+
+export const respondToOfferingCorrectionResponseOneHealthSafetyInstructionsOneArMax = 2000;
+
+export const respondToOfferingCorrectionResponseOneHealthSafetyInstructionsOneKuMax = 2000;
+
+export const respondToOfferingCorrectionResponseOneAccessibilityInformationOneEnMax = 2000;
+
+export const respondToOfferingCorrectionResponseOneAccessibilityInformationOneArMax = 2000;
+
+export const respondToOfferingCorrectionResponseOneAccessibilityInformationOneKuMax = 2000;
 
 export const respondToOfferingCorrectionResponseOneInstructionsMax = 2000;
 
@@ -4732,6 +5175,16 @@ export const RespondToOfferingCorrectionResponse = zod.object({
   "en": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "healthSafetyInstructions": zod.union([zod.object({
+  "en": zod.string().min(1).max(respondToOfferingCorrectionResponseOneHealthSafetyInstructionsOneEnMax),
+  "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneHealthSafetyInstructionsOneArMax),
+  "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseOneHealthSafetyInstructionsOneKuMax)
+}),zod.null()]).optional(),
+  "accessibilityInformation": zod.union([zod.object({
+  "en": zod.string().min(1).max(respondToOfferingCorrectionResponseOneAccessibilityInformationOneEnMax),
+  "ar": zod.string().min(1).max(respondToOfferingCorrectionResponseOneAccessibilityInformationOneArMax),
+  "ku": zod.string().min(1).max(respondToOfferingCorrectionResponseOneAccessibilityInformationOneKuMax)
 }),zod.null()]).optional(),
   "instructions": zod.string().max(respondToOfferingCorrectionResponseOneInstructionsMax).nullish(),
   "imagePath": zod.string().max(respondToOfferingCorrectionResponseOneImagePathMax).nullish(),
@@ -4809,7 +5262,9 @@ export const RespondToOfferingCorrectionResponse = zod.object({
 }),zod.null()]).optional(),
   "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
   "walkInOpensAt": zod.coerce.date().nullish(),
-  "walkInClosesAt": zod.coerce.date().nullish()
+  "walkInClosesAt": zod.coerce.date().nullish(),
+  "checkinOpensAt": zod.coerce.date().nullish(),
+  "checkinClosesAt": zod.coerce.date().nullish()
 }))
 
 
@@ -4838,6 +5293,18 @@ export const reviewOfferingApprovalResponseOneLocalizedDescriptionOneEnMax = 240
 export const reviewOfferingApprovalResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const reviewOfferingApprovalResponseOneLocalizedDescriptionOneKuMax = 240;
+
+export const reviewOfferingApprovalResponseOneHealthSafetyInstructionsOneEnMax = 2000;
+
+export const reviewOfferingApprovalResponseOneHealthSafetyInstructionsOneArMax = 2000;
+
+export const reviewOfferingApprovalResponseOneHealthSafetyInstructionsOneKuMax = 2000;
+
+export const reviewOfferingApprovalResponseOneAccessibilityInformationOneEnMax = 2000;
+
+export const reviewOfferingApprovalResponseOneAccessibilityInformationOneArMax = 2000;
+
+export const reviewOfferingApprovalResponseOneAccessibilityInformationOneKuMax = 2000;
 
 export const reviewOfferingApprovalResponseOneInstructionsMax = 2000;
 
@@ -4900,6 +5367,16 @@ export const ReviewOfferingApprovalResponse = zod.object({
   "en": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(reviewOfferingApprovalResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "healthSafetyInstructions": zod.union([zod.object({
+  "en": zod.string().min(1).max(reviewOfferingApprovalResponseOneHealthSafetyInstructionsOneEnMax),
+  "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneHealthSafetyInstructionsOneArMax),
+  "ku": zod.string().min(1).max(reviewOfferingApprovalResponseOneHealthSafetyInstructionsOneKuMax)
+}),zod.null()]).optional(),
+  "accessibilityInformation": zod.union([zod.object({
+  "en": zod.string().min(1).max(reviewOfferingApprovalResponseOneAccessibilityInformationOneEnMax),
+  "ar": zod.string().min(1).max(reviewOfferingApprovalResponseOneAccessibilityInformationOneArMax),
+  "ku": zod.string().min(1).max(reviewOfferingApprovalResponseOneAccessibilityInformationOneKuMax)
 }),zod.null()]).optional(),
   "instructions": zod.string().max(reviewOfferingApprovalResponseOneInstructionsMax).nullish(),
   "imagePath": zod.string().max(reviewOfferingApprovalResponseOneImagePathMax).nullish(),
@@ -4977,7 +5454,9 @@ export const ReviewOfferingApprovalResponse = zod.object({
 }),zod.null()]).optional(),
   "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
   "walkInOpensAt": zod.coerce.date().nullish(),
-  "walkInClosesAt": zod.coerce.date().nullish()
+  "walkInClosesAt": zod.coerce.date().nullish(),
+  "checkinOpensAt": zod.coerce.date().nullish(),
+  "checkinClosesAt": zod.coerce.date().nullish()
 }))
 
 
@@ -10352,6 +10831,18 @@ export const getLiveCatalogResponseOneLocalizedDescriptionOneArMax = 240;
 
 export const getLiveCatalogResponseOneLocalizedDescriptionOneKuMax = 240;
 
+export const getLiveCatalogResponseOneHealthSafetyInstructionsOneEnMax = 2000;
+
+export const getLiveCatalogResponseOneHealthSafetyInstructionsOneArMax = 2000;
+
+export const getLiveCatalogResponseOneHealthSafetyInstructionsOneKuMax = 2000;
+
+export const getLiveCatalogResponseOneAccessibilityInformationOneEnMax = 2000;
+
+export const getLiveCatalogResponseOneAccessibilityInformationOneArMax = 2000;
+
+export const getLiveCatalogResponseOneAccessibilityInformationOneKuMax = 2000;
+
 export const getLiveCatalogResponseOneInstructionsMax = 2000;
 
 export const getLiveCatalogResponseOneImagePathMax = 1000;
@@ -10413,6 +10904,16 @@ export const GetLiveCatalogResponseItem = zod.object({
   "en": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedDescriptionOneEnMax),
   "ar": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedDescriptionOneArMax),
   "ku": zod.string().min(1).max(getLiveCatalogResponseOneLocalizedDescriptionOneKuMax)
+}),zod.null()]).optional(),
+  "healthSafetyInstructions": zod.union([zod.object({
+  "en": zod.string().min(1).max(getLiveCatalogResponseOneHealthSafetyInstructionsOneEnMax),
+  "ar": zod.string().min(1).max(getLiveCatalogResponseOneHealthSafetyInstructionsOneArMax),
+  "ku": zod.string().min(1).max(getLiveCatalogResponseOneHealthSafetyInstructionsOneKuMax)
+}),zod.null()]).optional(),
+  "accessibilityInformation": zod.union([zod.object({
+  "en": zod.string().min(1).max(getLiveCatalogResponseOneAccessibilityInformationOneEnMax),
+  "ar": zod.string().min(1).max(getLiveCatalogResponseOneAccessibilityInformationOneArMax),
+  "ku": zod.string().min(1).max(getLiveCatalogResponseOneAccessibilityInformationOneKuMax)
 }),zod.null()]).optional(),
   "instructions": zod.string().max(getLiveCatalogResponseOneInstructionsMax).nullish(),
   "imagePath": zod.string().max(getLiveCatalogResponseOneImagePathMax).nullish(),
@@ -10490,7 +10991,9 @@ export const GetLiveCatalogResponseItem = zod.object({
 }),zod.null()]).optional(),
   "walkInReady": zod.boolean().optional().describe('Whether the member may start an open-access visit now; the server rechecks all rules.'),
   "walkInOpensAt": zod.coerce.date().nullish(),
-  "walkInClosesAt": zod.coerce.date().nullish()
+  "walkInClosesAt": zod.coerce.date().nullish(),
+  "checkinOpensAt": zod.coerce.date().nullish(),
+  "checkinClosesAt": zod.coerce.date().nullish()
 }))
 export const GetLiveCatalogResponse = zod.array(GetLiveCatalogResponseItem)
 

@@ -8,6 +8,7 @@ import {
   db, facilityProfiles, operationAudit, offerings, operators, partners, pool, reservations,
 } from "@workspace/db";
 import operationsRouter from "./operations";
+import publicRouter from "./public";
 
 const prefix = `offering-approval-test-${randomUUID()}`;
 const partnerId = `${prefix}-partner`;
@@ -35,6 +36,7 @@ app.use((req, _res, next) => {
   next();
 });
 app.use("/operations", operationsRouter);
+app.use("/public", publicRouter);
 
 async function call(path: string, userId: string, method = "GET", body?: unknown) {
   const response = await fetch(`http://127.0.0.1:${(server!.address() as { port: number }).port}${path}`, {
@@ -101,6 +103,13 @@ test("activity review is scoped, audited, and cannot bypass booking safeguards",
     accessType: "physical",
     environment: "indoor",
     tiers: ["M"],
+    localizedTitle: { en: "Approval test class", ar: "حصة اختبار الاعتماد", ku: "پۆلی تاقیکردنەوەی پەسەندکردن" },
+    localizedDescription: { en: "A test fitness class.", ar: "حصة لياقة للاختبار.", ku: "پۆلێکی وەرزشیی تاقیکردنەوە." },
+    localizedInstructor: { en: "Test coach", ar: "مدرب للاختبار", ku: "ڕاهێنەری تاقیکردنەوە" },
+    difficultyLevel: "all-levels",
+    requiredEquipment: { en: "Bring a water bottle.", ar: "أحضر زجاجة ماء.", ku: "بوتڵێک ئاو لەگەڵ خۆت بهێنە." },
+    healthSafetyInstructions: { en: "Stop if you feel unwell.", ar: "توقف إذا شعرت بتوعك.", ku: "ئەگەر هەستت بە ناخۆشی کرد، بوەستە." },
+    accessibilityInformation: { en: "Step-free entrance; contact the facility about other access needs.", ar: "مدخل بلا درجات؛ تواصل مع المرفق بشأن احتياجات الوصول الأخرى.", ku: "دەروازەکە بێ پلەیە؛ بۆ پێداویستییەکانی تری دەستڕاگەیشتن پەیوەندی بە شوێنەکەوە بکە." },
     startsAt: "2099-03-14T09:00:00+03:00",
     endsAt: "2099-03-14T10:00:00+03:00",
     cancellationDeadline: "2099-03-14T08:00:00+03:00",
@@ -118,6 +127,22 @@ test("activity review is scoped, audited, and cannot bypass booking safeguards",
   assert.equal(activity.approvalStatus, "draft");
   assert.equal(activity.active, false);
   assert.equal((created.data as { environment: string | null }).environment, "indoor");
+  assert.deepEqual((created.data as { healthSafetyInstructions: unknown }).healthSafetyInstructions, payload.healthSafetyInstructions);
+  assert.deepEqual((created.data as { accessibilityInformation: unknown }).accessibilityInformation, payload.accessibilityInformation);
+  const incomplete = await call("/operations/offerings", partnerUserId, "POST", {
+    ...payload, title: "Incomplete safety details", healthSafetyInstructions: undefined,
+  });
+  assert.equal(incomplete.status, 201);
+  const incompleteId = (incomplete.data as { id: string }).id;
+  createdOfferingIds.push(incompleteId);
+  const missingSafety = await call(`/operations/offerings/${incompleteId}/submit`, partnerUserId, "POST");
+  assert.equal(missingSafety.status, 400);
+  const completedSafety = await call(`/operations/offerings/${incompleteId}`, partnerUserId, "PATCH", {
+    capacity: 2,
+    healthSafetyInstructions: payload.healthSafetyInstructions,
+  });
+  assert.equal(completedSafety.status, 200);
+  assert.equal((await call(`/operations/offerings/${incompleteId}/submit`, partnerUserId, "POST")).status, 200);
   const settingUpdated = await call(`/operations/offerings/${activity.id}`, partnerUserId, "PATCH", {
     capacity: 2, environment: "outdoor",
   });
@@ -173,6 +198,18 @@ test("activity review is scoped, audited, and cannot bypass booking safeguards",
   assert.equal(published.status, 200);
   assert.equal((published.data as { approvalStatus: string; active: boolean }).approvalStatus, "published");
   assert.equal((published.data as { active: boolean }).active, true);
+  const publicCatalog = await call("/public/catalog", adminUserId);
+  const publicSession = (publicCatalog.data as Array<{ id: string; localizedTitle: unknown; healthSafetyInstructions: unknown; accessibilityInformation: unknown }>)
+    .find(row => row.id === activity.id);
+  assert.deepEqual(publicSession?.localizedTitle, payload.localizedTitle);
+  assert.deepEqual(publicSession?.healthSafetyInstructions, payload.healthSafetyInstructions);
+  assert.deepEqual(publicSession?.accessibilityInformation, payload.accessibilityInformation);
+  const publicFacilities = await call("/public/facilities", adminUserId);
+  const publicFacility = (publicFacilities.data as Array<{ id: string; upcomingSessions: Array<{ id: string; localizedInstructor: unknown; requiredEquipment: unknown }> }>)
+    .find(row => row.id === facilityId);
+  const facilitySession = publicFacility?.upcomingSessions.find(row => row.id === activity.id);
+  assert.deepEqual(facilitySession?.localizedInstructor, payload.localizedInstructor);
+  assert.deepEqual(facilitySession?.requiredEquipment, payload.requiredEquipment);
 
   await db.insert(reservations).values({
     id: `${prefix}-reservation`, userId: memberId, offeringId: activity.id, status: "reserved",

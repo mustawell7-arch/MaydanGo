@@ -5,8 +5,10 @@ import {
   facilityHoursOverrides,
   facilityProfiles,
   facilityReviews,
+  checkinPolicies,
   offerings,
   partners,
+  reservations,
 } from "@workspace/db";
 import {
   GetPublicFacilitiesResponse,
@@ -54,11 +56,17 @@ async function publishedFacilities(id?: string) {
     facility: offerings.facility,
     title: offerings.title,
     localizedTitle: offerings.localizedTitle,
+    localizedDescription: offerings.localizedDescription,
     localizedInstructor: offerings.localizedInstructor,
+    instructions: offerings.instructions,
+    requiredEquipment: offerings.requiredEquipment,
+    healthSafetyInstructions: offerings.healthSafetyInstructions,
+    accessibilityInformation: offerings.accessibilityInformation,
     resourceName: offerings.resourceName,
     category: offerings.category,
     startsAt: offerings.startsAt,
     endsAt: offerings.endsAt,
+    cancellationDeadline: offerings.cancellationDeadline,
     accessType: offerings.accessType,
     bookingModel: offerings.bookingModel,
     tiers: offerings.tiers,
@@ -67,8 +75,34 @@ async function publishedFacilities(id?: string) {
     gender: offerings.gender,
     minAge: offerings.minAge,
     maxAge: offerings.maxAge,
+    capacity: offerings.capacity,
+    additionalPayment: offerings.additionalPayment,
+    checkinOpensAt: checkinPolicies.opensAt,
+    checkinClosesAt: checkinPolicies.closesAt,
+    reserved: sql<number>`count(${reservations.id})::int`,
+    resourceBusy: sql<boolean>`exists (
+      select 1 from reservations resource_reservation
+      join booking_offerings resource_offering on resource_offering.id = resource_reservation.offering_id
+      where resource_reservation.status in ('reserved', 'requested')
+        and resource_offering.booking_model = 'resource_booking'
+        and resource_offering.scope = ${offerings.scope}
+        and resource_offering.active = true
+        and resource_offering.cancelled_at is null
+        and resource_offering.partner_id = ${offerings.partnerId}
+        and lower(btrim(resource_offering.city)) = lower(btrim(${offerings.city}))
+        and lower(btrim(resource_offering.facility)) = lower(btrim(${offerings.facility}))
+        and lower(btrim(coalesce(resource_offering.resource_name->>'en', ''))) = lower(btrim(coalesce(${offerings.resourceName}->>'en', '')))
+        and resource_offering.id <> ${offerings.id}
+        and resource_offering.starts_at < ${offerings.endsAt}
+        and resource_offering.ends_at > ${offerings.startsAt}
+    )`,
   }).from(offerings)
     .innerJoin(partners, eq(offerings.partnerId, partners.id))
+    .leftJoin(reservations, and(
+      eq(reservations.offeringId, offerings.id),
+      inArray(reservations.status, ["reserved", "requested"]),
+    ))
+    .leftJoin(checkinPolicies, eq(checkinPolicies.offeringId, offerings.id))
     .where(and(
       eq(offerings.scope, "live"),
       eq(offerings.active, true),
@@ -81,6 +115,7 @@ async function publishedFacilities(id?: string) {
       ),
       inArray(offerings.partnerId, partnerIds),
     ))
+    .groupBy(offerings.id, partners.id, checkinPolicies.offeringId, checkinPolicies.opensAt, checkinPolicies.closesAt)
     .orderBy(asc(offerings.startsAt));
   const liveSessions = await filterSuspendedOfferings(sessionRows);
   const ratingRows = await db.select({
@@ -111,8 +146,15 @@ async function publishedFacilities(id?: string) {
         session.partnerId === profile.partnerId &&
         normalized(session.city) === normalized(profile.city) &&
         normalized(session.facility) === normalized(profile.facility),
-      ).map(({ partnerId: _partnerId, city: _city, facility: _facility, ...session }) => ({
-        ...session,
+       ).map(({ partnerId: _partnerId, city: _city, facility: _facility, capacity, reserved, resourceBusy, ...session }) => ({
+         ...session,
+          capacity,
+         checkinOpensAt: session.checkinOpensAt?.toISOString() ?? null,
+         checkinClosesAt: session.checkinClosesAt?.toISOString() ?? null,
+         startsAt: session.startsAt.toISOString(),
+         endsAt: session.endsAt.toISOString(),
+         cancellationDeadline: session.cancellationDeadline.toISOString(),
+         remaining: resourceBusy ? 0 : Math.max(0, capacity - reserved),
         bookingModel: getOfferingBookingModel({
           kind: "session",
           accessType: session.accessType,
