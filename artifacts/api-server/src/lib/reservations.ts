@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, gt, gte, inArray, isNull, lt, lte, ne, sql } from "drizzle-orm";
-import { db, memberships, offerings, reservations, attendance, facilityProfiles, facilityHoursOverrides, checkinPolicies, memberProfiles, partners, waitlistEntries, memberUpdates } from "@workspace/db";
+import { ACTIVE_RESERVATION_STATUSES, db, memberships, offerings, reservations, attendance, facilityProfiles, facilityHoursOverrides, checkinPolicies, memberProfiles, partners, waitlistEntries, memberUpdates } from "@workspace/db";
 import { sendMemberNotification } from "./notifications";
 import {
   hasCurrentRequiredMemberConsent,
@@ -100,7 +100,7 @@ export async function assertMemberEligibleForOffering(tx: BookingTx, userId: str
   }
   const active = await tx.select({ r: reservations, o: offerings }).from(reservations)
     .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
-    .where(and(eq(reservations.userId, userId), inArray(reservations.status, ["reserved", "requested"])));
+    .where(and(eq(reservations.userId, userId), inArray(reservations.status, ACTIVE_RESERVATION_STATUSES)));
   if (active.some(({ o: other }) => other.id === o.id || (o.kind === "coach" && other.kind === "coach" && other.targetId === o.targetId))) {
     throw new BookingError(409, "You already have an active booking or request.");
   }
@@ -133,7 +133,7 @@ export async function assertMemberEligibleForOffering(tx: BookingTx, userId: str
 }
 
 export async function memberState(userId: string) {
-  const [membershipRows, rows, profiles, waitlistRows, updateRows] = await Promise.all([
+  const [membershipRows, rows, profiles, waitlistRows, updateRows, attendanceRows] = await Promise.all([
     db.select().from(memberships).where(eq(memberships.userId, userId)),
     db.select({ reservation: reservations, offering: offerings }).from(reservations)
       .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
@@ -144,17 +144,31 @@ export async function memberState(userId: string) {
       .where(eq(waitlistEntries.userId, userId)).orderBy(desc(waitlistEntries.createdAt)).limit(50),
     db.select().from(memberUpdates).where(eq(memberUpdates.userId, userId))
       .orderBy(desc(memberUpdates.createdAt), desc(memberUpdates.id)).limit(50),
+    db.select({
+      reservationId: attendance.reservationId,
+      status: attendance.status,
+      checkedInAt: attendance.checkedInAt,
+      settlementEligible: attendance.settlementEligible,
+    }).from(attendance).where(eq(attendance.userId, userId)),
   ]);
+  const attendanceByReservation = new Map(attendanceRows.filter(row => row.reservationId)
+    .map(row => [row.reservationId!, row]));
   return { profile: profiles[0] ?? null,
     memberships: membershipRows.map(membership => ({ ...membership, status: effectiveMembershipStatus(membership) })),
-    bookings: rows.map(({ reservation: r, offering: o }) => ({
-    id: r.id, kind: o.kind, targetId: o.targetId, slot: o.slot, title: o.title,
-    localizedTitle: o.localizedTitle, resourceName: o.resourceName, city: o.city, facility: o.facility,
-    bookingModel: getOfferingBookingModel(o),
-    cancellationDeadline: o.cancellationDeadline,
-    scope: o.scope, startsAt: o.startsAt, status: r.status,
-    createdAt: r.createdAt, cancelledAt: r.cancelledAt,
-  })), waitlists: waitlistRows.map(({ entry: e, offering: o }) => ({
+    bookings: rows.map(({ reservation: r, offering: o }) => {
+      const attendanceRecord = attendanceByReservation.get(r.id);
+      return {
+        id: r.id, kind: o.kind, targetId: o.targetId, slot: o.slot, title: o.title,
+        localizedTitle: o.localizedTitle, resourceName: o.resourceName, city: o.city, facility: o.facility,
+        bookingModel: getOfferingBookingModel(o),
+        cancellationDeadline: o.cancellationDeadline,
+        scope: o.scope, startsAt: o.startsAt, status: r.status,
+        attendanceStatus: attendanceRecord?.status ?? "not_checked_in",
+        checkedInAt: attendanceRecord?.checkedInAt ?? null,
+        settlementEligible: attendanceRecord?.settlementEligible ?? false,
+        createdAt: r.createdAt, cancelledAt: r.cancelledAt,
+      };
+    }), waitlists: waitlistRows.map(({ entry: e, offering: o }) => ({
     id: e.id, offeringId: e.offeringId, title: o.title, startsAt: o.startsAt,
     queuePosition: e.queuePosition, status: e.status, createdAt: e.createdAt,
     offerExpiresAt: e.offerExpiresAt, respondedAt: e.respondedAt,
@@ -236,7 +250,7 @@ async function advanceWaitlistInTransaction(tx: BookingTx, offering: typeof offe
   }
 
   const [held] = await tx.select({ count: sql<number>`count(*)::int` }).from(reservations)
-    .where(and(eq(reservations.offeringId, offering.id), inArray(reservations.status, ["reserved", "requested"])));
+    .where(and(eq(reservations.offeringId, offering.id), inArray(reservations.status, ACTIVE_RESERVATION_STATUSES)));
   const [offered] = await tx.select({ count: sql<number>`count(*)::int` }).from(waitlistEntries)
     .where(and(eq(waitlistEntries.offeringId, offering.id), eq(waitlistEntries.status, "offered"), gt(waitlistEntries.offerExpiresAt, now)));
   let placesToOffer = Math.max(0, offering.capacity - Number(held?.count ?? 0) - Number(offered?.count ?? 0));
@@ -324,7 +338,7 @@ export async function joinWaitlist(userId: string, offeringId: string) {
     if (existing[0]) return existing[0];
     await assertMemberEligibleForOffering(tx, userId, offering);
     const [reserved] = await tx.select({ count: sql<number>`count(*)::int` }).from(reservations)
-      .where(and(eq(reservations.offeringId, offeringId), inArray(reservations.status, ["reserved", "requested"])));
+      .where(and(eq(reservations.offeringId, offeringId), inArray(reservations.status, ACTIVE_RESERVATION_STATUSES)));
     const [offered] = await tx.select({ count: sql<number>`count(*)::int` }).from(waitlistEntries)
       .where(and(eq(waitlistEntries.offeringId, offeringId), eq(waitlistEntries.status, "offered"), gt(waitlistEntries.offerExpiresAt, now)));
     if (Number(reserved?.count ?? 0) + Number(offered?.count ?? 0) < offering.capacity)
@@ -480,7 +494,7 @@ async function lockAndCheckResourceAvailability(tx: BookingTx, offering: typeof 
     .from(reservations)
     .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
     .where(and(
-      inArray(reservations.status, ["reserved", "requested"]),
+      inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
       eq(offerings.scope, offering.scope),
       eq(offerings.active, true),
       isNull(offerings.cancelledAt),
@@ -549,7 +563,7 @@ export async function createReservation(userId: string, input: { kind: string; t
     }
     await assertMemberEligibleForOffering(tx, userId, o);
     const places = await tx.select({ id: reservations.id }).from(reservations)
-      .where(and(eq(reservations.offeringId, o.id), inArray(reservations.status, ["reserved", "requested"])));
+      .where(and(eq(reservations.offeringId, o.id), inArray(reservations.status, ACTIVE_RESERVATION_STATUSES)));
     const offeredPlaces = await tx.select({ id: waitlistEntries.id }).from(waitlistEntries)
       .where(and(eq(waitlistEntries.offeringId, o.id), eq(waitlistEntries.status, "offered"), gt(waitlistEntries.offerExpiresAt, now)));
     if (places.length + offeredPlaces.length >= o.capacity) throw new BookingError(409, "This class is full.");
@@ -573,7 +587,7 @@ export async function cancelReservation(userId: string, id: string) {
       .where(and(eq(reservations.id, id), eq(reservations.userId, userId))).for("update");
     if (!r || r.offeringId !== initial.offeringId) throw new BookingError(409, "This booking changed. Refresh and try again.");
     if (r.status === "cancelled") return { cancelled: false, changes: { offered: [], expired: [], reminders: [] } as WaitlistChanges };
-    if (!["reserved", "requested"].includes(r.status)) throw new BookingError(409, "This booking can’t be canceled.");
+    if (!ACTIVE_RESERVATION_STATUSES.includes(r.status)) throw new BookingError(409, "This booking can’t be canceled.");
     if ((await tx.select().from(attendance).where(eq(attendance.reservationId, id))).length)
       throw new BookingError(409, "Attendance already exists. Request an attendance review.");
     if (new Date() >= o.cancellationDeadline) throw new BookingError(409, "The cancellation deadline has passed. Contact support.");

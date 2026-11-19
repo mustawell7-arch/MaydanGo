@@ -2,7 +2,7 @@ import { Router } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { db, memberships, memberProfilePhotos, memberProfiles, offerings, reservations, partners, waitlistEntries, checkinPolicies } from "@workspace/db";
+import { ACTIVE_RESERVATION_STATUSES, db, memberships, memberProfilePhotos, memberProfiles, offerings, reservations, partners, waitlistEntries, checkinPolicies } from "@workspace/db";
 import { eq, and, inArray, sql, gt, asc, isNull, ne, or } from "drizzle-orm";
 import { buildMemberProfileUpsert } from "../lib/member-profile";
 import { getOfferingBookingModel } from "../lib/booking-model";
@@ -100,6 +100,7 @@ router.get("/account", async (req, res): Promise<void> => {
       ...booking,
       cancellationDeadline: asIso(booking.cancellationDeadline),
       startsAt: asIso(booking.startsAt),
+      checkedInAt: asIso(booking.checkedInAt),
       createdAt: asIso(booking.createdAt),
       cancelledAt: asIso(booking.cancelledAt),
     })),
@@ -433,7 +434,7 @@ router.get("/live-catalog", async (_req, res) => {
     resourceBusy: sql<boolean>`exists (
       select 1 from reservations resource_reservation
       join booking_offerings resource_offering on resource_offering.id = resource_reservation.offering_id
-      where resource_reservation.status in ('reserved', 'requested')
+      where resource_reservation.status in ('reserved', 'requested', 'confirmed')
         and resource_offering.booking_model = 'resource_booking'
         and resource_offering.scope = ${offerings.scope}
         and resource_offering.active = true
@@ -447,7 +448,7 @@ router.get("/live-catalog", async (_req, res) => {
         and resource_offering.ends_at > ${offerings.startsAt}
     )`,
   }).from(offerings).innerJoin(partners, eq(offerings.partnerId, partners.id))
-    .leftJoin(reservations, and(eq(reservations.offeringId, offerings.id), inArray(reservations.status, ["reserved", "requested"])))
+    .leftJoin(reservations, and(eq(reservations.offeringId, offerings.id), inArray(reservations.status, ACTIVE_RESERVATION_STATUSES)))
     .leftJoin(checkinPolicies, eq(checkinPolicies.offeringId, offerings.id))
     .where(and(
       eq(offerings.scope, "live"), eq(offerings.active, true), isNull(offerings.cancelledAt),
@@ -508,7 +509,7 @@ router.get("/catalog", async (_req, res) => {
     bookingCutoffMinutes: offerings.bookingCutoffMinutes,
     scope: offerings.scope, capacity: offerings.capacity,
     reserved: sql<number>`count(${reservations.id})::int`,
-  }).from(offerings).leftJoin(reservations, and(eq(reservations.offeringId, offerings.id), inArray(reservations.status, ["reserved", "requested"])))
+  }).from(offerings).leftJoin(reservations, and(eq(reservations.offeringId, offerings.id), inArray(reservations.status, ACTIVE_RESERVATION_STATUSES)))
     .where(and(eq(offerings.active, true), eq(offerings.scope, "preview"))).groupBy(offerings.id);
   res.json(rows.map(({ imagePath, ...r }) => ({
     ...r,

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 import {
+  ACTIVE_RESERVATION_STATUSES,
   attendance,
   attendanceEvents,
   db,
@@ -57,7 +58,7 @@ export async function cancelUpcomingVenueSessions(
       userId: reservations.userId,
     }).from(reservations).where(and(
       eq(reservations.offeringId, offering.id),
-      inArray(reservations.status, ["reserved", "requested"]),
+      inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
     )).for("update");
     cancelledBookingCount += heldReservations.length;
     heldReservations.forEach(row => affectedMemberIds.add(row.userId));
@@ -109,7 +110,7 @@ export async function cancelUpcomingVenueSessions(
       cancelledAt: now,
     }).where(and(
       eq(reservations.offeringId, offering.id),
-      inArray(reservations.status, ["reserved", "requested"]),
+      inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
     ));
     await tx.update(waitlistEntries).set({
       status: "closed",

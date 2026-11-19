@@ -53,6 +53,17 @@ const copy: Record<Language, Record<string, string>> = {
     booked: "Reserved",
     cancelled: "Cancelled",
     recorded: "Recorded",
+    bookingRequested: "Awaiting partner response",
+    bookingConfirmed: "Confirmed by partner",
+    bookingPartnerCancelled: "Cancelled by partner",
+    bookingAdminCancelled: "Cancelled by MaydanGo",
+    bookingRejected: "Request declined",
+    attendanceNotCheckedIn: "Not checked in",
+    attendanceCheckedIn: "Check-in awaiting confirmation",
+    attendanceAttended: "Attendance confirmed",
+    attendanceNoShow: "No-show recorded",
+    attendanceDisputed: "Attendance under review",
+    attendanceVoided: "Attendance record voided",
     sampleBooking: "Sample record — not a live booking.",
     bookingsError: "We could not load your bookings right now.",
     retry: "Try again",
@@ -142,6 +153,17 @@ const copy: Record<Language, Record<string, string>> = {
     booked: "محجوز",
     cancelled: "ملغى",
     recorded: "مسجل",
+    bookingRequested: "بانتظار رد الجهة",
+    bookingConfirmed: "مؤكد من الجهة",
+    bookingPartnerCancelled: "ألغته الجهة",
+    bookingAdminCancelled: "ألغاه فريق MaydanGo",
+    bookingRejected: "تم رفض الطلب",
+    attendanceNotCheckedIn: "لم يُسجل الحضور",
+    attendanceCheckedIn: "تسجيل الحضور بانتظار التأكيد",
+    attendanceAttended: "تم تأكيد الحضور",
+    attendanceNoShow: "تم تسجيل عدم الحضور",
+    attendanceDisputed: "الحضور قيد المراجعة",
+    attendanceVoided: "تم إبطال سجل الحضور",
     sampleBooking: "سجل تجريبي — ليس حجزاً فعلياً.",
     bookingsError: "تعذر تحميل حجوزاتك الآن.",
     retry: "حاول مرة أخرى",
@@ -231,6 +253,17 @@ const copy: Record<Language, Record<string, string>> = {
     booked: "حجزکراوە",
     cancelled: "هەڵوەشێنراوەتەوە",
     recorded: "تۆمارکراوە",
+    bookingRequested: "چاوەڕێی وەڵامی هاوبەشە",
+    bookingConfirmed: "لە لایەن هاوبەشەوە پشتڕاستکرایەوە",
+    bookingPartnerCancelled: "لە لایەن هاوبەشەوە هەڵوەشێنرایەوە",
+    bookingAdminCancelled: "لە لایەن تیمی MaydanGo ـەوە هەڵوەشێنرایەوە",
+    bookingRejected: "داواکارییەکە ڕەتکرایەوە",
+    attendanceNotCheckedIn: "گەیشتن تۆمار نەکراوە",
+    attendanceCheckedIn: "تۆمارکردنی گەیشتن چاوەڕێی پشتڕاستکردنەوەیە",
+    attendanceAttended: "گەیشتن پشتڕاستکرایەوە",
+    attendanceNoShow: "نەهاتن تۆمارکرا",
+    attendanceDisputed: "گەیشتن لە ژێر پێداچوونەوەدایە",
+    attendanceVoided: "تۆماری گەیشتن هەڵوەشێنرایەوە",
     sampleBooking: "تۆماری نموونەییە — حجزێکی ڕاستەقینە نییە.",
     bookingsError: "ئێستا نەتوانرا حجزەکانت باربکرێن.",
     retry: "دووبارە هەوڵ بدەوە",
@@ -647,11 +680,34 @@ export default function MemberAccountPage({ language }: { language: Language }) 
                   {[...summary.data.bookings].sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt)).map(booking => {
                     const preview = booking.scope === "preview";
                     const title = booking.localizedTitle?.[language] || booking.title;
-                    const status = booking.status.includes("cancel") ? t.cancelled : booking.status === "reserved" ? t.booked : t.recorded;
+                    const bookingStatuses: Record<string, string> = {
+                      requested: t.bookingRequested,
+                      reserved: t.booked,
+                      confirmed: t.bookingConfirmed,
+                      cancelled: t.cancelled,
+                      partner_cancelled: t.bookingPartnerCancelled,
+                      admin_cancelled: t.bookingAdminCancelled,
+                      rejected: t.bookingRejected,
+                    };
+                    const attendanceStatuses: Record<string, string> = {
+                      not_checked_in: t.attendanceNotCheckedIn,
+                      pending: t.attendanceCheckedIn,
+                      confirmed: t.attendanceAttended,
+                      no_show: t.attendanceNoShow,
+                      disputed: t.attendanceDisputed,
+                      void: t.attendanceVoided,
+                    };
                     return <li key={booking.id} className="rounded-xl border border-border p-4">
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <h3 className="font-bold">{title}</h3>
-                        <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">{preview ? t.sampleBooking : status}</span>
+                        <div className="flex flex-wrap gap-2">
+                          {preview
+                            ? <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">{t.sampleBooking}</span>
+                            : <>
+                              <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">{bookingStatuses[booking.status] ?? booking.status}</span>
+                              <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">{attendanceStatuses[booking.attendanceStatus] ?? booking.attendanceStatus}</span>
+                            </>}
+                        </div>
                       </div>
                       <p className="mt-2 text-sm text-muted-foreground">{booking.facility} · {booking.city}</p>
                       <p className="mt-1 text-sm text-muted-foreground">{formatIraqDate(booking.startsAt, language)}</p>

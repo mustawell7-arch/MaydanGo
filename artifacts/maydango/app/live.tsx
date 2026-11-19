@@ -35,7 +35,8 @@ export default function LiveScreen() {
   const live = app.memberMemberships.filter(m => m.scope !== 'preview');
   const items = useMemo(() => (catalog.data ?? []).filter(o => o.active && (filter === 'all' || o.accessType === filter))
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt)), [catalog.data, filter]);
-  const booked = (o: Offering) => app.serverBookings.some(b => b.kind === o.kind && b.targetId === o.targetId && b.slot === o.slot && b.status !== 'cancelled' && String(b.status) !== 'partner_cancelled');
+  const booked = (o: Offering) => app.serverBookings.some(b => b.kind === o.kind && b.targetId === o.targetId && b.slot === o.slot
+    && ['reserved', 'requested', 'confirmed'].includes(b.status));
   const billingBusy = !!busyId?.startsWith('billing:');
   const hasCurrentLiveAccess = live.some(m => ['active', 'trial'].includes(m.status) && Date.parse(m.endsAt) > Date.now());
   const hasUnresolvedPaidAccess = subscription.data?.paymentStatus === 'past_due' ||
@@ -59,6 +60,16 @@ export default function LiveScreen() {
     waiting: 'waitlistWaiting', offered: 'waitlistOffered', booked: 'waitlistBooked',
     expired: 'waitlistExpired', ineligible: 'waitlistIneligible', closed: 'waitlistClosed',
   } as const)[status as 'waiting' | 'offered' | 'booked' | 'expired' | 'ineligible' | 'closed'] ?? 'waitlistClosed';
+  const bookingStatusKey = (status: string) => ({
+    requested: 'bookingStatusRequested', reserved: 'bookingStatusReserved', confirmed: 'bookingStatusConfirmed',
+    cancelled: 'bookingStatusCancelled', partner_cancelled: 'bookingStatusPartnerCancelled',
+    admin_cancelled: 'bookingStatusAdminCancelled', rejected: 'bookingStatusRejected',
+  } as const)[status as 'requested' | 'reserved' | 'confirmed' | 'cancelled' | 'partner_cancelled' | 'admin_cancelled' | 'rejected'] ?? 'bookingStatusCancelled';
+  const attendanceStatusKey = (status: string) => ({
+    not_checked_in: 'attendanceNotCheckedIn', pending: 'attendanceCheckedIn',
+    confirmed: 'attendanceAttended', no_show: 'attendanceNoShow',
+    disputed: 'attendanceDisputed', void: 'attendanceVoided',
+  } as const)[status as 'not_checked_in' | 'pending' | 'confirmed' | 'no_show' | 'disputed' | 'void'] ?? 'attendanceNotCheckedIn';
 
   const startCheckout = async (plan: NonNullable<typeof plans.data>[number]) => {
     if (billingBusy || !plan.purchasable || hasCurrentLiveAccess || hasUnresolvedPaidAccess) return;
@@ -262,17 +273,19 @@ export default function LiveScreen() {
         const mine = app.serverBookings.filter(b => b.scope === 'live');
         return mine.length ? <>
           <Text style={[styles.label, { color: c.mutedForeground, marginTop: 10 }]}>YOUR LIVE RESERVATIONS</Text>
-          {mine.map(b => { const o = catalog.data?.find(x => x.kind === b.kind && x.targetId === b.targetId && x.slot === b.slot); const st = String(b.status);
-            return <View key={b.id} style={[styles.card, { backgroundColor: c.card, borderColor: st === 'partner_cancelled' ? c.destructive : c.border }]}>
+          {mine.map(b => { const o = catalog.data?.find(x => x.kind === b.kind && x.targetId === b.targetId && x.slot === b.slot); const st = b.status;
+            const terminal = !['requested', 'reserved', 'confirmed'].includes(st);
+            return <View key={b.id} style={[styles.card, { backgroundColor: c.card, borderColor: ['partner_cancelled', 'admin_cancelled', 'rejected'].includes(st) ? c.destructive : c.border }]}>
               <Text raw style={{ color: c.foreground, fontWeight: '700' }}>{o?.title ?? b.title}</Text>
               {b.bookingModel === 'resource_booking' && b.resourceName ? <Text raw style={{ color: c.primary, fontWeight: '700' }}>{t('resourceLabel')}: {b.resourceName[app.language]}</Text> : null}
               <Text style={{ color: c.mutedForeground }}>{dateTime(b.startsAt, app.language)}</Text>
-              <Text style={{ color: st === 'partner_cancelled' ? c.destructive : st === 'cancelled' ? c.mutedForeground : c.primary, fontWeight: '700', fontSize: 12 }}>
-                {st === 'partner_cancelled' ? 'Cancelled by partner. Your visit was returned.' : st === 'cancelled' ? 'Cancelled by you' : b.bookingModel === 'open_access' ? t('walkInReservation') : 'Reserved'}</Text>
-              {['open_access', 'resource_booking'].includes(b.bookingModel) && st === 'reserved' && <Pressable accessibilityRole="button" onPress={() => router.push('/checkin')}>
+              <Text style={{ color: terminal ? c.mutedForeground : c.primary, fontWeight: '700', fontSize: 12 }}>
+                {t(bookingStatusKey(st))} · {t(attendanceStatusKey(b.attendanceStatus))}</Text>
+              {['open_access', 'resource_booking'].includes(b.bookingModel) && ['reserved', 'confirmed'].includes(st)
+                && b.attendanceStatus === 'not_checked_in' && <Pressable accessibilityRole="button" onPress={() => router.push('/checkin')}>
                 <Text style={{ color: c.primary, fontWeight: '700' }}>{t('scanPartnerQr')}</Text>
               </Pressable>}
-              {!o && ['reserved', 'requested'].includes(st) && ['session', 'event', 'coach'].includes(b.kind) && b.bookingModel !== 'open_access' ? <Pressable accessibilityRole="button" disabled={!!busyId}
+              {!o && ['reserved', 'requested', 'confirmed'].includes(st) && ['session', 'event', 'coach'].includes(b.kind) && b.bookingModel !== 'open_access' ? <Pressable accessibilityRole="button" disabled={!!busyId}
                 onPress={() => void act({ id: b.id, kind: b.kind as Offering['kind'], targetId: b.targetId, slot: b.slot, bookingModel: b.bookingModel }, true)}>
                 <Text style={{ color: c.primary }}>Cancel reservation</Text>
               </Pressable> : null}

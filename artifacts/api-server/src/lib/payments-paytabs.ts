@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import {
-  db, membershipBilling, membershipPlans, memberships, offerings,
+  ACTIVE_RESERVATION_STATUSES, db, membershipBilling, membershipPlans, memberships, offerings,
   paymentWebhookEvents, reservations,
 } from "@workspace/db";
 import { PaymentError, paymentsEnabled, requirePayTabsCredentials } from "./payment-config";
@@ -247,7 +247,7 @@ async function cancelUpcomingLiveReservations(tx: Tx, userId: string, now = new 
   if (future.length) {
     await tx.update(reservations).set({ status: "cancelled", cancelledAt: now })
       .where(and(eq(reservations.userId, userId), inArray(reservations.offeringId, future.map(row => row.id)),
-        inArray(reservations.status, ["reserved", "requested"])));
+        inArray(reservations.status, ACTIVE_RESERVATION_STATUSES)));
   }
 }
 

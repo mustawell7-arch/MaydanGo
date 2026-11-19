@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lte, lt } from "drizzle-orm";
 import { z } from "zod";
-import { db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, courseMaterials, facilityProfiles, facilityHoursOverrides, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents, financeInvoiceCorrections, instructorPortalRequests, instructorCourseAssignments, instructorOfferingAssignments } from "@workspace/db";
+import { ACTIVE_RESERVATION_STATUSES, db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, courseMaterials, facilityProfiles, facilityHoursOverrides, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents, financeInvoiceCorrections, instructorPortalRequests, instructorCourseAssignments, instructorOfferingAssignments } from "@workspace/db";
 import { BookingError, effectiveMembershipStatus, processWaitlistQueue } from "../lib/reservations";
 import { deriveOfferingSessionStatus, effectiveOfferingActivityStatus, type OfferingActivityStatus } from "../lib/offering-status";
 import { hasAdminPermission, isOperationsPortalRole, type AdminPermission } from "../lib/admin-roles";
@@ -207,7 +207,7 @@ router.get("/", async (_req, res) => {
       count: sql<number>`count(*)::int`,
     }).from(reservations).where(and(
       inArray(reservations.offeringId, offeringIds),
-      inArray(reservations.status, ["reserved", "requested"]),
+      inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
     )).groupBy(reservations.offeringId),
     db.select({
       offeringId: waitlistEntries.offeringId,
@@ -835,7 +835,7 @@ router.patch("/offerings/:id/review", async (req, res) => {
     }
     const [booking] = await tx.select({ id: reservations.id }).from(reservations).where(and(
       eq(reservations.offeringId, current.id),
-      inArray(reservations.status, ["reserved", "requested"]),
+      inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
     )).limit(1);
     const [waitlist] = await tx.select({ id: waitlistEntries.id }).from(waitlistEntries).where(and(
       eq(waitlistEntries.offeringId, current.id),
@@ -948,7 +948,7 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
     if (needsReview) {
       const [booking] = await tx.select({ id: reservations.id }).from(reservations).where(and(
         inArray(reservations.offeringId, rows.map(row => row.id)),
-        inArray(reservations.status, ["reserved", "requested"]),
+        inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
       )).limit(1);
       const [waitlist] = await tx.select({ id: waitlistEntries.id }).from(waitlistEntries).where(and(
         inArray(waitlistEntries.offeringId, rows.map(row => row.id)),
@@ -1011,7 +1011,7 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
       tx.select({ offeringId: reservations.offeringId, count: sql<number>`count(*)::int` })
         .from(reservations).where(and(
           inArray(reservations.offeringId, offeringIds),
-          inArray(reservations.status, ["reserved", "requested"]),
+          inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
         )).groupBy(reservations.offeringId),
       tx.select({ offeringId: waitlistEntries.offeringId, count: sql<number>`count(*)::int` })
         .from(waitlistEntries).where(and(
@@ -1043,7 +1043,7 @@ async function changeOfferingSet(id: string, data: OfferingChangeInput, res: Res
         tx.select({ offeringId: reservations.offeringId, userId: reservations.userId }).from(reservations)
           .where(and(
             inArray(reservations.offeringId, offeringIds),
-            inArray(reservations.status, ["reserved", "requested"]),
+            inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
           )),
         tx.select({ offeringId: waitlistEntries.offeringId, userId: waitlistEntries.userId }).from(waitlistEntries)
           .where(and(
@@ -1198,7 +1198,7 @@ async function cancelOfferingSet(id: string, res: Response, series: boolean) {
       const [heldReservations, attendanceRows] = await Promise.all([
         tx.select({ offeringId: reservations.offeringId }).from(reservations).where(and(
           inArray(reservations.offeringId, offeringIds),
-          inArray(reservations.status, ["reserved", "requested"]),
+          inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
         )),
         tx.select({ offeringId: attendance.offeringId }).from(attendance)
           .where(inArray(attendance.offeringId, offeringIds)),
@@ -1218,7 +1218,7 @@ async function cancelOfferingSet(id: string, res: Response, series: boolean) {
     for (const row of rowsToCancel) {
       own(res, row.partnerId);
       const heldReservations = await tx.select({ userId: reservations.userId }).from(reservations)
-        .where(and(eq(reservations.offeringId, row.id), inArray(reservations.status, ["reserved", "requested"])));
+        .where(and(eq(reservations.offeringId, row.id), inArray(reservations.status, ACTIVE_RESERVATION_STATUSES)));
       bookingUsers.push(...heldReservations.map(reservation => ({
         offeringId: row.id, userId: reservation.userId, startsAt: row.startsAt,
       })));
@@ -1236,7 +1236,7 @@ async function cancelOfferingSet(id: string, res: Response, series: boolean) {
         });
       }
       await tx.update(reservations).set({ status: "partner_cancelled", cancelledAt })
-        .where(and(eq(reservations.offeringId, row.id), inArray(reservations.status, ["reserved", "requested"])));
+        .where(and(eq(reservations.offeringId, row.id), inArray(reservations.status, ACTIVE_RESERVATION_STATUSES)));
       const activeWaitlist = await tx.select({ userId: waitlistEntries.userId }).from(waitlistEntries)
         .where(and(eq(waitlistEntries.offeringId, row.id), inArray(waitlistEntries.status, ["waiting", "offered"])));
       waitlistUsers.push(...activeWaitlist.map(entry => ({
@@ -1550,7 +1550,7 @@ router.post("/bookings/:id/cancel", async (req, res) => {
     }).from(reservations).innerJoin(offerings, eq(reservations.offeringId, offerings.id))
       .where(and(eq(reservations.id, id), eq(offerings.scope, "live"))).for("update");
     if (!booking) throw new BookingError(404, "Live booking not found.");
-    if (!["reserved", "requested"].includes(booking.status) || booking.startsAt <= now)
+    if (!ACTIVE_RESERVATION_STATUSES.includes(booking.status) || booking.startsAt <= now)
       throw new BookingError(409, "Only future active bookings can be cancelled.");
     const [attendanceRecord] = await tx.select({ id: attendance.id }).from(attendance)
       .where(eq(attendance.reservationId, id)).limit(1);
@@ -1559,7 +1559,7 @@ router.post("/bookings/:id/cancel", async (req, res) => {
     const [cancelled] = await tx.update(reservations).set({
       status: "admin_cancelled", cancelledAt: now,
     }).where(and(
-      eq(reservations.id, id), inArray(reservations.status, ["reserved", "requested"]),
+      eq(reservations.id, id), inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
     )).returning({ id: reservations.id });
     if (!cancelled) throw new BookingError(409, "This booking has already changed.");
     await audit(tx, res.locals.operator.userId, "booking.admin_cancel", id, input.reason);
@@ -2453,14 +2453,14 @@ router.post("/memberships/lifecycle", async (req, res) => {
         .from(reservations).innerJoin(offerings, eq(reservations.offeringId, offerings.id))
         .where(and(
           eq(reservations.userId, input.userId), eq(offerings.scope, "live"),
-          gt(offerings.startsAt, now), inArray(reservations.status, ["reserved", "requested"]),
+          gt(offerings.startsAt, now), inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
         ));
       cancelledOfferingIds = [...new Set(held.map(row => row.offeringId))];
       if (cancelledOfferingIds.length) {
         await tx.update(reservations).set({ status: "cancelled", cancelledAt: now })
           .where(and(eq(reservations.userId, input.userId),
             inArray(reservations.offeringId, cancelledOfferingIds),
-            inArray(reservations.status, ["reserved", "requested"])));
+            inArray(reservations.status, ACTIVE_RESERVATION_STATUSES)));
       }
     }
     await audit(tx, res.locals.operator.userId, `membership.${input.action}`, input.userId, input.reason);
@@ -2478,7 +2478,7 @@ router.post("/revoke", async (req, res) => {
   const hadBookingsBeforeProviderCancel = (await db.select({ id: reservations.id }).from(reservations)
     .innerJoin(offerings, eq(reservations.offeringId, offerings.id))
     .where(and(eq(reservations.userId, input.userId), eq(offerings.scope, "live"),
-      inArray(reservations.status, ["reserved", "requested"]))).limit(1)).length > 0;
+      inArray(reservations.status, ACTIVE_RESERVATION_STATUSES))).limit(1)).length > 0;
   await cancelPaidSubscriptionImmediately(input.userId);
   const cancelledOfferingIds = await db.transaction(async tx => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${input.userId}))`);
@@ -2488,11 +2488,11 @@ router.post("/revoke", async (req, res) => {
     if (live.length) {
       const held = await tx.select({ offeringId: reservations.offeringId }).from(reservations)
         .where(and(eq(reservations.userId, input.userId), inArray(reservations.offeringId, live.map(o => o.id)),
-          inArray(reservations.status, ["reserved", "requested"])));
+          inArray(reservations.status, ACTIVE_RESERVATION_STATUSES)));
       affectedOfferingIds = [...new Set(held.map(row => row.offeringId))];
     }
     if (live.length) await tx.update(reservations).set({ status: "cancelled", cancelledAt: new Date() })
-      .where(and(eq(reservations.userId, input.userId), inArray(reservations.offeringId, live.map(o => o.id)), inArray(reservations.status, ["reserved", "requested"])));
+      .where(and(eq(reservations.userId, input.userId), inArray(reservations.offeringId, live.map(o => o.id)), inArray(reservations.status, ACTIVE_RESERVATION_STATUSES)));
     await audit(tx, res.locals.operator.userId, "membership.revoke", input.userId, input.reason);
     return affectedOfferingIds;
   });

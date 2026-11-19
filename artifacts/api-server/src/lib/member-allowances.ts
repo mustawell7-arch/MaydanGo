@@ -1,5 +1,5 @@
 import { and, eq, gte, inArray, lt } from "drizzle-orm";
-import { db, attendance, memberships, offerings, reservations } from "@workspace/db";
+import { ACTIVE_RESERVATION_STATUSES, db, attendance, memberships, offerings, reservations } from "@workspace/db";
 
 type MembershipForAllowance = {
   scope: string;
@@ -136,7 +136,7 @@ export async function getMemberAllowances(userId: string, now = new Date()) {
       .innerJoin(offerings, eq(offerings.id, reservations.offeringId))
       .where(and(
         eq(reservations.userId, userId),
-        inArray(reservations.status, ["reserved", "requested"]),
+        inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
         membershipPeriod,
       )),
     db.select({

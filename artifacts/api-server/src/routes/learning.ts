@@ -3,7 +3,7 @@ import { getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, gt, gte, inArray, isNull, sql } from "drizzle-orm";
 import {
-  db, courseEnrollments, courseMaterials, lessonAccess, learningCourses, learningLessons, lessonProgress,
+  ACTIVE_RESERVATION_STATUSES, BOOKED_RESERVATION_STATUSES, db, courseEnrollments, courseMaterials, lessonAccess, learningCourses, learningLessons, lessonProgress,
   memberSavedCourses,
   memberships, offerings, partners, reservations,
 } from "@workspace/db";
@@ -654,13 +654,13 @@ router.get("/live-classes", async (req, res): Promise<void> => {
     tiers: offerings.tiers,
     additionalPayment: offerings.additionalPayment,
     reserved: sql<number>`count(${reservations.id})::int`,
-    booked: sql<boolean>`coalesce(bool_or(${reservations.userId} = ${userId} and ${reservations.status} = 'reserved'), false)`,
+    booked: sql<boolean>`coalesce(bool_or(${reservations.userId} = ${userId} and ${reservations.status} in ('reserved', 'confirmed')), false)`,
     joinUrl: offerings.joinUrl,
   }).from(offerings)
     .innerJoin(partners, eq(offerings.partnerId, partners.id))
     .leftJoin(reservations, and(
       eq(reservations.offeringId, offerings.id),
-      inArray(reservations.status, ["reserved", "requested"]),
+      inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
     ))
     .where(and(
       eq(offerings.scope, "live"),
@@ -716,7 +716,7 @@ router.post("/live-classes/:id/join", async (req, res): Promise<void> => {
     throw new BookingError(409, "The secure join window is not open.");
   }
   const [reservation] = await db.select({ id: reservations.id }).from(reservations).where(and(
-    eq(reservations.offeringId, id), eq(reservations.userId, userId), eq(reservations.status, "reserved"),
+      eq(reservations.offeringId, id), eq(reservations.userId, userId), inArray(reservations.status, BOOKED_RESERVATION_STATUSES),
   ));
   if (!reservation) throw new BookingError(403, "Book this class with an eligible membership before joining.");
   if (row.offering.additionalPayment) {

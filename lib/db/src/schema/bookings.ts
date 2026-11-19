@@ -47,6 +47,16 @@ export type BookingModel =
   | "resource_booking"
   | "event"
   | "live_class";
+export type ReservationStatus =
+  | "requested"
+  | "reserved"
+  | "confirmed"
+  | "cancelled"
+  | "partner_cancelled"
+  | "admin_cancelled"
+  | "rejected";
+export const ACTIVE_RESERVATION_STATUSES: ReservationStatus[] = ["reserved", "requested", "confirmed"];
+export const BOOKED_RESERVATION_STATUSES: ReservationStatus[] = ["reserved", "confirmed"];
 export const memberProfiles = pgTable("member_profiles", {
   userId: text("user_id").primaryKey(),
   gender: text("gender").notNull(),
@@ -130,14 +140,14 @@ export const reservations = pgTable("reservations", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull(),
   offeringId: text("offering_id").notNull().references(() => offerings.id),
-  status: text("status").notNull(),
+  status: text("status").$type<ReservationStatus>().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
 }, t => [
   uniqueIndex("one_active_reservation").on(t.userId, t.offeringId)
-    .where(sql`${t.status} in ('reserved', 'requested')`),
+    .where(sql`${t.status} in ('reserved', 'requested', 'confirmed')`),
   index("reservation_active_offering").on(t.offeringId)
-    .where(sql`${t.status} in ('reserved', 'requested')`),
+    .where(sql`${t.status} in ('reserved', 'requested', 'confirmed')`),
 ]);
 
 export const waitlistEntries = pgTable("waitlist_entries", {

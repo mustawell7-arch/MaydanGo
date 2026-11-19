@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, desc, eq, gt, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 import { clerkClient } from "@clerk/express";
-import { db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, guardianConsentDocuments, manualCheckinChallenges, memberships, membershipBilling, membershipPlans, offerings, operators, partners, reservations, memberProfiles, memberConsentEvents, memberProfilePhotos, operationAudit } from "@workspace/db";
+import { ACTIVE_RESERVATION_STATUSES, BOOKED_RESERVATION_STATUSES, db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, guardianConsentDocuments, manualCheckinChallenges, memberships, membershipBilling, membershipPlans, offerings, operators, partners, reservations, memberProfiles, memberConsentEvents, memberProfilePhotos, operationAudit } from "@workspace/db";
 import { z } from "zod";
 import { BookingError, membershipCanAccess, processWaitlistQueue } from "./reservations";
 import { ageOnDate } from "./age";
@@ -130,7 +130,7 @@ async function eligible(tx: Tx, c: Awaited<ReturnType<typeof context>>) {
     eq(attendance.offeringId, o.id), inArray(attendance.status, ["pending", "confirmed", "disputed"])));
   if (otherArrivals.some(a => a.reservationId !== r.id))
     throw new BookingError(409, "Attendance already exists for this member and session.");
-  if (r.status !== "reserved" || !o.active || o.cancelledAt || o.accessType === "live")
+  if (!BOOKED_RESERVATION_STATUSES.includes(r.status) || !o.active || o.cancelledAt || o.accessType === "live")
     throw new BookingError(409, "A confirmed physical reservation is required.");
   const [partner] = await tx.select().from(partners).where(eq(partners.id, o.partnerId ?? "")).for("share");
   if (!partner?.approved) throw new BookingError(403, "Partner approval is required.");
@@ -157,7 +157,7 @@ async function eligible(tx: Tx, c: Awaited<ReturnType<typeof context>>) {
       throw new BookingError(403, "Your eligibility profile does not match this session.");
   }
   const held = await tx.select({ o: offerings }).from(reservations).innerJoin(offerings, eq(reservations.offeringId, offerings.id))
-    .where(and(eq(reservations.userId, r.userId), inArray(reservations.status, ["reserved", "requested"])));
+    .where(and(eq(reservations.userId, r.userId), inArray(reservations.status, ACTIVE_RESERVATION_STATUSES)));
   const visits = await tx.select({ o: offerings }).from(attendance).innerJoin(offerings, eq(attendance.offeringId, offerings.id))
     .where(and(eq(attendance.userId, r.userId), inArray(attendance.status, ["pending", "confirmed", "disputed"])));
   const uses = [...new Map([...held, ...visits].filter(x => x.o.scope === "live" && x.o.startsAt >= m.startsAt && x.o.startsAt < m.endsAt).map(x => [x.o.id, x.o])).values()];
@@ -421,15 +421,15 @@ export async function review(actor: string, id: string, input: z.infer<typeof re
     if (action === "reject_request") {
       if (c.r.status !== "requested" || c.o.startsAt <= now || !c.o.active || c.o.cancelledAt)
         throw new BookingError(409, "Only upcoming active booking requests may be rejected.");
-      await tx.update(reservations).set({ status: "partner_cancelled", cancelledAt: now }).where(eq(reservations.id, id));
-      await event(tx, id, actor, action, "requested", "partner_cancelled", reason);
+      await tx.update(reservations).set({ status: "rejected", cancelledAt: now }).where(eq(reservations.id, id));
+      await event(tx, id, actor, action, "requested", "rejected", reason);
       return c.o.id;
     }
     if (action === "accept_request") {
       if (c.r.status !== "requested" || c.o.startsAt <= now || !c.o.active || c.o.cancelledAt)
         throw new BookingError(409, "Only upcoming active requests may be confirmed.");
-      await tx.update(reservations).set({ status: "reserved" }).where(eq(reservations.id, id));
-      await event(tx, id, actor, action, "requested", "reserved", reason); return null;
+      await tx.update(reservations).set({ status: "confirmed" }).where(eq(reservations.id, id));
+      await event(tx, id, actor, action, "requested", "confirmed", reason); return null;
     }
     if (!c.p) throw new BookingError(409, "Configure the attendance policy first.");
     const locked = !!c.a?.lockedAt || now >= c.p.correctionEndsAt;
@@ -445,7 +445,7 @@ export async function review(actor: string, id: string, input: z.infer<typeof re
       throw new BookingError(403, "Disputes require administrator review.");
     if (c.a?.status === "disputed" && !action.startsWith("resolve_"))
       throw new BookingError(409, "Attendance is on hold for administrator review.");
-    if (action === "no_show" && (now < c.p.closesAt || c.a || c.r.status !== "reserved" || c.o.cancelledAt))
+    if (action === "no_show" && (now < c.p.closesAt || c.a || !BOOKED_RESERVATION_STATUSES.includes(c.r.status) || c.o.cancelledAt))
       throw new BookingError(409, "Only unscanned, confirmed reservations after the check-in window can be marked no-show.");
     if (action === "confirm") {
       if (actor === c.r.userId) throw new BookingError(403, "Another staff member must confirm your attendance.");
@@ -491,7 +491,7 @@ export async function review(actor: string, id: string, input: z.infer<typeof re
     }
     // No-shows retain their reserved allowance until explicitly waived.
     // A void correction releases the reservation hold as well as the visit.
-    if (status === "void" && ["reserved", "requested"].includes(c.r.status)) {
+    if (status === "void" && ACTIVE_RESERVATION_STATUSES.includes(c.r.status)) {
       await tx.update(reservations).set({ status: "cancelled", cancelledAt: now }).where(eq(reservations.id, id));
     }
     await event(tx, id, actor, action, c.a?.status ?? "not_checked_in", status, reason);
@@ -661,7 +661,7 @@ export async function getPartnerMemberPhotoPath(actor: string, reservationId: st
       eq(offerings.partnerId, op.partnerId),
       eq(offerings.scope, "live"),
     )).limit(1);
-  if (!booking || booking.status !== "reserved" || !booking.policy) return null;
+  if (!booking || !BOOKED_RESERVATION_STATUSES.includes(booking.status) || !booking.policy) return null;
 
   const now = new Date();
   if (now < booking.policy.opensAt || now > booking.policy.closesAt) return null;

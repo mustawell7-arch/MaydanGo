@@ -3,7 +3,7 @@ import { getAuth } from "@clerk/express";
 import { and, count, desc, eq, gt, gte, inArray, isNull, lte, ne } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import {
-  db, courseEnrollments, learningCourses, offerings, operationAudit, partners, reservations,
+  ACTIVE_RESERVATION_STATUSES, db, courseEnrollments, learningCourses, offerings, operationAudit, partners, reservations,
   sponsoredContentCampaigns, sponsoredContentPlacementEvents,
 } from "@workspace/db";
 import {
@@ -392,7 +392,7 @@ router.post("/public/sponsored-content/:id/events", async (req, res): Promise<vo
         .where(and(
           eq(reservations.userId, userId),
           eq(reservations.offeringId, campaign.targetId),
-          inArray(reservations.status, ["reserved", "requested"]),
+          inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
           gte(reservations.createdAt, campaign.startsAt),
         )).limit(1);
       referenceId = reservation?.id ?? null;

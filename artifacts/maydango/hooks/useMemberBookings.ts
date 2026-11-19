@@ -100,7 +100,8 @@ export function useMemberBookings(language: Language) {
   const create = (kind: 'session' | 'event' | 'coach', targetId: string, slot = '') =>
     mutate(() => createMemberBooking({ kind, targetId, slot }));
   const cancel = (kind: string, targetId: string, slot = '') => {
-    const row = current.bookings.find(b => b.kind === kind && b.targetId === targetId && b.slot === slot && b.status !== 'cancelled' && String(b.status) !== 'partner_cancelled');
+    const row = current.bookings.find(b => b.kind === kind && b.targetId === targetId && b.slot === slot
+      && ['requested', 'reserved', 'confirmed'].includes(b.status));
     return row ? mutate(() => cancelMemberBooking(row.id)) : Promise.resolve({ ok: false as const, reason: 'notActive' as const });
   };
   // Show the latest record for a target after cancellation/rebooking; keep history on the server.
@@ -108,13 +109,13 @@ export function useMemberBookings(language: Language) {
   const deduped = [...new Map(latest.map(b => [`${b.kind}:${b.targetId}:${b.slot}`, b])).values()];
   const cancelledAt = (b: MemberBooking) => b.cancelledAt ?? undefined;
   const bookings = deduped.filter(b => b.kind === 'session').map(b => ({
-    sessionId: b.targetId, bookedAt: b.createdAt, status: b.status === 'cancelled' || String(b.status) === 'partner_cancelled' ? 'cancelled' as const : 'reserved' as const, cancelledAt: cancelledAt(b),
+    sessionId: b.targetId, bookedAt: b.createdAt, status: b.status, cancelledAt: cancelledAt(b),
   }));
   const eventBookings = deduped.filter(b => b.kind === 'event' && b.scope === 'live').map(b => ({
-    eventId: b.targetId, reservedAt: b.createdAt, status: b.status === 'cancelled' || String(b.status) === 'partner_cancelled' ? 'cancelled' as const : 'reserved' as const, cancelledAt: cancelledAt(b),
+    eventId: b.targetId, reservedAt: b.createdAt, status: b.status, cancelledAt: cancelledAt(b),
   }));
   const coachRequests = deduped.filter(b => b.kind === 'coach').map(b => ({
-    coachId: b.targetId, slot: b.slot, requestedAt: b.createdAt, status: b.status === 'cancelled' || String(b.status) === 'partner_cancelled' ? 'cancelled' as const : 'requested' as const, cancelledAt: cancelledAt(b),
+    coachId: b.targetId, slot: b.slot, requestedAt: b.createdAt, status: b.status, cancelledAt: cancelledAt(b),
   }));
   return {
     bookings, eventBookings, coachRequests, memberError, memberConsentRequired, memberLoading, refreshMember,

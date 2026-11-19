@@ -1630,7 +1630,7 @@ components:
         createdAt: { type: string, format: date-time }
     MemberBooking:
       type: object
-      required: [id, kind, targetId, slot, title, localizedTitle, city, facility, bookingModel, resourceName, cancellationDeadline, scope, startsAt, status, createdAt]
+      required: [id, kind, targetId, slot, title, localizedTitle, city, facility, bookingModel, resourceName, cancellationDeadline, scope, startsAt, status, attendanceStatus, checkedInAt, settlementEligible, createdAt]
       properties:
         id: { type: string }
         kind: { type: string }
@@ -1651,7 +1651,10 @@ components:
         cancellationDeadline: { type: string, format: date-time }
         scope: { type: string }
         startsAt: { type: string }
-        status: { type: string }
+        status: { type: string, enum: [requested, reserved, confirmed, cancelled, partner_cancelled, admin_cancelled, rejected] }
+        attendanceStatus: { type: string, enum: [not_checked_in, pending, confirmed, no_show, disputed, void] }
+        checkedInAt: { type: ["string", "null"], format: date-time }
+        settlementEligible: { type: boolean }
         createdAt: { type: string }
         cancelledAt: { type: [string, "null"] }
     HealthStatus:

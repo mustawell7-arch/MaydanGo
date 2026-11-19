@@ -19,7 +19,9 @@ type Row = {
   when: string;
   title: string;
   meta: string;
-  status: 'reserved' | 'requested' | 'cancelled';
+  status: 'reserved' | 'requested' | 'confirmed' | 'cancelled' | 'partner_cancelled' | 'admin_cancelled' | 'rejected';
+  attendanceStatus?: 'not_checked_in' | 'pending' | 'confirmed' | 'no_show' | 'disputed' | 'void';
+  sample?: boolean;
   onCancel: () => void;
   cancelLabel: string;
   canCancel?: boolean;
@@ -35,11 +37,13 @@ export default function BookingsScreen() {
   const sessionRows: Row[] = app.bookings.flatMap((b) => {
     const s = sessions.find((x) => x.id === b.sessionId);
     if (!s) return [];
+    const booking = app.serverBookings.find(r => r.kind === 'session' && r.targetId === b.sessionId);
     const facility = facilities.find((f) => f.id === s.facilityId);
     return [{
-      key: `s-${b.sessionId}`, image: s.image, when: dateTime(app.serverBookings.find(r => r.kind === 'session' && r.targetId === b.sessionId)!.startsAt, app.language), title: s.title,
+      key: `s-${b.sessionId}`, image: s.image, when: booking ? dateTime(booking.startsAt, app.language) : '', title: s.title,
       meta: s.mode === 'online' ? `${t('onlineTag')} · ${s.instructor}` : `${facility?.name ?? ''} · ${s.instructor}`,
-      status: b.status, onCancel: () => app.cancelBooking(b.sessionId), cancelLabel: t('cancelBooking'),
+      status: booking?.status ?? b.status, attendanceStatus: booking?.attendanceStatus, sample: booking?.scope === 'preview',
+      onCancel: () => app.cancelBooking(b.sessionId), cancelLabel: t('cancelBooking'),
     }];
   });
   const eventRows: Row[] = app.serverBookings.flatMap(booking => {
@@ -51,7 +55,7 @@ export default function BookingsScreen() {
       when: dateTime(booking.startsAt, app.language),
       title: booking.localizedTitle ? facilityText(booking.localizedTitle, app.language) : booking.title,
       meta: `${booking.facility} · ${city ? getCityLabel(city.id, app.language) : booking.city}`,
-      status: booking.status === 'cancelled' || String(booking.status) === 'partner_cancelled' ? 'cancelled' as const : 'reserved' as const,
+      status: booking.status, attendanceStatus: booking.attendanceStatus,
       onCancel: () => app.cancelEvent(booking.targetId),
       cancelLabel: t('cancelReservation'),
       canCancel: Date.parse(booking.cancellationDeadline) > Date.now(),
@@ -62,19 +66,36 @@ export default function BookingsScreen() {
     const c = coaches.find((x) => x.id === r.coachId);
     const slot = c?.slots.find((s) => s.id === r.slot);
     if (!c || !slot) return [];
+    const booking = app.serverBookings.find(b => b.kind === 'coach' && b.targetId === r.coachId && b.slot === r.slot);
     return [{
-      key: `c-${r.coachId}-${r.slot}`, image: c.image, when: dateTime(app.serverBookings.find(b => b.kind === 'coach' && b.targetId === r.coachId && b.slot === r.slot)!.startsAt, app.language), title: c.name,
-      meta: c.specialty, status: r.status, onCancel: () => app.cancelCoachRequest(r.coachId, r.slot), cancelLabel: t('cancelRequest'),
+      key: `c-${r.coachId}-${r.slot}`, image: c.image, when: booking ? dateTime(booking.startsAt, app.language) : '', title: c.name,
+      meta: c.specialty, status: booking?.status ?? r.status, attendanceStatus: booking?.attendanceStatus,
+      onCancel: () => app.cancelCoachRequest(r.coachId, r.slot), cancelLabel: t('cancelRequest'),
     }];
   });
   const waitlistRows = [...app.waitlists]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 12);
   const waitlistUpdateRows = app.waitlistUpdates.slice(0, 20);
-  const activeCount = [...sessionRows, ...eventRows, ...coachRows].filter((r) => r.status !== 'cancelled').length;
+  const isActive = (status: Row['status']) => ['requested', 'reserved', 'confirmed'].includes(status);
+  const isTerminal = (status: Row['status']) => !isActive(status);
+  const activeCount = [...sessionRows, ...eventRows, ...coachRows].filter((r) => isActive(r.status)).length;
   const hasAny = sessionRows.length + eventRows.length + coachRows.length + waitlistRows.length + waitlistUpdateRows.length > 0;
 
-  const statusLabel = (s: Row['status']) => (s === 'reserved' ? t('statusReserved') : s === 'requested' ? t('statusRequested') : t('statusCancelled'));
+  const statusLabel = (s: Row['status'], sample = false) => {
+    if (sample && s === 'reserved') return t('statusReserved');
+    if (sample && s === 'requested') return t('statusRequested');
+    return t(({
+      requested: 'bookingStatusRequested', reserved: 'bookingStatusReserved', confirmed: 'bookingStatusConfirmed',
+      cancelled: 'bookingStatusCancelled', partner_cancelled: 'bookingStatusPartnerCancelled',
+      admin_cancelled: 'bookingStatusAdminCancelled', rejected: 'bookingStatusRejected',
+    } as Record<string, MessageKey>)[s] ?? 'bookingStatusCancelled');
+  };
+  const attendanceStatusLabel = (status: NonNullable<Row['attendanceStatus']>) => t(({
+    not_checked_in: 'attendanceNotCheckedIn', pending: 'attendanceCheckedIn',
+    confirmed: 'attendanceAttended', no_show: 'attendanceNoShow',
+    disputed: 'attendanceDisputed', void: 'attendanceVoided',
+  } as Record<string, MessageKey>)[status]);
   const waitlistStatusLabel = (status: string) => t(({
     waiting: 'waitlistWaiting', offered: 'waitlistOffered', booked: 'waitlistBooked',
     expired: 'waitlistExpired', left: 'waitlistLeft', ineligible: 'waitlistIneligible', closed: 'waitlistClosed',
@@ -87,12 +108,12 @@ export default function BookingsScreen() {
 
   const section = (title: MessageKey, rows: Row[]) => {
     if (!rows.length) return null;
-    const ordered = [...rows.filter((r) => r.status !== 'cancelled'), ...rows.filter((r) => r.status === 'cancelled')];
+    const ordered = [...rows.filter((r) => isActive(r.status)), ...rows.filter((r) => isTerminal(r.status))];
     return (
       <View style={{ marginBottom: 8 }}>
         <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: align }]}>{t(title)}</Text>
         {ordered.map((row) => {
-          const cancelled = row.status === 'cancelled';
+          const cancelled = isTerminal(row.status);
           const dot = cancelled ? colors.mutedForeground : row.status === 'requested' ? '#c9962f' : '#4e9664';
           return (
             <View key={row.key} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, opacity: cancelled ? 0.62 : 1 }]}>
@@ -109,8 +130,13 @@ export default function BookingsScreen() {
                 <View style={styles.footer}>
                   <View style={styles.statusPill}>
                     <View style={[styles.dot, { backgroundColor: dot }]} />
-                    <Text style={[styles.statusText, { color: colors.mutedForeground }]}>{statusLabel(row.status)}</Text>
+                    <Text style={[styles.statusText, { color: colors.mutedForeground }]}>{statusLabel(row.status, row.sample)}</Text>
                   </View>
+                  {!row.sample && row.attendanceStatus ? (
+                    <Text style={[styles.statusText, { color: colors.mutedForeground, marginTop: 4, textAlign: align }]}>
+                      {attendanceStatusLabel(row.attendanceStatus)}
+                    </Text>
+                  ) : null}
                   {!cancelled && row.canCancel !== false ? (
                     <Pressable disabled={app.memberLoading} accessibilityRole="button" accessibilityLabel={`${row.cancelLabel}: ${row.title}`} onPress={row.onCancel} hitSlop={6} style={styles.cancelButton}>
                       <Text style={[styles.cancelText, { color: colors.destructive }]}>{t('cancel')}</Text>

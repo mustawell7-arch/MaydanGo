@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { and, asc, eq, gt, gte, inArray, isNull, or, sql } from "drizzle-orm";
 import {
+  ACTIVE_RESERVATION_STATUSES,
   db,
   facilityHoursOverrides,
   facilityProfiles,
@@ -83,7 +84,7 @@ async function publishedFacilities(id?: string) {
     resourceBusy: sql<boolean>`exists (
       select 1 from reservations resource_reservation
       join booking_offerings resource_offering on resource_offering.id = resource_reservation.offering_id
-      where resource_reservation.status in ('reserved', 'requested')
+      where resource_reservation.status in ('reserved', 'requested', 'confirmed')
         and resource_offering.booking_model = 'resource_booking'
         and resource_offering.scope = ${offerings.scope}
         and resource_offering.active = true
@@ -100,7 +101,7 @@ async function publishedFacilities(id?: string) {
     .innerJoin(partners, eq(offerings.partnerId, partners.id))
     .leftJoin(reservations, and(
       eq(reservations.offeringId, offerings.id),
-      inArray(reservations.status, ["reserved", "requested"]),
+      inArray(reservations.status, ACTIVE_RESERVATION_STATUSES),
     ))
     .leftJoin(checkinPolicies, eq(checkinPolicies.offeringId, offerings.id))
     .where(and(
