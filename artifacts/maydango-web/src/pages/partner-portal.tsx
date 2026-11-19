@@ -1479,7 +1479,7 @@ export default function PartnerPortal() {
   const canViewPartnerFinance = isPartnerOwner || isPartnerFinance;
   const canViewReports = isOperationsAdmin || isPartnerOwner || isPartnerManager;
   const canManageMarketing = isPartnerOwner;
-  const attendance = useGetAttendance({ query: { retry: false, enabled: isLoaded && isSignedIn && canManageAttendance } });
+  const attendance = useGetAttendance({ query: { retry: false, enabled: isLoaded && isSignedIn && canManageAttendance, refetchInterval: 5_000 } });
   const addPartner = useAddPartner();
   const approvePartner = useApprovePartner();
   const updatePartnerActivityApprovalMode = useUpdatePartnerActivityApprovalMode();

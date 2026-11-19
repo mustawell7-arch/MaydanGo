@@ -101,7 +101,7 @@ paths:
       responses:
         "204": { description: Facility profile removed }
         "404": { description: Facility not found }
-        "409": { description: Facility has sessions or quality history and cannot be removed }
+        "409": { description: "Facility has sessions, quality history, or retained check-in QR history and cannot be removed" }
   /operations/facilities/{id}/hours-overrides:
     post:
       operationId: createFacilityHoursOverride
@@ -132,6 +132,79 @@ paths:
       responses:
         "204": { description: Facility hours override removed }
         "404": { description: Facility or override not found }
+  /operations/facilities/{id}/checkin-points:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getFacilityCheckinPoints
+      responses:
+        "200":
+          description: Active and inactive check-in points and recent QR activity, without QR secrets
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacilityCheckinPointsResponse" }
+        "403": { description: Facility is outside the operator's scope }
+        "404": { description: Facility not found }
+    post:
+      operationId: createFacilityCheckinPoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FacilityCheckinPointInput" }
+      responses:
+        "201":
+          description: Check-in point created; the QR token is shown once
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacilityCheckinPointIssued" }
+        "400": { description: Invalid point details }
+        "403": { description: Facility is outside the operator's scope }
+        "404": { description: Facility not found }
+  /operations/facilities/{id}/checkin-points/{pointId}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: pointId, in: path, required: true, schema: { type: string } }
+    patch:
+      operationId: updateFacilityCheckinPoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FacilityCheckinPointUpdate" }
+      responses:
+        "200":
+          description: Check-in location details updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacilityCheckinPoint" }
+        "403": { description: Facility is outside the operator's scope }
+        "404": { description: Facility or point not found }
+    delete:
+      operationId: deactivateFacilityCheckinPoint
+      responses:
+        "200":
+          description: Check-in point and its QR codes deactivated; activity history retained
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CheckinActionResult" }
+        "403": { description: Facility is outside the operator's scope }
+        "404": { description: Facility or point not found }
+  /operations/facilities/{id}/checkin-points/{pointId}/qr:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: pointId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: issueFacilityCheckinQr
+      responses:
+        "200":
+          description: QR code issued; earlier codes for this point are revoked
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FacilityCheckinQrCode" }
+        "403": { description: Facility is outside the operator's scope }
+        "404": { description: Facility or point not found }
+        "409": { description: Check-in point is inactive or QR refresh is too frequent }
   /public/catalog:
     get:
       operationId: getPublicCatalog
@@ -312,7 +385,8 @@ paths:
               type: object
               required: [token, latitude, longitude, accuracy, capturedAt]
               properties:
-                token: { type: string }
+                token: { type: string, pattern: "^MDG[12]:" }
+                reservationId: { type: string, format: uuid, description: Required when scanning a facility-location QR code }
                 latitude: { type: number }
                 longitude: { type: number }
                 accuracy: { type: number }
@@ -334,6 +408,9 @@ paths:
           content:
             application/json:
               schema: { $ref: "./operations.yaml#/components/schemas/MemberServiceError" }
+        "400": { description: QR data or check-in details are invalid }
+        "404": { description: Booking or check-in point was not found }
+        "409": { description: "QR is expired, booking is ineligible, the window is closed, or suspicious duplicate travel was detected" }
   /attendance/{id}/manual-code:
     post:
       operationId: requestManualCheckinCode
@@ -1186,6 +1263,84 @@ components:
         latitude: { type: ["number", "null"] }
         longitude: { type: ["number", "null"] }
         updatedAt: { type: string, format: date-time }
+    FacilityCheckinQrMode:
+      type: string
+      enum: [static, dynamic, rotating]
+    FacilityCheckinPointInput:
+      type: object
+      additionalProperties: false
+      required: [label, latitude, longitude, radius, mode]
+      properties:
+        label: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        radius: { type: integer, minimum: 25, maximum: 800 }
+        mode: { $ref: "#/components/schemas/FacilityCheckinQrMode" }
+    FacilityCheckinPointUpdate:
+      type: object
+      additionalProperties: false
+      required: [label, latitude, longitude, radius]
+      properties:
+        label: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        radius: { type: integer, minimum: 25, maximum: 800 }
+    FacilityCheckinPoint:
+      type: object
+      additionalProperties: false
+      required: [id, facilityId, label, latitude, longitude, radius, mode, active, hasActiveQr, activeQrExpiresAt, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        facilityId: { type: string, format: uuid }
+        label: { $ref: "#/components/schemas/LocalizedFacilityText" }
+        latitude: { type: number }
+        longitude: { type: number }
+        radius: { type: integer }
+        mode: { $ref: "#/components/schemas/FacilityCheckinQrMode" }
+        active: { type: boolean }
+        hasActiveQr: { type: boolean }
+        activeQrExpiresAt: { type: ["string", "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    FacilityCheckinQrActivity:
+      type: object
+      additionalProperties: false
+      required: [id, pointId, action, riskFlag, reason, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        pointId: { type: ["string", "null"], format: uuid }
+        action: { type: string, enum: [point_created, point_updated, point_deactivated, qr_issued, qr_replaced, qr_rotated, scan_recorded, scan_rejected] }
+        riskFlag: { type: boolean }
+        reason: { type: string, maxLength: 500 }
+        createdAt: { type: string, format: date-time }
+    FacilityCheckinPointsResponse:
+      type: object
+      additionalProperties: false
+      required: [points, activity]
+      properties:
+        points: { type: array, items: { $ref: "#/components/schemas/FacilityCheckinPoint" } }
+        activity: { type: array, items: { $ref: "#/components/schemas/FacilityCheckinQrActivity" } }
+    FacilityCheckinPointIssued:
+      type: object
+      additionalProperties: false
+      required: [point, token, expiresAt]
+      properties:
+        point: { $ref: "#/components/schemas/FacilityCheckinPoint" }
+        token: { type: string, pattern: "^MDG2:" }
+        expiresAt: { type: ["string", "null"], format: date-time }
+    FacilityCheckinQrCode:
+      type: object
+      additionalProperties: false
+      required: [token, expiresAt]
+      properties:
+        token: { type: string, pattern: "^MDG2:" }
+        expiresAt: { type: ["string", "null"], format: date-time }
+    CheckinActionResult:
+      type: object
+      additionalProperties: false
+      required: [ok]
+      properties:
+        ok: { type: boolean }
     FacilityHoursOverrideInput:
       type: object
       required: [startDate, endDate, closed, opensAt, closesAt, localizedReason]

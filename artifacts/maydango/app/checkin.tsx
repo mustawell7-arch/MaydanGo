@@ -29,16 +29,48 @@ export default function CheckInScreen() {
   const [error, setError] = useState('');
   const [consentRequired, setConsentRequired] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
+  const [selectedReservationId, setSelectedReservationId] = useState<string | null>(null);
   const lock = useRef(false);
   const owner = useRef(userId); owner.current = userId;
   const roster = useGetAttendance({ query: { queryKey: ['attendance', userId], enabled: !!isSignedIn, refetchInterval: 10000 } });
   useFocusEffect(useCallback(() => { if (isSignedIn) void roster.refetch(); }, [isSignedIn, userId]));
+  const ownRows = roster.data?.rows.filter(r => r.userId === userId) ?? [];
+  const eligibleRows = ownRows.filter(row => row.status === 'not_checked_in'
+    && new Date(row.endsAt).getTime() > Date.now()
+    && !!row.policy
+    && ['reserved', 'confirmed'].includes(row.bookingStatus));
+  const selectedBooking = eligibleRows.find(row => row.reservationId === selectedReservationId)
+    ?? (eligibleRows.length === 1 ? eligibleRows[0] : undefined);
+  const startScan = async () => {
+    setError('');
+    setReference(null);
+    try {
+      const cameraGranted = permission?.granted || (await requestPermission()).granted;
+      if (!cameraGranted) throw new Error('Camera permission is required. Enable it in your device settings.');
+      if (Platform.OS === 'web') {
+        await new Promise<GeolocationPosition>((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }));
+      } else {
+        const locationPermission = await Location.requestForegroundPermissionsAsync();
+        if (!locationPermission.granted) throw new Error('Location permission is required before scanning.');
+        await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
+      }
+      setScanning(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Camera and location access are required to check in.');
+    }
+  };
   const scan = async ({ data }: { data: string }) => {
     if (lock.current) return;
     lock.current = true; setBusy(true); setError(''); setConsentRequired(false);
     const who = userId;
     try {
-      if (!/^MDG1:[a-f0-9]{64}$/.test(data)) throw new Error('Ask staff for a current MaydanGO QR code.');
+      if (!/^(?:MDG1:[a-f0-9]{64}|MDG2:[0-9a-f-]{36}:[a-f0-9]{64})$/.test(data))
+        throw new Error('Ask staff for a current MaydanGo check-in QR code.');
+      const isFacilityQr = data.startsWith('MDG2:');
+      const reservationId = isFacilityQr ? selectedBooking?.reservationId : undefined;
+      if (isFacilityQr && !reservationId)
+        throw new Error('Choose an eligible booking before scanning this facility QR code.');
       let coords: { latitude: number; longitude: number; accuracy: number | null }, timestamp: number, mocked = false;
       if (Platform.OS === 'web') {
         const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
@@ -50,8 +82,9 @@ export default function CheckInScreen() {
         coords = pos.coords; timestamp = pos.timestamp; mocked = pos.mocked ?? false;
       }
       if (coords.accuracy === null) throw new Error('Could not verify location accuracy. Please retry outdoors.');
-      const result = await scanCheckinQr({ token: data, latitude: coords.latitude, longitude: coords.longitude,
-        accuracy: coords.accuracy, capturedAt: new Date(timestamp).toISOString(), mocked });
+      const result = await scanCheckinQr({ token: data, ...(reservationId ? { reservationId } : {}),
+        latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy,
+        capturedAt: new Date(timestamp).toISOString(), mocked });
       if (owner.current !== who) return;
       setReference(result.reference); setScanning(false);
       await roster.refetch();
@@ -63,7 +96,6 @@ export default function CheckInScreen() {
     } }
     finally { setBusy(false); lock.current = false; }
   };
-  const ownRows = roster.data?.rows.filter(r => r.userId === userId) ?? [];
   const success = ownRows.find(r => r.reference === reference);
   return <ScreenShell sample={false}>
     <ScreenHeader title="Check-in & attendance" eyebrow="Secure arrival and partner confirmation" />
@@ -73,7 +105,22 @@ export default function CheckInScreen() {
         <Text style={{ color: c.foreground }}>Sign in to check in and view your attendance. Sample reservations cannot be checked in.</Text>
         <Pressable onPress={() => router.push('/account')}><Text style={{ color: c.primary }}>Sign in</Text></Pressable>
       </View> : <>
-        <Text style={{ color: c.mutedForeground }}>Scan the single-use QR shown by staff for your reservation. Arrival is not attendance until the partner confirms it.</Text>
+         <Text style={{ color: c.mutedForeground }}>Choose an eligible booking when needed, then scan the facility QR or the reservation QR shown by staff. A facility QR identifies the location; arrival remains pending until the partner confirms it.</Text>
+         {eligibleRows.length > 1 ? <View style={[s.section, { backgroundColor: c.secondary }]}>
+           <Text style={{ color: c.foreground, fontWeight: '700' }}>Choose the booking for this check-in</Text>
+           {eligibleRows.map(row => {
+             const selected = selectedBooking?.reservationId === row.reservationId;
+             return <Pressable key={row.reservationId} accessibilityRole="button" accessibilityState={{ selected }}
+               onPress={() => setSelectedReservationId(row.reservationId)}
+               style={[s.bookingChoice, { borderColor: selected ? c.primary : c.border, backgroundColor: selected ? c.background : 'transparent' }]}>
+               <Text raw style={{ color: c.foreground, fontWeight: '700' }}>{row.title}</Text>
+               <Text raw style={{ color: c.mutedForeground }}>{row.facility} · {dateTime(row.startsAt, language)}</Text>
+             </Pressable>;
+           })}
+         </View> : eligibleRows.length === 1 ? <View style={s.bookingMeta}>
+           <Text style={{ color: c.mutedForeground }}>Selected booking:</Text>
+           <Text raw style={{ color: c.foreground }}>{selectedBooking?.title} · {selectedBooking?.facility}</Text>
+         </View> : null}
         {success ? <View style={[s.section, { backgroundColor: c.secondary }]}>
           {user?.imageUrl ? <Image source={{ uri: user.imageUrl }} style={s.photo} /> : null}
           <Text raw style={{ color: c.foreground, fontWeight: '800' }}>{user?.fullName ?? user?.username ?? 'Member'}</Text>
@@ -90,11 +137,9 @@ export default function CheckInScreen() {
           <Text raw selectable style={{ color: c.mutedForeground }}>{success.reference}</Text>
           <Text style={{ color: c.mutedForeground }}>Staff must verify this record in their own attendance roster, not from a screenshot.</Text>
         </View> : null}
-        <Pressable disabled={busy} style={[s.button, { backgroundColor: c.primary }]} onPress={async () => {
-          setError(''); setReference(null);
-          if (permission?.granted || (await requestPermission()).granted) setScanning(true);
-          else setError('Camera permission is required. Enable it in your device settings.');
-        }}><Text style={{ color: c.primaryForeground }}>Scan partner QR</Text></Pressable>
+        <Pressable disabled={busy} style={[s.button, { backgroundColor: c.primary }]} onPress={startScan}>
+          <Text style={{ color: c.primaryForeground }}>Scan check-in QR</Text>
+        </Pressable>
         {scanning && permission?.granted ? <View>
           <CameraView style={s.camera} facing="back" barcodeScannerSettings={{ barcodeTypes: ['qr'] }} onBarcodeScanned={busy ? undefined : scan} />
           <Pressable onPress={() => setScanning(false)}><Text style={{ color: c.primary }}>Close camera</Text></Pressable>
@@ -108,7 +153,7 @@ export default function CheckInScreen() {
         {consentRequired || isMemberConsentRequired(roster.error) ? <Pressable onPress={() => router.push('/account')}>
           <Text style={{ color: c.primary, textDecorationLine: 'underline' }}>{translate(language, 'memberConsentsTitle')}</Text>
         </Pressable> : null}
-        <Pressable onPress={() => void roster.refetch()}><Text style={{ color: c.primary }}>Refresh attendance</Text></Pressable>
+         <Pressable onPress={() => void roster.refetch()}><Text style={{ color: c.primary }}>Refresh attendance</Text></Pressable>
         <Text style={[s.heading, { color: c.foreground }]}>{roster.data?.role === 'member' ? 'Your attendance' : 'Partner attendance roster'}</Text>
         {roster.data?.rows.length === 0 ? <Text style={{ color: c.mutedForeground }}>No live reservations yet.</Text> : null}
         {roster.data?.rows.map(row => <AttendanceCard key={`${userId}:${row.reservationId}`} row={row}
@@ -143,6 +188,8 @@ function StatusSeal({ confirmed, tint, ink }: { confirmed: boolean; tint: string
 const s = StyleSheet.create({
   content: { padding: 20, gap: 16, paddingBottom: 60 },
   section: { padding: 16, borderRadius: 16, gap: 10 },
+  bookingChoice: { padding: 12, borderWidth: 1, borderRadius: 12, gap: 4 },
+  bookingMeta: { gap: 3 },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   seal: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   sealHalo: { position: 'absolute', width: 26, height: 26, borderRadius: 13, borderWidth: 1.5 },

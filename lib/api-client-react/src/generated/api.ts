@@ -37,6 +37,7 @@ import type {
   AdminRolePermissionsUpdateInput,
   BookingCancellationRequest,
   CancelRecurringOfferingSeriesResponse,
+  CheckinActionResult,
   CheckinPolicy,
   CompletePartnerGuardianConsentUpload200,
   CorporateAdministratorInvitationInput,
@@ -81,6 +82,12 @@ import type {
   DeviceChangeApprovalInput,
   DownloadMemberCourseMaterialParams,
   EnablePreviewMembershipBody,
+  FacilityCheckinPoint,
+  FacilityCheckinPointInput,
+  FacilityCheckinPointIssued,
+  FacilityCheckinPointUpdate,
+  FacilityCheckinPointsResponse,
+  FacilityCheckinQrCode,
   FacilityEmergencyContact,
   FacilityEmergencyContactInput,
   FacilityHoursOverride,
@@ -1619,6 +1626,409 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getDeleteFacilityHoursOverrideMutationOptions(options), queryClient);
     }
 
+export const getGetFacilityCheckinPointsUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/facilities/${id}/checkin-points`
+}
+
+export const getFacilityCheckinPoints = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<FacilityCheckinPointsResponse> => {
+
+  return customFetch<FacilityCheckinPointsResponse>(getGetFacilityCheckinPointsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFacilityCheckinPointsQueryKey = (id: string,) => {
+    return [
+    `/api/operations/facilities/${id}/checkin-points`
+    ] as const;
+    }
+
+
+export const getGetFacilityCheckinPointsQueryOptions = <TData = Awaited<ReturnType<typeof getFacilityCheckinPoints>>, TError = ErrorType<void>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFacilityCheckinPoints>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFacilityCheckinPointsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFacilityCheckinPoints>>> = ({ signal }) => getFacilityCheckinPoints(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFacilityCheckinPoints>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetFacilityCheckinPointsQueryResult = NonNullable<Awaited<ReturnType<typeof getFacilityCheckinPoints>>>
+export type GetFacilityCheckinPointsQueryError = ErrorType<void>
+
+
+export function useGetFacilityCheckinPoints<TData = Awaited<ReturnType<typeof getFacilityCheckinPoints>>, TError = ErrorType<void>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFacilityCheckinPoints>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFacilityCheckinPoints>>,
+          TError,
+          Awaited<ReturnType<typeof getFacilityCheckinPoints>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFacilityCheckinPoints<TData = Awaited<ReturnType<typeof getFacilityCheckinPoints>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFacilityCheckinPoints>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFacilityCheckinPoints>>,
+          TError,
+          Awaited<ReturnType<typeof getFacilityCheckinPoints>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFacilityCheckinPoints<TData = Awaited<ReturnType<typeof getFacilityCheckinPoints>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFacilityCheckinPoints>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetFacilityCheckinPoints<TData = Awaited<ReturnType<typeof getFacilityCheckinPoints>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFacilityCheckinPoints>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetFacilityCheckinPointsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateFacilityCheckinPointUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/facilities/${id}/checkin-points`
+}
+
+export const createFacilityCheckinPoint = async (id: string,
+    facilityCheckinPointInput: FacilityCheckinPointInput, options?: Parameters<typeof customFetch>[1]): Promise<FacilityCheckinPointIssued> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FacilityCheckinPointIssued>(getCreateFacilityCheckinPointUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(facilityCheckinPointInput)
+  }
+);}
+
+
+
+
+
+export const getCreateFacilityCheckinPointMutationKey = () => ['createFacilityCheckinPoint'] as const;
+
+export const getCreateFacilityCheckinPointMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFacilityCheckinPoint>>, TError,CreateFacilityCheckinPointMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createFacilityCheckinPoint>>, TError,CreateFacilityCheckinPointMutationVariables, TContext> => {
+
+const mutationKey = getCreateFacilityCheckinPointMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createFacilityCheckinPoint>>, CreateFacilityCheckinPointMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createFacilityCheckinPoint(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateFacilityCheckinPointMutationResult = NonNullable<Awaited<ReturnType<typeof createFacilityCheckinPoint>>>
+    export type CreateFacilityCheckinPointMutationBody = BodyType<FacilityCheckinPointInput>
+    export type CreateFacilityCheckinPointMutationError = ErrorType<void>
+    export type CreateFacilityCheckinPointMutationVariables = {id: string;data: BodyType<FacilityCheckinPointInput>}
+
+    export const useCreateFacilityCheckinPoint = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFacilityCheckinPoint>>, TError,CreateFacilityCheckinPointMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createFacilityCheckinPoint>>,
+        TError,
+        CreateFacilityCheckinPointMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateFacilityCheckinPointMutationOptions(options), queryClient);
+    }
+
+export const getUpdateFacilityCheckinPointUrl = (id: string,
+    pointId: string,) => {
+
+
+
+
+  return `/api/operations/facilities/${id}/checkin-points/${pointId}`
+}
+
+export const updateFacilityCheckinPoint = async (id: string,
+    pointId: string,
+    facilityCheckinPointUpdate: FacilityCheckinPointUpdate, options?: Parameters<typeof customFetch>[1]): Promise<FacilityCheckinPoint> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FacilityCheckinPoint>(getUpdateFacilityCheckinPointUrl(id,pointId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(facilityCheckinPointUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateFacilityCheckinPointMutationKey = () => ['updateFacilityCheckinPoint'] as const;
+
+export const getUpdateFacilityCheckinPointMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFacilityCheckinPoint>>, TError,UpdateFacilityCheckinPointMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateFacilityCheckinPoint>>, TError,UpdateFacilityCheckinPointMutationVariables, TContext> => {
+
+const mutationKey = getUpdateFacilityCheckinPointMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateFacilityCheckinPoint>>, UpdateFacilityCheckinPointMutationVariables> = (props) => {
+          const {id,pointId,data} = props ?? {};
+
+          return  updateFacilityCheckinPoint(id,pointId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateFacilityCheckinPointMutationResult = NonNullable<Awaited<ReturnType<typeof updateFacilityCheckinPoint>>>
+    export type UpdateFacilityCheckinPointMutationBody = BodyType<FacilityCheckinPointUpdate>
+    export type UpdateFacilityCheckinPointMutationError = ErrorType<void>
+    export type UpdateFacilityCheckinPointMutationVariables = {id: string;pointId: string;data: BodyType<FacilityCheckinPointUpdate>}
+
+    export const useUpdateFacilityCheckinPoint = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFacilityCheckinPoint>>, TError,UpdateFacilityCheckinPointMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateFacilityCheckinPoint>>,
+        TError,
+        UpdateFacilityCheckinPointMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateFacilityCheckinPointMutationOptions(options), queryClient);
+    }
+
+export const getDeactivateFacilityCheckinPointUrl = (id: string,
+    pointId: string,) => {
+
+
+
+
+  return `/api/operations/facilities/${id}/checkin-points/${pointId}`
+}
+
+export const deactivateFacilityCheckinPoint = async (id: string,
+    pointId: string, options?: Parameters<typeof customFetch>[1]): Promise<CheckinActionResult> => {
+
+  return customFetch<CheckinActionResult>(getDeactivateFacilityCheckinPointUrl(id,pointId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeactivateFacilityCheckinPointMutationKey = () => ['deactivateFacilityCheckinPoint'] as const;
+
+export const getDeactivateFacilityCheckinPointMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateFacilityCheckinPoint>>, TError,DeactivateFacilityCheckinPointMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deactivateFacilityCheckinPoint>>, TError,DeactivateFacilityCheckinPointMutationVariables, TContext> => {
+
+const mutationKey = getDeactivateFacilityCheckinPointMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deactivateFacilityCheckinPoint>>, DeactivateFacilityCheckinPointMutationVariables> = (props) => {
+          const {id,pointId} = props ?? {};
+
+          return  deactivateFacilityCheckinPoint(id,pointId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeactivateFacilityCheckinPointMutationResult = NonNullable<Awaited<ReturnType<typeof deactivateFacilityCheckinPoint>>>
+
+    export type DeactivateFacilityCheckinPointMutationError = ErrorType<void>
+    export type DeactivateFacilityCheckinPointMutationVariables = {id: string;pointId: string}
+
+    export const useDeactivateFacilityCheckinPoint = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateFacilityCheckinPoint>>, TError,DeactivateFacilityCheckinPointMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deactivateFacilityCheckinPoint>>,
+        TError,
+        DeactivateFacilityCheckinPointMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeactivateFacilityCheckinPointMutationOptions(options), queryClient);
+    }
+
+export const getIssueFacilityCheckinQrUrl = (id: string,
+    pointId: string,) => {
+
+
+
+
+  return `/api/operations/facilities/${id}/checkin-points/${pointId}/qr`
+}
+
+export const issueFacilityCheckinQr = async (id: string,
+    pointId: string, options?: Parameters<typeof customFetch>[1]): Promise<FacilityCheckinQrCode> => {
+
+  return customFetch<FacilityCheckinQrCode>(getIssueFacilityCheckinQrUrl(id,pointId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getIssueFacilityCheckinQrMutationKey = () => ['issueFacilityCheckinQr'] as const;
+
+export const getIssueFacilityCheckinQrMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof issueFacilityCheckinQr>>, TError,IssueFacilityCheckinQrMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof issueFacilityCheckinQr>>, TError,IssueFacilityCheckinQrMutationVariables, TContext> => {
+
+const mutationKey = getIssueFacilityCheckinQrMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof issueFacilityCheckinQr>>, IssueFacilityCheckinQrMutationVariables> = (props) => {
+          const {id,pointId} = props ?? {};
+
+          return  issueFacilityCheckinQr(id,pointId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type IssueFacilityCheckinQrMutationResult = NonNullable<Awaited<ReturnType<typeof issueFacilityCheckinQr>>>
+
+    export type IssueFacilityCheckinQrMutationError = ErrorType<void>
+    export type IssueFacilityCheckinQrMutationVariables = {id: string;pointId: string}
+
+    export const useIssueFacilityCheckinQr = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof issueFacilityCheckinQr>>, TError,IssueFacilityCheckinQrMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof issueFacilityCheckinQr>>,
+        TError,
+        IssueFacilityCheckinQrMutationVariables,
+        TContext
+      > => {
+      return useMutation(getIssueFacilityCheckinQrMutationOptions(options), queryClient);
+    }
+
 export const getGetPublicCatalogUrl = () => {
 
 
@@ -2542,7 +2952,7 @@ return customFetch<ScanCheckinQr200>(getScanCheckinQrUrl(),
 
 export const getScanCheckinQrMutationKey = () => ['scanCheckinQr'] as const;
 
-export const getScanCheckinQrMutationOptions = <TError = ErrorType<MemberServiceError>,
+export const getScanCheckinQrMutationOptions = <TError = ErrorType<void | MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof scanCheckinQr>>, TError,ScanCheckinQrMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof scanCheckinQr>>, TError,ScanCheckinQrMutationVariables, TContext> => {
 
@@ -2571,10 +2981,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type ScanCheckinQrMutationResult = NonNullable<Awaited<ReturnType<typeof scanCheckinQr>>>
     export type ScanCheckinQrMutationBody = BodyType<ScanCheckinQrBody>
-    export type ScanCheckinQrMutationError = ErrorType<MemberServiceError>
+    export type ScanCheckinQrMutationError = ErrorType<void | MemberServiceError>
     export type ScanCheckinQrMutationVariables = {data: BodyType<ScanCheckinQrBody>}
 
-    export const useScanCheckinQr = <TError = ErrorType<MemberServiceError>,
+    export const useScanCheckinQr = <TError = ErrorType<void | MemberServiceError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof scanCheckinQr>>, TError,ScanCheckinQrMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof scanCheckinQr>>,

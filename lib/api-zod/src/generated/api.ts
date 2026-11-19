@@ -1380,6 +1380,201 @@ export const DeleteFacilityHoursOverrideParams = zod.object({
 export const DeleteFacilityHoursOverrideResponse = zod.void()
 
 
+export const GetFacilityCheckinPointsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getFacilityCheckinPointsResponsePointsItemLabelEnMax = 500;
+
+export const getFacilityCheckinPointsResponsePointsItemLabelArMax = 500;
+
+export const getFacilityCheckinPointsResponsePointsItemLabelKuMax = 500;
+
+export const getFacilityCheckinPointsResponseActivityItemReasonMax = 500;
+
+
+
+export const GetFacilityCheckinPointsResponse = zod.object({
+  "points": zod.array(zod.object({
+  "id": zod.uuid(),
+  "facilityId": zod.uuid(),
+  "label": zod.object({
+  "en": zod.string().min(1).max(getFacilityCheckinPointsResponsePointsItemLabelEnMax),
+  "ar": zod.string().min(1).max(getFacilityCheckinPointsResponsePointsItemLabelArMax),
+  "ku": zod.string().min(1).max(getFacilityCheckinPointsResponsePointsItemLabelKuMax)
+}),
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.int(),
+  "mode": zod.enum(['static', 'dynamic', 'rotating']),
+  "active": zod.boolean(),
+  "hasActiveQr": zod.boolean(),
+  "activeQrExpiresAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "activity": zod.array(zod.object({
+  "id": zod.uuid(),
+  "pointId": zod.uuid().nullable(),
+  "action": zod.enum(['point_created', 'point_updated', 'point_deactivated', 'qr_issued', 'qr_replaced', 'qr_rotated', 'scan_recorded', 'scan_rejected']),
+  "riskFlag": zod.boolean(),
+  "reason": zod.string().max(getFacilityCheckinPointsResponseActivityItemReasonMax),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+export const CreateFacilityCheckinPointParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const createFacilityCheckinPointBodyLabelEnMax = 500;
+
+export const createFacilityCheckinPointBodyLabelArMax = 500;
+
+export const createFacilityCheckinPointBodyLabelKuMax = 500;
+
+export const createFacilityCheckinPointBodyLatitudeMin = -90;
+export const createFacilityCheckinPointBodyLatitudeMax = 90;
+
+export const createFacilityCheckinPointBodyLongitudeMin = -180;
+export const createFacilityCheckinPointBodyLongitudeMax = 180;
+
+export const createFacilityCheckinPointBodyRadiusMin = 25;
+export const createFacilityCheckinPointBodyRadiusMax = 800;
+
+
+
+export const CreateFacilityCheckinPointBody = zod.object({
+  "label": zod.object({
+  "en": zod.string().min(1).max(createFacilityCheckinPointBodyLabelEnMax),
+  "ar": zod.string().min(1).max(createFacilityCheckinPointBodyLabelArMax),
+  "ku": zod.string().min(1).max(createFacilityCheckinPointBodyLabelKuMax)
+}),
+  "latitude": zod.number().min(createFacilityCheckinPointBodyLatitudeMin).max(createFacilityCheckinPointBodyLatitudeMax),
+  "longitude": zod.number().min(createFacilityCheckinPointBodyLongitudeMin).max(createFacilityCheckinPointBodyLongitudeMax),
+  "radius": zod.int().min(createFacilityCheckinPointBodyRadiusMin).max(createFacilityCheckinPointBodyRadiusMax),
+  "mode": zod.enum(['static', 'dynamic', 'rotating'])
+})
+
+export const createFacilityCheckinPointResponsePointLabelEnMax = 500;
+
+export const createFacilityCheckinPointResponsePointLabelArMax = 500;
+
+export const createFacilityCheckinPointResponsePointLabelKuMax = 500;
+
+export const createFacilityCheckinPointResponseTokenRegExp = new RegExp('^MDG2:');
+
+
+export const CreateFacilityCheckinPointResponse = zod.object({
+  "point": zod.object({
+  "id": zod.uuid(),
+  "facilityId": zod.uuid(),
+  "label": zod.object({
+  "en": zod.string().min(1).max(createFacilityCheckinPointResponsePointLabelEnMax),
+  "ar": zod.string().min(1).max(createFacilityCheckinPointResponsePointLabelArMax),
+  "ku": zod.string().min(1).max(createFacilityCheckinPointResponsePointLabelKuMax)
+}),
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.int(),
+  "mode": zod.enum(['static', 'dynamic', 'rotating']),
+  "active": zod.boolean(),
+  "hasActiveQr": zod.boolean(),
+  "activeQrExpiresAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "token": zod.string().regex(createFacilityCheckinPointResponseTokenRegExp),
+  "expiresAt": zod.coerce.date().nullable()
+})
+
+
+export const UpdateFacilityCheckinPointParams = zod.object({
+  "id": zod.coerce.string(),
+  "pointId": zod.coerce.string()
+})
+
+export const updateFacilityCheckinPointBodyLabelEnMax = 500;
+
+export const updateFacilityCheckinPointBodyLabelArMax = 500;
+
+export const updateFacilityCheckinPointBodyLabelKuMax = 500;
+
+export const updateFacilityCheckinPointBodyLatitudeMin = -90;
+export const updateFacilityCheckinPointBodyLatitudeMax = 90;
+
+export const updateFacilityCheckinPointBodyLongitudeMin = -180;
+export const updateFacilityCheckinPointBodyLongitudeMax = 180;
+
+export const updateFacilityCheckinPointBodyRadiusMin = 25;
+export const updateFacilityCheckinPointBodyRadiusMax = 800;
+
+
+
+export const UpdateFacilityCheckinPointBody = zod.object({
+  "label": zod.object({
+  "en": zod.string().min(1).max(updateFacilityCheckinPointBodyLabelEnMax),
+  "ar": zod.string().min(1).max(updateFacilityCheckinPointBodyLabelArMax),
+  "ku": zod.string().min(1).max(updateFacilityCheckinPointBodyLabelKuMax)
+}),
+  "latitude": zod.number().min(updateFacilityCheckinPointBodyLatitudeMin).max(updateFacilityCheckinPointBodyLatitudeMax),
+  "longitude": zod.number().min(updateFacilityCheckinPointBodyLongitudeMin).max(updateFacilityCheckinPointBodyLongitudeMax),
+  "radius": zod.int().min(updateFacilityCheckinPointBodyRadiusMin).max(updateFacilityCheckinPointBodyRadiusMax)
+})
+
+export const updateFacilityCheckinPointResponseLabelEnMax = 500;
+
+export const updateFacilityCheckinPointResponseLabelArMax = 500;
+
+export const updateFacilityCheckinPointResponseLabelKuMax = 500;
+
+
+
+export const UpdateFacilityCheckinPointResponse = zod.object({
+  "id": zod.uuid(),
+  "facilityId": zod.uuid(),
+  "label": zod.object({
+  "en": zod.string().min(1).max(updateFacilityCheckinPointResponseLabelEnMax),
+  "ar": zod.string().min(1).max(updateFacilityCheckinPointResponseLabelArMax),
+  "ku": zod.string().min(1).max(updateFacilityCheckinPointResponseLabelKuMax)
+}),
+  "latitude": zod.number(),
+  "longitude": zod.number(),
+  "radius": zod.int(),
+  "mode": zod.enum(['static', 'dynamic', 'rotating']),
+  "active": zod.boolean(),
+  "hasActiveQr": zod.boolean(),
+  "activeQrExpiresAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const DeactivateFacilityCheckinPointParams = zod.object({
+  "id": zod.coerce.string(),
+  "pointId": zod.coerce.string()
+})
+
+export const DeactivateFacilityCheckinPointResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const IssueFacilityCheckinQrParams = zod.object({
+  "id": zod.coerce.string(),
+  "pointId": zod.coerce.string()
+})
+
+export const issueFacilityCheckinQrResponseTokenRegExp = new RegExp('^MDG2:');
+
+
+export const IssueFacilityCheckinQrResponse = zod.object({
+  "token": zod.string().regex(issueFacilityCheckinQrResponseTokenRegExp),
+  "expiresAt": zod.coerce.date().nullable()
+})
+
+
 export const getPublicCatalogResponseLocalizedTitleOneEnMax = 500;
 
 export const getPublicCatalogResponseLocalizedTitleOneArMax = 500;
@@ -1751,8 +1946,12 @@ export const RevokeCheckinQrParams = zod.object({
 export const RevokeCheckinQrResponse = zod.unknown()
 
 
+export const scanCheckinQrBodyTokenRegExp = new RegExp('^MDG[12]:');
+
+
 export const ScanCheckinQrBody = zod.object({
-  "token": zod.string(),
+  "token": zod.string().regex(scanCheckinQrBodyTokenRegExp),
+  "reservationId": zod.uuid().optional().describe('Required when scanning a facility-location QR code'),
   "latitude": zod.number(),
   "longitude": zod.number(),
   "accuracy": zod.number(),

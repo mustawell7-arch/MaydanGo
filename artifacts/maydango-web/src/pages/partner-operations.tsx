@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { trackEvent } from '@/lib/analytics';
 import { getPartnerPortalCopy, type PortalCopyLanguage } from '@/lib/partner-portal-copy';
 import { CalendarClock, Download, FileText, MapPin, Plus, RefreshCw, Save, ShieldCheck, Upload, Wallet } from 'lucide-react';
+import { FacilityCheckinQrManager } from '@/components/facility-checkin-qr-manager';
 import {
   downloadPartnerInvoiceDocument, getGetAttendanceQueryKey, getGetOperationFacilitiesQueryKey, getGetPartnerInvoicesQueryKey,
   getGetOperationsQueryKey, getGetPartnerSettlementSummaryQueryKey, useCreateFacilityProfile,
@@ -332,6 +333,7 @@ function Facilities({ lang, partnerId, isAdmin, onNotice }: { lang: PortalLangua
         </div>)}</div> : <p className="mt-2 text-xs text-[#687a71]">{t(lang, 'noSpecialHours')}</p>}
         {hoursEditorFor === item.id && !isAdmin && <HoursOverrideEditor facilityId={item.id} lang={lang} onClose={() => setHoursEditorFor(null)} onSaved={() => { setHoursEditorFor(null); onNotice(t(lang, 'specialHoursSaved')); }} />}
       </section>
+       <FacilityCheckinQrManager facility={item} lang={lang} />
       {item.activities.length > 0 && <div className="mt-4"><p className="mb-2 text-xs font-bold">{t(lang, 'activities')}</p><div className="flex flex-wrap gap-2">{item.activities.map((x, i) => <span key={i} className="rounded-full bg-[#eeeadc] px-3 py-1 text-xs">{x[lang]}</span>)}</div></div>}
       {item.amenities.length > 0 && <div className="mt-3"><p className="mb-2 text-xs font-bold">{t(lang, 'amenities')}</p><div className="flex flex-wrap gap-2">{item.amenities.map((x, i) => <span key={i} className="rounded-full bg-[#eeeadc] px-3 py-1 text-xs">{x[lang]}</span>)}</div></div>}
       {item.accessibility.length > 0 && <div className="mt-3"><p className="mb-2 text-xs font-bold">{t(lang, 'accessibility')}</p><div className="flex flex-wrap gap-2">{item.accessibility.map((x, i) => <span key={i} className="rounded-full bg-[#eeeadc] px-3 py-1 text-xs">{x[lang]}</span>)}</div></div>}

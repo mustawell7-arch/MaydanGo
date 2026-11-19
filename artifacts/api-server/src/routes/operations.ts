@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lte, lt } from "drizzle-orm";
 import { z } from "zod";
-import { ACTIVE_RESERVATION_STATUSES, db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, courseMaterials, facilityProfiles, facilityHoursOverrides, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents, financeInvoiceCorrections, instructorPortalRequests, instructorCourseAssignments, instructorOfferingAssignments } from "@workspace/db";
+import { ACTIVE_RESERVATION_STATUSES, db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, courseMaterials, facilityProfiles, facilityHoursOverrides, facilityCheckinPoints, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents, financeInvoiceCorrections, instructorPortalRequests, instructorCourseAssignments, instructorOfferingAssignments } from "@workspace/db";
 import { BookingError, effectiveMembershipStatus, processWaitlistQueue } from "../lib/reservations";
 import { deriveOfferingSessionStatus, effectiveOfferingActivityStatus, type OfferingActivityStatus } from "../lib/offering-status";
 import { hasAdminPermission, isOperationsPortalRole, type AdminPermission } from "../lib/admin-roles";
@@ -45,6 +45,10 @@ import { courseMaterialObjectPath, courseMaterialUploadObjectPath, isPrivateCour
 import { hasAccessRestrictionRecord, isAccessSuspended } from "../lib/account-access-restrictions";
 import { completeGuardianConsentUpload, requestGuardianConsentUpload } from "../lib/guardian-consents";
 import { saveOfferingPolicy, policyInput } from "../lib/checkin";
+import {
+  createFacilityCheckinPoint, deactivateFacilityCheckinPoint, facilityCheckinPointInput,
+  facilityCheckinPointUpdate, getFacilityCheckinPoints, issueFacilityCheckinQr, updateFacilityCheckinPoint,
+} from "../lib/facility-checkin-qr";
 import { getOfferingBookingModel } from "../lib/booking-model";
 import { sessionAudienceIssue, type SessionType } from "../lib/session-audience";
 import {
@@ -395,10 +399,54 @@ router.delete("/facilities/:id", async (req, res) => {
     const [incident] = await tx.select({ id: facilityQualityIncidents.id }).from(facilityQualityIncidents)
       .where(eq(facilityQualityIncidents.facilityId, id)).limit(1);
     if (qualityRecord || incident) throw new BookingError(409, "This facility has quality history and cannot be deleted.");
+    const [checkinPoint] = await tx.select({ id: facilityCheckinPoints.id }).from(facilityCheckinPoints)
+      .where(eq(facilityCheckinPoints.facilityId, id)).limit(1);
+    if (checkinPoint) throw new BookingError(409, "This facility has check-in QR history and cannot be deleted.");
     await tx.delete(facilityProfiles).where(eq(facilityProfiles.id, id));
     await audit(tx, res.locals.operator.userId, "facility.delete", id);
   });
   res.sendStatus(204);
+});
+router.get("/facilities/:id/checkin-points", async (req, res) => {
+  const id = String(req.params.id);
+  const [facility] = await db.select({ partnerId: facilityProfiles.partnerId })
+    .from(facilityProfiles).where(eq(facilityProfiles.id, id)).limit(1);
+  if (!facility) throw new BookingError(404, "Facility profile not found.");
+  own(res, facility.partnerId);
+  res.json(await getFacilityCheckinPoints(id));
+});
+router.post("/facilities/:id/checkin-points", async (req, res) => {
+  const id = String(req.params.id);
+  const [facility] = await db.select({ partnerId: facilityProfiles.partnerId })
+    .from(facilityProfiles).where(eq(facilityProfiles.id, id)).limit(1);
+  if (!facility) throw new BookingError(404, "Facility profile not found.");
+  own(res, facility.partnerId);
+  const result = await createFacilityCheckinPoint(id, res.locals.operator.userId, facilityCheckinPointInput.parse(req.body));
+  res.status(201).json(result);
+});
+router.patch("/facilities/:id/checkin-points/:pointId", async (req, res) => {
+  const id = String(req.params.id), pointId = String(req.params.pointId);
+  const [facility] = await db.select({ partnerId: facilityProfiles.partnerId })
+    .from(facilityProfiles).where(eq(facilityProfiles.id, id)).limit(1);
+  if (!facility) throw new BookingError(404, "Facility profile not found.");
+  own(res, facility.partnerId);
+  res.json(await updateFacilityCheckinPoint(id, pointId, res.locals.operator.userId, facilityCheckinPointUpdate.parse(req.body)));
+});
+router.delete("/facilities/:id/checkin-points/:pointId", async (req, res) => {
+  const id = String(req.params.id), pointId = String(req.params.pointId);
+  const [facility] = await db.select({ partnerId: facilityProfiles.partnerId })
+    .from(facilityProfiles).where(eq(facilityProfiles.id, id)).limit(1);
+  if (!facility) throw new BookingError(404, "Facility profile not found.");
+  own(res, facility.partnerId);
+  res.json(await deactivateFacilityCheckinPoint(id, pointId, res.locals.operator.userId));
+});
+router.post("/facilities/:id/checkin-points/:pointId/qr", async (req, res) => {
+  const id = String(req.params.id), pointId = String(req.params.pointId);
+  const [facility] = await db.select({ partnerId: facilityProfiles.partnerId })
+    .from(facilityProfiles).where(eq(facilityProfiles.id, id)).limit(1);
+  if (!facility) throw new BookingError(404, "Facility profile not found.");
+  own(res, facility.partnerId);
+  res.json(await issueFacilityCheckinQr(id, pointId, res.locals.operator.userId));
 });
 router.post("/facilities/:id/hours-overrides", async (req, res) => {
   const params = CreateFacilityHoursOverrideParams.parse(req.params);

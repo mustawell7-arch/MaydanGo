@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { and, desc, eq, gt, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 import { clerkClient } from "@clerk/express";
-import { ACTIVE_RESERVATION_STATUSES, BOOKED_RESERVATION_STATUSES, db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, guardianConsentDocuments, manualCheckinChallenges, memberships, membershipBilling, membershipPlans, offerings, operators, partners, reservations, memberProfiles, memberConsentEvents, memberProfilePhotos, operationAudit } from "@workspace/db";
+import { ACTIVE_RESERVATION_STATUSES, BOOKED_RESERVATION_STATUSES, db, attendance, attendanceEvents, checkinChallenges, checkinPolicies, facilityProfiles, facilityHoursOverrides, facilityCheckinPoints, facilityCheckinQrCodes, facilityCheckinQrActivity, guardianConsentDocuments, manualCheckinChallenges, memberships, membershipBilling, membershipPlans, offerings, operators, partners, reservations, memberProfiles, memberConsentEvents, memberProfilePhotos, operationAudit } from "@workspace/db";
 import { z } from "zod";
 import { BookingError, membershipCanAccess, processWaitlistQueue } from "./reservations";
 import { ageOnDate } from "./age";
@@ -33,7 +33,8 @@ export const policyInput = z.object({
   correctionEndsAt: z.string().datetime({ offset: true }),
 }).strict();
 export const scanInput = z.object({
-  token: z.string().regex(/^MDG1:[a-f0-9]{64}$/),
+  token: z.string().regex(/^(?:MDG1:[a-f0-9]{64}|MDG2:[0-9a-f-]{36}:[a-f0-9]{64})$/),
+  reservationId: z.string().uuid().optional(),
   latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180),
   accuracy: z.number().min(0).max(100), capturedAt: z.string().datetime({ offset: true }),
   mocked: z.boolean().optional(),
@@ -371,6 +372,11 @@ export async function recordManualCheckin(actor: string, id: string, input: z.in
   });
 }
 export async function scanQr(actor: string, input: z.infer<typeof scanInput>) {
+  if (input.token.startsWith("MDG2:")) return scanFacilityLocationQr(actor, input);
+  return scanReservationQr(actor, input);
+}
+
+async function scanReservationQr(actor: string, input: z.infer<typeof scanInput>) {
   await requireCurrentMemberConsent(actor);
   const rules = await getPlatformSafetyRules();
   return db.transaction(async tx => {
@@ -406,6 +412,90 @@ export async function scanQr(actor: string, input: z.infer<typeof scanInput>) {
     await event(tx, c.r.id, actor, "scan", "not_checked_in", "pending", "QR and location validated; partner confirmation required");
     return { reference, status: "pending" };
   });
+}
+
+async function scanFacilityLocationQr(actor: string, input: z.infer<typeof scanInput>) {
+  await requireCurrentMemberConsent(actor);
+  if (!input.reservationId) throw new BookingError(400, "Choose a reservation before scanning this facility QR code.");
+  const [target] = await db.select({
+    codeId: facilityCheckinQrCodes.id,
+    pointId: facilityCheckinPoints.id,
+    facilityId: facilityProfiles.id,
+  }).from(facilityCheckinQrCodes)
+    .innerJoin(facilityCheckinPoints, eq(facilityCheckinQrCodes.pointId, facilityCheckinPoints.id))
+    .innerJoin(facilityProfiles, eq(facilityCheckinPoints.facilityId, facilityProfiles.id))
+    .where(eq(facilityCheckinQrCodes.digest, digest(input.token))).limit(1);
+  if (!target) throw new BookingError(400, "Invalid facility QR code.");
+  try {
+    const rules = await getPlatformSafetyRules();
+    return await db.transaction(async tx => {
+      const c = await context(tx, input.reservationId!);
+      if (c.r.userId !== actor) throw new BookingError(403, "This booking does not belong to your account.");
+      const [code] = await tx.select().from(facilityCheckinQrCodes)
+        .where(eq(facilityCheckinQrCodes.id, target.codeId)).for("update");
+      const [point] = await tx.select().from(facilityCheckinPoints)
+        .where(eq(facilityCheckinPoints.id, target.pointId)).for("update");
+      const [facility] = await tx.select().from(facilityProfiles)
+        .where(eq(facilityProfiles.id, target.facilityId)).for("share");
+      const now = new Date();
+      if (!code || !point || !facility || code.digest !== digest(input.token)
+        || code.revokedAt || (code.expiresAt && code.expiresAt <= now) || !point.active) {
+        throw new BookingError(409, "This facility QR code has expired or been deactivated.");
+      }
+      const normalize = (value: string) => value.trim().toLocaleLowerCase("en");
+      if (!c.o.partnerId || normalize(c.o.partnerId) !== normalize(facility.partnerId)
+        || normalize(c.o.city) !== normalize(facility.city)
+        || normalize(c.o.facility) !== normalize(facility.facility)) {
+        throw new BookingError(403, "This facility QR code does not match the selected booking.");
+      }
+      await eligible(tx, c);
+      if (!c.p || now < c.p.opensAt || now >= c.p.closesAt)
+        throw new BookingError(409, "Outside the check-in window.");
+      if (c.a) throw new BookingError(409, "Arrival is already recorded for this booking.");
+      await requireFacilityOpen(tx, c, now);
+      const capturedAt = new Date(input.capturedAt);
+      const locationIsInvalid = input.mocked
+        || input.accuracy > rules.maxCheckinAccuracyMeters
+        || Math.abs(now.getTime() - capturedAt.getTime()) > 60_000
+        || distance(input.latitude, input.longitude, point.latitude, point.longitude) + input.accuracy > point.radius;
+      if (locationIsInvalid)
+        throw new BookingError(403, "A fresh, accurate location inside this check-in point is required.");
+      const recent = await tx.select({ a: attendance, p: checkinPolicies }).from(attendance)
+        .innerJoin(checkinPolicies, eq(attendance.offeringId, checkinPolicies.offeringId))
+        .where(eq(attendance.userId, actor));
+      if (recent.some(({ a, p }) => {
+        if (!a.verifiedBy || !["pending", "confirmed", "disputed"].includes(a.status)) return false;
+        const seconds = (now.getTime() - a.checkedInAt.getTime()) / 1000;
+        return isCheckinTravelViolation(
+          seconds,
+          distance(p.latitude, p.longitude, input.latitude, input.longitude),
+          rules,
+        );
+      })) throw new BookingError(409, "Rapid check-in or impossible travel detected. Contact staff.");
+      const reference = randomUUID();
+      await tx.insert(attendance).values({
+        id: reference, reservationId: c.r.id, userId: actor, offeringId: c.o.id,
+        checkedInAt: now, verifiedBy: actor, status: "pending", settlementEligible: false,
+      });
+      await event(tx, c.r.id, actor, "facility_qr.scan", "not_checked_in", "pending",
+        "Facility QR and location validated; partner confirmation required");
+      await tx.insert(facilityCheckinQrActivity).values({
+        id: randomUUID(), facilityId: facility.id, pointId: point.id, qrCodeId: code.id,
+        reservationId: c.r.id, actorId: actor, action: "scan_recorded",
+        riskFlag: false, reason: "Location validated; awaiting partner confirmation",
+      });
+      return { reference, status: "pending" as const };
+    });
+  } catch (error) {
+    const reason = error instanceof BookingError ? error.message : "Facility QR scan rejected.";
+    const riskFlag = /QR code|location|rapid check-in|impossible travel|already recorded/i.test(reason);
+    await db.insert(facilityCheckinQrActivity).values({
+      id: randomUUID(), facilityId: target.facilityId, pointId: target.pointId,
+      qrCodeId: target.codeId, reservationId: input.reservationId, actorId: actor,
+      action: "scan_rejected", riskFlag, reason: reason.slice(0, 500),
+    });
+    throw error;
+  }
 }
 export async function review(actor: string, id: string, input: z.infer<typeof reviewInput>) {
   const rejectedOfferingId = await db.transaction(async tx => {

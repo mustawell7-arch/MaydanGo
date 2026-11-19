@@ -290,6 +290,119 @@ export interface FacilityProfile {
   updatedAt: string;
 }
 
+export type FacilityCheckinQrMode = typeof FacilityCheckinQrMode[keyof typeof FacilityCheckinQrMode];
+
+
+export const FacilityCheckinQrMode = {
+  static: 'static',
+  dynamic: 'dynamic',
+  rotating: 'rotating',
+} as const;
+
+export interface FacilityCheckinPointInput {
+  label: LocalizedFacilityText;
+  /**
+     * @minimum -90
+     * @maximum 90
+     */
+  latitude: number;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  longitude: number;
+  /**
+     * @minimum 25
+     * @maximum 800
+     */
+  radius: number;
+  mode: FacilityCheckinQrMode;
+}
+
+export interface FacilityCheckinPointUpdate {
+  label: LocalizedFacilityText;
+  /**
+     * @minimum -90
+     * @maximum 90
+     */
+  latitude: number;
+  /**
+     * @minimum -180
+     * @maximum 180
+     */
+  longitude: number;
+  /**
+     * @minimum 25
+     * @maximum 800
+     */
+  radius: number;
+}
+
+export interface FacilityCheckinPoint {
+  id: string;
+  facilityId: string;
+  label: LocalizedFacilityText;
+  latitude: number;
+  longitude: number;
+  radius: number;
+  mode: FacilityCheckinQrMode;
+  active: boolean;
+  hasActiveQr: boolean;
+  /** @nullable */
+  activeQrExpiresAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type FacilityCheckinQrActivityAction = typeof FacilityCheckinQrActivityAction[keyof typeof FacilityCheckinQrActivityAction];
+
+
+export const FacilityCheckinQrActivityAction = {
+  point_created: 'point_created',
+  point_updated: 'point_updated',
+  point_deactivated: 'point_deactivated',
+  qr_issued: 'qr_issued',
+  qr_replaced: 'qr_replaced',
+  qr_rotated: 'qr_rotated',
+  scan_recorded: 'scan_recorded',
+  scan_rejected: 'scan_rejected',
+} as const;
+
+export interface FacilityCheckinQrActivity {
+  id: string;
+  /** @nullable */
+  pointId: string | null;
+  action: FacilityCheckinQrActivityAction;
+  riskFlag: boolean;
+  /** @maxLength 500 */
+  reason: string;
+  createdAt: string;
+}
+
+export interface FacilityCheckinPointsResponse {
+  points: FacilityCheckinPoint[];
+  activity: FacilityCheckinQrActivity[];
+}
+
+export interface FacilityCheckinPointIssued {
+  point: FacilityCheckinPoint;
+  /** @pattern ^MDG2: */
+  token: string;
+  /** @nullable */
+  expiresAt: string | null;
+}
+
+export interface FacilityCheckinQrCode {
+  /** @pattern ^MDG2: */
+  token: string;
+  /** @nullable */
+  expiresAt: string | null;
+}
+
+export interface CheckinActionResult {
+  ok: boolean;
+}
+
 export interface FacilityHoursOverrideInput {
   /** Inclusive calendar date in Asia/Baghdad */
   startDate: string;
@@ -6701,7 +6814,10 @@ export type IssueCheckinQr200 = {
 };
 
 export type ScanCheckinQrBody = {
+  /** @pattern ^MDG[12]: */
   token: string;
+  /** Required when scanning a facility-location QR code */
+  reservationId?: string;
   latitude: number;
   longitude: number;
   accuracy: number;
