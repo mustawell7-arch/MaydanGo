@@ -219,7 +219,23 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/SyncMemberAppleHealthActivityBody" }
+            schema: { $ref: "#/components/schemas/SyncMemberActivitySummariesBody" }
+      responses:
+        "200":
+          description: Upserted daily step totals and completed-workout counts for the signed-in member
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberActivitySyncState" }
+        "400": { description: The summaries are invalid or outside the recent sync window }
+        "403": { description: "Current policy consent, activity-data consent, and account access are required" }
+  /member/activity-sync/health-connect/sync:
+    post:
+      operationId: syncMemberHealthConnectActivity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SyncMemberActivitySummariesBody" }
       responses:
         "200":
           description: Upserted daily step totals and completed-workout counts for the signed-in member
@@ -3827,7 +3843,7 @@ components:
         records:
           type: array
           items: { $ref: "#/components/schemas/MemberActivitySyncRecord" }
-    AppleHealthDailySummary:
+    ActivityDailySummary:
       type: object
       additionalProperties: false
       required: [activityDate, steps, completedWorkouts]
@@ -3835,7 +3851,7 @@ components:
         activityDate: { $ref: "#/components/schemas/CalendarDate" }
         steps: { type: ["integer", "null"], minimum: 0, maximum: 300000 }
         completedWorkouts: { type: integer, minimum: 0, maximum: 100 }
-    SyncMemberAppleHealthActivityBody:
+    SyncMemberActivitySummariesBody:
       type: object
       additionalProperties: false
       required: [summaries]
@@ -3844,7 +3860,7 @@ components:
           type: array
           minItems: 1
           maxItems: 30
-          items: { $ref: "#/components/schemas/AppleHealthDailySummary" }
+          items: { $ref: "#/components/schemas/ActivityDailySummary" }
     AcceptMemberActivitySyncBody:
       type: object
       additionalProperties: false

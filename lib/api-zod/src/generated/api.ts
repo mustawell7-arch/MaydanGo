@@ -13307,6 +13307,60 @@ export const SyncMemberAppleHealthActivityResponse = zod.object({
 })
 
 
+export const syncMemberHealthConnectActivityBodySummariesItemActivityDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const syncMemberHealthConnectActivityBodySummariesItemStepsMin = 0;
+export const syncMemberHealthConnectActivityBodySummariesItemStepsMax = 300000;
+
+export const syncMemberHealthConnectActivityBodySummariesItemCompletedWorkoutsMin = 0;
+export const syncMemberHealthConnectActivityBodySummariesItemCompletedWorkoutsMax = 100;
+
+export const syncMemberHealthConnectActivityBodySummariesMax = 30;
+
+
+
+export const SyncMemberHealthConnectActivityBody = zod.object({
+  "summaries": zod.array(zod.object({
+  "activityDate": zod.string().regex(syncMemberHealthConnectActivityBodySummariesItemActivityDateRegExp),
+  "steps": zod.int().min(syncMemberHealthConnectActivityBodySummariesItemStepsMin).max(syncMemberHealthConnectActivityBodySummariesItemStepsMax).nullable(),
+  "completedWorkouts": zod.int().min(syncMemberHealthConnectActivityBodySummariesItemCompletedWorkoutsMin).max(syncMemberHealthConnectActivityBodySummariesItemCompletedWorkoutsMax)
+})).min(1).max(syncMemberHealthConnectActivityBodySummariesMax)
+})
+
+export const syncMemberHealthConnectActivityResponseConsentPolicyVersionMax = 40;
+
+export const syncMemberHealthConnectActivityResponseConsentHistoryItemPolicyVersionMax = 40;
+
+export const syncMemberHealthConnectActivityResponseRecordsItemActivityDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+export const syncMemberHealthConnectActivityResponseRecordsItemStepsMin = 0;
+export const syncMemberHealthConnectActivityResponseRecordsItemStepsMax = 300000;
+
+export const syncMemberHealthConnectActivityResponseRecordsItemCompletedWorkoutsMin = 0;
+export const syncMemberHealthConnectActivityResponseRecordsItemCompletedWorkoutsMax = 100;
+
+
+
+export const SyncMemberHealthConnectActivityResponse = zod.object({
+  "syncAvailable": zod.boolean(),
+  "consent": zod.object({
+  "status": zod.enum(['not_enabled', 'enabled', 'revoked']),
+  "policyVersion": zod.string().max(syncMemberHealthConnectActivityResponseConsentPolicyVersionMax).nullable(),
+  "changedAt": zod.coerce.date().nullable()
+}),
+  "consentHistory": zod.array(zod.object({
+  "action": zod.enum(['accepted', 'revoked']),
+  "policyVersion": zod.string().max(syncMemberHealthConnectActivityResponseConsentHistoryItemPolicyVersionMax),
+  "recordedAt": zod.coerce.date()
+})),
+  "records": zod.array(zod.object({
+  "activityDate": zod.string().regex(syncMemberHealthConnectActivityResponseRecordsItemActivityDateRegExp),
+  "steps": zod.int().min(syncMemberHealthConnectActivityResponseRecordsItemStepsMin).max(syncMemberHealthConnectActivityResponseRecordsItemStepsMax).nullable(),
+  "completedWorkouts": zod.int().min(syncMemberHealthConnectActivityResponseRecordsItemCompletedWorkoutsMin).max(syncMemberHealthConnectActivityResponseRecordsItemCompletedWorkoutsMax),
+  "source": zod.enum(['apple_health', 'health_connect']),
+  "syncedAt": zod.coerce.date()
+}))
+})
+
+
 export const deleteMemberActivitySyncDataResponseDeletedRecordsMin = 0;
 
 

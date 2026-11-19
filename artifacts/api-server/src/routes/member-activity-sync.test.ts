@@ -82,7 +82,7 @@ test("activity sync consent is opt-in, private to each member, and revocation de
   })).status, 400);
   assert.equal((await call("/member/activity-sync/consent", memberId, "POST", {
     accept: true,
-    policyVersion: "v1",
+    policyVersion: "v2",
   })).status, 403);
 
   await saveMemberConsentChoices(memberId, {
@@ -90,12 +90,21 @@ test("activity sync consent is opt-in, private to each member, and revocation de
     privacyPolicyAccepted: true,
     marketingConsent: false,
   });
+  await db.insert(memberActivitySyncConsentEvents).values({
+    id: randomUUID(),
+    userId: memberId,
+    action: "accepted",
+    policyVersion: "v1",
+  });
+  assert.equal((await call("/member/activity-sync/apple-health/sync", memberId, "POST", {
+    summaries: [{ activityDate: addCalendarDays(iraqToday(), -1), steps: 4200, completedWorkouts: 1 }],
+  })).status, 403);
   assert.equal((await call("/member/activity-sync/apple-health/sync", memberId, "POST", {
     summaries: [{ activityDate: addCalendarDays(iraqToday(), -1), steps: 4200, completedWorkouts: 1 }],
   })).status, 403);
   const accepted = await call("/member/activity-sync/consent", memberId, "POST", {
     accept: true,
-    policyVersion: "v1",
+    policyVersion: "v2",
   });
   assert.equal(accepted.status, 200);
   assert.equal((accepted.data as { syncAvailable: boolean }).syncAvailable, true);
@@ -118,6 +127,17 @@ test("activity sync consent is opt-in, private to each member, and revocation de
   ));
   assert.equal(ownSyncedRecords.length, 1);
   assert.equal(ownSyncedRecords[0]?.steps, 5100);
+  const healthConnectSync = await call("/member/activity-sync/health-connect/sync", memberId, "POST", {
+    summaries: [{ activityDate, steps: 6300, completedWorkouts: 3 }],
+  });
+  assert.equal(healthConnectSync.status, 200);
+  const healthConnectRows = await db.select().from(memberActivitySyncSummaries).where(and(
+    eq(memberActivitySyncSummaries.userId, memberId),
+    eq(memberActivitySyncSummaries.provider, "health_connect"),
+    eq(memberActivitySyncSummaries.activityDate, activityDate),
+  ));
+  assert.equal(healthConnectRows.length, 1);
+  assert.equal(healthConnectRows[0]?.steps, 6300);
   assert.equal((await call("/member/activity-sync/apple-health/sync", memberId, "POST", {
     summaries: [{ activityDate: addCalendarDays(iraqToday(), -30), steps: 1, completedWorkouts: 0 }],
   })).status, 400);
@@ -131,11 +151,11 @@ test("activity sync consent is opt-in, private to each member, and revocation de
   await addSummary(memberId, "2026-05-01");
   await addSummary(otherMemberId, "2026-05-01");
   const visible = await call("/member/activity-sync", memberId);
-  assert.equal((visible.data as { records: unknown[] }).records.length, 2);
+  assert.equal((visible.data as { records: unknown[] }).records.length, 3);
 
   const deleted = await call("/member/activity-sync/data", memberId, "DELETE");
   assert.equal(deleted.status, 200);
-  assert.equal((deleted.data as { deletedRecords: number }).deletedRecords, 2);
+  assert.equal((deleted.data as { deletedRecords: number }).deletedRecords, 3);
   const otherRows = await db.select().from(memberActivitySyncSummaries).where(and(
     eq(memberActivitySyncSummaries.userId, otherMemberId),
     eq(memberActivitySyncSummaries.activityDate, "2026-05-01"),
@@ -148,6 +168,7 @@ test("activity sync consent is opt-in, private to each member, and revocation de
   assert.equal((revoked.data as { consent: { status: string } }).consent.status, "revoked");
   assert.equal((revoked.data as { records: unknown[] }).records.length, 0);
   assert.equal((await call("/member/activity-sync/apple-health/sync", memberId, "POST", syncBody)).status, 403);
+  assert.equal((await call("/member/activity-sync/health-connect/sync", memberId, "POST", syncBody)).status, 403);
   const history = await db.select().from(memberActivitySyncConsentEvents).where(
     eq(memberActivitySyncConsentEvents.userId, memberId),
   ).orderBy(desc(memberActivitySyncConsentEvents.recordedAt), desc(memberActivitySyncConsentEvents.id));

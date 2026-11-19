@@ -5,9 +5,10 @@ import {
   memberActivitySyncConsentEvents,
   memberActivitySyncSummaries,
   type MemberActivitySyncConsentEvent,
+  type MemberActivitySyncProvider,
 } from "@workspace/db";
 
-export const MEMBER_ACTIVITY_SYNC_CONSENT_VERSION = "v1";
+export const MEMBER_ACTIVITY_SYNC_CONSENT_VERSION = "v2";
 
 async function lockMemberActivitySync(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], userId: string) {
   await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
@@ -47,8 +48,9 @@ export async function getMemberActivitySyncState(userId: string) {
   };
 }
 
-export async function syncAppleHealthActivitySummaries(
+export async function syncMemberActivitySummaries(
   userId: string,
+  provider: MemberActivitySyncProvider,
   summaries: Array<{
     activityDate: string;
     steps: number | null;
@@ -69,7 +71,7 @@ export async function syncAppleHealthActivitySummaries(
     await tx.insert(memberActivitySyncSummaries).values(summaries.map(summary => ({
       id: randomUUID(),
       userId,
-      provider: "apple_health" as const,
+      provider,
       activityDate: summary.activityDate,
       steps: summary.steps,
       completedWorkouts: summary.completedWorkouts,
@@ -146,7 +148,7 @@ export async function deleteMemberActivitySyncData(userId: string) {
 
 export class MemberActivitySyncConsentRequiredError extends Error {
   constructor() {
-    super("Enable activity-data sharing before syncing Apple Health.");
+    super("Enable activity-data sharing before syncing health summaries.");
     this.name = "MemberActivitySyncConsentRequiredError";
   }
 }

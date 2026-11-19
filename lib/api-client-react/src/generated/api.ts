@@ -327,7 +327,7 @@ import type {
   SupportTicketSummary,
   SupportUrgentAlertDeliveryOutcome,
   SupportUrgentAlertRecipientAudit,
-  SyncMemberAppleHealthActivityBody,
+  SyncMemberActivitySummariesBody,
   UpdateLegalPolicyDraftBody
 } from './api.schemas';
 
@@ -17624,7 +17624,7 @@ export const getSyncMemberAppleHealthActivityUrl = () => {
   return `/api/member/activity-sync/apple-health/sync`
 }
 
-export const syncMemberAppleHealthActivity = async (syncMemberAppleHealthActivityBody: SyncMemberAppleHealthActivityBody, options?: Parameters<typeof customFetch>[1]): Promise<MemberActivitySyncState> => {
+export const syncMemberAppleHealthActivity = async (syncMemberActivitySummariesBody: SyncMemberActivitySummariesBody, options?: Parameters<typeof customFetch>[1]): Promise<MemberActivitySyncState> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -17645,7 +17645,7 @@ return customFetch<MemberActivitySyncState>(getSyncMemberAppleHealthActivityUrl(
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(syncMemberAppleHealthActivityBody)
+    body: JSON.stringify(syncMemberActivitySummariesBody)
   }
 );}
 
@@ -17683,9 +17683,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type SyncMemberAppleHealthActivityMutationResult = NonNullable<Awaited<ReturnType<typeof syncMemberAppleHealthActivity>>>
-    export type SyncMemberAppleHealthActivityMutationBody = BodyType<SyncMemberAppleHealthActivityBody>
+    export type SyncMemberAppleHealthActivityMutationBody = BodyType<SyncMemberActivitySummariesBody>
     export type SyncMemberAppleHealthActivityMutationError = ErrorType<void>
-    export type SyncMemberAppleHealthActivityMutationVariables = {data: BodyType<SyncMemberAppleHealthActivityBody>}
+    export type SyncMemberAppleHealthActivityMutationVariables = {data: BodyType<SyncMemberActivitySummariesBody>}
 
     export const useSyncMemberAppleHealthActivity = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncMemberAppleHealthActivity>>, TError,SyncMemberAppleHealthActivityMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -17696,6 +17696,88 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getSyncMemberAppleHealthActivityMutationOptions(options), queryClient);
+    }
+
+export const getSyncMemberHealthConnectActivityUrl = () => {
+
+
+
+
+  return `/api/member/activity-sync/health-connect/sync`
+}
+
+export const syncMemberHealthConnectActivity = async (syncMemberActivitySummariesBody: SyncMemberActivitySummariesBody, options?: Parameters<typeof customFetch>[1]): Promise<MemberActivitySyncState> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MemberActivitySyncState>(getSyncMemberHealthConnectActivityUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(syncMemberActivitySummariesBody)
+  }
+);}
+
+
+
+
+
+export const getSyncMemberHealthConnectActivityMutationKey = () => ['syncMemberHealthConnectActivity'] as const;
+
+export const getSyncMemberHealthConnectActivityMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncMemberHealthConnectActivity>>, TError,SyncMemberHealthConnectActivityMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncMemberHealthConnectActivity>>, TError,SyncMemberHealthConnectActivityMutationVariables, TContext> => {
+
+const mutationKey = getSyncMemberHealthConnectActivityMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncMemberHealthConnectActivity>>, SyncMemberHealthConnectActivityMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  syncMemberHealthConnectActivity(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncMemberHealthConnectActivityMutationResult = NonNullable<Awaited<ReturnType<typeof syncMemberHealthConnectActivity>>>
+    export type SyncMemberHealthConnectActivityMutationBody = BodyType<SyncMemberActivitySummariesBody>
+    export type SyncMemberHealthConnectActivityMutationError = ErrorType<void>
+    export type SyncMemberHealthConnectActivityMutationVariables = {data: BodyType<SyncMemberActivitySummariesBody>}
+
+    export const useSyncMemberHealthConnectActivity = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncMemberHealthConnectActivity>>, TError,SyncMemberHealthConnectActivityMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof syncMemberHealthConnectActivity>>,
+        TError,
+        SyncMemberHealthConnectActivityMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSyncMemberHealthConnectActivityMutationOptions(options), queryClient);
     }
 
 export const getDeleteMemberActivitySyncDataUrl = () => {

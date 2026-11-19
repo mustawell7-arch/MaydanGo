@@ -1514,7 +1514,7 @@ export interface MemberActivitySyncState {
   records: MemberActivitySyncRecord[];
 }
 
-export interface AppleHealthDailySummary {
+export interface ActivityDailySummary {
   activityDate: CalendarDate;
   /**
      * @minimum 0
@@ -1529,12 +1529,12 @@ export interface AppleHealthDailySummary {
   completedWorkouts: number;
 }
 
-export interface SyncMemberAppleHealthActivityBody {
+export interface SyncMemberActivitySummariesBody {
   /**
      * @minItems 1
      * @maxItems 30
      */
-  summaries: AppleHealthDailySummary[];
+  summaries: ActivityDailySummary[];
 }
 
 export interface AcceptMemberActivitySyncBody {

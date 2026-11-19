@@ -48,7 +48,10 @@
         {
           "healthSharePermission": "MaydanGo reads daily step totals and completed-workout counts only, after you allow access in Apple Health.",
           "healthUpdatePermission": false,
-          "healthConnectPermissions": []
+          "healthConnectPermissions": [
+            "READ_STEPS",
+            "READ_EXERCISE"
+          ]
         }
       ]
     ],

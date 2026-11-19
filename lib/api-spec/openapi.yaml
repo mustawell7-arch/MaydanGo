@@ -781,6 +781,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1activity-sync~1consent"
   /member/activity-sync/apple-health/sync:
     $ref: "./operations.yaml#/paths/~1member~1activity-sync~1apple-health~1sync"
+  /member/activity-sync/health-connect/sync:
+    $ref: "./operations.yaml#/paths/~1member~1activity-sync~1health-connect~1sync"
   /member/activity-sync/data:
     $ref: "./operations.yaml#/paths/~1member~1activity-sync~1data"
   /member/fitness-challenges/{challengeId}/join:

@@ -9,6 +9,7 @@ import {
   useGetMemberActivitySync,
   useRevokeMemberActivitySync,
   useSyncMemberAppleHealthActivity,
+  useSyncMemberHealthConnectActivity,
 } from '@workspace/api-client-react';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, Pressable } from '@/components/Localized';
@@ -16,9 +17,9 @@ import { ScreenHeader, ScreenShell } from '@/components/ScreenShell';
 import { useApp } from '@/contexts/AppContext';
 import { useColors } from '@/hooks/useColors';
 import {
-  buildAppleHealthDailySummaries,
-  getAppleHealthSyncRange,
-} from '@/lib/apple-health-sync';
+  buildHealthActivityDailySummaries,
+  getHealthActivitySyncRange,
+} from '@/lib/health-activity-sync';
 import { translate, type MessageKey } from '@/lib/i18n';
 
 type ConfirmAction = 'delete' | 'revoke' | null;
@@ -34,6 +35,7 @@ export default function ActivitySyncScreen() {
   const revoke = useRevokeMemberActivitySync();
   const deleteData = useDeleteMemberActivitySyncData();
   const appleHealthSync = useSyncMemberAppleHealthActivity();
+  const healthConnectSync = useSyncMemberHealthConnectActivity();
   const [consentChecked, setConsentChecked] = useState(false);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const [notice, setNotice] = useState<MessageKey | null>(null);
@@ -43,8 +45,35 @@ export default function ActivitySyncScreen() {
   const rtlText = app.language === 'en' ? undefined : styles.rtlText;
   const status = query.data?.consent.status ?? 'not_enabled';
   const enabled = status === 'enabled';
+  const healthProvider = Platform.OS === 'ios'
+    ? 'apple_health'
+    : Platform.OS === 'android' ? 'health_connect' : null;
   const busy = accept.isPending || revoke.isPending || deleteData.isPending
-    || appleHealthSync.isPending || healthSyncRunning;
+    || appleHealthSync.isPending || healthConnectSync.isPending || healthSyncRunning;
+  const activeHealthSyncPending = healthProvider === 'apple_health'
+    ? appleHealthSync.isPending
+    : healthConnectSync.isPending;
+  const healthProviderTitle = t(
+    healthProvider === 'health_connect'
+      ? 'activitySyncHealthConnectTitle'
+      : healthProvider === 'apple_health' ? 'activitySyncAppleTitle' : 'activitySyncProviderTitle',
+  );
+  const healthConnectionHint = t(
+    Platform.OS === 'ios'
+      ? 'activitySyncConnectionHint'
+      : Platform.OS === 'android' ? 'activitySyncHealthConnectHint' : 'activitySyncWebHint',
+  );
+  const healthPermissionNote = t(
+    healthProvider === 'health_connect'
+      ? 'activitySyncHealthConnectPermissionNote'
+      : 'activitySyncApplePermissionNote',
+  );
+  const healthProviderUnavailable = healthProvider === 'health_connect'
+    ? 'activitySyncHealthConnectUnavailable'
+    : 'activitySyncHealthKitUnavailable';
+  const healthProviderSyncComplete = healthProvider === 'health_connect'
+    ? 'activitySyncHealthConnectSyncComplete'
+    : 'activitySyncAppleSyncComplete';
 
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: getGetMemberActivitySyncQueryKey() });
@@ -65,10 +94,10 @@ export default function ActivitySyncScreen() {
     }
   };
 
-  const syncAppleHealth = async () => {
+  const syncHealthProvider = async () => {
     if (busy) return;
-    if (Platform.OS !== 'ios') {
-      setNotice(Platform.OS === 'android' ? 'activitySyncAndroidLater' : 'activitySyncWebHint');
+    if (!healthProvider) {
+      setNotice('activitySyncWebHint');
       return;
     }
     setActionError(false);
@@ -83,14 +112,14 @@ export default function ActivitySyncScreen() {
         WorkoutType,
       } = await import('@appeeky/expo-healthkit');
       if (!HealthKit.isAvailable()) {
-        setNotice('activitySyncHealthKitUnavailable');
+        setNotice(healthProviderUnavailable);
         return;
       }
 
       await HealthKit.requestAuthorization({
         toRead: [QuantityType.stepCount, WorkoutType.workout],
       });
-      const range = getAppleHealthSyncRange();
+      const range = getHealthActivitySyncRange();
       const [stepStatistics, workouts] = await Promise.all([
         HealthKit.queryStatisticsCollection({
           type: QuantityType.stepCount,
@@ -102,20 +131,24 @@ export default function ActivitySyncScreen() {
         }),
         HealthKit.queryWorkouts({ from: range.from, to: range.to, ascending: true }),
       ]);
-      const summaries = buildAppleHealthDailySummaries(
+      const summaries = buildHealthActivityDailySummaries(
         stepStatistics,
         workouts,
         range.firstDay,
         range.today,
       );
       if (summaries.length === 0) {
-        setNotice('activitySyncAppleNoData');
+        setNotice('activitySyncHealthAppNoData');
         return;
       }
 
-      await appleHealthSync.mutateAsync({ data: { summaries } });
+      if (healthProvider === 'apple_health') {
+        await appleHealthSync.mutateAsync({ data: { summaries } });
+      } else {
+        await healthConnectSync.mutateAsync({ data: { summaries } });
+      }
       await refresh();
-      setNotice('activitySyncAppleSyncComplete');
+      setNotice(healthProviderSyncComplete);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (/ExpoHealthKit|native module/i.test(message)) {
@@ -190,7 +223,7 @@ export default function ActivitySyncScreen() {
                 {t(enabled ? 'activitySyncEnabledStatus' : status === 'revoked' ? 'activitySyncRevokedStatus' : 'activitySyncNotEnabledStatus')}
               </Text>
               <Text style={[styles.body, { color: colors.mutedForeground }, rtlText]}>
-                {t(Platform.OS === 'ios' ? 'activitySyncConnectionHint' : Platform.OS === 'android' ? 'activitySyncAndroidLater' : 'activitySyncWebHint')}
+                {healthConnectionHint}
               </Text>
 
               {!enabled ? (
@@ -215,7 +248,7 @@ export default function ActivitySyncScreen() {
                     colors={colors}
                     disabled={!consentChecked || busy}
                     onPress={() => void run(
-                      () => accept.mutateAsync({ data: { accept: true, policyVersion: 'v1' } }),
+                      () => accept.mutateAsync({ data: { accept: true, policyVersion: 'v2' } }),
                       'activitySyncEnabled',
                     )}
                   />
@@ -229,18 +262,18 @@ export default function ActivitySyncScreen() {
             </View>
 
             {enabled ? (
-              <View testID="activity-sync-apple" style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Text style={[styles.sectionTitle, { color: colors.foreground }, rtlText]}>{t('activitySyncAppleTitle')}</Text>
+              <View testID="activity-sync-health-provider" style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }, rtlText]}>{healthProviderTitle}</Text>
                 <Text style={[styles.body, { color: colors.mutedForeground }, rtlText]}>
-                  {t(Platform.OS === 'ios' ? 'activitySyncApplePermissionNote' : Platform.OS === 'android' ? 'activitySyncAndroidLater' : 'activitySyncWebHint')}
+                  {healthProvider ? healthPermissionNote : healthConnectionHint}
                 </Text>
-                {Platform.OS === 'ios' ? (
+                {healthProvider ? (
                   <ActionButton
-                    testID="activity-sync-apple-connect"
-                    label={healthSyncRunning || appleHealthSync.isPending ? t('activitySyncSyncing') : t('activitySyncSyncNow')}
+                    testID={healthProvider === 'apple_health' ? 'activity-sync-apple-connect' : 'activity-sync-health-connect'}
+                    label={healthSyncRunning || activeHealthSyncPending ? t('activitySyncSyncing') : t(healthProvider === 'apple_health' ? 'activitySyncSyncNow' : 'activitySyncHealthConnectSyncNow')}
                     colors={colors}
                     disabled={busy}
-                    onPress={() => void syncAppleHealth()}
+                    onPress={() => void syncHealthProvider()}
                   />
                 ) : null}
               </View>

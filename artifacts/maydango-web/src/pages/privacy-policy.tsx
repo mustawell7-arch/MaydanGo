@@ -26,6 +26,7 @@ const privacyCopy: Record<Language, {
         title: 'Information MaydanGo handles',
         paragraphs: [
           'Depending on the features you use, this may include account name and email, basic profile and eligibility details, membership status, reservations, waitlist activity, check-ins, attendance, course enrolment and progress, courses you save for later, and support or safety reports you choose to submit. For enrolled courses, progress includes lessons you open and the last saved playback position, so you can resume later.',
+          'If you opt in and request a sync, MaydanGo reads daily step totals and counts of completed workouts from Apple Health on iOS or Health Connect on Android. Only day-level summaries for the most recent 30 days are sent to and stored by MaydanGo. Workout sessions are processed on your device only to calculate the daily count; their individual details are not uploaded. This feature does not request heart rate, sleep, location, or workout routes.',
           'If you join a fitness challenge, MaydanGo records your participation and active-day progress. You can log workout days yourself, and eligible partner-confirmed visits may count automatically. Progress is shown in your account and included in your data export; it is not shown on public leaderboards or in the challenge-management page.',
           'MaydanGo loyalty points are non-cash points: one point for each partner-confirmed, eligible visit and each course you complete. Your balance and history are visible only to you and included in your data export. Points cannot currently be redeemed and do not change membership access or visit credits.',
           'The mobile app may use your device location when you start a location-based check-in. It is used to support that check-in, not to continuously follow your movements.',
@@ -38,6 +39,7 @@ const privacyCopy: Record<Language, {
         title: 'How information is used',
         paragraphs: [
           'MaydanGo uses this information to sign you in, show the services available to your account, manage bookings and waitlists, confirm attendance, provide courses and online sessions, respond to support or safety reports, and protect the service from misuse.',
+          'Activity summaries are private to your account. Sync is manual after you grant device permission; the summaries are not used for fitness-challenge scoring, membership decisions, advertising, or booking access.',
           'If you enter a member referral code, MaydanGo links it to your account for sign-up attribution after you verify your email and accept the required policies. The inviter sees an aggregate count only, not your identity. Referral tracking does not provide rewards or send automated promotional messages.',
           'Information is not used to promise a place, membership access, health outcome, or service availability that has not been confirmed in the app or by the relevant provider.',
         ],
@@ -48,7 +50,7 @@ const privacyCopy: Record<Language, {
         paragraphs: [
           'MaydanGo staff with authorized access may use information to operate the service and respond to requests. A facility partner may see the booking and attendance details needed to host a session and confirm a visit. Instructors are limited to the courses or sessions assigned to them.',
           'Company administrators can manage employee enrollment. They are not given members’ individual activity or personal finance records through the company workspace.',
-          'Clerk provides sign-in and account authentication. Replit provides the application hosting and infrastructure used to run MaydanGo, including the configured database and file storage. No additional external data provider has been identified for this draft. Any payment provider and its data use will be described before payment features are enabled.',
+          'Clerk provides sign-in and account authentication. Replit provides the application hosting and infrastructure used to run MaydanGo, including the configured database and file storage. If you choose to connect Apple Health or Health Connect, that service is a read-only source for the activity summaries described above; MaydanGo does not write activity data back to it. Any payment provider and its data use will be described before payment features are enabled.',
         ],
       },
       {
@@ -87,7 +89,7 @@ const privacyCopy: Record<Language, {
         id: 'rights',
         title: 'Your privacy requests',
         paragraphs: [
-          'If you have an account, use Account → Privacy requests to request a copy of your information or an account-deletion review. Authorized support staff verify your identity before approving a data copy. After approval, only the signed-in account holder can download it, for 24 hours. The export includes consent history, member-visible support conversations, your invite code, aggregate sign-up count, any code applied to your account, your fitness-challenge participation and progress dates, your loyalty-points balance and earning history, and your saved profile photo when present; it does not list other members by identity. It excludes payment instrument details, login credentials, device tokens, private class links, internal staff notes, and support attachment contents.',
+          'If you have an account, use Account → Privacy requests to request a copy of your information or an account-deletion review. Authorized support staff verify your identity before approving a data copy. After approval, only the signed-in account holder can download it, for 24 hours. The export includes consent history, member-visible support conversations, your invite code, aggregate sign-up count, any code applied to your account, your fitness-challenge participation and progress dates, your daily step and completed-workout summaries, your loyalty-points balance and earning history, and your saved profile photo when present; it does not list other members by identity. It excludes payment instrument details, login credentials, device tokens, private class links, internal staff notes, and support attachment contents.',
           'Account-deletion requests are reviewed by authorized support staff and are not immediate. MaydanGo may need to verify that a request relates to your account before acting. Some records may need to be retained for service safety, security, or other applicable requirements.',
         ],
       },
@@ -123,6 +125,7 @@ const privacyCopy: Record<Language, {
         title: 'المعلومات التي تتعامل معها MaydanGo',
         paragraphs: [
           'بحسب الميزات التي تستخدمها، قد تشمل المعلومات اسم الحساب والبريد الإلكتروني وتفاصيل الملف الشخصي والأهلية وحالة العضوية والحجوزات وقائمة الانتظار وتسجيلات الحضور والتقدم في الدورات والدورات التي تحفظها للرجوع إليها لاحقاً وبلاغات الدعم أو السلامة التي تختار إرسالها. ويشمل التقدم في الدورات المسجّل فيها الدروس التي تفتحها وآخر موضع محفوظ للتشغيل كي تتمكن من المتابعة لاحقاً.',
+          'إذا فعّلت الربط اختيارياً وطلبت المزامنة، يقرأ MaydanGo إجمالي الخطوات اليومي وعدد التمارين المكتملة من Apple Health على iOS أو Health Connect على Android. ولا يُرسل إلى MaydanGo ولا يُحفظ فيه سوى ملخصات يومية عن آخر 30 يوماً. تُعالج جلسات التمرين على جهازك فقط لحساب العدد اليومي، ولا تُرفع تفاصيلها الفردية. ولا تطلب هذه الميزة معدل نبض القلب أو النوم أو الموقع أو مسارات التمارين.',
           'إذا انضممت إلى تحدٍ رياضي، تسجل MaydanGo مشاركتك وتقدمك بالأيام النشطة. يمكنك تسجيل أيام التمرين بنفسك، وقد تُحتسب تلقائياً الزيارات المؤهلة التي يؤكدها الشريك. يظهر تقدمك في حسابك ويُدرج في نسخة بياناتك؛ ولا يظهر في لوحة ترتيب عامة أو في صفحة إدارة التحديات.',
           'نقاط الولاء في MaydanGo غير نقدية: تُضاف نقطة واحدة عن كل زيارة مؤهلة يؤكدها الشريك، ونقطة عن كل دورة تُكملها. لا يظهر رصيدك وسجل نقاطك إلا لك، ويُدرجان في نسخة بياناتك. لا يمكن استبدال النقاط حالياً، ولا تغيّر صلاحية العضوية أو رصيد الزيارات.',
           'قد يستخدم تطبيق الهاتف موقع جهازك عند بدء تسجيل حضور يعتمد على الموقع. يُستخدم ذلك لدعم تسجيل الحضور، وليس لتتبع تحركاتك باستمرار.',
@@ -135,6 +138,7 @@ const privacyCopy: Record<Language, {
         title: 'كيفية استخدام المعلومات',
         paragraphs: [
           'تستخدم MaydanGo هذه المعلومات لتسجيل الدخول، وإظهار الخدمات المتاحة لحسابك، وإدارة الحجوزات وقوائم الانتظار، وتأكيد الحضور، وتقديم الدورات والجلسات عبر الإنترنت، والرد على بلاغات الدعم والسلامة، وحماية الخدمة من إساءة الاستخدام.',
+          'تبقى ملخصات النشاط خاصة بحسابك. تتم المزامنة يدوياً بعد منح إذن الجهاز، ولا تُستخدم الملخصات لاحتساب التحديات الرياضية أو لاتخاذ قرارات بشأن العضوية أو الإعلانات أو صلاحية الحجز.',
           'إذا أدخلت رمز دعوة من عضو، تربطه MaydanGo بحسابك لاحتساب التسجيل بعد تأكيد بريدك الإلكتروني وقبول السياسات المطلوبة. يرى صاحب الدعوة العدد الإجمالي فقط، ولا يرى هويتك. لا يوفر نظام الدعوات مكافآت ولا يرسل رسائل ترويجية تلقائية.',
           'لا تُستخدم المعلومات لتأكيد مكان أو دخول عضوية أو نتيجة صحية أو توفر خدمة لم يتم تأكيدها في التطبيق أو من الجهة المقدمة.',
         ],
@@ -145,7 +149,7 @@ const privacyCopy: Record<Language, {
         paragraphs: [
           'قد يستخدم موظفو MaydanGo المخوّلون المعلومات لتشغيل الخدمة والرد على الطلبات. وقد يرى شريك المرفق تفاصيل الحجز والحضور اللازمة لاستضافة الجلسة وتأكيد الزيارة. ويقتصر وصول المدربين على الدورات أو الجلسات المسندة إليهم.',
           'يستطيع مسؤول الشركة إدارة تسجيل الموظفين، ولا يحصل عبر مساحة الشركة على سجل النشاط الفردي للأعضاء أو سجلاتهم المالية الشخصية.',
-          'تتولى Clerk تسجيل الدخول والتحقق من الحساب. وتوفر Replit استضافة التطبيق والبنية التحتية التي تشغّل MaydanGo، بما فيها قاعدة البيانات وتخزين الملفات المهيآن. لم تُحدد في هذه المسودة جهة خارجية أخرى تتعامل مع البيانات. وسيُشرح استخدام أي مزود للدفع قبل تفعيل ميزات الدفع.',
+          'تتولى Clerk تسجيل الدخول والتحقق من الحساب. وتوفر Replit استضافة التطبيق والبنية التحتية التي تشغّل MaydanGo، بما فيها قاعدة البيانات وتخزين الملفات المهيآن. إذا اخترت ربط Apple Health أو Health Connect، فسيكون مصدراً للقراءة فقط لملخصات النشاط المذكورة أعلاه؛ ولا يكتب MaydanGo بيانات النشاط في هاتين الخدمتين. وسيُشرح استخدام أي مزود للدفع قبل تفعيل ميزات الدفع.',
         ],
       },
       {
@@ -184,7 +188,7 @@ const privacyCopy: Record<Language, {
         id: 'rights',
         title: 'طلبات الخصوصية',
         paragraphs: [
-          'إذا كان لديك حساب، استخدم الحساب ← طلبات الخصوصية لطلب نسخة من معلوماتك أو مراجعة حذف الحساب. يتحقق فريق الدعم المخوّل من هويتك قبل الموافقة على نسخة البيانات. بعد الموافقة، يستطيع صاحب الحساب المسجّل فقط تنزيلها خلال 24 ساعة. تتضمن النسخة سجل الموافقات ومحادثات الدعم الظاهرة لك ورمز دعوتك والعدد الإجمالي للتسجيلات وأي رمز طُبق على حسابك ومشاركتك في التحديات وأيام التقدم فيها ورصيد نقاط الولاء وسجل اكتسابها وصورتك الشخصية المحفوظة إن وُجدت، ولا تعرض هويات الأعضاء الآخرين. ولا تتضمن تفاصيل أدوات الدفع أو بيانات الدخول أو رموز الأجهزة أو روابط الصفوف الخاصة أو ملاحظات الموظفين الداخلية أو محتوى مرفقات الدعم.',
+          'إذا كان لديك حساب، استخدم الحساب ← طلبات الخصوصية لطلب نسخة من معلوماتك أو مراجعة حذف الحساب. يتحقق فريق الدعم المخوّل من هويتك قبل الموافقة على نسخة البيانات. بعد الموافقة، يستطيع صاحب الحساب المسجّل فقط تنزيلها خلال 24 ساعة. تتضمن النسخة سجل الموافقات ومحادثات الدعم الظاهرة لك ورمز دعوتك والعدد الإجمالي للتسجيلات وأي رمز طُبق على حسابك ومشاركتك في التحديات وأيام التقدم فيها وملخصات الخطوات اليومية والتمارين المكتملة ورصيد نقاط الولاء وسجل اكتسابها وصورتك الشخصية المحفوظة إن وُجدت، ولا تعرض هويات الأعضاء الآخرين. ولا تتضمن تفاصيل أدوات الدفع أو بيانات الدخول أو رموز الأجهزة أو روابط الصفوف الخاصة أو ملاحظات الموظفين الداخلية أو محتوى مرفقات الدعم.',
           'يراجع فريق الدعم المخوّل طلبات حذف الحساب، ولا يتم الحذف فوراً. قد تحتاج MaydanGo إلى التحقق من أن الطلب يخص حسابك قبل اتخاذ إجراء. وقد يلزم الاحتفاظ ببعض السجلات لأغراض سلامة الخدمة أو أمنها أو لمتطلبات أخرى واجبة التطبيق.',
         ],
       },
@@ -220,6 +224,7 @@ const privacyCopy: Record<Language, {
         title: 'زانیارییەکانی MaydanGo',
         paragraphs: [
           'بەپێی ئەو تایبەتمەندییانەی بەکاریان دەهێنیت، زانیارییەکان لەوانەیە ناوی هەژمار و ئیمەیڵ، وردەکاریی پڕۆفایل و شایستەیی، دۆخی ئەندامێتی، حجز، لیستی چاوەڕوانی، تۆماری حزوور، پێشکەوتنی کۆرس، کۆرسەکان کە بۆ گەڕانەوەی دواتر پاشەکەوتیان دەکەیت، و ڕاپۆرتی پشتگیری یان سەلامەتی بگرێتەوە کە خۆت دەنێریت. لە کۆرسەکانی تۆمارکراویتدا، پێشکەوتن ئەو وانانە دەگرێتەوە کە دەیکەیتەوە و دوا شوێنی پەخشکردنی پاشەکەوتکراو، بۆ ئەوەی دواتر لەوێوە بەردەوام بیت.',
+          'ئەگەر بە هەڵبژاردەی خۆت پەیوەندییەک چالاک بکەیت و داوای هاوکاتسازی بکەیت، MaydanGo کۆی ڕۆژانەی هەنگاوەکان و ژمارەی ڕاهێنانە تەواوکراوەکان لە Apple Health لە iOS یان Health Connect لە Android دەخوێنێتەوە. تەنها پوختە ڕۆژانەکانی 30 ڕۆژی ڕابردوو بۆ MaydanGo دەنێردرێن و لەوێ هەڵدەگیرێن. دانیشتنەکانی ڕاهێنان تەنها لەسەر ئامێرەکەت بۆ ژماردنی ژمارەی ڕۆژانە بەکاردەهێنرێن؛ وردەکارییە تاکەکەسییەکان نانێردرێن. ئەم تایبەتمەندییە دڵلێدان، خەو، شوێن یان ڕێڕەوی ڕاهێنان داوا ناکات.',
           'ئەگەر بەشداری ئاستەنگێکی وەرزشی بکەیت، MaydanGo بەشداری و پێشکەوتنی ڕۆژە چالاکەکانت تۆمار دەکات. دەتوانیت ڕۆژانی ڕاهێنان خۆت تۆمار بکەیت، و سەردانی گونجاو کە هاوبەش پشتڕاستی دەکاتەوە لەوانەیە خۆکارانە بژمێردرێت. پێشکەوتنەکەت لە هەژمارەکەتدا پیشان دەدرێت و لە کۆپیی داتاکەتدا دەبێت؛ لە خشتەی ڕیزبەندیی گشتی یان پەڕەی بەڕێوەبردنی ئاستەنگەکاندا پیشان نادرێت.',
           'خاڵەکانی وەفاداری MaydanGo پارە نین: بۆ هەر سەردانێکی گونجاو کە هاوبەش پشتڕاستی بکاتەوە و هەر کۆرسێک کە تەواوی بکەیت، یەک خاڵ زیاد دەکرێت. باڵانس و مێژووی خاڵەکانت تەنها بۆ خۆت دەردەکەوێت و لە کۆپیی داتاکەتدا دەبێت. ئێستا ناتوانرێت خاڵەکان بە شتێکی تر بگۆڕدرێن و دەستگەیشتن بە ئەندامێتی یان باڵانسی سەردان ناگۆڕن.',
           'ئەپی مۆبایل لەوانەیە کاتی دەستپێکردنی حزووری پشتبەستوو بە شوێن، شوێنی ئامێرەکەت بەکاربهێنێت. ئەمە بۆ پشتگیریی تۆمارکردنی حزوورە، نەک بۆ بەدواداچوونی بەردەوامی جووڵەکانت.',
@@ -232,6 +237,7 @@ const privacyCopy: Record<Language, {
         title: 'بۆچی زانیاری بەکاردەهێنرێت',
         paragraphs: [
           'MaydanGo ئەم زانیارییانە بەکاردەهێنێت بۆ چوونەژوورەوە، پیشاندانی خزمەتگوزارییە بەردەستەکانی هەژمارەکەت، بەڕێوەبردنی حجز و لیستی چاوەڕوانی، پشتڕاستکردنەوەی حزوور، پێشکەشکردنی کۆرس و وانەی ئۆنلاین، وەڵامدانەوەی ڕاپۆرتی پشتگیری یان سەلامەتی، و پاراستنی خزمەتگوزاری لە بەکارهێنانی خراپ.',
+          'پوختەکانی چالاکی تایبەت بە هەژمارەکەتن. هاوکاتسازی بە دەستییە و تەنها دوای ڕێگەپێدانی ئامێر دەکرێت؛ ئەم پوختانە بۆ ژماردنی ئاستەنگی وەرزشی، بڕیاری ئەندامێتی، ڕیکلام یان دەستگەیشتنی حجز بەکارناهێنرێن.',
           'ئەگەر کۆدی بانگهێشتکردنی ئەندامێک بنووسیت، MaydanGo کۆدەکە بە هەژمارەکەتەوە دەبەستێتەوە بۆ ژماردنی تۆمارکردن، دوای پشتڕاستکردنەوەی ئیمەیڵ و پەسەندکردنی سیاسەتە پێویستەکان. بانگهێشکار تەنها ژمارەی گشتی دەبینێت، نەک ناسنامەی تۆ. ئەم سیستەمە خەڵات نادات و پەیامی بازاڕکردنی ئۆتۆماتیکی نانێرێت.',
           'زانیاری بەکارناهێنرێت بۆ بەڵێندانی شوێن، دەستگەیشتنی ئەندامێتی، ئەنجامی تەندروستی یان بەردەستبوونی خزمەتگوزارییەک کە لە ئەپ یان لەلایەن دابینکەرەوە پشتڕاست نەکراوەتەوە.',
         ],
@@ -242,7 +248,7 @@ const privacyCopy: Record<Language, {
         paragraphs: [
           'کارمەندانی ڕێگەپێدراوی MaydanGo لەوانەیە زانیاری بەکاربهێنن بۆ بەڕێوەبردنی خزمەتگوزاری و وەڵامدانەوەی داواکاری. هاوبەشی شوێن لەوانەیە وردەکاریی حجز و حزووری پێویستی بۆ پێشکەشکردنی وانە و پشتڕاستکردنەوەی سەردان ببینێت. دەستگەیشتنی ڕاهێنەر سنووردارە بەو کۆرس و وانانەی پێی سپێردراون.',
           'بەڕێوەبەری کۆمپانیا دەتوانێت تۆمارکردنی کارمەندان بەڕێوەببات. لە ڕێگەی شوێنی کۆمپانیاوە تۆماری چالاکیی تاکەکەسی یان دارایی کەسی ئەندامان نابینێت.',
-          'Clerk چوونەژوورەوە و پشتڕاستکردنەوەی هەژمار بەڕێوەدەبات. Replit میوانداری ئەپ و بنەمای ژێرخانەیی MaydanGo دابین دەکات، لەوانە بنکەدراوە و هەڵگرتنی فایل کە ڕێکخراون. لەم ڕەشنووسەدا دابینکەری دەرەکیی تری مامەڵەکار بە داتا دیاری نەکراوە. بەکارهێنانی هەر دابینکەرێکی پارەدان پێش چالاککردنی پارەدان ڕوون دەکرێتەوە.',
+          'Clerk چوونەژوورەوە و پشتڕاستکردنەوەی هەژمار بەڕێوەدەبات. Replit میوانداری ئەپ و بنەمای ژێرخانەیی MaydanGo دابین دەکات، لەوانە بنکەدراوە و هەڵگرتنی فایل کە ڕێکخراون. ئەگەر Apple Health یان Health Connect بە هەڵبژاردە ببەستیتەوە، تەنها سەرچاوەیەکی خوێندنەوەی پوختەکانی چالاکییە؛ MaydanGo داتای چالاکی بۆ ئەم خزمەتگوزارییانە نانێرێتەوە. بەکارهێنانی هەر دابینکەرێکی پارەدان پێش چالاککردنی پارەدان ڕوون دەکرێتەوە.',
         ],
       },
       {
@@ -281,7 +287,7 @@ const privacyCopy: Record<Language, {
         id: 'rights',
         title: 'داواکارییەکانی تایبەتمەندی',
         paragraphs: [
-          'ئەگەر هەژمارت هەیە، لە هەژمار ← داواکارییەکانی تایبەتمەندی داوای کۆپیی زانیارییەکانت یان پێداچوونەوە بۆ سڕینەوەی هەژمار بکە. تیمی پشتگیریی ڕێگەپێدراو پێش پەسەندکردنی کۆپیی داتا ناسنامەکەت پشتڕاست دەکاتەوە. دوای پەسەندکردن، تەنها خاوەنی هەژماری چوونەژوورەوە دەتوانێت لە ماوەی ٢٤ کاتژمێردا دایبگرێت. کۆپییەکە مێژووی ڕەزامەندی، گفتوگۆکانی پشتگیریی بینراو بۆ تۆ، کۆدی بانگهێشتکردنت، کۆی گشتیی تۆمارکردنەکان، هەر کۆدێکی بەکارهاتوو لە هەژمارەکەت، بەشداری و ڕۆژەکانی پێشکەوتنی ئاستەنگی وەرزشی، باڵانسی خاڵەکانی وەفاداری و مێژووی بەدەستهێنانیان، و وێنە کەسییە پاشەکەوتکراوەکەت ئەگەر هەبێت دەگرێتەوە؛ ناسنامەی ئەندامانی تر نیشان نادات. وردەکاریی پارەدان، زانیاریی چوونەژوورەوە، تۆکنی ئامێر، بەستەری وانەی تایبەت، تێبینیی ناوخۆی کارمەندان و ناوەڕۆکی هاوپێچەکانی پشتگیری تێدا نایەت.',
+          'ئەگەر هەژمارت هەیە، لە هەژمار ← داواکارییەکانی تایبەتمەندی داوای کۆپیی زانیارییەکانت یان پێداچوونەوە بۆ سڕینەوەی هەژمار بکە. تیمی پشتگیریی ڕێگەپێدراو پێش پەسەندکردنی کۆپیی داتا ناسنامەکەت پشتڕاست دەکاتەوە. دوای پەسەندکردن، تەنها خاوەنی هەژماری چوونەژوورەوە دەتوانێت لە ماوەی ٢٤ کاتژمێردا دایبگرێت. کۆپییەکە مێژووی ڕەزامەندی، گفتوگۆکانی پشتگیریی بینراو بۆ تۆ، کۆدی بانگهێشتکردنت، کۆی گشتیی تۆمارکردنەکان، هەر کۆدێکی بەکارهاتوو لە هەژمارەکەت، بەشداری و ڕۆژەکانی پێشکەوتنی ئاستەنگی وەرزشی، پوختەی هەنگاوە ڕۆژانەکان و ڕاهێنانە تەواوکراوەکان، باڵانسی خاڵەکانی وەفاداری و مێژووی بەدەستهێنانیان، و وێنە کەسییە پاشەکەوتکراوەکەت ئەگەر هەبێت دەگرێتەوە؛ ناسنامەی ئەندامانی تر نیشان نادات. وردەکاریی پارەدان، زانیاریی چوونەژوورەوە، تۆکنی ئامێر، بەستەری وانەی تایبەت، تێبینیی ناوخۆی کارمەندان و ناوەڕۆکی هاوپێچەکانی پشتگیری تێدا نایەت.',
           'تیمی پشتگیریی ڕێگەپێدراو داواکاریی سڕینەوەی هەژمار پێداچوونەوەی بۆ دەکات و سڕینەوە دەستبەجێ نییە. لەوانەیە MaydanGo پێش هەر کارێک پشتڕاستی بکاتەوە کە داواکارییەکە پەیوەندی بە هەژمارەکەتەوە هەیە. هەندێک تۆمار لەوانەیە بۆ پاراستنی سەلامەتی و ئاسایشی خزمەتگوزاری یان داواکارییەکانی تر پێویست بێت بهێڵدرێنەوە.',
         ],
       },
