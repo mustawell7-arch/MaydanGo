@@ -33,6 +33,10 @@ const copy = {
     facility: 'Facility',
     chooseFacility: 'Choose a facility',
     reviewedOn: 'Inspection date',
+    inspectionType: 'Visit type',
+    routineInspection: 'Routine inspection',
+    mysteryVisit: 'Unannounced mystery visit',
+    mysteryVisitNote: 'Record completed inspections only. Findings become visible to the facility partner after submission.',
     nextReview: 'Next review',
     licenceExpiry: 'Licence expiry',
     insuranceExpiry: 'Insurance expiry',
@@ -364,6 +368,7 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
     }
     const input: FacilityQualityAssessmentInput = {
       facilityId,
+      inspectionType: String(values.get('inspectionType') ?? 'routine') as FacilityQualityAssessmentInput['inspectionType'],
       reviewedOn: String(values.get('reviewedOn') ?? ''),
       nextReviewOn: String(values.get('nextReviewOn') ?? '') || null,
       licenceExpiresOn: String(values.get('licenceExpiresOn') ?? '') || null,
@@ -663,6 +668,10 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
       {qualityAdmin && <form id="facility-quality-inspection-form" onSubmit={event => void submitAssessment(event)} className="grid content-start gap-4 rounded-3xl border border-[#ddd7c6] bg-[#fffdf7] p-5 sm:p-6">
         <div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a76445]">{t(lang, 'newInspection')}</p><h3 className="mt-2 font-display text-xl font-bold">{t(lang, 'hygiene')} · {t(lang, 'safety')}</h3></div>
         <label className="text-xs font-semibold">{t(lang, 'facility')}<select required value={facilityId} onChange={event => setFacilityId(event.target.value)} className={inputClass}><option value="">{t(lang, 'chooseFacility')}</option>{facilities.map(item => <option key={item.id} value={item.id}>{item.facility} · {item.city}</option>)}</select></label>
+        <label className="text-xs font-semibold">{t(lang, 'inspectionType')}<select name="inspectionType" defaultValue="routine" className={inputClass}>
+          <option value="routine">{t(lang, 'routineInspection')}</option><option value="mystery">{t(lang, 'mysteryVisit')}</option>
+        </select></label>
+        <p className="rounded-xl bg-[#f7f4e9] p-3 text-xs leading-5 text-[#687a71]">{t(lang, 'mysteryVisitNote')}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-semibold">{t(lang, 'reviewedOn')}<input required type="date" name="reviewedOn" defaultValue={dateInput(new Date())} className={inputClass} /></label>
           <label className="text-xs font-semibold">{t(lang, 'nextReview')}<input type="date" name="nextReviewOn" className={inputClass} /></label>
@@ -700,7 +709,7 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
         <h3 id="quality-inspection-history" className="font-display text-xl font-bold">{t(lang, 'inspectionHistory')}</h3>
         <div className="mt-4 space-y-3">
           {query.data.assessments.length ? query.data.assessments.map(item => <article key={item.id} id={`quality-assessment-${item.id}`} className="rounded-2xl border border-[#e7e1d4] bg-[#fbf9f1] p-4">
-            <div className="flex flex-wrap items-start justify-between gap-2"><div><h4 className="font-bold">{item.facility} · {item.city}</h4><p className="mt-1 text-xs text-[#687a71]">{t(lang, 'reviewedOn')}: {dateLabel(item.reviewedOn, lang)}</p></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${item.status === 'approved' ? 'bg-[#e1efdf] text-[#2d6d4a]' : item.status === 'suspended' ? 'bg-[#f2dfd5] text-[#9a4435]' : 'bg-[#fff0d6] text-[#8a5b20]'}`}>{statusLabel(item.status)}</span></div>
+            <div className="flex flex-wrap items-start justify-between gap-2"><div><h4 className="font-bold">{item.facility} · {item.city}</h4><p className="mt-1 text-xs text-[#687a71]">{t(lang, 'reviewedOn')}: {dateLabel(item.reviewedOn, lang)}</p></div><div className="flex flex-wrap gap-2"><span data-testid={`inspection-type-${item.id}`} className="rounded-full bg-[#e5eee7] px-2.5 py-1 text-[10px] font-bold text-[#315d4d]">{t(lang, item.inspectionType === 'mystery' ? 'mysteryVisit' : 'routineInspection')}</span><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${item.status === 'approved' ? 'bg-[#e1efdf] text-[#2d6d4a]' : item.status === 'suspended' ? 'bg-[#f2dfd5] text-[#9a4435]' : 'bg-[#fff0d6] text-[#8a5b20]'}`}>{statusLabel(item.status)}</span></div></div>
             <p className="mt-3 text-sm leading-6 text-[#51665e]">{item.findings}</p>
             <div className="mt-3 grid gap-2 text-xs text-[#687a71] sm:grid-cols-2">
               <p>{t(lang, 'nextReview')}: {dateLabel(item.nextReviewOn, lang)}</p>

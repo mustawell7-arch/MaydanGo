@@ -10779,6 +10779,7 @@ export const GetFacilityQualityControlResponse = zod.object({
   "partnerName": zod.string(),
   "facility": zod.string(),
   "city": zod.string(),
+  "inspectionType": zod.enum(['routine', 'mystery']),
   "reviewedOn": zod.coerce.date(),
   "nextReviewOn": zod.coerce.date().nullable(),
   "licenceExpiresOn": zod.coerce.date().nullable(),
@@ -11193,6 +11194,7 @@ export const UpsertFacilityEmergencyContactResponse = zod.object({
 
 export const createFacilityQualityAssessmentBodyFacilityIdMax = 160;
 
+export const createFacilityQualityAssessmentBodyInspectionTypeDefault = `routine`;
 export const createFacilityQualityAssessmentBodyFindingsMin = 5;
 export const createFacilityQualityAssessmentBodyFindingsMax = 2000;
 
@@ -11202,6 +11204,7 @@ export const createFacilityQualityAssessmentBodyCorrectiveActionMax = 2000;
 
 export const CreateFacilityQualityAssessmentBody = zod.object({
   "facilityId": zod.string().min(1).max(createFacilityQualityAssessmentBodyFacilityIdMax),
+  "inspectionType": zod.enum(['routine', 'mystery']).default(createFacilityQualityAssessmentBodyInspectionTypeDefault),
   "reviewedOn": zod.coerce.date(),
   "nextReviewOn": zod.coerce.date().nullable(),
   "licenceExpiresOn": zod.coerce.date().nullable(),
@@ -11231,6 +11234,7 @@ export const CreateFacilityQualityAssessmentResponse = zod.object({
   "partnerName": zod.string(),
   "facility": zod.string(),
   "city": zod.string(),
+  "inspectionType": zod.enum(['routine', 'mystery']),
   "reviewedOn": zod.coerce.date(),
   "nextReviewOn": zod.coerce.date().nullable(),
   "licenceExpiresOn": zod.coerce.date().nullable(),
@@ -11279,6 +11283,7 @@ export const UpdateFacilityQualityAssessmentResponse = zod.object({
   "partnerName": zod.string(),
   "facility": zod.string(),
   "city": zod.string(),
+  "inspectionType": zod.enum(['routine', 'mystery']),
   "reviewedOn": zod.coerce.date(),
   "nextReviewOn": zod.coerce.date().nullable(),
   "licenceExpiresOn": zod.coerce.date().nullable(),

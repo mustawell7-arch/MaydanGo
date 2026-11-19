@@ -5459,6 +5459,14 @@ export interface FacilityQualityFacility {
   city: string;
 }
 
+export type FacilityQualityAssessmentInspectionType = typeof FacilityQualityAssessmentInspectionType[keyof typeof FacilityQualityAssessmentInspectionType];
+
+
+export const FacilityQualityAssessmentInspectionType = {
+  routine: 'routine',
+  mystery: 'mystery',
+} as const;
+
 export type FacilityQualityAssessmentStatus = typeof FacilityQualityAssessmentStatus[keyof typeof FacilityQualityAssessmentStatus];
 
 
@@ -5475,6 +5483,7 @@ export interface FacilityQualityAssessment {
   partnerName: string;
   facility: string;
   city: string;
+  inspectionType: FacilityQualityAssessmentInspectionType;
   reviewedOn: string;
   /** @nullable */
   nextReviewOn: string | null;
@@ -5496,6 +5505,14 @@ export interface FacilityQualityAssessment {
   updatedAt: string;
 }
 
+export type FacilityQualityAssessmentInputInspectionType = typeof FacilityQualityAssessmentInputInspectionType[keyof typeof FacilityQualityAssessmentInputInspectionType];
+
+
+export const FacilityQualityAssessmentInputInspectionType = {
+  routine: 'routine',
+  mystery: 'mystery',
+} as const;
+
 export type FacilityQualityAssessmentInputStatus = typeof FacilityQualityAssessmentInputStatus[keyof typeof FacilityQualityAssessmentInputStatus];
 
 
@@ -5511,6 +5528,7 @@ export interface FacilityQualityAssessmentInput {
      * @maxLength 160
      */
   facilityId: string;
+  inspectionType?: FacilityQualityAssessmentInputInspectionType;
   reviewedOn: string;
   /** @nullable */
   nextReviewOn: string | null;

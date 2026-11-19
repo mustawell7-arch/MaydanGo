@@ -4,6 +4,7 @@ import { facilityProfiles } from "./facilities";
 import { partners } from "./operations";
 
 export type QualityCheckStatus = "pass" | "action_required" | "not_applicable";
+export type FacilityInspectionType = "routine" | "mystery";
 export type FacilityHygieneChecklist = {
   cleanliness: QualityCheckStatus;
   changingAreas: QualityCheckStatus;
@@ -21,6 +22,7 @@ export const facilityQualityAssessments = pgTable("facility_quality_assessments"
   id: text("id").primaryKey(),
   facilityId: text("facility_id").notNull().references(() => facilityProfiles.id, { onDelete: "restrict" }),
   partnerId: text("partner_id").notNull().references(() => partners.id, { onDelete: "restrict" }),
+  inspectionType: text("inspection_type").$type<FacilityInspectionType>().notNull().default("routine"),
   reviewedOn: date("reviewed_on", { mode: "string" }).notNull(),
   nextReviewOn: date("next_review_on", { mode: "string" }),
   licenceExpiresOn: date("licence_expires_on", { mode: "string" }),
@@ -40,6 +42,7 @@ export const facilityQualityAssessments = pgTable("facility_quality_assessments"
   index("facility_quality_assessment_partner_date").on(table.partnerId, table.reviewedOn),
   index("facility_quality_assessment_status_due").on(table.status, table.correctiveDueOn),
   check("facility_quality_assessment_status_valid", sql`${table.status} IN ('approved', 'action_required', 'suspended')`),
+  check("facility_quality_assessment_inspection_type_valid", sql`${table.inspectionType} IN ('routine', 'mystery')`),
 ]);
 
 export const facilityQualityIncidents = pgTable("facility_quality_incidents", {

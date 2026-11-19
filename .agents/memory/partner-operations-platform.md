@@ -20,3 +20,9 @@ Facility quality review thresholds are three linked facility/safety support tick
 **Why:** the user selected these complaint and rating thresholds for MaydanGo.
 
 **How to apply:** count only facility/safety tickets linked to a member booking or check-in; use published reviews from confirmed visits, and do not automatically suspend facilities or change bookings based on either signal.
+
+Mystery visits are recorded after completion as unannounced quality assessments. The partner can review findings after submission; there is no advance notice or scheduling/assignment workflow.
+
+**Why:** the PDF names mystery visits without defining a scheduling process, so the initial workflow stays limited to auditable completed inspections.
+
+**How to apply:** do not notify the partner before a mystery visit is recorded; ask before adding visit scheduling, external auditors, or a separate assignment workflow.

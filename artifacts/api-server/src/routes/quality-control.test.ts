@@ -325,11 +325,21 @@ test("facility quality records are scoped, validated, and audited", async () => 
     correctiveAction: "Complete the cleaning review and record the result.",
     correctiveDueOn: dateOffset(7),
   };
-  const createdAssessment = await call("/operations/quality/assessments", adminUser, "POST", assessmentBody);
+  const futureMysteryAssessment = await call("/operations/quality/assessments", adminUser, "POST", {
+    ...assessmentBody,
+    inspectionType: "mystery",
+    reviewedOn: dateOffset(1),
+  });
+  assert.equal(futureMysteryAssessment.status, 400);
+  const createdAssessment = await call("/operations/quality/assessments", adminUser, "POST", {
+    ...assessmentBody,
+    inspectionType: "mystery",
+  });
   assert.equal(createdAssessment.status, 201);
-  const assessment = createdAssessment.data as { id: string; status: string };
+  const assessment = createdAssessment.data as { id: string; status: string; inspectionType: string };
   assessmentIds.push(assessment.id);
   assert.equal(assessment.status, "action_required");
+  assert.equal(assessment.inspectionType, "mystery");
 
   const adminDashboard = await call("/operations/quality", adminUser);
   assert.equal(adminDashboard.status, 200);
@@ -358,7 +368,9 @@ test("facility quality records are scoped, validated, and audited", async () => 
     correctiveDueOn: null,
   });
   assert.equal(dueSoonAssessment.status, 201);
-  const dueSoonAssessmentId = (dueSoonAssessment.data as { id: string }).id;
+  const dueSoonAssessmentData = dueSoonAssessment.data as { id: string; inspectionType: string };
+  const dueSoonAssessmentId = dueSoonAssessmentData.id;
+  assert.equal(dueSoonAssessmentData.inspectionType, "routine");
   assessmentIds.push(dueSoonAssessmentId);
   const overdueAssessment = await call("/operations/quality/assessments", adminUser, "POST", {
     ...assessmentBody,

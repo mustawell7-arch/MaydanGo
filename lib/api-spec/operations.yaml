@@ -6023,7 +6023,7 @@ components:
     FacilityQualityAssessment:
       type: object
       additionalProperties: false
-      required: [id, facilityId, partnerId, partnerName, facility, city, reviewedOn, nextReviewOn, licenceExpiresOn, insuranceExpiresOn, hygieneChecklist, safetyChecklist, status, findings, correctiveAction, correctiveDueOn, createdBy, updatedBy, createdAt, updatedAt]
+      required: [id, facilityId, partnerId, partnerName, facility, city, inspectionType, reviewedOn, nextReviewOn, licenceExpiresOn, insuranceExpiresOn, hygieneChecklist, safetyChecklist, status, findings, correctiveAction, correctiveDueOn, createdBy, updatedBy, createdAt, updatedAt]
       properties:
         id: { type: string }
         facilityId: { type: string }
@@ -6031,6 +6031,7 @@ components:
         partnerName: { type: string }
         facility: { type: string }
         city: { type: string }
+        inspectionType: { type: string, enum: [routine, mystery] }
         reviewedOn: { type: string, format: date }
         nextReviewOn: { type: ["string", "null"], format: date }
         licenceExpiresOn: { type: ["string", "null"], format: date }
@@ -6051,6 +6052,7 @@ components:
       required: [facilityId, reviewedOn, nextReviewOn, licenceExpiresOn, insuranceExpiresOn, hygieneChecklist, safetyChecklist, status, findings, correctiveAction, correctiveDueOn]
       properties:
         facilityId: { type: string, minLength: 1, maxLength: 160 }
+        inspectionType: { type: string, enum: [routine, mystery], default: routine }
         reviewedOn: { type: string, format: date }
         nextReviewOn: { type: ["string", "null"], format: date }
         licenceExpiresOn: { type: ["string", "null"], format: date }

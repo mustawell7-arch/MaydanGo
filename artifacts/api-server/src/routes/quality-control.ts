@@ -152,6 +152,7 @@ function isCalendarDate(value: string | null) {
 }
 
 function assessmentError(input: {
+  inspectionType: "routine" | "mystery";
   reviewedOn: Date;
   nextReviewOn: Date | null;
   status: QualityStatus;
@@ -165,6 +166,9 @@ function assessmentError(input: {
   const correctiveDueOn = toDateOnly(input.correctiveDueOn);
   if (!isCalendarDate(reviewedOn) || !isCalendarDate(nextReviewOn) || !isCalendarDate(correctiveDueOn)) {
     return "Use valid calendar dates.";
+  }
+  if (input.inspectionType === "mystery" && reviewedOn && reviewedOn > baghdadDateOnly()) {
+    return "Record an unannounced mystery visit after it has occurred.";
   }
   if (reviewedOn && nextReviewOn && nextReviewOn <= reviewedOn) {
     return "The next review date must be after the inspection date.";
@@ -192,6 +196,7 @@ async function assessmentDetail(id: string) {
     partnerName: partners.name,
     facility: facilityProfiles.facility,
     city: facilityProfiles.city,
+    inspectionType: facilityQualityAssessments.inspectionType,
     reviewedOn: facilityQualityAssessments.reviewedOn,
     nextReviewOn: facilityQualityAssessments.nextReviewOn,
     licenceExpiresOn: facilityQualityAssessments.licenceExpiresOn,
@@ -290,6 +295,7 @@ router.get("/", async (_req, res): Promise<void> => {
       partnerName: partners.name,
       facility: facilityProfiles.facility,
       city: facilityProfiles.city,
+      inspectionType: facilityQualityAssessments.inspectionType,
       reviewedOn: facilityQualityAssessments.reviewedOn,
       nextReviewOn: facilityQualityAssessments.nextReviewOn,
       licenceExpiresOn: facilityQualityAssessments.licenceExpiresOn,
@@ -876,6 +882,7 @@ router.post("/assessments", async (req, res): Promise<void> => {
       id,
       facilityId: facility.id,
       partnerId: facility.partnerId,
+      inspectionType: input.inspectionType ?? "routine",
       reviewedOn: toDateOnly(input.reviewedOn)!,
       nextReviewOn: toDateOnly(input.nextReviewOn),
       licenceExpiresOn: toDateOnly(input.licenceExpiresOn),
@@ -896,6 +903,7 @@ router.post("/assessments", async (req, res): Promise<void> => {
       targetId: id,
       detail: JSON.stringify({
         facilityId: facility.id,
+        inspectionType: input.inspectionType ?? "routine",
         reviewedOn: toDateOnly(input.reviewedOn),
         status: input.status,
         nextReviewOn: toDateOnly(input.nextReviewOn),
