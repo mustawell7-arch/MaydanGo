@@ -5,8 +5,9 @@ import type { Server } from "node:http";
 import { and, eq, inArray } from "drizzle-orm";
 import express from "express";
 import {
-  db, facilityProfiles, facilityQualityAssessments, facilityQualityEmergencyContacts, facilityQualityIncidents,
-  operationAudit, operators, partners, partnerComplianceDocuments, pool,
+  attendance, db, facilityProfiles, facilityQualityAssessments, facilityQualityEmergencyContacts,
+  facilityQualityIncidents, facilityReviews, offerings, operationAudit, operators, partners,
+  partnerComplianceDocuments, pool, reservations, supportTicketLinks, supportTickets,
 } from "@workspace/db";
 import qualityControlRouter from "./quality-control";
 import operationsRouter from "./operations";
@@ -30,6 +31,12 @@ const facilityIds = [facilityA, facilityB];
 const assessmentIds: string[] = [];
 const incidentIds: string[] = [];
 const complianceDocumentIds: string[] = [];
+const qualityReviewIds: string[] = [];
+const qualityAttendanceIds: string[] = [];
+const qualityReservationIds: string[] = [];
+const qualityOfferingIds: string[] = [];
+const complaintTicketIds: string[] = [];
+const complaintLinkIds: string[] = [];
 let server: Server | null = null;
 const dateOffset = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 
@@ -77,6 +84,12 @@ async function call(path: string, userId?: string, method = "GET", body?: unknow
 
 after(async () => {
   if (server) await new Promise<void>(resolve => server!.close(() => resolve()));
+  if (qualityReviewIds.length) await db.delete(facilityReviews).where(inArray(facilityReviews.id, qualityReviewIds));
+  if (complaintLinkIds.length) await db.delete(supportTicketLinks).where(inArray(supportTicketLinks.id, complaintLinkIds));
+  if (complaintTicketIds.length) await db.delete(supportTickets).where(inArray(supportTickets.id, complaintTicketIds));
+  if (qualityAttendanceIds.length) await db.delete(attendance).where(inArray(attendance.id, qualityAttendanceIds));
+  if (qualityReservationIds.length) await db.delete(reservations).where(inArray(reservations.id, qualityReservationIds));
+  if (qualityOfferingIds.length) await db.delete(offerings).where(inArray(offerings.id, qualityOfferingIds));
   if (incidentIds.length) await db.delete(facilityQualityIncidents).where(inArray(facilityQualityIncidents.id, incidentIds));
   if (assessmentIds.length) await db.delete(facilityQualityAssessments).where(inArray(facilityQualityAssessments.id, assessmentIds));
   if (complianceDocumentIds.length) await db.delete(partnerComplianceDocuments).where(inArray(partnerComplianceDocuments.id, complianceDocumentIds));
@@ -122,6 +135,8 @@ test("facility quality records are scoped, validated, and audited", async () => 
     incidents: unknown[];
     expiringDocuments: unknown[];
     reapprovalAlerts: unknown[];
+    complaintAlerts: unknown[];
+    ratingAlerts: unknown[];
     emergencyContacts: unknown[];
     complianceDocuments: unknown[];
   };
@@ -130,8 +145,133 @@ test("facility quality records are scoped, validated, and audited", async () => 
   assert.equal(scopedData.incidents.length, 0);
   assert.equal(scopedData.expiringDocuments.length, 0);
   assert.equal(scopedData.reapprovalAlerts.length, 0);
+  assert.equal(scopedData.complaintAlerts.length, 0);
+  assert.equal(scopedData.ratingAlerts.length, 0);
   assert.equal(scopedData.emergencyContacts.length, 0);
   assert.equal(scopedData.complianceDocuments.length, 0);
+
+  const offeringA = `${prefix}-offering-a`;
+  const offeringB = `${prefix}-offering-b`;
+  qualityOfferingIds.push(offeringA, offeringB);
+  const startsAt = new Date(Date.now() + 60 * 60 * 1000);
+  const endsAt = new Date(startsAt.getTime() + 60 * 60 * 1000);
+  await db.insert(offerings).values([
+    {
+      id: offeringA, kind: "facility", targetId: facilityA, title: "Facility A session", scope: "live",
+      partnerId: partnerA, city: "Baghdad", facility: `${prefix} facility A`, category: "fitness", tiers: [],
+      startsAt, endsAt, cancellationDeadline: startsAt, capacity: 20, active: true,
+    },
+    {
+      id: offeringB, kind: "facility", targetId: facilityB, title: "Facility B session", scope: "live",
+      partnerId: partnerB, city: "Baghdad", facility: `${prefix} facility B`, category: "fitness", tiers: [],
+      startsAt, endsAt, cancellationDeadline: startsAt, capacity: 20, active: true,
+    },
+  ]);
+
+  const complaintCases = [
+    { category: "facility", type: "booking", ageDays: 1 },
+    { category: "safety", type: "booking", ageDays: 5 },
+    { category: "facility", type: "checkin", ageDays: 7 },
+    { category: "booking", type: "booking", ageDays: 2 },
+    { category: "safety", type: "booking", ageDays: 31 },
+  ].map(item => ({
+    ...item,
+    ticketId: randomUUID(),
+    userId: `${prefix}-complaint-member-${randomUUID()}`,
+    createdAt: new Date(Date.now() - item.ageDays * 86_400_000),
+    recordId: randomUUID(),
+  }));
+  const complaintReservationCases = complaintCases.filter(item => item.type === "booking");
+  const complaintCheckinCase = complaintCases.find(item => item.type === "checkin")!;
+  qualityReservationIds.push(...complaintReservationCases.map(item => item.recordId));
+  qualityAttendanceIds.push(complaintCheckinCase.recordId);
+  await db.insert(reservations).values(complaintReservationCases.map(item => ({
+    id: item.recordId, userId: item.userId, offeringId: offeringA, status: "confirmed" as const,
+    createdAt: item.createdAt,
+  })));
+  await db.insert(attendance).values([{
+    id: complaintCheckinCase.recordId,
+    userId: complaintCheckinCase.userId,
+    offeringId: offeringA,
+    checkedInAt: complaintCheckinCase.createdAt,
+    verifiedBy: supportUser,
+    status: "confirmed",
+  }]);
+  complaintTicketIds.push(...complaintCases.map(item => item.ticketId));
+  await db.insert(supportTickets).values(complaintCases.map(item => ({
+    id: item.ticketId, userId: item.userId, subject: "Facility experience",
+    category: item.category, urgent: false, language: "en", status: "open",
+    createdAt: item.createdAt, updatedAt: item.createdAt, lastMessageAt: item.createdAt,
+  })));
+  const complaintLinks = complaintCases.map(item => ({
+    id: randomUUID(),
+    ticketId: item.ticketId,
+    reservationId: item.type === "booking" ? item.recordId : null,
+    attendanceId: item.type === "checkin" ? item.recordId : null,
+    createdBy: supportUser,
+  }));
+  complaintLinkIds.push(...complaintLinks.map(item => item.id));
+  await db.insert(supportTicketLinks).values(complaintLinks);
+
+  const ratingCases = ["A", "B"].flatMap(group => Array.from({ length: 10 }, (_, index) => ({
+    facilityId: group === "A" ? facilityA : facilityB,
+    partnerId: group === "A" ? partnerA : partnerB,
+    offeringId: group === "A" ? offeringA : offeringB,
+    userId: `${prefix}-rating-member-${group}-${index}`,
+    reservationId: randomUUID(),
+    attendanceId: randomUUID(),
+    reviewId: randomUUID(),
+    overallRating: group === "A" ? 4 : 3,
+  })));
+  qualityReservationIds.push(...ratingCases.map(item => item.reservationId));
+  qualityAttendanceIds.push(...ratingCases.map(item => item.attendanceId));
+  qualityReviewIds.push(...ratingCases.map(item => item.reviewId));
+  await db.insert(reservations).values(ratingCases.map(item => ({
+    id: item.reservationId, userId: item.userId, offeringId: item.offeringId, status: "confirmed" as const,
+  })));
+  await db.insert(attendance).values(ratingCases.map(item => ({
+    id: item.attendanceId,
+    userId: item.userId,
+    offeringId: item.offeringId,
+    checkedInAt: new Date(),
+    verifiedBy: supportUser,
+    reservationId: item.reservationId,
+    status: "confirmed",
+  })));
+  await db.insert(facilityReviews).values(ratingCases.map(item => ({
+    id: item.reviewId,
+    attendanceId: item.attendanceId,
+    reservationId: item.reservationId,
+    facilityId: item.facilityId,
+    partnerId: item.partnerId,
+    reviewerUserId: item.userId,
+    overallRating: item.overallRating,
+    categoryRatings: {
+      cleanliness: item.overallRating, staff: item.overallRating, equipment: item.overallRating,
+      instructor: item.overallRating, facilities: item.overallRating, informationAccuracy: item.overallRating,
+    },
+    content: null,
+    status: "published",
+  })));
+
+  const qualitySignalView = await call("/operations/quality", adminUser);
+  assert.equal(qualitySignalView.status, 200);
+  const complaintAlerts = (qualitySignalView.data as {
+    complaintAlerts: Array<{ facilityId: string; complaintCount: number; windowDays: number }>;
+  }).complaintAlerts;
+  assert.deepEqual(complaintAlerts.map(item => [item.facilityId, item.complaintCount, item.windowDays]), [[facilityA, 3, 30]]);
+  const ratingAlerts = (qualitySignalView.data as {
+    ratingAlerts: Array<{ facilityId: string; averageRating: number; reviewCount: number }>;
+  }).ratingAlerts;
+  assert.deepEqual(ratingAlerts.map(item => [item.facilityId, item.averageRating, item.reviewCount]), [[facilityB, 3, 10]]);
+  const partnerAQualitySignals = await call("/operations/quality", partnerUserA);
+  assert.deepEqual((partnerAQualitySignals.data as { complaintAlerts: Array<{ facilityId: string }> })
+    .complaintAlerts.map(item => item.facilityId), [facilityA]);
+  assert.equal((partnerAQualitySignals.data as { ratingAlerts: unknown[] }).ratingAlerts.length, 0);
+  const partnerBQualitySignals = await call("/operations/quality", partnerUserB);
+  assert.equal((partnerBQualitySignals.data as { complaintAlerts: unknown[] }).complaintAlerts.length, 0);
+  assert.deepEqual((partnerBQualitySignals.data as { ratingAlerts: Array<{ facilityId: string }> })
+    .ratingAlerts.map(item => item.facilityId), [facilityB]);
 
   const emergencyContactBody = {
     contactName: "Venue safety lead",

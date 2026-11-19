@@ -14,3 +14,9 @@ Before a partner application can be approved or launched, an authorized staff me
 **Why:** the user chose to require an inspection before partner approval.
 
 **How to apply:** retain each inspection as history, require complete checklist results, and prevent approval or launch until the latest inspection is approved.
+
+Facility quality review thresholds are three linked facility/safety support tickets in a rolling 30-day window, or a published verified-review average below 3.5 after at least 10 reviews. These are human-review prompts, not automatic enforcement.
+
+**Why:** the user selected these complaint and rating thresholds for MaydanGo.
+
+**How to apply:** count only facility/safety tickets linked to a member booking or check-in; use published reviews from confirmed visits, and do not automatically suspend facilities or change bookings based on either signal.

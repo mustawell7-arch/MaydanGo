@@ -13,6 +13,7 @@ import type {
   FacilityQualityIncidentInput, FacilityQualityIncidentUpdate, FacilitySafetyChecklist,
 } from '@workspace/api-client-react';
 import { AlertTriangle, ClipboardCheck, FileCheck2, RefreshCw, ShieldAlert } from 'lucide-react';
+import { Link } from 'wouter';
 import type { PortalLanguage } from '@/pages/partner-operations';
 
 type CheckStatus = 'pass' | 'action_required' | 'not_applicable';
@@ -91,6 +92,19 @@ const copy = {
     recordReapproval: 'Record reinspection',
     viewInspection: 'View inspection history',
     noReapprovals: 'No facility reapprovals are due within 30 days.',
+    qualitySignalsTitle: 'Customer quality review alerts',
+    qualitySignalsIntro: 'These aggregate signals prompt a human review only. They do not prove misconduct, suspend a facility, or change bookings.',
+    complaintSignalsTitle: 'Facility and safety complaints',
+    complaintSignalsDescription: 'Three or more member tickets linked to this facility within the last 30 days.',
+    ratingSignalsTitle: 'Low verified ratings',
+    ratingSignalsDescription: 'Average below 3.5 from at least 10 published reviews of confirmed visits.',
+    complaintCountLabel: 'Linked tickets in 30 days',
+    latestComplaintLabel: 'Latest linked ticket',
+    ratingAverageLabel: 'Average rating',
+    publishedReviewCount: 'Published verified reviews',
+    noComplaintSignals: 'No facilities currently meet the complaint threshold.',
+    noRatingSignals: 'No facilities currently meet the rating threshold.',
+    openSupportDesk: 'Review linked tickets in Support Desk',
     viewQualityRecord: 'View quality record',
     emergencyContacts: 'Facility emergency contacts',
     emergencyContactsIntro: 'Operational contacts are visible only to authorized partner and safety staff.',
@@ -447,6 +461,8 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
   const facilities = query.data.facilities;
   const expiryAlerts = qualityAdmin ? query.data.expiringDocuments : [];
   const reapprovalAlerts = query.data.reapprovalAlerts;
+  const complaintAlerts = query.data.complaintAlerts;
+  const ratingAlerts = query.data.ratingAlerts;
   const emergencyContactByFacility = new Map(query.data.emergencyContacts.map(item => [item.facilityId, item]));
   const statusLabel = (value: AssessmentStatus) => t(lang, value === 'approved' ? 'approved' : value === 'suspended' ? 'suspended' : 'actionRequired');
   const incidentStatusLabel = (value: IncidentStatus) => t(lang, value === 'resolved' ? 'resolved' : value === 'under_review' ? 'underReview' : 'open');
@@ -502,6 +518,56 @@ export function FacilityQualityControl({ lang }: { lang: PortalLanguage }) {
               </li>)}
             </ul>
             : <p className="mt-4 rounded-xl bg-white/85 p-4 text-sm text-[#51665e]" data-testid="text-no-reapproval-alerts">{t(lang, 'noReapprovals')}</p>}
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="facility-quality-signals-title" className="rounded-3xl border border-[#e3d0b2] bg-[#f8f4e8] p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="max-w-3xl">
+          <h3 id="facility-quality-signals-title" className="font-display text-xl font-bold">{t(lang, 'qualitySignalsTitle')}</h3>
+          <p className="mt-1 text-sm leading-6 text-[#687a71]">{t(lang, 'qualitySignalsIntro')}</p>
+        </div>
+        {qualityAdmin && <Link href="/support-desk" className="inline-flex min-h-10 items-center rounded-xl border border-[#d7ccb5] bg-white px-3 py-2 text-xs font-semibold text-[#174d43] hover:bg-[#f3efe2]">
+          {t(lang, 'openSupportDesk')}
+        </Link>}
+      </div>
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-[#eadcc0] bg-white/85 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="font-bold">{t(lang, 'complaintSignalsTitle')}</h4>
+            <span className="rounded-full bg-[#fff0d6] px-3 py-1 text-xs font-bold text-[#8a5b20]" data-testid="text-complaint-quality-alert-count">{complaintAlerts.length}</span>
+          </div>
+          <p className="mt-1 text-xs leading-5 text-[#687a71]">{t(lang, 'complaintSignalsDescription')}</p>
+          {complaintAlerts.length
+            ? <ul className="mt-3 space-y-2">
+              {complaintAlerts.map(alert => <li key={alert.facilityId} className="rounded-xl bg-[#fbf8f0] p-3" data-testid="card-complaint-quality-alert">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div><p className="text-sm font-bold">{alert.facility} · {alert.city}</p><p className="mt-1 text-[11px] text-[#687a71]">{alert.partnerName}</p></div>
+                  <span className="rounded-full bg-[#fff0d6] px-2.5 py-1 text-[10px] font-bold text-[#8a5b20]">{alert.complaintCount} {t(lang, 'complaintCountLabel')}</span>
+                </div>
+                <p className="mt-2 text-[11px] text-[#687a71]">{t(lang, 'latestComplaintLabel')}: {dateLabel(alert.latestComplaintAt, lang)}</p>
+              </li>)}
+            </ul>
+            : <p className="mt-3 rounded-xl bg-[#fbf8f0] p-3 text-xs text-[#687a71]" data-testid="text-no-complaint-quality-alerts">{t(lang, 'noComplaintSignals')}</p>}
+        </div>
+        <div className="rounded-2xl border border-[#eadcc0] bg-white/85 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="font-bold">{t(lang, 'ratingSignalsTitle')}</h4>
+            <span className="rounded-full bg-[#f2dfd5] px-3 py-1 text-xs font-bold text-[#9a4435]" data-testid="text-rating-quality-alert-count">{ratingAlerts.length}</span>
+          </div>
+          <p className="mt-1 text-xs leading-5 text-[#687a71]">{t(lang, 'ratingSignalsDescription')}</p>
+          {ratingAlerts.length
+            ? <ul className="mt-3 space-y-2">
+              {ratingAlerts.map(alert => <li key={alert.facilityId} className="rounded-xl bg-[#fbf8f0] p-3" data-testid="card-rating-quality-alert">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div><p className="text-sm font-bold">{alert.facility} · {alert.city}</p><p className="mt-1 text-[11px] text-[#687a71]">{alert.partnerName}</p></div>
+                  <span className="rounded-full bg-[#f2dfd5] px-2.5 py-1 text-[10px] font-bold text-[#9a4435]">{t(lang, 'ratingAverageLabel')}: {alert.averageRating.toFixed(1)} / 5</span>
+                </div>
+                <p className="mt-2 text-[11px] text-[#687a71]">{alert.reviewCount} {t(lang, 'publishedReviewCount')}</p>
+              </li>)}
+            </ul>
+            : <p className="mt-3 rounded-xl bg-[#fbf8f0] p-3 text-xs text-[#687a71]" data-testid="text-no-rating-quality-alerts">{t(lang, 'noRatingSignals')}</p>}
         </div>
       </div>
     </section>

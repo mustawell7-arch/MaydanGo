@@ -6249,10 +6249,35 @@ components:
         contactRole: { type: string, minLength: 2, maxLength: 100 }
         contactPhone: { type: string, minLength: 7, maxLength: 30, pattern: "^[+0-9() -]+$" }
         verified: { type: boolean }
+    FacilityComplaintQualityAlert:
+      type: object
+      additionalProperties: false
+      required: [facilityId, partnerId, partnerName, facility, city, complaintCount, windowDays, latestComplaintAt]
+      properties:
+        facilityId: { type: string }
+        partnerId: { type: string }
+        partnerName: { type: string }
+        facility: { type: string }
+        city: { type: string }
+        complaintCount: { type: integer, minimum: 3 }
+        windowDays: { type: integer, enum: [30] }
+        latestComplaintAt: { type: string, format: date-time }
+    FacilityRatingQualityAlert:
+      type: object
+      additionalProperties: false
+      required: [facilityId, partnerId, partnerName, facility, city, averageRating, reviewCount]
+      properties:
+        facilityId: { type: string }
+        partnerId: { type: string }
+        partnerName: { type: string }
+        facility: { type: string }
+        city: { type: string }
+        averageRating: { type: number, minimum: 1, maximum: 5 }
+        reviewCount: { type: integer, minimum: 10 }
     FacilityQualityControl:
       type: object
       additionalProperties: false
-      required: [role, facilities, assessments, incidents, expiringDocuments, reapprovalAlerts, emergencyContacts, complianceDocuments]
+      required: [role, facilities, assessments, incidents, expiringDocuments, reapprovalAlerts, complaintAlerts, ratingAlerts, emergencyContacts, complianceDocuments]
       properties:
         role: { type: string, enum: [fraud_compliance_admin, partner, super_admin] }
         facilities: { type: array, items: { $ref: "#/components/schemas/FacilityQualityFacility" } }
@@ -6260,6 +6285,8 @@ components:
         incidents: { type: array, items: { $ref: "#/components/schemas/FacilityQualityIncident" } }
         expiringDocuments: { type: array, items: { $ref: "#/components/schemas/FacilityDocumentExpiryAlert" } }
         reapprovalAlerts: { type: array, items: { $ref: "#/components/schemas/FacilityReapprovalAlert" } }
+        complaintAlerts: { type: array, items: { $ref: "#/components/schemas/FacilityComplaintQualityAlert" } }
+        ratingAlerts: { type: array, items: { $ref: "#/components/schemas/FacilityRatingQualityAlert" } }
         emergencyContacts: { type: array, items: { $ref: "#/components/schemas/FacilityEmergencyContact" } }
         complianceDocuments: { type: array, items: { $ref: "#/components/schemas/PartnerComplianceDocument" } }
     ReviewCategoryRatings:

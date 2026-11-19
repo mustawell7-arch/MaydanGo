@@ -1,6 +1,6 @@
 import { Router, type Response } from "express";
 import { getAuth } from "@clerk/express";
-import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { hasAdminPermission } from "../lib/admin-roles";
@@ -9,8 +9,9 @@ import { listExpiringPartnerDocuments } from "../lib/partner-document-expiry";
 import { isAccessSuspended } from "../lib/account-access-restrictions";
 import { hasPartnerPermission, isPartnerOperatorRole } from "../lib/partner-roles";
 import {
-  db, facilityProfiles, facilityQualityAssessments, facilityQualityEmergencyContacts, facilityQualityIncidents,
-  operationAudit, operators, partners, partnerComplianceDocuments,
+  attendance, db, facilityProfiles, facilityQualityAssessments, facilityQualityEmergencyContacts,
+  facilityQualityIncidents, facilityReviews, offerings, operationAudit, operators, partners,
+  partnerComplianceDocuments, reservations, supportTicketLinks, supportTickets,
 } from "@workspace/db";
 import {
   CompletePartnerComplianceUploadParams, CompletePartnerComplianceUploadResponse,
@@ -30,6 +31,10 @@ const router = Router();
 const objectStorage = new ObjectStorageService();
 const MAX_COMPLIANCE_DOCUMENT_BYTES = 10 * 1024 * 1024;
 const REAPPROVAL_NOTICE_DAYS = 30;
+const COMPLAINT_LOOKBACK_DAYS = 30;
+const COMPLAINT_REVIEW_THRESHOLD = 3;
+const RATING_REVIEW_THRESHOLD = 3.5;
+const RATING_MINIMUM_REVIEW_COUNT = 10;
 const allowedComplianceMimeTypes = new Set(["application/pdf", "image/jpeg", "image/png"]);
 type Operator = typeof operators.$inferSelect;
 type QualityStatus = "approved" | "action_required" | "suspended";
@@ -387,6 +392,103 @@ router.get("/", async (_req, res): Promise<void> => {
       ),
   ]);
   const expiringDocuments = await listExpiringPartnerDocuments(partnerScope);
+  const facilityIds = facilities.map(facility => facility.id);
+  const complaintWindowStart = new Date(Date.now() - COMPLAINT_LOOKBACK_DAYS * 86_400_000);
+  const now = new Date();
+  const [bookingComplaintRows, checkinComplaintRows, facilityRatingRows] = facilityIds.length
+    ? await Promise.all([
+      db.select({
+        facilityId: facilityProfiles.id,
+        ticketId: supportTickets.id,
+        createdAt: supportTickets.createdAt,
+      }).from(supportTicketLinks)
+        .innerJoin(supportTickets, eq(supportTickets.id, supportTicketLinks.ticketId))
+        .innerJoin(reservations, eq(reservations.id, supportTicketLinks.reservationId))
+        .innerJoin(offerings, eq(offerings.id, reservations.offeringId))
+        .innerJoin(facilityProfiles, and(
+          eq(facilityProfiles.partnerId, offerings.partnerId),
+          sql`lower(btrim(${facilityProfiles.city})) = lower(btrim(${offerings.city}))`,
+          sql`lower(btrim(${facilityProfiles.facility})) = lower(btrim(${offerings.facility}))`,
+        ))
+        .where(and(
+          inArray(facilityProfiles.id, facilityIds),
+          inArray(supportTickets.category, ["facility", "safety"]),
+          eq(reservations.userId, supportTickets.userId),
+          gte(supportTickets.createdAt, complaintWindowStart),
+          lte(supportTickets.createdAt, now),
+        )),
+      db.select({
+        facilityId: facilityProfiles.id,
+        ticketId: supportTickets.id,
+        createdAt: supportTickets.createdAt,
+      }).from(supportTicketLinks)
+        .innerJoin(supportTickets, eq(supportTickets.id, supportTicketLinks.ticketId))
+        .innerJoin(attendance, eq(attendance.id, supportTicketLinks.attendanceId))
+        .innerJoin(offerings, eq(offerings.id, attendance.offeringId))
+        .innerJoin(facilityProfiles, and(
+          eq(facilityProfiles.partnerId, offerings.partnerId),
+          sql`lower(btrim(${facilityProfiles.city})) = lower(btrim(${offerings.city}))`,
+          sql`lower(btrim(${facilityProfiles.facility})) = lower(btrim(${offerings.facility}))`,
+        ))
+        .where(and(
+          inArray(facilityProfiles.id, facilityIds),
+          inArray(supportTickets.category, ["facility", "safety"]),
+          eq(attendance.userId, supportTickets.userId),
+          gte(supportTickets.createdAt, complaintWindowStart),
+          lte(supportTickets.createdAt, now),
+        )),
+      db.select({
+        facilityId: facilityReviews.facilityId,
+        reviewCount: sql<number>`count(*)::int`,
+        averageRating: sql<number>`avg(${facilityReviews.overallRating})::float`,
+      }).from(facilityReviews)
+        .where(and(
+          inArray(facilityReviews.facilityId, facilityIds),
+          eq(facilityReviews.status, "published"),
+        ))
+        .groupBy(facilityReviews.facilityId),
+    ])
+    : [[], [], []];
+  const facilityById = new Map(facilities.map(facility => [facility.id, facility]));
+  const uniqueComplaintRows = new Map<string, { facilityId: string; createdAt: Date }>();
+  for (const row of [...bookingComplaintRows, ...checkinComplaintRows]) {
+    uniqueComplaintRows.set(`${row.facilityId}:${row.ticketId}`, {
+      facilityId: row.facilityId,
+      createdAt: row.createdAt,
+    });
+  }
+  const complaintGroups = new Map<string, { complaintCount: number; latestComplaintAt: Date }>();
+  for (const row of uniqueComplaintRows.values()) {
+    const current = complaintGroups.get(row.facilityId);
+    complaintGroups.set(row.facilityId, {
+      complaintCount: (current?.complaintCount ?? 0) + 1,
+      latestComplaintAt: !current || row.createdAt > current.latestComplaintAt
+        ? row.createdAt
+        : current.latestComplaintAt,
+    });
+  }
+  const complaintAlerts = [...complaintGroups.entries()].flatMap(([facilityId, group]) => {
+    const facility = facilityById.get(facilityId);
+    if (!facility || group.complaintCount < COMPLAINT_REVIEW_THRESHOLD) return [];
+    return [{
+      ...facility,
+      facilityId,
+      complaintCount: group.complaintCount,
+      windowDays: COMPLAINT_LOOKBACK_DAYS,
+      latestComplaintAt: group.latestComplaintAt,
+    }];
+  }).sort((a, b) => b.complaintCount - a.complaintCount);
+  const ratingAlerts = facilityRatingRows.flatMap(row => {
+    const facility = facilityById.get(row.facilityId);
+    if (!facility || row.reviewCount < RATING_MINIMUM_REVIEW_COUNT
+      || row.averageRating >= RATING_REVIEW_THRESHOLD) return [];
+    return [{
+      ...facility,
+      facilityId: row.facilityId,
+      averageRating: row.averageRating,
+      reviewCount: row.reviewCount,
+    }];
+  }).sort((a, b) => a.averageRating - b.averageRating || b.reviewCount - a.reviewCount);
   const reapprovalAlerts = latestReviewRows.flatMap(row => {
     if (!row.nextReviewOn) return [];
     const daysRemaining = daysUntilDate(row.nextReviewOn);
@@ -404,6 +506,8 @@ router.get("/", async (_req, res): Promise<void> => {
     incidents: incidentRows,
     expiringDocuments,
     reapprovalAlerts,
+    complaintAlerts,
+    ratingAlerts,
     emergencyContacts: contactRows.map(row => ({
       ...row,
       verificationStatus: row.verifiedAt ? "verified" : "pending",

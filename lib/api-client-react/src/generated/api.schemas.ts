@@ -5954,6 +5954,40 @@ export interface FacilityEmergencyContactInput {
   verified: boolean;
 }
 
+export type FacilityComplaintQualityAlertWindowDays = typeof FacilityComplaintQualityAlertWindowDays[keyof typeof FacilityComplaintQualityAlertWindowDays];
+
+
+export const FacilityComplaintQualityAlertWindowDays = {
+  NUMBER_30: 30,
+} as const;
+
+export interface FacilityComplaintQualityAlert {
+  facilityId: string;
+  partnerId: string;
+  partnerName: string;
+  facility: string;
+  city: string;
+  /** @minimum 3 */
+  complaintCount: number;
+  windowDays: FacilityComplaintQualityAlertWindowDays;
+  latestComplaintAt: string;
+}
+
+export interface FacilityRatingQualityAlert {
+  facilityId: string;
+  partnerId: string;
+  partnerName: string;
+  facility: string;
+  city: string;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  averageRating: number;
+  /** @minimum 10 */
+  reviewCount: number;
+}
+
 export type FacilityQualityControlRole = typeof FacilityQualityControlRole[keyof typeof FacilityQualityControlRole];
 
 
@@ -5970,6 +6004,8 @@ export interface FacilityQualityControl {
   incidents: FacilityQualityIncident[];
   expiringDocuments: FacilityDocumentExpiryAlert[];
   reapprovalAlerts: FacilityReapprovalAlert[];
+  complaintAlerts: FacilityComplaintQualityAlert[];
+  ratingAlerts: FacilityRatingQualityAlert[];
   emergencyContacts: FacilityEmergencyContact[];
   complianceDocuments: PartnerComplianceDocument[];
 }

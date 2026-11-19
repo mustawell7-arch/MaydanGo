@@ -10753,6 +10753,12 @@ export const DownloadSuperAdminGuardianConsentDocumentParams = zod.object({
 export const DownloadSuperAdminGuardianConsentDocumentResponse = zod.unknown()
 
 
+export const getFacilityQualityControlResponseComplaintAlertsItemComplaintCountMin = 3;
+
+export const getFacilityQualityControlResponseRatingAlertsItemAverageRatingMax = 5;
+
+export const getFacilityQualityControlResponseRatingAlertsItemReviewCountMin = 10;
+
 export const getFacilityQualityControlResponseComplianceDocumentsItemFileSizeMax = 10485760;
 
 
@@ -10837,6 +10843,25 @@ export const GetFacilityQualityControlResponse = zod.object({
   "daysRemaining": zod.int(),
   "alertStatus": zod.enum(['due_soon', 'overdue']),
   "inspectionStatus": zod.enum(['approved', 'action_required', 'suspended'])
+})),
+  "complaintAlerts": zod.array(zod.object({
+  "facilityId": zod.string(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "complaintCount": zod.int().min(getFacilityQualityControlResponseComplaintAlertsItemComplaintCountMin),
+  "windowDays": zod.literal(30),
+  "latestComplaintAt": zod.coerce.date()
+})),
+  "ratingAlerts": zod.array(zod.object({
+  "facilityId": zod.string(),
+  "partnerId": zod.string(),
+  "partnerName": zod.string(),
+  "facility": zod.string(),
+  "city": zod.string(),
+  "averageRating": zod.number().min(1).max(getFacilityQualityControlResponseRatingAlertsItemAverageRatingMax),
+  "reviewCount": zod.int().min(getFacilityQualityControlResponseRatingAlertsItemReviewCountMin)
 })),
   "emergencyContacts": zod.array(zod.object({
   "facilityId": zod.string(),
