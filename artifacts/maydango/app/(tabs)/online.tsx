@@ -91,7 +91,9 @@ export default function OnlineScreen() {
   }, [app.bookingCatalog]);
   const started = showSavedOnly ? [] : courseRows.filter((course) =>
     course.enrolled && course.completedLessons < course.lessonCount && matchesCourse(course));
-  const recommendations = showSavedOnly ? [] : recommendOnlineCourses(courseRows).filter(matchesCourse);
+  const recommendations = showSavedOnly
+    ? []
+    : recommendOnlineCourses(courseRows).filter(({ course }) => matchesCourse(course));
   const coursePlacement = (id: string, category: string) => {
     const featured = findSponsoredContentPlacement(sponsoredContentQuery.data ?? [], 'course', id, 'featured_course');
     if (featured) return { campaignId: featured.campaignId, placementType: 'featured_course' as const };
@@ -314,7 +316,7 @@ export default function OnlineScreen() {
             {recommendations.length ? <>
               <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 18, textAlign: align }]}>{t('recommendedForYou')}</Text>
               <Text style={[styles.catalogMeta, { color: colors.mutedForeground, marginBottom: 8, textAlign: align }]}>{t('recommendationReason')}</Text>
-              {recommendations.map((course) => {
+              {recommendations.map(({ course, reason }) => {
                 const sponsored = coursePlacement(course.id, course.category);
                 return (
                 <View key={`recommended-${course.id}`}
@@ -338,6 +340,9 @@ export default function OnlineScreen() {
                         {localText(course.localizedInstructor, app.language)} · {course.category}
                       </Text>
                       <Text numberOfLines={2} style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{localText(course.localizedSummary, app.language)}</Text>
+                      <Text style={[styles.catalogMeta, { color: colors.primary, textAlign: align, marginTop: 3 }]}>
+                        {t(reason === 'saved-course-interest' ? 'recommendationSavedReason' : 'recommendationEnrollmentReason')}
+                      </Text>
                     </View>
                     <View style={[styles.playButton, { backgroundColor: colors.secondary }]}>
                       <Ionicons name="chevron-forward" size={15} color={colors.primary} style={app.language !== 'en' ? { transform: [{ scaleX: -1 }] } : undefined} />
