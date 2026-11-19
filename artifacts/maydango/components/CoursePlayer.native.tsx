@@ -1,6 +1,7 @@
 import React from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
+import CoursePlaybackWatermark from "./CoursePlaybackWatermark";
 import type { CoursePlayerProps } from "./CoursePlayer.types";
 
 function buildPlayerHtml(sourceUrl: string, initialPositionSeconds: number, kind: CoursePlayerProps["kind"]) {
@@ -19,10 +20,11 @@ function buildPlayerHtml(sourceUrl: string, initialPositionSeconds: number, kind
 <style>html,body{margin:0;width:100%;height:100%;background:#000}body{display:flex;align-items:center;justify-content:center}#player{${elementStyle}}</style>
 </head>
 <body>
-<${mediaElement} id="player" controls playsinline preload="metadata"></${mediaElement}>
+<${mediaElement} id="player" controls playsinline preload="metadata" controlslist="nodownload noplaybackrate" disablepictureinpicture></${mediaElement}>
 <script>
 const player=document.getElementById("player");
 player.src=${safeUrl};
+player.addEventListener("contextmenu",event=>event.preventDefault());
 const initialPosition=${initialPosition};
 let lastSentAt=0;
 function sendProgress(force){
@@ -50,7 +52,7 @@ window.setInterval(()=>{if(!player.paused&&!player.ended)sendProgress(false)},50
 </html>`;
 }
 
-export default function CoursePlayer({ sourceUrl, initialPositionSeconds, kind, onProgress }: CoursePlayerProps) {
+export default function CoursePlayer({ sourceUrl, initialPositionSeconds, kind, watermarkLabel, onProgress }: CoursePlayerProps) {
   const handleMessage = (event: WebViewMessageEvent) => {
     try {
       const value = JSON.parse(event.nativeEvent.data) as {
@@ -73,21 +75,25 @@ export default function CoursePlayer({ sourceUrl, initialPositionSeconds, kind, 
   };
 
   return (
-    <WebView
-      testID="course-recording-player"
-      originWhitelist={["https://*", "about:blank"]}
-      source={{ html: buildPlayerHtml(sourceUrl, initialPositionSeconds, kind), baseUrl: new URL(sourceUrl).origin }}
-      onMessage={handleMessage}
-      javaScriptEnabled
-      allowsInlineMediaPlayback
-      allowsFullscreenVideo
-      mediaPlaybackRequiresUserAction
-      scrollEnabled={false}
-      style={styles.player}
-    />
+    <View testID="course-recording-player" style={styles.container}>
+      <WebView
+        originWhitelist={["https://*", "about:blank"]}
+        source={{ html: buildPlayerHtml(sourceUrl, initialPositionSeconds, kind), baseUrl: new URL(sourceUrl).origin }}
+        onMessage={handleMessage}
+        javaScriptEnabled
+        allowsInlineMediaPlayback
+        allowsFullscreenVideo
+        mediaPlaybackRequiresUserAction
+        scrollEnabled={false}
+        style={[styles.player, kind === "audio" && styles.audioPlayer]}
+      />
+      {kind === "video" && <CoursePlaybackWatermark label={watermarkLabel} />}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: { position: "relative", width: "100%", marginTop: 10 },
   player: { height: 230, width: "100%", backgroundColor: "#000", borderRadius: 12 },
+  audioPlayer: { height: 64 },
 });

@@ -1,5 +1,6 @@
 import React from "react";
 import { View } from "react-native";
+import CoursePlaybackWatermark from "./CoursePlaybackWatermark";
 import type { CoursePlayerProps } from "./CoursePlayer.types";
 
 function savePosition(
@@ -16,6 +17,7 @@ export default function CoursePlayer({
   sourceUrl,
   initialPositionSeconds,
   kind,
+  watermarkLabel,
   onProgress,
 }: CoursePlayerProps) {
   const mediaProps = {
@@ -23,6 +25,8 @@ export default function CoursePlayer({
     preload: "metadata" as const,
     src: sourceUrl,
     crossOrigin: "anonymous" as const,
+    controlsList: "nodownload noplaybackrate",
+    disablePictureInPicture: true,
     onLoadedMetadata: (event: React.SyntheticEvent<HTMLMediaElement>) => {
       const player = event.currentTarget;
       if (initialPositionSeconds > 0 && initialPositionSeconds < player.duration - 2) {
@@ -33,6 +37,7 @@ export default function CoursePlayer({
     onPause: (event: React.SyntheticEvent<HTMLMediaElement>) => savePosition(event, onProgress, true),
     onSeeked: (event: React.SyntheticEvent<HTMLMediaElement>) => savePosition(event, onProgress, true),
     onEnded: (event: React.SyntheticEvent<HTMLMediaElement>) => savePosition(event, onProgress, true),
+    onContextMenu: (event: React.MouseEvent<HTMLMediaElement>) => event.preventDefault(),
   };
   const playerStyle = {
     width: "100%",
@@ -42,10 +47,11 @@ export default function CoursePlayer({
   };
 
   return (
-    <View testID="course-recording-player" style={{ width: "100%", marginTop: 10 }}>
+    <View testID="course-recording-player" style={{ width: "100%", marginTop: 10, position: "relative" }}>
       {kind === "audio"
         ? <audio {...mediaProps} style={playerStyle} />
         : <video {...mediaProps} style={playerStyle} playsInline />}
+      {kind === "video" && <CoursePlaybackWatermark label={watermarkLabel} />}
     </View>
   );
 }

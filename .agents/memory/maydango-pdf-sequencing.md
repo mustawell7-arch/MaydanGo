@@ -9,14 +9,20 @@ When the user says to continue MaydanGo work, identify and implement the next un
 
 **How to apply:** Before each continuation, locate the next incomplete PDF item, check the current code for existing coverage, then build that item before proposing anything outside the PDF. Do not configure Bird or start SMS delivery until every other PDF milestone is complete; keep its task open in the meantime. Treat the sign-up phone value as unverified user input: never send messages or trust it for verification until the final SMS flow confirms that exact number.
 
-The user explicitly skipped the Customer Community milestone.
+The user explicitly skipped the Customer Community and Third-party wellbeing apps milestones.
 
 **Why:** The user asked not to build it and to move on.
 
-**How to apply:** Do not implement or reopen Customer Community unless the user asks. Continue with Wearable Integration next.
+**How to apply:** Do not implement or reopen either item unless the user asks.
 
 The user selected daily step totals and completed-workout counts only. Apple Health and Android Health Connect now use the same manual, read-only summary flow; native phone validation remains for the final test phase. Direct third-party wellness-app integrations are a separate PDF item.
 
 **Why:** The user chose a foundation-first approach, limited wearable data to steps and workout counts, and deferred device tests until the end.
 
-**How to apply:** Keep health summaries private, exclude heart rate, sleep, and location, and never count imported summaries toward challenges. Treat the next direct third-party app connection as a separate milestone and do not choose a vendor without the user's direction. Do not claim either OS integration is device-verified until final native phone testing.
+**How to apply:** Keep health summaries private, exclude heart rate, sleep, and location, and never count imported summaries toward challenges. Do not reopen third-party app integrations unless asked. Do not claim either OS integration is device-verified until final native phone testing.
+
+The PDF's Middle East expansion milestone names no countries. The user dismissed the country-selection question, so no expansion market has been chosen.
+
+**Why:** Country-specific cities, currency, time zones, legal rules, and membership access should not be invented.
+
+**How to apply:** Preserve Iraq as the only configured market until the user names an expansion country. Continue with later independent PDF items when possible.

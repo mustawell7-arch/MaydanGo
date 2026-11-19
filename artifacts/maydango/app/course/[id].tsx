@@ -544,6 +544,7 @@ export default function CourseDetailScreen() {
                               sourceUrl={activePlayback.url}
                               initialPositionSeconds={activePlayback.initialPositionSeconds}
                               kind={activePlayback.kind}
+                              watermarkLabel={t('courseWatermarkLabel')}
                               onProgress={(position, duration, force) => savePlaybackPosition(lesson.id, position, duration, force)}
                             />
                           </View>
