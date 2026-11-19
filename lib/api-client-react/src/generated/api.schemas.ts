@@ -4303,6 +4303,45 @@ export interface MemberCourseCertificate {
   disclaimer: string;
 }
 
+export interface CourseAssignmentInput {
+  localizedTitle: LocalizedText;
+  localizedInstructions: LocalizedCourseDetail47d80cf;
+}
+
+export interface InstructorCourseAssignment {
+  id: string;
+  /** @minimum 1 */
+  position: number;
+  localizedTitle: LocalizedText;
+  localizedInstructions: LocalizedCourseDetail47d80cf;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type InstructorCourseAssignmentsResponse = InstructorCourseAssignment[];
+
+export interface MemberCourseAssignment {
+  id: string;
+  /** @minimum 1 */
+  position: number;
+  localizedTitle: LocalizedText;
+  localizedInstructions: LocalizedCourseDetail47d80cf;
+  completed: boolean;
+  /** @nullable */
+  completedAt: string | null;
+}
+
+export interface MemberCourseAssignmentProgressInput {
+  completed: boolean;
+}
+
+export interface MemberCourseAssignmentProgressResponse {
+  assignmentId: string;
+  completed: boolean;
+  /** @nullable */
+  completedAt: string | null;
+}
+
 export type InstructorAccessRequestAdminStatus = typeof InstructorAccessRequestAdminStatus[keyof typeof InstructorAccessRequestAdminStatus];
 
 
@@ -4903,6 +4942,7 @@ export type CourseDetail = CourseSummary & ({
   materials: CourseMaterial[];
   /** @nullable */
   lastAccessAt: string | null;
+  assignments: MemberCourseAssignment[];
 });
 
 export interface CoursePlaybackLinkResponse {

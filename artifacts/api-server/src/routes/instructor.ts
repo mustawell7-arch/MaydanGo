@@ -1,14 +1,20 @@
 import { Router } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
-import { and, asc, count, eq, gt, inArray, isNull, max, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNull, max, sql } from "drizzle-orm";
 import {
-  courseCertificates, courseEnrollments, db, instructorCourseAssignments, instructorOfferingAssignments,
-  instructorPortalRequests, learningCourses, learningLessons, lessonProgress, offerings, operators,
+  courseAssignments, courseCertificates, courseEnrollments, db, instructorCourseAssignments,
+  instructorOfferingAssignments, instructorPortalRequests, learningCourses, learningLessons,
+  lessonProgress, offerings, operators,
 } from "@workspace/db";
 import { randomUUID } from "node:crypto";
 import {
   GetInstructorCourseCertificateCandidatesResponse, GetInstructorPortalResponse, IssueInstructorCourseCertificateResponse,
+  CreateInstructorCourseAssignmentBody, CreateInstructorCourseAssignmentParams,
+  CreateInstructorCourseAssignmentResponse, DeleteInstructorCourseAssignmentParams,
+  GetInstructorCourseAssignmentsParams, GetInstructorCourseAssignmentsResponse,
   SubmitInstructorAccessRequestBody, SubmitInstructorAccessRequestResponse,
+  UpdateInstructorCourseAssignmentBody, UpdateInstructorCourseAssignmentParams,
+  UpdateInstructorCourseAssignmentResponse,
 } from "@workspace/api-zod";
 import { instructorSupportRouter } from "./instructor-support";
 import instructorContentRouter from "./instructor-content";
@@ -248,6 +254,93 @@ router.post("/courses/:courseId/enrollments/:enrollmentId/certificate", async (r
     issuedAt: courseCertificates.issuedAt,
   }).from(courseCertificates).where(eq(courseCertificates.enrollmentId, enrollmentId)).limit(1);
   res.json(IssueInstructorCourseCertificateResponse.parse({ id: certificate.id, issuedAt: certificate.issuedAt }));
+});
+
+router.get("/courses/:courseId/assignments", async (req, res): Promise<void> => {
+  const parsed = GetInstructorCourseAssignmentsParams.safeParse(req.params);
+  if (!parsed.success) { res.status(400).json({ message: "Choose a valid course." }); return; }
+  const userId = getAuth(req).userId!;
+  const { courseId } = parsed.data;
+  if (!await assignedInstructor(userId, courseId)) {
+    res.status(403).json({ message: "You can manage assignments only for courses assigned to you." });
+    return;
+  }
+  const assignments = await db.select().from(courseAssignments)
+    .where(eq(courseAssignments.courseId, courseId))
+    .orderBy(asc(courseAssignments.position), asc(courseAssignments.createdAt));
+  res.json(GetInstructorCourseAssignmentsResponse.parse(assignments));
+});
+
+router.post("/courses/:courseId/assignments", async (req, res): Promise<void> => {
+  const params = CreateInstructorCourseAssignmentParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ message: "Choose a valid course." }); return; }
+  const body = CreateInstructorCourseAssignmentBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ message: "Provide a title and instructions in English, Arabic, and Sorani Kurdish." });
+    return;
+  }
+  const userId = getAuth(req).userId!;
+  const { courseId } = params.data;
+  if (!await assignedInstructor(userId, courseId)) {
+    res.status(403).json({ message: "You can manage assignments only for courses assigned to you." });
+    return;
+  }
+  const [latest] = await db.select({ position: courseAssignments.position }).from(courseAssignments)
+    .where(eq(courseAssignments.courseId, courseId))
+    .orderBy(desc(courseAssignments.position))
+    .limit(1);
+  const [assignment] = await db.insert(courseAssignments).values({
+    id: randomUUID(),
+    courseId,
+    position: (latest?.position ?? 0) + 1,
+    localizedTitle: body.data.localizedTitle,
+    localizedInstructions: body.data.localizedInstructions,
+    createdBy: userId,
+  }).returning();
+  res.status(201).json(CreateInstructorCourseAssignmentResponse.parse(assignment));
+});
+
+router.put("/courses/:courseId/assignments/:assignmentId", async (req, res): Promise<void> => {
+  const params = UpdateInstructorCourseAssignmentParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ message: "Choose a valid course assignment." }); return; }
+  const body = UpdateInstructorCourseAssignmentBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ message: "Provide a title and instructions in English, Arabic, and Sorani Kurdish." });
+    return;
+  }
+  const userId = getAuth(req).userId!;
+  const { courseId, assignmentId } = params.data;
+  if (!await assignedInstructor(userId, courseId)) {
+    res.status(403).json({ message: "You can manage assignments only for courses assigned to you." });
+    return;
+  }
+  const [assignment] = await db.update(courseAssignments).set({
+    localizedTitle: body.data.localizedTitle,
+    localizedInstructions: body.data.localizedInstructions,
+    updatedAt: new Date(),
+  }).where(and(
+    eq(courseAssignments.id, assignmentId),
+    eq(courseAssignments.courseId, courseId),
+  )).returning();
+  if (!assignment) { res.status(404).json({ message: "This assignment is not part of the course." }); return; }
+  res.json(UpdateInstructorCourseAssignmentResponse.parse(assignment));
+});
+
+router.delete("/courses/:courseId/assignments/:assignmentId", async (req, res): Promise<void> => {
+  const params = DeleteInstructorCourseAssignmentParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ message: "Choose a valid course assignment." }); return; }
+  const userId = getAuth(req).userId!;
+  const { courseId, assignmentId } = params.data;
+  if (!await assignedInstructor(userId, courseId)) {
+    res.status(403).json({ message: "You can manage assignments only for courses assigned to you." });
+    return;
+  }
+  const [removed] = await db.delete(courseAssignments).where(and(
+    eq(courseAssignments.id, assignmentId),
+    eq(courseAssignments.courseId, courseId),
+  )).returning({ id: courseAssignments.id });
+  if (!removed) { res.status(404).json({ message: "This assignment is not part of the course." }); return; }
+  res.status(204).end();
 });
 
 router.post("/access-request", async (req, res) => {

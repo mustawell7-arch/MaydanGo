@@ -1989,6 +1989,66 @@ paths:
         "403": { description: Instructor access or course assignment is required }
         "404": { description: Enrollment not found in this course }
         "409": { description: Learner has not completed every course lesson }
+  /instructor/courses/{courseId}/assignments:
+    parameters:
+      - name: courseId
+        in: path
+        required: true
+        schema: { type: string, minLength: 1 }
+    get:
+      operationId: getInstructorCourseAssignments
+      responses:
+        "200":
+          description: Practice assignments for one course assigned to the signed-in instructor
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InstructorCourseAssignmentsResponse" }
+        "403": { description: Instructor access or course assignment is required }
+    post:
+      operationId: createInstructorCourseAssignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CourseAssignmentInput" }
+      responses:
+        "201":
+          description: Localized practice assignment created for the assigned course
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InstructorCourseAssignment" }
+        "403": { description: Instructor access or course assignment is required }
+  /instructor/courses/{courseId}/assignments/{assignmentId}:
+    parameters:
+      - name: courseId
+        in: path
+        required: true
+        schema: { type: string, minLength: 1 }
+      - name: assignmentId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      operationId: updateInstructorCourseAssignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CourseAssignmentInput" }
+      responses:
+        "200":
+          description: Localized practice assignment updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InstructorCourseAssignment" }
+        "403": { description: Instructor access or course assignment is required }
+        "404": { description: Assignment not found in the assigned course }
+    delete:
+      operationId: deleteInstructorCourseAssignment
+      responses:
+        "204": { description: Practice assignment removed }
+        "403": { description: Instructor access or course assignment is required }
+        "404": { description: Assignment not found in the assigned course }
   /instructor/content-drafts:
     get:
       operationId: getInstructorContentDrafts
@@ -2738,6 +2798,28 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/MemberCourseCertificate" }
         "404": { description: No certificate has been issued for this member and course }
+  /member/courses/{id}/assignments/{assignmentId}/progress:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - name: assignmentId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      operationId: updateMemberCourseAssignmentProgress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemberCourseAssignmentProgressInput" }
+      responses:
+        "200":
+          description: This member's private assignment completion state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MemberCourseAssignmentProgressResponse" }
+        "403": { description: Eligible membership and course enrollment are required }
+        "404": { description: Assignment not found in this course }
   /member/courses/{id}/favorite:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     put:
@@ -5371,6 +5453,52 @@ components:
         completedAt: { type: string, format: date-time }
         issuedAt: { type: string, format: date-time }
         disclaimer: { type: string }
+    CourseAssignmentInput:
+      type: object
+      additionalProperties: false
+      required: [localizedTitle, localizedInstructions]
+      properties:
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedInstructions: { $ref: "#/components/schemas/LocalizedCourseDetail" }
+    InstructorCourseAssignment:
+      type: object
+      additionalProperties: false
+      required: [id, position, localizedTitle, localizedInstructions, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        position: { type: integer, minimum: 1 }
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedInstructions: { $ref: "#/components/schemas/LocalizedCourseDetail" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    InstructorCourseAssignmentsResponse:
+      type: array
+      items: { $ref: "#/components/schemas/InstructorCourseAssignment" }
+    MemberCourseAssignment:
+      type: object
+      additionalProperties: false
+      required: [id, position, localizedTitle, localizedInstructions, completed, completedAt]
+      properties:
+        id: { type: string, format: uuid }
+        position: { type: integer, minimum: 1 }
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedInstructions: { $ref: "#/components/schemas/LocalizedCourseDetail" }
+        completed: { type: boolean }
+        completedAt: { type: ["string", "null"], format: date-time }
+    MemberCourseAssignmentProgressInput:
+      type: object
+      additionalProperties: false
+      required: [completed]
+      properties:
+        completed: { type: boolean }
+    MemberCourseAssignmentProgressResponse:
+      type: object
+      additionalProperties: false
+      required: [assignmentId, completed, completedAt]
+      properties:
+        assignmentId: { type: string, format: uuid }
+        completed: { type: boolean }
+        completedAt: { type: ["string", "null"], format: date-time }
     InstructorAccessRequestAdmin:
       type: object
       required: [id, userId, message, status, submittedAt]
@@ -5816,12 +5944,13 @@ components:
       allOf:
         - $ref: "#/components/schemas/CourseSummary"
         - type: object
-          required: [accessState, lessons, materials, lastAccessAt]
+          required: [accessState, lessons, materials, lastAccessAt, assignments]
           properties:
             accessState: { type: string, enum: [membership_required, enrollment_required, ready] }
             lessons: { type: array, items: { $ref: "#/components/schemas/CourseLesson" } }
             materials: { type: array, items: { $ref: "#/components/schemas/CourseMaterial" } }
             lastAccessAt: { type: [string, "null"], format: date-time }
+            assignments: { type: array, items: { $ref: "#/components/schemas/MemberCourseAssignment" } }
     CoursePlaybackLinkResponse:
       type: object
       additionalProperties: false

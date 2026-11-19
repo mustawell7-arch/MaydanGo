@@ -13,6 +13,7 @@ import {
   useSubmitMemberCourseQuizAttempt,
   useSetMemberCourseFavorite, useUpdateCourseProgress,
   useGetMemberCourseCertificate,
+  useUpdateMemberCourseAssignmentProgress,
   useUpdateMemberCoursePlaybackProgress,
   type SponsoredContentPlacementType,
 } from '@workspace/api-client-react';
@@ -46,6 +47,7 @@ export default function CourseDetailScreen() {
   const certificateQuery = useGetMemberCourseCertificate(id, {
     query: { enabled: !!course?.courseCompletedAt, retry: false },
   });
+  const assignmentProgressMutation = useUpdateMemberCourseAssignmentProgress();
   const sponsoredTracking = useSponsoredContentTracking();
   const [activePlayback, setActivePlayback] = useState<{
     lessonId: string;
@@ -180,6 +182,19 @@ export default function CourseDetailScreen() {
       });
       setQuizResults(current => ({ ...current, [lessonId]: result }));
       await queryClient.invalidateQueries({ queryKey: getGetMemberCourseQueryKey(course.id) });
+    } catch (error) {
+      setMessage(errorCopy(error));
+    }
+  };
+  const updateAssignmentProgress = async (assignmentId: string, completed: boolean) => {
+    try {
+      await assignmentProgressMutation.mutateAsync({
+        id: course.id,
+        assignmentId,
+        data: { completed },
+      });
+      await queryClient.invalidateQueries({ queryKey: getGetMemberCourseQueryKey(course.id) });
+      setMessage(t(completed ? 'assignmentMarkedDone' : 'assignmentMarkedOpen'));
     } catch (error) {
       setMessage(errorCopy(error));
     }
@@ -429,6 +444,46 @@ export default function CourseDetailScreen() {
                 style={({ pressed }) => [styles.enrolButton, { backgroundColor: colors.primary, opacity: pressed || enrollMutation.isPending ? 0.65 : 1 }]}>
                 <Text style={[styles.enrolText, { color: colors.primaryForeground }]}>{enrollMutation.isPending ? t('coursesLoading') : t('enrol')}</Text>
               </Pressable>
+            </View>
+          ) : null}
+          {ready && course.assignments.length > 0 ? (
+            <View style={{ marginTop: 12, padding: 15, borderRadius: 14, backgroundColor: colors.secondary, gap: 11 }} testID="panel-course-assignments">
+              <View style={{ gap: 3 }}>
+                <Text style={{ color: colors.foreground, fontWeight: '800', fontSize: 16, textAlign: align }}>{t('courseAssignments')}</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 18, textAlign: align }}>{t('assignmentProgressIntro')}</Text>
+              </View>
+              {course.assignments.map(assignment => (
+                <View key={assignment.id} style={{ padding: 12, borderRadius: 12, backgroundColor: colors.card, gap: 8 }} testID={`card-course-assignment-${assignment.id}`}>
+                  <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '800', textAlign: align }}>
+                    {assignment.localizedTitle[app.language] || assignment.localizedTitle.en}
+                  </Text>
+                  <Text style={{ color: colors.mutedForeground, fontSize: 13, lineHeight: 20, textAlign: align }}>
+                    {assignment.localizedInstructions[app.language] || assignment.localizedInstructions.en}
+                  </Text>
+                  <Pressable
+                    testID={`button-course-assignment-${assignment.id}`}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: assignment.completed, disabled: assignmentProgressMutation.isPending }}
+                    disabled={assignmentProgressMutation.isPending}
+                    onPress={() => void updateAssignmentProgress(assignment.id, !assignment.completed)}
+                    style={({ pressed }) => ({
+                      minHeight: 42,
+                      flexDirection: app.language === 'en' ? 'row' : 'row-reverse',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 7,
+                      borderRadius: 10,
+                      backgroundColor: assignment.completed ? colors.primary : colors.secondary,
+                      opacity: pressed || assignmentProgressMutation.isPending ? 0.6 : 1,
+                    })}
+                  >
+                    <Ionicons name={assignment.completed ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={assignment.completed ? colors.primaryForeground : colors.primary} />
+                    <Text style={{ color: assignment.completed ? colors.primaryForeground : colors.primary, fontSize: 12, fontWeight: '800' }}>
+                      {t(assignment.completed ? 'assignmentMarkUndone' : 'assignmentMarkDone')}
+                    </Text>
+                  </Pressable>
+                </View>
+              ))}
             </View>
           ) : null}
           {message ? <Text accessibilityLiveRegion="polite" style={[styles.message, { color: colors.primary, textAlign: align }]}>{message}</Text> : null}

@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/react';
 import {
+  getGetInstructorCourseAssignmentsQueryKey,
   getGetInstructorCourseCertificateCandidatesQueryKey,
   getGetInstructorAccessRequestsQueryKey,
   getGetInstructorPortalQueryKey,
@@ -10,6 +11,9 @@ import {
   getGetInstructorSupportTicketQueryKey,
   getGetInstructorSupportTicketsQueryKey,
   useCreateInstructorSupportTicket,
+  useCreateInstructorCourseAssignment,
+  useDeleteInstructorCourseAssignment,
+  useGetInstructorCourseAssignments,
   useGetInstructorAccessRequests,
   useGetInstructorPortal,
   useIssueInstructorCourseCertificate,
@@ -17,6 +21,7 @@ import {
   useGetInstructorSupportTickets,
   useReplyInstructorSupportTicket,
   useSubmitInstructorAccessRequest,
+  useUpdateInstructorCourseAssignment,
 } from '@workspace/api-client-react';
 import { getGetMemberSupportTicketAttachmentsQueryKey, useGetMemberSupportTicketAttachments } from '@workspace/api-client-react';
 import { downloadMemberSupportFile, supportAttachmentType, uploadMemberSupportAttachments } from '@/lib/support-attachments';
@@ -42,6 +47,12 @@ const copy = {
     reason: 'Decision note', assignedCourses: 'Assigned courses', upcoming: 'Your upcoming sessions',
     noCourses: 'No courses have been assigned yet.', noSessions: 'No future sessions have been assigned.',
     summary: 'Course summary', instructor: 'Instructor', courseDetails: 'Course details',
+    assignmentSection: 'Practice assignments', assignmentIntro: 'Create self-directed tasks for learners. Their completion stays private to their account.',
+    assignmentTitle: 'Assignment title', assignmentInstructions: 'Practice instructions', assignmentEnglish: 'English', assignmentArabic: 'Arabic', assignmentKurdish: 'Sorani Kurdish',
+    assignmentAdd: 'Add assignment', assignmentSave: 'Save changes', assignmentCancel: 'Cancel editing', assignmentEdit: 'Edit', assignmentDelete: 'Delete', assignmentSaving: 'Saving…',
+    assignmentEmpty: 'No practice assignments have been added.', assignmentLoading: 'Loading assignments…', assignmentLoadError: 'Assignments could not be loaded.',
+    assignmentSaveError: 'The assignment could not be saved.', assignmentDeleteError: 'The assignment could not be deleted.',
+    assignmentDeleteConfirm: 'Delete this assignment? Members’ private completion tracking for it will also be removed.',
     certificateReview: 'Course certificates', certificateReviewIntro: 'Review learners who have completed every lesson. Issuing a certificate is your approval.',
     certificateEmpty: 'No learners have completed this course yet.', certificateLoading: 'Loading eligible learners…',
     certificateLoadError: 'Eligible learners could not be loaded.', learner: 'Learner', completed: 'Completed',
@@ -104,6 +115,12 @@ const copy = {
     reason: 'ملاحظة القرار', assignedCourses: 'الدورات المخصصة', upcoming: 'جلساتك القادمة',
     noCourses: 'لم يتم تخصيص دورات بعد.', noSessions: 'لم يتم تخصيص جلسات مستقبلية.',
     summary: 'ملخص الدورة', instructor: 'المدرّب', courseDetails: 'تفاصيل الدورة',
+    assignmentSection: 'تمارين الدورة', assignmentIntro: 'أنشئ تمارين ذاتية للمتعلمين. تظل حالة إكمالهم خاصة بحساباتهم.',
+    assignmentTitle: 'عنوان التمرين', assignmentInstructions: 'تعليمات التمرين', assignmentEnglish: 'الإنجليزية', assignmentArabic: 'العربية', assignmentKurdish: 'الكردية السورانية',
+    assignmentAdd: 'إضافة تمرين', assignmentSave: 'حفظ التغييرات', assignmentCancel: 'إلغاء التعديل', assignmentEdit: 'تعديل', assignmentDelete: 'حذف', assignmentSaving: 'جارٍ الحفظ…',
+    assignmentEmpty: 'لم تتم إضافة تمارين بعد.', assignmentLoading: 'جارٍ تحميل التمارين…', assignmentLoadError: 'تعذر تحميل التمارين.',
+    assignmentSaveError: 'تعذر حفظ التمرين.', assignmentDeleteError: 'تعذر حذف التمرين.',
+    assignmentDeleteConfirm: 'هل تريد حذف هذا التمرين؟ سيُحذف أيضاً تتبّع إكماله الخاص بالمتعلمين.',
     certificateReview: 'شهادات الدورة', certificateReviewIntro: 'راجع المتعلمين الذين أكملوا جميع الدروس. إصدار الشهادة هو موافقتك.',
     certificateEmpty: 'لم يُكمل أي متعلم هذه الدورة بعد.', certificateLoading: 'جارٍ تحميل المتعلمين المؤهلين…',
     certificateLoadError: 'تعذر تحميل قائمة المتعلمين المؤهلين.', learner: 'المتعلم', completed: 'تاريخ الإكمال',
@@ -166,6 +183,12 @@ const copy = {
     reason: 'تێبینی بڕیار', assignedCourses: 'کۆرسە دیاریکراوەکان', upcoming: 'وانەکانی داهاتووت',
     noCourses: 'هێشتا هیچ کۆرسێکت بۆ دیاری نەکراوە.', noSessions: 'هێشتا هیچ وانەیەکی داهاتووت بۆ دیاری نەکراوە.',
     summary: 'پوختەی کۆرس', instructor: 'ڕاهێنەر', courseDetails: 'وردەکاری کۆرس',
+    assignmentSection: 'ئەرکەکانی ڕاهێنان', assignmentIntro: 'ئەرکی خۆڕاهێنانی فێرخوازان زیاد بکە. دۆخی تەواوکردنیان تەنها لە هەژماری خۆیاندا دەمێنێتەوە.',
+    assignmentTitle: 'ناونیشانی ئەرک', assignmentInstructions: 'ڕێنمایی ڕاهێنان', assignmentEnglish: 'ئینگلیزی', assignmentArabic: 'عەرەبی', assignmentKurdish: 'کوردیی سۆرانی',
+    assignmentAdd: 'زیادکردنی ئەرک', assignmentSave: 'پاشەکەوتکردنی گۆڕانکارییەکان', assignmentCancel: 'هەڵوەشاندنەوەی دەستکاریکردن', assignmentEdit: 'دەستکاری', assignmentDelete: 'سڕینەوە', assignmentSaving: 'پاشەکەوت دەکرێت…',
+    assignmentEmpty: 'هێشتا هیچ ئەرکێکی ڕاهێنان زیاد نەکراوە.', assignmentLoading: 'ئەرکەکان بار دەکرێن…', assignmentLoadError: 'بارکردنی ئەرکەکان سەرکەوتوو نەبوو.',
+    assignmentSaveError: 'پاشەکەوتکردنی ئەرکەکە سەرکەوتوو نەبوو.', assignmentDeleteError: 'سڕینەوەی ئەرکەکە سەرکەوتوو نەبوو.',
+    assignmentDeleteConfirm: 'ئەم ئەرکە بسڕدرێتەوە؟ بەدواداچوونی تایبەتی تەواوکردنی فێرخوازانیش دەسڕدرێتەوە.',
     certificateReview: 'بڕوانامەکانی کۆرس', certificateReviewIntro: 'ئەو فێرخوازانە بپشکنە کە هەموو وانەکانیان تەواو کردووە. دەرکردنی بڕوانامە بە واتای پەسەندکردنی تۆیە.',
     certificateEmpty: 'هێشتا هیچ فێرخوازێک ئەم کۆرسەی تەواو نەکردووە.', certificateLoading: 'فێرخوازە شایستەکان بار دەکرێن…',
     certificateLoadError: 'نەتوانرا لیستی فێرخوازە شایستەکان بار بکرێت.', learner: 'فێرخواز', completed: 'ڕێکەوتی تەواوکردن',
@@ -603,6 +626,143 @@ function CourseCertificateReview({ courseId, lang }: { courseId: string; lang: L
   );
 }
 
+type LocalizedAssignmentText = { en: string; ar: string; ku: string };
+const emptyAssignmentText = (): LocalizedAssignmentText => ({ en: '', ar: '', ku: '' });
+
+function CourseAssignmentsPanel({ courseId, lang }: { courseId: string; lang: Language }) {
+  const queryClient = useQueryClient();
+  const assignments = useGetInstructorCourseAssignments(courseId);
+  const create = useCreateInstructorCourseAssignment();
+  const update = useUpdateInstructorCourseAssignment();
+  const remove = useDeleteInstructorCourseAssignment();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [title, setTitle] = useState<LocalizedAssignmentText>(emptyAssignmentText);
+  const [instructions, setInstructions] = useState<LocalizedAssignmentText>(emptyAssignmentText);
+  const [error, setError] = useState('');
+  const busy = create.isPending || update.isPending || remove.isPending;
+  const canSave = Object.values(title).every(value => value.trim().length > 0)
+    && Object.values(instructions).every(value => value.trim().length > 0);
+  const clearForm = () => {
+    setEditingId(null);
+    setTitle(emptyAssignmentText());
+    setInstructions(emptyAssignmentText());
+  };
+  const refresh = () => queryClient.invalidateQueries({
+    queryKey: getGetInstructorCourseAssignmentsQueryKey(courseId),
+  });
+  const save = async () => {
+    if (!canSave || busy) return;
+    const data = {
+      localizedTitle: {
+        en: title.en.trim(), ar: title.ar.trim(), ku: title.ku.trim(),
+      },
+      localizedInstructions: {
+        en: instructions.en.trim(), ar: instructions.ar.trim(), ku: instructions.ku.trim(),
+      },
+    };
+    setError('');
+    try {
+      if (editingId) await update.mutateAsync({ courseId, assignmentId: editingId, data });
+      else await create.mutateAsync({ courseId, data });
+      await refresh();
+      clearForm();
+    } catch {
+      setError(t(lang, 'assignmentSaveError'));
+    }
+  };
+  const edit = (assignment: NonNullable<typeof assignments.data>[number]) => {
+    setEditingId(assignment.id);
+    setTitle(assignment.localizedTitle);
+    setInstructions(assignment.localizedInstructions);
+    setError('');
+  };
+  const deleteAssignment = async (assignmentId: string) => {
+    if (typeof window !== 'undefined' && !window.confirm(t(lang, 'assignmentDeleteConfirm'))) return;
+    setError('');
+    try {
+      await remove.mutateAsync({ courseId, assignmentId });
+      await refresh();
+      if (editingId === assignmentId) clearForm();
+    } catch {
+      setError(t(lang, 'assignmentDeleteError'));
+    }
+  };
+  const localeLabels: Record<Language, string> = {
+    en: t(lang, 'assignmentEnglish'),
+    ar: t(lang, 'assignmentArabic'),
+    ku: t(lang, 'assignmentKurdish'),
+  };
+  return (
+    <section className="mt-5 border-t border-[#e3dfd3] pt-4" data-testid={`panel-course-assignments-${courseId}`}>
+      <h4 className="text-sm font-bold">{t(lang, 'assignmentSection')}</h4>
+      <p className="mt-1 text-xs leading-5 text-[#718077]">{t(lang, 'assignmentIntro')}</p>
+      {assignments.isLoading ? (
+        <p className="mt-3 text-xs text-[#718077]" data-testid={`loading-course-assignments-${courseId}`}>{t(lang, 'assignmentLoading')}</p>
+      ) : assignments.isError ? (
+        <p role="alert" className="mt-3 text-xs text-[#9a4435]" data-testid={`error-course-assignments-${courseId}`}>{t(lang, 'assignmentLoadError')}</p>
+      ) : assignments.data?.length ? (
+        <ul className="mt-3 space-y-2">
+          {assignments.data.map(assignment => (
+            <li key={assignment.id} className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-[#e3dfd3] bg-white/70 p-3" data-testid={`instructor-assignment-${assignment.id}`}>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">{localized(assignment.localizedTitle, lang)}</p>
+                <p className="mt-1 whitespace-pre-line text-xs leading-5 text-[#718077]">{localized(assignment.localizedInstructions, lang)}</p>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <button type="button" disabled={busy} onClick={() => edit(assignment)} className="rounded-full border border-[#174d43] px-3 py-1.5 text-xs font-bold text-[#174d43] disabled:opacity-50" data-testid={`button-edit-assignment-${assignment.id}`}>{t(lang, 'assignmentEdit')}</button>
+                <button type="button" disabled={busy} onClick={() => void deleteAssignment(assignment.id)} className="rounded-full border border-[#b96750] px-3 py-1.5 text-xs font-bold text-[#9a4435] disabled:opacity-50" data-testid={`button-delete-assignment-${assignment.id}`}>{t(lang, 'assignmentDelete')}</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 text-xs text-[#718077]" data-testid={`empty-course-assignments-${courseId}`}>{t(lang, 'assignmentEmpty')}</p>
+      )}
+      <div className="mt-4 rounded-xl border border-[#e3dfd3] bg-[#faf8f0] p-3">
+        <h5 className="text-xs font-bold">{t(lang, editingId ? 'assignmentSave' : 'assignmentAdd')}</h5>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          {(['en', 'ar', 'ku'] as const).map(language => (
+            <label key={`title-${language}`} className="text-[11px] font-semibold text-[#60756b]">
+              {localeLabels[language]} · {t(lang, 'assignmentTitle')}
+              <input
+                dir={language === 'en' ? 'ltr' : 'rtl'}
+                value={title[language]}
+                maxLength={240}
+                onChange={event => setTitle(current => ({ ...current, [language]: event.target.value }))}
+                className="mt-1 block h-10 w-full rounded-lg border border-[#d8d2c4] bg-white px-2.5 text-xs text-[#173d35]"
+                data-testid={`input-assignment-title-${courseId}-${language}`}
+              />
+            </label>
+          ))}
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          {(['en', 'ar', 'ku'] as const).map(language => (
+            <label key={`instructions-${language}`} className="text-[11px] font-semibold text-[#60756b]">
+              {localeLabels[language]} · {t(lang, 'assignmentInstructions')}
+              <textarea
+                dir={language === 'en' ? 'ltr' : 'rtl'}
+                value={instructions[language]}
+                maxLength={2000}
+                rows={3}
+                onChange={event => setInstructions(current => ({ ...current, [language]: event.target.value }))}
+                className="mt-1 block w-full rounded-lg border border-[#d8d2c4] bg-white px-2.5 py-2 text-xs leading-5 text-[#173d35]"
+                data-testid={`input-assignment-instructions-${courseId}-${language}`}
+              />
+            </label>
+          ))}
+        </div>
+        {error && <p role="alert" className="mt-3 text-xs text-[#9a4435]" data-testid={`error-save-assignment-${courseId}`}>{error}</p>}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button type="button" disabled={!canSave || busy} onClick={() => void save()} className="rounded-full bg-[#174d43] px-4 py-2 text-xs font-bold text-[#fff9e9] disabled:opacity-50" data-testid={`button-save-assignment-${courseId}`}>
+            {busy ? t(lang, 'assignmentSaving') : t(lang, editingId ? 'assignmentSave' : 'assignmentAdd')}
+          </button>
+          {editingId && <button type="button" disabled={busy} onClick={clearForm} className="rounded-full border border-[#d8d2c4] px-4 py-2 text-xs font-bold text-[#536b61] disabled:opacity-50" data-testid={`button-cancel-assignment-${courseId}`}>{t(lang, 'assignmentCancel')}</button>}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function InstructorPortalPage() {
   const { isLoaded, isSignedIn } = useAuth();
   const queryClient = useQueryClient();
@@ -720,6 +880,7 @@ export function InstructorPortalPage() {
                           <p className="mt-3 text-sm leading-6 text-[#536b61]">{localized(course.localizedSummary, lang)}</p>
                           <p className="mt-3 text-xs text-[#718077]"><span className="font-semibold">{t(lang, 'instructor')}:</span> {localized(course.localizedInstructor, lang)}</p>
                             <CourseCertificateReview courseId={course.id} lang={lang} />
+                            <CourseAssignmentsPanel courseId={course.id} lang={lang} />
                         </article>
                       ))}
                     </div>}

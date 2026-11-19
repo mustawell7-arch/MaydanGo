@@ -3,7 +3,8 @@ import { clerkClient, getAuth } from "@clerk/express";
 import { randomUUID } from "node:crypto";
 import { and, asc, count, desc, eq, gt, gte, inArray, isNull, sql } from "drizzle-orm";
 import {
-  ACTIVE_RESERVATION_STATUSES, BOOKED_RESERVATION_STATUSES, courseCertificates, db, courseEnrollments, courseMaterials, courseQuizAttempts, lessonAccess, learningCourses, learningLessons, lessonProgress,
+  ACTIVE_RESERVATION_STATUSES, BOOKED_RESERVATION_STATUSES, courseAssignmentProgress, courseAssignments, courseCertificates,
+  db, courseEnrollments, courseMaterials, courseQuizAttempts, lessonAccess, learningCourses, learningLessons, lessonProgress,
   memberSavedCourses,
   memberships, offerings, partners, reservations,
 } from "@workspace/db";
@@ -16,6 +17,8 @@ import {
   UpdateMemberCoursePlaybackProgressBody, UpdateMemberCoursePlaybackProgressResponse,
   SetMemberCourseFavoriteBody, SetMemberCourseFavoriteParams, SetMemberCourseFavoriteResponse,
   GetMemberCourseCertificateResponse,
+  UpdateMemberCourseAssignmentProgressBody, UpdateMemberCourseAssignmentProgressParams,
+  UpdateMemberCourseAssignmentProgressResponse,
 } from "@workspace/api-zod";
 import { BookingError, membershipCanAccess } from "../lib/reservations";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
@@ -157,11 +160,33 @@ async function getCourseDetail(userId: string, id: string) {
       .where(eq(courseMaterials.courseId, id))
       .orderBy(asc(courseMaterials.approvedAt))
     : [];
+  const assignments = accessState === "ready" && enrolled
+    ? await db.select().from(courseAssignments).where(eq(courseAssignments.courseId, id))
+      .orderBy(asc(courseAssignments.position), asc(courseAssignments.createdAt))
+    : [];
+  const assignmentProgress = enrolled && assignments.length
+    ? await db.select({
+      assignmentId: courseAssignmentProgress.assignmentId,
+      completedAt: courseAssignmentProgress.completedAt,
+    }).from(courseAssignmentProgress).where(and(
+      eq(courseAssignmentProgress.enrollmentId, enrolled.id),
+      inArray(courseAssignmentProgress.assignmentId, assignments.map(assignment => assignment.id)),
+    ))
+    : [];
+  const completedAssignments = new Map(assignmentProgress.map(row => [row.assignmentId, row.completedAt]));
   const summary = courseSummary(course, !!enrolled, completed.size, lessons.length, savedCourse.length > 0, latestCompletedAt);
   return {
     ...summary,
     accessState,
     materials,
+    assignments: assignments.map(assignment => ({
+      id: assignment.id,
+      position: assignment.position,
+      localizedTitle: assignment.localizedTitle,
+      localizedInstructions: assignment.localizedInstructions,
+      completed: completedAssignments.has(assignment.id),
+      completedAt: completedAssignments.get(assignment.id) ?? null,
+    })),
     lastAccessAt: enrolled?.lastAccessAt ?? null,
     lessons: lessons.map(lesson => ({
       id: lesson.id,
@@ -268,6 +293,74 @@ router.get("/courses/:id/certificate", async (req, res): Promise<void> => {
     completedAt: certificate.completedAt,
     issuedAt: certificate.issuedAt,
     disclaimer: "This is a course completion certificate, not an accredited qualification.",
+  }));
+});
+
+router.put("/courses/:id/assignments/:assignmentId/progress", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) { res.status(401).json({ message: "Sign in to update assignment progress." }); return; }
+  if (await isAccessSuspended("member", userId)) {
+    res.status(403).json({ message: "This account is temporarily restricted from course changes. Contact MaydanGo support." });
+    return;
+  }
+  const params = UpdateMemberCourseAssignmentProgressParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ message: "Choose a valid course assignment." });
+    return;
+  }
+  const body = UpdateMemberCourseAssignmentProgressBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ message: "Choose a valid completion state." });
+    return;
+  }
+  const courseId = params.data.id;
+  const assignmentId = params.data.assignmentId;
+  const [course] = await db.select({ id: learningCourses.id }).from(learningCourses).where(and(
+    eq(learningCourses.id, courseId),
+    eq(learningCourses.published, true),
+  )).limit(1);
+  if (!course) { res.status(404).json({ message: "This course is not available." }); return; }
+  if (!await currentDigitalCourseMembership(userId)) {
+    res.status(403).json({ message: "An eligible membership with digital course access is required." });
+    return;
+  }
+  const [enrollment] = await db.select({ id: courseEnrollments.id }).from(courseEnrollments).where(and(
+    eq(courseEnrollments.userId, userId),
+    eq(courseEnrollments.courseId, courseId),
+  )).limit(1);
+  if (!enrollment) {
+    res.status(403).json({ message: "Enroll in this course before tracking assignment progress." });
+    return;
+  }
+  const [assignment] = await db.select({ id: courseAssignments.id }).from(courseAssignments).where(and(
+    eq(courseAssignments.id, assignmentId),
+    eq(courseAssignments.courseId, courseId),
+  )).limit(1);
+  if (!assignment) { res.status(404).json({ message: "This assignment is not part of the course." }); return; }
+
+  let completedAt: Date | null = null;
+  if (body.data.completed) {
+    const now = new Date();
+    const [saved] = await db.insert(courseAssignmentProgress).values({
+      id: randomUUID(),
+      assignmentId,
+      enrollmentId: enrollment.id,
+      completedAt: now,
+    }).onConflictDoUpdate({
+      target: [courseAssignmentProgress.enrollmentId, courseAssignmentProgress.assignmentId],
+      set: { completedAt: now },
+    }).returning({ completedAt: courseAssignmentProgress.completedAt });
+    completedAt = saved.completedAt;
+  } else {
+    await db.delete(courseAssignmentProgress).where(and(
+      eq(courseAssignmentProgress.assignmentId, assignmentId),
+      eq(courseAssignmentProgress.enrollmentId, enrollment.id),
+    ));
+  }
+  res.json(UpdateMemberCourseAssignmentProgressResponse.parse({
+    assignmentId,
+    completed: body.data.completed,
+    completedAt,
   }));
 });
 

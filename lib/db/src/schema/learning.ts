@@ -131,3 +131,26 @@ export const courseCertificates = pgTable("course_certificates", {
   uniqueIndex("course_certificate_enrollment").on(table.enrollmentId),
   index("course_certificate_instructor").on(table.instructorUserId, table.issuedAt),
 ]);
+
+export const courseAssignments = pgTable("course_assignments", {
+  id: text("id").primaryKey(),
+  courseId: text("course_id").notNull().references(() => learningCourses.id, { onDelete: "cascade" }),
+  position: integer("position").notNull(),
+  localizedTitle: jsonb("localized_title").$type<LocalizedText>().notNull(),
+  localizedInstructions: jsonb("localized_instructions").$type<LocalizedText>().notNull(),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  index("course_assignments_course_position").on(table.courseId, table.position),
+]);
+
+export const courseAssignmentProgress = pgTable("course_assignment_progress", {
+  id: text("id").primaryKey(),
+  assignmentId: text("assignment_id").notNull().references(() => courseAssignments.id, { onDelete: "cascade" }),
+  enrollmentId: text("enrollment_id").notNull().references(() => courseEnrollments.id, { onDelete: "cascade" }),
+  completedAt: timestamp("completed_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  uniqueIndex("course_assignment_progress_enrollment_assignment").on(table.enrollmentId, table.assignmentId),
+  index("course_assignment_progress_enrollment").on(table.enrollmentId),
+]);

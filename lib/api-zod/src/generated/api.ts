@@ -7465,6 +7465,193 @@ export const IssueInstructorCourseCertificateResponse = zod.object({
 })
 
 
+
+
+
+export const GetInstructorCourseAssignmentsParams = zod.object({
+  "courseId": zod.coerce.string().min(1)
+})
+
+
+export const getInstructorCourseAssignmentsResponseLocalizedTitleEnMax = 240;
+
+export const getInstructorCourseAssignmentsResponseLocalizedTitleArMax = 240;
+
+export const getInstructorCourseAssignmentsResponseLocalizedTitleKuMax = 240;
+
+export const getInstructorCourseAssignmentsResponseLocalizedInstructionsEnMax = 2000;
+
+export const getInstructorCourseAssignmentsResponseLocalizedInstructionsArMax = 2000;
+
+export const getInstructorCourseAssignmentsResponseLocalizedInstructionsKuMax = 2000;
+
+
+
+export const GetInstructorCourseAssignmentsResponseItem = zod.object({
+  "id": zod.uuid(),
+  "position": zod.int().min(1),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(getInstructorCourseAssignmentsResponseLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(getInstructorCourseAssignmentsResponseLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(getInstructorCourseAssignmentsResponseLocalizedTitleKuMax)
+}),
+  "localizedInstructions": zod.object({
+  "en": zod.string().min(1).max(getInstructorCourseAssignmentsResponseLocalizedInstructionsEnMax),
+  "ar": zod.string().min(1).max(getInstructorCourseAssignmentsResponseLocalizedInstructionsArMax),
+  "ku": zod.string().min(1).max(getInstructorCourseAssignmentsResponseLocalizedInstructionsKuMax)
+}),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const GetInstructorCourseAssignmentsResponse = zod.array(GetInstructorCourseAssignmentsResponseItem)
+
+
+
+
+
+export const CreateInstructorCourseAssignmentParams = zod.object({
+  "courseId": zod.coerce.string().min(1)
+})
+
+export const createInstructorCourseAssignmentBodyLocalizedTitleEnMax = 240;
+
+export const createInstructorCourseAssignmentBodyLocalizedTitleArMax = 240;
+
+export const createInstructorCourseAssignmentBodyLocalizedTitleKuMax = 240;
+
+export const createInstructorCourseAssignmentBodyLocalizedInstructionsEnMax = 2000;
+
+export const createInstructorCourseAssignmentBodyLocalizedInstructionsArMax = 2000;
+
+export const createInstructorCourseAssignmentBodyLocalizedInstructionsKuMax = 2000;
+
+
+
+export const CreateInstructorCourseAssignmentBody = zod.object({
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(createInstructorCourseAssignmentBodyLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(createInstructorCourseAssignmentBodyLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(createInstructorCourseAssignmentBodyLocalizedTitleKuMax)
+}),
+  "localizedInstructions": zod.object({
+  "en": zod.string().min(1).max(createInstructorCourseAssignmentBodyLocalizedInstructionsEnMax),
+  "ar": zod.string().min(1).max(createInstructorCourseAssignmentBodyLocalizedInstructionsArMax),
+  "ku": zod.string().min(1).max(createInstructorCourseAssignmentBodyLocalizedInstructionsKuMax)
+})
+})
+
+
+export const createInstructorCourseAssignmentResponseLocalizedTitleEnMax = 240;
+
+export const createInstructorCourseAssignmentResponseLocalizedTitleArMax = 240;
+
+export const createInstructorCourseAssignmentResponseLocalizedTitleKuMax = 240;
+
+export const createInstructorCourseAssignmentResponseLocalizedInstructionsEnMax = 2000;
+
+export const createInstructorCourseAssignmentResponseLocalizedInstructionsArMax = 2000;
+
+export const createInstructorCourseAssignmentResponseLocalizedInstructionsKuMax = 2000;
+
+
+
+export const CreateInstructorCourseAssignmentResponse = zod.object({
+  "id": zod.uuid(),
+  "position": zod.int().min(1),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(createInstructorCourseAssignmentResponseLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(createInstructorCourseAssignmentResponseLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(createInstructorCourseAssignmentResponseLocalizedTitleKuMax)
+}),
+  "localizedInstructions": zod.object({
+  "en": zod.string().min(1).max(createInstructorCourseAssignmentResponseLocalizedInstructionsEnMax),
+  "ar": zod.string().min(1).max(createInstructorCourseAssignmentResponseLocalizedInstructionsArMax),
+  "ku": zod.string().min(1).max(createInstructorCourseAssignmentResponseLocalizedInstructionsKuMax)
+}),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+
+
+
+export const UpdateInstructorCourseAssignmentParams = zod.object({
+  "courseId": zod.coerce.string().min(1),
+  "assignmentId": zod.uuid()
+})
+
+export const updateInstructorCourseAssignmentBodyLocalizedTitleEnMax = 240;
+
+export const updateInstructorCourseAssignmentBodyLocalizedTitleArMax = 240;
+
+export const updateInstructorCourseAssignmentBodyLocalizedTitleKuMax = 240;
+
+export const updateInstructorCourseAssignmentBodyLocalizedInstructionsEnMax = 2000;
+
+export const updateInstructorCourseAssignmentBodyLocalizedInstructionsArMax = 2000;
+
+export const updateInstructorCourseAssignmentBodyLocalizedInstructionsKuMax = 2000;
+
+
+
+export const UpdateInstructorCourseAssignmentBody = zod.object({
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(updateInstructorCourseAssignmentBodyLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(updateInstructorCourseAssignmentBodyLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(updateInstructorCourseAssignmentBodyLocalizedTitleKuMax)
+}),
+  "localizedInstructions": zod.object({
+  "en": zod.string().min(1).max(updateInstructorCourseAssignmentBodyLocalizedInstructionsEnMax),
+  "ar": zod.string().min(1).max(updateInstructorCourseAssignmentBodyLocalizedInstructionsArMax),
+  "ku": zod.string().min(1).max(updateInstructorCourseAssignmentBodyLocalizedInstructionsKuMax)
+})
+})
+
+
+export const updateInstructorCourseAssignmentResponseLocalizedTitleEnMax = 240;
+
+export const updateInstructorCourseAssignmentResponseLocalizedTitleArMax = 240;
+
+export const updateInstructorCourseAssignmentResponseLocalizedTitleKuMax = 240;
+
+export const updateInstructorCourseAssignmentResponseLocalizedInstructionsEnMax = 2000;
+
+export const updateInstructorCourseAssignmentResponseLocalizedInstructionsArMax = 2000;
+
+export const updateInstructorCourseAssignmentResponseLocalizedInstructionsKuMax = 2000;
+
+
+
+export const UpdateInstructorCourseAssignmentResponse = zod.object({
+  "id": zod.uuid(),
+  "position": zod.int().min(1),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(updateInstructorCourseAssignmentResponseLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(updateInstructorCourseAssignmentResponseLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(updateInstructorCourseAssignmentResponseLocalizedTitleKuMax)
+}),
+  "localizedInstructions": zod.object({
+  "en": zod.string().min(1).max(updateInstructorCourseAssignmentResponseLocalizedInstructionsEnMax),
+  "ar": zod.string().min(1).max(updateInstructorCourseAssignmentResponseLocalizedInstructionsArMax),
+  "ku": zod.string().min(1).max(updateInstructorCourseAssignmentResponseLocalizedInstructionsKuMax)
+}),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+
+
+
+export const DeleteInstructorCourseAssignmentParams = zod.object({
+  "courseId": zod.coerce.string().min(1),
+  "assignmentId": zod.uuid()
+})
+
+export const DeleteInstructorCourseAssignmentResponse = zod.void()
+
+
 export const getInstructorContentDraftsResponseDraftsItemPayloadOneDisplayNameMax = 120;
 
 export const getInstructorContentDraftsResponseDraftsItemPayloadOneBiographyMax = 3000;
@@ -12628,6 +12815,19 @@ export const getMemberCourseResponseTwoMaterialsItemFileNameMax = 180;
 
 
 
+export const getMemberCourseResponseTwoAssignmentsItemLocalizedTitleEnMax = 240;
+
+export const getMemberCourseResponseTwoAssignmentsItemLocalizedTitleArMax = 240;
+
+export const getMemberCourseResponseTwoAssignmentsItemLocalizedTitleKuMax = 240;
+
+export const getMemberCourseResponseTwoAssignmentsItemLocalizedInstructionsEnMax = 2000;
+
+export const getMemberCourseResponseTwoAssignmentsItemLocalizedInstructionsArMax = 2000;
+
+export const getMemberCourseResponseTwoAssignmentsItemLocalizedInstructionsKuMax = 2000;
+
+
 
 export const GetMemberCourseResponse = zod.object({
   "localizedTitle": zod.object({
@@ -12727,7 +12927,23 @@ export const GetMemberCourseResponse = zod.object({
   "sizeBytes": zod.int().min(1),
   "approvedAt": zod.coerce.date()
 })),
-  "lastAccessAt": zod.coerce.date().nullable()
+  "lastAccessAt": zod.coerce.date().nullable(),
+  "assignments": zod.array(zod.object({
+  "id": zod.uuid(),
+  "position": zod.int().min(1),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(getMemberCourseResponseTwoAssignmentsItemLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseResponseTwoAssignmentsItemLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(getMemberCourseResponseTwoAssignmentsItemLocalizedTitleKuMax)
+}),
+  "localizedInstructions": zod.object({
+  "en": zod.string().min(1).max(getMemberCourseResponseTwoAssignmentsItemLocalizedInstructionsEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseResponseTwoAssignmentsItemLocalizedInstructionsArMax),
+  "ku": zod.string().min(1).max(getMemberCourseResponseTwoAssignmentsItemLocalizedInstructionsKuMax)
+}),
+  "completed": zod.boolean(),
+  "completedAt": zod.coerce.date().nullable()
+}))
 }))
 
 
@@ -12765,6 +12981,22 @@ export const GetMemberCourseCertificateResponse = zod.object({
   "completedAt": zod.coerce.date(),
   "issuedAt": zod.coerce.date(),
   "disclaimer": zod.string()
+})
+
+
+export const UpdateMemberCourseAssignmentProgressParams = zod.object({
+  "id": zod.coerce.string(),
+  "assignmentId": zod.uuid()
+})
+
+export const UpdateMemberCourseAssignmentProgressBody = zod.object({
+  "completed": zod.boolean()
+})
+
+export const UpdateMemberCourseAssignmentProgressResponse = zod.object({
+  "assignmentId": zod.uuid(),
+  "completed": zod.boolean(),
+  "completedAt": zod.coerce.date().nullable()
 })
 
 
@@ -12877,6 +13109,19 @@ export const enrollMemberCourseResponseTwoMaterialsItemFileNameMax = 180;
 
 
 
+export const enrollMemberCourseResponseTwoAssignmentsItemLocalizedTitleEnMax = 240;
+
+export const enrollMemberCourseResponseTwoAssignmentsItemLocalizedTitleArMax = 240;
+
+export const enrollMemberCourseResponseTwoAssignmentsItemLocalizedTitleKuMax = 240;
+
+export const enrollMemberCourseResponseTwoAssignmentsItemLocalizedInstructionsEnMax = 2000;
+
+export const enrollMemberCourseResponseTwoAssignmentsItemLocalizedInstructionsArMax = 2000;
+
+export const enrollMemberCourseResponseTwoAssignmentsItemLocalizedInstructionsKuMax = 2000;
+
+
 
 export const EnrollMemberCourseResponse = zod.object({
   "localizedTitle": zod.object({
@@ -12976,7 +13221,23 @@ export const EnrollMemberCourseResponse = zod.object({
   "sizeBytes": zod.int().min(1),
   "approvedAt": zod.coerce.date()
 })),
-  "lastAccessAt": zod.coerce.date().nullable()
+  "lastAccessAt": zod.coerce.date().nullable(),
+  "assignments": zod.array(zod.object({
+  "id": zod.uuid(),
+  "position": zod.int().min(1),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(enrollMemberCourseResponseTwoAssignmentsItemLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(enrollMemberCourseResponseTwoAssignmentsItemLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(enrollMemberCourseResponseTwoAssignmentsItemLocalizedTitleKuMax)
+}),
+  "localizedInstructions": zod.object({
+  "en": zod.string().min(1).max(enrollMemberCourseResponseTwoAssignmentsItemLocalizedInstructionsEnMax),
+  "ar": zod.string().min(1).max(enrollMemberCourseResponseTwoAssignmentsItemLocalizedInstructionsArMax),
+  "ku": zod.string().min(1).max(enrollMemberCourseResponseTwoAssignmentsItemLocalizedInstructionsKuMax)
+}),
+  "completed": zod.boolean(),
+  "completedAt": zod.coerce.date().nullable()
+}))
 }))
 
 
@@ -13082,6 +13343,19 @@ export const updateCourseProgressResponseTwoMaterialsItemFileNameMax = 180;
 
 
 
+export const updateCourseProgressResponseTwoAssignmentsItemLocalizedTitleEnMax = 240;
+
+export const updateCourseProgressResponseTwoAssignmentsItemLocalizedTitleArMax = 240;
+
+export const updateCourseProgressResponseTwoAssignmentsItemLocalizedTitleKuMax = 240;
+
+export const updateCourseProgressResponseTwoAssignmentsItemLocalizedInstructionsEnMax = 2000;
+
+export const updateCourseProgressResponseTwoAssignmentsItemLocalizedInstructionsArMax = 2000;
+
+export const updateCourseProgressResponseTwoAssignmentsItemLocalizedInstructionsKuMax = 2000;
+
+
 
 export const UpdateCourseProgressResponse = zod.object({
   "localizedTitle": zod.object({
@@ -13181,7 +13455,23 @@ export const UpdateCourseProgressResponse = zod.object({
   "sizeBytes": zod.int().min(1),
   "approvedAt": zod.coerce.date()
 })),
-  "lastAccessAt": zod.coerce.date().nullable()
+  "lastAccessAt": zod.coerce.date().nullable(),
+  "assignments": zod.array(zod.object({
+  "id": zod.uuid(),
+  "position": zod.int().min(1),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(updateCourseProgressResponseTwoAssignmentsItemLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(updateCourseProgressResponseTwoAssignmentsItemLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(updateCourseProgressResponseTwoAssignmentsItemLocalizedTitleKuMax)
+}),
+  "localizedInstructions": zod.object({
+  "en": zod.string().min(1).max(updateCourseProgressResponseTwoAssignmentsItemLocalizedInstructionsEnMax),
+  "ar": zod.string().min(1).max(updateCourseProgressResponseTwoAssignmentsItemLocalizedInstructionsArMax),
+  "ku": zod.string().min(1).max(updateCourseProgressResponseTwoAssignmentsItemLocalizedInstructionsKuMax)
+}),
+  "completed": zod.boolean(),
+  "completedAt": zod.coerce.date().nullable()
+}))
 }))
 
 
