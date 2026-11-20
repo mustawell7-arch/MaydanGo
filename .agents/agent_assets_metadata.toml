@@ -210,3 +210,17 @@ mtime_ms = 1795182788159
 storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/d84de71b-eabb-4ce3-9ecc-577ef7b38aa7/f1523973-bc51-4331-a1ad-bdaa37e8f46f"
 storage_version_token = "1795182833895513"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "OFey3Tuux9X5xjnwlXuPU"
+uri = "file://docs/wireframes.md"
+type = "text"
+title = "MaydanGo low-fidelity wireframes"
+description = "Image-free screen structures for the member app, public website, and role-based portals; owner-supplied photos and visual styling remain reserved."
+logical_id = "1936fb68-e7bf-4b9f-930d-9a214437a4f3"
+content_hash = "sha256:3049a9570822c5ea05d8e38e363f9f880f6f362072d4b03f2d486ece17faa9eb"
+size = 9445
+mtime_ms = 1795183346418
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/1936fb68-e7bf-4b9f-930d-9a214437a4f3/e66961ef-3c2f-46be-8ef9-4525b7105401"
+storage_version_token = "1795183388601623"
+content_type = "text/markdown"
