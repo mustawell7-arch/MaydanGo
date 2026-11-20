@@ -1,0 +1,81 @@
+name: MaydanGo Android test APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build installable debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+      EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+      EXPO_PUBLIC_DOMAIN: ${{ vars.EXPO_PUBLIC_DOMAIN }}
+    steps:
+      - name: Check out MaydanGo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.26.1 --activate
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check build configuration
+        run: |
+          node <<'NODE'
+          const key = process.env.CLERK_PUBLISHABLE_KEY ?? "";
+          if (!/^pk_(test|live)_/.test(key)) {
+            console.error("Add the MaydanGo Clerk publishable key as the GitHub Actions secret CLERK_PUBLISHABLE_KEY.");
+            process.exit(1);
+          }
+
+          const domain = process.env.EXPO_PUBLIC_DOMAIN ?? "";
+          try {
+            const parsed = new URL(`https://${domain}`);
+            if (!domain || parsed.host !== domain || parsed.pathname !== "/" || parsed.search || parsed.hash) {
+              throw new Error("invalid host");
+            }
+          } catch {
+            console.error("Set the GitHub Actions repository variable EXPO_PUBLIC_DOMAIN to the API host only, without https:// or a path.");
+            process.exit(1);
+          }
+          NODE
+
+      - name: Generate the Android project
+        run: pnpm --filter @workspace/maydango exec expo prebuild --platform android --no-install
+
+      - name: Build signed test APK
+        working-directory: artifacts/maydango/android
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Prepare download
+        run: cp artifacts/maydango/android/app/build/outputs/apk/debug/app-debug.apk maydango-test.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: maydango-test-apk
+          path: maydango-test.apk
+          if-no-files-found: error
+          retention-days: 14

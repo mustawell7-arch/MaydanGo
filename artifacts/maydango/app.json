@@ -10,7 +10,9 @@
     "ios": {
       "supportsTablet": false
     },
-    "android": {},
+    "android": {
+      "package": "com.maydango.app"
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
@@ -48,10 +50,7 @@
         {
           "healthSharePermission": "MaydanGo reads daily step totals and completed-workout counts only, after you allow access in Apple Health.",
           "healthUpdatePermission": false,
-          "healthConnectPermissions": [
-            "READ_STEPS",
-            "READ_EXERCISE"
-          ]
+          "healthConnectPermissions": ["READ_STEPS", "READ_EXERCISE"]
         }
       ]
     ],
