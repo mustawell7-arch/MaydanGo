@@ -21,7 +21,7 @@ This is a code-level review of Section 79 in the product PDF. It is not a penetr
 | Audit logs | **Partial:** important operator actions use append-only audit records; coverage is not universal across every domain. |
 | Fraud monitoring | **Partial:** device and check-in rules detect selected risk signals; this is not a complete fraud operations service. |
 | Server and error monitoring | **Partial:** structured server logging and health checks exist. External error monitoring and alerting have not been verified. |
-| Vulnerability testing | **Completed for this review:** dependency, source, and privacy/dataflow scanners were run; results are summarized below. |
+| Vulnerability testing | **Automated scans completed:** the latest findings and limitations are recorded in `docs/security-testing-report.md`. This is not a penetration test. |
 | Penetration testing | **Not performed:** arrange a separately authorized, scoped test before launch. |
 | Access-log monitoring | **Partial:** request logging exists, but continuous review, retention, and alerting are not verified. |
 | Secret management | **Implemented in application configuration:** credentials are read from environment secrets rather than source constants. Review production secret scope and rotation before launch. |
@@ -30,13 +30,9 @@ This is a code-level review of Section 79 in the product PDF. It is not a penetr
 
 The API now adds `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and a restrictive `Permissions-Policy` to its responses. CSP and HSTS are not set in application code: the public web app needs an origin-specific policy, and production TLS terminates at the hosting edge.
 
-## Scanner results
+## Latest automated scan
 
-- **Dependency audit:** 2 high and 1 moderate advisories. The high findings affect `picomatch` 2.3.2 and 4.0.7; the moderate finding affects `minimatch` 10.2.6 through Expo fingerprint tooling.
-- **Source scan:** 2 high file-path warnings in the Expo static server. Both reads use the shared resolver that decodes and confines paths to the built static asset root; existing tests cover plain and encoded traversal. The static build directory is not an upload target. These findings were reviewed as false positives for the current data flow.
-- **Privacy/dataflow scan:** no findings.
-
-The registry currently has no `picomatch` release newer than 4.0.7, and no `minimatch` 10.x release newer than 10.2.6. `minimatch`'s suggested fix is major version 11; the current Expo 57 fingerprint dependency requires the 10.x line. Forcing a major override or upgrading the Expo SDK to work around these transitive dependencies would create compatibility risk without a confirmed safe patch. Recheck upstream compatible releases and rescan before production.
+The latest dependency, source, and privacy/dataflow scan was run on 21 November 2026. It found one moderate `minimatch` advisory, two static-server path warnings reviewed against the path-confinement helper, and no privacy/dataflow findings. The full results, test evidence, and remediation steps are in `docs/security-testing-report.md`.
 
 ## Release checks still required
 
