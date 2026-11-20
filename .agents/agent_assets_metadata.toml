@@ -98,3 +98,115 @@ mtime_ms = 1794833588815
 storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/d2adc1ce-8034-420e-b8b0-6106ff931504/f1fddab3-c048-4413-98f1-41bc86c11932"
 storage_version_token = "1794833844127870"
 content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "waG0dGvi22ylCAR_uhb6o"
+uri = "file://docs/product-requirements.md"
+type = "text"
+title = "MaydanGo Product Requirements Document"
+description = "Draft MaydanGo product deliverable for review."
+logical_id = "599fd693-2bb2-4446-8fb9-655d8fa60c58"
+content_hash = "sha256:8e084412ee5520caf28fc2be2411a24d04ef0a026b683ae66a3bdc96de00668e"
+size = 22743
+mtime_ms = 1795182234342
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/599fd693-2bb2-4446-8fb9-655d8fa60c58/a6cdc2d2-67b0-4539-a5b6-85f12a16e6e7"
+storage_version_token = "1795182297866946"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "zd9CDMyDqXeEFIf0PItCh"
+uri = "file://docs/user-stories.md"
+type = "text"
+title = "MaydanGo User Stories"
+description = "Draft MaydanGo product deliverable for review."
+logical_id = "9a8e97c0-99f7-4a9f-b7a6-5ed311d03296"
+content_hash = "sha256:47d62c26272638cf038eee9671d455c1b83304b191f8287a3742e93beece3462"
+size = 15738
+mtime_ms = 1795182125482
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/9a8e97c0-99f7-4a9f-b7a6-5ed311d03296/b1df9ad4-ad35-487c-b7b8-dab6390e4d04"
+storage_version_token = "1795182298572700"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "BUXR4gAYDwR2U3kfLDsrw"
+uri = "file://docs/acceptance-criteria.md"
+type = "text"
+title = "MaydanGo Acceptance Criteria"
+description = "Draft MaydanGo product deliverable for review."
+logical_id = "bdb714fd-e491-4651-b895-5d50e8fe0bf9"
+content_hash = "sha256:81f99bbd3d3d9e2708f8f7f67355ab05a3aec7d390cd5dcf705e19d97632711f"
+size = 11750
+mtime_ms = 1795182169026
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/bdb714fd-e491-4651-b895-5d50e8fe0bf9/db37e33a-3cb8-481d-9010-a1653576f380"
+storage_version_token = "1795182299263144"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "YbC1aeT9jgrDtsy7rRfz8"
+uri = "file://docs/user-flow-diagrams.md"
+type = "text"
+title = "MaydanGo User-Flow Diagrams"
+description = "Draft MaydanGo product deliverable for review."
+logical_id = "ac4c8fc7-7cfa-4905-a3c5-fa6de7b4e634"
+content_hash = "sha256:8d50c09c75463948555732d065851781b7a03628b6eec812dbcf54bc16301259"
+size = 6621
+mtime_ms = 1795182191750
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/ac4c8fc7-7cfa-4905-a3c5-fa6de7b4e634/78e46d44-554b-486a-877f-1ebf5ceba2ff"
+storage_version_token = "1795182299980782"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "I5ukAhTH6wAo6x7VJWani"
+uri = "file://docs/technical-architecture.md"
+type = "text"
+title = "MaydanGo technical architecture"
+description = "Current-state system architecture, including the API, data boundaries, deferred payments, and scaling considerations."
+logical_id = "0f5236d0-908e-41d2-90e2-f6529eff1916"
+content_hash = "sha256:b58089c24374168a53da3087d31337f9120d4101c9b3af93c93e9785881f6412"
+size = 9983
+mtime_ms = 1795182412762
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/0f5236d0-908e-41d2-90e2-f6529eff1916/b53a3784-8321-4713-8214-014bc7bda5f0"
+storage_version_token = "1795182546977981"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "P161sskvG1YgHOUk8_Qqf"
+uri = "file://docs/database-entity-coverage.md"
+type = "text"
+title = "MaydanGo database design"
+description = "Schema coverage and entity relationships, including course collections, consent, safety, wearable summaries, and deferred finance records."
+logical_id = "3a580a61-8ec7-4b99-ac24-e07135d1cb5d"
+content_hash = "sha256:37c44e7a2dd9bc2fc171c8ae45af9bfdb11610c2d90fb20e982c23806a37e95b"
+size = 12781
+mtime_ms = 1795182505550
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/3a580a61-8ec7-4b99-ac24-e07135d1cb5d/b591daa3-da1d-402a-9c1a-c6f36feeed6e"
+storage_version_token = "1795182548349003"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "8Hesj6Hrup_CYhgPvEjYF"
+uri = "file://docs/api-reference.md"
+type = "text"
+title = "MaydanGo API reference"
+description = "Human-readable guide to the OpenAPI contract, client authentication, endpoint families, uploads, rate limits, and deferred operations."
+logical_id = "2935a100-d657-4ca2-b2b8-c91514012b75"
+content_hash = "sha256:5dce17609245eea6758d5ea625ef86d83c55222e99838f8377685ee119ece2a5"
+size = 8742
+mtime_ms = 1795182657962
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/2935a100-d657-4ca2-b2b8-c91514012b75/bc0039b2-0b81-48d0-b8e2-f571e472a3b5"
+storage_version_token = "1795182682124780"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "Yzb8Yvukv07SBRETPS_V2"
+uri = "file://docs/financial-architecture.md"
+type = "text"
+title = "MaydanGo financial architecture"
+description = "Current finance records, security boundaries, provider gates, and final-phase requirements; no payment settings or code were changed."
+logical_id = "d84de71b-eabb-4ce3-9ecc-577ef7b38aa7"
+content_hash = "sha256:9c01c2a6b17e55649e9e6503934725c7fb1790397c08b35b8788b809d6e70bd7"
+size = 9350
+mtime_ms = 1795182788159
+storage_uri = "gcs://replit-rams-assets-kira/rams/assets/repl:ae877da1-f25f-4b89-90ab-12bbbd996789/d84de71b-eabb-4ce3-9ecc-577ef7b38aa7/f1523973-bc51-4331-a1ad-bdaa37e8f46f"
+storage_version_token = "1795182833895513"
+content_type = "text/markdown"

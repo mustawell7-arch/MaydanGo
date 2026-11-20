@@ -1,5 +1,11 @@
 # MaydanGo technical architecture
 
+| Document field | Value |
+|---|---|
+| Version | 1.1 |
+| Last updated | 20 November 2026 |
+| Status | Draft — current-state architecture |
+
 ## Purpose and status
 
 This document describes the architecture that exists in the repository and distinguishes it from capabilities still planned in the product requirements. “Implemented” means there is a working code path; “Partial” means the current scope is narrower than the PDF requirement; “Deferred” means it must not be treated as live or complete.
@@ -66,6 +72,7 @@ The API is the shared authority for member eligibility, booking and attendance s
 | Partner settlement | **Partial:** verified attendance and settlement reporting exist; they do not initiate bank transfers. |
 | Instructor settlement | **Deferred:** no active instructor payout flow. |
 | Course management | **Implemented, scoped:** courses, lessons, access decisions, enrollment, favorites, and member progress. |
+| Course collections | **Implemented, discovery only:** administrators manage localized ordered collections; public and member APIs return published collections without granting course access. |
 | Video-progress tracking | **Implemented, scoped:** lesson playback progress is recorded; protected media access is checked through the API. |
 | Live-class integration | **Partial:** live-class schedules and entitlement checks exist; a production streaming-provider integration is not confirmed. |
 | Event ticketing | **Partial:** free event reservations can use the booking flow; paid ticket sales are deferred with payment work. |
@@ -86,6 +93,7 @@ The API is the shared authority for member eligibility, booking and attendance s
 4. Drizzle maps domain schemas to PostgreSQL. Schema changes are maintained in `lib/db` and reviewed before they are applied.
 5. Public endpoints expose only published content. Private course and operational documents require authorization and are not served as permanent public object URLs.
 6. Push notifications are sent through the Expo service; failed deliveries have recovery handling.
+7. Course collections group published courses for discovery only. Each course retains its existing membership and enrollment checks in the API.
 
 ## Security and operations
 
@@ -98,6 +106,8 @@ The API is the shared authority for member eligibility, booking and attendance s
 ## Explicitly deferred or unconfirmed
 
 - Live customer payments, recurring billing, wallet, production refunds, corporate invoices, financial reconciliation, and actual payouts: final payment milestone.
+- Gift-course purchase or transfer: final payment milestone; gift eligibility and access rules are not yet approved.
+- Customer Community and third-party wellbeing-app integrations: explicitly skipped. Expansion beyond Iraq remains unselected.
 - App Store and Google Play distribution and store URLs: not configured.
 - Production streaming, maps, and external accounting providers: no provider is confirmed in the current architecture.
 - Centralized translation editing and complete audit coverage: future platform capabilities.
