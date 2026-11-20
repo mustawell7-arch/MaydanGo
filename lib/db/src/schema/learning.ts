@@ -38,6 +38,31 @@ export const learningCourses = pgTable("learning_courses", {
   index("learning_courses_instructor").on(table.instructorUserId),
 ]);
 
+export const learningCourseBundles = pgTable("learning_course_bundles", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  localizedTitle: jsonb("localized_title").$type<LocalizedText>().notNull(),
+  localizedSummary: jsonb("localized_summary").$type<LocalizedText>().notNull(),
+  published: boolean("published").notNull().default(false),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  index("learning_course_bundles_published").on(table.published),
+]);
+
+export const learningCourseBundleItems = pgTable("learning_course_bundle_items", {
+  id: text("id").primaryKey(),
+  bundleId: text("bundle_id").notNull().references(() => learningCourseBundles.id, { onDelete: "cascade" }),
+  courseId: text("course_id").notNull().references(() => learningCourses.id, { onDelete: "cascade" }),
+  position: integer("position").notNull(),
+}, table => [
+  uniqueIndex("learning_course_bundle_items_course").on(table.bundleId, table.courseId),
+  uniqueIndex("learning_course_bundle_items_position").on(table.bundleId, table.position),
+  index("learning_course_bundle_items_course_id").on(table.courseId),
+]);
+
 export const learningLessons = pgTable("learning_lessons", {
   id: text("id").primaryKey(),
   courseId: text("course_id").notNull().references(() => learningCourses.id, { onDelete: "cascade" }),

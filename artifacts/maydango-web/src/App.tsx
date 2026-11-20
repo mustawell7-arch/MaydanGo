@@ -56,6 +56,7 @@ const SuperAdminPage = lazy(() => import('@/pages/super-admin'));
 const FitnessChallengesAdminPage = lazy(() => import('@/pages/fitness-challenges-admin'));
 const SuperAdminPoliciesPage = lazy(() => import('@/pages/super-admin-policies'));
 const CourseMaterialsManagerPage = lazy(() => import('@/pages/course-materials-manager'));
+const CourseBundleManagerPage = lazy(() => import('@/pages/course-bundle-manager'));
 const CorporateAdminPage = lazy(() =>
   import('@/pages/corporate-workspace').then(module => ({ default: module.CorporateAdminPage })),
 );
@@ -1442,6 +1443,7 @@ function Router() {
       <Route path="/admin/fitness-challenges" component={FitnessChallengesAdminPage} />
       <Route path="/super-admin/policies" component={SuperAdminPoliciesPage} />
       <Route path="/admin/course-materials" component={CourseMaterialsManagerPage} />
+      <Route path="/admin/course-bundles" component={CourseBundleManagerPage} />
       <Route path="/admin/corporate" component={CorporateAdminPage} />
       <Route path="/corporate-agreement-draft" component={CorporateAgreementTemplatePage} />
       <Route path="/corporate-portal" component={CorporatePortalPage} />

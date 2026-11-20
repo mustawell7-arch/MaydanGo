@@ -1,13 +1,19 @@
 import { Router } from "express";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
-import { db, instructorProfiles, learningCourses, learningLessons } from "@workspace/db";
-import { GetPublicCoursesResponse, GetPublicInstructorProfilesResponse } from "@workspace/api-zod";
+import {
+  db, instructorProfiles, learningCourseBundles, learningCourseBundleItems,
+  learningCourses, learningLessons,
+} from "@workspace/db";
+import {
+  GetPublicCourseBundlesResponse, GetPublicCoursesResponse, GetPublicInstructorProfilesResponse,
+} from "@workspace/api-zod";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 
 const router = Router();
 const objectStorage = new ObjectStorageService();
 
-router.get("/courses", async (_req, res): Promise<void> => {
+async function getPublicCourses(courseIds?: string[]) {
+  if (courseIds && courseIds.length === 0) return [];
   const courses = await db.select({
     id: learningCourses.id,
     localizedTitle: learningCourses.localizedTitle,
@@ -23,9 +29,11 @@ router.get("/courses", async (_req, res): Promise<void> => {
     disclaimers: learningCourses.disclaimers,
     supportingMaterials: learningCourses.supportingMaterials,
   }).from(learningCourses)
-    .where(eq(learningCourses.published, true))
+    .where(courseIds
+      ? and(eq(learningCourses.published, true), inArray(learningCourses.id, courseIds))
+      : eq(learningCourses.published, true))
     .orderBy(asc(learningCourses.category), asc(learningCourses.title))
-    .limit(100);
+    .limit(courseIds ? Math.min(courseIds.length, 2000) : 100);
   const lessonCounts = courses.length
     ? await db.select({
       courseId: learningLessons.courseId,
@@ -36,11 +44,56 @@ router.get("/courses", async (_req, res): Promise<void> => {
     : [];
   const countByCourse = new Map(lessonCounts.map(row => [row.courseId, row.lessonCount]));
 
-  res.json(GetPublicCoursesResponse.parse(courses.map(course => ({
+  return GetPublicCoursesResponse.parse(courses.map(course => ({
     ...course,
     publishedAt: course.publishedAt?.toISOString() ?? null,
     lessonCount: countByCourse.get(course.id) ?? 0,
-  }))));
+  })));
+}
+
+router.get("/courses", async (_req, res): Promise<void> => {
+  res.json(await getPublicCourses());
+});
+
+router.get("/course-bundles", async (_req, res): Promise<void> => {
+  const bundles = await db.select().from(learningCourseBundles)
+    .where(eq(learningCourseBundles.published, true))
+    .orderBy(asc(learningCourseBundles.title))
+    .limit(100);
+  if (!bundles.length) {
+    res.json(GetPublicCourseBundlesResponse.parse([]));
+    return;
+  }
+  const items = await db.select({
+    bundleId: learningCourseBundleItems.bundleId,
+    courseId: learningCourseBundleItems.courseId,
+  }).from(learningCourseBundleItems)
+    .where(inArray(learningCourseBundleItems.bundleId, bundles.map(bundle => bundle.id)))
+    .orderBy(asc(learningCourseBundleItems.bundleId), asc(learningCourseBundleItems.position));
+  const courseIds = [...new Set(items.map(item => item.courseId))];
+  const courses = await getPublicCourses(courseIds);
+  const courseById = new Map(courses.map(course => [course.id, course]));
+  const courseIdsByBundle = new Map<string, string[]>();
+  for (const item of items) {
+    const selected = courseIdsByBundle.get(item.bundleId) ?? [];
+    selected.push(item.courseId);
+    courseIdsByBundle.set(item.bundleId, selected);
+  }
+  const result = bundles.flatMap(bundle => {
+    const selectedCourseIds = courseIdsByBundle.get(bundle.id) ?? [];
+    const bundleCourses = selectedCourseIds
+      .map(courseId => courseById.get(courseId))
+      .filter((course): course is NonNullable<typeof course> => !!course);
+    if (bundleCourses.length < 2 || bundleCourses.length !== selectedCourseIds.length) return [];
+    return [{
+      id: bundle.id,
+      title: bundle.title,
+      localizedTitle: bundle.localizedTitle,
+      localizedSummary: bundle.localizedSummary,
+      courses: bundleCourses,
+    }];
+  });
+  res.json(GetPublicCourseBundlesResponse.parse(result));
 });
 
 router.get("/instructors", async (_req, res): Promise<void> => {

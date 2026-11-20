@@ -63,6 +63,8 @@ import type {
   CorporatePortalResponse,
   CourseAdminRecord,
   CourseAssignmentInput,
+  CourseBundleAdminRecord,
+  CourseBundleInput,
   CourseDetail,
   CourseFavoriteInput,
   CourseFavoriteResponse,
@@ -137,11 +139,14 @@ import type {
   GetInstructorAccessRequestsResponse,
   GetInstructorContentDraftsResponse,
   GetInstructorContentReviewQueueResponse,
+  GetMemberCourseBundlesResponse,
+  GetOperationCourseBundlesResponse,
   GetOperationCourseMaterialsResponse,
   GetOperationCoursesResponse,
   GetOperationsAnalyticsParams,
   GetPartnerSettlementSummaryParams,
   GetPartnerStaffResponse,
+  GetPublicCourseBundlesResponse,
   GetPublicInstructorProfilesResponse,
   GetPublicLegalPolicyVersionParams,
   GetPublicSponsoredContentParams,
@@ -2423,6 +2428,101 @@ export function useGetPublicCourses<TData = Awaited<ReturnType<typeof getPublicC
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetPublicCoursesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicCourseBundlesUrl = () => {
+
+
+
+
+  return `/api/public/course-bundles`
+}
+
+export const getPublicCourseBundles = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetPublicCourseBundlesResponse> => {
+
+  return customFetch<GetPublicCourseBundlesResponse>(getGetPublicCourseBundlesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicCourseBundlesQueryKey = () => {
+    return [
+    `/api/public/course-bundles`
+    ] as const;
+    }
+
+
+export const getGetPublicCourseBundlesQueryOptions = <TData = Awaited<ReturnType<typeof getPublicCourseBundles>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCourseBundles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicCourseBundlesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicCourseBundles>>> = ({ signal }) => getPublicCourseBundles({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicCourseBundles>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPublicCourseBundlesQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicCourseBundles>>>
+export type GetPublicCourseBundlesQueryError = ErrorType<unknown>
+
+
+export function useGetPublicCourseBundles<TData = Awaited<ReturnType<typeof getPublicCourseBundles>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCourseBundles>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicCourseBundles>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicCourseBundles>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicCourseBundles<TData = Awaited<ReturnType<typeof getPublicCourseBundles>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCourseBundles>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPublicCourseBundles>>,
+          TError,
+          Awaited<ReturnType<typeof getPublicCourseBundles>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPublicCourseBundles<TData = Awaited<ReturnType<typeof getPublicCourseBundles>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCourseBundles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetPublicCourseBundles<TData = Awaited<ReturnType<typeof getPublicCourseBundles>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPublicCourseBundles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPublicCourseBundlesQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -7791,6 +7891,266 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getCreateLearningCourseMutationOptions(options), queryClient);
+    }
+
+export const getGetOperationCourseBundlesUrl = () => {
+
+
+
+
+  return `/api/operations/course-bundles`
+}
+
+export const getOperationCourseBundles = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetOperationCourseBundlesResponse> => {
+
+  return customFetch<GetOperationCourseBundlesResponse>(getGetOperationCourseBundlesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationCourseBundlesQueryKey = () => {
+    return [
+    `/api/operations/course-bundles`
+    ] as const;
+    }
+
+
+export const getGetOperationCourseBundlesQueryOptions = <TData = Awaited<ReturnType<typeof getOperationCourseBundles>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationCourseBundles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationCourseBundlesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationCourseBundles>>> = ({ signal }) => getOperationCourseBundles({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationCourseBundles>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOperationCourseBundlesQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationCourseBundles>>>
+export type GetOperationCourseBundlesQueryError = ErrorType<unknown>
+
+
+export function useGetOperationCourseBundles<TData = Awaited<ReturnType<typeof getOperationCourseBundles>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationCourseBundles>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOperationCourseBundles>>,
+          TError,
+          Awaited<ReturnType<typeof getOperationCourseBundles>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOperationCourseBundles<TData = Awaited<ReturnType<typeof getOperationCourseBundles>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationCourseBundles>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOperationCourseBundles>>,
+          TError,
+          Awaited<ReturnType<typeof getOperationCourseBundles>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOperationCourseBundles<TData = Awaited<ReturnType<typeof getOperationCourseBundles>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationCourseBundles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetOperationCourseBundles<TData = Awaited<ReturnType<typeof getOperationCourseBundles>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOperationCourseBundles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOperationCourseBundlesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateOperationCourseBundleUrl = () => {
+
+
+
+
+  return `/api/operations/course-bundles`
+}
+
+export const createOperationCourseBundle = async (courseBundleInput: CourseBundleInput, options?: Parameters<typeof customFetch>[1]): Promise<CourseBundleAdminRecord> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CourseBundleAdminRecord>(getCreateOperationCourseBundleUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(courseBundleInput)
+  }
+);}
+
+
+
+
+
+export const getCreateOperationCourseBundleMutationKey = () => ['createOperationCourseBundle'] as const;
+
+export const getCreateOperationCourseBundleMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOperationCourseBundle>>, TError,CreateOperationCourseBundleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createOperationCourseBundle>>, TError,CreateOperationCourseBundleMutationVariables, TContext> => {
+
+const mutationKey = getCreateOperationCourseBundleMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createOperationCourseBundle>>, CreateOperationCourseBundleMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createOperationCourseBundle(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateOperationCourseBundleMutationResult = NonNullable<Awaited<ReturnType<typeof createOperationCourseBundle>>>
+    export type CreateOperationCourseBundleMutationBody = BodyType<CourseBundleInput>
+    export type CreateOperationCourseBundleMutationError = ErrorType<void>
+    export type CreateOperationCourseBundleMutationVariables = {data: BodyType<CourseBundleInput>}
+
+    export const useCreateOperationCourseBundle = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOperationCourseBundle>>, TError,CreateOperationCourseBundleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createOperationCourseBundle>>,
+        TError,
+        CreateOperationCourseBundleMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateOperationCourseBundleMutationOptions(options), queryClient);
+    }
+
+export const getUpdateOperationCourseBundleUrl = (id: string,) => {
+
+
+
+
+  return `/api/operations/course-bundles/${id}`
+}
+
+export const updateOperationCourseBundle = async (id: string,
+    courseBundleInput: CourseBundleInput, options?: Parameters<typeof customFetch>[1]): Promise<CourseBundleAdminRecord> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CourseBundleAdminRecord>(getUpdateOperationCourseBundleUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(courseBundleInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateOperationCourseBundleMutationKey = () => ['updateOperationCourseBundle'] as const;
+
+export const getUpdateOperationCourseBundleMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOperationCourseBundle>>, TError,UpdateOperationCourseBundleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateOperationCourseBundle>>, TError,UpdateOperationCourseBundleMutationVariables, TContext> => {
+
+const mutationKey = getUpdateOperationCourseBundleMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateOperationCourseBundle>>, UpdateOperationCourseBundleMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateOperationCourseBundle(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateOperationCourseBundleMutationResult = NonNullable<Awaited<ReturnType<typeof updateOperationCourseBundle>>>
+    export type UpdateOperationCourseBundleMutationBody = BodyType<CourseBundleInput>
+    export type UpdateOperationCourseBundleMutationError = ErrorType<void>
+    export type UpdateOperationCourseBundleMutationVariables = {id: string;data: BodyType<CourseBundleInput>}
+
+    export const useUpdateOperationCourseBundle = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOperationCourseBundle>>, TError,UpdateOperationCourseBundleMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateOperationCourseBundle>>,
+        TError,
+        UpdateOperationCourseBundleMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateOperationCourseBundleMutationOptions(options), queryClient);
     }
 
 export const getUpdateLearningCourseUrl = (id: string,) => {
@@ -17169,6 +17529,101 @@ export function useGetMemberCourses<TData = Awaited<ReturnType<typeof getMemberC
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetMemberCoursesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMemberCourseBundlesUrl = () => {
+
+
+
+
+  return `/api/member/course-bundles`
+}
+
+export const getMemberCourseBundles = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetMemberCourseBundlesResponse> => {
+
+  return customFetch<GetMemberCourseBundlesResponse>(getGetMemberCourseBundlesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMemberCourseBundlesQueryKey = () => {
+    return [
+    `/api/member/course-bundles`
+    ] as const;
+    }
+
+
+export const getGetMemberCourseBundlesQueryOptions = <TData = Awaited<ReturnType<typeof getMemberCourseBundles>>, TError = ErrorType<void>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberCourseBundles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMemberCourseBundlesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMemberCourseBundles>>> = ({ signal }) => getMemberCourseBundles({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMemberCourseBundles>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMemberCourseBundlesQueryResult = NonNullable<Awaited<ReturnType<typeof getMemberCourseBundles>>>
+export type GetMemberCourseBundlesQueryError = ErrorType<void>
+
+
+export function useGetMemberCourseBundles<TData = Awaited<ReturnType<typeof getMemberCourseBundles>>, TError = ErrorType<void>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberCourseBundles>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberCourseBundles>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberCourseBundles>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberCourseBundles<TData = Awaited<ReturnType<typeof getMemberCourseBundles>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberCourseBundles>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMemberCourseBundles>>,
+          TError,
+          Awaited<ReturnType<typeof getMemberCourseBundles>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMemberCourseBundles<TData = Awaited<ReturnType<typeof getMemberCourseBundles>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberCourseBundles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetMemberCourseBundles<TData = Awaited<ReturnType<typeof getMemberCourseBundles>>, TError = ErrorType<void>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMemberCourseBundles>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMemberCourseBundlesQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { and, desc, eq, inArray, sql, asc, gt, isNull, gte, lte, lt } from "drizzle-orm";
 import { z } from "zod";
-import { ACTIVE_RESERVATION_STATUSES, db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourses, learningLessons, courseMaterials, facilityProfiles, facilityHoursOverrides, facilityCheckinPoints, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents, financeInvoiceCorrections, instructorPortalRequests, instructorCourseAssignments, instructorOfferingAssignments } from "@workspace/db";
+import { ACTIVE_RESERVATION_STATUSES, db, operators, partners, offerings, reservations, waitlistEntries, membershipPlans, memberships, accessGrants, operationAudit, attendance, attendanceEvents, checkinPolicies, learningCourseBundles, learningCourseBundleItems, learningCourses, learningLessons, courseMaterials, facilityProfiles, facilityHoursOverrides, facilityCheckinPoints, facilityQualityAssessments, facilityQualityIncidents, partnerInvoiceSubmissions, membershipBilling, paymentWebhookEvents, financeReviewItems, financeReviewEvents, financeInvoiceCorrections, instructorPortalRequests, instructorCourseAssignments, instructorOfferingAssignments } from "@workspace/db";
 import { BookingError, effectiveMembershipStatus, processWaitlistQueue } from "../lib/reservations";
 import { deriveOfferingSessionStatus, effectiveOfferingActivityStatus, type OfferingActivityStatus } from "../lib/offering-status";
 import { hasAdminPermission, isOperationsPortalRole, type AdminPermission } from "../lib/admin-roles";
@@ -13,6 +13,9 @@ import { createFacilityProfileInput, facilityHoursOverrideInput, facilityProfile
 import {
   AddLearningLessonBody, AddLearningLessonResponse, ChangeLiveOfferingBody,
   CreateLearningCourseBody, CreateLearningCourseResponse,
+  CreateOperationCourseBundleBody, CreateOperationCourseBundleResponse,
+  GetOperationCourseBundlesResponse, UpdateOperationCourseBundleBody,
+  UpdateOperationCourseBundleResponse,
   CompleteCourseMaterialUploadBody, CompleteCourseMaterialUploadResponse,
   CreateCourseMaterialUploadUrlBody, CreateCourseMaterialUploadUrlResponse,
   CreateFacilityProfileBody, CreateFacilityProfileResponse, CreateFacilityHoursOverrideBody,
@@ -2138,6 +2141,157 @@ router.get("/courses", async (_req, res) => {
       lessonCount: countByCourse.get(course.id) ?? 0,
     })),
   }));
+});
+
+router.get("/course-bundles", async (_req, res) => {
+  admin(res, "content");
+  const bundles = await db.select().from(learningCourseBundles)
+    .orderBy(desc(learningCourseBundles.updatedAt));
+  const items = bundles.length ? await db.select({
+    bundleId: learningCourseBundleItems.bundleId,
+    courseId: learningCourseBundleItems.courseId,
+    position: learningCourseBundleItems.position,
+  }).from(learningCourseBundleItems)
+    .where(inArray(learningCourseBundleItems.bundleId, bundles.map(bundle => bundle.id)))
+    .orderBy(asc(learningCourseBundleItems.bundleId), asc(learningCourseBundleItems.position))
+    : [];
+  const courseIdsByBundle = new Map<string, string[]>();
+  for (const item of items) {
+    const courseIds = courseIdsByBundle.get(item.bundleId) ?? [];
+    courseIds.push(item.courseId);
+    courseIdsByBundle.set(item.bundleId, courseIds);
+  }
+  res.json(GetOperationCourseBundlesResponse.parse({
+    bundles: bundles.map(bundle => {
+      const courseIds = courseIdsByBundle.get(bundle.id) ?? [];
+      return {
+        id: bundle.id,
+        title: bundle.title,
+        localizedTitle: bundle.localizedTitle,
+        localizedSummary: bundle.localizedSummary,
+        courseIds,
+        courseCount: courseIds.length,
+        published: bundle.published,
+        createdAt: bundle.createdAt,
+        updatedAt: bundle.updatedAt,
+      };
+    }),
+  }));
+});
+
+router.post("/course-bundles", async (req, res) => {
+  admin(res, "content");
+  const parsed = CreateOperationCourseBundleBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Add localized bundle details and choose at least two unique courses." });
+    return;
+  }
+  const data = parsed.data;
+  if (new Set(data.courseIds).size !== data.courseIds.length) {
+    res.status(400).json({ message: "Select each course only once." });
+    return;
+  }
+  const now = new Date();
+  const id = randomUUID();
+  const created = await db.transaction(async tx => {
+    const courses = await tx.select({ id: learningCourses.id, published: learningCourses.published })
+      .from(learningCourses).where(inArray(learningCourses.id, data.courseIds));
+    if (courses.length !== data.courseIds.length) {
+      throw new BookingError(400, "One or more selected courses no longer exist.");
+    }
+    if (data.published && courses.some(course => !course.published)) {
+      throw new BookingError(409, "Publish every course before publishing this collection.");
+    }
+    const [bundle] = await tx.insert(learningCourseBundles).values({
+      id,
+      title: data.localizedTitle.en,
+      localizedTitle: data.localizedTitle,
+      localizedSummary: data.localizedSummary,
+      published: data.published,
+      publishedAt: data.published ? now : null,
+      createdBy: getAuth(req).userId!,
+      createdAt: now,
+      updatedAt: now,
+    }).returning();
+    await tx.insert(learningCourseBundleItems).values(data.courseIds.map((courseId, index) => ({
+      id: randomUUID(),
+      bundleId: id,
+      courseId,
+      position: index + 1,
+    })));
+    await audit(tx, getAuth(req).userId!, "course_bundle.create", id,
+      `courses=${data.courseIds.length};published=${data.published}`);
+    return {
+      id: bundle.id,
+      title: bundle.title,
+      localizedTitle: bundle.localizedTitle,
+      localizedSummary: bundle.localizedSummary,
+      courseIds: data.courseIds,
+      courseCount: data.courseIds.length,
+      published: bundle.published,
+      createdAt: bundle.createdAt,
+      updatedAt: bundle.updatedAt,
+    };
+  });
+  res.status(201).json(CreateOperationCourseBundleResponse.parse(created));
+});
+
+router.put("/course-bundles/:id", async (req, res) => {
+  admin(res, "content");
+  const parsed = UpdateOperationCourseBundleBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Add localized bundle details and choose at least two unique courses." });
+    return;
+  }
+  const data = parsed.data;
+  if (new Set(data.courseIds).size !== data.courseIds.length) {
+    res.status(400).json({ message: "Select each course only once." });
+    return;
+  }
+  const id = String(req.params.id);
+  const updated = await db.transaction(async tx => {
+    const [existing] = await tx.select().from(learningCourseBundles)
+      .where(eq(learningCourseBundles.id, id)).for("update");
+    if (!existing) throw new BookingError(404, "Course collection not found.");
+    const courses = await tx.select({ id: learningCourses.id, published: learningCourses.published })
+      .from(learningCourses).where(inArray(learningCourses.id, data.courseIds));
+    if (courses.length !== data.courseIds.length) {
+      throw new BookingError(400, "One or more selected courses no longer exist.");
+    }
+    if (data.published && courses.some(course => !course.published)) {
+      throw new BookingError(409, "Publish every course before publishing this collection.");
+    }
+    const now = new Date();
+    const [bundle] = await tx.update(learningCourseBundles).set({
+      title: data.localizedTitle.en,
+      localizedTitle: data.localizedTitle,
+      localizedSummary: data.localizedSummary,
+      published: data.published,
+      publishedAt: data.published ? existing.publishedAt ?? now : null,
+      updatedAt: now,
+    }).where(eq(learningCourseBundles.id, id)).returning();
+    await tx.delete(learningCourseBundleItems).where(eq(learningCourseBundleItems.bundleId, id));
+    await tx.insert(learningCourseBundleItems).values(data.courseIds.map((courseId, index) => ({
+      id: randomUUID(),
+      bundleId: id,
+      courseId,
+      position: index + 1,
+    })));
+    await audit(tx, getAuth(req).userId!, "course_bundle.update", id,
+      `courses=${data.courseIds.length};published=${data.published}`);
+    return {
+      id: bundle.id,
+      title: bundle.title,
+      localizedTitle: bundle.localizedTitle,
+      localizedSummary: bundle.localizedSummary,
+      courseIds: data.courseIds,
+      courseCount: data.courseIds.length,
+      published: bundle.published,
+      createdAt: bundle.createdAt,
+      updatedAt: bundle.updatedAt,
+    };
+  });
+  res.json(UpdateOperationCourseBundleResponse.parse(updated));
 });
 
 router.post("/courses", async (req, res) => {

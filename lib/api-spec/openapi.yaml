@@ -257,6 +257,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PublicCourse"
+  /public/course-bundles:
+    get:
+      operationId: getPublicCourseBundles
+      responses:
+        "200":
+          description: Published course collections with published course summaries only
+          content:
+            application/json:
+              schema:
+                $ref: "./operations.yaml#/components/schemas/GetPublicCourseBundlesResponse"
   /public/instructors:
     get:
       operationId: getPublicInstructorProfiles
@@ -579,6 +589,10 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1invoices~1{id}~1document"
   /operations/courses:
     $ref: "./operations.yaml#/paths/~1operations~1courses"
+  /operations/course-bundles:
+    $ref: "./operations.yaml#/paths/~1operations~1course-bundles"
+  /operations/course-bundles/{id}:
+    $ref: "./operations.yaml#/paths/~1operations~1course-bundles~1{id}"
   /operations/courses/{id}:
     $ref: "./operations.yaml#/paths/~1operations~1courses~1{id}"
   /operations/courses/{id}/lessons:
@@ -771,6 +785,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1member~1device~1change"
   /member/courses:
     $ref: "./operations.yaml#/paths/~1member~1courses"
+  /member/course-bundles:
+    $ref: "./operations.yaml#/paths/~1member~1course-bundles"
   /member/fitness-challenges:
     $ref: "./operations.yaml#/paths/~1member~1fitness-challenges"
   /member/loyalty-points:

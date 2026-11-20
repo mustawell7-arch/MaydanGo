@@ -3864,7 +3864,7 @@ export const CourseMetadataInputLevel = {
 
 export interface CourseMetadataInput {
   localizedTitle: LocalizedText;
-  localizedSummary: LocalizedText;
+  localizedSummary: LocalizedCourseDetail47d80cf;
   localizedInstructor: LocalizedText;
   /**
      * @minLength 1
@@ -3926,6 +3926,79 @@ export type CourseAdminRecord = CourseMetadataInput & {
 export interface GetOperationCoursesResponse {
   courses: CourseAdminRecord[];
 }
+
+export interface CourseBundleInput {
+  localizedTitle: LocalizedText;
+  localizedSummary: LocalizedCourseDetail47d80cf;
+  /**
+     * @minItems 2
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 200
+     */
+  courseIds: string[];
+  published: boolean;
+}
+
+export interface CourseBundleAdminRecord {
+  id: string;
+  title: string;
+  localizedTitle: LocalizedText;
+  localizedSummary: LocalizedCourseDetail47d80cf;
+  courseIds: string[];
+  /**
+     * @minimum 0
+     * @maximum 20
+     */
+  courseCount: number;
+  published: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CourseSummary = CourseMetadataInput & ({
+  id: string;
+  title: string;
+  lessonCount: number;
+  enrolled: boolean;
+  completedLessons: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  completionPercentage: number;
+  /** @nullable */
+  courseCompletedAt: string | null;
+  isSaved: boolean;
+});
+
+export interface MemberCourseBundle {
+  id: string;
+  title: string;
+  localizedTitle: LocalizedText;
+  localizedSummary: LocalizedCourseDetail47d80cf;
+  courses: CourseSummary[];
+}
+
+export interface PublicCourseBundle {
+  id: string;
+  title: string;
+  localizedTitle: LocalizedText;
+  localizedSummary: LocalizedCourseDetail47d80cf;
+  /**
+     * @minItems 2
+     * @maxItems 20
+     */
+  courses: PublicCourse[];
+}
+
+export type GetPublicCourseBundlesResponse = PublicCourseBundle[];
+
+export interface GetOperationCourseBundlesResponse {
+  bundles: CourseBundleAdminRecord[];
+}
+
+export type GetMemberCourseBundlesResponse = MemberCourseBundle[];
 
 export interface InstructorProfileDraftPayload {
   /**
@@ -4890,22 +4963,6 @@ export interface CorporateEmployeeRemoval {
   id: string;
   status: CorporateEmployeeRemovalStatus;
 }
-
-export type CourseSummary = CourseMetadataInput & ({
-  id: string;
-  title: string;
-  lessonCount: number;
-  enrolled: boolean;
-  completedLessons: number;
-  /**
-     * @minimum 0
-     * @maximum 100
-     */
-  completionPercentage: number;
-  /** @nullable */
-  courseCompletedAt: string | null;
-  isSaved: boolean;
-});
 
 export interface CourseFavoriteInput {
   isSaved: boolean;

@@ -4,7 +4,8 @@ import { randomUUID } from "node:crypto";
 import { and, asc, count, desc, eq, gt, gte, inArray, isNull, sql } from "drizzle-orm";
 import {
   ACTIVE_RESERVATION_STATUSES, BOOKED_RESERVATION_STATUSES, courseAssignmentProgress, courseAssignments, courseCertificates,
-  db, courseEnrollments, courseMaterials, courseQuizAttempts, lessonAccess, learningCourses, learningLessons, lessonProgress,
+  db, courseEnrollments, courseMaterials, courseQuizAttempts, lessonAccess, learningCourseBundles,
+  learningCourseBundleItems, learningCourses, learningLessons, lessonProgress,
   memberSavedCourses,
   memberships, offerings, partners, reservations,
 } from "@workspace/db";
@@ -17,6 +18,7 @@ import {
   UpdateMemberCoursePlaybackProgressBody, UpdateMemberCoursePlaybackProgressResponse,
   SetMemberCourseFavoriteBody, SetMemberCourseFavoriteParams, SetMemberCourseFavoriteResponse,
   GetMemberCourseCertificateResponse,
+  GetMemberCourseBundlesResponse,
   UpdateMemberCourseAssignmentProgressBody, UpdateMemberCourseAssignmentProgressParams,
   UpdateMemberCourseAssignmentProgressResponse,
 } from "@workspace/api-zod";
@@ -217,9 +219,7 @@ async function getCourseDetail(userId: string, id: string) {
   };
 }
 
-router.get("/courses", async (req, res): Promise<void> => {
-  const userId = getAuth(req).userId;
-  if (!userId) { res.status(401).json({ message: "Sign in to browse courses." }); return; }
+async function getMemberCourseSummaries(userId: string) {
   const published = await db.select().from(learningCourses)
     .where(eq(learningCourses.published, true)).orderBy(asc(learningCourses.title));
   const enrollments = published.length ? await db.select().from(courseEnrollments)
@@ -244,7 +244,7 @@ router.get("/courses", async (req, res): Promise<void> => {
       inArray(memberSavedCourses.courseId, published.map(course => course.id)),
     )) : [];
   const savedCourseIds = new Set(savedRows.map(row => row.courseId));
-  res.json(GetMemberCoursesResponse.parse(published.map(course => {
+  return published.map(course => {
     const enrollment = enrollmentByCourse.get(course.id);
     const progress = enrollment ? progressByEnrollment.get(enrollment.id) : undefined;
     return courseSummary(
@@ -255,7 +255,51 @@ router.get("/courses", async (req, res): Promise<void> => {
       savedCourseIds.has(course.id),
       progress?.latestCompletedAt ?? null,
     );
-  })));
+  });
+}
+
+router.get("/courses", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) { res.status(401).json({ message: "Sign in to browse courses." }); return; }
+  res.json(GetMemberCoursesResponse.parse(await getMemberCourseSummaries(userId)));
+});
+
+router.get("/course-bundles", async (req, res): Promise<void> => {
+  const userId = getAuth(req).userId;
+  if (!userId) { res.status(401).json({ message: "Sign in to browse course collections." }); return; }
+  const bundles = await db.select().from(learningCourseBundles)
+    .where(eq(learningCourseBundles.published, true))
+    .orderBy(asc(learningCourseBundles.title));
+  const items = bundles.length ? await db.select({
+    bundleId: learningCourseBundleItems.bundleId,
+    courseId: learningCourseBundleItems.courseId,
+  }).from(learningCourseBundleItems)
+    .where(inArray(learningCourseBundleItems.bundleId, bundles.map(bundle => bundle.id)))
+    .orderBy(asc(learningCourseBundleItems.bundleId), asc(learningCourseBundleItems.position))
+    : [];
+  const memberCourses = await getMemberCourseSummaries(userId);
+  const courseById = new Map(memberCourses.map(course => [course.id, course]));
+  const coursesByBundle = new Map<string, string[]>();
+  for (const item of items) {
+    const bundleCourses = coursesByBundle.get(item.bundleId) ?? [];
+    bundleCourses.push(item.courseId);
+    coursesByBundle.set(item.bundleId, bundleCourses);
+  }
+  const memberBundles = bundles.flatMap(bundle => {
+    const selectedCourseIds = coursesByBundle.get(bundle.id) ?? [];
+    const courses = selectedCourseIds
+      .map(courseId => courseById.get(courseId))
+      .filter((course): course is NonNullable<typeof course> => !!course);
+    if (courses.length < 2 || courses.length !== selectedCourseIds.length) return [];
+    return [{
+      id: bundle.id,
+      title: bundle.title,
+      localizedTitle: bundle.localizedTitle,
+      localizedSummary: bundle.localizedSummary,
+      courses,
+    }];
+  });
+  res.json(GetMemberCourseBundlesResponse.parse(memberBundles));
 });
 
 router.get("/courses/:id", async (req, res): Promise<void> => {

@@ -1938,6 +1938,48 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CourseAdminRecord" }
+  /operations/course-bundles:
+    get:
+      operationId: getOperationCourseBundles
+      responses:
+        "200":
+          description: Course bundles available to content administrators, including unpublished drafts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetOperationCourseBundlesResponse" }
+    post:
+      operationId: createOperationCourseBundle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CourseBundleInput" }
+      responses:
+        "201":
+          description: Course collection created without changing course access
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CourseBundleAdminRecord" }
+        "400": { description: Invalid bundle details or course selection }
+        "409": { description: Published bundles must contain published courses }
+  /operations/course-bundles/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    put:
+      operationId: updateOperationCourseBundle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CourseBundleInput" }
+      responses:
+        "200":
+          description: Course collection content or publishing state updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CourseBundleAdminRecord" }
+        "400": { description: Invalid bundle details or course selection }
+        "404": { description: Course bundle not found }
+        "409": { description: Published bundles must contain published courses }
   /operations/courses/{id}:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     put:
@@ -2914,6 +2956,16 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/CourseSummary" } }
+  /member/course-bundles:
+    get:
+      operationId: getMemberCourseBundles
+      responses:
+        "200":
+          description: Published course collections and each member’s course progress
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GetMemberCourseBundlesResponse" }
+        "401": { description: Sign-in required }
   /member/courses/{id}:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     get:
@@ -5305,7 +5357,7 @@ components:
       required: [localizedTitle, localizedSummary, localizedInstructor, category, level, durationMinutes, thumbnailUrl, published]
       properties:
         localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
-        localizedSummary: { $ref: "#/components/schemas/LocalizedText" }
+        localizedSummary: { $ref: "#/components/schemas/LocalizedCourseDetail" }
         localizedInstructor: { $ref: "#/components/schemas/LocalizedText" }
         category: { type: string, minLength: 1, maxLength: 120 }
         level: { type: string, enum: [beginner, intermediate, advanced, all-levels] }
@@ -5372,6 +5424,76 @@ components:
         courses:
           type: array
           items: { $ref: "#/components/schemas/CourseAdminRecord" }
+    CourseBundleInput:
+      type: object
+      additionalProperties: false
+      required: [localizedTitle, localizedSummary, courseIds, published]
+      properties:
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedSummary: { $ref: "#/components/schemas/LocalizedCourseDetail" }
+        courseIds:
+          type: array
+          minItems: 2
+          maxItems: 20
+          uniqueItems: true
+          items: { type: string, minLength: 1, maxLength: 200 }
+        published: { type: boolean }
+    CourseBundleAdminRecord:
+      type: object
+      additionalProperties: false
+      required: [id, title, localizedTitle, localizedSummary, courseIds, courseCount, published, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedSummary: { $ref: "#/components/schemas/LocalizedCourseDetail" }
+        courseIds:
+          type: array
+          items: { type: string }
+        courseCount: { type: integer, minimum: 0, maximum: 20 }
+        published: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    MemberCourseBundle:
+      type: object
+      additionalProperties: false
+      required: [id, title, localizedTitle, localizedSummary, courses]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedSummary: { $ref: "#/components/schemas/LocalizedCourseDetail" }
+        courses:
+          type: array
+          items: { $ref: "#/components/schemas/CourseSummary" }
+    PublicCourseBundle:
+      type: object
+      additionalProperties: false
+      required: [id, title, localizedTitle, localizedSummary, courses]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        localizedTitle: { $ref: "#/components/schemas/LocalizedText" }
+        localizedSummary: { $ref: "#/components/schemas/LocalizedCourseDetail" }
+        courses:
+          type: array
+          minItems: 2
+          maxItems: 20
+          items: { $ref: "#/components/schemas/PublicCourse" }
+    GetPublicCourseBundlesResponse:
+      type: array
+      items: { $ref: "#/components/schemas/PublicCourseBundle" }
+    GetOperationCourseBundlesResponse:
+      type: object
+      additionalProperties: false
+      required: [bundles]
+      properties:
+        bundles:
+          type: array
+          items: { $ref: "#/components/schemas/CourseBundleAdminRecord" }
+    GetMemberCourseBundlesResponse:
+      type: array
+      items: { $ref: "#/components/schemas/MemberCourseBundle" }
     InstructorProfileDraftPayload:
       type: object
       additionalProperties: false

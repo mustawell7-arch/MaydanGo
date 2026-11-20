@@ -10,8 +10,10 @@ import {
   getGetPublicSponsoredFacilitiesQueryKey,
   getGetPublicSponsoredContentQueryKey,
   getGetPublicInstructorProfilesQueryKey,
+  getGetPublicCourseBundlesQueryKey,
   useGetPublicCatalog,
   useGetPublicCourses,
+  useGetPublicCourseBundles,
   useGetPublicFacilities,
   useGetPublicFacility,
   useGetPublicFacilityReviews,
@@ -22,7 +24,7 @@ import {
   useRecordPublicSponsoredContentEvent,
 } from '@workspace/api-client-react';
 import type {
-  PublicFacility, PublicCourse, PublicInstructorProfile,
+  PublicFacility, PublicCourse, PublicCourseBundle, PublicInstructorProfile,
   PublicSponsoredContentPlacement, SponsoredContentPlacementType, SponsoredContentType,
 } from '@workspace/api-client-react';
 
@@ -98,6 +100,10 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     reviewCount: 'reviews',
     coursesTitle: 'Online courses',
     coursesIntro: 'Browse the courses listed on MaydanGo and find one that suits your interests and experience.',
+    courseBundlesTitle: 'Learning paths',
+    courseBundlesIntro: 'Explore curated groups of related courses in a suggested order.',
+    courseBundleCourseLabel: 'Courses in this path',
+    courseBundleAccessNote: 'Collections help you discover related courses. Membership and enrollment are checked separately for each course.',
     courseLibrary: 'Published courses',
     courseLevel: 'Level',
     duration: 'minutes',
@@ -209,6 +215,10 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     reviewCount: 'تقييمات',
     coursesTitle: 'الدورات عبر الإنترنت',
     coursesIntro: 'تصفح تفاصيل الدورات المنشورة، بما فيها أسماء المدربين والمستويات والمدد. يمكن للأعضاء الذين تشمل خططهم الدورات الرقمية مشاهدة الدروس عبر تطبيق MaydanGo.',
+    courseBundlesTitle: 'مسارات التعلّم',
+    courseBundlesIntro: 'استكشف مجموعات منتقاة من الدورات المترابطة بترتيب مقترح.',
+    courseBundleCourseLabel: 'الدورات في هذا المسار',
+    courseBundleAccessNote: 'تساعدك هذه المجموعات على استكشاف الدورات المترابطة. ويُتحقق من العضوية والتسجيل لكل دورة على حدة.',
     courseLibrary: 'الدورات المنشورة',
     courseLevel: 'المستوى',
     duration: 'دقيقة',
@@ -320,6 +330,10 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     reviewCount: 'هەڵسەنگاندن',
     coursesTitle: 'کۆرسەکانی ئۆنلاین',
     coursesIntro: 'وردەکاریی کۆرسە بڵاوکراوەکان، ناوی مامۆستا، ئاست و ماوە ببینە. ئەندامانی پلانی دەستگەیشتنی کۆرسی دیجیتاڵی لەخۆگرتوو، دەتوانن وانەکان لە ئەپی MaydanGo ببینن.',
+    courseBundlesTitle: 'ڕێڕەوی فێربوون',
+    courseBundlesIntro: 'کۆمەڵەیەک لە کۆرسە پەیوەندیدارەکان بە ڕیزبەندییەکی پێشنیارکراو ببینە.',
+    courseBundleCourseLabel: 'کۆرسەکانی ئەم ڕێڕەوە',
+    courseBundleAccessNote: 'ئەم کۆمەڵانە یارمەتیت دەدەن کۆرسە پەیوەندیدارەکان بدۆزیتەوە؛ مەرجی ئەندامێتی و تۆماربوون بۆ هەر کۆرسێک جیاواز پشکنین دەکرێت.',
     courseLibrary: 'کۆرسە بڵاوکراوەکان',
     courseLevel: 'ئاست',
     duration: 'خولەک',
@@ -924,6 +938,9 @@ export function PublicFacilityBrowser({ language = 'en' }: { language?: PublicCa
 export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCatalogLanguage }) {
   const text = copy[language];
   const coursesQuery = useGetPublicCourses({ query: { queryKey: getGetPublicCoursesQueryKey() } });
+  const courseBundlesQuery = useGetPublicCourseBundles({
+    query: { queryKey: getGetPublicCourseBundlesQueryKey() },
+  });
   const sponsoredContentQuery = useGetPublicSponsoredContent(undefined, {
     query: { queryKey: getGetPublicSponsoredContentQueryKey() },
   });
@@ -1025,6 +1042,59 @@ export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCata
           </div>
         )}
       </section>
+      {courseBundlesQuery.isLoading ? (
+        <div className="mt-12" aria-label={text.courseBundlesTitle}>
+          <div className="mb-5 h-7 w-48 animate-pulse rounded bg-muted" />
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {[0, 1, 2].map(index => <div key={index} className="h-48 animate-pulse rounded-2xl border border-border bg-card" />)}
+          </div>
+        </div>
+      ) : courseBundlesQuery.isError ? (
+        <div className="mt-12">
+          <QueryError
+            message={text.failedCourses}
+            retry={() => void courseBundlesQuery.refetch()}
+            retryLabel={text.retry}
+            id="course-bundles"
+          />
+        </div>
+      ) : courseBundlesQuery.data?.length ? (
+        <section className="mt-12" aria-labelledby="public-course-bundles-title" data-testid="section-public-course-bundles">
+          <header className="mb-6">
+            <p className="text-xs font-bold uppercase tracking-[.18em] text-primary">{text.courseLibrary}</p>
+            <h2 id="public-course-bundles-title" className="font-display mt-2 text-2xl font-bold sm:text-3xl">{text.courseBundlesTitle}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{text.courseBundlesIntro}</p>
+          </header>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {courseBundlesQuery.data.map((bundle: PublicCourseBundle, bundleIndex: number) => (
+              <article
+                key={bundle.id}
+                className="rounded-2xl border border-border bg-card p-5 sm:p-6"
+                data-testid={`card-public-course-bundle-${bundle.id}`}
+              >
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">{text.courseBundlesTitle} · {String(bundleIndex + 1).padStart(2, '0')}</p>
+                <h3 className="font-display mt-3 text-xl font-bold leading-tight">{localized(bundle.localizedTitle, language)}</h3>
+                <p className="mt-3 min-h-12 text-sm leading-6 text-muted-foreground">{localized(bundle.localizedSummary, language)}</p>
+                <div className="mt-5 border-t border-border pt-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{text.courseBundleCourseLabel}</h4>
+                  <ol className="mt-3 divide-y divide-border">
+                    {bundle.courses.map((course, index) => (
+                      <li key={course.id} className="flex gap-3 py-3 first:pt-0 last:pb-0" data-testid={`row-public-bundle-course-${course.id}`}>
+                        <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-accent/70 text-xs font-bold text-primary">{index + 1}</span>
+                        <span className="min-w-0">
+                          <span className="block font-semibold">{localized(course.localizedTitle, language)}</span>
+                          <span className="mt-1 block text-xs text-muted-foreground">{course.category} · {course.lessonCount} {text.lessonCount}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </article>
+            ))}
+          </div>
+          <p className="mt-5 text-sm leading-6 text-muted-foreground">{text.courseBundleAccessNote}</p>
+        </section>
+      ) : null}
       <section className="mt-12" aria-labelledby="public-instructor-profiles-title" data-testid="section-public-instructor-profiles">
         <header className="mb-6">
           <p className="text-xs font-bold uppercase tracking-[.18em] text-primary">{text.instructor}</p>

@@ -9,7 +9,7 @@ import {
   getGetMemberCoursesQueryKey, getGetMemberLiveClassesQueryKey,
   getGetMemberCourseQueryKey, getGetPublicSponsoredContentQueryKey,
   useCreateLiveClassJoin, useGetMemberCourses, useGetPublicSponsoredContent,
-  useGetMemberLiveClasses, useSetMemberCourseFavorite,
+  useGetMemberCourseBundles, useGetMemberLiveClasses, useSetMemberCourseFavorite,
   type SponsoredContentPlacementType,
 } from '@workspace/api-client-react';
 import { MemberNotice } from '@/components/MemberNotice';
@@ -42,6 +42,7 @@ export default function OnlineScreen() {
   const t = (key: MessageKey) => translate(app.language, key);
   const align = app.language === 'en' ? 'left' : 'right';
   const coursesQuery = useGetMemberCourses({ query: { enabled: mode === 'courses' } });
+  const bundlesQuery = useGetMemberCourseBundles({ query: { enabled: mode === 'courses' } });
   const sponsoredContentCity = app.selectedCityId === 'all' ? undefined : getCityLabel(app.selectedCityId, 'en');
   const sponsoredContentQuery = useGetPublicSponsoredContent(
     { city: sponsoredContentCity },
@@ -252,6 +253,7 @@ export default function OnlineScreen() {
             ) : null}
             {coursesQuery.isLoading ? <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={{ color: colors.mutedForeground }}>{t('coursesLoading')}</Text></View> : null}
             {coursesQuery.isError ? <Text style={[styles.catalogMeta, { color: colors.destructive, textAlign: align }]}>{t('catalogLoadError')}</Text> : null}
+            {!showSavedOnly && bundlesQuery.isError ? <Text style={[styles.catalogMeta, { color: colors.destructive, textAlign: align }]}>{t('courseBundlesLoadError')}</Text> : null}
             {!coursesQuery.isLoading && !coursesQuery.isError && courseRows.length > 0 ? (
               <View accessibilityRole="tablist" style={[styles.segment, styles.courseFilter, { backgroundColor: colors.secondary }]}>
                 <Pressable
@@ -280,6 +282,63 @@ export default function OnlineScreen() {
             {!coursesQuery.isLoading && !coursesQuery.isError && courseSearch.trim() && visibleCourseRows.length === 0
               ? <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{t('noCourseSearchResults')}</Text>
               : null}
+            {!showSavedOnly && bundlesQuery.data?.length ? (
+              <View style={styles.bundleSection} testID="section-course-bundles">
+                <View>
+                  <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: align, marginBottom: 4 }]}>{t('courseBundles')}</Text>
+                  <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align, marginTop: 0, marginBottom: 10 }]}>{t('courseBundlesIntro')}</Text>
+                </View>
+                {bundlesQuery.data.map(bundle => (
+                  <View
+                    key={bundle.id}
+                    testID={`course-bundle-${bundle.id}`}
+                    style={[styles.bundleCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  >
+                    <View style={styles.bundleHeader}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align, marginTop: 0 }]}>
+                          {localText(bundle.localizedTitle, app.language)}
+                        </Text>
+                        <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
+                          {t('courseBundleCourseCount').replace('{count}', String(bundle.courses.length))}
+                        </Text>
+                      </View>
+                      <Ionicons name="albums-outline" size={20} color={colors.primary} />
+                    </View>
+                    <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align, lineHeight: 17, marginBottom: 7 }]}>
+                      {localText(bundle.localizedSummary, app.language)}
+                    </Text>
+                    {bundle.courses.map((course, index) => (
+                      <Pressable
+                        key={course.id}
+                        testID={`button-bundle-course-${course.id}`}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${t('viewCourse')}: ${localText(course.localizedTitle, app.language)}`}
+                        onPress={() => openCourse(course.id, course.enrolled)}
+                        style={({ pressed }) => [
+                          styles.bundleCourse,
+                          { borderTopColor: colors.border, opacity: pressed ? 0.65 : 1 },
+                        ]}
+                      >
+                        <View style={[styles.bundleCourseNumber, { backgroundColor: colors.secondary }]}>
+                          <Text style={[styles.bundleCourseNumberText, { color: colors.primary }]}>{index + 1}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.courseTitle, { color: colors.foreground, textAlign: align, marginTop: 0 }]}>
+                            {localText(course.localizedTitle, app.language)}
+                          </Text>
+                          <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>
+                            {course.category} · {course.lessonCount} {t('lessons')}
+                          </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} style={app.language !== 'en' ? { transform: [{ scaleX: -1 }] } : undefined} />
+                      </Pressable>
+                    ))}
+                  </View>
+                ))}
+                <Text style={[styles.catalogMeta, { color: colors.mutedForeground, textAlign: align }]}>{t('courseBundleAccessNote')}</Text>
+              </View>
+            ) : null}
             {started.length > 0 ? <>
               <Text style={[styles.sectionTitle, { color: colors.foreground, textAlign: align }]}>{t('continueLearning')}</Text>
               {started.map((course) => {
@@ -583,6 +642,12 @@ const styles = StyleSheet.create({
   courseBody: { padding: 14 },
   courseKicker: { fontSize: 9, fontWeight: '700' },
   courseTitle: { fontSize: 14, fontWeight: '800', marginTop: 4 },
+  bundleSection: { gap: 10, marginTop: 18 },
+  bundleCard: { borderWidth: 1, borderRadius: 18, padding: 13, marginBottom: 2 },
+  bundleHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
+  bundleCourse: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderTopWidth: 1 },
+  bundleCourseNumber: { width: 28, height: 28, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  bundleCourseNumberText: { fontSize: 11, fontWeight: '800' },
   courseProgressTrack: { height: 5, borderRadius: 5, marginTop: 11, overflow: 'hidden' },
   courseProgressFill: { height: 5, borderRadius: 5 },
   courseFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 9 },

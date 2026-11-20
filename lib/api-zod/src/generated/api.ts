@@ -1837,6 +1837,105 @@ export const GetPublicCoursesResponseItem = zod.object({
 export const GetPublicCoursesResponse = zod.array(GetPublicCoursesResponseItem)
 
 
+export const getPublicCourseBundlesResponseLocalizedTitleEnMax = 240;
+
+export const getPublicCourseBundlesResponseLocalizedTitleArMax = 240;
+
+export const getPublicCourseBundlesResponseLocalizedTitleKuMax = 240;
+
+export const getPublicCourseBundlesResponseLocalizedSummaryEnMax = 2000;
+
+export const getPublicCourseBundlesResponseLocalizedSummaryArMax = 2000;
+
+export const getPublicCourseBundlesResponseLocalizedSummaryKuMax = 2000;
+
+
+export const getPublicCourseBundlesResponseCoursesItemLessonCountMin = 0;
+
+export const getPublicCourseBundlesResponseCoursesItemCourseLanguagesMax = 3;
+
+export const getPublicCourseBundlesResponseCoursesItemSubtitleLanguagesMax = 3;
+
+export const getPublicCourseBundlesResponseCoursesItemRequiredEquipmentOneEnMax = 2000;
+
+export const getPublicCourseBundlesResponseCoursesItemRequiredEquipmentOneArMax = 2000;
+
+export const getPublicCourseBundlesResponseCoursesItemRequiredEquipmentOneKuMax = 2000;
+
+export const getPublicCourseBundlesResponseCoursesItemDisclaimersOneEnMax = 2000;
+
+export const getPublicCourseBundlesResponseCoursesItemDisclaimersOneArMax = 2000;
+
+export const getPublicCourseBundlesResponseCoursesItemDisclaimersOneKuMax = 2000;
+
+export const getPublicCourseBundlesResponseCoursesItemSupportingMaterialsOneEnMax = 2000;
+
+export const getPublicCourseBundlesResponseCoursesItemSupportingMaterialsOneArMax = 2000;
+
+export const getPublicCourseBundlesResponseCoursesItemSupportingMaterialsOneKuMax = 2000;
+
+export const getPublicCourseBundlesResponseCoursesMin = 2;
+export const getPublicCourseBundlesResponseCoursesMax = 20;
+
+
+
+export const GetPublicCourseBundlesResponseItem = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(getPublicCourseBundlesResponseLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(getPublicCourseBundlesResponseLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(getPublicCourseBundlesResponseLocalizedTitleKuMax)
+}),
+  "localizedSummary": zod.object({
+  "en": zod.string().min(1).max(getPublicCourseBundlesResponseLocalizedSummaryEnMax),
+  "ar": zod.string().min(1).max(getPublicCourseBundlesResponseLocalizedSummaryArMax),
+  "ku": zod.string().min(1).max(getPublicCourseBundlesResponseLocalizedSummaryKuMax)
+}),
+  "courses": zod.array(zod.object({
+  "id": zod.string(),
+  "localizedTitle": zod.object({
+  "en": zod.string(),
+  "ar": zod.string(),
+  "ku": zod.string()
+}),
+  "localizedSummary": zod.object({
+  "en": zod.string(),
+  "ar": zod.string(),
+  "ku": zod.string()
+}),
+  "localizedInstructor": zod.object({
+  "en": zod.string(),
+  "ar": zod.string(),
+  "ku": zod.string()
+}),
+  "category": zod.string(),
+  "level": zod.string(),
+  "durationMinutes": zod.int().min(1),
+  "lessonCount": zod.int().min(getPublicCourseBundlesResponseCoursesItemLessonCountMin),
+  "publishedAt": zod.coerce.date().nullable(),
+  "courseLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).min(1).max(getPublicCourseBundlesResponseCoursesItemCourseLanguagesMax).nullable(),
+  "subtitleLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).max(getPublicCourseBundlesResponseCoursesItemSubtitleLanguagesMax).nullable(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().max(getPublicCourseBundlesResponseCoursesItemRequiredEquipmentOneEnMax),
+  "ar": zod.string().max(getPublicCourseBundlesResponseCoursesItemRequiredEquipmentOneArMax),
+  "ku": zod.string().max(getPublicCourseBundlesResponseCoursesItemRequiredEquipmentOneKuMax)
+}),zod.null()]),
+  "disclaimers": zod.union([zod.object({
+  "en": zod.string().max(getPublicCourseBundlesResponseCoursesItemDisclaimersOneEnMax),
+  "ar": zod.string().max(getPublicCourseBundlesResponseCoursesItemDisclaimersOneArMax),
+  "ku": zod.string().max(getPublicCourseBundlesResponseCoursesItemDisclaimersOneKuMax)
+}),zod.null()]),
+  "supportingMaterials": zod.union([zod.object({
+  "en": zod.string().max(getPublicCourseBundlesResponseCoursesItemSupportingMaterialsOneEnMax),
+  "ar": zod.string().max(getPublicCourseBundlesResponseCoursesItemSupportingMaterialsOneArMax),
+  "ku": zod.string().max(getPublicCourseBundlesResponseCoursesItemSupportingMaterialsOneKuMax)
+}),zod.null()])
+})).min(getPublicCourseBundlesResponseCoursesMin).max(getPublicCourseBundlesResponseCoursesMax)
+})
+export const GetPublicCourseBundlesResponse = zod.array(GetPublicCourseBundlesResponseItem)
+
+
 export const getPublicInstructorProfilesResponsePhotoUrlRegExp = new RegExp('^/api/public/instructors/[0-9a-f-]{36}/photo$');
 export const getPublicInstructorProfilesResponseCoursesItemLocalizedTitleEnMax = 240;
 
@@ -6298,11 +6397,11 @@ export const getOperationCoursesResponseCoursesItemOneLocalizedTitleArMax = 240;
 
 export const getOperationCoursesResponseCoursesItemOneLocalizedTitleKuMax = 240;
 
-export const getOperationCoursesResponseCoursesItemOneLocalizedSummaryEnMax = 240;
+export const getOperationCoursesResponseCoursesItemOneLocalizedSummaryEnMax = 2000;
 
-export const getOperationCoursesResponseCoursesItemOneLocalizedSummaryArMax = 240;
+export const getOperationCoursesResponseCoursesItemOneLocalizedSummaryArMax = 2000;
 
-export const getOperationCoursesResponseCoursesItemOneLocalizedSummaryKuMax = 240;
+export const getOperationCoursesResponseCoursesItemOneLocalizedSummaryKuMax = 2000;
 
 export const getOperationCoursesResponseCoursesItemOneLocalizedInstructorEnMax = 240;
 
@@ -6393,11 +6492,11 @@ export const createLearningCourseBodyOneLocalizedTitleArMax = 240;
 
 export const createLearningCourseBodyOneLocalizedTitleKuMax = 240;
 
-export const createLearningCourseBodyOneLocalizedSummaryEnMax = 240;
+export const createLearningCourseBodyOneLocalizedSummaryEnMax = 2000;
 
-export const createLearningCourseBodyOneLocalizedSummaryArMax = 240;
+export const createLearningCourseBodyOneLocalizedSummaryArMax = 2000;
 
-export const createLearningCourseBodyOneLocalizedSummaryKuMax = 240;
+export const createLearningCourseBodyOneLocalizedSummaryKuMax = 2000;
 
 export const createLearningCourseBodyOneLocalizedInstructorEnMax = 240;
 
@@ -6512,11 +6611,11 @@ export const createLearningCourseResponseOneLocalizedTitleArMax = 240;
 
 export const createLearningCourseResponseOneLocalizedTitleKuMax = 240;
 
-export const createLearningCourseResponseOneLocalizedSummaryEnMax = 240;
+export const createLearningCourseResponseOneLocalizedSummaryEnMax = 2000;
 
-export const createLearningCourseResponseOneLocalizedSummaryArMax = 240;
+export const createLearningCourseResponseOneLocalizedSummaryArMax = 2000;
 
-export const createLearningCourseResponseOneLocalizedSummaryKuMax = 240;
+export const createLearningCourseResponseOneLocalizedSummaryKuMax = 2000;
 
 export const createLearningCourseResponseOneLocalizedInstructorEnMax = 240;
 
@@ -6599,6 +6698,194 @@ export const CreateLearningCourseResponse = zod.object({
 }))
 
 
+export const getOperationCourseBundlesResponseBundlesItemLocalizedTitleEnMax = 240;
+
+export const getOperationCourseBundlesResponseBundlesItemLocalizedTitleArMax = 240;
+
+export const getOperationCourseBundlesResponseBundlesItemLocalizedTitleKuMax = 240;
+
+export const getOperationCourseBundlesResponseBundlesItemLocalizedSummaryEnMax = 2000;
+
+export const getOperationCourseBundlesResponseBundlesItemLocalizedSummaryArMax = 2000;
+
+export const getOperationCourseBundlesResponseBundlesItemLocalizedSummaryKuMax = 2000;
+
+export const getOperationCourseBundlesResponseBundlesItemCourseCountMin = 0;
+export const getOperationCourseBundlesResponseBundlesItemCourseCountMax = 20;
+
+
+
+export const GetOperationCourseBundlesResponse = zod.object({
+  "bundles": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(getOperationCourseBundlesResponseBundlesItemLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(getOperationCourseBundlesResponseBundlesItemLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(getOperationCourseBundlesResponseBundlesItemLocalizedTitleKuMax)
+}),
+  "localizedSummary": zod.object({
+  "en": zod.string().min(1).max(getOperationCourseBundlesResponseBundlesItemLocalizedSummaryEnMax),
+  "ar": zod.string().min(1).max(getOperationCourseBundlesResponseBundlesItemLocalizedSummaryArMax),
+  "ku": zod.string().min(1).max(getOperationCourseBundlesResponseBundlesItemLocalizedSummaryKuMax)
+}),
+  "courseIds": zod.array(zod.string()),
+  "courseCount": zod.int().min(getOperationCourseBundlesResponseBundlesItemCourseCountMin).max(getOperationCourseBundlesResponseBundlesItemCourseCountMax),
+  "published": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}))
+})
+
+
+export const createOperationCourseBundleBodyLocalizedTitleEnMax = 240;
+
+export const createOperationCourseBundleBodyLocalizedTitleArMax = 240;
+
+export const createOperationCourseBundleBodyLocalizedTitleKuMax = 240;
+
+export const createOperationCourseBundleBodyLocalizedSummaryEnMax = 2000;
+
+export const createOperationCourseBundleBodyLocalizedSummaryArMax = 2000;
+
+export const createOperationCourseBundleBodyLocalizedSummaryKuMax = 2000;
+
+export const createOperationCourseBundleBodyCourseIdsItemMax = 200;
+
+export const createOperationCourseBundleBodyCourseIdsMin = 2;
+export const createOperationCourseBundleBodyCourseIdsMax = 20;
+
+
+
+export const CreateOperationCourseBundleBody = zod.object({
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(createOperationCourseBundleBodyLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(createOperationCourseBundleBodyLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(createOperationCourseBundleBodyLocalizedTitleKuMax)
+}),
+  "localizedSummary": zod.object({
+  "en": zod.string().min(1).max(createOperationCourseBundleBodyLocalizedSummaryEnMax),
+  "ar": zod.string().min(1).max(createOperationCourseBundleBodyLocalizedSummaryArMax),
+  "ku": zod.string().min(1).max(createOperationCourseBundleBodyLocalizedSummaryKuMax)
+}),
+  "courseIds": zod.array(zod.string().min(1).max(createOperationCourseBundleBodyCourseIdsItemMax)).min(createOperationCourseBundleBodyCourseIdsMin).max(createOperationCourseBundleBodyCourseIdsMax),
+  "published": zod.boolean()
+})
+
+export const createOperationCourseBundleResponseLocalizedTitleEnMax = 240;
+
+export const createOperationCourseBundleResponseLocalizedTitleArMax = 240;
+
+export const createOperationCourseBundleResponseLocalizedTitleKuMax = 240;
+
+export const createOperationCourseBundleResponseLocalizedSummaryEnMax = 2000;
+
+export const createOperationCourseBundleResponseLocalizedSummaryArMax = 2000;
+
+export const createOperationCourseBundleResponseLocalizedSummaryKuMax = 2000;
+
+export const createOperationCourseBundleResponseCourseCountMin = 0;
+export const createOperationCourseBundleResponseCourseCountMax = 20;
+
+
+
+export const CreateOperationCourseBundleResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(createOperationCourseBundleResponseLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(createOperationCourseBundleResponseLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(createOperationCourseBundleResponseLocalizedTitleKuMax)
+}),
+  "localizedSummary": zod.object({
+  "en": zod.string().min(1).max(createOperationCourseBundleResponseLocalizedSummaryEnMax),
+  "ar": zod.string().min(1).max(createOperationCourseBundleResponseLocalizedSummaryArMax),
+  "ku": zod.string().min(1).max(createOperationCourseBundleResponseLocalizedSummaryKuMax)
+}),
+  "courseIds": zod.array(zod.string()),
+  "courseCount": zod.int().min(createOperationCourseBundleResponseCourseCountMin).max(createOperationCourseBundleResponseCourseCountMax),
+  "published": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const UpdateOperationCourseBundleParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updateOperationCourseBundleBodyLocalizedTitleEnMax = 240;
+
+export const updateOperationCourseBundleBodyLocalizedTitleArMax = 240;
+
+export const updateOperationCourseBundleBodyLocalizedTitleKuMax = 240;
+
+export const updateOperationCourseBundleBodyLocalizedSummaryEnMax = 2000;
+
+export const updateOperationCourseBundleBodyLocalizedSummaryArMax = 2000;
+
+export const updateOperationCourseBundleBodyLocalizedSummaryKuMax = 2000;
+
+export const updateOperationCourseBundleBodyCourseIdsItemMax = 200;
+
+export const updateOperationCourseBundleBodyCourseIdsMin = 2;
+export const updateOperationCourseBundleBodyCourseIdsMax = 20;
+
+
+
+export const UpdateOperationCourseBundleBody = zod.object({
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(updateOperationCourseBundleBodyLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(updateOperationCourseBundleBodyLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(updateOperationCourseBundleBodyLocalizedTitleKuMax)
+}),
+  "localizedSummary": zod.object({
+  "en": zod.string().min(1).max(updateOperationCourseBundleBodyLocalizedSummaryEnMax),
+  "ar": zod.string().min(1).max(updateOperationCourseBundleBodyLocalizedSummaryArMax),
+  "ku": zod.string().min(1).max(updateOperationCourseBundleBodyLocalizedSummaryKuMax)
+}),
+  "courseIds": zod.array(zod.string().min(1).max(updateOperationCourseBundleBodyCourseIdsItemMax)).min(updateOperationCourseBundleBodyCourseIdsMin).max(updateOperationCourseBundleBodyCourseIdsMax),
+  "published": zod.boolean()
+})
+
+export const updateOperationCourseBundleResponseLocalizedTitleEnMax = 240;
+
+export const updateOperationCourseBundleResponseLocalizedTitleArMax = 240;
+
+export const updateOperationCourseBundleResponseLocalizedTitleKuMax = 240;
+
+export const updateOperationCourseBundleResponseLocalizedSummaryEnMax = 2000;
+
+export const updateOperationCourseBundleResponseLocalizedSummaryArMax = 2000;
+
+export const updateOperationCourseBundleResponseLocalizedSummaryKuMax = 2000;
+
+export const updateOperationCourseBundleResponseCourseCountMin = 0;
+export const updateOperationCourseBundleResponseCourseCountMax = 20;
+
+
+
+export const UpdateOperationCourseBundleResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(updateOperationCourseBundleResponseLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(updateOperationCourseBundleResponseLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(updateOperationCourseBundleResponseLocalizedTitleKuMax)
+}),
+  "localizedSummary": zod.object({
+  "en": zod.string().min(1).max(updateOperationCourseBundleResponseLocalizedSummaryEnMax),
+  "ar": zod.string().min(1).max(updateOperationCourseBundleResponseLocalizedSummaryArMax),
+  "ku": zod.string().min(1).max(updateOperationCourseBundleResponseLocalizedSummaryKuMax)
+}),
+  "courseIds": zod.array(zod.string()),
+  "courseCount": zod.int().min(updateOperationCourseBundleResponseCourseCountMin).max(updateOperationCourseBundleResponseCourseCountMax),
+  "published": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
 export const UpdateLearningCourseParams = zod.object({
   "id": zod.coerce.string()
 })
@@ -6609,11 +6896,11 @@ export const updateLearningCourseBodyLocalizedTitleArMax = 240;
 
 export const updateLearningCourseBodyLocalizedTitleKuMax = 240;
 
-export const updateLearningCourseBodyLocalizedSummaryEnMax = 240;
+export const updateLearningCourseBodyLocalizedSummaryEnMax = 2000;
 
-export const updateLearningCourseBodyLocalizedSummaryArMax = 240;
+export const updateLearningCourseBodyLocalizedSummaryArMax = 2000;
 
-export const updateLearningCourseBodyLocalizedSummaryKuMax = 240;
+export const updateLearningCourseBodyLocalizedSummaryKuMax = 2000;
 
 export const updateLearningCourseBodyLocalizedInstructorEnMax = 240;
 
@@ -6695,11 +6982,11 @@ export const updateLearningCourseResponseOneLocalizedTitleArMax = 240;
 
 export const updateLearningCourseResponseOneLocalizedTitleKuMax = 240;
 
-export const updateLearningCourseResponseOneLocalizedSummaryEnMax = 240;
+export const updateLearningCourseResponseOneLocalizedSummaryEnMax = 2000;
 
-export const updateLearningCourseResponseOneLocalizedSummaryArMax = 240;
+export const updateLearningCourseResponseOneLocalizedSummaryArMax = 2000;
 
-export const updateLearningCourseResponseOneLocalizedSummaryKuMax = 240;
+export const updateLearningCourseResponseOneLocalizedSummaryKuMax = 2000;
 
 export const updateLearningCourseResponseOneLocalizedInstructorEnMax = 240;
 
@@ -12969,11 +13256,11 @@ export const getMemberCoursesResponseOneLocalizedTitleArMax = 240;
 
 export const getMemberCoursesResponseOneLocalizedTitleKuMax = 240;
 
-export const getMemberCoursesResponseOneLocalizedSummaryEnMax = 240;
+export const getMemberCoursesResponseOneLocalizedSummaryEnMax = 2000;
 
-export const getMemberCoursesResponseOneLocalizedSummaryArMax = 240;
+export const getMemberCoursesResponseOneLocalizedSummaryArMax = 2000;
 
-export const getMemberCoursesResponseOneLocalizedSummaryKuMax = 240;
+export const getMemberCoursesResponseOneLocalizedSummaryKuMax = 2000;
 
 export const getMemberCoursesResponseOneLocalizedInstructorEnMax = 240;
 
@@ -13061,6 +13348,132 @@ export const GetMemberCoursesResponseItem = zod.object({
   "isSaved": zod.boolean()
 }))
 export const GetMemberCoursesResponse = zod.array(GetMemberCoursesResponseItem)
+
+
+export const getMemberCourseBundlesResponseLocalizedTitleEnMax = 240;
+
+export const getMemberCourseBundlesResponseLocalizedTitleArMax = 240;
+
+export const getMemberCourseBundlesResponseLocalizedTitleKuMax = 240;
+
+export const getMemberCourseBundlesResponseLocalizedSummaryEnMax = 2000;
+
+export const getMemberCourseBundlesResponseLocalizedSummaryArMax = 2000;
+
+export const getMemberCourseBundlesResponseLocalizedSummaryKuMax = 2000;
+
+export const getMemberCourseBundlesResponseCoursesItemOneLocalizedTitleEnMax = 240;
+
+export const getMemberCourseBundlesResponseCoursesItemOneLocalizedTitleArMax = 240;
+
+export const getMemberCourseBundlesResponseCoursesItemOneLocalizedTitleKuMax = 240;
+
+export const getMemberCourseBundlesResponseCoursesItemOneLocalizedSummaryEnMax = 2000;
+
+export const getMemberCourseBundlesResponseCoursesItemOneLocalizedSummaryArMax = 2000;
+
+export const getMemberCourseBundlesResponseCoursesItemOneLocalizedSummaryKuMax = 2000;
+
+export const getMemberCourseBundlesResponseCoursesItemOneLocalizedInstructorEnMax = 240;
+
+export const getMemberCourseBundlesResponseCoursesItemOneLocalizedInstructorArMax = 240;
+
+export const getMemberCourseBundlesResponseCoursesItemOneLocalizedInstructorKuMax = 240;
+
+export const getMemberCourseBundlesResponseCoursesItemOneCategoryMax = 120;
+
+export const getMemberCourseBundlesResponseCoursesItemOneDurationMinutesMax = 10000;
+
+export const getMemberCourseBundlesResponseCoursesItemOneCourseLanguagesMax = 3;
+
+export const getMemberCourseBundlesResponseCoursesItemOneSubtitleLanguagesMax = 3;
+
+export const getMemberCourseBundlesResponseCoursesItemOneRequiredEquipmentOneEnMax = 2000;
+
+export const getMemberCourseBundlesResponseCoursesItemOneRequiredEquipmentOneArMax = 2000;
+
+export const getMemberCourseBundlesResponseCoursesItemOneRequiredEquipmentOneKuMax = 2000;
+
+export const getMemberCourseBundlesResponseCoursesItemOneDisclaimersOneEnMax = 2000;
+
+export const getMemberCourseBundlesResponseCoursesItemOneDisclaimersOneArMax = 2000;
+
+export const getMemberCourseBundlesResponseCoursesItemOneDisclaimersOneKuMax = 2000;
+
+export const getMemberCourseBundlesResponseCoursesItemOneSupportingMaterialsOneEnMax = 2000;
+
+export const getMemberCourseBundlesResponseCoursesItemOneSupportingMaterialsOneArMax = 2000;
+
+export const getMemberCourseBundlesResponseCoursesItemOneSupportingMaterialsOneKuMax = 2000;
+
+export const getMemberCourseBundlesResponseCoursesItemTwoCompletionPercentageMin = 0;
+export const getMemberCourseBundlesResponseCoursesItemTwoCompletionPercentageMax = 100;
+
+
+
+export const GetMemberCourseBundlesResponseItem = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(getMemberCourseBundlesResponseLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseBundlesResponseLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(getMemberCourseBundlesResponseLocalizedTitleKuMax)
+}),
+  "localizedSummary": zod.object({
+  "en": zod.string().min(1).max(getMemberCourseBundlesResponseLocalizedSummaryEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseBundlesResponseLocalizedSummaryArMax),
+  "ku": zod.string().min(1).max(getMemberCourseBundlesResponseLocalizedSummaryKuMax)
+}),
+  "courses": zod.array(zod.object({
+  "localizedTitle": zod.object({
+  "en": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneLocalizedTitleEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneLocalizedTitleArMax),
+  "ku": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneLocalizedTitleKuMax)
+}),
+  "localizedSummary": zod.object({
+  "en": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneLocalizedSummaryEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneLocalizedSummaryArMax),
+  "ku": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneLocalizedSummaryKuMax)
+}),
+  "localizedInstructor": zod.object({
+  "en": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneLocalizedInstructorEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneLocalizedInstructorArMax),
+  "ku": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneLocalizedInstructorKuMax)
+}),
+  "category": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneCategoryMax),
+  "level": zod.enum(['beginner', 'intermediate', 'advanced', 'all-levels']),
+  "durationMinutes": zod.int().min(1).max(getMemberCourseBundlesResponseCoursesItemOneDurationMinutesMax),
+  "thumbnailUrl": zod.url().nullable(),
+  "published": zod.boolean(),
+  "courseLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).min(1).max(getMemberCourseBundlesResponseCoursesItemOneCourseLanguagesMax).nullish(),
+  "subtitleLanguages": zod.array(zod.enum(['en', 'ar', 'ku'])).max(getMemberCourseBundlesResponseCoursesItemOneSubtitleLanguagesMax).nullish(),
+  "requiredEquipment": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneRequiredEquipmentOneEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneRequiredEquipmentOneArMax),
+  "ku": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneRequiredEquipmentOneKuMax)
+}),zod.null()]).optional(),
+  "disclaimers": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneDisclaimersOneEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneDisclaimersOneArMax),
+  "ku": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneDisclaimersOneKuMax)
+}),zod.null()]).optional(),
+  "supportingMaterials": zod.union([zod.object({
+  "en": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneSupportingMaterialsOneEnMax),
+  "ar": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneSupportingMaterialsOneArMax),
+  "ku": zod.string().min(1).max(getMemberCourseBundlesResponseCoursesItemOneSupportingMaterialsOneKuMax)
+}),zod.null()]).optional()
+}).and(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "lessonCount": zod.int(),
+  "enrolled": zod.boolean(),
+  "completedLessons": zod.int(),
+  "completionPercentage": zod.int().min(getMemberCourseBundlesResponseCoursesItemTwoCompletionPercentageMin).max(getMemberCourseBundlesResponseCoursesItemTwoCompletionPercentageMax),
+  "courseCompletedAt": zod.coerce.date().nullable(),
+  "isSaved": zod.boolean()
+})))
+})
+export const GetMemberCourseBundlesResponse = zod.array(GetMemberCourseBundlesResponseItem)
 
 
 export const getMemberFitnessChallengesResponseLocalizedTitleEnMax = 240;
@@ -13417,11 +13830,11 @@ export const getMemberCourseResponseOneOneLocalizedTitleArMax = 240;
 
 export const getMemberCourseResponseOneOneLocalizedTitleKuMax = 240;
 
-export const getMemberCourseResponseOneOneLocalizedSummaryEnMax = 240;
+export const getMemberCourseResponseOneOneLocalizedSummaryEnMax = 2000;
 
-export const getMemberCourseResponseOneOneLocalizedSummaryArMax = 240;
+export const getMemberCourseResponseOneOneLocalizedSummaryArMax = 2000;
 
-export const getMemberCourseResponseOneOneLocalizedSummaryKuMax = 240;
+export const getMemberCourseResponseOneOneLocalizedSummaryKuMax = 2000;
 
 export const getMemberCourseResponseOneOneLocalizedInstructorEnMax = 240;
 
@@ -13711,11 +14124,11 @@ export const enrollMemberCourseResponseOneOneLocalizedTitleArMax = 240;
 
 export const enrollMemberCourseResponseOneOneLocalizedTitleKuMax = 240;
 
-export const enrollMemberCourseResponseOneOneLocalizedSummaryEnMax = 240;
+export const enrollMemberCourseResponseOneOneLocalizedSummaryEnMax = 2000;
 
-export const enrollMemberCourseResponseOneOneLocalizedSummaryArMax = 240;
+export const enrollMemberCourseResponseOneOneLocalizedSummaryArMax = 2000;
 
-export const enrollMemberCourseResponseOneOneLocalizedSummaryKuMax = 240;
+export const enrollMemberCourseResponseOneOneLocalizedSummaryKuMax = 2000;
 
 export const enrollMemberCourseResponseOneOneLocalizedInstructorEnMax = 240;
 
@@ -13945,11 +14358,11 @@ export const updateCourseProgressResponseOneOneLocalizedTitleArMax = 240;
 
 export const updateCourseProgressResponseOneOneLocalizedTitleKuMax = 240;
 
-export const updateCourseProgressResponseOneOneLocalizedSummaryEnMax = 240;
+export const updateCourseProgressResponseOneOneLocalizedSummaryEnMax = 2000;
 
-export const updateCourseProgressResponseOneOneLocalizedSummaryArMax = 240;
+export const updateCourseProgressResponseOneOneLocalizedSummaryArMax = 2000;
 
-export const updateCourseProgressResponseOneOneLocalizedSummaryKuMax = 240;
+export const updateCourseProgressResponseOneOneLocalizedSummaryKuMax = 2000;
 
 export const updateCourseProgressResponseOneOneLocalizedInstructorEnMax = 240;
 
