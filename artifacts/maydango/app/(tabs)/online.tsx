@@ -9,6 +9,7 @@ import {
   getGetMemberCoursesQueryKey, getGetMemberLiveClassesQueryKey,
   getGetMemberCourseQueryKey, getGetPublicSponsoredContentQueryKey,
   useCreateLiveClassJoin, useGetMemberCourses, useGetPublicSponsoredContent,
+  useGetPublicSupplementStore,
   useGetMemberCourseBundles, useGetMemberLiveClasses, useSetMemberCourseFavorite,
   type SponsoredContentPlacementType,
 } from '@workspace/api-client-react';
@@ -55,6 +56,9 @@ export default function OnlineScreen() {
     },
   );
   const sponsoredContentTracking = useSponsoredContentTracking();
+  const supplementStoreQuery = useGetPublicSupplementStore({
+    query: { enabled: mode === 'courses', staleTime: 60_000 },
+  });
   const liveQuery = useGetMemberLiveClasses({ query: { enabled: mode === 'live', refetchInterval: 30_000 } });
   const joinMutation = useCreateLiveClassJoin();
   const favoriteMutation = useSetMemberCourseFavorite();
@@ -200,6 +204,19 @@ export default function OnlineScreen() {
           <Text style={[styles.introText, { textAlign: align }]}>{t('onlineIntro')}</Text>
           <View style={styles.introMark}><Ionicons name="play" size={17} color={colors.primary} /></View>
         </View>
+        {supplementStoreQuery.data?.url ? (
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={t('visitSupplementStore')}
+            onPress={() => void Linking.openURL(supplementStoreQuery.data!.url!).catch(error => setMessage(errorCopy(error)))}
+            style={({ pressed }) => [styles.supplementStoreLink, { backgroundColor: colors.secondary, opacity: pressed ? 0.7 : 1 }]}
+            testID="link-supplement-store"
+          >
+            <Ionicons name="bag-handle-outline" size={18} color={colors.primary} />
+            <Text style={[styles.supplementStoreText, { color: colors.primary }]}>{t('visitSupplementStore')}</Text>
+            <Ionicons name="open-outline" size={16} color={colors.primary} />
+          </Pressable>
+        ) : null}
         <View accessibilityRole="tablist" style={[styles.segment, { backgroundColor: colors.secondary }]}>
           {(['courses', 'live', 'coaching'] as const).map((value) => (
             <Pressable
@@ -623,6 +640,8 @@ const styles = StyleSheet.create({
   introTitle: { color: '#ffffff', fontSize: 24, fontWeight: '800', marginTop: 9 },
   introText: { color: '#d1ddcf', fontSize: 11, marginTop: 6, maxWidth: 220, lineHeight: 16 },
   introMark: { position: 'absolute', right: 18, bottom: 18, width: 38, height: 38, borderRadius: 14, backgroundColor: '#c6e57d', alignItems: 'center', justifyContent: 'center' },
+  supplementStoreLink: { minHeight: 48, borderRadius: 14, paddingHorizontal: 14, marginBottom: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
+  supplementStoreText: { fontSize: 12, fontWeight: '800' },
   segment: { flexDirection: 'row', padding: 4, borderRadius: 15, marginBottom: 16 },
   segmentOption: { flex: 1, minHeight: 40, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 },
   courseFilter: { marginTop: -5, marginBottom: 14 },

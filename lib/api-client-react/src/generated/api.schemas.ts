@@ -206,6 +206,33 @@ export interface FacilityProfileInput {
      */
   websiteUrl: string | null;
   /**
+     * Optional HTTPS link supplied by the partner.
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^https://
+     */
+  logoUrl?: string | null;
+  /**
+     * Optional HTTPS link supplied by the partner.
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^https://
+     */
+  coverImageUrl?: string | null;
+  /**
+     * @maxItems 12
+     * @items.maxLength 2048
+     * @items.pattern ^https://
+     */
+  galleryImageUrls?: string[];
+  /**
+     * Optional HTTPS link supplied by the partner.
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^https://
+     */
+  promotionalVideoUrl?: string | null;
+  /**
      * @minimum -90
      * @maximum 90
      * @nullable
@@ -253,6 +280,33 @@ export interface FacilityProfileUpdate {
      */
   websiteUrl: string | null;
   /**
+     * Optional HTTPS link supplied by the partner.
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^https://
+     */
+  logoUrl?: string | null;
+  /**
+     * Optional HTTPS link supplied by the partner.
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^https://
+     */
+  coverImageUrl?: string | null;
+  /**
+     * @maxItems 12
+     * @items.maxLength 2048
+     * @items.pattern ^https://
+     */
+  galleryImageUrls?: string[];
+  /**
+     * Optional HTTPS link supplied by the partner.
+     * @maxLength 2048
+     * @nullable
+     * @pattern ^https://
+     */
+  promotionalVideoUrl?: string | null;
+  /**
      * @minimum -90
      * @maximum 90
      * @nullable
@@ -283,6 +337,26 @@ export interface FacilityProfile {
   contactPhone: string | null;
   /** @nullable */
   websiteUrl: string | null;
+  /**
+     * @nullable
+     * @pattern ^https://
+     */
+  logoUrl: string | null;
+  /**
+     * @nullable
+     * @pattern ^https://
+     */
+  coverImageUrl: string | null;
+  /**
+     * @maxItems 12
+     * @items.pattern ^https://
+     */
+  galleryImageUrls: string[];
+  /**
+     * @nullable
+     * @pattern ^https://
+     */
+  promotionalVideoUrl: string | null;
   /** @nullable */
   latitude: number | null;
   /** @nullable */
@@ -6975,6 +7049,11 @@ export interface PlatformSafetyRulesValues {
      */
   maxDailyVisitsPerPlan: number;
   offeringApprovalRequired: boolean;
+  /**
+     * @maxLength 2048
+     * @nullable
+     */
+  supplementStoreUrl: string | null;
 }
 
 export interface PlatformSafetyRulesUpdateInput {
@@ -7453,6 +7532,14 @@ export interface MemberFitnessChallengeMembership {
 export interface MemberFitnessChallengeActivityResponse {
   challengeId: string;
   activityDate: CalendarDate;
+}
+
+export interface SupplementStoreLink {
+  /**
+     * @maxLength 2048
+     * @nullable
+     */
+  url: string | null;
 }
 
 export type GetPublicSponsoredContentParams = {

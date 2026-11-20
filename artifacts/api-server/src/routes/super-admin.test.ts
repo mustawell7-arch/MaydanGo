@@ -8,6 +8,7 @@ import { db, accountAccessRestrictions, adminRolePermissions, facilityProfiles, 
 import { createSuperAdminRouter } from "./super-admin";
 import superAdminMemberRouter from "./member";
 import publicPoliciesRouter from "./legal-policies";
+import publicRouter from "./public";
 import { DEFAULT_ADMIN_ACTIONS } from "../lib/admin-roles";
 import { filterSuspendedOfferings, isAccessSuspended, isVenueSafetyRestricted } from "../lib/account-access-restrictions";
 import { BookingError, assertMemberEligibleForOffering } from "../lib/reservations";
@@ -49,6 +50,7 @@ app.use((req, _res, next) => {
 });
 app.use("/policies", publicPoliciesRouter);
 app.use("/member", superAdminMemberRouter);
+app.use("/public", publicRouter);
 app.use("/super-admin", createSuperAdminRouter({
   async findVerifiedByEmail(email) {
     return identities.get(email) ?? null;
@@ -174,6 +176,26 @@ test("Super Admin role management is protected, auditable, and preserves other s
   })).status, 400);
   const [ruleAudit] = await db.select().from(operationAudit).where(eq(operationAudit.action, "super_admin.platform_safety_rules.updated"));
   assert.equal(ruleAudit?.targetId, "platform:global");
+
+  assert.equal((await call("/super-admin/supplement-store")).status, 401);
+  assert.equal((await call("/super-admin/supplement-store", "GET", partnerId)).status, 403);
+  const storeBefore = await call("/super-admin/supplement-store", "GET", superAdminId);
+  assert.equal(storeBefore.status, 200);
+  const storeUrl = "https://shop.example/iraq";
+  assert.equal((await call("/super-admin/supplement-store", "PUT", superAdminId, { url: "http://shop.example" })).status, 400);
+  const storeSaved = await call("/super-admin/supplement-store", "PUT", superAdminId, { url: storeUrl });
+  assert.equal(storeSaved.status, 200);
+  assert.deepEqual(storeSaved.data, { url: storeUrl });
+  assert.deepEqual((await call("/public/supplement-store")).data, { url: storeUrl });
+  const storeAudits = await db.select().from(operationAudit)
+    .where(eq(operationAudit.action, "super_admin.supplement_store.updated"));
+  assert.equal(storeAudits.some(entry =>
+    entry.targetId === "platform:supplement-store"
+    && entry.detail.includes('"afterHost":"shop.example"')
+    && !entry.detail.includes(storeUrl),
+  ), true);
+  assert.deepEqual((await call("/super-admin/supplement-store", "PUT", superAdminId, { url: null })).data, { url: null });
+  assert.deepEqual((await call("/public/supplement-store")).data, { url: null });
 
   const updatedPolicy = await call("/super-admin/role-permissions/finance_admin", "PUT", superAdminId, {
     actions: ["view", "refund", "view_sensitive_data"],

@@ -54,6 +54,8 @@ export function FacilityCard({
       ? t('noRatingsYet')
       : `${facility.averageRating.toFixed(1)} · ${new Intl.NumberFormat(ratingLocale).format(facility.reviewCount)} ${t('ratings')}`
     : null;
+  const publishedImage = isPublished ? facility.coverImageUrl || facility.logoUrl : null;
+  const publishedImageIsLogo = isPublished && !facility.coverImageUrl && Boolean(facility.logoUrl);
   const sessionCaption = isPublished
     ? facility.upcomingSessions.length === 0 ? t('noPublishedSessions') : `${facility.upcomingSessions.length} ${t('sessions')}`
     : localize(facility.gender, app.language);
@@ -67,7 +69,9 @@ export function FacilityCard({
           style={({ pressed }) => [StyleSheet.absoluteFill, { opacity: pressed ? 0.95 : 1 }]}
         >
           {isPublished
-            ? <View style={styles.imagePlaceholder}><Ionicons name="fitness-outline" size={36} color={colors.primary} /></View>
+            ? publishedImage
+              ? <Image accessibilityLabel={name} source={{ uri: publishedImage }} style={[styles.image, publishedImageIsLogo && styles.logoImage]} resizeMode={publishedImageIsLogo ? 'contain' : 'cover'} />
+              : <View style={styles.imagePlaceholder}><Ionicons name="fitness-outline" size={36} color={colors.primary} /></View>
             : <Image source={facility.image} style={styles.image} resizeMode="cover" />}
         </Pressable>
         <Pressable
@@ -141,6 +145,7 @@ const styles = StyleSheet.create({
   full: { width: '100%', marginBottom: 14 },
   imageWrap: { height: 110, position: 'relative' },
   image: { width: '100%', height: '100%' },
+  logoImage: { padding: 18 },
   imagePlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   favoriteButton: {
     position: 'absolute',

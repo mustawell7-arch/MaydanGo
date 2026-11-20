@@ -20,6 +20,7 @@ import {
   useGetPublicSponsoredFacilities,
   useGetPublicSponsoredContent,
   useGetPublicInstructorProfiles,
+  useGetPublicSupplementStore,
   useRecordPublicSponsoredFacilityEvent,
   useRecordPublicSponsoredContentEvent,
 } from '@workspace/api-client-react';
@@ -100,6 +101,7 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     reviewCount: 'reviews',
     coursesTitle: 'Online courses',
     coursesIntro: 'Browse the courses listed on MaydanGo and find one that suits your interests and experience.',
+    visitSupplementStore: 'Visit the supplement store',
     courseBundlesTitle: 'Learning paths',
     courseBundlesIntro: 'Explore curated groups of related courses in a suggested order.',
     courseBundleCourseLabel: 'Courses in this path',
@@ -215,6 +217,7 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     reviewCount: 'تقييمات',
     coursesTitle: 'الدورات عبر الإنترنت',
     coursesIntro: 'تصفح تفاصيل الدورات المنشورة، بما فيها أسماء المدربين والمستويات والمدد. يمكن للأعضاء الذين تشمل خططهم الدورات الرقمية مشاهدة الدروس عبر تطبيق MaydanGo.',
+    visitSupplementStore: 'زيارة متجر المكمّلات',
     courseBundlesTitle: 'مسارات التعلّم',
     courseBundlesIntro: 'استكشف مجموعات منتقاة من الدورات المترابطة بترتيب مقترح.',
     courseBundleCourseLabel: 'الدورات في هذا المسار',
@@ -330,6 +333,7 @@ const copy: Record<PublicCatalogLanguage, Copy> = {
     reviewCount: 'هەڵسەنگاندن',
     coursesTitle: 'کۆرسەکانی ئۆنلاین',
     coursesIntro: 'وردەکاریی کۆرسە بڵاوکراوەکان، ناوی مامۆستا، ئاست و ماوە ببینە. ئەندامانی پلانی دەستگەیشتنی کۆرسی دیجیتاڵی لەخۆگرتوو، دەتوانن وانەکان لە ئەپی MaydanGo ببینن.',
+    visitSupplementStore: 'سەردانی فرۆشگای پێکهاتەی وەرزشی',
     courseBundlesTitle: 'ڕێڕەوی فێربوون',
     courseBundlesIntro: 'کۆمەڵەیەک لە کۆرسە پەیوەندیدارەکان بە ڕیزبەندییەکی پێشنیارکراو ببینە.',
     courseBundleCourseLabel: 'کۆرسەکانی ئەم ڕێڕەوە',
@@ -945,6 +949,7 @@ export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCata
     query: { queryKey: getGetPublicSponsoredContentQueryKey() },
   });
   const instructorProfilesQuery = useGetPublicInstructorProfiles({ query: { queryKey: getGetPublicInstructorProfilesQueryKey(), retry: false } });
+  const supplementStoreQuery = useGetPublicSupplementStore();
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
   const courses = coursesQuery.data ?? [];
@@ -977,6 +982,11 @@ export function PublicCourseBrowser({ language = 'en' }: { language?: PublicCata
           {text.viewMembershipPlans}<ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Link>
       </aside>
+      {supplementStoreQuery.data?.url && <div className="mb-8">
+        <a href={supplementStoreQuery.data.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-primary/20 bg-card px-5 py-3 text-sm font-bold text-primary transition-colors hover:bg-accent" data-testid="link-public-supplement-store">
+          {text.visitSupplementStore}<ExternalLink className="h-4 w-4" aria-hidden="true" />
+        </a>
+      </div>}
       <section className="mt-8" aria-label={text.courses}>
         <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div><p className="text-xs font-bold uppercase tracking-[.18em] text-primary">{text.publicInfo}</p><h2 className="font-display mt-2 text-2xl font-bold sm:text-3xl">{text.courses}</h2></div>

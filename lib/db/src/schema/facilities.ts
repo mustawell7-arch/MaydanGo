@@ -21,6 +21,10 @@ export type FacilityProfileContent = {
   openingHours: FacilityHours[];
   contactPhone: string | null;
   websiteUrl: string | null;
+  logoUrl: string | null;
+  coverImageUrl: string | null;
+  galleryImageUrls: string[];
+  promotionalVideoUrl: string | null;
   latitude: number | null;
   longitude: number | null;
 };
@@ -40,6 +44,10 @@ export const facilityProfiles = pgTable("facility_profiles", {
   openingHours: jsonb("opening_hours").$type<FacilityHours[]>().notNull(),
   contactPhone: text("contact_phone"),
   websiteUrl: text("website_url"),
+  logoUrl: text("logo_url"),
+  coverImageUrl: text("cover_image_url"),
+  galleryImageUrls: jsonb("gallery_image_urls").$type<string[]>().notNull().default([]),
+  promotionalVideoUrl: text("promotional_video_url"),
   latitude: doublePrecision("latitude"),
   longitude: doublePrecision("longitude"),
   publishedAt: timestamp("published_at", { withTimezone: true }),

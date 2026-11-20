@@ -116,6 +116,10 @@ const facilityWebsite = z.string().trim().url().max(2048).refine(value => {
   try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; }
   catch { return false; }
 }, "Use an HTTPS website link.");
+const facilityMediaUrl = z.string().trim().url().max(2048).refine(value => {
+  try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; }
+  catch { return false; }
+}, "Use an HTTPS media link.");
 const facilityProfileFieldsObject = z.object({
   city: label,
   facility: label,
@@ -129,9 +133,22 @@ const facilityProfileFieldsObject = z.object({
   openingHours: facilityHoursInput,
   contactPhone: z.string().trim().max(40).nullable(),
   websiteUrl: facilityWebsite.nullable(),
+  logoUrl: facilityMediaUrl.nullable().optional(),
+  coverImageUrl: facilityMediaUrl.nullable().optional(),
+  galleryImageUrls: z.array(facilityMediaUrl).max(12).optional(),
+  promotionalVideoUrl: facilityMediaUrl.nullable().optional(),
   latitude: z.number().min(-90).max(90).nullable(),
   longitude: z.number().min(-180).max(180).nullable(),
 }).strict();
+const validateFacilityMedia = (
+  profile: { galleryImageUrls?: string[] },
+  ctx: z.RefinementCtx,
+) => {
+  const gallery = profile.galleryImageUrls ?? [];
+  if (new Set(gallery).size !== gallery.length) {
+    ctx.addIssue({ code: "custom", path: ["galleryImageUrls"], message: "Gallery image links must be unique." });
+  }
+};
 const validateFacilityCoordinates = (
   profile: { latitude: number | null; longitude: number | null },
   ctx: z.RefinementCtx,
@@ -140,9 +157,11 @@ const validateFacilityCoordinates = (
     ctx.addIssue({ code: "custom", message: "Latitude and longitude must be provided together." });
   }
 };
-export const facilityProfileFields = facilityProfileFieldsObject.superRefine(validateFacilityCoordinates);
+export const facilityProfileFields = facilityProfileFieldsObject
+  .superRefine(validateFacilityCoordinates)
+  .superRefine(validateFacilityMedia);
 export const createFacilityProfileInput = facilityProfileFieldsObject.extend({ partnerId: label })
-  .strict().superRefine(validateFacilityCoordinates);
+  .strict().superRefine(validateFacilityCoordinates).superRefine(validateFacilityMedia);
 export const offeringInput = z.object({
   partnerId: label, title: label, kind: z.enum(["session", "event", "coach"]),
   bookingModel: z.enum(["booking_required", "booking_request", "open_access", "resource_booking", "event", "live_class"]).optional(),

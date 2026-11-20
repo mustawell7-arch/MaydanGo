@@ -128,7 +128,13 @@ test("reviews require confirmed visits and support reporting, moderation, and pa
     { userId: financeUser, role: "finance", partnerId: null },
   ]);
   await db.insert(facilityProfiles).values([
-    { id: facilityA, partnerId: partnerA, ...profile(`${prefix} facility A`) },
+    {
+      id: facilityA, partnerId: partnerA, ...profile(`${prefix} facility A`),
+      logoUrl: "https://media.example/logo.png",
+      coverImageUrl: "https://media.example/cover.jpg",
+      galleryImageUrls: ["https://media.example/gallery-1.jpg"],
+      promotionalVideoUrl: "https://video.example/facility",
+    },
     { id: facilityB, partnerId: partnerB, ...profile(`${prefix} facility B`) },
   ]);
   await db.insert(offerings).values([
@@ -196,9 +202,15 @@ test("reviews require confirmed visits and support reporting, moderation, and pa
   assert.equal(facilitiesWithRatings.status, 200);
   const ratedFacility = (facilitiesWithRatings.data as Array<{
     id: string; averageRating: number | null; reviewCount: number;
+    logoUrl: string | null; coverImageUrl: string | null; galleryImageUrls: string[];
+    promotionalVideoUrl: string | null;
   }>).find(item => item.id === facilityA);
   assert.equal(ratedFacility?.averageRating, 4);
   assert.equal(ratedFacility?.reviewCount, 1);
+  assert.equal(ratedFacility?.logoUrl, "https://media.example/logo.png");
+  assert.equal(ratedFacility?.coverImageUrl, "https://media.example/cover.jpg");
+  assert.deepEqual(ratedFacility?.galleryImageUrls, ["https://media.example/gallery-1.jpg"]);
+  assert.equal(ratedFacility?.promotionalVideoUrl, "https://video.example/facility");
 
   assert.equal((await call(`/member/reviews/${review.id}/reports`, userA, "POST", { reason: "other", details: null })).status, 404);
   const report = await call(`/member/reviews/${review.id}/reports`, userB, "POST", {

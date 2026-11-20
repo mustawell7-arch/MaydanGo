@@ -4,6 +4,7 @@ import { trackEvent } from '@/lib/analytics';
 import { getPartnerPortalCopy, type PortalCopyLanguage } from '@/lib/partner-portal-copy';
 import { CalendarClock, Download, FileText, MapPin, Plus, RefreshCw, Save, ShieldCheck, Upload, Wallet } from 'lucide-react';
 import { FacilityCheckinQrManager } from '@/components/facility-checkin-qr-manager';
+import { FacilityMediaFields } from '@/components/facility-media-fields';
 import {
   downloadPartnerInvoiceDocument, getGetAttendanceQueryKey, getGetOperationFacilitiesQueryKey, getGetPartnerInvoicesQueryKey,
   getGetOperationsQueryKey, getGetPartnerSettlementSummaryQueryKey, useCreateFacilityProfile,
@@ -24,6 +25,7 @@ const copy = {
   en: {
     facilities: 'Facilities', addFacility: 'Add facility', edit: 'Edit details', save: 'Save changes', city: 'City', name: 'Facility name',
     district: 'District', address: 'Address', description: 'About this place', phone: 'Contact phone', website: 'Website', latitude: 'Latitude', longitude: 'Longitude',
+    galleryLimit: 'Use no more than 12 gallery image links.',
     hours: 'Weekly opening hours', specialHours: 'Temporary closures and special hours', addSpecialHours: 'Add date override',
     overrideType: 'Override type', closedAllDay: 'Closed all day', specialSchedule: 'Special hours', reason: 'Reason shown to visitors',
     opens: 'Opens', closes: 'Closes', publishSpecialHours: 'Publish override', cancel: 'Cancel',
@@ -56,6 +58,7 @@ const copy = {
   ar: {
     facilities: 'المرافق', addFacility: 'إضافة مرفق', edit: 'تعديل التفاصيل', save: 'حفظ التغييرات', city: 'المدينة', name: 'اسم المرفق',
     district: 'المنطقة', address: 'العنوان', description: 'عن المكان', phone: 'هاتف التواصل', website: 'الموقع الإلكتروني', latitude: 'خط العرض', longitude: 'خط الطول',
+    galleryLimit: 'استخدم 12 رابطاً كحد أقصى لصور المعرض.',
     hours: 'ساعات العمل الأسبوعية', specialHours: 'الإغلاقات المؤقتة وساعات العمل الخاصة', addSpecialHours: 'إضافة تعديل مؤقت',
     overrideType: 'نوع التعديل', closedAllDay: 'مغلق طوال اليوم', specialSchedule: 'ساعات خاصة', reason: 'السبب الذي سيظهر للزوار',
     opens: 'يفتح', closes: 'يغلق', publishSpecialHours: 'نشر التعديل', cancel: 'إلغاء',
@@ -88,6 +91,7 @@ const copy = {
   ku: {
     facilities: 'شوێنەکان', addFacility: 'شوێنێک زیاد بکە', edit: 'دەستکاری وردەکارییەکان', save: 'گۆڕانکارییەکان پاشەکەوت بکە', city: 'شار', name: 'ناوی شوێن',
     district: 'گەڕەک', address: 'ناونیشان', description: 'دەربارەی شوێنەکە', phone: 'تەلەفۆنی پەیوەندی', website: 'ماڵپەڕ', latitude: 'پانی', longitude: 'درێژی',
+    galleryLimit: 'زیاتر لە ١٢ بەستەری وێنەی گەلەری بەکارمەهێنە.',
     hours: 'کاتژمێری کارکردنی هەفتانە', specialHours: 'داخستنە کاتییەکان و کاتژمێری تایبەت', addSpecialHours: 'زیادکردنی گۆڕانکاری کاتی',
     overrideType: 'جۆری گۆڕانکاری', closedAllDay: 'تەواوی ڕۆژ داخراوە', specialSchedule: 'کاتژمێری تایبەت', reason: 'هۆکارەکەی بۆ سەردانکەران پیشان دەدرێت',
     opens: 'دەکرێتەوە', closes: 'دادەخرێت', publishSpecialHours: 'بڵاوکردنەوەی گۆڕانکاری', cancel: 'پاشگەزبوونەوە',
@@ -134,7 +138,8 @@ const toBaghdadInput = (value: string) => value ? new Date(new Date(value).getTi
 const fromBaghdadInput = (value: string) => new Date(`${value}:00+03:00`).toISOString();
 const emptyFacility = (partnerId: string): FacilityProfileInput => ({
   partnerId, city: '', facility: '', localizedName: localizedBlank(), localizedDistrict: localizedBlank(), localizedAddress: localizedBlank(), localizedDescription: localizedBlank(),
-  activities: [], amenities: [], accessibility: [], openingHours: defaultHours(), contactPhone: null, websiteUrl: null, latitude: null, longitude: null,
+  activities: [], amenities: [], accessibility: [], openingHours: defaultHours(), contactPhone: null, websiteUrl: null,
+  logoUrl: null, coverImageUrl: null, galleryImageUrls: [], promotionalVideoUrl: null, latitude: null, longitude: null,
 });
 function localizedField(label: string, value: { en: string; ar: string; ku: string }, onChange: (next: { en: string; ar: string; ku: string }) => void, multiline = false, required = false) {
   return <fieldset className="grid gap-2 sm:col-span-2"><legend className="mb-1 text-xs font-semibold text-[#51665e]">{label} · EN / AR / KU</legend><div className="grid gap-2 sm:grid-cols-3">{(['en', 'ar', 'ku'] as const).map(lang => {
@@ -171,6 +176,10 @@ function FacilityEditor({ partnerId, facility, lang, onClose, onSaved }: { partn
     openingHours: facility.openingHours.map(hour => ({ ...hour })),
     contactPhone: facility.contactPhone,
     websiteUrl: facility.websiteUrl,
+    logoUrl: facility.logoUrl,
+    coverImageUrl: facility.coverImageUrl,
+    galleryImageUrls: facility.galleryImageUrls,
+    promotionalVideoUrl: facility.promotionalVideoUrl,
     latitude: facility.latitude,
     longitude: facility.longitude,
   } : emptyFacility(partnerId));
@@ -186,6 +195,10 @@ function FacilityEditor({ partnerId, facility, lang, onClose, onSaved }: { partn
       [item.en, item.ar, item.ku].some(text => !text.trim()),
     ))) {
       setError(t(lang, 'translationRequired'));
+      return;
+    }
+    if ((form.galleryImageUrls?.length ?? 0) > 12) {
+      setError(t(lang, 'galleryLimit'));
       return;
     }
     const { partnerId: _serverScopedPartnerId, ...profileUpdate } = form;
@@ -211,6 +224,14 @@ function FacilityEditor({ partnerId, facility, lang, onClose, onSaved }: { partn
         {localizedList(form.activities, value => set('activities', value), lang, t(lang, 'activities'))}
         {localizedList(form.amenities, value => set('amenities', value), lang, t(lang, 'amenities'))}
         {localizedList(form.accessibility, value => set('accessibility', value), lang, t(lang, 'accessibility'))}
+        <div className="sm:col-span-2">
+          <FacilityMediaFields
+            value={form}
+            lang={lang}
+            inputClass={inputClass}
+            onChange={(key, value) => set(key, value as FacilityProfileInput[typeof key])}
+          />
+        </div>
         <label className="text-xs font-semibold">{t(lang, 'phone')}<input className={inputClass} value={form.contactPhone ?? ''} onChange={e => set('contactPhone', e.target.value || null)} /></label>
         <label className="text-xs font-semibold">{t(lang, 'website')}<input type="url" className={inputClass} value={form.websiteUrl ?? ''} onChange={e => set('websiteUrl', e.target.value || null)} /></label>
         <label className="text-xs font-semibold">{t(lang, 'latitude')}<input type="number" step="any" min="-90" max="90" className={inputClass} value={form.latitude ?? ''} onChange={e => set('latitude', e.target.value ? Number(e.target.value) : null)} /></label>

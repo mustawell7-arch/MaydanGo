@@ -196,23 +196,48 @@ function FacilityDetails({ facility }: { facility: PublicFacility }) {
   const openWebsite = () => {
     if (facility.websiteUrl) void Linking.openURL(facility.websiteUrl).catch(() => undefined);
   };
+  const openPromotionalVideo = () => {
+    if (facility.promotionalVideoUrl) void Linking.openURL(facility.promotionalVideoUrl).catch(() => undefined);
+  };
 
   return (
     <ScreenShell sample={false}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={[styles.hero, { backgroundColor: colors.secondary }]}>
+          {facility.coverImageUrl ? <>
+            <Image source={{ uri: facility.coverImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityIgnoresInvertColors />
+            <View pointerEvents="none" style={styles.heroShade} />
+          </> : null}
           <Pressable onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('back')}>
             <Ionicons name="arrow-back" size={19} color={colors.primary} />
           </Pressable>
           <Pressable onPress={() => app.toggleFavorite(facility.id)} style={styles.saveButton} accessibilityRole="button" accessibilityLabel={t('savePlace')}>
             <Ionicons name={app.favorites.includes(facility.id) ? 'heart' : 'heart-outline'} size={20} color={app.favorites.includes(facility.id) ? colors.destructive : colors.primary} />
           </Pressable>
-          <Ionicons name="fitness-outline" size={42} color={colors.primary} />
-          <Text style={[styles.heroActivities, { color: colors.mutedForeground, textAlign }]}>{facility.activities.map(item => facilityText(item, app.language)).join(' · ')}</Text>
-          <Text style={[styles.heroName, { color: colors.foreground, textAlign }]}>{name}</Text>
-          <Text style={[styles.heroPartner, { color: colors.mutedForeground, textAlign }]}>{facility.partnerName}</Text>
+          {facility.logoUrl
+            ? <Image accessibilityLabel={name} source={{ uri: facility.logoUrl }} style={styles.heroLogo} resizeMode="contain" />
+            : !facility.coverImageUrl ? <Ionicons name="fitness-outline" size={42} color={colors.primary} /> : null}
+          <Text style={[styles.heroActivities, { color: facility.coverImageUrl ? '#f3f5ee' : colors.mutedForeground, textAlign }]}>{facility.activities.map(item => facilityText(item, app.language)).join(' · ')}</Text>
+          <Text style={[styles.heroName, { color: facility.coverImageUrl ? '#ffffff' : colors.foreground, textAlign }]}>{name}</Text>
+          <Text style={[styles.heroPartner, { color: facility.coverImageUrl ? '#f3f5ee' : colors.mutedForeground, textAlign }]}>{facility.partnerName}</Text>
         </View>
         <View style={styles.body}>
+          {facility.galleryImageUrls.length ? <Section title={t('facilityGallery')} color={colors.foreground}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryRow}>
+              {facility.galleryImageUrls.map((uri, index) => (
+                <Image key={`${index}-${uri}`} source={{ uri }} accessibilityLabel={`${name} ${index + 1}`} style={styles.galleryImage} resizeMode="cover" />
+              ))}
+            </ScrollView>
+          </Section> : null}
+          {facility.promotionalVideoUrl ? <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={t('watchFacilityVideo')}
+            onPress={openPromotionalVideo}
+            style={[styles.videoButton, { borderColor: colors.border, backgroundColor: colors.card }]}
+          >
+            <Ionicons name="play-circle-outline" size={19} color={colors.primary} />
+            <Text style={[styles.actionText, { color: colors.primary }]}>{t('watchFacilityVideo')}</Text>
+          </Pressable> : null}
           <View style={[styles.statusCard, { backgroundColor: colors.secondary }]}>
             <View style={[styles.statusIcon, { backgroundColor: colors.card }]}>
               <Ionicons name="time-outline" size={18} color={colors.primary} />
@@ -463,6 +488,8 @@ function LocalizedList({
 const styles = StyleSheet.create({
   content: { paddingBottom: 36 },
   hero: { minHeight: 228, paddingHorizontal: 24, paddingTop: 76, paddingBottom: 22, alignItems: 'center', justifyContent: 'flex-end' },
+  heroShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,30,24,0.45)' },
+  heroLogo: { width: 54, height: 54, borderRadius: 15, backgroundColor: '#ffffff', marginBottom: 2 },
   sampleShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,30,24,0.38)' },
   sampleHeroTitle: { position: 'absolute', left: 22, bottom: 22, right: 22 },
   sampleHeroCategory: { color: '#edf4eb', fontSize: 11, fontWeight: '800', marginBottom: 5 },
@@ -473,6 +500,9 @@ const styles = StyleSheet.create({
   heroName: { fontSize: 25, fontWeight: '900', letterSpacing: -0.5, marginTop: 5 },
   heroPartner: { fontSize: 11, marginTop: 6 },
   body: { paddingHorizontal: 20, paddingTop: 18 },
+  galleryRow: { gap: 10, paddingEnd: 4 },
+  galleryImage: { width: 220, height: 142, borderRadius: 16, backgroundColor: '#e5e8df' },
+  videoButton: { minHeight: 44, borderRadius: 13, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 12, marginTop: 18 },
   statusCard: { flexDirection: 'row', alignItems: 'center', gap: 11, padding: 13, borderRadius: 16, marginBottom: 5 },
   reviewSummary: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 15, padding: 12, marginBottom: 10 },
   reviewAverage: { fontSize: 17, fontWeight: '900' },

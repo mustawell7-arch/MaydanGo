@@ -13,6 +13,7 @@ export const DEFAULT_PLATFORM_SAFETY_RULES: PlatformSafetyRules = {
   impossibleTravelMetersPerSecond: 80,
   maxDailyVisitsPerPlan: 100000,
   offeringApprovalRequired: true,
+  supplementStoreUrl: null,
 };
 
 export const platformSafetyRulesSchema = z.object({
@@ -26,6 +27,15 @@ export const platformSafetyRulesSchema = z.object({
   impossibleTravelMetersPerSecond: z.number().int().min(1).max(200),
   maxDailyVisitsPerPlan: z.number().int().min(1).max(100000),
   offeringApprovalRequired: z.boolean(),
+  supplementStoreUrl: z.string().url().max(2048).nullable().default(null).refine(value => {
+    if (!value) return true;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password;
+    } catch {
+      return false;
+    }
+  }, "Use a public HTTPS address without embedded credentials."),
 }).strict().superRefine((rules, context) => {
   if (rules.impossibleTravelWindowSeconds <= rules.rapidCheckinBlockSeconds) {
     context.addIssue({

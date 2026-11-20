@@ -112,6 +112,22 @@ test("facility profiles require seven unique valid weekdays and paired coordinat
     longitude: null,
   };
   assert.equal(facilityProfileFields.safeParse(profile).success, true);
+  assert.equal(facilityProfileFields.safeParse({
+    ...profile,
+    logoUrl: 'https://media.example/brand.png',
+    coverImageUrl: 'https://media.example/cover.jpg',
+    galleryImageUrls: ['https://media.example/gallery-1.jpg', 'https://media.example/gallery-2.jpg'],
+    promotionalVideoUrl: 'https://video.example/facility',
+  }).success, true);
+  assert.equal(facilityProfileFields.safeParse({ ...profile, logoUrl: 'http://media.example/brand.png' }).success, false);
+  assert.equal(facilityProfileFields.safeParse({
+    ...profile,
+    galleryImageUrls: ['https://media.example/same.jpg', 'https://media.example/same.jpg'],
+  }).success, false);
+  assert.equal(facilityProfileFields.safeParse({
+    ...profile,
+    galleryImageUrls: Array.from({ length: 13 }, (_, index) => `https://media.example/${index}.jpg`),
+  }).success, false);
   assert.equal(facilityProfileFields.safeParse({ ...profile, latitude: 36.2 }).success, false);
   assert.equal(facilityProfileFields.safeParse({ ...profile, openingHours: profile.openingHours.slice(1) }).success, false);
   assert.equal(facilityProfileFields.safeParse({

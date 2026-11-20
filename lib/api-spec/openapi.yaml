@@ -46,6 +46,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1operations~1sponsored-content~1{id}"
   /public/sponsored-content:
     $ref: "./operations.yaml#/paths/~1public~1sponsored-content"
+  /public/supplement-store:
+    $ref: "./operations.yaml#/paths/~1public~1supplement-store"
   /public/sponsored-content/{id}/events:
     $ref: "./operations.yaml#/paths/~1public~1sponsored-content~1{id}~1events"
   /operations/facilities:
@@ -713,6 +715,8 @@ paths:
     $ref: "./operations.yaml#/paths/~1super-admin~1role-permissions"
   /super-admin/platform-rules:
     $ref: "./operations.yaml#/paths/~1super-admin~1platform-rules"
+  /super-admin/supplement-store:
+    $ref: "./operations.yaml#/paths/~1super-admin~1supplement-store"
   /super-admin/role-permissions/{role}:
     $ref: "./operations.yaml#/paths/~1super-admin~1role-permissions~1{role}"
   /super-admin/audit-logs:
@@ -1288,6 +1292,10 @@ components:
         openingHours: { type: array, maxItems: 7, items: { $ref: "#/components/schemas/FacilityOpeningDay" } }
         contactPhone: { type: ["string", "null"], maxLength: 40 }
         websiteUrl: { type: ["string", "null"], format: uri, maxLength: 2048 }
+        logoUrl: { type: ["string", "null"], format: uri, pattern: "^https://", maxLength: 2048, description: "Optional HTTPS link supplied by the partner." }
+        coverImageUrl: { type: ["string", "null"], format: uri, pattern: "^https://", maxLength: 2048, description: "Optional HTTPS link supplied by the partner." }
+        galleryImageUrls: { type: array, maxItems: 12, uniqueItems: true, items: { type: string, format: uri, pattern: "^https://", maxLength: 2048 } }
+        promotionalVideoUrl: { type: ["string", "null"], format: uri, pattern: "^https://", maxLength: 2048, description: "Optional HTTPS link supplied by the partner." }
         latitude: { type: ["number", "null"], minimum: -90, maximum: 90 }
         longitude: { type: ["number", "null"], minimum: -180, maximum: 180 }
     FacilityProfileUpdate:
@@ -1306,11 +1314,15 @@ components:
         openingHours: { type: array, maxItems: 7, items: { $ref: "#/components/schemas/FacilityOpeningDay" } }
         contactPhone: { type: ["string", "null"], maxLength: 40 }
         websiteUrl: { type: ["string", "null"], format: uri, maxLength: 2048 }
+        logoUrl: { type: ["string", "null"], format: uri, pattern: "^https://", maxLength: 2048, description: "Optional HTTPS link supplied by the partner." }
+        coverImageUrl: { type: ["string", "null"], format: uri, pattern: "^https://", maxLength: 2048, description: "Optional HTTPS link supplied by the partner." }
+        galleryImageUrls: { type: array, maxItems: 12, uniqueItems: true, items: { type: string, format: uri, pattern: "^https://", maxLength: 2048 } }
+        promotionalVideoUrl: { type: ["string", "null"], format: uri, pattern: "^https://", maxLength: 2048, description: "Optional HTTPS link supplied by the partner." }
         latitude: { type: ["number", "null"], minimum: -90, maximum: 90 }
         longitude: { type: ["number", "null"], minimum: -180, maximum: 180 }
     FacilityProfile:
       type: object
-      required: [id, partnerId, city, facility, localizedName, localizedDistrict, localizedAddress, localizedDescription, activities, amenities, accessibility, openingHours, contactPhone, websiteUrl, latitude, longitude, updatedAt]
+      required: [id, partnerId, city, facility, localizedName, localizedDistrict, localizedAddress, localizedDescription, activities, amenities, accessibility, openingHours, contactPhone, websiteUrl, logoUrl, coverImageUrl, galleryImageUrls, promotionalVideoUrl, latitude, longitude, updatedAt]
       properties:
         id: { type: string }
         partnerId: { type: string }
@@ -1326,6 +1338,10 @@ components:
         openingHours: { type: array, items: { $ref: "#/components/schemas/FacilityOpeningDay" } }
         contactPhone: { type: ["string", "null"] }
         websiteUrl: { type: ["string", "null"], format: uri }
+        logoUrl: { type: ["string", "null"], format: uri, pattern: "^https://" }
+        coverImageUrl: { type: ["string", "null"], format: uri, pattern: "^https://" }
+        galleryImageUrls: { type: array, maxItems: 12, uniqueItems: true, items: { type: string, format: uri, pattern: "^https://" } }
+        promotionalVideoUrl: { type: ["string", "null"], format: uri, pattern: "^https://" }
         latitude: { type: ["number", "null"] }
         longitude: { type: ["number", "null"] }
         updatedAt: { type: string, format: date-time }

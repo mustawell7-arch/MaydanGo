@@ -55,6 +55,12 @@ export const getPublicFacilitiesResponseOneOpeningHoursItemDayMax = 6;
 
 export const getPublicFacilitiesResponseOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
 export const getPublicFacilitiesResponseOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getPublicFacilitiesResponseOneLogoUrlRegExp = new RegExp('^https:/');
+export const getPublicFacilitiesResponseOneCoverImageUrlRegExp = new RegExp('^https:/');
+export const getPublicFacilitiesResponseOneGalleryImageUrlsItemRegExp = new RegExp('^https:/');
+export const getPublicFacilitiesResponseOneGalleryImageUrlsMax = 12;
+
+export const getPublicFacilitiesResponseOnePromotionalVideoUrlRegExp = new RegExp('^https:/');
 export const getPublicFacilitiesResponseTwoAverageRatingMax = 5;
 
 export const getPublicFacilitiesResponseTwoReviewCountMin = 0;
@@ -172,6 +178,10 @@ export const GetPublicFacilitiesResponseItem = zod.object({
 })),
   "contactPhone": zod.string().nullable(),
   "websiteUrl": zod.url().nullable(),
+  "logoUrl": zod.url().regex(getPublicFacilitiesResponseOneLogoUrlRegExp).nullable(),
+  "coverImageUrl": zod.url().regex(getPublicFacilitiesResponseOneCoverImageUrlRegExp).nullable(),
+  "galleryImageUrls": zod.array(zod.url().regex(getPublicFacilitiesResponseOneGalleryImageUrlsItemRegExp)).max(getPublicFacilitiesResponseOneGalleryImageUrlsMax),
+  "promotionalVideoUrl": zod.url().regex(getPublicFacilitiesResponseOnePromotionalVideoUrlRegExp).nullable(),
   "latitude": zod.number().nullable(),
   "longitude": zod.number().nullable(),
   "updatedAt": zod.coerce.date()
@@ -316,6 +326,12 @@ export const getPublicFacilityResponseOneOpeningHoursItemDayMax = 6;
 
 export const getPublicFacilityResponseOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
 export const getPublicFacilityResponseOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getPublicFacilityResponseOneLogoUrlRegExp = new RegExp('^https:/');
+export const getPublicFacilityResponseOneCoverImageUrlRegExp = new RegExp('^https:/');
+export const getPublicFacilityResponseOneGalleryImageUrlsItemRegExp = new RegExp('^https:/');
+export const getPublicFacilityResponseOneGalleryImageUrlsMax = 12;
+
+export const getPublicFacilityResponseOnePromotionalVideoUrlRegExp = new RegExp('^https:/');
 export const getPublicFacilityResponseTwoAverageRatingMax = 5;
 
 export const getPublicFacilityResponseTwoReviewCountMin = 0;
@@ -433,6 +449,10 @@ export const GetPublicFacilityResponse = zod.object({
 })),
   "contactPhone": zod.string().nullable(),
   "websiteUrl": zod.url().nullable(),
+  "logoUrl": zod.url().regex(getPublicFacilityResponseOneLogoUrlRegExp).nullable(),
+  "coverImageUrl": zod.url().regex(getPublicFacilityResponseOneCoverImageUrlRegExp).nullable(),
+  "galleryImageUrls": zod.array(zod.url().regex(getPublicFacilityResponseOneGalleryImageUrlsItemRegExp)).max(getPublicFacilityResponseOneGalleryImageUrlsMax),
+  "promotionalVideoUrl": zod.url().regex(getPublicFacilityResponseOnePromotionalVideoUrlRegExp).nullable(),
   "latitude": zod.number().nullable(),
   "longitude": zod.number().nullable(),
   "updatedAt": zod.coerce.date()
@@ -720,6 +740,15 @@ export const GetPublicSponsoredContentResponseItem = zod.object({
 export const GetPublicSponsoredContentResponse = zod.array(GetPublicSponsoredContentResponseItem)
 
 
+export const getPublicSupplementStoreResponseUrlMax = 2048;
+
+
+
+export const GetPublicSupplementStoreResponse = zod.object({
+  "url": zod.url().max(getPublicSupplementStoreResponseUrlMax).nullable()
+})
+
+
 export const RecordPublicSponsoredContentEventParams = zod.object({
   "id": zod.coerce.string()
 })
@@ -779,6 +808,12 @@ export const getOperationFacilitiesResponseOneOpeningHoursItemDayMax = 6;
 
 export const getOperationFacilitiesResponseOneOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
 export const getOperationFacilitiesResponseOneOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const getOperationFacilitiesResponseOneLogoUrlRegExp = new RegExp('^https:/');
+export const getOperationFacilitiesResponseOneCoverImageUrlRegExp = new RegExp('^https:/');
+export const getOperationFacilitiesResponseOneGalleryImageUrlsItemRegExp = new RegExp('^https:/');
+export const getOperationFacilitiesResponseOneGalleryImageUrlsMax = 12;
+
+export const getOperationFacilitiesResponseOnePromotionalVideoUrlRegExp = new RegExp('^https:/');
 export const getOperationFacilitiesResponseTwoSpecialHoursItemLocalizedReasonEnMax = 500;
 
 export const getOperationFacilitiesResponseTwoSpecialHoursItemLocalizedReasonArMax = 500;
@@ -835,6 +870,10 @@ export const GetOperationFacilitiesResponseItem = zod.object({
 })),
   "contactPhone": zod.string().nullable(),
   "websiteUrl": zod.url().nullable(),
+  "logoUrl": zod.url().regex(getOperationFacilitiesResponseOneLogoUrlRegExp).nullable(),
+  "coverImageUrl": zod.url().regex(getOperationFacilitiesResponseOneCoverImageUrlRegExp).nullable(),
+  "galleryImageUrls": zod.array(zod.url().regex(getOperationFacilitiesResponseOneGalleryImageUrlsItemRegExp)).max(getOperationFacilitiesResponseOneGalleryImageUrlsMax),
+  "promotionalVideoUrl": zod.url().regex(getOperationFacilitiesResponseOnePromotionalVideoUrlRegExp).nullable(),
   "latitude": zod.number().nullable(),
   "longitude": zod.number().nullable(),
   "updatedAt": zod.coerce.date()
@@ -923,6 +962,24 @@ export const createFacilityProfileBodyContactPhoneMax = 40;
 
 export const createFacilityProfileBodyWebsiteUrlMax = 2048;
 
+export const createFacilityProfileBodyLogoUrlMax = 2048;
+
+
+export const createFacilityProfileBodyLogoUrlRegExp = new RegExp('^https:/');
+export const createFacilityProfileBodyCoverImageUrlMax = 2048;
+
+
+export const createFacilityProfileBodyCoverImageUrlRegExp = new RegExp('^https:/');
+export const createFacilityProfileBodyGalleryImageUrlsItemMax = 2048;
+
+
+export const createFacilityProfileBodyGalleryImageUrlsItemRegExp = new RegExp('^https:/');
+export const createFacilityProfileBodyGalleryImageUrlsMax = 12;
+
+export const createFacilityProfileBodyPromotionalVideoUrlMax = 2048;
+
+
+export const createFacilityProfileBodyPromotionalVideoUrlRegExp = new RegExp('^https:/');
 export const createFacilityProfileBodyLatitudeMin = -90;
 export const createFacilityProfileBodyLatitudeMax = 90;
 
@@ -978,6 +1035,10 @@ export const CreateFacilityProfileBody = zod.object({
 })).max(createFacilityProfileBodyOpeningHoursMax),
   "contactPhone": zod.string().max(createFacilityProfileBodyContactPhoneMax).nullable(),
   "websiteUrl": zod.url().max(createFacilityProfileBodyWebsiteUrlMax).nullable(),
+  "logoUrl": zod.url().max(createFacilityProfileBodyLogoUrlMax).regex(createFacilityProfileBodyLogoUrlRegExp).nullish().describe('Optional HTTPS link supplied by the partner.'),
+  "coverImageUrl": zod.url().max(createFacilityProfileBodyCoverImageUrlMax).regex(createFacilityProfileBodyCoverImageUrlRegExp).nullish().describe('Optional HTTPS link supplied by the partner.'),
+  "galleryImageUrls": zod.array(zod.url().max(createFacilityProfileBodyGalleryImageUrlsItemMax).regex(createFacilityProfileBodyGalleryImageUrlsItemRegExp)).max(createFacilityProfileBodyGalleryImageUrlsMax).optional(),
+  "promotionalVideoUrl": zod.url().max(createFacilityProfileBodyPromotionalVideoUrlMax).regex(createFacilityProfileBodyPromotionalVideoUrlRegExp).nullish().describe('Optional HTTPS link supplied by the partner.'),
   "latitude": zod.number().min(createFacilityProfileBodyLatitudeMin).max(createFacilityProfileBodyLatitudeMax).nullable(),
   "longitude": zod.number().min(createFacilityProfileBodyLongitudeMin).max(createFacilityProfileBodyLongitudeMax).nullable()
 })
@@ -1029,6 +1090,12 @@ export const createFacilityProfileResponseOpeningHoursItemDayMax = 6;
 
 export const createFacilityProfileResponseOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
 export const createFacilityProfileResponseOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const createFacilityProfileResponseLogoUrlRegExp = new RegExp('^https:/');
+export const createFacilityProfileResponseCoverImageUrlRegExp = new RegExp('^https:/');
+export const createFacilityProfileResponseGalleryImageUrlsItemRegExp = new RegExp('^https:/');
+export const createFacilityProfileResponseGalleryImageUrlsMax = 12;
+
+export const createFacilityProfileResponsePromotionalVideoUrlRegExp = new RegExp('^https:/');
 
 
 export const CreateFacilityProfileResponse = zod.object({
@@ -1079,6 +1146,10 @@ export const CreateFacilityProfileResponse = zod.object({
 })),
   "contactPhone": zod.string().nullable(),
   "websiteUrl": zod.url().nullable(),
+  "logoUrl": zod.url().regex(createFacilityProfileResponseLogoUrlRegExp).nullable(),
+  "coverImageUrl": zod.url().regex(createFacilityProfileResponseCoverImageUrlRegExp).nullable(),
+  "galleryImageUrls": zod.array(zod.url().regex(createFacilityProfileResponseGalleryImageUrlsItemRegExp)).max(createFacilityProfileResponseGalleryImageUrlsMax),
+  "promotionalVideoUrl": zod.url().regex(createFacilityProfileResponsePromotionalVideoUrlRegExp).nullable(),
   "latitude": zod.number().nullable(),
   "longitude": zod.number().nullable(),
   "updatedAt": zod.coerce.date()
@@ -1152,6 +1223,24 @@ export const updateFacilityProfileBodyContactPhoneMax = 40;
 
 export const updateFacilityProfileBodyWebsiteUrlMax = 2048;
 
+export const updateFacilityProfileBodyLogoUrlMax = 2048;
+
+
+export const updateFacilityProfileBodyLogoUrlRegExp = new RegExp('^https:/');
+export const updateFacilityProfileBodyCoverImageUrlMax = 2048;
+
+
+export const updateFacilityProfileBodyCoverImageUrlRegExp = new RegExp('^https:/');
+export const updateFacilityProfileBodyGalleryImageUrlsItemMax = 2048;
+
+
+export const updateFacilityProfileBodyGalleryImageUrlsItemRegExp = new RegExp('^https:/');
+export const updateFacilityProfileBodyGalleryImageUrlsMax = 12;
+
+export const updateFacilityProfileBodyPromotionalVideoUrlMax = 2048;
+
+
+export const updateFacilityProfileBodyPromotionalVideoUrlRegExp = new RegExp('^https:/');
 export const updateFacilityProfileBodyLatitudeMin = -90;
 export const updateFacilityProfileBodyLatitudeMax = 90;
 
@@ -1206,6 +1295,10 @@ export const UpdateFacilityProfileBody = zod.object({
 })).max(updateFacilityProfileBodyOpeningHoursMax),
   "contactPhone": zod.string().max(updateFacilityProfileBodyContactPhoneMax).nullable(),
   "websiteUrl": zod.url().max(updateFacilityProfileBodyWebsiteUrlMax).nullable(),
+  "logoUrl": zod.url().max(updateFacilityProfileBodyLogoUrlMax).regex(updateFacilityProfileBodyLogoUrlRegExp).nullish().describe('Optional HTTPS link supplied by the partner.'),
+  "coverImageUrl": zod.url().max(updateFacilityProfileBodyCoverImageUrlMax).regex(updateFacilityProfileBodyCoverImageUrlRegExp).nullish().describe('Optional HTTPS link supplied by the partner.'),
+  "galleryImageUrls": zod.array(zod.url().max(updateFacilityProfileBodyGalleryImageUrlsItemMax).regex(updateFacilityProfileBodyGalleryImageUrlsItemRegExp)).max(updateFacilityProfileBodyGalleryImageUrlsMax).optional(),
+  "promotionalVideoUrl": zod.url().max(updateFacilityProfileBodyPromotionalVideoUrlMax).regex(updateFacilityProfileBodyPromotionalVideoUrlRegExp).nullish().describe('Optional HTTPS link supplied by the partner.'),
   "latitude": zod.number().min(updateFacilityProfileBodyLatitudeMin).max(updateFacilityProfileBodyLatitudeMax).nullable(),
   "longitude": zod.number().min(updateFacilityProfileBodyLongitudeMin).max(updateFacilityProfileBodyLongitudeMax).nullable()
 })
@@ -1257,6 +1350,12 @@ export const updateFacilityProfileResponseOpeningHoursItemDayMax = 6;
 
 export const updateFacilityProfileResponseOpeningHoursItemOpensAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
 export const updateFacilityProfileResponseOpeningHoursItemClosesAtRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+export const updateFacilityProfileResponseLogoUrlRegExp = new RegExp('^https:/');
+export const updateFacilityProfileResponseCoverImageUrlRegExp = new RegExp('^https:/');
+export const updateFacilityProfileResponseGalleryImageUrlsItemRegExp = new RegExp('^https:/');
+export const updateFacilityProfileResponseGalleryImageUrlsMax = 12;
+
+export const updateFacilityProfileResponsePromotionalVideoUrlRegExp = new RegExp('^https:/');
 
 
 export const UpdateFacilityProfileResponse = zod.object({
@@ -1307,6 +1406,10 @@ export const UpdateFacilityProfileResponse = zod.object({
 })),
   "contactPhone": zod.string().nullable(),
   "websiteUrl": zod.url().nullable(),
+  "logoUrl": zod.url().regex(updateFacilityProfileResponseLogoUrlRegExp).nullable(),
+  "coverImageUrl": zod.url().regex(updateFacilityProfileResponseCoverImageUrlRegExp).nullable(),
+  "galleryImageUrls": zod.array(zod.url().regex(updateFacilityProfileResponseGalleryImageUrlsItemRegExp)).max(updateFacilityProfileResponseGalleryImageUrlsMax),
+  "promotionalVideoUrl": zod.url().regex(updateFacilityProfileResponsePromotionalVideoUrlRegExp).nullable(),
   "latitude": zod.number().nullable(),
   "longitude": zod.number().nullable(),
   "updatedAt": zod.coerce.date()
@@ -11132,6 +11235,8 @@ export const getSuperAdminPlatformRulesResponseSettingsImpossibleTravelMetersPer
 
 export const getSuperAdminPlatformRulesResponseSettingsMaxDailyVisitsPerPlanMax = 100000;
 
+export const getSuperAdminPlatformRulesResponseSettingsSupplementStoreUrlMax = 2048;
+
 
 
 export const GetSuperAdminPlatformRulesResponse = zod.object({
@@ -11145,7 +11250,8 @@ export const GetSuperAdminPlatformRulesResponse = zod.object({
   "impossibleTravelBaseMeters": zod.int().min(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMin).max(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMax),
   "impossibleTravelMetersPerSecond": zod.int().min(1).max(getSuperAdminPlatformRulesResponseSettingsImpossibleTravelMetersPerSecondMax),
   "maxDailyVisitsPerPlan": zod.int().min(1).max(getSuperAdminPlatformRulesResponseSettingsMaxDailyVisitsPerPlanMax),
-  "offeringApprovalRequired": zod.boolean()
+  "offeringApprovalRequired": zod.boolean(),
+  "supplementStoreUrl": zod.url().max(getSuperAdminPlatformRulesResponseSettingsSupplementStoreUrlMax).nullable()
 }),
   "isCustom": zod.boolean(),
   "updatedAt": zod.coerce.date().nullable()
@@ -11172,6 +11278,8 @@ export const updateSuperAdminPlatformRulesBodySettingsImpossibleTravelMetersPerS
 
 export const updateSuperAdminPlatformRulesBodySettingsMaxDailyVisitsPerPlanMax = 100000;
 
+export const updateSuperAdminPlatformRulesBodySettingsSupplementStoreUrlMax = 2048;
+
 
 
 export const UpdateSuperAdminPlatformRulesBody = zod.object({
@@ -11185,7 +11293,8 @@ export const UpdateSuperAdminPlatformRulesBody = zod.object({
   "impossibleTravelBaseMeters": zod.int().min(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelBaseMetersMin).max(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelBaseMetersMax),
   "impossibleTravelMetersPerSecond": zod.int().min(1).max(updateSuperAdminPlatformRulesBodySettingsImpossibleTravelMetersPerSecondMax),
   "maxDailyVisitsPerPlan": zod.int().min(1).max(updateSuperAdminPlatformRulesBodySettingsMaxDailyVisitsPerPlanMax),
-  "offeringApprovalRequired": zod.boolean()
+  "offeringApprovalRequired": zod.boolean(),
+  "supplementStoreUrl": zod.url().max(updateSuperAdminPlatformRulesBodySettingsSupplementStoreUrlMax).nullable()
 })
 })
 
@@ -11209,6 +11318,8 @@ export const updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelMeters
 
 export const updateSuperAdminPlatformRulesResponseSettingsMaxDailyVisitsPerPlanMax = 100000;
 
+export const updateSuperAdminPlatformRulesResponseSettingsSupplementStoreUrlMax = 2048;
+
 
 
 export const UpdateSuperAdminPlatformRulesResponse = zod.object({
@@ -11222,10 +11333,37 @@ export const UpdateSuperAdminPlatformRulesResponse = zod.object({
   "impossibleTravelBaseMeters": zod.int().min(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMin).max(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelBaseMetersMax),
   "impossibleTravelMetersPerSecond": zod.int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsImpossibleTravelMetersPerSecondMax),
   "maxDailyVisitsPerPlan": zod.int().min(1).max(updateSuperAdminPlatformRulesResponseSettingsMaxDailyVisitsPerPlanMax),
-  "offeringApprovalRequired": zod.boolean()
+  "offeringApprovalRequired": zod.boolean(),
+  "supplementStoreUrl": zod.url().max(updateSuperAdminPlatformRulesResponseSettingsSupplementStoreUrlMax).nullable()
 }),
   "isCustom": zod.boolean(),
   "updatedAt": zod.coerce.date().nullable()
+})
+
+
+export const getSuperAdminSupplementStoreResponseUrlMax = 2048;
+
+
+
+export const GetSuperAdminSupplementStoreResponse = zod.object({
+  "url": zod.url().max(getSuperAdminSupplementStoreResponseUrlMax).nullable()
+})
+
+
+export const updateSuperAdminSupplementStoreBodyUrlMax = 2048;
+
+
+
+export const UpdateSuperAdminSupplementStoreBody = zod.object({
+  "url": zod.url().max(updateSuperAdminSupplementStoreBodyUrlMax).nullable()
+})
+
+export const updateSuperAdminSupplementStoreResponseUrlMax = 2048;
+
+
+
+export const UpdateSuperAdminSupplementStoreResponse = zod.object({
+  "url": zod.url().max(updateSuperAdminSupplementStoreResponseUrlMax).nullable()
 })
 
 

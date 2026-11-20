@@ -1489,6 +1489,15 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PublicSponsoredContentPlacementsResponse" }
+  /public/supplement-store:
+    get:
+      operationId: getPublicSupplementStore
+      responses:
+        "200":
+          description: Optional public link to the configured supplement store
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupplementStoreLink" }
   /public/sponsored-content/{id}/events:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     post:
@@ -3359,6 +3368,28 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PlatformSafetyRulesRecord" }
+  /super-admin/supplement-store:
+    get:
+      operationId: getSuperAdminSupplementStore
+      responses:
+        "200":
+          description: Current optional supplement store link
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupplementStoreLink" }
+    put:
+      operationId: updateSuperAdminSupplementStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SupplementStoreLink" }
+      responses:
+        "200":
+          description: Link saved and recorded in the audit history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupplementStoreLink" }
   /super-admin/role-permissions/{role}:
     parameters:
       - name: role
@@ -7346,7 +7377,7 @@ components:
     PlatformSafetyRulesValues:
       type: object
       additionalProperties: false
-      required: [deviceChangeWaitHours, deviceChangeRiskWindowDays, repeatedDeviceChangeThreshold, maxCheckinAccuracyMeters, rapidCheckinBlockSeconds, impossibleTravelWindowSeconds, impossibleTravelBaseMeters, impossibleTravelMetersPerSecond, maxDailyVisitsPerPlan, offeringApprovalRequired]
+      required: [deviceChangeWaitHours, deviceChangeRiskWindowDays, repeatedDeviceChangeThreshold, maxCheckinAccuracyMeters, rapidCheckinBlockSeconds, impossibleTravelWindowSeconds, impossibleTravelBaseMeters, impossibleTravelMetersPerSecond, maxDailyVisitsPerPlan, offeringApprovalRequired, supplementStoreUrl]
       properties:
         deviceChangeWaitHours: { type: integer, minimum: 1, maximum: 168 }
         deviceChangeRiskWindowDays: { type: integer, minimum: 1, maximum: 90 }
@@ -7358,6 +7389,7 @@ components:
         impossibleTravelMetersPerSecond: { type: integer, minimum: 1, maximum: 200 }
         maxDailyVisitsPerPlan: { type: integer, minimum: 1, maximum: 100000 }
         offeringApprovalRequired: { type: boolean }
+        supplementStoreUrl: { type: ["string", "null"], format: uri, maxLength: 2048 }
     PlatformSafetyRulesUpdateInput:
       type: object
       additionalProperties: false
@@ -7695,3 +7727,12 @@ components:
       properties:
         challengeId: { type: string, format: uuid }
         activityDate: { $ref: "#/components/schemas/CalendarDate" }
+    SupplementStoreLink:
+      type: object
+      additionalProperties: false
+      required: [url]
+      properties:
+        url:
+          type: [string, "null"]
+          format: uri
+          maxLength: 2048

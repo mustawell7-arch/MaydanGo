@@ -5,10 +5,18 @@ import facilitiesPublicRouter from "./facilities-public";
 import { filterSuspendedOfferings } from "../lib/account-access-restrictions";
 import { getOfferingBookingModel } from "../lib/booking-model";
 import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
+import { GetPublicSupplementStoreResponse } from "@workspace/api-zod";
+import { getPlatformSafetyRules } from "../lib/platform-rules";
 
 const router = Router();
 const objectStorage = new ObjectStorageService();
 router.use(facilitiesPublicRouter);
+
+router.get("/supplement-store", async (_req, res) => {
+  const settings = await getPlatformSafetyRules();
+  res.setHeader("Cache-Control", "public, max-age=60");
+  res.json(GetPublicSupplementStoreResponse.parse({ url: settings.supplementStoreUrl }));
+});
 
 router.get("/catalog", async (_req, res) => {
   const rows = await db

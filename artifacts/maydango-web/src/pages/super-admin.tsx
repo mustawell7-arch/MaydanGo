@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@clerk/react";
 import {
   getGetSuperAdminAccountsQueryKey,
@@ -8,6 +8,7 @@ import {
   getGetSuperAdminMemberConsentHistoryQueryKey,
   getGetSuperAdminPlatformRulesQueryKey,
   getGetSuperAdminRolePermissionsQueryKey,
+  getGetSuperAdminSupplementStoreQueryKey,
   useGetSuperAdminAccounts,
   useGetSuperAdminAccountRestrictions,
   useGetSuperAdminAuditLogs,
@@ -15,10 +16,12 @@ import {
   useGetSuperAdminMemberConsentHistory,
   useGetSuperAdminPlatformRules,
   useGetSuperAdminRolePermissions,
+  useGetSuperAdminSupplementStore,
   useUpdateSuperAdminPlatformRules,
   useUpsertSuperAdminAccount,
   useUpdateSuperAdminAccountRestriction,
   useUpdateSuperAdminRolePermissions,
+  useUpdateSuperAdminSupplementStore,
   type AdminAction,
   type AdminAccount,
   type AccountRestrictionEntityType,
@@ -117,6 +120,9 @@ export default function SuperAdminPage() {
       queryKey: getGetSuperAdminPlatformRulesQueryKey(),
     },
   });
+  const supplementStoreQuery = useGetSuperAdminSupplementStore({
+    query: { enabled: isLoaded && !!isSignedIn, queryKey: getGetSuperAdminSupplementStoreQueryKey() },
+  });
   const [auditPage, setAuditPage] = useState(0);
   const auditParams = { limit: 100, offset: auditPage * 100 };
   const auditQuery = useGetSuperAdminAuditLogs(auditParams, {
@@ -147,6 +153,7 @@ export default function SuperAdminPage() {
   const saveRestriction = useUpdateSuperAdminAccountRestriction();
   const saveRolePermissions = useUpdateSuperAdminRolePermissions();
   const savePlatformRules = useUpdateSuperAdminPlatformRules();
+  const saveSupplementStore = useUpdateSuperAdminSupplementStore();
   const [email, setEmail] = useState("");
   const [newRole, setNewRole] = useState<AdminRole>("customer_support_admin");
   const [roleChoices, setRoleChoices] = useState<Record<string, AdminRole>>({});
@@ -163,6 +170,8 @@ export default function SuperAdminPage() {
   const [restrictionFeedback, setRestrictionFeedback] = useState("");
   const [permissionFeedback, setPermissionFeedback] = useState("");
   const [platformRulesFeedback, setPlatformRulesFeedback] = useState("");
+  const [supplementStoreUrl, setSupplementStoreUrl] = useState("");
+  const [supplementStoreFeedback, setSupplementStoreFeedback] = useState("");
   const [guardianDownloadId, setGuardianDownloadId] = useState<string | null>(null);
   const [guardianFeedback, setGuardianFeedback] = useState("");
   const [busyId, setBusyId] = useState("");
@@ -170,6 +179,10 @@ export default function SuperAdminPage() {
   const cancelsUpcomingVenueVisits = requiresVenueCategory
     && !!restrictionCategory
     && restrictionCategory !== "administrative";
+
+  useEffect(() => {
+    if (supplementStoreQuery.data) setSupplementStoreUrl(supplementStoreQuery.data.url ?? "");
+  }, [supplementStoreQuery.data?.url]);
 
   const refresh = async () => {
     await Promise.all([
@@ -212,6 +225,21 @@ export default function SuperAdminPage() {
   const addAccount = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     submitAccount({ email: email.trim(), role: newRole }, "active", "new-account", () => setEmail(""));
+  };
+
+  const submitSupplementStore = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSupplementStoreFeedback("");
+    saveSupplementStore.mutate(
+      { data: { url: supplementStoreUrl.trim() || null } },
+      {
+        onSuccess: async () => {
+          setSupplementStoreFeedback("The supplement-store link was saved. Members will see it on the online-training page.");
+          await queryClient.invalidateQueries({ queryKey: getGetSuperAdminSupplementStoreQueryKey() });
+        },
+        onError: () => setSupplementStoreFeedback("The link could not be saved. Use a valid HTTPS address and try again."),
+      },
+    );
   };
 
   const submitRestriction = (event: FormEvent<HTMLFormElement>) => {
@@ -359,6 +387,27 @@ export default function SuperAdminPage() {
               <h3 className="font-bold">{item.title}</h3><p className="mt-2 text-sm leading-5 text-[#60756b]">{item.description}</p>
             </Link>)}
           </div>
+        </section>
+
+        <section className="mb-8 rounded-3xl border border-[#e1dccf] bg-[#fffdf7] p-5 sm:p-6" aria-labelledby="supplement-store-title" data-testid="section-supplement-store">
+          <div className="mb-4">
+            <h2 id="supplement-store-title" className="font-display text-xl font-bold">Supplement-store link</h2>
+            <p className="mt-1 max-w-3xl text-sm leading-5 text-[#60756b]">Add a public HTTPS link to an external store. MaydanGo will not process payments; the link stays hidden from members until configured.</p>
+          </div>
+          {supplementStoreFeedback && <p className="mb-4 text-sm" role={supplementStoreFeedback.startsWith("The link could not") ? "alert" : "status"} data-testid="status-supplement-store">{supplementStoreFeedback}</p>}
+          {supplementStoreQuery.isLoading
+            ? <p className="py-3 text-sm text-[#748279]" role="status">Loading store-link settings…</p>
+            : supplementStoreQuery.isError
+              ? <p className="rounded-xl border border-[#e8c5ba] bg-[#fff5f1] p-4 text-sm text-[#9a4435]" role="alert">Store-link settings could not be loaded. Retry before changing them.</p>
+              : <form onSubmit={submitSupplementStore} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <label className="flex-1 space-y-1 text-xs font-semibold text-[#36564b]">Store website URL
+                  <input type="url" inputMode="url" maxLength={2048} pattern="https://.+" placeholder="https://example.com" value={supplementStoreUrl} onChange={event => setSupplementStoreUrl(event.target.value)} className="h-11 w-full rounded-xl border border-[#d8d2c4] bg-[#fffdf7] px-3 text-sm font-normal" data-testid="input-supplement-store-url" />
+                  <span className="block font-normal text-[#748279]">Leave empty and save to hide the member link.</span>
+                </label>
+                <button type="submit" disabled={saveSupplementStore.isPending} className="h-11 rounded-full bg-[#174d43] px-5 text-sm font-bold text-[#fff9e9] disabled:opacity-50" data-testid="button-save-supplement-store">
+                  {saveSupplementStore.isPending ? "Saving…" : "Save store link"}
+                </button>
+              </form>}
         </section>
 
         <section className="mb-8 rounded-3xl border border-[#e1dccf] bg-[#fffdf7] p-5 sm:p-6" aria-labelledby="platform-rules-title" data-testid="section-platform-safety-rules">

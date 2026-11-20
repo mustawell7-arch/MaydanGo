@@ -27,6 +27,23 @@ test("platform safety rejects invalid bounds and inconsistent fraud windows", ()
   }).success, false);
 });
 
+test("supplement-store settings default safely and accept only public HTTPS URLs", () => {
+  const { supplementStoreUrl: _legacyStoreUrl, ...legacySettings } = DEFAULT_PLATFORM_SAFETY_RULES;
+  assert.equal(platformSafetyRulesSchema.parse(legacySettings).supplementStoreUrl, null);
+  assert.equal(platformSafetyRulesSchema.safeParse({
+    ...DEFAULT_PLATFORM_SAFETY_RULES,
+    supplementStoreUrl: "https://shop.example/fitness",
+  }).success, true);
+  assert.equal(platformSafetyRulesSchema.safeParse({
+    ...DEFAULT_PLATFORM_SAFETY_RULES,
+    supplementStoreUrl: "http://shop.example",
+  }).success, false);
+  assert.equal(platformSafetyRulesSchema.safeParse({
+    ...DEFAULT_PLATFORM_SAFETY_RULES,
+    supplementStoreUrl: "https://member:password@shop.example",
+  }).success, false);
+});
+
 test("daily-visit maximum applies only to new or changed plan rules", () => {
   assert.equal(exceedsPlatformDailyVisitLimit(null, 15, 10), true);
   assert.equal(exceedsPlatformDailyVisitLimit(null, 10, 10), false);

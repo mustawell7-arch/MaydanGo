@@ -49,6 +49,8 @@ export type PlatformSafetyRules = {
   impossibleTravelMetersPerSecond: number;
   maxDailyVisitsPerPlan: number;
   offeringApprovalRequired: boolean;
+  // Optional public destination; null keeps the member-facing link hidden.
+  supplementStoreUrl: string | null;
 };
 export const platformSafetyRules = pgTable("platform_safety_rules", {
   id: text("id").primaryKey(),

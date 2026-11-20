@@ -11,6 +11,7 @@ import {
 import type { FacilityOpeningDay, FacilityProfile, FacilityProfileInput, FacilityProfileUpdate, LocalizedFacilityText, Partner } from '@workspace/api-client-react';
 import { AlertTriangle, Clock3, MapPin, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import { trackEvent } from '@/lib/analytics';
+import { FacilityMediaFields } from '@/components/facility-media-fields';
 
 type Language = keyof LocalizedFacilityText;
 type ProfileForm = Omit<FacilityProfileInput, 'partnerId'>;
@@ -27,7 +28,8 @@ const blankHours = (): FacilityOpeningDay[] => days.map((_, day) => ({ day, clos
 const blankForm = (): ProfileForm => ({
   city: '', facility: '', localizedName: blankText(), localizedDistrict: blankText(), localizedAddress: blankText(),
   localizedDescription: blankText(), activities: [], amenities: [], accessibility: [], openingHours: blankHours(),
-  contactPhone: null, websiteUrl: null, latitude: null, longitude: null,
+  contactPhone: null, websiteUrl: null, logoUrl: null, coverImageUrl: null, galleryImageUrls: [], promotionalVideoUrl: null,
+  latitude: null, longitude: null,
 });
 const formFromProfile = (profile: FacilityProfile): ProfileForm => ({
   city: profile.city, facility: profile.facility, localizedName: { ...profile.localizedName }, localizedDistrict: { ...profile.localizedDistrict },
@@ -35,7 +37,9 @@ const formFromProfile = (profile: FacilityProfile): ProfileForm => ({
   activities: profile.activities.map(item => ({ ...item })), amenities: profile.amenities.map(item => ({ ...item })),
   accessibility: profile.accessibility.map(item => ({ ...item })),
   openingHours: [...profile.openingHours].sort((a, b) => a.day - b.day).map(item => ({ ...item })),
-  contactPhone: profile.contactPhone, websiteUrl: profile.websiteUrl, latitude: profile.latitude, longitude: profile.longitude,
+  contactPhone: profile.contactPhone, websiteUrl: profile.websiteUrl, logoUrl: profile.logoUrl,
+  coverImageUrl: profile.coverImageUrl, galleryImageUrls: profile.galleryImageUrls,
+  promotionalVideoUrl: profile.promotionalVideoUrl, latitude: profile.latitude, longitude: profile.longitude,
 });
 const displayName = (profile: FacilityProfile) => profile.localizedName.en || profile.facility;
 
@@ -83,6 +87,7 @@ function ProfileEditor({ profile, partners, partnerId, isAdmin, onClose, onSaved
     event.preventDefault();
     if (!selectedPartner) { setMessage('Choose an approved partner before saving this facility.'); return; }
     if ((form.latitude === null) !== (form.longitude === null)) { setMessage('Enter both latitude and longitude, or leave both blank.'); return; }
+    if ((form.galleryImageUrls?.length ?? 0) > 12) { setMessage('Use no more than 12 gallery image links.'); return; }
     const invalidList = [form.activities, form.amenities, form.accessibility].some(entries => entries.some(entry => [entry.en, entry.ar, entry.ku].some(text => !text.trim())));
     if (invalidList) { setMessage('Complete all three language fields for each list entry, or remove the unfinished entry.'); return; }
     const data = {
@@ -120,6 +125,12 @@ function ProfileEditor({ profile, partners, partnerId, isAdmin, onClose, onSaved
         <LocalizedFields title="Street address" value={form.localizedAddress} onChange={value => setField('localizedAddress', value)} testPrefix="facility-address" />
         <LocalizedFields title="Description" value={form.localizedDescription} onChange={value => setField('localizedDescription', value)} testPrefix="facility-description" multiline />
         <div className="grid gap-3 lg:grid-cols-3"><LocalizedList title="Activities" value={form.activities} onChange={value => setField('activities', value)} testPrefix="activities" /><LocalizedList title="Amenities" value={form.amenities} onChange={value => setField('amenities', value)} testPrefix="amenities" /><LocalizedList title="Accessibility" value={form.accessibility} onChange={value => setField('accessibility', value)} testPrefix="accessibility" /></div>
+        <FacilityMediaFields
+          value={form}
+          lang="en"
+          inputClass={field}
+          onChange={(key, value) => setField(key, value as ProfileForm[typeof key])}
+        />
         <section className="rounded-2xl border border-[#e3ddce] bg-[#fffdf7]/70 p-4"><div className="flex items-center gap-2"><Clock3 size={16} className="text-[#a76445]" /><h3 className="text-sm font-bold text-[#36564b]">Opening hours</h3></div><p className="mt-1 text-[11px] text-[#75847c]">Sunday first. Closed days are saved without times.</p><div className="mt-3 divide-y divide-[#ece7d9]">{days.map((day, index) => { const row = form.openingHours.find(item => item.day === index) ?? blankHours()[index]; return <div key={day} className="grid gap-2 py-3 sm:grid-cols-[1fr_auto_1fr_1fr] sm:items-center"><span data-testid={`text-opening-day-${index}`} className="text-xs font-semibold">{day}</span><label className="flex items-center gap-2 text-xs text-[#687a71]"><input data-testid={`checkbox-closed-${index}`} type="checkbox" checked={row.closed} onChange={event => updateHours(index, event.target.checked ? { closed: true, opensAt: null, closesAt: null } : { closed: false, opensAt: '09:00', closesAt: '17:00' })} className="accent-[#174d43]" />Closed</label><input data-testid={`input-opens-${index}`} aria-label={`${day} opens at`} type="time" required={!row.closed} disabled={row.closed} className={field} value={row.opensAt ?? ''} onChange={event => updateHours(index, { opensAt: event.target.value || null })} /><input data-testid={`input-closes-${index}`} aria-label={`${day} closes at`} type="time" required={!row.closed} disabled={row.closed} className={field} value={row.closesAt ?? ''} onChange={event => updateHours(index, { closesAt: event.target.value || null })} /></div>; })}</div></section>
         <section className="rounded-2xl border border-[#e3ddce] bg-[#fffdf7]/70 p-4"><h3 className="text-sm font-bold text-[#36564b]">Contact and map pin <span className="font-normal text-[#879187]">· optional</span></h3><div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="block text-xs font-semibold text-[#51665e]">Contact phone<input data-testid="input-facility-phone" type="tel" maxLength={40} className={field} value={form.contactPhone ?? ''} onChange={event => setField('contactPhone', event.target.value || null)} /></label><label className="block text-xs font-semibold text-[#51665e]">Website URL<input data-testid="input-facility-website" type="url" maxLength={2048} placeholder="https://" className={field} value={form.websiteUrl ?? ''} onChange={event => setField('websiteUrl', event.target.value || null)} /></label><label className="block text-xs font-semibold text-[#51665e]">Latitude<input data-testid="input-facility-latitude" type="number" min="-90" max="90" step="any" className={field} value={form.latitude ?? ''} onChange={event => setField('latitude', event.target.value === '' ? null : Number(event.target.value))} /></label><label className="block text-xs font-semibold text-[#51665e]">Longitude<input data-testid="input-facility-longitude" type="number" min="-180" max="180" step="any" className={field} value={form.longitude ?? ''} onChange={event => setField('longitude', event.target.value === '' ? null : Number(event.target.value))} /></label></div></section>
         {message && <p data-testid="status-facility-form" role="alert" className="rounded-xl border border-[#e4c3b7] bg-[#fff5f1] px-4 py-3 text-sm text-[#9a4435]">{message}</p>}

@@ -28,6 +28,9 @@ import {
   UpsertSuperAdminAccountResponse,
   UpdateSuperAdminAccountRestrictionBody,
   UpdateSuperAdminAccountRestrictionResponse,
+  GetSuperAdminSupplementStoreResponse,
+  UpdateSuperAdminSupplementStoreBody,
+  UpdateSuperAdminSupplementStoreResponse,
 } from "@workspace/api-zod";
 import {
   ADMIN_ACTIONS,
@@ -412,6 +415,71 @@ export function createSuperAdminRouter(
       isCustom: !!row,
       updatedAt: row?.updatedAt.toISOString() ?? null,
     }));
+  });
+
+  router.get("/supplement-store", async (_req, res): Promise<void> => {
+    const [row] = await db.select().from(platformSafetyRules)
+      .where(eq(platformSafetyRules.id, "global")).limit(1);
+    const settings = row ? platformSafetyRulesSchema.parse(row.settings) : DEFAULT_PLATFORM_SAFETY_RULES;
+    res.json(GetSuperAdminSupplementStoreResponse.parse({ url: settings.supplementStoreUrl }));
+  });
+
+  router.put("/supplement-store", async (req, res): Promise<void> => {
+    const parsed = UpdateSuperAdminSupplementStoreBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.message });
+      return;
+    }
+    const url = parsed.data.url;
+    if (url) {
+      try {
+        const parsedUrl = new URL(url);
+        if (parsedUrl.protocol !== "https:" || parsedUrl.username || parsedUrl.password) {
+          res.status(400).json({ message: "Enter a public HTTPS link without embedded credentials." });
+          return;
+        }
+      } catch {
+        res.status(400).json({ message: "Enter a valid HTTPS link." });
+        return;
+      }
+    }
+
+    const actorId = res.locals.superAdminUserId as string;
+    const saved = await db.transaction(async tx => {
+      const [previous] = await tx.select().from(platformSafetyRules)
+        .where(eq(platformSafetyRules.id, "global")).for("update").limit(1);
+      const before = previous
+        ? platformSafetyRulesSchema.parse(previous.settings)
+        : DEFAULT_PLATFORM_SAFETY_RULES;
+      if (before.supplementStoreUrl === url) return { url };
+
+      const now = new Date();
+      const settings = { ...before, supplementStoreUrl: url };
+      await tx.insert(platformSafetyRules).values({
+        id: "global",
+        settings,
+        updatedBy: actorId,
+        updatedAt: now,
+      }).onConflictDoUpdate({
+        target: platformSafetyRules.id,
+        set: { settings, updatedBy: actorId, updatedAt: now },
+      });
+
+      const host = (value: string | null | undefined) => {
+        if (!value) return null;
+        try { return new URL(value).host; } catch { return null; }
+      };
+      await tx.insert(operationAudit).values({
+        id: randomUUID(),
+        actorId,
+        action: "super_admin.supplement_store.updated",
+        targetId: "platform:supplement-store",
+        detail: JSON.stringify({ beforeHost: host(before.supplementStoreUrl), afterHost: host(url), cleared: url === null }),
+      });
+      return { url };
+    });
+
+    res.json(UpdateSuperAdminSupplementStoreResponse.parse(saved));
   });
 
   router.put("/platform-rules", async (req, res): Promise<void> => {
